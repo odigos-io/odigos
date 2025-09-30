@@ -172,3 +172,7 @@ data:
     {{- if .Values.goAutoOffsetsMode }}
     goAutoOffsetsMode: {{ .Values.goAutoOffsetsMode }}
     {{- end }}
+    {{- if .Values.metricsSources }}
+    metricsSources:
+      {{- toYaml .Values.metricsSources | nindent 6 }}
+    {{- end }}

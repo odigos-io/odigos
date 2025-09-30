@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -19,17 +18,18 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
+	"github.com/odigos-io/odigos/k8sutils/pkg/restart"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -276,6 +276,65 @@ var centralInstallCmd = &cobra.Command{
 	},
 }
 
+var centralUninstallCmd = &cobra.Command{
+	Use:   "uninstall",
+	Short: "Uninstall Odigos Tower backend and UI components",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		nsFlag, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+		ns := nsFlag
+		if ns == "" {
+			ns = consts.DefaultOdigosCentralNamespace
+		}
+
+		if !cmd.Flag("yes").Changed {
+			fmt.Printf("About to uninstall Odigos Tower from namespace %s\n", ns)
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting uninstall")
+				return
+			}
+		}
+
+		fmt.Println("Starting Odigos Tower uninstallation...")
+
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Deployments",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteDeploymentsByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Services",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServicesByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Roles",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRolesByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central RoleBindings",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRoleBindingsByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ServiceAccounts",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServiceAccountsByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Secrets",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteSecretsByLabel)
+
+		createKubeResourceWithLogging(ctx, "Deleting Odigos Central token secret",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteCentralTokenSecretAdapter)
+
+		hasCentralLabel, err := kube.NamespaceHasLabel(ctx, client, ns, k8sconsts.OdigosSystemLabelCentralKey)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if namespace %s has Odigos Central label: %s\n", ns, err)
+			os.Exit(1)
+		}
+		if hasCentralLabel {
+			createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+				client, ns, k8sconsts.OdigosSystemLabelCentralKey, uninstallNamespace)
+			waitForNamespaceDeletion(ctx, client, ns)
+		}
+
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower uninstalled.\n")
+	},
+}
+
 var activateCmd = &cobra.Command{
 	Use:   "activate",
 	Short: "Activate the Odigos Enterprise tier from the Community Edition",
@@ -391,6 +450,10 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	return nil
 }
 
+func deleteCentralTokenSecretAdapter(ctx context.Context, client *kube.Client, ns string, _ string) error {
+	return kube.DeleteCentralTokenSecret(ctx, client, ns)
+}
+
 var portForwardCentralCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Port-forward Odigos Tower UI and Backend to localhost",
@@ -412,7 +475,7 @@ var portForwardCentralCmd = &cobra.Command{
 		}
 		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
 
-		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
+		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUIAppName)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
 			cancel()
@@ -469,19 +532,7 @@ func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel 
 }
 
 func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
-	// Create patch to add/update the restartedAt annotation
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
-		time.Now().Format(time.RFC3339))
-
-	// Patch the Odiglet daemonset
-	_, err := client.AppsV1().DaemonSets(ns).Patch(
-		ctx,
-		k8sconsts.OdigletDaemonSetName,
-		types.StrategicMergePatchType,
-		[]byte(patch),
-		metav1.PatchOptions{},
-	)
-	return err
+	return restart.RestartDaemonSet(ctx, client.Interface, ns, k8sconsts.OdigletDaemonSetName)
 }
 
 func init() {
@@ -498,10 +549,15 @@ func init() {
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
+	centralCmd.AddCommand(centralUninstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
+
+	// central uninstall flags
+	centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower uninstallation")
+	centralUninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")

@@ -2,12 +2,15 @@ package nodecollector
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,40 +23,44 @@ const (
 	syncDaemonsetRetry = 3
 )
 
-func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (ctrl.Result, error) {
+type nodeCollectorBaseReconciler struct {
+	client.Client
+	scheme               *runtime.Scheme
+	autoscalerDeployment *appsv1.Deployment
+}
+
+func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	var ics odigosv1.InstrumentationConfigList
-	if err := c.List(ctx, &ics); err != nil {
+	if err := b.Client.List(ctx, &ics); err != nil {
 		return ctrl.Result{}, err
-	}
-
-	if len(ics.Items) == 0 {
-		logger.V(3).Info("No odigos sources found, skipping data collection sync")
-		return ctrl.Result{}, nil
 	}
 
 	odigosNs := env.GetCurrentNamespace()
 
-	var dataCollectionCollectorGroup odigosv1.CollectorsGroup
-	err := c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &dataCollectionCollectorGroup)
+	dataCollectionCollectorGroup := &odigosv1.CollectorsGroup{}
+	err := b.Client.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, dataCollectionCollectorGroup)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		dataCollectionCollectorGroup = nil
 	}
 
 	var clusterCollectorCollectorGroup odigosv1.CollectorsGroup
-	err = c.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &clusterCollectorCollectorGroup)
+	err = b.Client.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &clusterCollectorCollectorGroup)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	var processors odigosv1.ProcessorList
-	if err := c.List(ctx, &processors); err != nil {
+	if err := b.Client.List(ctx, &processors); err != nil {
 		logger.Error(err, "Failed to list processors")
 		return ctrl.Result{}, err
 	}
 
-	err = syncDataCollection(&ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, &dataCollectionCollectorGroup, ctx, c, scheme)
+	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, dataCollectionCollectorGroup)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -61,25 +68,36 @@ func reconcileNodeCollector(ctx context.Context, c client.Client, scheme *runtim
 	return ctrl.Result{}, nil
 }
 
-func syncDataCollection(sources *odigosv1.InstrumentationConfigList, signals []common.ObservabilitySignal, processors *odigosv1.ProcessorList,
-	dataCollection *odigosv1.CollectorsGroup, ctx context.Context, c client.Client,
-	scheme *runtime.Scheme) error {
+func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []common.ObservabilitySignal, processors *odigosv1.ProcessorList,
+	dataCollection *odigosv1.CollectorsGroup) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
-	err := syncService(ctx, c, scheme, dataCollection)
+	err := b.syncService(ctx, dataCollection)
 	if err != nil {
 		logger.Error(err, "Failed to sync service")
 		return err
 	}
 
-	err = SyncConfigMap(sources, signals, processors, dataCollection, ctx, c, scheme)
+	err = b.SyncConfigMap(ctx, sources, clusterCollectorSignals, processors, dataCollection)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
 	}
 
-	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, signals, dataCollection, ctx, c)
+	// enabled signals also takes into account spanmetrics connector
+	// e.g - cluster collector can accept only metrics,
+	// while node collector collects both metrics and traces, which it converts to metrics and does not forward downstream.
+	// the enabled signals represents what's actually collected from agents in node collector.
+	enabledSignals := clusterCollectorSignals
+	spanMetricsEnabled := dataCollection != nil && dataCollection.Spec.Metrics != nil && dataCollection.Spec.Metrics.SpanMetrics != nil
+	if spanMetricsEnabled {
+		if !slices.Contains(enabledSignals, common.TracesObservabilitySignal) {
+			enabledSignals = append(enabledSignals, common.TracesObservabilitySignal)
+		}
+	}
+
+	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, enabledSignals, dataCollection, ctx, b.Client)
 
 	return nil
 }

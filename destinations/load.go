@@ -24,8 +24,9 @@ func Get() []Destination {
 	return loadedDestinations
 }
 
-func GetDestinationByType(destType string) Destination {
-	return destinationsByType[destType]
+func GetDestinationByType(destType string) (Destination, bool) {
+	dest, ok := destinationsByType[destType]
+	return dest, ok
 }
 
 func load(fs embed.FS) error {

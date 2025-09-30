@@ -5,6 +5,7 @@ import (
 	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
@@ -25,7 +26,13 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentor-instrumentationconfig-instrumentationconfig").
 		For(&odigosv1alpha1.InstrumentationConfig{}).
-		WithEventFilter(&instrumentorpredicate.RuntimeDetailsChangedPredicate{}).
+		// The SDK config might need to get updated if either:
+		// - runtime details (auto detection) is updated.
+		// - runtime overrides is updated by the user.
+		WithEventFilter(predicate.Or(
+			&instrumentorpredicate.RuntimeDetailsChangedPredicate{},
+			&instrumentorpredicate.ContainerOverridesChangedPredicate{},
+		)).
 		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

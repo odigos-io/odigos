@@ -192,7 +192,8 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 	destType := k8sDest.Spec.Type
 	destName := k8sDest.Spec.DestinationName
 	mergedFields := mergeDataAndSecrets(k8sDest.Spec.Data, secretFields)
-	destTypeConfig := DestinationTypeConfigToCategoryItem(destinations.GetDestinationByType(string(destType)))
+	dest, _ := destinations.GetDestinationByType(string(destType))
+	destTypeConfig := DestinationTypeConfigToCategoryItem(dest)
 
 	fieldsJSON, err := json.Marshal(mergedFields)
 	if err != nil {

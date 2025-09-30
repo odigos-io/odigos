@@ -150,13 +150,7 @@ func (c *Client) DeleteOldOdigosSystemObjects(ctx context.Context, resourceAndNa
 	systemObject, _ := k8slabels.NewRequirement(k8sconsts.OdigosSystemLabelKey, selection.Equals, []string{k8sconsts.OdigosSystemLabelValue})
 	notLatestVersion, _ := k8slabels.NewRequirement(k8sconsts.OdigosSystemConfigLabelKey, selection.NotEquals, []string{strconv.Itoa(configVersion)})
 
-	// Items with preserve="true" are excluded from deletion.
-	// e.g data-collection configmap
-	skipPreserved, _ := k8slabels.NewRequirement(
-		k8sconsts.OdigosPreserveLabelKey, selection.NotEquals,
-		[]string{"true"},
-	)
-	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).Add(*skipPreserved).String()
+	labelSelector := k8slabels.NewSelector().Add(*systemObject).Add(*notLatestVersion).String()
 	resource := resourceAndNamespace.Resource
 	ns := resourceAndNamespace.Namespace
 	// DeleteCollection is only available in k8s 1.23 and above, for older versions we need to list and delete each resource
