@@ -63,6 +63,11 @@ spec:
         action: upsert
       - key: http.status_code
         action: delete
+      - key: http.request.method
+        from_attribute: http.method
+        action: upsert
+      - key: http.method
+        action: delete
 
   signals:
   - TRACES
