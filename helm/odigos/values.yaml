@@ -539,6 +539,15 @@ metricsSources:
     ## format is duration string (1us, 2ms, 3s, 4m, 5h, 6d, etc)
     # explicitHistogramBuckets: ['2ms', '4ms', '6ms', '8ms', '10ms', '50ms', '100ms', '200ms', '400ms', '800ms', '1s', '1400ms', '2s', '5s', '10s', '15s']
 
+    ## set if process level dimensions will be included in span metrics
+    ## by default, process level metrics are not included
+    ## when set to true - timeseries will be created for each process in a container
+    ## when unset or set to false - timeseries will aggregate all processes into a single value per series
+    # includedProcessInDimensions: true
+
+    ## set resource attributes to exclude from the span metrics
+    # excludedResourceAttributes: ['process.runtime.name', 'process.runtime.version']
+
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.

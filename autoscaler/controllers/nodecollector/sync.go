@@ -90,7 +90,7 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 	// while node collector collects both metrics and traces, which it converts to metrics and does not forward downstream.
 	// the enabled signals represents what's actually collected from agents in node collector.
 	enabledSignals := clusterCollectorSignals
-	spanMetricsEnabled := dataCollection.Spec.Metrics != nil && dataCollection.Spec.Metrics.SpanMetrics != nil
+	spanMetricsEnabled := dataCollection != nil && dataCollection.Spec.Metrics != nil && dataCollection.Spec.Metrics.SpanMetrics != nil
 	if spanMetricsEnabled {
 		if !slices.Contains(enabledSignals, common.TracesObservabilitySignal) {
 			enabledSignals = append(enabledSignals, common.TracesObservabilitySignal)
