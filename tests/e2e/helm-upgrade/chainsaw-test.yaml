@@ -32,8 +32,7 @@ spec:
               # --retry-max-time 30: maximum time to spend retrying (30 seconds)
               ASSETS_JSON=$(curl -s --retry 5 --retry-delay 1 --retry-max-time 30 "$REPO_URL")
 
-              # Find the download URL for the BASE odigos helm chart (exclude odigos-central)
-              # Match helm-chart-odigos-<version>.tgz where next char after 'odigos-' is a digit
+              # Find the download URL for the BASE odigos helm chart 
               CHART_DOWNLOAD_URL=$(echo "$ASSETS_JSON" \
                 | grep -E '"browser_download_url"' \
                 | grep -E 'helm-chart-odigos-[0-9]' \
