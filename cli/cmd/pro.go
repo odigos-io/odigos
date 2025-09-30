@@ -283,14 +283,10 @@ var centralUninstallCmd = &cobra.Command{
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-		nsFlag, err := cmd.Flags().GetString("namespace")
+		ns, err := cmd.Flags().GetString("namespace")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
 			os.Exit(1)
-		}
-		ns := nsFlag
-		if ns == "" {
-			ns = consts.DefaultOdigosCentralNamespace
 		}
 
 		if !cmd.Flag("yes").Changed {
@@ -404,14 +400,10 @@ var centralUpgradeCmd = &cobra.Command{
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-		nsFlag, err := cmd.Flags().GetString("namespace")
+		ns, err := cmd.Flags().GetString("namespace")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
 			os.Exit(1)
-		}
-		ns := nsFlag
-		if ns == "" {
-			ns = consts.DefaultOdigosCentralNamespace
 		}
 
 		if !cmd.Flag("yes").Changed {
