@@ -7,7 +7,7 @@ metadata:
     app: python-span-generator
     odigos-target: "true"
 spec:
-  replicas: 4
+  replicas: 1
   selector:
     matchLabels:
       app: python-span-generator
@@ -29,9 +29,9 @@ spec:
             - name: OTEL_RESOURCE_ATTRIBUTES
               value: service.name=python-span-generator,service.version=v1.0.0
             - name: SPANS_PER_SEC
-              value: "1000"
+              value: "1000"                                        
             - name: SPAN_BYTES
-              value: "1000"
+              value: "2000"
           resources:
             requests:
               cpu: "1000m"

@@ -7,7 +7,7 @@ metadata:
     app: java-span-generator
     odigos-target: "true"
 spec:
-  replicas: 5
+  replicas: 1
   selector:
     matchLabels:
       app: java-span-generator
@@ -31,7 +31,7 @@ spec:
             - name: SPANS_PER_SEC
               value: "1000"
             - name: SPAN_BYTES
-              value: "1000"
+              value: "2000"
           resources:
             requests:
               cpu: "500m"

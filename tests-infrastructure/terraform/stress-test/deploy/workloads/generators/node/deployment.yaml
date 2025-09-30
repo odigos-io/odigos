@@ -7,7 +7,7 @@ metadata:
     app: node-span-generator
     odigos-target: "true"
 spec:
-  replicas: 6
+  replicas: 1
   selector:
     matchLabels:
       app: node-span-generator
@@ -31,7 +31,7 @@ spec:
             - name: SPANS_PER_SEC
               value: "1000"
             - name: SPAN_BYTES
-              value: "1000"
+              value: "2000"
           resources:
             requests:
               cpu: "500m"

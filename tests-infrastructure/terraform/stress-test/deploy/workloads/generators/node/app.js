@@ -3,8 +3,8 @@ import { trace } from '@opentelemetry/api';
 const tracer = trace.getTracer('node-span-gen');
 
 // Configurable knobs
-const spansPerSec = Number(process.env.SPANS_PER_SEC || '1000');
-const spanBytes = Number(process.env.SPAN_BYTES || '1000');
+const spansPerSec = Number(process.env.SPANS_PER_SEC || '6000');
+const spanBytes = Number(process.env.SPAN_BYTES || '4000');
 
 // Create payload
 const attrPayload = 'x'.repeat(spanBytes);
@@ -18,15 +18,21 @@ let totalSpans = 0;
 
 function emitBatch(n) {
   for (let i = 0; i < n; i++) {
-    const span = tracer.startSpan('node-span');
+    const span = tracer.startSpan('load-span');
     span.setAttribute('payload', attrPayload);
+    span.setAttribute('lang', 'node');
+    span.setAttribute('gen', 'node-span-gen');
+    span.setAttribute('payload_size', spanBytes);
     span.end();
+    
+    // Add small delay to reduce CPU usage (optional)
+    if (i % 100 === 0) {
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1);
+    }
   }
   
   totalSpans += n;
-  if (totalSpans % 1000 === 0) {
-    console.log(`[node-span-gen] Completed batch: Generated ${totalSpans} spans`);
-  }
+  console.log(`[node-span-gen] Generated ${n} spans in this second (total: ${totalSpans})`);
 }
 
 // Generate spans every second
