@@ -292,12 +292,6 @@ var centralUninstallCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// Validate version string format (e.g., v1.6.0-pre1, v1.5.0-rc2, v1.5.0)
-		if !centralVersionRegex.MatchString(versionFlag) {
-			fmt.Printf("\033[31mERROR\033[0m Invalid --version value %q. Expected formats: vX.Y.Z, vX.Y.Z-preN, or vX.Y.Z-rcN\n", versionFlag)
-			os.Exit(1)
-		}
-
 		if !cmd.Flag("yes").Changed {
 			fmt.Printf("About to uninstall Odigos Tower from namespace %s\n", ns)
 			confirmed, err := confirm.Ask("Are you sure?")
@@ -422,6 +416,11 @@ var centralUpgradeCmd = &cobra.Command{
 				fmt.Println("Aborting upgrade")
 				return
 			}
+		}
+
+		if !centralVersionRegex.MatchString(versionFlag) {
+			fmt.Printf("\033[31mERROR\033[0m Invalid --version value %q. Expected formats: vX.Y.Z, vX.Y.Z-preN, or vX.Y.Z-rcN\n", versionFlag)
+			os.Exit(1)
 		}
 
 		managerOpts := resourcemanager.ManagerOpts{
