@@ -293,12 +293,6 @@ var centralUninstallCmd = &cobra.Command{
 			ns = consts.DefaultOdigosCentralNamespace
 		}
 
-		// if CLI was built without an embedded version and --version not provided
-		if versionFlag == "" {
-			fmt.Println("\033[31mERROR\033[0m No version specified and CLI was built without an embedded version. Provide --version.")
-			os.Exit(1)
-		}
-
 		if !cmd.Flag("yes").Changed {
 			fmt.Printf("About to uninstall Odigos Tower from namespace %s\n", ns)
 			confirmed, err := confirm.Ask("Are you sure?")
