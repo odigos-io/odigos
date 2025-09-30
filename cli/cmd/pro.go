@@ -608,6 +608,7 @@ func init() {
 	centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
 	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower upgrade")
 	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
+	centralUpgradeCmd.MarkFlagRequired("version")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
