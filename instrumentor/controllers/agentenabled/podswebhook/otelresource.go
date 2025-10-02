@@ -47,39 +47,6 @@ func getOwnerReferenceAttributes(ownerReferences []metav1.OwnerReference) []reso
 	resourceAttributes := []resourceAttribute{}
 	for _, ownerReference := range ownerReferences {
 		switch ownerReference.Kind {
-		case "Deployment":
-			resourceAttributes = append(resourceAttributes,
-				resourceAttribute{
-					Key:   semconv.K8SDeploymentNameKey,
-					Value: ownerReference.Name,
-				},
-				resourceAttribute{
-					Key:   semconv.K8SDeploymentUIDKey,
-					Value: string(ownerReference.UID),
-				},
-			)
-		case "StatefulSet":
-			resourceAttributes = append(resourceAttributes,
-				resourceAttribute{
-					Key:   semconv.K8SStatefulSetNameKey,
-					Value: ownerReference.Name,
-				},
-				resourceAttribute{
-					Key:   semconv.K8SStatefulSetUIDKey,
-					Value: string(ownerReference.UID),
-				},
-			)
-		case "DaemonSet":
-			resourceAttributes = append(resourceAttributes,
-				resourceAttribute{
-					Key:   semconv.K8SDaemonSetNameKey,
-					Value: ownerReference.Name,
-				},
-				resourceAttribute{
-					Key:   semconv.K8SDaemonSetUIDKey,
-					Value: string(ownerReference.UID),
-				},
-			)
 		case "Job":
 			resourceAttributes = append(resourceAttributes,
 				resourceAttribute{

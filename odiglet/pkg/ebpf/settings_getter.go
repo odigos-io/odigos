@@ -92,6 +92,24 @@ func parseOtelResourceAttributes(envValue string) []attribute.KeyValue {
 	return attrs
 }
 
+// appendUniqueAttributes appends new attributes to the existing slice, skipping any that already exist
+func appendUniqueAttributes(existing []attribute.KeyValue, new []attribute.KeyValue) []attribute.KeyValue {
+	// Create a map to track existing keys for quick lookup
+	existingKeys := make(map[attribute.Key]bool)
+	for _, attr := range existing {
+		existingKeys[attr.Key] = true
+	}
+
+	// Append only attributes with keys that don't already exist
+	for _, attr := range new {
+		if !existingKeys[attr.Key] {
+			existing = append(existing, attr)
+		}
+	}
+
+	return existing
+}
+
 func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, pe detector.ProcessEvent) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		semconv.K8SNamespaceName(podWorkload.Namespace),
@@ -122,7 +140,7 @@ func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, p
 		// Parse OTEL_RESOURCE_ATTRIBUTES environment variable
 		if otelResourceAttrs, ok := envs[k8sconsts.OtelResourceAttributesEnvVar]; ok {
 			parsedAttrs := parseOtelResourceAttributes(otelResourceAttrs)
-			attrs = append(attrs, parsedAttrs...)
+			attrs = appendUniqueAttributes(attrs, parsedAttrs)
 		}
 
 		if pe.ExecDetails.ExePath != "" {
