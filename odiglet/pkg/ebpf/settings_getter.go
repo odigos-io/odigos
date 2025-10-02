@@ -59,6 +59,39 @@ func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K
 	return nil, "", fmt.Errorf("no sdk config found for language %s", lang)
 }
 
+// parseOtelResourceAttributes parses the OTEL_RESOURCE_ATTRIBUTES environment variable
+// which is in the format "key1=value1,key2=value2" and returns a slice of attribute.KeyValue
+func parseOtelResourceAttributes(envValue string) []attribute.KeyValue {
+	if envValue == "" {
+		return nil
+	}
+
+	var attrs []attribute.KeyValue
+	pairs := strings.Split(envValue, ",")
+
+	for _, pair := range pairs {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+
+		parts := strings.SplitN(pair, "=", 2)
+		if len(parts) != 2 {
+			// Skip malformed pairs
+			continue
+		}
+
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+
+		if key != "" && value != "" {
+			attrs = append(attrs, attribute.String(key, value))
+		}
+	}
+
+	return attrs
+}
+
 func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, pe detector.ProcessEvent) []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		semconv.K8SNamespaceName(podWorkload.Namespace),
@@ -84,6 +117,12 @@ func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, p
 		containerName, ok := envs[k8sconsts.OdigosEnvVarContainerName]
 		if ok && containerName != "" {
 			attrs = append(attrs, semconv.K8SContainerName(containerName))
+		}
+
+		// Parse OTEL_RESOURCE_ATTRIBUTES environment variable
+		if otelResourceAttrs, ok := envs[k8sconsts.OtelResourceAttributesEnvVar]; ok {
+			parsedAttrs := parseOtelResourceAttributes(otelResourceAttrs)
+			attrs = append(attrs, parsedAttrs...)
 		}
 
 		if pe.ExecDetails.ExePath != "" {
