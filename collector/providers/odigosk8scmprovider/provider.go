@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/collector/confmap"
@@ -40,11 +41,15 @@ type provider struct {
 	running                     bool
 	logger                      *zap.Logger
 	lastReportedResourceVersion string
+	debounceTimer               *time.Timer
+	debounceMutex               sync.Mutex
+	debounceDelay               time.Duration
 }
 
 func newProvider(set confmap.ProviderSettings) confmap.Provider {
 	return &provider{
-		logger: set.Logger,
+		logger:        set.Logger,
+		debounceDelay: 5 * time.Second, // Configurable debounce delay
 	}
 }
 
@@ -185,8 +190,7 @@ func (p *provider) runInformer(wf confmap.WatcherFunc) {
 			}
 
 			if cm.ResourceVersion != p.lastReportedResourceVersion {
-				p.lastReportedResourceVersion = cm.ResourceVersion
-				wf(&confmap.ChangeEvent{})
+				p.debouncedNotify(cm.ResourceVersion, wf)
 			}
 		},
 	})
@@ -195,12 +199,44 @@ func (p *provider) runInformer(wf confmap.WatcherFunc) {
 	close(p.providerStopCh)
 }
 
+// debouncedNotify implements debouncing for configuration change notifications
+func (p *provider) debouncedNotify(resourceVersion string, wf confmap.WatcherFunc) {
+	p.debounceMutex.Lock()
+	defer p.debounceMutex.Unlock()
+
+	// Cancel existing timer if it exists
+	if p.debounceTimer != nil {
+		p.debounceTimer.Stop()
+	}
+
+	p.logger.Debug("debounced triggered with new resource version", zap.String("resourceVersion", resourceVersion))
+
+	// Store the latest resource version
+	p.lastReportedResourceVersion = resourceVersion
+
+	// Create new timer that will fire after the debounce delay
+	p.debounceTimer = time.AfterFunc(p.debounceDelay, func() {
+		p.logger.Debug("debounced configuration change notification triggered",
+			zap.String("resourceVersion", resourceVersion))
+		wf(&confmap.ChangeEvent{})
+	})
+}
+
 func (p *provider) Scheme() string {
 	return schemeName
 }
 
 func (p *provider) Shutdown(ctx context.Context) error {
 	p.logger.Info("shutting down k8s config map provider")
+
+	// Cancel pending debounce timer
+	p.debounceMutex.Lock()
+	if p.debounceTimer != nil {
+		p.debounceTimer.Stop()
+		p.debounceTimer = nil
+	}
+	p.debounceMutex.Unlock()
+
 	if p.running {
 		close(p.informerStopCh)
 		<-p.providerStopCh
