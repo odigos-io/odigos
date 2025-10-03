@@ -1,0 +1,40 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: StatusType
+metadata:
+  name: runtime-detection
+spec:
+  k8sConditionType: RuntimeDetection
+  shortDescription: 'Indicates whether an odigos source runtime details has been detected successfully'
+  entities:
+    - Workload
+  reasons:
+    - k8sConditionReason: DetectedSuccessfully
+      displayName: 'Runtime detected successfully'
+      description: 'The runtime of the workload has been detected successfully'
+    - k8sConditionReason: WaitingForDetection
+      displayName: 'Runtime detection pending'
+      description: 'Indicates that runtime detection info has not yet persisted into the InstrumentationConfig status'
+      potentialCauses:
+        - name: 'Odiglet is starting'
+          description: |
+            Runtime detection takes place on an odiglet daemonset pod running on the same node of one of the workload pods.
+            If odiglet pod is still starting (pulling image, running init container, starting container),
+            the runtime detection info may be shortly available once odiglet pod is running.
+        - name: 'Odiglet unhealthy'
+          description: |
+            If odiglet pod is unhealthy (crashloopbackoff, terminated, error etc.),
+            the runtime detection can not proceed.
+        - name: 'Runtime detection error'
+          description: |
+            If runtime detection process experienced any errors, they will be written to 
+            the odiglet logs and no runtime info will be available.
+    - k8sConditionReason: NoRunningPods
+      displayName: 'No running pods'
+      description: 'Pending for workload to have running pods to execute runtime detection process on'
+      potentialCauses:
+        - name: 'Workload has no available replicas'
+          description: |
+            If the workload has no available replicas, the runtime detection can not proceed.
+        - name: 'Workload is a cronjob'
+          description: |
+            If the workload is a cronjob, the runtime detection can not proceed.
