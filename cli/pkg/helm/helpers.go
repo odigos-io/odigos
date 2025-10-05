@@ -1,10 +1,13 @@
 package helm
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -12,6 +15,9 @@ import (
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 var (
@@ -25,6 +31,10 @@ var (
 
 // injected at build time
 var OdigosChartVersion string
+
+var (
+	HelmResetThenReuseValues = true // default: true (sensible for upgrades)
+)
 
 func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]interface{}, error) {
 	// choose version
@@ -55,6 +65,7 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 			}
 
 			// fallback image.tag to AppVersion if not set
+			// During the release of the helm chart, we're setting the appVersion to the same as the image.tag [release-charts.sh]
 			if ch.Metadata.AppVersion != "" {
 				if _, ok := vals["image"]; !ok {
 					vals["image"] = map[string]interface{}{}
@@ -62,7 +73,7 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 				if imgVals, ok := vals["image"].(map[string]interface{}); ok {
 					if _, hasTag := imgVals["tag"]; !hasTag || imgVals["tag"] == "" {
 						imgVals["tag"] = ch.Metadata.AppVersion
-						fmt.Printf("Using appVersion %s as image.tag\n", ch.Metadata.AppVersion)
+						fmt.Printf("Using the Chart appVersion %s as image.tag\n", ch.Metadata.AppVersion)
 					}
 				}
 			}
@@ -178,4 +189,23 @@ func refreshHelmRepo(settings *cli.EnvSettings, chartRef string) {
 			}
 		}
 	}
+}
+
+// IsLegacyInstallation checks whether Odigos was installed using the old non-Helm method.
+func IsLegacyInstallation(ctx context.Context, client corev1.CoreV1Interface, namespace string) (bool, error) {
+	cm, err := client.ConfigMaps(namespace).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// ConfigMap doesn’t exist — not an old install
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check installation method: %w", err)
+	}
+
+	method := cm.Data[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey]
+	if method == string(installationmethod.K8sInstallationMethodOdigosCli) {
+		return true, nil
+	}
+
+	return false, nil
 }

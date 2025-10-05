@@ -102,7 +102,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
 
-      # Ensure the chart is hereo to be embedded in the CLI
+      # Ensure the chart is here to be embedded in the CLI
       - name: Download packaged chart artifact
         uses: actions/download-artifact@v4
         with:
