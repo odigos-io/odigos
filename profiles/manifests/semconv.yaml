@@ -58,10 +58,19 @@ spec:
         action: upsert
       - key: db.statement
         action: delete
-
-
+      - key: http.response.status_code
+        from_attribute: http.status_code
+        action: upsert
+      - key: http.status_code
+        action: delete
+      - key: http.request.method
+        from_attribute: http.method
+        action: upsert
+      - key: http.method
+        action: delete
 
   signals:
   - TRACES
+  - METRICS
   collectorRoles:
   - CLUSTER_GATEWAY
