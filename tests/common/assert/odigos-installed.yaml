@@ -111,6 +111,7 @@ spec:
           (memory != null): true
         limits:
           (memory != null): true
+    - name: deviceplugin
   (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
   hostPID: true
   nodeSelector:
@@ -120,6 +121,10 @@ spec:
 status:
   containerStatuses:
     - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
+    - name: deviceplugin
       ready: true
       restartCount: 0
       started: true

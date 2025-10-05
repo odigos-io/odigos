@@ -1,0 +1,51 @@
+---
+title: "odigos cleanup"
+sidebarTitle: "odigos cleanup"
+---
+## odigos cleanup
+
+Revert all the changes made by the `odigos install` command.
+This command will cleanup user added Odigos resources (CRs) from your cluster.
+Note: This command will not remove the Odigos namespace that should be deleted manually post cleanup.
+
+```
+odigos cleanup [flags]
+```
+
+### Examples
+
+```
+
+# Cleanup Odigos open-source or cloud from the cluster in your kubeconfig active context.
+odigos cleanup
+
+# Cleanup Odigos without confirmation
+odigos cleanup --yes
+
+# Cleanup Odigos without waiting for pods to rollout without instrumentation
+odigos cleanup --no-wait
+
+
+```
+
+### Options
+
+```
+  -h, --help                   help for cleanup
+      --instrumentation-only   only remove instrumentation from workloads, without removing the entire Odigos setup
+  -n, --namespace string       namespace to uninstall Odigos from (overrides auto-detection)
+      --no-wait                skip waiting for pods to rollout without instrumentation
+      --yes                    skip the confirmation prompt
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes

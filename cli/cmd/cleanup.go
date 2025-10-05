@@ -20,9 +20,8 @@ import (
 var cleanupCmd = &cobra.Command{
 	Use: "cleanup",
 	Short: `Revert all the changes made by the ` + "`odigos install`" + ` command.
-This command will cleanup user added resources from Odigos from your cluster.
-
-Note: Namespaces created during Odigos CLI installation will be deleted during uninstallation. This applies only to CLI installs, not Helm.`,
+This command will cleanup user added Odigos resources (CRs) from your cluster.
+Note: This command will not remove the Odigos namespace that should be deleted manually post cleanup.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -133,10 +132,10 @@ Note: Namespaces created during Odigos CLI installation will be deleted during u
 odigos cleanup
 
 # Cleanup Odigos without confirmation
-odigos uninstall --yes
+odigos cleanup --yes
 
 # Cleanup Odigos without waiting for pods to rollout without instrumentation
-odigos uninstall --no-wait
+odigos cleanup --no-wait
 
 `,
 }

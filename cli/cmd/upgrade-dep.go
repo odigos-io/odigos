@@ -27,8 +27,7 @@ type VersionChangeType int
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade-deprecated",
 	Short: "Upgrade odigos version in your cluster.",
-	Long: `Upgrade odigos version in your cluster.
-
+	Long: `This command is deprecated. Please use ` + "`odigos install`" + ` instead which also upgrades the Odigos version in the cluster. which uses the Helm SDK under the hood.
 This command will upgrade the Odigos version in the cluster to the version of Odigos CLI
 and apply any required migrations and adaptations.`,
 	Run: func(cmd *cobra.Command, args []string) {
