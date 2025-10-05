@@ -15,7 +15,7 @@ spec:
         - script:
             timeout: 4m
             content: |
-              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set ResourceSizePreset=size_m
               ../../common/verify_odigos_installation.sh odigos-test
         - assert:
             timeout: 3m

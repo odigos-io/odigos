@@ -62,7 +62,7 @@ spec:
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
               ./odigos uninstall --yes
               # Run the Odigos CLI installation
-              ./odigos install --namespace odigos-test
+              ./odigos install --namespace odigos-test --set ResourceSizePreset=size_m
         - assert:
             timeout: 4m
             file: ../../common/assert/latest-odigos-version-installed.yaml
@@ -124,7 +124,7 @@ spec:
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
-            content: ../../../cli/odigos install --set image.tag=e2e-test
+            content: ../../../cli/odigos install --set image.tag=e2e-test --set ResourceSizePreset=size_m
             timeout: 3m
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml

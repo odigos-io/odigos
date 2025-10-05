@@ -22,7 +22,7 @@ spec:
       try:
         - script:
             content: |
-              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set ResourceSizePreset=size_m
             timeout: 4m
 
     - name: Assert Odigos Installed
