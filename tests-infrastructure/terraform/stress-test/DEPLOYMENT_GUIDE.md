@@ -46,9 +46,6 @@ Your AWS credentials need the following permissions:
    cluster_name = "your-odigos-stress-test"
    region       = "us-east-1"
    
-   # Security - IMPORTANT: Restrict this in production!
-   cluster_endpoint_public_access_cidrs = ["YOUR_IP/32"]
-   
    # Node Configuration
    node_spec        = "c6a.2xlarge"
    node_desired_size = 3
