@@ -1,5 +1,5 @@
 {{- if .Values.pdb.enabled }}
-{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .) }}
+{{- if and .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .) }}
 {{- $pdbApiVersion := "policy/v1" }}
 {{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}
 {{- $pdbApiVersion = "policy/v1beta1" }}
