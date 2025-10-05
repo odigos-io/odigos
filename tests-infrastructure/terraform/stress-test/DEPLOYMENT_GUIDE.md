@@ -198,9 +198,9 @@ kubectl describe destination clickhouse-destination -n odigos-system
 ### Data Flow
 
 ```
-EKS Applications → Odigos Collector → ClickHouse (EC2)
+EKS Applications → Odigos Collector → Odigos Gateway -> ClickHouse (EC2)
                                       ↓
-                                 Grafana (EC2)
+                                 Prometheues -> Grafana (EC2)
 ```
 
 ## Verification Checklist
