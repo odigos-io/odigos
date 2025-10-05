@@ -406,7 +406,6 @@ odiglet:
   noHostPid: false
 
 centralProxy:
-  enabled: false
   # Central backend URL where this proxy will forward data
   centralBackendURL: ''
   resources:
