@@ -54,7 +54,7 @@ cd ..
 tofu apply
 ```
 
-#### Step 3: Deploy Applications
+#### Step 3: Deploy Load Applications [Go/Java/Node/Python]
 
 ```bash
 # Configure kubectl
@@ -201,26 +201,6 @@ kubectl describe destination clickhouse-destination -n odigos-system
 EKS Applications → Odigos Collector → ClickHouse (EC2)
                                       ↓
                                  Grafana (EC2)
-```
-
-## Running Load Tests
-
-### Using K6
-
-The K6 load testing script is pre-configured on the monitoring instance:
-
-```bash
-# SSH to monitoring instance
-aws ssm start-session --target <instance-id>
-
-# Run load test
-sudo systemctl start k6-loadtest
-
-# Check status
-sudo systemctl status k6-loadtest
-
-# View logs
-sudo journalctl -u k6-loadtest -f
 ```
 
 ## Verification Checklist
