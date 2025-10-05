@@ -197,7 +197,7 @@ spec:
       try:
         - script:
             timeout: 2m
-            content: ../../../cli/odigos uninstall --yes
+            content: ../../../cli/odigos uninstall
         - script:
             timeout: 1m
             content: |
