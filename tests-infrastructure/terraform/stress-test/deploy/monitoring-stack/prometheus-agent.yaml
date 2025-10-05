@@ -140,8 +140,6 @@ items:
   metadata:
     name: odigos-system
     namespace: monitoring
-    labels:
-      release: prometheus-agent
   spec:
     selector:
       matchLabels:
@@ -160,8 +158,6 @@ items:
   metadata:
     name: odigos-node-collector
     namespace: monitoring
-    labels:
-      release: prometheus-agent
   spec:
     selector:
       matchLabels:
@@ -181,8 +177,6 @@ items:
   metadata:
     name: odigos-cluster-gateway
     namespace: monitoring
-    labels:
-      release: prometheus-agent
   spec:
     selector:
       matchLabels:
