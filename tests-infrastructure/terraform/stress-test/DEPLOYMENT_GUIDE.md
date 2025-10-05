@@ -36,7 +36,9 @@ Your AWS credentials need the following permissions:
 
 ### Manual Deployment
 
-#### Step 1: Configure Infrastructure
+#### Step 1: Configure Infrastructure (Optional)
+
+> **Note:** This step is optional and only needed if you want to customize the default configuration. You can skip this step to use the default settings.
 
 1. **Edit terraform.tfvars:**
    ```hcl
@@ -302,6 +304,7 @@ tofu output
 # Check EC2 status
 cd ec2/
 tofu output
+
 ```
 
 ## Cleanup
@@ -318,42 +321,3 @@ tofu destroy
 cd ec2/
 tofu destroy
 ```
-
-## Security Best Practices
-
-1. **Network Security:**
-   - Use private subnets for all resources
-   - Restrict EKS endpoint access to specific IPs
-   - Use security groups with least privilege
-
-2. **Access Control:**
-   - Use IAM roles instead of access keys
-   - Enable MFA for AWS console access
-   - Use AWS Systems Manager for EC2 access
-
-3. **Data Protection:**
-   - Enable encryption for all EBS volumes
-   - Use AWS Secrets Manager for sensitive data
-   - Enable CloudTrail for audit logging
-
-4. **Monitoring:**
-   - Set up CloudWatch alarms
-   - Enable VPC Flow Logs
-   - Monitor resource usage and costs
-
-## Cost Optimization Tips
-
-1. **Use Spot Instances:** Configure node groups to use spot instances for non-critical workloads
-2. **Auto Scaling:** Set up HPA for test applications
-3. **Resource Limits:** Set appropriate CPU/memory limits
-4. **Scheduled Scaling:** Use KEDA or similar tools for scheduled scaling
-5. **Cleanup:** Destroy infrastructure when not in use
-6. **Monitoring:** Set up cost alerts and budgets
-
-## Support
-
-For issues or questions:
-1. Check the troubleshooting section
-2. Review AWS and Kubernetes documentation
-3. Check the main README.md file
-4. Contact the platform team
