@@ -1,0 +1,38 @@
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: clickhouse-destination
+  namespace: odigos-system
+spec:
+  data:
+    CLICKHOUSE_CREATE_SCHEME: "true"
+    CLICKHOUSE_DATABASE_NAME: otel
+    CLICKHOUSE_ENDPOINT: tcp://${ec2_ip}:9000
+    CLICKHOUSE_LOGS_TABLE: otel_logs
+    CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM: otel_metrics_exponential_histogram
+    CLICKHOUSE_METRICS_TABLE_GAUGE: otel_metrics_gauge
+    CLICKHOUSE_METRICS_TABLE_HISTOGRAM: otel_metrics_histogram
+    CLICKHOUSE_METRICS_TABLE_SUM: otel_metrics_sum
+    CLICKHOUSE_METRICS_TABLE_SUMMARY: otel_metrics_summary
+    CLICKHOUSE_TRACES_TABLE: otel_traces
+    CLICKHOUSE_USERNAME: default
+  secretRef:
+    name: clickhouse-secret
+  destinationName: "clickhouse"
+  signals:
+  - TRACES
+  - METRICS
+  - LOGS
+  sourceSelector:
+    dataStreams:
+    - default
+  type: clickhouse
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: clickhouse-secret
+  namespace: odigos-system
+type: Opaque
+data:
+  CLICKHOUSE_PASSWORD: c3RyZXNzdGVzdA== # base64 encoded "stresstest"  
