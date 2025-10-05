@@ -25,7 +25,7 @@ type VersionChangeType int
 
 // upgradeCmd represents the upgrade command
 var upgradeCmd = &cobra.Command{
-	Use:   "upgrade",
+	Use:   "upgrade-deprecated",
 	Short: "Upgrade odigos version in your cluster.",
 	Long: `Upgrade odigos version in your cluster.
 
