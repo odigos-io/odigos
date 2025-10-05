@@ -36,23 +36,7 @@ Your AWS credentials need the following permissions:
 
 ### Manual Deployment
 
-#### Step 1: Configure Infrastructure (Optional)
-
-> **Note:** This step is optional and only needed if you want to customize the default configuration. You can skip this step to use the default settings.
-
-1. **Edit terraform.tfvars:**
-   ```hcl
-   # Basic Configuration
-   cluster_name = "your-odigos-stress-test"
-   region       = "us-east-1"
-   
-   # Node Configuration
-   node_spec        = "c6a.2xlarge"
-   node_desired_size = 3
-   node_max_size    = 5
-   ```
-
-#### Step 2: Deploy Infrastructure
+#### Step 1: Deploy Infrastructure
 
 ```bash
 # Deploy EKS infrastructure
@@ -81,6 +65,21 @@ kubectl apply -f deploy/workloads/ --recursive
 
 # Deploy Odigos configurations
 kubectl apply -f deploy/odigos/
+```
+
+### Optional: Customize Configuration
+
+If you want to customize the default cluster settings, you can edit the `terraform.tfvars` file before running the deployment commands:
+
+```hcl
+# Basic Configuration
+cluster_name = "your-odigos-stress-test"
+region       = "us-east-1"
+
+# Node Configuration
+node_spec        = "c6a.2xlarge"
+node_desired_size = 3
+node_max_size    = 5
 ```
 
 ## Architecture Overview
