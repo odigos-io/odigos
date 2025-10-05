@@ -18,10 +18,11 @@ import (
 
 // cleanupCmd represents the cleanup command
 var cleanupCmd = &cobra.Command{
-	Use: "cleanup",
-	Short: `Revert all the changes made by the ` + "`odigos install`" + ` command.
-This command will cleanup user added Odigos resources (CRs) from your cluster.
-Note: This command will not remove the Odigos namespace that should be deleted manually post cleanup.`,
+	Use:   "cleanup",
+	Short: `Remove Odigos Sources created by the user.`,
+	Long: `This command removes all Odigos Source resources that were added by the user.
+It runs as part of the cleanup job triggered during 'odigos uninstall'.
+All other Odigos components and system resources are deleted automatically by Helm.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
