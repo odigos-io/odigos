@@ -180,7 +180,7 @@ spec:
       try:
         - script:
             timeout: 2m
-            content: ../../../cli/odigos uninstall
+            content: ../../../cli/odigos uninstall --ns odigos-test
         - script:
             timeout: 1m
             content: |
