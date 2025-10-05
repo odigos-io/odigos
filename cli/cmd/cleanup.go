@@ -142,10 +142,10 @@ odigos uninstall --no-wait
 }
 
 func init() {
-	rootCmd.AddCommand(uninstallCmd)
-	uninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
-	uninstallCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
-	uninstallCmd.Flags().Bool("instrumentation-only", false, "only remove instrumentation from workloads, without removing the entire Odigos setup")
-	uninstallCmd.Flags().StringP("namespace", "n", "", "namespace to uninstall Odigos from (overrides auto-detection)")
+	rootCmd.AddCommand(cleanupCmd)
+	cleanupCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
+	cleanupCmd.Flags().Bool("no-wait", false, "skip waiting for pods to rollout without instrumentation")
+	cleanupCmd.Flags().Bool("instrumentation-only", false, "only remove instrumentation from workloads, without removing the entire Odigos setup")
+	cleanupCmd.Flags().StringP("namespace", "n", "", "namespace to uninstall Odigos from (overrides auto-detection)")
 
 }
