@@ -51,7 +51,7 @@ jobs:
 
       - name: Release Helm charts
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
         run: bash ./scripts/release-charts.sh
 # in release-helm job
       - name: Upload packaged chart artifact
