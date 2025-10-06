@@ -47,6 +47,12 @@ git diff -G apiVersion
 
 # The check avoids pushing the same tag twice and only pushes if there's a new entry in the index
 if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
+
+	if ! gh release view -R "$GITHUB_REPOSITORY" "$TAG" > /dev/null 2>&1; then
+	echo "Creating GitHub release $TAG..."
+	gh release create "$TAG" --title "$TAG" --notes "Auto-created for Helm charts"
+	fi
+
 	# Upload new packages
 	gh release upload -R $GITHUB_REPOSITORY $TAG $TMPDIR/*.tgz || exit 1
 
