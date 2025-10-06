@@ -47,23 +47,47 @@ git diff -G apiVersion
 
 # The check avoids pushing the same tag twice and only pushes if there's a new entry in the index
 if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
+  echo "------------------------------------------------------------"
+  echo "🔍 Debug info before uploading Helm charts"
+  echo "TAG: $TAG"
+  echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+  echo "Current working dir: $(pwd)"
+  echo "Files in TMPDIR:"
+  ls -lah "$TMPDIR"
+  echo "------------------------------------------------------------"
+  echo "🔐 Checking GitHub CLI authentication status:"
+  gh auth status || echo "⚠️ gh auth status failed"
+  echo "------------------------------------------------------------"
+  echo "🔎 Checking if release $TAG exists in $GITHUB_REPOSITORY..."
+  gh release view -R "$GITHUB_REPOSITORY" "$TAG" || echo "⚠️ Release not found, will attempt to create it"
+  echo "------------------------------------------------------------"
 
-	if ! gh release view -R "$GITHUB_REPOSITORY" "$TAG" > /dev/null 2>&1; then
-	echo "Creating GitHub release $TAG..."
-	gh release create "$TAG" --title "$TAG" --notes "Auto-created for Helm charts"
-	fi
+  if ! gh release view -R "$GITHUB_REPOSITORY" "$TAG" > /dev/null 2>&1; then
+    echo "🚀 Creating GitHub release $TAG..."
+    set -x
+    gh release create "$TAG" --title "$TAG" --notes "Auto-created for Helm charts" || echo "❌ Failed to create release"
+    set +x
+  else
+    echo "✅ Release already exists, continuing"
+  fi
 
-	# Upload new packages
-	gh release upload -R $GITHUB_REPOSITORY $TAG $TMPDIR/*.tgz || exit 1
+  echo "------------------------------------------------------------"
+  echo "📦 Uploading Helm chart packages to release $TAG..."
+  set -x
+  gh release upload -R "$GITHUB_REPOSITORY" "$TAG" "$TMPDIR"/*.tgz || echo "❌ Upload failed"
+  set +x
+  echo "✅ Upload completed (if no errors above)"
+  echo "------------------------------------------------------------"
 
-	git add index.yaml
-	git commit -m "update index with $TAG" && git push
-	popd
-	git fetch
+  git add index.yaml
+  git commit -m "update index with $TAG" && git push
+  popd
+  git fetch
 else
-	echo "No significant changes"
-	popd
+  echo "No significant changes"
+  popd
 fi
+
 
 # Roll back chart version changes
 git checkout ${CHARTDIRS[*]}
