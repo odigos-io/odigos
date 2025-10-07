@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"sync"
 	"syscall"
 
@@ -39,6 +40,8 @@ var (
 	downloadFile     string
 	fromFile         string
 )
+
+var centralVersionRegex = regexp.MustCompile(`^v\d+\.\d+\.\d+(?:-(?:pre|rc)\d+)?$`)
 
 var proCmd = &cobra.Command{
 	Use:   "pro",
@@ -283,14 +286,10 @@ var centralUninstallCmd = &cobra.Command{
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-		nsFlag, err := cmd.Flags().GetString("namespace")
+		ns, err := cmd.Flags().GetString("namespace")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
 			os.Exit(1)
-		}
-		ns := nsFlag
-		if ns == "" {
-			ns = consts.DefaultOdigosCentralNamespace
 		}
 
 		if !cmd.Flag("yes").Changed {
@@ -394,6 +393,50 @@ var activateCmd = &cobra.Command{
 		}
 
 		fmt.Println("Activation completed successfully. Odigos is upgraded to enterprise tier")
+	},
+}
+
+var centralUpgradeCmd = &cobra.Command{
+	Use:   "upgrade",
+	Short: "Upgrade Odigos Tower UI in the central namespace",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+
+		if !cmd.Flag("yes").Changed {
+			fmt.Printf("About to upgrade Odigos Tower UI in namespace %s to version %s\n", ns, versionFlag)
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting upgrade")
+				return
+			}
+		}
+
+		if !centralVersionRegex.MatchString(versionFlag) {
+			fmt.Printf("\033[31mERROR\033[0m Invalid --version value %q. Expected formats: vX.Y.Z, vX.Y.Z-preN, or vX.Y.Z-rcN\n", versionFlag)
+			os.Exit(1)
+		}
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+			SystemObjectLabelKey: k8sconsts.OdigosSystemLabelCentralKey,
+		}
+
+		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
+		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts)
+		if err := resources.ApplyResourceManagers(ctx, client, []resourcemanager.ResourceManager{uiManager, backendManager}, "Upgrading"); err != nil {
+			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Tower UI/Backend:")
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower UI and Backend upgraded to %s.\n", versionFlag)
 	},
 }
 
@@ -549,15 +592,17 @@ func init() {
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
-	centralCmd.AddCommand(centralUninstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
 
-	// central uninstall flags
-	centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower uninstallation")
-	centralUninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
+	// register and configure central upgrade command
+	centralCmd.AddCommand(centralUpgradeCmd)
+	centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
+	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower upgrade")
+	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
+	centralUpgradeCmd.MarkFlagRequired("version")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
