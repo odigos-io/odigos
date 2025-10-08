@@ -689,6 +689,7 @@ type ComplexityRoot struct {
 	Probe struct {
 		ClassName  func(childComplexity int) int
 		MethodName func(childComplexity int) int
+		Symbol     func(childComplexity int) int
 	}
 
 	Query struct {
@@ -3786,6 +3787,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Probe.MethodName(childComplexity), true
+
+	case "Probe.symbol":
+		if e.complexity.Probe.Symbol == nil {
+			break
+		}
+
+		return e.complexity.Probe.Symbol(childComplexity), true
 
 	case "Query.computePlatform":
 		if e.complexity.Query.ComputePlatform == nil {
@@ -10142,6 +10150,8 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_probes(_ context
 				return ec.fieldContext_Probe_className(ctx, field)
 			case "methodName":
 				return ec.fieldContext_Probe_methodName(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Probe_symbol(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Probe", field.Name)
 		},
@@ -24448,6 +24458,47 @@ func (ec *executionContext) fieldContext_Probe_methodName(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Probe_symbol(ctx context.Context, field graphql.CollectedField, obj *model.Probe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Probe_symbol(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Symbol, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Probe_symbol(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Probe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_computePlatform(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_computePlatform(ctx, field)
 	if err != nil {
@@ -31583,7 +31634,7 @@ func (ec *executionContext) unmarshalInputProbeInput(ctx context.Context, obj an
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"className", "methodName"}
+	fieldsInOrder := [...]string{"className", "methodName", "symbol"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -31604,6 +31655,13 @@ func (ec *executionContext) unmarshalInputProbeInput(ctx context.Context, obj an
 				return it, err
 			}
 			it.MethodName = data
+		case "symbol":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("symbol"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Symbol = data
 		}
 	}
 
@@ -36825,6 +36883,8 @@ func (ec *executionContext) _Probe(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Probe_className(ctx, field, obj)
 		case "methodName":
 			out.Values[i] = ec._Probe_methodName(ctx, field, obj)
+		case "symbol":
+			out.Values[i] = ec._Probe_symbol(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

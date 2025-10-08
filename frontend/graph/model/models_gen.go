@@ -883,11 +883,13 @@ type PodWorkloadInput struct {
 type Probe struct {
 	ClassName  *string `json:"className,omitempty"`
 	MethodName *string `json:"methodName,omitempty"`
+	Symbol     *string `json:"symbol,omitempty"`
 }
 
 type ProbeInput struct {
 	ClassName  *string `json:"className,omitempty"`
 	MethodName *string `json:"methodName,omitempty"`
+	Symbol     *string `json:"symbol,omitempty"`
 }
 
 type Query struct {

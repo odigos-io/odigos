@@ -313,6 +313,7 @@ type CustomInstrumentations {
 type Probe {
   className: String
   methodName: String
+  symbol: String
 }
 
 input CustomInstrumentationsInput {
@@ -322,6 +323,7 @@ input CustomInstrumentationsInput {
 input ProbeInput {
   className: String
   methodName: String
+  symbol: String
 }
 
 input HeadersCollectionInput {
