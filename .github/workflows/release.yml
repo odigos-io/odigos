@@ -19,7 +19,7 @@ env:
   DOCKERHUB_ORG: "keyval"
 
 jobs:
-  release-helm:
+  package-helm:
     runs-on: ubuntu-latest
     steps:
       - name: Determine Tag Value
@@ -39,21 +39,14 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
 
-      - name: Configure Git
-        run: |
-          git config --global user.email "bot@odigos.io"
-          git config --global user.name "Odigos Release Bot"
-
       - name: Install Helm
         uses: azure/setup-helm@v4.2.0
         with:
           version: v3.15.2
 
-      - name: Release Helm charts
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
-        run: bash ./scripts/release-charts.sh
-# in release-helm job
+      - name: Package Helm charts
+        run: bash ./scripts/package-charts.sh
+
       - name: Upload packaged chart artifact
         uses: actions/upload-artifact@v4
         with:
@@ -64,13 +57,12 @@ jobs:
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          success-description: "Helm charts released successfully. new version is ready"
-          failure-description: "ERROR: Failed to release Helm charts"
+          success-description: "Helm charts packaged successfully"
+          failure-description: "ERROR: Failed to package Helm charts"
           tag: ${{ env.TAG }}
 
-
-  release-cli:
-    needs: release-helm
+  build-cli:
+    needs: package-helm
     runs-on: ubuntu-latest
     steps:
       - name: Determine Tag Value
@@ -229,8 +221,52 @@ jobs:
           failure-description: ${{ env.FAILURE_MSG }}
           tag: ${{ env.TAG }}
 
+  publish-helm:
+    needs: build-cli
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine Tag Value
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "bot@odigos.io"
+          git config --global user.name "Odigos Release Bot"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4.2.0
+        with:
+          version: v3.15.2
+
+      - name: Publish Helm charts
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+        run: bash ./scripts/release-charts.sh
+
+      - name: Notify Slack
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Helm charts published successfully. new version is ready"
+          failure-description: "ERROR: Failed to publish Helm charts"
+          tag: ${{ env.TAG }}
+
   trigger-openshift-certification:
-    needs: release-cli
+    needs: publish-helm
     runs-on: ubuntu-latest
     steps:
       - name: Determine Tag Value
