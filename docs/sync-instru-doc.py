@@ -3,6 +3,7 @@ import re
 import time
 import requests
 from packaging.version import Version
+from urllib.parse import quote
 
 
 """
@@ -251,106 +252,100 @@ def merge_versions(current_versions, new_versions):
     )
 
 
-def get_npm_versions(otel_dependency, otel_dependency_version):
-    """
-    Get the versions of an OTel dependency from the npmjs website
+SUPPORTED_VERSIONS_HEADER = re.compile(r'^#+\s+Supported Versions', re.IGNORECASE | re.MULTILINE)
+HEADING_LINE = re.compile(r'^#{2,}\s+.+', re.MULTILINE)
+SUPPORTED_LINE = re.compile(r'^[*-]\s+`?(@?[\w@./:-]+)`?\s+((?:[><=~^]*\s*\d+[^`\s]*)[\w. <>=~^]*)')
 
-    :param otel_dependency: The OTel dependency to get the versions of
-    :param otel_dependency_version: The version of the OTel dependency
-    :return: The versions of the OTel dependency
+
+def _extract_supported_versions(readme_text):
+    """Parse the Supported Versions section from README text.
+
+    Returns list of tuples: (package_name, versions_spec_string)
+    versions_spec_string preserves operators (>=, < etc.).
+    """
+    m = SUPPORTED_VERSIONS_HEADER.search(readme_text)
+    if not m:
+        return []
+    start = m.end()
+    # Find next heading of same or higher level
+    next_heading = HEADING_LINE.search(readme_text, pos=start)
+    section = readme_text[start: next_heading.start() if next_heading else len(readme_text)]
+    results = []
+    for line in section.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        lm = SUPPORTED_LINE.match(line)
+        if not lm:
+            continue
+        pkg = lm.group(1)
+        ver_spec = lm.group(2).strip()
+        ver_spec = re.sub(r'\s+', ' ', ver_spec)
+        results.append((pkg, ver_spec))
+    return results
+
+
+def get_npm_versions(otel_dependency, otel_dependency_version):
+    """Obtain supported version ranges for an instrumentation package via the npm registry API.
+
+    We query the registry API (not the website) which returns JSON (with README text).
+    Fallback: if the README lacks a Supported Versions section, create a single
+    entry using the instrumentation's own version (normalized without ^/~).
     """
     npm_pack_url = 'https://www.npmjs.com/package'
-    content = fetch(
-        f'{npm_pack_url}/{otel_dependency}/v/{otel_dependency_version}'
-    )._content
+    # Normalize version (strip common range operators just in case)
+    normalized_ver = otel_dependency_version.lstrip('^~')
+    # Encode scoped package name for registry URL
+    encoded_name = quote(otel_dependency, safe='@/')
+    registry_url = f'https://registry.npmjs.org/{encoded_name}'
 
-    # Extract the block of content that contains the versions
-    content_block = content[
-        content.find(
-            b'href="#supported-versions"'
-        ):
-        content.find(
-            b'href="#usage"'
-        )
-    ]
-    ul_block = content_block[
-        content_block.find(
-            b'<ul>'
-        ):content_block.find(
-            b'<div class="markdown-heading">'
-        )
-    ]
+    try:
+        meta = fetch(registry_url).json()
+    except Exception as e:
+        print(f'Failed to fetch registry metadata for {otel_dependency}: {e}')
+        return [{
+            'package_url': f'{npm_pack_url}/{otel_dependency}',
+            'package_name': otel_dependency.replace(instrumentation_dependency_prefix[0], '').replace(instrumentation_dependency_prefix[1], ''),
+            'package_versions': f'versions `>={normalized_ver}`'
+        }]
 
-    # Decode the byte string to a normal string
-    html_string = ul_block.decode('utf-8')
+    # Prefer version-specific readme if present
+    readme_text = ''
+    versions_map = meta.get('versions', {})
+    version_obj = versions_map.get(normalized_ver)
+    if version_obj and version_obj.get('readme'):
+        readme_text = version_obj.get('readme', '')
+    else:
+        # Fallback to top-level readme
+        readme_text = meta.get('readme', '') or ''
 
-    # Strip all HTML tags
-    inner_text_rows = re.sub(
-        r'<[^>]*>', '', html_string
-    ).strip().replace(
-        ' version ', ' '
-    ).replace(
-        ' versions ', ' '
-    ).replace(
-        '&gt;', '>'
-    ).replace(
-        '&lt;', '<'
-    ).replace(
-        '&amp;', '&'
-    ).split('\n')
+    supported = _extract_supported_versions(readme_text)
+    results = []
+    if not supported:
+        simple_name = otel_dependency.replace(instrumentation_dependency_prefix[0], '').replace(instrumentation_dependency_prefix[1], '')
+        results.append({
+            'package_url': f'{npm_pack_url}/{simple_name}',
+            'package_name': simple_name,
+            'package_versions': f'versions `>={normalized_ver}`'
+        })
+        return results
 
-    # Extract the names and versions
-    versions = []
-    filtered_text_rows = [s for s in inner_text_rows if s]
-    for row in filtered_text_rows:
-        row_words = row.split(' ')
-        package_name = row_words[0] if row_words[0].startswith('@') or len(filtered_text_rows) > 1 else otel_dependency.replace(
-            instrumentation_dependency_prefix[0], ''
-        ).replace(
-            instrumentation_dependency_prefix[1], ''
-        )
-        package_versions = ' '.join(row_words[1:])
-
-        if not package_versions:
-            print(f'Failed to extract version info for {otel_dependency}')
-            os._exit(1)
-
-        if any(char.isalpha() for char in package_versions):
-            print(f'Skipping: {row} (origin: {otel_dependency})')
-        else:
-            package_url = f'{npm_pack_url}/{package_name}'
-            package_versions = f'versions `{package_versions}`'
-
-            # Node specific
-            if row_words[0].replace('.', '').lower() == 'nodejs':
-                package_url = ''
-                clean_package_name = otel_dependency.replace(
-                    instrumentation_dependency_prefix[0], ''
-                ).replace(
-                    instrumentation_dependency_prefix[1], ''
-                )
-                package_name = f'node:{clean_package_name}'
-                package_versions = (
-                    f'[`Node.js`](https://nodejs.org/)'
-                    + f' {package_versions}'
-                )
-
-            versions.append({
+    for pkg, ver_spec in supported:
+        package_versions = f'versions `{ver_spec}`'
+        package_url = f'{npm_pack_url}/{pkg}' if not pkg.startswith('node:') else ''
+        results.append({
+            'package_url': package_url,
+            'package_name': pkg,
+            'package_versions': package_versions
+        })
+        if pkg == 'node:http':
+            results.append({
                 'package_url': package_url,
-                'package_name': package_name,
+                'package_name': 'node:https',
                 'package_versions': package_versions
             })
 
-            # Unique case
-            if package_name == 'node:http':
-                package_name = 'node:https'
-                versions.append({
-                    'package_url': package_url,
-                    'package_name': package_name,
-                    'package_versions': package_versions
-                })
-
-    return versions
+    return results
 
 
 def process_nodejs_dependencies(lang_type_config, current_dir):
