@@ -45,6 +45,7 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
         probes {
           className
           methodName
+          symbol
         }
       }
     }
@@ -96,6 +97,7 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
         probes {
           className
           methodName
+          symbol
         }
       }
     }
