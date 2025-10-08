@@ -17,7 +17,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
 
-	for _, runtimeDetails := range(runtimeDetailsByContainer) {
+	for _, runtimeDetails := range runtimeDetailsByContainer {
 		if runtimeDetails == nil {
 			continue
 		}
@@ -27,10 +27,10 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		}
 		sdkConfigs = createDefaultSdkConfig(sdkConfigs, containerLanguage)
 	}
-
 	// iterate over all the payload collection rules, and update the instrumentation config accordingly
 	for i := range rules.Items {
 		rule := &rules.Items[i]
+		// skip disabled rules
 		if rule.Spec.Disabled {
 			continue
 		}
@@ -39,9 +39,10 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		if !participating {
 			continue
 		}
-
+		// merge the rule into all the sdk configs
 		for i := range sdkConfigs {
-			if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
+			// If we've recieved nil for the instrumentation libraries, then we apply the given rules as global rules to the SDK.
+			if rule.Spec.InstrumentationLibraries == nil {
 				if rule.Spec.PayloadCollection != nil {
 					sdkConfigs[i].DefaultPayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
 					sdkConfigs[i].DefaultPayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
@@ -58,7 +59,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					sdkConfigs[i].DefaultTraceConfig = mergeDefaultTracingConfig(sdkConfigs[i].DefaultTraceConfig, rule.Spec.TraceConfig)
 				}
 				if rule.Spec.CustomInstrumentations != nil {
-					sdkConfigs[i].DefaultCustomInstrumentations = mergeCustomInstrumentations(sdkConfigs[i].DefaultCustomInstrumentations, rule.Spec.CustomInstrumentations)
+					sdkConfigs[i].CustomInstrumentations = mergeCustomInstrumentations(sdkConfigs[i].CustomInstrumentations, rule.Spec.CustomInstrumentations)
 				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
@@ -81,6 +82,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					}
 					if rule.Spec.TraceConfig != nil {
 						libraryConfig.TraceConfig = mergeTracingConfig(libraryConfig.TraceConfig, rule.Spec.TraceConfig)
+					}
+					if rule.Spec.CustomInstrumentations != nil {
+						libraryConfig.CustomInstrumentations = mergeCustomInstrumentations(libraryConfig.CustomInstrumentations, rule.Spec.CustomInstrumentations)
 					}
 				}
 			}
