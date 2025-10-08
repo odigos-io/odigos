@@ -12,4 +12,5 @@ type CustomInstrumentations struct {
 type Probe struct {
 	ClassName  string `json:"className,omitempty"`
 	MethodName string `json:"methodName,omitempty"`
+	Symbol     string `json:"symbol,omitempty"`
 }
