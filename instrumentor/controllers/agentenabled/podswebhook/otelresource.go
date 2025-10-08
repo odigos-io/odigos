@@ -39,6 +39,8 @@ func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName stri
 			Value: podWorkload.Name,
 		},
 	}
+	// Get otel resource attributes for the owner reference (job/replicaset name and uid)
+	// This is more efficient than doing this in the k8s attributes processor in the collector
 	resourceAttributes = append(resourceAttributes, getOwnerReferenceAttributes(ownerReferences)...)
 	return resourceAttributes
 }

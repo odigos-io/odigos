@@ -2,9 +2,11 @@ package ebpf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -23,7 +25,7 @@ type k8sSettingsGetter struct {
 
 var _ instrumentation.SettingsGetter[K8sProcessDetails] = &k8sSettingsGetter{}
 
-func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails, dist *distro.OtelDistro) (instrumentation.Settings, error) {
+func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, kd K8sProcessDetails, dist *distro.OtelDistro) (instrumentation.Settings, error) {
 	sdkConfig, serviceName, err := ksg.instrumentationSDKConfig(ctx, kd, dist.Language)
 	if err != nil {
 		return instrumentation.Settings{}, err
@@ -34,9 +36,14 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, kd K8sProcessDetails
 		OtelServiceName = kd.pw.Name
 	}
 
+	resourceAttributes, err := getResourceAttributes(kd.pw, kd.pod.Name, kd.procEvent)
+	if err != nil {
+		logger.Info("error getting resource attributes", "error", err)
+	}
+
 	return instrumentation.Settings{
 		ServiceName:        OtelServiceName,
-		ResourceAttributes: getResourceAttributes(kd.pw, kd.pod.Name, kd.procEvent),
+		ResourceAttributes: resourceAttributes,
 		InitialConfig:      sdkConfig,
 	}, nil
 }
@@ -61,10 +68,12 @@ func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K
 
 // parseOtelResourceAttributes parses the OTEL_RESOURCE_ATTRIBUTES environment variable
 // which is in the format "key1=value1,key2=value2" and returns a slice of attribute.KeyValue
-func parseOtelResourceAttributes(envValue string) []attribute.KeyValue {
+func parseOtelResourceAttributes(envValue string) ([]attribute.KeyValue, error) {
 	if envValue == "" {
-		return nil
+		return nil, nil
 	}
+
+	var errs []error
 
 	var attrs []attribute.KeyValue
 	pairs := strings.Split(envValue, ",")
@@ -78,6 +87,7 @@ func parseOtelResourceAttributes(envValue string) []attribute.KeyValue {
 		parts := strings.SplitN(pair, "=", 2)
 		if len(parts) != 2 {
 			// Skip malformed pairs
+			errs = append(errs, fmt.Errorf("malformed otel resource attribute pair: %s", pair))
 			continue
 		}
 
@@ -86,10 +96,12 @@ func parseOtelResourceAttributes(envValue string) []attribute.KeyValue {
 
 		if key != "" && value != "" {
 			attrs = append(attrs, attribute.String(key, value))
+		} else {
+			errs = append(errs, fmt.Errorf("empty key or value in otel resource attribute pair: %s", pair))
 		}
 	}
 
-	return attrs
+	return attrs, errors.Join(errs...)
 }
 
 // appendUniqueAttributes appends new attributes to the existing slice, skipping any that already exist
@@ -110,12 +122,15 @@ func appendUniqueAttributes(existing []attribute.KeyValue, new []attribute.KeyVa
 	return existing
 }
 
-func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, pe detector.ProcessEvent) []attribute.KeyValue {
+func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, pe detector.ProcessEvent) ([]attribute.KeyValue, error) {
+	var errs []error
 	attrs := []attribute.KeyValue{
 		semconv.K8SNamespaceName(podWorkload.Namespace),
 		semconv.K8SPodName(podName),
 	}
 
+	// These should be overridden by the OTEL_RESOURCE_ATTRIBUTES environment variable
+	// Pre-initialize in case the OTEL_RESOURCE_ATTRIBUTES fail to parse
 	switch podWorkload.Kind {
 	case k8sconsts.WorkloadKindDeployment:
 		attrs = append(attrs, semconv.K8SDeploymentName(podWorkload.Name))
@@ -139,7 +154,10 @@ func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, p
 
 		// Parse OTEL_RESOURCE_ATTRIBUTES environment variable
 		if otelResourceAttrs, ok := envs[k8sconsts.OtelResourceAttributesEnvVar]; ok {
-			parsedAttrs := parseOtelResourceAttributes(otelResourceAttrs)
+			parsedAttrs, err := parseOtelResourceAttributes(otelResourceAttrs)
+			if err != nil {
+				errs = append(errs, err)
+			}
 			attrs = appendUniqueAttributes(attrs, parsedAttrs)
 		}
 
@@ -168,5 +186,5 @@ func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, p
 		attrs = append(attrs, semconv.ProcessVpid(pe.ExecDetails.ContainerProcessID))
 	}
 
-	return attrs
+	return attrs, errors.Join(errs...)
 }
