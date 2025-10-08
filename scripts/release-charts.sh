@@ -65,8 +65,12 @@ if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
   if ! gh release view -R "$GITHUB_REPOSITORY" "$TAG" > /dev/null 2>&1; then
     echo "🚀 Creating GitHub release $TAG..."
     set -x
-    gh release create "$TAG" --title "$TAG" --notes "Auto-created for Helm charts" || echo "❌ Failed to create release"
+    if ! gh release create -R "$GITHUB_REPOSITORY" "$TAG" --title "$TAG" --notes "Auto-created for Helm charts"; then
+      echo "❌ Failed to create release $TAG"
+      exit 1
+    fi
     set +x
+    echo "✅ Release $TAG created successfully"
   else
     echo "✅ Release already exists, continuing"
   fi
@@ -74,9 +78,12 @@ if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
   echo "------------------------------------------------------------"
   echo "📦 Uploading Helm chart packages to release $TAG..."
   set -x
-  gh release upload -R "$GITHUB_REPOSITORY" "$TAG" "$TMPDIR"/*.tgz || echo "❌ Upload failed"
+  if ! gh release upload -R "$GITHUB_REPOSITORY" "$TAG" "$TMPDIR"/*.tgz; then
+    echo "❌ Failed to upload Helm charts to release $TAG"
+    exit 1
+  fi
   set +x
-  echo "✅ Upload completed (if no errors above)"
+  echo "✅ Upload completed successfully"
   echo "------------------------------------------------------------"
 
   git add index.yaml
