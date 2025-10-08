@@ -1,4 +1,4 @@
-{{- if and .Values.centralProxy.enabled .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
+{{- if and .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -37,7 +37,7 @@ spec:
       containers:
         - name: central-proxy
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-proxy" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-central-proxy" "Tag" $imageTag) }}
           ports:
             - containerPort: 8080
           env:
