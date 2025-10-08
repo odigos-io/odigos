@@ -124,7 +124,7 @@ spec:
     - name: Upgrade to HEAD version with the current compiled cli
       try:
         - script:
-            content: ../../../cli/odigos install --set image.tag=e2e-test --set ResourceSizePreset=size_m
+            content: ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set ResourceSizePreset=size_m
             timeout: 3m
         - assert:
             file: ../../common/assert/odigos-upgraded.yaml
