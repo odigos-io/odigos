@@ -81,7 +81,7 @@ and cannot automatically upgrade installations created with the legacy method.
 `, helm.HelmNamespace)
 
 		fmt.Printf("%s\n", msg)
-		os.Exit(0)
+		os.Exit(1)
 		return nil
 	}
 
