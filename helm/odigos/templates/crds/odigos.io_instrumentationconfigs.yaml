@@ -289,7 +289,7 @@ spec:
                           type: boolean
                       type: object
                     customInstrumentations:
-                      description: default configuration for custom instrumentations,
+                      description: custom instrumentations to be applied by default,
                         in case the instrumentation library does not provide a configuration.
                       properties:
                         probes:
@@ -300,6 +300,8 @@ spec:
                               className:
                                 type: string
                               methodName:
+                                type: string
+                              symbol:
                                 type: string
                             type: object
                           type: array
@@ -424,6 +426,22 @@ spec:
                                   Should record the `code.stacktrace` attribute.
                                   if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
+                            type: object
+                          customInstrumentations:
+                            properties:
+                              probes:
+                                description: Custom instrumentation probes to be added
+                                  to the SDK.
+                                items:
+                                  properties:
+                                    className:
+                                      type: string
+                                    methodName:
+                                      type: string
+                                    symbol:
+                                      type: string
+                                  type: object
+                                type: array
                             type: object
                           headersCollection:
                             properties:
