@@ -39,14 +39,16 @@ var (
 func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]interface{}, error) {
 	// choose version
 	version := ""
+	// if the version is set by the user via --chart-version flag, use it
 	if HelmChartVersion != "" {
 		version = strings.TrimPrefix(HelmChartVersion, "v")
 	} else if OdigosChartVersion != "" {
+		// if the version is set by the CLI at build time, use it
 		version = strings.TrimPrefix(OdigosChartVersion, "v")
 	}
 
 	// Use embedded chart if available (default odigos/odigos and no override)
-	if HelmChart == "odigos/odigos" && HelmChartVersion == "" {
+	if HelmChart == k8sconsts.DefaultHelmChart && HelmChartVersion == "" {
 		ch, err := LoadEmbeddedChart(version)
 		if err == nil {
 			fmt.Printf("📦 Using embedded chart %s (chart version: %s)\n", ch.Metadata.Name, ch.Metadata.Version)
@@ -65,7 +67,7 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 			}
 
 			// fallback image.tag to AppVersion if not set
-			// During the release of the helm chart, we're setting the appVersion to the same as the image.tag [release-charts.sh]
+			// During the release of the helm chart, we're setting the appVersion to the same as the image.tag [package-charts.sh]
 			if ch.Metadata.AppVersion != "" {
 				if _, ok := vals["image"]; !ok {
 					vals["image"] = map[string]interface{}{}
@@ -84,8 +86,8 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 	}
 
 	// otherwise: use remote/local chart like today
-	if strings.HasPrefix(HelmChart, "odigos/") {
-		if err := ensureHelmRepo(settings, "odigos", "https://odigos-io.github.io/odigos/"); err != nil {
+	if strings.HasPrefix(HelmChart, k8sconsts.OdigosHelmRepoName+"/") {
+		if err := ensureHelmRepo(settings, k8sconsts.OdigosHelmRepoName, k8sconsts.OdigosHelmRepoURL); err != nil {
 			return nil, nil, err
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/helm"
 	"github.com/spf13/cobra"
@@ -163,7 +164,7 @@ func init() {
 	for _, c := range []*cobra.Command{helmInstallCmd, helmUpgradeCmd} {
 		c.Flags().StringVar(&helm.HelmReleaseName, "release-name", "odigos", "Helm release name")
 		c.Flags().StringVarP(&helm.HelmNamespace, "ns", "", "odigos-system", "Target Kubernetes namespace")
-		c.Flags().StringVar(&helm.HelmChart, "chart", "odigos/odigos", "Helm chart to install (repo/name, local path, or URL)")
+		c.Flags().StringVar(&helm.HelmChart, "chart", k8sconsts.DefaultHelmChart, "Helm chart to install (repo/name, local path, or URL)")
 		c.Flags().StringVarP(&helm.HelmValuesFile, "values", "f", "", "Path to a custom values.yaml file")
 		c.Flags().StringSliceVar(&helm.HelmSetArgs, "set", []string{}, "Set values on the command line (key=value)")
 		c.Flags().StringVar(&helm.HelmChartVersion, "chart-version", "", "Override Helm chart version (defaults to CLI-baked version)")
