@@ -252,10 +252,16 @@ jobs:
         with:
           version: v3.15.2
 
+      - name: Download packaged chart artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: odigos-chart
+          path: helm/
+
       - name: Publish Helm charts
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
-        run: bash ./scripts/release-charts.sh
+        run: bash ./scripts/publish-charts.sh
 
       - name: Notify Slack
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
