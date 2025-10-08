@@ -93,7 +93,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ env.TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
+          # TEMPORARY: Use adopt-helm-in-cli-install branch for this release, revert to tag after release
+          ref: adopt-helm-in-cli-install
 
       # Ensure the chart is here to be embedded in the CLI
       - name: Download packaged chart artifact
