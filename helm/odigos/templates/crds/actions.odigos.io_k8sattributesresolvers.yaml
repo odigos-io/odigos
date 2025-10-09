@@ -89,6 +89,7 @@ spec:
                   k8s.replicaset.name
                   if CollectWorkloadUID is set, also collect:
                   k8s.replicaset.uid
+                  DEPRECATED: ReplicaSet attributes are now collected by default during instrumentation.
                 type: boolean
               collectWorkloadUID:
                 description: |-
@@ -96,6 +97,7 @@ spec:
                   k8s.deployment.uid
                   k8s.daemonset.uid
                   k8s.statefulset.uid
+                  DEPRECATED: Workload UID attributes are now collected by default during instrumentation.
                 type: boolean
               disabled:
                 type: boolean
