@@ -1,0 +1,31 @@
+datastreams:
+  - name: default
+    sources:
+      - namespace: default
+        kind: Deployment
+        name: pricing
+      - namespace: default
+        kind: Deployment
+        name: frontend
+      - namespace: default
+        kind: Deployment
+        name: membership
+      - namespace: default
+        kind: Deployment
+        name: currency
+      - namespace: default
+        kind: Deployment
+        name: coupon
+      - namespace: default
+        kind: Deployment
+        name: inventory
+      - namespace: default
+        kind: CronJob
+        name: load-generator
+      - namespace: default
+        kind: Deployment
+        name: geolocation
+    destinations:
+      - destinationname: odigos.io.dest.jaeger-lj2vx
+        configuredsignals:
+          - TRACES
