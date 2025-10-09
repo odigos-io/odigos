@@ -19,10 +19,25 @@ interface UseActionCrud {
 }
 
 const stringifyRenames = (action: ActionFormData): ActionInput => {
+  const sanitizeFromArray = <T extends { from?: string | null }>(arr?: T[]) => {
+    if (!Array.isArray(arr)) return arr as unknown as T[] | undefined;
+    return arr.map((item) => {
+      const fromVal = (item as { from?: unknown }).from as string | undefined;
+      const hasValidFrom = typeof fromVal === 'string' && fromVal.trim().length > 0;
+      if (!hasValidFrom) {
+        const { from, ...rest } = item as Record<string, unknown>;
+        return rest as T;
+      }
+      return item;
+    });
+  };
+
   return {
     ...action,
     fields: {
       ...action.fields,
+      labelsAttributes: sanitizeFromArray(action.fields.labelsAttributes as any),
+      annotationsAttributes: sanitizeFromArray(action.fields.annotationsAttributes as any),
       renames: action.fields.renames ? JSON.stringify(action.fields.renames) : null,
     },
   };

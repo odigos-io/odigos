@@ -574,11 +574,13 @@ input ActionFieldsInput {
 input K8sLabelAttributeInput {
   labelKey: String!
   attributeKey: String!
+  from: K8sAttributesFrom
 }
 
 input K8sAnnotationAttributeInput {
   annotationKey: String!
   attributeKey: String!
+  from: K8sAttributesFrom
 }
 
 input ClusterAttributeInput {
@@ -666,11 +668,13 @@ type ActionFields {
 type K8sLabelAttribute {
   labelKey: String!
   attributeKey: String!
+  from: K8sAttributesFrom
 }
 
 type K8sAnnotationAttribute {
   annotationKey: String!
   attributeKey: String!
+  from: K8sAttributesFrom
 }
 
 type ClusterAttribute {
@@ -706,6 +710,10 @@ enum StringOperation {
   contains
   not_contains
   regex
+}
+enum K8sAttributesFrom {
+  pod
+  namespace
 }
 enum NumberOperation {
   exists
