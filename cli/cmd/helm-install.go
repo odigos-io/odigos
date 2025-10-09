@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
@@ -13,11 +13,12 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v3/pkg/storage/driver"
 )
 
 var helmInstallCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install and upgrade Odigos using Helm SDK under the hood",
+	Short: "Install and upgrade Odigos",
 	Long: `This subcommand installs or upgrades Odigos in your Kubernetes cluster.
 It installs Kubernetes components that auto-instrument your applications with OpenTelemetry
 and send traces, metrics, and logs to any telemetry backend.`,
@@ -43,7 +44,7 @@ odigos install --reset-then-reuse-values=false
 var helmUpgradeCmd = &cobra.Command{
 	Use:     "upgrade",
 	Aliases: []string{"update"},
-	Short:   "Upgrade Odigos using Helm SDK under the hood",
+	Short:   "Upgrade Odigos",
 	Long: `Upgrades (or installs) Odigos in your Kubernetes cluster.
 This command behaves identically to 'odigos install' and uses the same Helm-based flow.`,
 	RunE: runInstallOrUpgradeWithLegacyCheck,
@@ -101,32 +102,24 @@ func runInstallOrUpgrade() error {
 		return err
 	}
 
-	// Helm SDK note:
-	// Unlike the `helm upgrade --install` CLI command, the Go SDK's Upgrade action
-	// does NOT support automatically creating a release when it doesn't exist.
-	//
-	// If the release is missing, the SDK returns an error message string such as:
-	//   "release: not found"
-	//   "has no deployed releases"
-	//
-	// Because the SDK does not provide a typed error, the only way to detect
-	// this case is to check the error message text and explicitly fall back
-	// to running an Install action instead.
-	//
-	// if Helm changes its error messages in the future, we may need to update these checks.
+	get := action.NewGet(actionConfig)
+	_, getErr := get.Run(helm.HelmReleaseName)
+	if getErr != nil {
+		if errors.Is(getErr, driver.ErrReleaseNotFound) {
+			// Release does not exist → install
+			rel, err := runInstall(actionConfig, ch, vals)
+			if err == nil {
+				fmt.Printf("\n✅ Installed release %q in namespace %q (chart version: %s)\n",
+					rel.Name, helm.HelmNamespace, ch.Metadata.Version)
+			}
+			return err
+		}
+		return getErr // Some other error
+	}
+
+	// Release exists → upgrade
 	rel, err := runUpgrade(actionConfig, ch, vals)
 	if err != nil {
-		// Fallback if release does not exist
-		if strings.Contains(err.Error(), "not found") ||
-			strings.Contains(err.Error(), "no deployed") {
-			rel, err = runInstall(actionConfig, ch, vals)
-			if err != nil {
-				return err
-			}
-			fmt.Printf("\n✅ Installed release %q in namespace %q (chart version: %s)\n",
-				rel.Name, helm.HelmNamespace, ch.Metadata.Version)
-			return nil
-		}
 		return err
 	}
 
