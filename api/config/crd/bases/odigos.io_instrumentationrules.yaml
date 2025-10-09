@@ -86,6 +86,8 @@ spec:
                           type: string
                         methodName:
                           type: string
+                        symbol:
+                          type: string
                       type: object
                     type: array
                 type: object
