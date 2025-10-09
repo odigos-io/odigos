@@ -4,12 +4,13 @@ sidebarTitle: "odigos install"
 ---
 ## odigos install
 
-Install Odigos in your kubernetes cluster.
+Install and upgrade Odigos using Helm SDK under the hood
 
 ### Synopsis
 
-This sub command will Install Odigos in your kubernetes cluster.
-It will install k8s components that will auto-instrument your applications with OpenTelemetry and send traces, metrics and logs to any telemetry backend
+This subcommand installs or upgrades Odigos in your Kubernetes cluster.
+It installs Kubernetes components that auto-instrument your applications with OpenTelemetry
+and send traces, metrics, and logs to any telemetry backend.
 
 ```
 odigos install [flags]
@@ -19,50 +20,34 @@ odigos install [flags]
 
 ```
 
-# Install Odigos open-source in your cluster.
+# Install or upgrade Odigos open-source in your cluster with the default values
 odigos install
 
-# Install Odigos cloud in your cluster.
-odigos install --api-key <your-api-key>
+# Install or upgrade Odigos on-prem tier for enterprise users
+odigos install --set onPremToken=${ODIGOS_TOKEN}
 
-# Install Odigos cloud in a specific cluster
-odigos install --kubeconfig <path-to-kubeconfig>
+# Install or upgrade Odigos and set specific values
+odigos install --set collectorGateway.minReplicas=5 --set collectorGateway.maxReplicas=10
 
-# Install Odigos onprem tier for enterprise users
-odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
+# Install or upgrade Odigos using a local values.yaml file
+odigos install --values ./values.yaml
 
-# Install Odigos and connect the cluster to forward data to the centralized backend
-odigos install --cluster-name ${YOUR_CLUSTER_NAME} --central-backend-url ${YOUR_CENTRAL_BACKEND_URL}
+# Reset all values to chart defaults (opt out of reuse)
+odigos install --reset-then-reuse-values=false
 
 ```
 
 ### Options
 
 ```
-  -k, --api-key string                                          api key for odigos cloud
-      --central-backend-url string                              use to connect this cluster to the centralized odigos cluster
-      --cluster-name string                                     name of the cluster to be used in the centralized backend
-      --container-runtime-socket-path string                    custom configuration of a path to the container runtime socket path (e.g. /var/lib/rancher/rke2/agent/containerd/containerd.sock)
-  -h, --help                                                    help for install
-      --ignore-container strings                                container names to exclude from instrumentation (useful for sidecar container) (default [istio-proxy,vault-agent,filebeat,linkerd-proxy,fluentd,akeyless-init])
-      --ignore-namespace strings                                namespaces not to show in odigos ui (default [kube-system,local-path-storage,istio-system,linkerd,kube-node-lease])
-      --image-prefix string                                     prefix for all container images. (default "registry.odigos.io")
-      --instrumentation-auto-rollback-disabled                  Disabled the auto rollback feature
-      --instrumentation-auto-rollback-grace-time string         Auto rollback grace time (default "5m")
-      --instrumentation-auto-rollback-stability-window string   Auto rollback stability windows time (default "1h")
-      --k8s-node-logs-directory string                          custom configuration of a path to the directory where Kubernetes logs are symlinked in a node (e.g. /mnt/var/log)
-  -n, --namespace string                                        target k8s namespace for Odigos installation (default "odigos-system")
-      --node-selector string                                    comma-separated key=value pair of Kubernetes NodeSelectors to set on Odigos components. Example: kubernetes.io/hostname=myhost
-      --nowait                                                  skip waiting for odigos pods to be ready
-      --onprem-token string                                     authentication token for odigos enterprise on-premises
-      --openshift                                               configure requirements for OpenShift: required selinux settings, RBAC roles, and will use OpenShift certified images (if --image-prefix is not set)
-      --profile strings                                         install preset profiles with a specific configuration
-      --psp                                                     enable pod security policy
-      --skip-webhook-issuer-creation                            Skip creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
-      --telemetry                                               send general telemetry regarding Odigos usage (default true)
-      --ui-mode string                                          set the UI mode (one-of: default, readonly) (default "default")
-      --user-instrumentation-envs string                        JSON string to configure per-language instrumentation envs, e.g. '{"languages":{"go":{"enabled":true,"env":{"OTEL_GO_ENABLED":"true"}}}}'
-      --version string                                          for development purposes only
+      --chart string              Helm chart to install (repo/name, local path, or URL) (default "odigos/odigos")
+      --chart-version string      Override Helm chart version (defaults to CLI-baked version)
+  -h, --help                      help for install
+      --ns string                 Target Kubernetes namespace (default "odigos-system")
+      --release-name string       Helm release name (default "odigos")
+      --reset-then-reuse-values   Reset to chart defaults, then reuse values from the previous release (default: true). (default true)
+      --set strings               Set values on the command line (key=value)
+  -f, --values string             Path to a custom values.yaml file
 ```
 
 ### Options inherited from parent commands
