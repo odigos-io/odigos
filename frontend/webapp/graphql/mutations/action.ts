@@ -17,10 +17,12 @@ export const CREATE_ACTION = gql`
         labelsAttributes {
           labelKey
           attributeKey
+          from
         }
         annotationsAttributes {
           annotationKey
           attributeKey
+          from
         }
         clusterAttributes {
           attributeName
@@ -84,10 +86,12 @@ export const UPDATE_ACTION = gql`
         labelsAttributes {
           labelKey
           attributeKey
+          from
         }
         annotationsAttributes {
           annotationKey
           attributeKey
+          from
         }
         clusterAttributes {
           attributeName
