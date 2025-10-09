@@ -347,7 +347,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 	}
 
 	// Fetch initial settings for the instrumentation
-	settings, err := m.handler.SettingsGetter.Settings(ctx, pd, otelDistro)
+	settings, err := m.handler.SettingsGetter.Settings(ctx, m.logger, pd, otelDistro)
 	if err != nil {
 		// for k8s instrumentation config CR will be queried to get the settings
 		// we should always have config for this event.

@@ -44,6 +44,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	for env := range appendEnvVarNames {
 		appendEnvVarSlice = append(appendEnvVarSlice, env)
 	}
+	appendEnvVarSlice = append(appendEnvVarSlice, k8sconsts.OtelResourceAttributesEnvVar)
 
 	// creating ebpf map for traces
 	// later this can be expanded to other maps [e.g., metrics, logs]
