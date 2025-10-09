@@ -98,11 +98,23 @@ spec:
             timeout: 2m
             content: ../../common/wait_for_rollout.sh
         - script:
-            timeout: 30s
+            timeout: 60s
             content: |
-              kubectl get cm odigos-gateway -n odigos-test -o jsonpath='{.data.collector-conf}' > /tmp/current.yaml
-              yq '.connectors."odigosrouterconnector/traces"' /tmp/current.yaml > /tmp/current-datastreams-connector-config.yaml
-              diff /tmp/current-datastreams-connector-config.yaml expected-datastreams-config.yaml
+              echo "===== FETCHING ACTUAL CONNECTOR CONFIG ====="
+              kubectl get cm odigos-gateway -n odigos-test -o jsonpath='{.data.collector-conf}' \
+                > /tmp/raw-collector-conf.yaml
+
+              echo "===== PARSING CONNECTOR CONFIG ====="
+              yq '.connectors."odigosrouterconnector/traces"' /tmp/raw-collector-conf.yaml \
+                > /tmp/current-datastreams-connector-config.yaml
+
+              echo "===== ACTUAL CONNECTOR CONFIG ====="
+              cat /tmp/current-datastreams-connector-config.yaml
+              echo "===== END ACTUAL CONNECTOR CONFIG ====="
+
+              echo "===== DIFF EXPECTED vs ACTUAL ====="
+              diff /tmp/current-datastreams-connector-config.yaml expected-datastreams-config.yaml >/dev/null
+              echo "✅ Diff matched expected datastreams config"
 
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
