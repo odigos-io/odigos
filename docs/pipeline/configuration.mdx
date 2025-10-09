@@ -48,12 +48,19 @@ Available Sizing config `size_s`, `size_m`, `size_l` are pre-defined configurati
 | `size_xl`| **1024**             | **1024**          | **1000m**            | **1000m**         |
 
 
-#### 2. Directly Editing the `odigos-configuration` ConfigMap
+#### 2. Advanced Pipeline Configuration
 
-For more advanced control over the pipeline, you can directly edit the `odigos-configuration` ConfigMap. This method allows you to configure additional `collectorGateway` settings.
+For advanced control over the pipeline, you can override the default sizing and fine-tune resource and scaling parameters for the `collectorGateway` and `collectorNode`. The way you apply these advanced settings depends on how you installed Odigos:
 
-Editing the ConfigMap allows you to fine-tune every aspect of the pipeline to meet custom requirements. Below is an example of how to configure the `collectorGateway` parameters:
+- **If you installed Odigos using the CLI:**
+  Edit the `odigos-configuration` ConfigMap directly in your cluster. This allows you to set advanced options for both `collectorGateway` and `collectorNode` (such as custom CPU/memory requests, limits, and replica counts).
 
+- **If you installed Odigos using Helm:**
+  Make your changes in the `values.yaml` file or by using the `--set` flag during installation or upgrade. **Do not** edit the `odigos-configuration` ConfigMap directly, as Helm manages this resource and will overwrite manual changes.
+
+This method gives you full control over the pipeline configuration, letting you override any default or profile-based settings to match your specific requirements.
+
+Below is an example of how to configure the `collectorGateway` and `collectorNode` parameters:
 ```yaml
   # HYBRID CONFIGURATION APPROACH:
   # By default, all values below are automatically set based on the ResourceSizePreset values.yaml attribute describe above.
