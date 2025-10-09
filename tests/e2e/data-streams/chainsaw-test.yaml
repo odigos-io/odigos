@@ -116,6 +116,9 @@ spec:
               diff /tmp/current-datastreams-connector-config.yaml expected-datastreams-config.yaml >/dev/null
               echo "✅ Diff matched expected datastreams config"
 
+              ## This sleep here to ensure configuration is updated in the collector because of the debounce mechanism
+              sleep 5
+
     - name: '[2 - Workload Instrumentation] Generate Traffic'
       try:
         - apply:
