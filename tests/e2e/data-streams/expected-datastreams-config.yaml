@@ -1,0 +1,34 @@
+datastreams:
+  - name: stream-1
+    sources:
+      - namespace: default
+        kind: Deployment
+        name: frontend
+      - namespace: default
+        kind: Deployment
+        name: coupon
+      - namespace: default
+        kind: Deployment
+        name: inventory
+      - namespace: default
+        kind: Deployment
+        name: pricing
+    destinations:
+      - destinationname: odigos.io.dest.simple-trace-db-stream-1
+        configuredsignals:
+          - TRACES
+  - name: stream-2
+    sources:
+      - namespace: default
+        kind: Deployment
+        name: currency
+      - namespace: default
+        kind: Deployment
+        name: geolocation
+      - namespace: default
+        kind: Deployment
+        name: frontend
+    destinations:
+      - destinationname: odigos.io.dest.simple-trace-db-stream-2
+        configuredsignals:
+          - TRACES
