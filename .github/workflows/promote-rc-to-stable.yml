@@ -68,7 +68,7 @@ jobs:
       - name: Notify Slack Start
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Starting to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
           failure-description: "ERROR: Failed to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
@@ -105,8 +105,10 @@ jobs:
 
       - name: Retag existing images to stable
         run: |
-            ALL_REGISTRIES_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
-            ONLY_GCR_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
+            ALL_REGISTRIES_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
+            # TODO: Remove ONLY_GCR_IMAGE_NAMES in next release if enterprise images work well in all registries
+            # Kept empty for now in case we need to rollback some images to GCR-only
+            ONLY_GCR_IMAGE_NAMES=()
 
             ALL_REGISTRIES=(${GCR_REPO} ${GHCR_REPO} ${DOCKERHUB_REPO})
             UBI9_SUFFIXES=("" "-ubi9")
@@ -181,7 +183,7 @@ jobs:
       - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with: 
+        with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Successfully re-tagged release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
           failure-description: "ERROR: Failed to re-tag release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
