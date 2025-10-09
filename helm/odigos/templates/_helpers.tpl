@@ -102,6 +102,7 @@ true
   "size_s" (dict "cpu" "150m" "memory" "300Mi")
   "size_m" (dict "cpu" "500m" "memory" "500Mi")
   "size_l" (dict "cpu" "750m" "memory" "750Mi")
+  "size_xl" (dict "cpu" "1000m" "memory" "1024Mi")
 -}}
 {{- with (get $sizes $s) -}}
 {{ toYaml . }}
