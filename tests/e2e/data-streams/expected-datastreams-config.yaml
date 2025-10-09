@@ -1,18 +1,9 @@
 datastreams:
-  - name: default
+  - name: stream-1
     sources:
       - namespace: default
         kind: Deployment
-        name: pricing
-      - namespace: default
-        kind: Deployment
         name: frontend
-      - namespace: default
-        kind: Deployment
-        name: membership
-      - namespace: default
-        kind: Deployment
-        name: currency
       - namespace: default
         kind: Deployment
         name: coupon
@@ -20,12 +11,24 @@ datastreams:
         kind: Deployment
         name: inventory
       - namespace: default
-        kind: CronJob
-        name: load-generator
+        kind: Deployment
+        name: pricing
+    destinations:
+      - destinationname: odigos.io.dest.simple-trace-db-stream-1
+        configuredsignals:
+          - TRACES
+  - name: stream-2
+    sources:
+      - namespace: default
+        kind: Deployment
+        name: currency
       - namespace: default
         kind: Deployment
         name: geolocation
+      - namespace: default
+        kind: Deployment
+        name: frontend
     destinations:
-      - destinationname: odigos.io.dest.jaeger-lj2vx
+      - destinationname: odigos.io.dest.simple-trace-db-stream-2
         configuredsignals:
           - TRACES
