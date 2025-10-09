@@ -12,7 +12,7 @@
 
   {{- define "collector.validateSizing" -}}
   {{- $s := .Values.ResourceSizePreset | default "size_m" -}}
-  {{- if not (has $s (list "size_s" "size_m" "size_l")) -}}
+  {{- if not (has $s (list "size_s" "size_m" "size_l" "size_xl")) -}}
     {{- fail (printf "Invalid ResourceSizePreset=%q. Valid: size_s, size_m, size_l" $s) -}}
   {{- end -}}
   {{- end -}}
@@ -62,6 +62,17 @@
   nodeMemoryLimit: 750
   nodeCPURequest: 500
   nodeCPULimit: 750
+  {{- else if eq $s "size_xl" }}
+  gatewayMinReplicas: 5
+  gatewayMaxReplicas: 15
+  gatewayMemoryRequest: 2000
+  gatewayMemoryLimit: 2000
+  gatewayCPURequest: 1250
+  gatewayCPULimit: 1250
+  nodeMemoryRequest: 1024
+  nodeMemoryLimit: 1024
+  nodeCPURequest: 1000
+  nodeCPULimit: 1000
   {{- else }} {{/* default size_m */}}
   gatewayMinReplicas: 2
   gatewayMaxReplicas: 8
