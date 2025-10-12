@@ -255,6 +255,12 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		existingRule.Spec.CodeAttributes = nil
 	}
 
+	if input.HeadersCollection != nil {
+		existingRule.Spec.HeadersCollection = getHeadersCollectionInput(input)
+	} else {
+		existingRule.Spec.HeadersCollection = nil
+	}
+
 	if input.CustomInstrumentations != nil {
 		existingRule.Spec.CustomInstrumentations = getCustomInstrumentationsInput(input)
 	} else {
