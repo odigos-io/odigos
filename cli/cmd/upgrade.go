@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 type VersionChangeType int
@@ -100,6 +101,23 @@ and apply any required migrations and adaptations.`,
 		if err != nil {
 			fmt.Println("Odigos upgrade failed - unable to read the current Odigos configuration.")
 			os.Exit(1)
+		}
+
+		//Temporary Migration: map legacy centralBackendURL -> centralBackendURLs if present
+		//remove after v2.0.0
+		if len(config.CentralBackendURLs) == 0 {
+			cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+			if err == nil && cm.Data != nil && cm.Data[consts.OdigosConfigurationFileName] != "" {
+				var raw struct {
+					CentralBackendURL  string   `yaml:"centralBackendURL" json:"centralBackendURL"`
+					CentralBackendURLs []string `yaml:"centralBackendURLs" json:"centralBackendURLs"`
+				}
+				if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &raw); err == nil {
+					if len(raw.CentralBackendURLs) == 0 && raw.CentralBackendURL != "" {
+						config.CentralBackendURLs = []string{raw.CentralBackendURL}
+					}
+				}
+			}
 		}
 
 		// update the config on upgrade
