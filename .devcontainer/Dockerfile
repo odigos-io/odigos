@@ -4,13 +4,7 @@ FROM mcr.microsoft.com/devcontainers/go:1-1.24
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     curl \
-    bash-completion \
-    git \
-    zsh \
-    iproute2 \
-    iptables \
-    socat \
-    conntrack \
+    git
     && rm -rf /var/lib/apt/lists/*
 
 # Install kubectl v1.34.1
@@ -29,8 +23,6 @@ RUN echo "alias kc='kubectl --insecure-skip-tls-verify=true'" >> /etc/bash.bashr
     && echo "source <(kubectl completion bash)" >> /etc/bash.bashrc \
     && echo "alias kc='kubectl --insecure-skip-tls-verify=true'" >> /etc/zsh/zshrc \
     && echo "source <(kubectl completion zsh)" >> /etc/zsh/zshrc
-
-# Install ko
 
 # Install ko (latest release)
 RUN KO_VERSION=$(curl -s https://api.github.com/repos/ko-build/ko/releases/latest \
