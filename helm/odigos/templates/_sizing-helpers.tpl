@@ -45,7 +45,7 @@
   gatewayMaxReplicas: 5
   gatewayMemoryRequest: 300
   gatewayMemoryLimit: 300
-  gatewayCPURequest: 150
+  gatewayCPURequest: 300
   gatewayCPULimit: 300
   nodeMemoryRequest: 150
   nodeMemoryLimit: 300
@@ -56,7 +56,7 @@
   gatewayMaxReplicas: 12
   gatewayMemoryRequest: 850
   gatewayMemoryLimit: 850
-  gatewayCPURequest: 750
+  gatewayCPURequest: 1250
   gatewayCPULimit: 1250
   nodeMemoryRequest: 500
   nodeMemoryLimit: 750
@@ -67,8 +67,8 @@
   gatewayMaxReplicas: 15
   gatewayMemoryRequest: 2000
   gatewayMemoryLimit: 2000
-  gatewayCPURequest: 1250
-  gatewayCPULimit: 1250
+  gatewayCPURequest: 1500
+  gatewayCPULimit: 1500
   nodeMemoryRequest: 1024
   nodeMemoryLimit: 1024
   nodeCPURequest: 1000
@@ -78,7 +78,7 @@
   gatewayMaxReplicas: 8
   gatewayMemoryRequest: 600
   gatewayMemoryLimit: 600
-  gatewayCPURequest: 500
+  gatewayCPURequest: 1000
   gatewayCPULimit: 1000
   nodeMemoryRequest: 250
   nodeMemoryLimit: 500
