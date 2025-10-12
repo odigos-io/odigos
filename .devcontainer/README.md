@@ -2,9 +2,14 @@
 
 This setup of devcontainer allows you to quickly get started with Odigos and a local Kubernetes cluster using `kind`.
 
-## Quick Setup
+## Who is this for?
+- If you do not want to install anything on your local machine, and want to get a quick setup for Odigos, this is for you.
 
-1. Create kind cluster
+## Quick Development Setup (only devcontainer)
+1. Start the devcontainer (`CMD + Shift + P` -> Reopen in Container)
+
+## Full Odigos Setup (devcontainer + kind cluster)
+1. Create kind cluster (can run locally as well)
 > This specfic version of kind is required because "latest" is sometimes not compatible with the devcontainer setup, so we pin.
 ```sh
 kind create cluster --name kind --image kindest/node:v1.31.4
