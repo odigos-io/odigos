@@ -43,7 +43,7 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the UI mode (default/readonly).
 	- "%s": Controls the number of items to fetch per paginated-batch in the UI.
 	- "%s": Sets the public URL of a remotely, self-hosted UI.
-	- "%s": Sets the URL of the Odigos Tower Backend.
+	- "%s": Sets the URLs of the Odigos Tower Backend.
 	- "%s": Sets the name of this cluster, for Odigos Tower.
 	- "%s": List of namespaces to be ignored.
 	- "%s": List of containers to be ignored.
@@ -80,7 +80,7 @@ var configCmd = &cobra.Command{
 		consts.UiModeProperty,
 		consts.UiPaginationLimitProperty,
 		consts.UiRemoteUrlProperty,
-		consts.CentralBackendURLProperty,
+		consts.CentralBackendURLsProperty,
 		consts.ClusterNameProperty,
 		consts.IgnoredNamespacesProperty,
 		consts.IgnoredContainersProperty,
@@ -172,10 +172,10 @@ var setConfigCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// central proxy depends on central-backend-url / cluster-name, ensure it restarts when those change
-		if (property == consts.CentralBackendURLProperty || property == consts.ClusterNameProperty) &&
+		// central proxy depends on central-backend-urls / cluster-name, ensure it restarts when those change
+		if (property == consts.CentralBackendURLsProperty || property == consts.ClusterNameProperty) &&
 			currentTier == common.OnPremOdigosTier &&
-			config.CentralBackendURL != "" && config.ClusterName != "" {
+			len(config.CentralBackendURLs) > 0 && config.ClusterName != "" {
 			if err := restart.RestartDeployment(ctx, client.Interface, ns, k8sconsts.CentralProxyDeploymentName); err != nil {
 				fmt.Printf("Warning: failed to restart central-proxy: %v\n", err)
 			}
@@ -190,7 +190,8 @@ func validatePropertyValue(property string, value []string) error {
 	switch property {
 	case consts.IgnoredNamespacesProperty,
 		consts.IgnoredContainersProperty,
-		consts.AllowedTestConnectionHostsProperty:
+		consts.AllowedTestConnectionHostsProperty,
+		consts.CentralBackendURLsProperty:
 		if len(value) < 1 {
 			return fmt.Errorf("%s expects at least one value", property)
 		}
@@ -204,7 +205,6 @@ func validatePropertyValue(property string, value []string) error {
 		consts.UiModeProperty,
 		consts.UiPaginationLimitProperty,
 		consts.UiRemoteUrlProperty,
-		consts.CentralBackendURLProperty,
 		consts.ClusterNameProperty,
 		consts.MountMethodProperty,
 		consts.CustomContainerRuntimeSocketPath,
@@ -331,8 +331,8 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	case consts.UiRemoteUrlProperty:
 		config.UiRemoteUrl = value[0]
 
-	case consts.CentralBackendURLProperty:
-		config.CentralBackendURL = value[0]
+	case consts.CentralBackendURLsProperty:
+		config.CentralBackendURLs = value
 
 	case consts.ClusterNameProperty:
 		config.ClusterName = value[0]

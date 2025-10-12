@@ -748,7 +748,7 @@ type OdigosConfiguration struct {
 	KarpenterEnabled                 *bool                 `json:"karpenterEnabled,omitempty"`
 	AllowConcurrentAgents            *bool                 `json:"allowConcurrentAgents,omitempty"`
 	UIPaginationLimit                *int                  `json:"uiPaginationLimit,omitempty"`
-	CentralBackendURL                *string               `json:"centralBackendURL,omitempty"`
+	CentralBackendURLs               []*string             `json:"centralBackendURLs,omitempty"`
 	Oidc                             *OidcConfiguration    `json:"oidc,omitempty"`
 	ClusterName                      *string               `json:"clusterName,omitempty"`
 	ImagePrefix                      *string               `json:"imagePrefix,omitempty"`
@@ -772,7 +772,7 @@ type OdigosConfigurationInput struct {
 	KarpenterEnabled                 *bool                      `json:"karpenterEnabled,omitempty"`
 	AllowConcurrentAgents            *bool                      `json:"allowConcurrentAgents,omitempty"`
 	UIPaginationLimit                *int                       `json:"uiPaginationLimit,omitempty"`
-	CentralBackendURL                *string                    `json:"centralBackendURL,omitempty"`
+	CentralBackendURLs               []*string                  `json:"centralBackendURLs,omitempty"`
 	Oidc                             *OidcConfigurationInput    `json:"oidc,omitempty"`
 	ClusterName                      *string                    `json:"clusterName,omitempty"`
 	ImagePrefix                      *string                    `json:"imagePrefix,omitempty"`

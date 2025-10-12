@@ -45,13 +45,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-          {{- if .Values.ui.centralBackendURL }}
-          - name: CENTRAL_BACKEND_WS_URL
-            valueFrom:
-              configMapKeyRef:
-                name: odigos-configuration
-                key: centralBackendURL
-          {{- end }}
+          # UI no longer needs CENTRAL_BACKEND_WS_URL; central proxy multi-connection is configured via odigos-configuration
         ports:
           - containerPort: 3000
             name: ui

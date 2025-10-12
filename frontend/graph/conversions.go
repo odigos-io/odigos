@@ -125,8 +125,13 @@ func convertOdigosConfigToK8s(cfg *model.OdigosConfigurationInput) (*common.Odig
 	if cfg.UIPaginationLimit != nil {
 		odigosConfig.UiPaginationLimit = *cfg.UIPaginationLimit
 	}
-	if cfg.CentralBackendURL != nil {
-		odigosConfig.CentralBackendURL = *cfg.CentralBackendURL
+	if len(cfg.CentralBackendURLs) > 0 {
+		odigosConfig.CentralBackendURLs = make([]string, len(cfg.CentralBackendURLs))
+		for i, u := range cfg.CentralBackendURLs {
+			if u != nil {
+				odigosConfig.CentralBackendURLs[i] = *u
+			}
+		}
 	}
 	if cfg.Oidc != nil {
 		odigosConfig.Oidc = &common.OidcConfiguration{}
@@ -270,7 +275,6 @@ func convertOdigosConfigToGql(cfg *common.OdigosConfiguration) (*model.OdigosCon
 		AllowConcurrentAgents:            cfg.AllowConcurrentAgents,
 		ClusterName:                      &cfg.ClusterName,
 		ImagePrefix:                      &cfg.ImagePrefix,
-		CentralBackendURL:                &cfg.CentralBackendURL,
 		RollbackDisabled:                 cfg.RollbackDisabled,
 		RollbackGraceTime:                &cfg.RollbackGraceTime,
 		RollbackStabilityWindow:          &cfg.RollbackStabilityWindow,
