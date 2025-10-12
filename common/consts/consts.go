@@ -69,6 +69,7 @@ const (
 	UiPaginationLimitProperty          = "ui-pagination-limit"
 	UiRemoteUrlProperty                = "ui-remote-url"
 	CentralBackendURLProperty          = "central-backend-url"
+	CentralBackendURLsProperty         = "central-backend-urls"
 	ClusterNameProperty                = "cluster-name"
 	IgnoredNamespacesProperty          = "ignored-namespaces"
 	IgnoredContainersProperty          = "ignored-containers"

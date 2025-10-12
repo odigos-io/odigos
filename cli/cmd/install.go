@@ -53,8 +53,8 @@ var (
 	nodeSelectorFlag                 string
 	karpenterEnabled                 bool
 
-	clusterName       string
-	centralBackendURL string
+	clusterName        string
+	centralBackendURLs []string
 
 	userInstrumentationEnvsRaw string
 
@@ -87,7 +87,7 @@ It will install k8s components that will auto-instrument your applications with 
 			os.Exit(1)
 		}
 
-		if clusterName == "" && centralBackendURL != "" {
+		if clusterName == "" && len(centralBackendURLs) > 0 {
 			fmt.Printf("\033[33mWARNING\033[0m You provided a central backend URL but no cluster name.\n")
 			fmt.Println("Odigos will be installed, but this cluster will NOT be connected to the centralized Odigos backend.")
 			fmt.Println("To connect it later, run: \033[36modigos config set --cluster-name <your-cluster-name> \033[0m")
@@ -124,9 +124,9 @@ It will install k8s components that will auto-instrument your applications with 
 			odigosTier = common.OnPremOdigosTier
 			odigosProToken = odigosOnPremToken
 		}
-		if centralBackendURL != "" && odigosTier != common.OnPremOdigosTier {
+		if len(centralBackendURLs) > 0 && odigosTier != common.OnPremOdigosTier {
 			fmt.Printf("\033[31mERROR\033[0m Central backend connection is only available in the OnPrem tier.\n")
-			fmt.Println("Please upgrade to the OnPrem tier or remove the --central-backend-url flag.")
+			fmt.Println("Please upgrade to the OnPrem tier or remove the --central-backend-urls flag.")
 		}
 		// validate user input profiles against available profiles
 		err = ValidateUserInputProfiles(odigosTier)
@@ -174,8 +174,8 @@ odigos install --kubeconfig <path-to-kubeconfig>
 # Install Odigos onprem tier for enterprise users
 odigos install --onprem-token ${ODIGOS_TOKEN} --profile ${YOUR_ENTERPRISE_PROFILE_NAME}
 
-# Install Odigos and connect the cluster to forward data to the centralized backend
-odigos install --cluster-name ${YOUR_CLUSTER_NAME} --central-backend-url ${YOUR_CENTRAL_BACKEND_URL}
+# Install Odigos and connect the cluster to multiple centralized backends
+odigos install --cluster-name ${YOUR_CLUSTER_NAME} --central-backend-urls ${YOUR_CENTRAL_BACKEND_URL_1} --central-backend-urls ${YOUR_CENTRAL_BACKEND_URL_2}
 `,
 }
 
@@ -212,7 +212,7 @@ func parseNodeSelectorFlag() (map[string]string, error) {
 	for _, selector := range selectors {
 		s := strings.Split(selector, "=")
 		if len(s) != 2 {
-			return nodeSelector, errors.New(fmt.Sprintf("invalid node selector, must be in form 'key=value': %s", selector))
+			return nodeSelector, fmt.Errorf("invalid node selector, must be in form 'key=value': %s", selector)
 		}
 		nodeSelector[s[0]] = s[1]
 	}
@@ -381,7 +381,7 @@ func CreateOdigosConfiguration(odigosTier common.OdigosTier, nodeSelector map[st
 		UiMode:                    common.UiMode(uiMode),
 		UiPaginationLimit:         100,
 		ClusterName:               clusterName,
-		CentralBackendURL:         centralBackendURL,
+		CentralBackendURLs:        centralBackendURLs,
 		UserInstrumentationEnvs:   parsedUserJson,
 		NodeSelector:              nodeSelector,
 		RollbackDisabled:          &autoRollbackDisabled,
@@ -421,7 +421,7 @@ func init() {
 	installCmd.Flags().StringVar(&nodeSelectorFlag, "node-selector", "", "comma-separated key=value pair of Kubernetes NodeSelectors to set on Odigos components. Example: kubernetes.io/hostname=myhost")
 
 	installCmd.Flags().StringVar(&clusterName, "cluster-name", "", "name of the cluster to be used in the centralized backend")
-	installCmd.Flags().StringVar(&centralBackendURL, "central-backend-url", "", "use to connect this cluster to the centralized odigos cluster")
+	installCmd.Flags().StringSliceVar(&centralBackendURLs, "central-backend-urls", []string{}, "one or more centralized odigos backend host:port values")
 	installCmd.Flags().StringVar(
 		&userInstrumentationEnvsRaw,
 		"user-instrumentation-envs",

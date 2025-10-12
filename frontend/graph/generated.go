@@ -618,7 +618,7 @@ type ComplexityRoot struct {
 	OdigosConfiguration struct {
 		AgentEnvVarsInjectionMethod      func(childComplexity int) int
 		AllowConcurrentAgents            func(childComplexity int) int
-		CentralBackendURL                func(childComplexity int) int
+		CentralBackendURLs               func(childComplexity int) int
 		ClusterName                      func(childComplexity int) int
 		CollectorGateway                 func(childComplexity int) int
 		CollectorNode                    func(childComplexity int) int
@@ -3458,12 +3458,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OdigosConfiguration.AllowConcurrentAgents(childComplexity), true
 
-	case "OdigosConfiguration.centralBackendURL":
-		if e.complexity.OdigosConfiguration.CentralBackendURL == nil {
+	case "OdigosConfiguration.centralBackendURLs":
+		if e.complexity.OdigosConfiguration.CentralBackendURLs == nil {
 			break
 		}
 
-		return e.complexity.OdigosConfiguration.CentralBackendURL(childComplexity), true
+		return e.complexity.OdigosConfiguration.CentralBackendURLs(childComplexity), true
 
 	case "OdigosConfiguration.clusterName":
 		if e.complexity.OdigosConfiguration.ClusterName == nil {
@@ -22275,8 +22275,8 @@ func (ec *executionContext) fieldContext_OdigosConfiguration_uiPaginationLimit(_
 	return fc, nil
 }
 
-func (ec *executionContext) _OdigosConfiguration_centralBackendURL(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_centralBackendURL(ctx, field)
+func (ec *executionContext) _OdigosConfiguration_centralBackendURLs(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosConfiguration_centralBackendURLs(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -22289,7 +22289,7 @@ func (ec *executionContext) _OdigosConfiguration_centralBackendURL(ctx context.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CentralBackendURL, nil
+		return obj.CentralBackendURLs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22298,12 +22298,12 @@ func (ec *executionContext) _OdigosConfiguration_centralBackendURL(ctx context.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.([]*string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_OdigosConfiguration_centralBackendURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_OdigosConfiguration_centralBackendURLs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "OdigosConfiguration",
 		Field:      field,
@@ -24604,8 +24604,8 @@ func (ec *executionContext) fieldContext_Query_odigosConfig(_ context.Context, f
 				return ec.fieldContext_OdigosConfiguration_allowConcurrentAgents(ctx, field)
 			case "uiPaginationLimit":
 				return ec.fieldContext_OdigosConfiguration_uiPaginationLimit(ctx, field)
-			case "centralBackendURL":
-				return ec.fieldContext_OdigosConfiguration_centralBackendURL(ctx, field)
+			case "centralBackendURLs":
+				return ec.fieldContext_OdigosConfiguration_centralBackendURLs(ctx, field)
 			case "oidc":
 				return ec.fieldContext_OdigosConfiguration_oidc(ctx, field)
 			case "clusterName":
@@ -31135,7 +31135,7 @@ func (ec *executionContext) unmarshalInputOdigosConfigurationInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"karpenterEnabled", "allowConcurrentAgents", "uiPaginationLimit", "centralBackendURL", "oidc", "clusterName", "imagePrefix", "ignoredNamespaces", "ignoredContainers", "profiles", "mountMethod", "agentEnvVarsInjectionMethod", "customContainerRuntimeSocketPath", "odigletHealthProbeBindPort", "rollbackDisabled", "rollbackGraceTime", "rollbackStabilityWindow", "rollout", "collectorNode", "collectorGateway", "nodeSelector"}
+	fieldsInOrder := [...]string{"karpenterEnabled", "allowConcurrentAgents", "uiPaginationLimit", "centralBackendURLs", "oidc", "clusterName", "imagePrefix", "ignoredNamespaces", "ignoredContainers", "profiles", "mountMethod", "agentEnvVarsInjectionMethod", "customContainerRuntimeSocketPath", "odigletHealthProbeBindPort", "rollbackDisabled", "rollbackGraceTime", "rollbackStabilityWindow", "rollout", "collectorNode", "collectorGateway", "nodeSelector"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -31163,13 +31163,13 @@ func (ec *executionContext) unmarshalInputOdigosConfigurationInput(ctx context.C
 				return it, err
 			}
 			it.UIPaginationLimit = data
-		case "centralBackendURL":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("centralBackendURL"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+		case "centralBackendURLs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("centralBackendURLs"))
+			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.CentralBackendURL = data
+			it.CentralBackendURLs = data
 		case "oidc":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oidc"))
 			data, err := ec.unmarshalOOidcConfigurationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOidcConfigurationInput(ctx, v)
@@ -36416,8 +36416,8 @@ func (ec *executionContext) _OdigosConfiguration(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._OdigosConfiguration_allowConcurrentAgents(ctx, field, obj)
 		case "uiPaginationLimit":
 			out.Values[i] = ec._OdigosConfiguration_uiPaginationLimit(ctx, field, obj)
-		case "centralBackendURL":
-			out.Values[i] = ec._OdigosConfiguration_centralBackendURL(ctx, field, obj)
+		case "centralBackendURLs":
+			out.Values[i] = ec._OdigosConfiguration_centralBackendURLs(ctx, field, obj)
 		case "oidc":
 			out.Values[i] = ec._OdigosConfiguration_oidc(ctx, field, obj)
 		case "clusterName":

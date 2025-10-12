@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -448,14 +449,14 @@ func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig 
 		return false, fmt.Errorf("failed to update odigos configuration: %v", err)
 	}
 
-	// restart central-proxy when central-backend-url or cluster-name changed and both are set in on-prem tier
+	// restart central-proxy when central-backend-urls or cluster-name changed and both are set in on-prem tier
 	// determine tier
 	depCM, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err == nil {
 		tier := depCM.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
 		if tier == string(common.OnPremOdigosTier) {
-			changed := prevCfg.CentralBackendURL != cfg.CentralBackendURL || prevCfg.ClusterName != cfg.ClusterName
-			bothSet := cfg.CentralBackendURL != "" && cfg.ClusterName != ""
+			changed := !reflect.DeepEqual(prevCfg.CentralBackendURLs, cfg.CentralBackendURLs) || prevCfg.ClusterName != cfg.ClusterName
+			bothSet := len(cfg.CentralBackendURLs) > 0 && cfg.ClusterName != ""
 			if changed && bothSet {
 				_ = restart.RestartDeployment(ctx, kube.DefaultClient.Interface, env.GetCurrentNamespace(), k8sconsts.CentralProxyDeploymentName)
 			}

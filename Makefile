@@ -1,7 +1,7 @@
 TAG ?= $(shell odigos version --cluster)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
-CENTRAL_BACKEND_URL ?=
+CENTRAL_BACKEND_URLS ?=
 ORG ?= registry.odigos.io
 # Override ORG for staging pushes
 ifeq ($(STAGING_ORG),true)
@@ -310,7 +310,7 @@ cli-install:
 		--version $(ODIGOS_CLI_VERSION) \
 		--nowait \
 		$(if $(CLUSTER_NAME),--cluster-name $(CLUSTER_NAME)) \
-		$(if $(CENTRAL_BACKEND_URL),--central-backend-url $(CENTRAL_BACKEND_URL)) \
+		$(if $(CENTRAL_BACKEND_URLS),--central-backend-urls $(CENTRAL_BACKEND_URLS)) \
 		$(FLAGS)
 
 
@@ -342,7 +342,7 @@ helm-install:
 		--namespace odigos-system \
 		--set image.tag=$(ODIGOS_CLI_VERSION) \
 		--set clusterName=$(CLUSTER_NAME) \
-		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
+		$(if $(CENTRAL_BACKEND_URLS),--set centralProxy.centralBackendURLs={$$(echo $(CENTRAL_BACKEND_URLS) | sed 's/ /,/g')},) \
 		--set onPremToken=$(ONPREM_TOKEN)
 
 .PHONY: helm-install-central

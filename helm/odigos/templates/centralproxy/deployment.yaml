@@ -1,4 +1,4 @@
-{{- if and .Values.centralProxy.centralBackendURL .Values.clusterName (include "odigos.secretExists" .)}}
+{{- if and .Values.centralProxy.centralBackendURLs .Values.clusterName (include "odigos.secretExists" .)}}
 
 apiVersion: apps/v1
 kind: Deployment
@@ -43,8 +43,8 @@ spec:
           env:
             - name: CLUSTER_NAME
               value: {{ .Values.clusterName | quote }}
-            - name: CENTRAL_BACKEND_URL
-              value: {{ .Values.centralProxy.centralBackendURL | quote }}
+            - name: CENTRAL_BACKEND_URLS
+              value: {{ join "," .Values.centralProxy.centralBackendURLs | quote }}
           resources:
             requests:
               cpu: {{ .Values.centralProxy.resources.requests.cpu }}

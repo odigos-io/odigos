@@ -81,7 +81,7 @@ type OdigosConfiguration {
   karpenterEnabled: Boolean
   allowConcurrentAgents: Boolean
   uiPaginationLimit: Int
-  centralBackendURL: String
+  centralBackendURLs: [String]
   oidc: OidcConfiguration
   clusterName: String
   imagePrefix: String
@@ -139,7 +139,7 @@ input OdigosConfigurationInput {
   karpenterEnabled: Boolean
   allowConcurrentAgents: Boolean
   uiPaginationLimit: Int
-  centralBackendURL: String
+  centralBackendURLs: [String]
   oidc: OidcConfigurationInput
   clusterName: String
   imagePrefix: String

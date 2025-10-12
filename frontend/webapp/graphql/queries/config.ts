@@ -18,7 +18,7 @@ export const GET_ODIGOS_CONFIG = gql`
       karpenterEnabled
       allowConcurrentAgents
       uiPaginationLimit
-      centralBackendURL
+      centralBackendURLs
       oidc {
         tenantUrl
         clientId

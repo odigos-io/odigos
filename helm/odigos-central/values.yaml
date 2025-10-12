@@ -19,7 +19,6 @@ centralBackend:
 centralUI:
   uiMode: normal
   uiPaginationLimit: 0
-  centralBackendURL: ''
   resources:
     requests:
       cpu: 100m

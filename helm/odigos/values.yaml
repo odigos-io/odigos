@@ -65,7 +65,6 @@ userInstrumentationEnvs:
 # See https://docs.odigos.io/pipeline/configuration#1-using-sizing-configuration for more details.
 ResourceSizePreset: size_m
 
-
 collectorGateway:
   # HYBRID CONFIGURATION APPROACH:
   # By default, all values below are automatically set based on the ResourceSizePreset above.
@@ -76,7 +75,6 @@ collectorGateway:
   # 2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
   # 3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request
   # 4. Same logic applies to CPU settings
-
 
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
@@ -260,7 +258,8 @@ ui:
   #  - This flag sets the client secret of the OIDC application.
   #  - If not set, the UI will not process OIDC authentication.
   oidcClientSecret: ''
-  centralBackendURL: ''
+  # Deprecated: UI no longer consumes centralBackendURL directly
+  # centralBackendURLs is configured under .Values.centralProxy
 
 instrumentor:
   # which mount method to use for odigos agent directory
@@ -406,8 +405,8 @@ odiglet:
   noHostPid: false
 
 centralProxy:
-  # Central backend URL where this proxy will forward data
-  centralBackendURL: ''
+  # Central backend URLs where this proxy will forward data (array of host:port)
+  centralBackendURLs: []
   resources:
     requests:
       cpu: 100m
@@ -468,12 +467,12 @@ autoRollback:
   stabilityWindowTime: 1h
 
 rollout:
-# Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
-# If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
-# When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
-# Any new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)
-# will still have the agent injected, regardless of this setting.
-# When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
+  # Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.
+  # If workload restarts are sensitive, this setting can be used to disable the automatic rollout.
+  # When disabled, users are responsible for manually triggering rollouts after adding or removing sources.
+  # Any new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)
+  # will still have the agent injected, regardless of this setting.
+  # When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
   automaticRolloutDisabled: false
 
 # Pod Disruption Budgets (PDBs) help ensure high availability during voluntary disruptions like node drains or upgrades.
@@ -546,7 +545,6 @@ metricsSources:
 
     ## set resource attributes to exclude from the span metrics
     # excludedResourceAttributes: ['process.runtime.name', 'process.runtime.version']
-
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
