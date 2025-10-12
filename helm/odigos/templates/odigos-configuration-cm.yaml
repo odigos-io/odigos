@@ -19,13 +19,6 @@ data:
     {{- if .Values.centralProxy.centralBackendURLs }}
     centralBackendURLs:
       {{- toYaml .Values.centralProxy.centralBackendURLs | nindent 6 }}
-    {{- else if .Values.ui.centralBackendURLs }}
-    centralBackendURLs:
-      {{- toYaml .Values.ui.centralBackendURLs | nindent 6 }}
-    {{- else if .Values.centralProxy.centralBackendURL }}
-    centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
-    {{- else if .Values.ui.centralBackendURL }}
-    centralBackendURL: {{ .Values.ui.centralBackendURL }}
     {{- end }}
     imagePrefix: {{ template "utils.imagePrefix" (dict "Values" .Values) }}
     {{- if .Values.ui.uiMode }}
