@@ -262,6 +262,7 @@ type OdigosConfiguration struct {
 	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
 	UiRemoteUrl               string                         `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
 	CentralBackendURL         string                         `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
+	CentralBackendURLs        []string                       `json:"centralBackendURLs,omitempty" yaml:"centralBackendURLs"`
 	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
 	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
 	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements

@@ -16,8 +16,16 @@ data:
     {{- if .Values.clusterName }}
     clusterName: {{ .Values.clusterName }}
     {{- end }}
-    {{- if .Values.centralProxy.centralBackendURL }}
+    {{- if .Values.centralProxy.centralBackendURLs }}
+    centralBackendURLs:
+      {{- toYaml .Values.centralProxy.centralBackendURLs | nindent 6 }}
+    {{- else if .Values.ui.centralBackendURLs }}
+    centralBackendURLs:
+      {{- toYaml .Values.ui.centralBackendURLs | nindent 6 }}
+    {{- else if .Values.centralProxy.centralBackendURL }}
     centralBackendURL: {{ .Values.centralProxy.centralBackendURL }}
+    {{- else if .Values.ui.centralBackendURL }}
+    centralBackendURL: {{ .Values.ui.centralBackendURL }}
     {{- end }}
     imagePrefix: {{ template "utils.imagePrefix" (dict "Values" .Values) }}
     {{- if .Values.ui.uiMode }}
@@ -29,9 +37,7 @@ data:
     {{- if .Values.ui.uiRemoteUrl }}
     uiRemoteUrl: {{ .Values.ui.uiRemoteUrl }}
     {{- end }}
-    {{- if .Values.ui.centralBackendURL }}
-    centralBackendURL: {{ .Values.ui.centralBackendURL }}
-    {{- end }}
+    
     {{- if or .Values.ui.oidcTenantUrl .Values.ui.oidcClientId .Values.ui.oidcClientSecret }}
     oidc:
       {{- if .Values.ui.oidcTenantUrl }}
