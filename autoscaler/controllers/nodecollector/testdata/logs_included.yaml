@@ -51,6 +51,7 @@ processors:
     detectors:
     - ec2
     - azure
+    - aks
     timeout: 2s
   test_type/test_processor:
     key: val
