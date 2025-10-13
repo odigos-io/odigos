@@ -83,43 +83,56 @@ spec:
         - script:
             timeout: 1m
             content: |
-              # Test official field names + mirroring using helm template
-              P="../../.."
-
-              helm template odigos $P/helm/odigos \
+              echo "🚀 Rendering Helm template for odiglet DaemonSet..."
+              helm template odigos "$P/helm/odigos" \
                 --set collectorNode.limitMemoryMiB=570 \
                 --set collectorNode.limitCPUm=560 \
                 --show-only templates/odiglet/daemonset.yaml > /tmp/helm-template-output.yaml
 
               echo "📋 Extracting data-collection container resources..."
-
-              # Extract the entire resources section for data-collection container
-              RESOURCES=$(grep -A 60 "name: data-collection" /tmp/helm-template-output.yaml | grep -A 15 "resources:")
+              RESOURCES=$(grep -A 60 "name: data-collection" /tmp/helm-template-output.yaml | grep -A 15 "resources:" || true)
 
               echo "🔍 Found resources section:"
               echo "$RESOURCES"
 
+              # Helper function to normalize hidden characters and whitespace
+              normalize() {
+                echo "$1" | tr -d '\r' | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+              }
+
               echo "✅ Verifying mirroring (requests should equal limits)..."
 
-              # Check memory - both request and limit should be 570Mi
-              MEMORY_REQUEST=$(echo "$RESOURCES" | grep -A 2 "requests:" | grep "memory:" | awk '{print $2}')
-              MEMORY_LIMIT=$(echo "$RESOURCES" | grep -A 2 "limits:" | grep "memory:" | awk '{print $2}')
+              # ---- MEMORY ----
+              MEMORY_REQUEST_RAW=$(echo "$RESOURCES" | grep -A 2 "requests:" | grep "memory:" | awk '{print $2}')
+              MEMORY_LIMIT_RAW=$(echo "$RESOURCES" | grep -A 2 "limits:" | grep "memory:" | awk '{print $2}')
 
-              if [ "$MEMORY_REQUEST" = "570Mi" ] && [ "$MEMORY_LIMIT" = "570Mi" ]; then
+              MEMORY_REQUEST=$(normalize "$MEMORY_REQUEST_RAW")
+              MEMORY_LIMIT=$(normalize "$MEMORY_LIMIT_RAW")
+
+              printf "🔍 Debug: MEMORY_REQUEST_RAW=[%s], MEMORY_LIMIT_RAW=[%s]\n" "$MEMORY_REQUEST_RAW" "$MEMORY_LIMIT_RAW"
+              printf "🔍 Normalized: MEMORY_REQUEST=[%s], MEMORY_LIMIT=[%s]\n" "$MEMORY_REQUEST" "$MEMORY_LIMIT"
+
+              if [[ "$MEMORY_REQUEST" == "570Mi" && "$MEMORY_LIMIT" == "570Mi" ]]; then
                 echo "✅ Memory mirroring works: request=$MEMORY_REQUEST, limit=$MEMORY_LIMIT"
               else
-                echo "❌ Memory mirroring failed: request=$MEMORY_REQUEST, limit=$MEMORY_LIMIT (expected both 750Mi)"
+                echo "❌ Memory mirroring failed: request='$MEMORY_REQUEST', limit='$MEMORY_LIMIT' (expected both '570Mi')"
                 exit 1
               fi
 
-              # Check CPU - both request and limit should be 560m
-              CPU_REQUEST=$(echo "$RESOURCES" | grep -A 2 "requests:" | grep "cpu:" | awk '{print $2}')
-              CPU_LIMIT=$(echo "$RESOURCES" | grep -A 2 "limits:" | grep "cpu:" | awk '{print $2}')
+              # ---- CPU ----
+              CPU_REQUEST_RAW=$(echo "$RESOURCES" | grep -A 2 "requests:" | grep "cpu:" | awk '{print $2}')
+              CPU_LIMIT_RAW=$(echo "$RESOURCES" | grep -A 2 "limits:" | grep "cpu:" | awk '{print $2}')
 
-              if [ "$CPU_REQUEST" = "560m" ] && [ "$CPU_LIMIT" = "560m" ]; then
+              CPU_REQUEST=$(normalize "$CPU_REQUEST_RAW")
+              CPU_LIMIT=$(normalize "$CPU_LIMIT_RAW")
+
+              printf "🔍 Debug: CPU_REQUEST_RAW=[%s], CPU_LIMIT_RAW=[%s]\n" "$CPU_REQUEST_RAW" "$CPU_LIMIT_RAW"
+              printf "🔍 Normalized: CPU_REQUEST=[%s], CPU_LIMIT=[%s]\n" "$CPU_REQUEST" "$CPU_LIMIT"
+
+              if [[ "$CPU_REQUEST" == "560m" && "$CPU_LIMIT" == "560m" ]]; then
                 echo "✅ CPU mirroring works: request=$CPU_REQUEST, limit=$CPU_LIMIT"
               else
-                echo "❌ CPU mirroring failed: request=$CPU_REQUEST, limit=$CPU_LIMIT (expected both 560m)"
+                echo "❌ CPU mirroring failed: request='$CPU_REQUEST', limit='$CPU_LIMIT' (expected both '560m')"
                 exit 1
               fi
 
