@@ -78,6 +78,51 @@ spec:
             timeout: 30s
             file: verify-datacollection-resources.yaml
 
+    - name: Verify Backward Compatibility in helm chart fields - New Fields & Mirroring
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              # Test official field names + mirroring using helm template
+              P="../../.."
+
+              helm template odigos $P/helm/odigos \
+                --set collectorNode.limitMemoryMiB=570 \
+                --set collectorNode.limitCPUm=560 \
+                --show-only templates/odiglet/daemonset.yaml > /tmp/helm-template-output.yaml
+
+              echo "📋 Extracting data-collection container resources..."
+
+              # Extract the entire resources section for data-collection container
+              RESOURCES=$(grep -A 60 "name: data-collection" /tmp/helm-template-output.yaml | grep -A 15 "resources:")
+
+              echo "🔍 Found resources section:"
+              echo "$RESOURCES"
+
+              echo "✅ Verifying mirroring (requests should equal limits)..."
+
+              # Check memory - both request and limit should be 570Mi
+              MEMORY_REQUEST=$(echo "$RESOURCES" | grep -A 2 "requests:" | grep "memory:" | awk '{print $2}')
+              MEMORY_LIMIT=$(echo "$RESOURCES" | grep -A 2 "limits:" | grep "memory:" | awk '{print $2}')
+
+              if [ "$MEMORY_REQUEST" = "570Mi" ] && [ "$MEMORY_LIMIT" = "570Mi" ]; then
+                echo "✅ Memory mirroring works: request=$MEMORY_REQUEST, limit=$MEMORY_LIMIT"
+              else
+                echo "❌ Memory mirroring failed: request=$MEMORY_REQUEST, limit=$MEMORY_LIMIT (expected both 750Mi)"
+                exit 1
+              fi
+
+              # Check CPU - both request and limit should be 560m
+              CPU_REQUEST=$(echo "$RESOURCES" | grep -A 2 "requests:" | grep "cpu:" | awk '{print $2}')
+              CPU_LIMIT=$(echo "$RESOURCES" | grep -A 2 "limits:" | grep "cpu:" | awk '{print $2}')
+
+              if [ "$CPU_REQUEST" = "560m" ] && [ "$CPU_LIMIT" = "560m" ]; then
+                echo "✅ CPU mirroring works: request=$CPU_REQUEST, limit=$CPU_LIMIT"
+              else
+                echo "❌ CPU mirroring failed: request=$CPU_REQUEST, limit=$CPU_LIMIT (expected both 560m)"
+                exit 1
+              fi
+
       catch:
         - script:
             content: |
