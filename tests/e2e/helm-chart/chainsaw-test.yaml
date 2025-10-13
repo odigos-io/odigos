@@ -16,6 +16,11 @@ spec:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
 
+    # Install Odigos with legacy field names to test backward compatibility and mirroring:
+    # - Uses legacy field "memoryLimit" (instead of "limitMemoryMiB")
+    # - Uses field "limitCPUm" (consistent with values.yaml)
+    # - Does NOT set memory/CPU requests to test mirroring functionality
+    # - Expected: requests should mirror the limit values (560Mi memory, 550m CPU)
     - name: Install Odigos
       try:
         - script:
@@ -24,12 +29,20 @@ spec:
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set nodeSelector."kubernetes\.io/os"=linux \
+                  --set collectorNode.memoryLimit=560 \
+                  --set collectorNode.limitCPUm=550
               else
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                  --set image.tag=e2e-test \
+                  --set nodeSelector."kubernetes\.io/os"=linux \
+                  --set collectorNode.memoryLimit=560 \
+                  --set collectorNode.limitCPUm=550
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
-
     - name: Verify Odigos Installation
       try:
         - script:
@@ -58,6 +71,12 @@ spec:
         - assert:
             timeout: 10s
             file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Backward Compatibility in helm chart fields - Legacy Fields & Mirroring
+      try:
+        - assert:
+            timeout: 30s
+            file: verify-datacollection-resources.yaml
 
       catch:
         - script:

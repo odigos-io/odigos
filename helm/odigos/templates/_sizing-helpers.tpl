@@ -162,9 +162,15 @@
 
   {{- define "collector.node.memoryRequest" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- if hasKey .Values.collectorNode "memoryRequest" -}}
+  {{- if hasKey .Values.collectorNode "requestMemoryMiB" -}}
+  {{- .Values.collectorNode.requestMemoryMiB -}}
+  {{- else if hasKey .Values.collectorNode "memoryRequest" -}}
+  {{/* Backward compatibility: support legacy field name "memoryRequest" */}}
   {{- .Values.collectorNode.memoryRequest -}}
+  {{- else if hasKey .Values.collectorNode "limitMemoryMiB" -}}
+  {{- .Values.collectorNode.limitMemoryMiB -}}
   {{- else if hasKey .Values.collectorNode "memoryLimit" -}}
+  {{/* Backward compatibility: support legacy field name "memoryLimit" for mirroring */}}
   {{- .Values.collectorNode.memoryLimit -}}
   {{- else -}}
   {{- $d.nodeMemoryRequest -}}
@@ -173,9 +179,15 @@
 
   {{- define "collector.node.memoryLimit" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- if hasKey .Values.collectorNode "memoryLimit" -}}
+  {{- if hasKey .Values.collectorNode "limitMemoryMiB" -}}
+  {{- .Values.collectorNode.limitMemoryMiB -}}
+  {{- else if hasKey .Values.collectorNode "memoryLimit" -}}
+  {{/* Backward compatibility: support legacy field name "memoryLimit" */}}
   {{- .Values.collectorNode.memoryLimit -}}
+  {{- else if hasKey .Values.collectorNode "requestMemoryMiB" -}}
+  {{- .Values.collectorNode.requestMemoryMiB -}}
   {{- else if hasKey .Values.collectorNode "memoryRequest" -}}
+  {{/* Backward compatibility: support legacy field name "memoryRequest" for mirroring */}}
   {{- .Values.collectorNode.memoryRequest -}}
   {{- else -}}
   {{- $d.nodeMemoryLimit -}}
@@ -184,7 +196,10 @@
 
   {{- define "collector.node.cpuRequest" -}}
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
-  {{- if hasKey .Values.collectorNode "cpuRequest" -}}
+  {{- if hasKey .Values.collectorNode "requestCPUm" -}}
+  {{- .Values.collectorNode.requestCPUm -}}
+  {{- else if hasKey .Values.collectorNode "cpuRequest" -}}
+  {{/* Backward compatibility: support legacy field name "cpuRequest" */}}
   {{- .Values.collectorNode.cpuRequest -}}
   {{- else if hasKey .Values.collectorNode "limitCPUm" -}}
   {{- .Values.collectorNode.limitCPUm -}}
@@ -197,7 +212,10 @@
   {{- $d := include "collector.sizingDefaults" . | fromYaml -}}
   {{- if hasKey .Values.collectorNode "limitCPUm" -}}
   {{- .Values.collectorNode.limitCPUm -}}
+  {{- else if hasKey .Values.collectorNode "requestCPUm" -}}
+  {{- .Values.collectorNode.requestCPUm -}}
   {{- else if hasKey .Values.collectorNode "cpuRequest" -}}
+  {{/* Backward compatibility: support legacy field name "cpuRequest" for mirroring */}}
   {{- .Values.collectorNode.cpuRequest -}}
   {{- else -}}
   {{- $d.nodeCPULimit -}}
