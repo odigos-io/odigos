@@ -1,0 +1,70 @@
+---
+title: "odigos sources enable cluster"
+sidebarTitle: "odigos sources enable cluster"
+---
+## odigos sources enable cluster
+
+Enable an entire cluster for Odigos instrumentation
+
+### Synopsis
+
+This command enables the cluster for Odigos instrumentation. It will create Source objects for all apps in the cluster, except those that are excluded.
+
+```
+odigos sources enable cluster [flags]
+```
+
+### Examples
+
+```
+
+# Enable the cluster for Odigos instrumentation
+odigos sources enable cluster
+
+# Enable the cluster for Odigos instrumentation, but dry run
+odigos sources enable cluster --dry-run
+
+# Enable the cluster for Odigos instrumentation with excluded namespaces
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt
+
+# Enable the cluster for Odigos instrumentation with excluded apps
+odigos sources enable cluster --exclude-apps-file=excluded-apps.txt
+
+# Enable the cluster for Odigos instrumentation with excluded namespaces and apps
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt --exclude-apps-file=excluded-apps.txt
+
+For example, excluded-namespaces.txt:
+namespace1
+namespace2
+
+For example, excluded-apps.txt:
+app1
+app2
+
+```
+
+### Options
+
+```
+      --dry-run                             dry run
+      --exclude-apps-file string            Path to file containing apps to exclude
+      --exclude-namespaces-file string      Path to file containing namespaces to exclude
+  -h, --help                                help for cluster
+      --instrumentation-cool-off duration   Cool-off period for instrumentation. Time format is 1h30m
+      --only-deployment string              Name of the deployment to instrument (must be used with --only-namespace)
+      --only-namespace string               Namespace of the deployment to instrument (must be used with --only-deployment)
+      --remote                              remote
+      --skip-preflight-checks               Skip preflight checks
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos sources enable](/cli/odigos_sources_enable)	 - Enable a source for Odigos instrumentation.
