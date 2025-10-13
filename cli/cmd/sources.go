@@ -55,6 +55,26 @@ var (
 
 	sourceOtelServiceFlagName = "otel-service"
 	sourceOtelServiceFlag     string
+
+	excludeAppsFileFlagName = "exclude-apps-file"
+	excludeAppsFileFlag     string
+
+	excludeNamespacesFileFlagName = "exclude-namespaces-file"
+	excludeNamespacesFileFlag     string
+
+	dryRunFlagName = "dry-run"
+	dryRunFlag     bool
+
+	remoteFlagName = "remote"
+	remoteFlag     bool
+
+	instrumentationCoolOffFlagName = "instrumentation-cool-off"
+
+	onlyDeploymentFlagName = "only-deployment"
+	onlyNamespaceFlagName  = "only-namespace"
+
+	skipPreflightChecksFlagName = "skip-preflight-checks"
+	skipPreflightChecksFlag     bool
 )
 
 var sourcesCmd = &cobra.Command{
@@ -389,7 +409,11 @@ func enableOrDisableSource(cmd *cobra.Command, args []string, workloadKind k8sco
 		fmt.Printf("\033[31mERROR\033[0m Cannot %s Source: %+v\n", msg, err)
 		os.Exit(1)
 	}
-	fmt.Printf("%sd Source %s for %s %s\n", msg, source.GetName(), source.Spec.Workload.Kind, source.Spec.Workload.Name)
+	dryRunMsg := ""
+	if dryRunFlag {
+		dryRunMsg = "\033[31m(dry run)\033[0m"
+	}
+	fmt.Printf("%s%sd Source %s for %s %s (disabled=%t)\n", dryRunMsg, msg, source.GetName(), source.Spec.Workload.Kind, source.Spec.Workload.Name, disableInstrumentation)
 }
 
 func enableOrDisableSourceCmd(workloadKind k8sconsts.WorkloadKind, disableInstrumentation bool) *cobra.Command {
@@ -406,6 +430,41 @@ func enableOrDisableSourceCmd(workloadKind k8sconsts.WorkloadKind, disableInstru
 		Aliases: kindAliases[workloadKind],
 		Run: func(cmd *cobra.Command, args []string) {
 			enableOrDisableSource(cmd, args, workloadKind, disableInstrumentation)
+		},
+	}
+}
+
+func enableClusterSourceCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "cluster",
+		Short: "Enable an entire cluster for Odigos instrumentation",
+		Long:  "This command enables the cluster for Odigos instrumentation. It will create Source objects for all apps in the cluster, except those that are excluded.",
+		Example: `
+# Enable the cluster for Odigos instrumentation
+odigos sources enable cluster
+
+# Enable the cluster for Odigos instrumentation, but dry run
+odigos sources enable cluster --dry-run
+
+# Enable the cluster for Odigos instrumentation with excluded namespaces
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt
+
+# Enable the cluster for Odigos instrumentation with excluded apps
+odigos sources enable cluster --exclude-apps-file=excluded-apps.txt
+
+# Enable the cluster for Odigos instrumentation with excluded namespaces and apps
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt --exclude-apps-file=excluded-apps.txt
+
+For example, excluded-namespaces.txt:
+namespace1
+namespace2
+
+For example, excluded-apps.txt:
+app1
+app2
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			enableClusterSource(cmd, args)
 		},
 	}
 }
@@ -482,13 +541,15 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 
 	source.Spec.DisableInstrumentation = disableInstrumentation
 
-	if len(sources.Items) > 0 {
-		source, err = client.OdigosClient.Sources(sourceNamespace).Update(ctx, source, v1.UpdateOptions{})
-	} else {
-		source, err = client.OdigosClient.Sources(sourceNamespace).Create(ctx, source, v1.CreateOptions{})
-	}
-	if err != nil {
-		return nil, err
+	if !dryRunFlag {
+		if len(sources.Items) > 0 {
+			source, err = client.OdigosClient.Sources(sourceNamespace).Update(ctx, source, v1.UpdateOptions{})
+		} else {
+			source, err = client.OdigosClient.Sources(sourceNamespace).Create(ctx, source, v1.CreateOptions{})
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if workloadKind == k8sconsts.WorkloadKindNamespace {
@@ -589,9 +650,22 @@ func init() {
 			enableCmd.Flags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
 			disableCmd.Flags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
 		}
+		enableCmd.Flags().Bool(dryRunFlagName, false, "dry run")
+		disableCmd.Flags().Bool(dryRunFlagName, false, "dry run")
 		sourceEnableCmd.AddCommand(enableCmd)
 		sourceDisableCmd.AddCommand(disableCmd)
 	}
+
+	enableClusterSourceCmd := enableClusterSourceCmd()
+	enableClusterSourceCmd.Flags().StringVar(&excludeAppsFileFlag, excludeAppsFileFlagName, "", "Path to file containing apps to exclude")
+	enableClusterSourceCmd.Flags().StringVar(&excludeNamespacesFileFlag, excludeNamespacesFileFlagName, "", "Path to file containing namespaces to exclude")
+	enableClusterSourceCmd.Flags().BoolVar(&dryRunFlag, dryRunFlagName, false, "dry run")
+	enableClusterSourceCmd.Flags().BoolVar(&remoteFlag, remoteFlagName, false, "remote")
+	enableClusterSourceCmd.Flags().Duration(instrumentationCoolOffFlagName, 0, "Cool-off period for instrumentation. Time format is 1h30m")
+	enableClusterSourceCmd.Flags().String(onlyNamespaceFlagName, "", "Namespace of the deployment to instrument (must be used with --only-deployment)")
+	enableClusterSourceCmd.Flags().String(onlyDeploymentFlagName, "", "Name of the deployment to instrument (must be used with --only-namespace)")
+	enableClusterSourceCmd.Flags().Bool(skipPreflightChecksFlagName, false, "Skip preflight checks")
+	sourceEnableCmd.AddCommand(enableClusterSourceCmd)
 
 	sourceCreateCmd.Flags().AddFlagSet(sourceFlags)
 	sourceCreateCmd.Flags().BoolVar(&disableInstrumentationFlag, disableInstrumentationFlagName, false, "Disable instrumentation for Source")
