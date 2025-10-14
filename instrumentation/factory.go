@@ -49,7 +49,7 @@ type Instrumentation interface {
 	// for the instrumentation to be ready to run.
 	// For eBPF, this will load the probes into the kernel
 	// In case of a failure, an error will be returned and all the resources will be cleaned up.
-	Load(ctx context.Context) error
+	Load(ctx context.Context) ([]InstrumentationLibrary, error)
 
 	// Run will start reading events from the probes and export them.
 	// It is a blocking call, and will return only when the instrumentation is stopped.
@@ -63,4 +63,11 @@ type Instrumentation interface {
 
 	// ApplyConfig will send a configuration update to the instrumentation.
 	ApplyConfig(ctx context.Context, config Config) error
+}
+
+// InstrumentationLibrary is used to identify a specific instrumentation library.
+type InstrumentationLibrary struct {
+	// Name is the name of the instrumentation library.
+	// For example, "net/http", "@opentelemetry/instrumentation-redis".
+	Name string
 }
