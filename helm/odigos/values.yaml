@@ -65,19 +65,16 @@ userInstrumentationEnvs:
 # See https://docs.odigos.io/pipeline/configuration#1-using-sizing-configuration for more details.
 ResourceSizePreset: size_m
 
-
+# HYBRID CONFIGURATION APPROACH:
+# By default, all values below are automatically set based on the ResourceSizePreset above.
+# Uncomment and modify any value to override the automatic sizing for that specific parameter.
+#
+# IMPORTANT CONSTRAINTS:
+# 1. minReplicas must be less or equal to maxReplicas
+# 2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
+# 3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request
+# 4. Same logic applies to CPU settings
 collectorGateway:
-  # HYBRID CONFIGURATION APPROACH:
-  # By default, all values below are automatically set based on the ResourceSizePreset above.
-  # Uncomment and modify any value to override the automatic sizing for that specific parameter.
-  #
-  # IMPORTANT CONSTRAINTS:
-  # 1. minReplicas must be less or equal to maxReplicas
-  # 2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
-  # 3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request
-  # 4. Same logic applies to CPU settings
-
-
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
   # of the form "memory: <value>Mi".

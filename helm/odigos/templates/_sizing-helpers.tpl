@@ -12,7 +12,7 @@
 
   {{- define "collector.validateSizing" -}}
   {{- $s := .Values.ResourceSizePreset | default "size_m" -}}
-  {{- if not (has $s (list "size_s" "size_m" "size_l")) -}}
+  {{- if not (has $s (list "size_s" "size_m" "size_l" "size_xl")) -}}
     {{- fail (printf "Invalid ResourceSizePreset=%q. Valid: size_s, size_m, size_l" $s) -}}
   {{- end -}}
   {{- end -}}
@@ -45,7 +45,7 @@
   gatewayMaxReplicas: 5
   gatewayMemoryRequest: 300
   gatewayMemoryLimit: 300
-  gatewayCPURequest: 150
+  gatewayCPURequest: 300
   gatewayCPULimit: 300
   nodeMemoryRequest: 150
   nodeMemoryLimit: 300
@@ -56,18 +56,29 @@
   gatewayMaxReplicas: 12
   gatewayMemoryRequest: 850
   gatewayMemoryLimit: 850
-  gatewayCPURequest: 750
+  gatewayCPURequest: 1250
   gatewayCPULimit: 1250
   nodeMemoryRequest: 500
   nodeMemoryLimit: 750
   nodeCPURequest: 500
   nodeCPULimit: 750
+  {{- else if eq $s "size_xl" }}
+  gatewayMinReplicas: 5
+  gatewayMaxReplicas: 15
+  gatewayMemoryRequest: 2000
+  gatewayMemoryLimit: 2000
+  gatewayCPURequest: 1500
+  gatewayCPULimit: 1500
+  nodeMemoryRequest: 1024
+  nodeMemoryLimit: 1024
+  nodeCPURequest: 1000
+  nodeCPULimit: 1000
   {{- else }} {{/* default size_m */}}
   gatewayMinReplicas: 2
   gatewayMaxReplicas: 8
   gatewayMemoryRequest: 600
   gatewayMemoryLimit: 600
-  gatewayCPURequest: 500
+  gatewayCPURequest: 1000
   gatewayCPULimit: 1000
   nodeMemoryRequest: 250
   nodeMemoryLimit: 500
