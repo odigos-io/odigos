@@ -147,76 +147,6 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 			}, timeout, interval).Should(BeTrue())
 		})
 
-		It("Should create a Processor with workload UID attributes enabled", func() {
-			By("Creating a K8sAttributesResolver with workload UID")
-			resolver := &actionv1.K8sAttributesResolver{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      ActionName + "-workload",
-					Namespace: ActionNamespace,
-				},
-				Spec: actionv1.K8sAttributesSpec{
-					ActionName:         "test-workload-k8sattributes",
-					Signals:            []common.ObservabilitySignal{common.TracesObservabilitySignal},
-					CollectWorkloadUID: true,
-				},
-			}
-
-			Expect(k8sClient.Create(testCtx, resolver)).Should(Succeed())
-
-			By("Checking that a Processor is created with workload UID attributes")
-			processor := &odigosv1.Processor{}
-			Eventually(func() bool {
-				err := k8sClient.Get(testCtx, types.NamespacedName{
-					Name:      "odigos-k8sattributes",
-					Namespace: ActionNamespace,
-				}, processor)
-				if err != nil {
-					return false
-				}
-
-				// Parse the processor config
-				var config map[string]interface{}
-				err = json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &config)
-				if err != nil {
-					return false
-				}
-
-				// Check that workload UID attributes are included
-				extract, ok := config["extract"].(map[string]interface{})
-				if !ok {
-					return false
-				}
-
-				metadata, ok := extract["metadata"].([]interface{})
-				if !ok {
-					return false
-				}
-
-				// Check for workload UID attributes
-				hasDeploymentUID := false
-				hasDaemonSetUID := false
-				hasStatefulSetUID := false
-				hasJobUID := false
-
-				for _, attr := range metadata {
-					if attrStr, ok := attr.(string); ok {
-						switch attrStr {
-						case "k8s.deployment.uid":
-							hasDeploymentUID = true
-						case "k8s.daemonset.uid":
-							hasDaemonSetUID = true
-						case "k8s.statefulset.uid":
-							hasStatefulSetUID = true
-						case "k8s.job.uid":
-							hasJobUID = true
-						}
-					}
-				}
-
-				return hasDeploymentUID && hasDaemonSetUID && hasStatefulSetUID && hasJobUID
-			}, timeout, interval).Should(BeTrue())
-		})
-
 		It("Should create a Processor with cluster UID attributes enabled", func() {
 			By("Creating a K8sAttributesResolver with cluster UID")
 			resolver := &actionv1.K8sAttributesResolver{
@@ -423,71 +353,6 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 				}
 
 				return hasRestartedAt
-			}, timeout, interval).Should(BeTrue())
-		})
-
-		It("Should create a Processor with replica set attributes when enabled", func() {
-			By("Creating a K8sAttributesResolver with replica set attributes")
-			resolver := &actionv1.K8sAttributesResolver{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      ActionName + "-replicaset",
-					Namespace: ActionNamespace,
-				},
-				Spec: actionv1.K8sAttributesSpec{
-					ActionName:                  "test-replicaset-k8sattributes",
-					Signals:                     []common.ObservabilitySignal{common.TracesObservabilitySignal},
-					CollectReplicaSetAttributes: true,
-					CollectWorkloadUID:          true, // Required for replica set UID
-				},
-			}
-
-			Expect(k8sClient.Create(testCtx, resolver)).Should(Succeed())
-
-			By("Checking that a Processor is created with replica set attributes")
-			processor := &odigosv1.Processor{}
-			Eventually(func() bool {
-				err := k8sClient.Get(testCtx, types.NamespacedName{
-					Name:      "odigos-k8sattributes",
-					Namespace: ActionNamespace,
-				}, processor)
-				if err != nil {
-					return false
-				}
-
-				// Parse the processor config
-				var config map[string]interface{}
-				err = json.Unmarshal(processor.Spec.ProcessorConfig.Raw, &config)
-				if err != nil {
-					return false
-				}
-
-				// Check that replica set attributes are included
-				extract, ok := config["extract"].(map[string]interface{})
-				if !ok {
-					return false
-				}
-
-				metadata, ok := extract["metadata"].([]interface{})
-				if !ok {
-					return false
-				}
-
-				// Check for replica set attributes
-				hasReplicaSetName := false
-				hasReplicaSetUID := false
-
-				for _, attr := range metadata {
-					if attrStr, ok := attr.(string); ok {
-						switch attrStr {
-						case "k8s.replicaset.name":
-							hasReplicaSetName = true
-						case "k8s.replicaset.uid":
-							hasReplicaSetUID = true
-						}
-					}
-				}
-
-				return hasReplicaSetName && hasReplicaSetUID
 			}, timeout, interval).Should(BeTrue())
 		})
 
@@ -871,8 +736,6 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 
 				// Check for container attributes (from legacy)
 				hasContainerName := false
-				// Check for workload UID attributes (from modern)
-				hasDeploymentUID := false
 				// Check for cluster UID attributes (from modern)
 				hasClusterUID := false
 
@@ -881,8 +744,6 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 						switch attrStr {
 						case "k8s.container.name":
 							hasContainerName = true
-						case "k8s.deployment.uid":
-							hasDeploymentUID = true
 						case "k8s.cluster.uid":
 							hasClusterUID = true
 						}
@@ -938,7 +799,7 @@ var _ = Describe("K8sAttributesResolver Controller", func() {
 					}
 				}
 
-				return hasContainerName && hasDeploymentUID && hasClusterUID &&
+				return hasContainerName && hasClusterUID &&
 					hasAppName && hasAppComponent && hasRestartedAt &&
 					hasTraces && hasMetrics
 			}, timeout, interval).Should(BeTrue())

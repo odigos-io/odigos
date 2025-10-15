@@ -53,21 +53,6 @@ pod_association:
 */
 
 var (
-	workloadUIDAttributes = []string{
-		string(semconv.K8SDeploymentUIDKey),
-		string(semconv.K8SDaemonSetUIDKey),
-		string(semconv.K8SStatefulSetUIDKey),
-		string(semconv.K8SJobUIDKey),
-	}
-
-	workloadNameAttributes = []string{
-		string(semconv.K8SDeploymentNameKey),
-		string(semconv.K8SDaemonSetNameKey),
-		string(semconv.K8SStatefulSetNameKey),
-		string(semconv.K8SCronJobNameKey),
-		string(semconv.K8SJobNameKey),
-	}
-
 	containerAttributes = []string{
 		string(semconv.K8SContainerNameKey),
 		string(semconv.ContainerIDKey),
@@ -165,12 +150,10 @@ func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctr
 
 func (r *K8sAttributesResolverReconciler) createMigratedAction(action *actionv1.K8sAttributesResolver, migratedActionName string) *odigosv1.Action {
 	config := actionv1.K8sAttributesConfig{
-		CollectContainerAttributes:  action.Spec.CollectContainerAttributes,
-		CollectReplicaSetAttributes: action.Spec.CollectReplicaSetAttributes,
-		CollectWorkloadUID:          action.Spec.CollectWorkloadUID,
-		CollectClusterUID:           action.Spec.CollectClusterUID,
-		LabelsAttributes:            action.Spec.LabelsAttributes,
-		AnnotationsAttributes:       action.Spec.AnnotationsAttributes,
+		CollectContainerAttributes: action.Spec.CollectContainerAttributes,
+		CollectClusterUID:          action.Spec.CollectClusterUID,
+		LabelsAttributes:           action.Spec.LabelsAttributes,
+		AnnotationsAttributes:      action.Spec.AnnotationsAttributes,
 	}
 
 	odigosAction := &odigosv1.Action{
@@ -210,10 +193,7 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 		signals              = map[common.ObservabilitySignal]struct{}{}
 		ownerReferences      = []metav1.OwnerReference{}
 		collectContainer     = false
-		collectReplicaSet    = false
-		collectWorkloadUID   = false
 		collectClusterUID    = false
-		collectWorkloadNames = false
 	)
 
 	for i := range actionList.Items {
@@ -235,12 +215,7 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 
 		// create a union of all the actions' configuration to one processor
 		collectContainer = collectContainer || config.CollectContainerAttributes
-		collectReplicaSet = collectReplicaSet || config.CollectReplicaSetAttributes
-		collectWorkloadUID = collectWorkloadUID || config.CollectWorkloadUID
 		collectClusterUID = collectClusterUID || config.CollectClusterUID
-		// traces should already contain workload name (if they originated from odigos)
-		// logs collected from filelog receiver will lack this info thus needs to be added
-		// collectWorkloadNames = (collectWorkloadNames || slices.Contains(currentAction.Spec.Signals, common.LogsObservabilitySignal))
 
 		// Add label attributes, newer configs override older ones with same Tag
 		for _, label := range config.LabelsAttributes {
@@ -272,21 +247,6 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 			signals[currentAction.Spec.Signals[signalIndex]] = struct{}{}
 		}
 
-	}
-
-	if collectWorkloadUID {
-		metadataAttributes = append(metadataAttributes, workloadUIDAttributes...)
-		if collectReplicaSet {
-			metadataAttributes = append(metadataAttributes, string(semconv.K8SReplicaSetUIDKey))
-		}
-	}
-
-	if collectWorkloadNames {
-		metadataAttributes = append(metadataAttributes, workloadNameAttributes...)
-	}
-
-	if collectReplicaSet {
-		metadataAttributes = append(metadataAttributes, string(semconv.K8SReplicaSetNameKey))
 	}
 
 	if collectContainer {
