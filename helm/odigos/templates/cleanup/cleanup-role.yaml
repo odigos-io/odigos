@@ -22,7 +22,3 @@ rules:
   resources: ["configmaps"]
   resourceNames: ["odigos-config"]
   verbs: ["get","delete"]
-# allow cleanup to read and delete secrets in this namespace [helm secret]
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get", "list", "delete"]

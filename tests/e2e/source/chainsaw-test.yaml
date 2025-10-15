@@ -22,9 +22,9 @@ spec:
             timeout: 4m
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set ResourceSizePreset=size_m
+                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
               else
-                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set ResourceSizePreset=size_m
+                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
 

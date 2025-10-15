@@ -23,7 +23,7 @@ spec:
       try:
         - script:
             content: |
-              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set ResourceSizePreset=size_m
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../common/verify_odigos_installation.sh odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
             timeout: 4m
