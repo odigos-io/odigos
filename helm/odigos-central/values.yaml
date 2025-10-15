@@ -15,6 +15,11 @@ centralBackend:
     kubernetes.io/os: linux
   tolerations: []
   affinity: []
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 10
+    wsTargetPerPod: 200
 
 centralUI:
   uiMode: normal

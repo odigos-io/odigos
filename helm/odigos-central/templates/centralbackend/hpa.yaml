@@ -1,0 +1,26 @@
+{{- if and (include "odigos.secretExists" .) .Values.centralBackend.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: central-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: central-backend
+  minReplicas: {{ .Values.centralBackend.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.centralBackend.autoscaling.maxReplicas }}
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: odigos_central_active_ws
+        target:
+          type: AverageValue
+          averageValue: "{{ .Values.centralBackend.autoscaling.wsTargetPerPod }}"
+{{- end }}
+
+
