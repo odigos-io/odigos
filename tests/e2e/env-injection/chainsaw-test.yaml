@@ -81,7 +81,7 @@ spec:
         - script:
             timeout: 30s
             content: |
-              ../../../cli/odigos config set agent-env-vars-injection-method pod-manifest
+              ../../../cli/odigos upgrade --set instrumentor.agentEnvVarsInjectionMethod=pod-manifest
 
     - name: Assert config set successfully
       try:
@@ -111,7 +111,7 @@ spec:
         - script:
             timeout: 30s
             content: |
-              ../../../cli/odigos config set agent-env-vars-injection-method loader
+              ../../../cli/odigos upgrade --set instrumentor.agentEnvVarsInjectionMethod=loader
 
     - name: Assert config set successfully
       try:
