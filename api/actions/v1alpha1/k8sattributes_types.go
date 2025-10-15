@@ -76,12 +76,14 @@ type K8sAttributesConfig struct {
 	// k8s.replicaset.name
 	// if CollectWorkloadUID is set, also collect:
 	// k8s.replicaset.uid
+	// DEPRECATED: ReplicaSet attributes are now collected by default during instrumentation.
 	CollectReplicaSetAttributes bool `json:"collectReplicaSetAttributes,omitempty"`
 
 	// Collect the following workload UID attributes:
 	// k8s.deployment.uid
 	// k8s.daemonset.uid
 	// k8s.statefulset.uid
+	// DEPRECATED: Workload UID attributes are now collected by default during instrumentation.
 	CollectWorkloadUID bool `json:"collectWorkloadUID,omitempty"`
 
 	// Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace "kube-system"
@@ -127,12 +129,14 @@ type K8sAttributesSpec struct {
 	// k8s.replicaset.name
 	// if CollectWorkloadUID is set, also collect:
 	// k8s.replicaset.uid
+	// DEPRECATED: ReplicaSet attributes are now collected by default during instrumentation.
 	CollectReplicaSetAttributes bool `json:"collectReplicaSetAttributes,omitempty"`
 
 	// Collect the following workload UID attributes:
 	// k8s.deployment.uid
 	// k8s.daemonset.uid
 	// k8s.statefulset.uid
+	// DEPRECATED: Workload UID attributes are now collected by default during instrumentation.
 	CollectWorkloadUID bool `json:"collectWorkloadUID,omitempty"`
 
 	// Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace "kube-system"

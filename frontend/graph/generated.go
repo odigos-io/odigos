@@ -387,10 +387,12 @@ type ComplexityRoot struct {
 	K8sAnnotationAttribute struct {
 		AnnotationKey func(childComplexity int) int
 		AttributeKey  func(childComplexity int) int
+		From          func(childComplexity int) int
 	}
 
 	K8sLabelAttribute struct {
 		AttributeKey func(childComplexity int) int
+		From         func(childComplexity int) int
 		LabelKey     func(childComplexity int) int
 	}
 
@@ -2358,12 +2360,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sAnnotationAttribute.AttributeKey(childComplexity), true
 
+	case "K8sAnnotationAttribute.from":
+		if e.complexity.K8sAnnotationAttribute.From == nil {
+			break
+		}
+
+		return e.complexity.K8sAnnotationAttribute.From(childComplexity), true
+
 	case "K8sLabelAttribute.attributeKey":
 		if e.complexity.K8sLabelAttribute.AttributeKey == nil {
 			break
 		}
 
 		return e.complexity.K8sLabelAttribute.AttributeKey(childComplexity), true
+
+	case "K8sLabelAttribute.from":
+		if e.complexity.K8sLabelAttribute.From == nil {
+			break
+		}
+
+		return e.complexity.K8sLabelAttribute.From(childComplexity), true
 
 	case "K8sLabelAttribute.labelKey":
 		if e.complexity.K8sLabelAttribute.LabelKey == nil {
@@ -6060,6 +6076,8 @@ func (ec *executionContext) fieldContext_ActionFields_labelsAttributes(_ context
 				return ec.fieldContext_K8sLabelAttribute_labelKey(ctx, field)
 			case "attributeKey":
 				return ec.fieldContext_K8sLabelAttribute_attributeKey(ctx, field)
+			case "from":
+				return ec.fieldContext_K8sLabelAttribute_from(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sLabelAttribute", field.Name)
 		},
@@ -6107,6 +6125,8 @@ func (ec *executionContext) fieldContext_ActionFields_annotationsAttributes(_ co
 				return ec.fieldContext_K8sAnnotationAttribute_annotationKey(ctx, field)
 			case "attributeKey":
 				return ec.fieldContext_K8sAnnotationAttribute_attributeKey(ctx, field)
+			case "from":
+				return ec.fieldContext_K8sAnnotationAttribute_from(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sAnnotationAttribute", field.Name)
 		},
@@ -15058,6 +15078,47 @@ func (ec *executionContext) fieldContext_K8sAnnotationAttribute_attributeKey(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sAnnotationAttribute_from(ctx context.Context, field graphql.CollectedField, obj *model.K8sAnnotationAttribute) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sAnnotationAttribute_from(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.From, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sAttributesFrom)
+	fc.Result = res
+	return ec.marshalOK8sAttributesFrom2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sAttributesFrom(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sAnnotationAttribute_from(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sAnnotationAttribute",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type K8sAttributesFrom does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sLabelAttribute_labelKey(ctx context.Context, field graphql.CollectedField, obj *model.K8sLabelAttribute) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sLabelAttribute_labelKey(ctx, field)
 	if err != nil {
@@ -15141,6 +15202,47 @@ func (ec *executionContext) fieldContext_K8sLabelAttribute_attributeKey(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sLabelAttribute_from(ctx context.Context, field graphql.CollectedField, obj *model.K8sLabelAttribute) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sLabelAttribute_from(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.From, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sAttributesFrom)
+	fc.Result = res
+	return ec.marshalOK8sAttributesFrom2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sAttributesFrom(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sLabelAttribute_from(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sLabelAttribute",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type K8sAttributesFrom does not have child fields")
 		},
 	}
 	return fc, nil
@@ -30754,7 +30856,7 @@ func (ec *executionContext) unmarshalInputK8sAnnotationAttributeInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"annotationKey", "attributeKey"}
+	fieldsInOrder := [...]string{"annotationKey", "attributeKey", "from"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30775,6 +30877,13 @@ func (ec *executionContext) unmarshalInputK8sAnnotationAttributeInput(ctx contex
 				return it, err
 			}
 			it.AttributeKey = data
+		case "from":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			data, err := ec.unmarshalOK8sAttributesFrom2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sAttributesFrom(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.From = data
 		}
 	}
 
@@ -30849,7 +30958,7 @@ func (ec *executionContext) unmarshalInputK8sLabelAttributeInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"labelKey", "attributeKey"}
+	fieldsInOrder := [...]string{"labelKey", "attributeKey", "from"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -30870,6 +30979,13 @@ func (ec *executionContext) unmarshalInputK8sLabelAttributeInput(ctx context.Con
 				return it, err
 			}
 			it.AttributeKey = data
+		case "from":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			data, err := ec.unmarshalOK8sAttributesFrom2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sAttributesFrom(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.From = data
 		}
 	}
 
@@ -34230,6 +34346,8 @@ func (ec *executionContext) _K8sAnnotationAttribute(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "from":
+			out.Values[i] = ec._K8sAnnotationAttribute_from(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -34274,6 +34392,8 @@ func (ec *executionContext) _K8sLabelAttribute(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "from":
+			out.Values[i] = ec._K8sLabelAttribute_from(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -41643,6 +41763,22 @@ func (ec *executionContext) unmarshalOK8sAnnotationAttributeInput2ᚕᚖgithub�
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalOK8sAttributesFrom2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sAttributesFrom(ctx context.Context, v any) (*model.K8sAttributesFrom, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.K8sAttributesFrom)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOK8sAttributesFrom2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sAttributesFrom(ctx context.Context, sel ast.SelectionSet, v *model.K8sAttributesFrom) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOK8sLabelAttribute2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sLabelAttributeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sLabelAttribute) graphql.Marshaler {

@@ -18,10 +18,12 @@ export const GET_ACTIONS = gql`
           labelsAttributes {
             labelKey
             attributeKey
+            from
           }
           annotationsAttributes {
             annotationKey
             attributeKey
+            from
           }
           clusterAttributes {
             attributeName

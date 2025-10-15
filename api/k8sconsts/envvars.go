@@ -6,6 +6,7 @@ const (
 	OdigosEnvVarPodName                = "ODIGOS_POD_NAME"
 	OdigosEnvVarDistroName             = "ODIGOS_DISTRO_NAME"
 	CustomContainerRuntimeSocketEnvVar = "CONTAINER_RUNTIME_SOCK"
+	OtelResourceAttributesEnvVar       = "OTEL_RESOURCE_ATTRIBUTES"
 )
 
 func OdigosInjectedEnvVars() []string {
