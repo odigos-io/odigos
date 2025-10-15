@@ -30,6 +30,11 @@ const (
 	CentralBackendServiceAccountName = "central-backend"
 	CentralBackendRoleName           = "central-backend"
 	CentralBackendRoleBindingName    = "central-backend"
+	// Tuning ConfigMap for central-backend autoscaling
+	CentralBackendTuningConfigMapName   = "odigos-central-tuning"
+	CentralBackendWsTargetPerPodKey     = "wsTargetPerPod"
+	CentralActiveWsMetricName           = "odigos_central_active_ws"
+	CentralBackendDefaultWsTargetPerPod = "200"
 )
 
 const (
