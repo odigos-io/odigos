@@ -53,8 +53,16 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
 	}
 
+	// Check if the current kernel supports the ring buffer
+	ringEn := IsRingBufferSupported()
+
+	mapType := cilumebpf.PerfEventArray
+	if ringEn {
+		mapType = cilumebpf.RingBuf
+	}
+
 	spec := &cilumebpf.MapSpec{
-		Type: cilumebpf.PerfEventArray,
+		Type: mapType,
 		Name: "traces",
 	}
 
