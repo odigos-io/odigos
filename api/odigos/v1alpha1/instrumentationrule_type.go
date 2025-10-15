@@ -23,6 +23,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// InstrumentationRuleVerified indicates that the InstrumentationRule has been successfully verified.
+	InstrumentationRuleVerified = "Verified"
+)
+
 // Includes the instrumentation library name, span kind (for golang) and language
 // which identifies a specific library globally.
 type InstrumentationLibraryGlobalId struct {

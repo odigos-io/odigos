@@ -306,25 +306,41 @@ type HeadersCollection {
   headerKeys: [String]
 }
 
+#### CUSTOM PROBES ####
 type CustomInstrumentations {
-  probes: [Probe]
+  golang: [GolangCustomProbe]
+  java: [JavaCustomProbe]
 }
 
-type Probe {
+type GolangCustomProbe {
+  packageName: String
+  functionName: String
+  receiverName: String
+  receiverMethodName: String
+}
+
+type JavaCustomProbe {
   className: String
   methodName: String
-  symbol: String
 }
 
 input CustomInstrumentationsInput {
-  probes: [ProbeInput]
+  golang: [GolangCustomProbeInput]
+  java: [JavaCustomProbeInput]
 }
 
-input ProbeInput {
+input GolangCustomProbeInput {
+  packageName: String
+  functionName: String
+  receiverName: String
+  receiverMethodName: String
+}
+
+input JavaCustomProbeInput {
   className: String
   methodName: String
-  symbol: String
 }
+#### END CUSTOM PROBES ####
 
 input HeadersCollectionInput {
   headerKeys: [String]

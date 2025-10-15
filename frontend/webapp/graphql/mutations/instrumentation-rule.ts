@@ -42,10 +42,15 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
         headerKeys
       }
       customInstrumentations {
-        probes {
-          className
+        golang{
+          packageName
+          functionName
+          receiverName
+          receiverMethodName
+        }
+        java {
           methodName
-          symbol
+          className
         }
       }
     }
@@ -94,10 +99,15 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
         headerKeys
       }
       customInstrumentations {
-        probes {
-          className
+        golang{
+          packageName
+          functionName
+          receiverName
+          receiverMethodName
+        }
+        java {
           methodName
-          symbol
+          className
         }
       }
     }

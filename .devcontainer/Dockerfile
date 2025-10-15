@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/devcontainers/go:1-1.24
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     curl \
-    git
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Install kubectl v1.34.1

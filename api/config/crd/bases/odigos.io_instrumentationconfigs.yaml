@@ -292,16 +292,34 @@ spec:
                       description: custom instrumentations to be applied by default,
                         in case the instrumentation library does not provide a configuration.
                       properties:
-                        probes:
-                          description: Custom instrumentation probes to be added to
-                            the SDK.
+                        golang:
                           items:
+                            description: |-
+                              golang custom probe contains the details for a custom probe for golang applications,
+                              which includes the package name, function name or receiver name and method name to be instrumented.
+                            properties:
+                              functionName:
+                                type: string
+                              packageName:
+                                description: Package name is required
+                                type: string
+                              receiverMethodName:
+                                type: string
+                              receiverName:
+                                type: string
+                            required:
+                            - packageName
+                            type: object
+                          type: array
+                        java:
+                          items:
+                            description: |-
+                              java custom probe contains the details for a custom probe for java applications,
+                              which includes the class name and method name to be instrumented.
                             properties:
                               className:
                                 type: string
                               methodName:
-                                type: string
-                              symbol:
                                 type: string
                             type: object
                           type: array
@@ -429,16 +447,34 @@ spec:
                             type: object
                           customInstrumentations:
                             properties:
-                              probes:
-                                description: Custom instrumentation probes to be added
-                                  to the SDK.
+                              golang:
                                 items:
+                                  description: |-
+                                    golang custom probe contains the details for a custom probe for golang applications,
+                                    which includes the package name, function name or receiver name and method name to be instrumented.
+                                  properties:
+                                    functionName:
+                                      type: string
+                                    packageName:
+                                      description: Package name is required
+                                      type: string
+                                    receiverMethodName:
+                                      type: string
+                                    receiverName:
+                                      type: string
+                                  required:
+                                  - packageName
+                                  type: object
+                                type: array
+                              java:
+                                items:
+                                  description: |-
+                                    java custom probe contains the details for a custom probe for java applications,
+                                    which includes the class name and method name to be instrumented.
                                   properties:
                                     className:
                                       type: string
                                     methodName:
-                                      type: string
-                                    symbol:
                                       type: string
                                   type: object
                                 type: array
