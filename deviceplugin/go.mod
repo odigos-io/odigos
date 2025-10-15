@@ -2,8 +2,6 @@ module github.com/odigos-io/odigos/deviceplugin
 
 go 1.25.0
 
-toolchain go1.25.4
-
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
