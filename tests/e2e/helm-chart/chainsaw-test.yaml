@@ -85,7 +85,7 @@ spec:
             content: |
               echo "🚀 Running resource verification script..."
               P="../../.."
-              ./scripts/check-data-collection-resources.sh "$P"
+              ./check-data-collection-resources.sh "$P"
       catch:
         - script:
             content: |
