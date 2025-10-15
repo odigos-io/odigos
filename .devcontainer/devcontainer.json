@@ -32,7 +32,8 @@
         "redhat.vscode-yaml",
         "ms-kubernetes-tools.vscode-kubernetes-tools",
         "ms-kubernetes-tools.kind-vscode",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "GraphQL.vscode-graphql-syntax"
       ]
     }
   }

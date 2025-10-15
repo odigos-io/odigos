@@ -201,19 +201,21 @@ func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentati
 		return rule1
 	}
 
-	mergedRules := instrumentationrules.CustomInstrumentations{}
+	mergedRules := &instrumentationrules.CustomInstrumentations{}
 
-	var mergedProbes []instrumentationrules.Probe
-	if rule1.Probes != nil {
-		mergedProbes = append(mergedProbes, rule1.Probes...)
-	}
+	// Merge Golang custom probes
+	mergedGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(rule1.Golang)+len(rule2.Golang))
+	mergedGolangProbes = append(mergedGolangProbes, rule1.Golang...)
+	mergedGolangProbes = append(mergedGolangProbes, rule2.Golang...)
+	mergedRules.Golang = mergedGolangProbes
 
-	if rule2.Probes != nil {
-		mergedProbes = append(mergedProbes, rule2.Probes...)
-	}
+	// Merge Java custom probes
+	mergedJavaProbes := make([]instrumentationrules.JavaCustomProbe, 0, len(rule1.Java)+len(rule2.Java))
+	mergedJavaProbes = append(mergedJavaProbes, rule1.Java...)
+	mergedJavaProbes = append(mergedJavaProbes, rule2.Java...)
+	mergedRules.Java = mergedJavaProbes
 
-	mergedRules.Probes = mergedProbes
-	return &mergedRules
+	return mergedRules
 }
 
 func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersCollection, rule2 *instrumentationrules.HttpHeadersCollection) *instrumentationrules.HttpHeadersCollection {
