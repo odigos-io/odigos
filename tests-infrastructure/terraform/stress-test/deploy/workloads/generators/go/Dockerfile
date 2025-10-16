@@ -27,8 +27,6 @@ WORKDIR /root/
 COPY --from=builder /app/go-span-gen .
 
 # Set environment variables
-ENV OTEL_SERVICE_NAME=go-span-gen
-ENV OTEL_RESOURCE_ATTRIBUTES=service.name=go-span-gen
 ENV SPANS_PER_SEC=5000
 ENV SPAN_BYTES=10000
 

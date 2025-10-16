@@ -51,8 +51,6 @@ func main() {
 	payload := strings.Repeat("x", spanBytes)
 
 	log.Printf("Starting Go span generator with %d spans/sec, %d bytes per span", spansPerSec, spanBytes)
-	log.Printf("OTEL_SERVICE_NAME: %s", os.Getenv("OTEL_SERVICE_NAME"))
-	log.Printf("OTEL_RESOURCE_ATTRIBUTES: %s", os.Getenv("OTEL_RESOURCE_ATTRIBUTES"))
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()

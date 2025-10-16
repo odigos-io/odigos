@@ -24,9 +24,5 @@ COPY app.py .
 # Set Python path
 ENV PYTHONPATH=/app/site-packages
 
-# Set environment variables
-ENV OTEL_SERVICE_NAME=python-span-generator
-ENV OTEL_RESOURCE_ATTRIBUTES=service.name=python-span-generator,service.version=v1.0.0
-
 # Run the application
 CMD ["python", "app.py"]

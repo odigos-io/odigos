@@ -42,9 +42,6 @@ def main():
     # Log startup information
     logger.info("Starting Python span generator with %d spans/sec, %d bytes per span", 
                 spans_per_sec, span_bytes)
-    logger.info("OTEL_SERVICE_NAME: %s", os.getenv("OTEL_SERVICE_NAME", "Not set"))
-    logger.info("OTEL_RESOURCE_ATTRIBUTES: %s", 
-                os.getenv("OTEL_RESOURCE_ATTRIBUTES", "Not set"))
     
     span_count = 0
     
