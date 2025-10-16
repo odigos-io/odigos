@@ -31,7 +31,10 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage Odigos configuration",
-	Long: fmt.Sprintf(`Manage Odigos configuration settings to customize system behavior.
+	Long: fmt.Sprintf(`
+	This command will be deprecated as setting values now happens via the `+"`"+`odigos install`+"`"+` command with the "--set" flag.
+
+	Manage Odigos configuration settings to customize system behavior.
 
 	Configurable properties:
 	- "%s": Enables or disables telemetry (true/false).

@@ -15,8 +15,9 @@ spec:
         - script:
             timeout: 4m
             content: |
-              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
@@ -80,7 +81,7 @@ spec:
         - script:
             timeout: 30s
             content: |
-              ../../../cli/odigos config set agent-env-vars-injection-method pod-manifest
+              ../../../cli/odigos upgrade --ns odigos-test --set instrumentor.agentEnvVarsInjectionMethod=pod-manifest
 
     - name: Assert config set successfully
       try:
@@ -110,7 +111,7 @@ spec:
         - script:
             timeout: 30s
             content: |
-              ../../../cli/odigos config set agent-env-vars-injection-method loader
+              ../../../cli/odigos upgrade --ns odigos-test --set instrumentor.agentEnvVarsInjectionMethod=loader
 
     - name: Assert config set successfully
       try:
