@@ -25,7 +25,7 @@ func ConnectAndListen(ctx context.Context, socketPath string, logger *zap.Logger
 		}
 
 		// Try to connect and get FD
-		fd, err := connectAndGetFD(socketPath)
+		fd, err := connectAndGetFD(ctx, socketPath)
 		if err != nil {
 			// Connection attempt failed—odiglet may be down or in the process of restarting.
 			// Retry the connection after a short delay.
@@ -57,8 +57,9 @@ func ConnectAndListen(ctx context.Context, socketPath string, logger *zap.Logger
 }
 
 // connectAndGetFD makes a single connection, gets FD, and closes connection
-func connectAndGetFD(socketPath string) (int, error) {
-	conn, err := net.Dial("unix", socketPath)
+func connectAndGetFD(ctx context.Context, socketPath string) (int, error) {
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "unix", socketPath)
 	if err != nil {
 		return -1, err
 	}

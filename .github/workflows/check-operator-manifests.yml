@@ -14,14 +14,14 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: "1.25"
 
       - name: Check operator manifests are up to date
         id: check-manifests
         run: |
           cd operator
           USE_IMAGE_DIGESTS=true make generate manifests
-          
+
           # Check if there are any changes
           if ! git diff --quiet; then
             echo "::error::Please run cd operator/ && USE_IMAGE_DIGESTS=true make generate manifests"
@@ -37,10 +37,10 @@ jobs:
             const fs = require('fs');
             const ownersText = fs.readFileSync('operator/OWNERS', 'utf8');
             const usernames = ownersText.trim().split('\n').filter(line => line.trim() !== '');
-            
+
             github.rest.pulls.requestReviewers({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
               reviewers: usernames
-            }); 
+            });
