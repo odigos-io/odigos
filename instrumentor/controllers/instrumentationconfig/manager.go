@@ -3,6 +3,7 @@ package instrumentationconfig
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
+	utilpredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -14,6 +15,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentor-instrumentationconfig-instrumentationrule").
 		For(&odigosv1alpha1.InstrumentationRule{}).
+		// We filter for only created or updated events, and ignore events of status updates (aka no Spec change).
+		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, utilpredicate.CreationPredicate{})).
 		Complete(&InstrumentationRuleReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

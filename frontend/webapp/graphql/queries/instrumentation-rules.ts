@@ -43,11 +43,17 @@ export const GET_INSTRUMENTATION_RULES = gql`
           headerKeys
         }
         customInstrumentations {
-            probes {
-                className
-                methodName
-            }
-         }
+          golang{
+            packageName
+            functionName
+            receiverName
+            receiverMethodName
+          }
+          java {
+            methodName
+            className
+          }
+        }
       }
     }
   }

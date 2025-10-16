@@ -235,6 +235,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - odigos.io
+  resources:
+  - instrumentationrules/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - operator.odigos.io
   resources:
   - odigos
