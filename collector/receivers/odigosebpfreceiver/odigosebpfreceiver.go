@@ -3,12 +3,9 @@ package odigosebpfreceiver
 import (
 	"context"
 	"encoding/binary"
-	"errors"
-	"os"
 	"sync"
 
 	"github.com/cilium/ebpf"
-	"github.com/cilium/ebpf/perf"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
@@ -197,14 +194,14 @@ func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 }
 
 func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
-	reader, err := perf.NewReader(m, numOfPages*os.Getpagesize())
+	reader, err := NewBufferReader(m, r.logger)
 	if err != nil {
-		r.logger.Error("failed to open perf reader", zap.Error(err))
+		r.logger.Error("failed to open buffer reader", zap.Error(err))
 		return err
 	}
 	defer reader.Close()
 
-	var record perf.Record
+	var record BufferRecord
 
 	// Close the reader when context is cancelled to unblock ReadInto()
 	go func() {
@@ -215,10 +212,10 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 	for {
 		err := reader.ReadInto(&record)
 		if err != nil {
-			if errors.Is(err, perf.ErrClosed) {
+			if IsClosedError(err) {
 				return nil
 			}
-			r.logger.Error("error reading from perf reader", zap.Error(err))
+			r.logger.Error("error reading from buffer reader", zap.Error(err))
 			continue
 		}
 
