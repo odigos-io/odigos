@@ -75,7 +75,7 @@ RUN for v in ${RUBY_VERSIONS}; do \
 
 
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
+FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.9 AS builder
 
 
 WORKDIR /instrumentations
