@@ -3,6 +3,7 @@ package ebpf
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/cilium/ebpf/rlimit"
@@ -19,6 +20,8 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const numOfPages = 2048
 
 type InstrumentationManagerOptions struct {
 	Factories                  map[string]instrumentation.Factory
@@ -53,17 +56,20 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
 	}
 
-	// Check if the current kernel supports the ring buffer
-	ringEn := IsRingBufferSupported()
-
 	mapType := cilumebpf.PerfEventArray
-	if ringEn {
-		mapType = cilumebpf.RingBuf
-	}
-
 	spec := &cilumebpf.MapSpec{
 		Type: mapType,
 		Name: "traces",
+	}
+
+	// Check if the current kernel supports the ring buffer
+	ringEn := IsRingBufferSupported()
+
+	if ringEn {
+		mapType = cilumebpf.RingBuf
+		spec.Type = mapType
+		// Set MaxEntries for ring buffer: MaxEntries = numOfPages * os.Getpagesize()
+		spec.MaxEntries = uint32(numOfPages * os.Getpagesize())
 	}
 
 	m, err := cilumebpf.NewMap(spec)
