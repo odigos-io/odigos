@@ -440,6 +440,51 @@ var centralUpgradeCmd = &cobra.Command{
 	},
 }
 
+var centralUpdateTokenCmd = &cobra.Command{
+    Use:   "update-token",
+    Short: "Update Odigos Tower on-prem token in the central namespace",
+    Run: func(cmd *cobra.Command, args []string) {
+        ctx := cmd.Context()
+        client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+        ns, err := cmd.Flags().GetString("namespace")
+        if err != nil {
+            fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+            os.Exit(1)
+        }
+
+        token := cmd.Flag("onprem-token").Value.String()
+
+        // Try to get existing secret and update, otherwise create it
+        sec, err := client.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosCentralSecretName, metav1.GetOptions{})
+        if apierrors.IsNotFound(err) {
+            if err := createOdigosCentralSecret(ctx, client, ns, token); err != nil {
+                fmt.Printf("\033[31mERROR\033[0m Failed to create central token secret: %v\n", err)
+                os.Exit(1)
+            }
+        } else if err != nil {
+            fmt.Printf("\033[31mERROR\033[0m Failed to get central token secret: %v\n", err)
+            os.Exit(1)
+        } else {
+            if sec.Data == nil {
+                sec.Data = make(map[string][]byte)
+            }
+            sec.Data[k8sconsts.OdigosOnpremTokenSecretKey] = []byte(token)
+            if _, err := client.CoreV1().Secrets(ns).Update(ctx, sec, metav1.UpdateOptions{}); err != nil {
+                fmt.Printf("\033[31mERROR\033[0m Failed to update central token secret: %v\n", err)
+                os.Exit(1)
+            }
+        }
+
+        if err := restart.RestartDeployment(ctx, client.Interface, ns, k8sconsts.CentralBackendName); err != nil {
+            fmt.Printf("\033[31mERROR\033[0m Failed to restart central backend: %v\n", err)
+            os.Exit(1)
+        }
+
+        fmt.Println("\n\u001B[32mSUCCESS:\u001B[0m Central token updated and backend restarted")
+    },
+}
+
 func createOdigosCentralSecret(ctx context.Context, client *kube.Client, ns, token string) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -600,6 +645,12 @@ func init() {
 	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower upgrade")
 	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 	centralUpgradeCmd.MarkFlagRequired("version")
+
+    // register and configure central update-token command
+    centralCmd.AddCommand(centralUpdateTokenCmd)
+    centralUpdateTokenCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower")
+    centralUpdateTokenCmd.Flags().String("onprem-token", "", "On-prem token for Odigos Tower")
+    centralUpdateTokenCmd.MarkFlagRequired("onprem-token")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
