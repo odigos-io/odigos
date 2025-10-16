@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "~1.24"
+          go-version: "~1.25"
           check-latest: true
           cache: true
           cache-dependency-path: |
@@ -231,4 +231,3 @@ jobs:
           gh actions-cache delete odigos-build-${{ matrix.test-scenario }}-${{ matrix.kube-version }} --confirm || true
           gh actions-cache delete odigos-deps-${{ matrix.test-scenario }}-${{ matrix.kube-version }} --confirm || true
         continue-on-error: true
-

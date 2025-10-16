@@ -77,7 +77,7 @@ RUN for v in ${RUBY_VERSIONS}; do \
 
 # Compile rsync statically for distroless image
 # don't specify the platform here, since we want to compile for multi architecture natively with gcc
-FROM registry.odigos.io/odiglet-base:v1.8 AS rsync-builder
+FROM debian:bookworm-slim AS rsync-builder
 ARG RSYNC_VERSION=3.2.7
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -102,7 +102,7 @@ RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz 
     && rm -rf rsync-${RSYNC_VERSION}*
 
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
+FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.9 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
