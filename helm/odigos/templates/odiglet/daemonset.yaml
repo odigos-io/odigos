@@ -103,6 +103,9 @@ spec:
           {{- end }}
           args:
             - --health-probe-bind-port={{ .Values.odiglet.odiglet.livenessProbe.httpGet.port }}
+          {{- if .Values.odiglet.traceIdSuffix }}
+            - --trace-id-suffix={{ .Values.odiglet.traceIdSuffix }}
+          {{- end }}
           command:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
