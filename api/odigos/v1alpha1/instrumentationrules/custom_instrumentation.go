@@ -76,8 +76,18 @@ func (gcp *GolangCustomProbe) Verify() error {
 	if gcp.PackageName == "" {
 		return errors.New("packageName is required for GolangCustomProbe")
 	}
-	if gcp.FunctionName == "" || (gcp.ReceiverName == "" && gcp.ReceiverMethodName == "") {
-		return errors.New("either functionName or receiver name + method name is required for GolangCustomProbe")
+	// First - check if we have too many
+	if gcp.FunctionName != "" && gcp.ReceiverName != "" && gcp.ReceiverMethodName != "" {
+		return errors.New("too many arguments; either function name or receiver name + method name is required for GolangCustomProbe")
 	}
+	if gcp.FunctionName == "" && gcp.ReceiverName == "" && gcp.ReceiverMethodName == "" {
+		return errors.New("too few arguments; either function name or receiver name + method name is required for GolangCustomProbe")
+	}
+
+	// Negation: if not (any value in function name OR any value in both reciever inputs) - fail
+	if !(gcp.FunctionName != "" || (gcp.ReceiverName != "" && gcp.ReceiverMethodName != "")) {
+		return errors.New("either function name or receiver name + method name is required for GolangCustomProbe")
+	}
+
 	return nil
 }
