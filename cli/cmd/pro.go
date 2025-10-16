@@ -455,7 +455,6 @@ var centralUpdateTokenCmd = &cobra.Command{
 
 		token := cmd.Flag("onprem-token").Value.String()
 
-		// Try to get existing secret and update, otherwise create it
 		sec, err := client.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosCentralSecretName, metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			if err := createOdigosCentralSecret(ctx, client, ns, token); err != nil {
