@@ -106,6 +106,22 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
+      - instrumentationrules
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationrules/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
       - sources
     verbs:
       - create

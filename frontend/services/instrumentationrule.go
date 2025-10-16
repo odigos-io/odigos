@@ -201,6 +201,7 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		for _, probe := range input.CustomInstrumentations.Golang {
 			apiProbe := instrumentationrules.GolangCustomProbe{}
 			if probe.PackageName != nil && *probe.PackageName != "" {
+				apiProbe.PackageName = *probe.PackageName
 				// Golang probe has either functionName or receiverName + receiverMethodName
 				if probe.FunctionName != nil && *probe.FunctionName != "" {
 					apiProbe.FunctionName = *probe.FunctionName
@@ -218,10 +219,11 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 	seen := make(map[string]struct{})
 	for _, probe := range customInstrumentations.Golang {
 		var key string
+		key = "pkg:" + probe.PackageName + "|"
 		if probe.FunctionName != "" {
-			key = "function:" + probe.FunctionName
+			key += "function:" + probe.FunctionName
 		} else {
-			key = "receiver:" + probe.ReceiverName + "|method:" + probe.ReceiverMethodName
+			key += "receiver:" + probe.ReceiverName + "|method:" + probe.ReceiverMethodName
 		}
 		if _, exists := seen[key]; !exists {
 			seen[key] = struct{}{}
@@ -326,7 +328,7 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	profileName := annotations[k8sconsts.OdigosProfileAnnotation]
 
 	// print the custom instrumentation probes for debugging
-	if updatedRule.Spec.CustomInstrumentations != nil && updatedRule.Spec.CustomInstrumentations != nil {
+	if updatedRule.Spec.CustomInstrumentations != nil {
 		probesJson, _ := json.MarshalIndent(updatedRule.Spec.CustomInstrumentations, "", "  ")
 		fmt.Printf("XXXXX Updated Instrumentation Rule %s Custom Instrumentation Probes: %s\n", id, string(probesJson))
 	}
