@@ -21,11 +21,11 @@ type WaitForLangDetection struct {
 }
 
 func (w *WaitForLangDetection) From() State {
-	return SourceCreated
+	return StateSourceCreated
 }
 
 func (w *WaitForLangDetection) To() State {
-	return LangDetectedState
+	return StateLangDetected
 }
 
 // checkLanguageDetected checks if language detection has completed for the workload.
@@ -104,7 +104,7 @@ func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object) e
 func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
 	detected, err := w.checkLanguageDetected(ctx, obj)
 	if err != nil {
-		return UnknownState, err
+		return StateUnknown, err
 	}
 
 	if !detected {

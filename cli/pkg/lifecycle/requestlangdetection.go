@@ -20,11 +20,11 @@ type RequestLangDetection struct {
 var _ Transition = &RequestLangDetection{}
 
 func (r *RequestLangDetection) From() State {
-	return PreflightChecksPassed
+	return StatePreflightChecksPassed
 }
 
 func (r *RequestLangDetection) To() State {
-	return SourceCreated
+	return StateSourceCreated
 }
 
 func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object) error {
@@ -90,7 +90,7 @@ func (r *RequestLangDetection) GetTransitionState(ctx context.Context, obj clien
 		}
 		sources, err := r.client.OdigosClient.Sources(obj.GetNamespace()).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labeled).String()})
 		if err != nil {
-			return UnknownState, err
+			return StateUnknown, err
 		}
 		if len(sources.Items) == 0 {
 			return r.From(), nil
@@ -99,7 +99,7 @@ func (r *RequestLangDetection) GetTransitionState(ctx context.Context, obj clien
 		des, err := remote.DescribeSource(ctx, r.client, r.odigosNamespace, string(workloadKind), obj.GetNamespace(), obj.GetName())
 		if err != nil || des.Name.Value == nil {
 			// name value will be nil for unsupported kinds
-			return UnknownState, err
+			return StateUnknown, err
 		}
 
 		if des.SourceObjectsAnalysis.Instrumented.Value != true {
