@@ -16,11 +16,11 @@ type InstrumentationStarted struct {
 }
 
 func (i *InstrumentationStarted) From() State {
-	return LangDetectedState
+	return StateLangDetected
 }
 
 func (i *InstrumentationStarted) To() State {
-	return InstrumentationInProgress
+	return StateInstrumentationInProgress
 }
 
 func (i *InstrumentationStarted) Execute(ctx context.Context, obj client.Object) error {
@@ -36,7 +36,7 @@ func (i *InstrumentationStarted) GetTransitionState(ctx context.Context, obj cli
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				i.log("Error while fetching InstrumentationConfig: " + err.Error())
-				return UnknownState, err
+				return StateUnknown, err
 			}
 			return i.From(), nil
 		}
@@ -47,7 +47,7 @@ func (i *InstrumentationStarted) GetTransitionState(ctx context.Context, obj cli
 	} else {
 		describe, err := remote.DescribeSource(ctx, i.client, obj.GetNamespace(), string(kind), obj.GetNamespace(), obj.GetName())
 		if err != nil {
-			return UnknownState, err
+			return StateUnknown, err
 		}
 		if describe.OtelAgents.Containers == nil || len(describe.OtelAgents.Containers) == 0 {
 			return i.From(), nil

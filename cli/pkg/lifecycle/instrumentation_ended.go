@@ -17,11 +17,11 @@ type InstrumentationEnded struct {
 }
 
 func (i *InstrumentationEnded) From() State {
-	return InstrumentationInProgress
+	return StateInstrumentationInProgress
 }
 
 func (i *InstrumentationEnded) To() State {
-	return InstrumentedState
+	return StateInstrumented
 }
 
 func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object) error {
@@ -82,7 +82,7 @@ func (i *InstrumentationEnded) GetTransitionState(ctx context.Context, obj clien
 	rolloutCompleted, err := utils.VerifyAllPodsAreRunning(ctx, i.client, obj)
 	if err != nil {
 		i.log("Error verifying all pods are instrumented")
-		return UnknownState, err
+		return StateUnknown, err
 	}
 	if !rolloutCompleted {
 		return i.From(), nil

@@ -14,11 +14,11 @@ type PreflightCheck struct {
 }
 
 func (p *PreflightCheck) From() State {
-	return NoSourceCreatedState
+	return StateNoSourceCreated
 }
 
 func (p *PreflightCheck) To() State {
-	return PreflightChecksPassed
+	return StatePreflightChecksPassed
 }
 
 func (p *PreflightCheck) Execute(ctx context.Context, obj client.Object) error {

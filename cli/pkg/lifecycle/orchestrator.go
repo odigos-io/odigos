@@ -10,38 +10,50 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type State string
+type State int
 
 const (
-	// UnknownState indicates something went wrong and we don't know the current state.
-	UnknownState State = "Unknown"
+	// Unknown is an error state.
+	StateUnknown State = iota
 
-	// NoSourceCreatedState indicates that no Source object has been created for the workload.
-	NoSourceCreatedState State = "NoSourceCreated"
+	// NoSourceCreated is the initial state before instrumentation starts.
+	StateNoSourceCreated
 
-	// PreflightChecksPassedState indicates that the preflight checks have passed and the workload is eligible for instrumentation.
-	PreflightChecksPassed State = "PreflightChecksPassed"
+	// PreflightChecksPassed indicates the workload is healthy and can be instrumented.
+	StatePreflightChecksPassed
 
-	// SourceCreatedState indicates that the Source object has been created for the workload and language detection is in progress.
-	SourceCreated State = "SourceCreated"
+	// SourceCreated indicates the Source object has been created for the workload and language detection is in progress.
+	StateSourceCreated
 
-	// LangDetectedState indicates that the language detection has completed and the workload is eligible for instrumentation.
-	LangDetectedState State = "LangDetected"
+	// LangDetected indicates the language detection has completed and the workload is eligible for instrumentation.
+	StateLangDetected
 
-	// InstrumentationInProgressState indicates that the instrumentation is in progress, but the pods are not yet running.
-	InstrumentationInProgress State = "InstrumentationInProgress"
+	// InstrumentationInProgress indicates the instrumentation is in progress, but the pods are not yet running.
+	StateInstrumentationInProgress
 
-	// InstrumentedState indicates that the instrumentation has completed and the workload is instrumented and the pods are running.
-	InstrumentedState State = "Instrumented"
+	// Instrumented indicates the instrumentation has completed and the workload is instrumented and the pods are running.
+	StateInstrumented
 )
 
-var orderedStates = []State{
-	NoSourceCreatedState,
-	PreflightChecksPassed,
-	SourceCreated,
-	LangDetectedState,
-	InstrumentationInProgress,
-	InstrumentedState,
+func (s State) String() string {
+	switch s {
+	case StateUnknown:
+		return "Unknown"
+	case StateNoSourceCreated:
+		return "NoSourceCreated"
+	case StatePreflightChecksPassed:
+		return "PreflightChecksPassed"
+	case StateSourceCreated:
+		return "SourceCreated"
+	case StateLangDetected:
+		return "LangDetected"
+	case StateInstrumentationInProgress:
+		return "InstrumentationInProgress"
+	case StateInstrumented:
+		return "Instrumented"
+	default:
+		return "Unknown"
+	}
 }
 
 type Orchestrator struct {
@@ -63,22 +75,22 @@ func NewOrchestrator(client *kube.Client, ctx context.Context, isRemote bool) (*
 	// The current state determines which transition to execute while an app is in that state.
 	var stateToTransitionMap = map[State]Transition{
 		// When an app is not currently instrumented, we need to check if it's eligible for instrumentation.
-		NoSourceCreatedState: &PreflightCheck{baseTransition},
+		StateNoSourceCreated: &PreflightCheck{baseTransition},
 
 		// If the app is eligible for instrumentation, we need to request the language detection.
-		PreflightChecksPassed: &RequestLangDetection{baseTransition},
+		StatePreflightChecksPassed: &RequestLangDetection{baseTransition},
 
 		// If the language detection is in progress, we need to wait for it to complete.
-		SourceCreated: &WaitForLangDetection{baseTransition},
+		StateSourceCreated: &WaitForLangDetection{baseTransition},
 
 		// If the language detection is complete, we need to start the instrumentation.
-		LangDetectedState: &InstrumentationStarted{baseTransition},
+		StateLangDetected: &InstrumentationStarted{baseTransition},
 
 		// If the instrumentation is in progress, we need to wait for it to complete.
-		InstrumentationInProgress: &InstrumentationEnded{baseTransition},
+		StateInstrumentationInProgress: &InstrumentationEnded{baseTransition},
 
 		// If the instrumentation is complete, we don't need to do anything.
-		InstrumentedState: nil,
+		StateInstrumented: nil,
 	}
 
 	return &Orchestrator{Client: client,
@@ -88,6 +100,7 @@ func NewOrchestrator(client *kube.Client, ctx context.Context, isRemote bool) (*
 	}, nil
 }
 
+// Apply is called sequentially on workloads to instrument them.
 func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 	// Create a channel to handle cancellation
 	done := make(chan struct{})
@@ -97,8 +110,8 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 		defer close(done)
 
 		// Start by assuming the app is not instrumented and run preflight checks.
-		state := NoSourceCreatedState
-		prevState := UnknownState
+		state := StateNoSourceCreated
+		prevState := StateUnknown
 		currentTransition := o.TransitionsMap[state]
 
 		for currentTransition != nil {
@@ -123,13 +136,13 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 				}
 				state = currentState
 				if state != prevState {
-					o.log(fmt.Sprintf("Current state: %s", state))
+					o.log(fmt.Sprintf("Current state: %s", state.String()))
 					prevState = state
 				}
 
-				if state == UnknownState {
-					o.log(fmt.Sprintf("Unknown state: %s", state))
-					finalErr = fmt.Errorf("unknown state: %s", state)
+				if state == StateUnknown {
+					o.log(fmt.Sprintf("Unknown state: %s", state.String()))
+					finalErr = fmt.Errorf("unknown state: %s", state.String())
 					return
 				}
 
@@ -153,22 +166,22 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 }
 
 func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object) (State, error) {
-	for _, state := range orderedStates {
+	for state := StateNoSourceCreated; state <= StateInstrumented; state++ {
 		transition := o.TransitionsMap[state]
 		if transition == nil {
 			// InstrumentedState is the last state, so if we reach it, we can return it.
 			break
 		}
 		transitionState, err := transition.GetTransitionState(ctx, obj)
-		if err != nil || transitionState == UnknownState {
-			return UnknownState, err
+		if err != nil || transitionState == StateUnknown {
+			return StateUnknown, err
 		}
 		// If the transition returns its From() state (the state we came from), then we need to run the transition for that state.
 		if transitionState == state {
 			return state, nil
 		}
 	}
-	return InstrumentedState, nil
+	return StateInstrumented, nil
 }
 
 func (o *Orchestrator) log(str string) {
