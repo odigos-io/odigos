@@ -25,13 +25,13 @@ func GetNumberOfDestinations(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	req := http.Request{
-		Method: http.MethodGet,
-		URL:    url,
-		Header: http.Header{"Accept": []string{"application/json"}},
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil)
+	if err != nil {
+		return 0, err
 	}
+	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(&req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -57,13 +57,13 @@ func DescribeOdigos(ctx context.Context) (*odigos.OdigosAnalyze, error) {
 		return nil, err
 	}
 
-	req := http.Request{
-		Method: http.MethodGet,
-		URL:    url,
-		Header: http.Header{"Accept": []string{"application/json"}},
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil)
+	if err != nil {
+		return nil, err
 	}
+	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(&req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -92,13 +92,13 @@ func DescribeSource(ctx context.Context, client *kube.Client, odigosNs string, w
 		return nil, err
 	}
 
-	req := http.Request{
-		Method: http.MethodGet,
-		URL:    url,
-		Header: http.Header{"Accept": []string{"application/json"}},
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil)
+	if err != nil {
+		return nil, err
 	}
+	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(&req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -126,13 +126,13 @@ func CreateSource(ctx context.Context, client *kube.Client, odigosNs string, wor
 	if err != nil {
 		return err
 	}
-	req := http.Request{
-		Method: http.MethodPost,
-		URL:    url,
-		Header: http.Header{"Accept": []string{"application/json"}},
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url.String(), nil)
+	if err != nil {
+		return err
 	}
+	req.Header.Set("Accept", "application/json")
 
-	resp, err := http.DefaultClient.Do(&req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
