@@ -14,7 +14,7 @@ serving-certs/
 /odigos
 gha-creds-*.json
 artifacts/
-preflight*
+/preflight*
 
 **.tfstate
 **.tfstate.backup
