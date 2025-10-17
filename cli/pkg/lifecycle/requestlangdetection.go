@@ -70,11 +70,11 @@ func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object, i
 			}
 		}
 		return nil
-	}
-
-	err := remote.CreateSource(ctx, r.client, obj.GetNamespace(), string(workloadKind), obj.GetNamespace(), obj.GetName())
-	if err != nil {
-		return err
+	} else {
+		err := remote.CreateSource(ctx, r.client, obj.GetNamespace(), string(workloadKind), obj.GetNamespace(), obj.GetName())
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

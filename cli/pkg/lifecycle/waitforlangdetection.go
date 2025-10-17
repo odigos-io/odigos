@@ -49,36 +49,37 @@ func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object, i
 				}
 				return false, nil
 			}
-		}
-
-		describe, err := remote.DescribeSource(ctx, w.client, obj.GetNamespace(), string(workloadKind), obj.GetNamespace(), obj.GetName())
-		if err != nil {
 			return false, nil
-		}
-
-		if describe.RuntimeInfo == nil {
-			return false, nil
-		}
-
-		if len(describe.RuntimeInfo.Containers) == 0 {
-			return false, nil
-		}
-
-		langFound := false
-		for _, c := range describe.RuntimeInfo.Containers {
-			langStr, ok := c.Language.Value.(string)
-			if !ok {
-				continue
+		} else {
+			describe, err := remote.DescribeSource(ctx, w.client, obj.GetNamespace(), string(workloadKind), obj.GetNamespace(), obj.GetName())
+			if err != nil {
+				return false, nil
 			}
 
-			langParsed := common.ProgrammingLanguage(langStr)
-			if langParsed != common.UnknownProgrammingLanguage && langParsed != common.IgnoredProgrammingLanguage {
-				langFound = true
-				break
+			if describe.RuntimeInfo == nil {
+				return false, nil
 			}
-		}
-		if !langFound {
-			return false, errors.New("Failed to detect language")
+
+			if len(describe.RuntimeInfo.Containers) == 0 {
+				return false, nil
+			}
+
+			langFound := false
+			for _, c := range describe.RuntimeInfo.Containers {
+				langStr, ok := c.Language.Value.(string)
+				if !ok {
+					continue
+				}
+
+				langParsed := common.ProgrammingLanguage(langStr)
+				if langParsed != common.UnknownProgrammingLanguage && langParsed != common.IgnoredProgrammingLanguage {
+					langFound = true
+					break
+				}
+			}
+			if !langFound {
+				return false, errors.New("Failed to detect language")
+			}
 		}
 
 		return true, nil

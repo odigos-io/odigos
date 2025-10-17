@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/lifecycle"
@@ -113,6 +114,13 @@ func enableClusterSource(cmd *cobra.Command) {
 
 func instrumentCluster(ctx context.Context, client *kube.Client, excludeNamespaces map[string]struct{}, excludeApps map[string]struct{}, dryRun bool, isRemote bool, onlyNamespace string, onlyDeployment string) {
 	systemNs := sliceToMap(k8sconsts.DefaultIgnoredNamespaces)
+	odigosNs, err := resources.GetOdigosNamespace(client, ctx)
+	if err != nil {
+		fmt.Printf("\033[31mERROR\033[0m Cannot get odigos namespace: %s\n", err)
+		os.Exit(1)
+	}
+	systemNs[odigosNs] = struct{}{}
+
 	orchestrator, err := lifecycle.NewOrchestrator(client, ctx, isRemote)
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot create orchestrator: %s\n", err)
