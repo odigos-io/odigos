@@ -75,6 +75,15 @@ var (
 
 	sourceSkipPreflightChecksFlagName = "skip-preflight-checks"
 	sourceSkipPreflightChecksFlag     bool
+
+	sourceLocalPortFlagName = "local-port"
+	sourceLocalPortFlag     string
+
+	sourceRemotePortFlagName = "remote-port"
+	sourceRemotePortFlag     string
+
+	sourceLocalAddressFlagName = "local-address"
+	sourceLocalAddressFlag     string
 )
 
 var sourcesCmd = &cobra.Command{
@@ -676,6 +685,9 @@ func init() {
 	enableClusterSourceCmd.Flags().String(sourceOnlyNamespaceFlagName, "", "Namespace of the deployment to instrument (must be used with --only-deployment)")
 	enableClusterSourceCmd.Flags().String(sourceOnlyDeploymentFlagName, "", "Name of the deployment to instrument (must be used with --only-namespace)")
 	enableClusterSourceCmd.Flags().Bool(sourceSkipPreflightChecksFlagName, false, "Skip preflight checks")
+	enableClusterSourceCmd.Flags().StringVar(&sourceLocalPortFlag, sourceLocalPortFlagName, "0", "Local port to forward to the remote UI (defaults to 0=random)")
+	enableClusterSourceCmd.Flags().StringVar(&sourceRemotePortFlag, sourceRemotePortFlagName, "3000", "Remote port to forward to the local UI")
+	enableClusterSourceCmd.Flags().StringVar(&sourceLocalAddressFlag, sourceLocalAddressFlagName, "localhost", "Local address to forward to the remote UI")
 	sourceEnableCmd.AddCommand(enableClusterSourceCmd)
 
 	sourceCreateCmd.Flags().AddFlagSet(sourceFlags)
