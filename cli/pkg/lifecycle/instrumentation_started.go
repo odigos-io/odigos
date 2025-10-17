@@ -23,14 +23,14 @@ func (i *InstrumentationStarted) To() State {
 	return InstrumentationInProgress
 }
 
-func (i *InstrumentationStarted) Execute(ctx context.Context, obj client.Object, isRemote bool) error {
+func (i *InstrumentationStarted) Execute(ctx context.Context, obj client.Object) error {
 	// Instrumentation is started already, nothing to execute here. This transition just verifies that the pods are running.
 	return nil
 }
 
-func (i *InstrumentationStarted) GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+func (i *InstrumentationStarted) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
 	kind := workload.WorkloadKindFromClientObject(obj)
-	if !isRemote {
+	if !i.remote {
 		icName := workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), kind)
 		ic, err := i.client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
 		if err != nil {

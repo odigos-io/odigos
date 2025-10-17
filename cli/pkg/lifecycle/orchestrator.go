@@ -57,7 +57,7 @@ func NewOrchestrator(client *kube.Client, ctx context.Context, isRemote bool) (*
 		return nil, err
 	}
 
-	baseTransition := BaseTransition{client: client}
+	baseTransition := BaseTransition{client: client, odigosNamespace: ns, remote: isRemote}
 
 	// stateToTransitionMap is a map of states to transitions.
 	// The current state determines which transition to execute while an app is in that state.
@@ -109,7 +109,7 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 			default:
 
 				// Execute the current transition
-				if err := currentTransition.Execute(ctx, obj, o.Remote); err != nil {
+				if err := currentTransition.Execute(ctx, obj); err != nil {
 					o.log(fmt.Sprintf("Error executing transition: %s", err))
 					finalErr = fmt.Errorf("failed to execute transition: %w", err)
 					return
@@ -159,7 +159,7 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object) (
 			// InstrumentedState is the last state, so if we reach it, we can return it.
 			break
 		}
-		transitionState, err := transition.GetTransitionState(ctx, obj, o.Remote, o.OdigosNamespace)
+		transitionState, err := transition.GetTransitionState(ctx, obj)
 		if err != nil || transitionState == UnknownState {
 			return UnknownState, err
 		}
@@ -178,12 +178,14 @@ func (o *Orchestrator) log(str string) {
 type Transition interface {
 	From() State
 	To() State
-	Execute(ctx context.Context, obj client.Object, isRemote bool) error
-	GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error)
+	Execute(ctx context.Context, obj client.Object) error
+	GetTransitionState(ctx context.Context, obj client.Object) (State, error)
 }
 
 type BaseTransition struct {
-	client *kube.Client
+	client          *kube.Client
+	odigosNamespace string
+	remote          bool
 }
 
 func (b *BaseTransition) log(str string) {

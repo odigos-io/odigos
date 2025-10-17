@@ -29,12 +29,12 @@ func (w *WaitForLangDetection) To() State {
 	return LangDetectedState
 }
 
-func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object, isRemote bool) error {
+func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object) error {
 	workloadKind := workload.WorkloadKindFromClientObject(obj)
 	icName := workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), workloadKind)
 
 	return wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
-		if !isRemote {
+		if !w.remote {
 			ic, err := w.client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
 			if err != nil {
 				if !apierrors.IsNotFound(err) {
@@ -86,11 +86,11 @@ func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object, i
 	})
 }
 
-func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
 	workloadKind := workload.WorkloadKindFromClientObject(obj)
 	icName := workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), workloadKind)
 
-	if !isRemote {
+	if !w.remote {
 		instrumentationConfig, err := w.client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
@@ -123,7 +123,7 @@ func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj clien
 			return UnknownState, nil
 		}
 	} else {
-		describe, err := remote.DescribeSource(ctx, w.client, odigosNamespace, string(workloadKind), obj.GetNamespace(), obj.GetName())
+		describe, err := remote.DescribeSource(ctx, w.client, w.odigosNamespace, string(workloadKind), obj.GetNamespace(), obj.GetName())
 		if err != nil {
 			return UnknownState, err
 		}
