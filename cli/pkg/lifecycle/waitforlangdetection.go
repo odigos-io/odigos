@@ -22,7 +22,7 @@ type WaitForLangDetection struct {
 }
 
 func (w *WaitForLangDetection) From() State {
-	return LangDetectionInProgress
+	return SourceCreated
 }
 
 func (w *WaitForLangDetection) To() State {

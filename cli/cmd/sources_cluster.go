@@ -44,13 +44,14 @@ func enableClusterSource(cmd *cobra.Command) {
 		}
 	}()
 
-	excludeNamespaces, err := readAppListFromFile(sourceExcludeNamespacesFileFlag)
+	excludeNamespaces, err := readLinesFromFile(sourceExcludeNamespacesFileFlag)
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot read exclude namespaces file: %+v\n", err)
 		os.Exit(1)
 	}
+	fmt.Printf("Excluding %d namespaces\n", len(excludeNamespaces))
 
-	excludeApps, err := readAppListFromFile(sourceExcludeWorkloadsFileFlag)
+	excludeApps, err := readLinesFromFile(sourceExcludeWorkloadsFileFlag)
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot read exclude apps file: %+v\n", err)
 		os.Exit(1)
@@ -60,11 +61,11 @@ func enableClusterSource(cmd *cobra.Command) {
 	isRemote := cmd.Flag(sourceRemoteFlagName).Changed && cmd.Flag(sourceRemoteFlagName).Value.String() == "true"
 	coolOffStr := cmd.Flag(sourceInstrumentationCoolOffFlagName).Value.String()
 	coolOff, err := time.ParseDuration(coolOffStr)
-	ctx = lifecycle.SetCoolOff(ctx, coolOff)
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Invalid duration for instrumentation-cool-off: %s\n", err)
 		os.Exit(1)
 	}
+	ctx = lifecycle.SetCoolOff(ctx, coolOff)
 
 	onlyDeployment := cmd.Flag(sourceOnlyDeploymentFlagName).Value.String()
 	onlyNamespace := cmd.Flag(sourceOnlyNamespaceFlagName).Value.String()
@@ -263,7 +264,7 @@ func sliceToMap(slice []string) map[string]struct{} {
 	return m
 }
 
-func readAppListFromFile(filename string) (map[string]struct{}, error) {
+func readLinesFromFile(filename string) (map[string]struct{}, error) {
 	if filename == "" {
 		return nil, nil
 	}

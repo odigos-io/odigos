@@ -13,19 +13,32 @@ import (
 type State string
 
 const (
-	UnknownState              State = "Unknown"
-	NotInstrumentedState      State = "NotInstrumented"
-	PreflightChecksPassed     State = "PreflightChecksPassed"
-	LangDetectionInProgress   State = "LangDetectionInProgress"
-	LangDetectedState         State = "LangDetected"
+	// UnknownState indicates something went wrong and we don't know the current state.
+	UnknownState State = "Unknown"
+
+	// NoSourceCreatedState indicates that no Source object has been created for the workload.
+	NoSourceCreatedState State = "NoSourceCreated"
+
+	// PreflightChecksPassedState indicates that the preflight checks have passed and the workload is eligible for instrumentation.
+	PreflightChecksPassed State = "PreflightChecksPassed"
+
+	// SourceCreatedState indicates that the Source object has been created for the workload and language detection is in progress.
+	SourceCreated State = "SourceCreated"
+
+	// LangDetectedState indicates that the language detection has completed and the workload is eligible for instrumentation.
+	LangDetectedState State = "LangDetected"
+
+	// InstrumentationInProgressState indicates that the instrumentation is in progress, but the pods are not yet running.
 	InstrumentationInProgress State = "InstrumentationInProgress"
-	InstrumentedState         State = "Instrumented"
+
+	// InstrumentedState indicates that the instrumentation has completed and the workload is instrumented and the pods are running.
+	InstrumentedState State = "Instrumented"
 )
 
 var orderedStates = []State{
-	NotInstrumentedState,
+	NoSourceCreatedState,
 	PreflightChecksPassed,
-	LangDetectionInProgress,
+	SourceCreated,
 	LangDetectedState,
 	InstrumentationInProgress,
 	InstrumentedState,
@@ -50,13 +63,13 @@ func NewOrchestrator(client *kube.Client, ctx context.Context, isRemote bool) (*
 	// The current state determines which transition to execute while an app is in that state.
 	var stateToTransitionMap = map[State]Transition{
 		// When an app is not currently instrumented, we need to check if it's eligible for instrumentation.
-		NotInstrumentedState: &PreflightCheck{baseTransition},
+		NoSourceCreatedState: &PreflightCheck{baseTransition},
 
 		// If the app is eligible for instrumentation, we need to request the language detection.
 		PreflightChecksPassed: &RequestLangDetection{baseTransition},
 
 		// If the language detection is in progress, we need to wait for it to complete.
-		LangDetectionInProgress: &WaitForLangDetection{baseTransition},
+		SourceCreated: &WaitForLangDetection{baseTransition},
 
 		// If the language detection is complete, we need to start the instrumentation.
 		LangDetectedState: &InstrumentationStarted{baseTransition},
@@ -84,7 +97,7 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 		defer close(done)
 
 		// Start by assuming the app is not instrumented and run preflight checks.
-		state := NotInstrumentedState
+		state := NoSourceCreatedState
 		prevState := UnknownState
 		currentTransition := o.TransitionsMap[state]
 
@@ -102,7 +115,7 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 					return
 				}
 
-				currentState, err := o.getCurrentState(ctx, obj, o.Remote, o.OdigosNamespace)
+				currentState, err := o.getCurrentState(ctx, obj)
 				if err != nil {
 					o.log(fmt.Sprintf("Error getting current state: %s", err))
 					finalErr = fmt.Errorf("failed to get current state: %w", err)
@@ -139,14 +152,14 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 	}
 }
 
-func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object) (State, error) {
 	for _, state := range orderedStates {
 		transition := o.TransitionsMap[state]
 		if transition == nil {
 			// InstrumentedState is the last state, so if we reach it, we can return it.
 			break
 		}
-		transitionState, err := transition.GetTransitionState(ctx, obj, isRemote, odigosNamespace)
+		transitionState, err := transition.GetTransitionState(ctx, obj, o.Remote, o.OdigosNamespace)
 		if err != nil || transitionState == UnknownState {
 			return UnknownState, err
 		}
