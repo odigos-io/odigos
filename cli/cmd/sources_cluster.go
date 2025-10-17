@@ -87,7 +87,28 @@ func enableClusterSource(cmd *cobra.Command) {
 	fmt.Printf("\u001B[32mPASS\u001B[0m\n\n")
 
 	if isRemote {
-		uiClient, err = remote.NewUIClient(client, ctx)
+		localPort := cmd.Flag(sourceLocalPortFlagName).Value.String()
+		remotePort := cmd.Flag(sourceRemotePortFlagName).Value.String()
+		localAddress := cmd.Flag(sourceLocalAddressFlagName).Value.String()
+
+		ns, err := resources.GetOdigosNamespace(client, ctx)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot get odigos namespace: %s\n", err)
+			os.Exit(1)
+		}
+		uiPod, err := kube.FindOdigosUIPod(client, ctx, ns)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
+			os.Exit(1)
+		}
+
+		fw, err := kube.PortForwardWithContext(ctx, uiPod, client, localPort, remotePort, localAddress)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
+			os.Exit(1)
+		}
+
+		uiClient, err = remote.NewUIClient(fw)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot create remote UI client: %s\n", err)
 			os.Exit(1)
