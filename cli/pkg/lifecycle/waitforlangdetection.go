@@ -2,7 +2,6 @@ package lifecycle
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -29,113 +28,52 @@ func (w *WaitForLangDetection) To() State {
 	return LangDetectedState
 }
 
-func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object) error {
-	workloadKind := workload.WorkloadKindFromClientObject(obj)
-	icName := workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), workloadKind)
-
-	return wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
-		if !w.remote {
-			ic, err := w.client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
-			if err != nil {
-				if !apierrors.IsNotFound(err) {
-					w.log("Error while fetching InstrumentationConfig: " + err.Error())
-				}
-				return false, nil
-			}
-
-			if status := meta.FindStatusCondition(ic.Status.Conditions, odigosv1.RuntimeDetectionStatusConditionType); status != nil {
-				if status.Reason == string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully) && status.Status == metav1.ConditionTrue {
-					return true, nil
-				}
-				return false, nil
-			}
-			return false, nil
-		} else {
-			describe, err := remote.DescribeSource(ctx, w.client, obj.GetNamespace(), string(workloadKind), obj.GetNamespace(), obj.GetName())
-			if err != nil {
-				return false, nil
-			}
-
-			if describe.RuntimeInfo == nil {
-				return false, nil
-			}
-
-			if len(describe.RuntimeInfo.Containers) == 0 {
-				return false, nil
-			}
-
-			langFound := false
-			for _, c := range describe.RuntimeInfo.Containers {
-				langStr, ok := c.Language.Value.(string)
-				if !ok {
-					continue
-				}
-
-				langParsed := common.ProgrammingLanguage(langStr)
-				if langParsed != common.UnknownProgrammingLanguage && langParsed != common.IgnoredProgrammingLanguage {
-					langFound = true
-					break
-				}
-			}
-			if !langFound {
-				return false, errors.New("Failed to detect language")
-			}
-		}
-
-		return true, nil
-	})
-}
-
-func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
+// checkLanguageDetected checks if language detection has completed for the workload.
+// Returns (detected, error) where:
+// - detected is true if language detection succeeded
+// - error is non-nil only for actual errors (not for "not ready yet" cases)
+func (w *WaitForLangDetection) checkLanguageDetected(ctx context.Context, obj client.Object) (bool, error) {
 	workloadKind := workload.WorkloadKindFromClientObject(obj)
 	icName := workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), workloadKind)
 
 	if !w.remote {
-		instrumentationConfig, err := w.client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
+		ic, err := w.client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
-				return w.From(), nil
+				return false, nil
 			}
-			return UnknownState, err
+			return false, err
 		}
-		if instrumentationConfig.Status.Conditions == nil {
-			if status := meta.FindStatusCondition(instrumentationConfig.Status.Conditions, odigosv1.RuntimeDetectionStatusConditionType); status != nil {
-				if status.Reason == string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully) && status.Status != metav1.ConditionTrue {
-					return w.From(), nil
+
+		// Check status conditions
+		if status := meta.FindStatusCondition(ic.Status.Conditions, odigosv1.RuntimeDetectionStatusConditionType); status != nil {
+			if status.Reason == string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully) && status.Status == metav1.ConditionTrue {
+				// Condition indicates success, now verify SdkConfigs
+				if ic.Spec.SdkConfigs == nil || len(ic.Spec.SdkConfigs) == 0 {
+					return false, nil
 				}
+
+				// Check if at least one valid language was detected
+				for _, sdkConfig := range ic.Spec.SdkConfigs {
+					if sdkConfig.Language != common.UnknownProgrammingLanguage && sdkConfig.Language != common.IgnoredProgrammingLanguage {
+						return true, nil
+					}
+				}
+				return false, nil
 			}
-		}
-
-		if instrumentationConfig.Spec.SdkConfigs == nil || len(instrumentationConfig.Spec.SdkConfigs) == 0 {
-			return w.From(), nil
-		}
-
-		langFound := false
-		for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
-			if sdkConfig.Language != common.UnknownProgrammingLanguage && sdkConfig.Language != common.IgnoredProgrammingLanguage {
-				langFound = true
-				break
-			}
-		}
-
-		if !langFound {
-			w.log("Failed to detect language, skipping")
-			return UnknownState, nil
 		}
 	} else {
+		// Remote mode: use DescribeSource API
 		describe, err := remote.DescribeSource(ctx, w.client, w.odigosNamespace, string(workloadKind), obj.GetNamespace(), obj.GetName())
 		if err != nil {
-			return UnknownState, err
-		}
-		if describe.RuntimeInfo == nil {
-			return w.From(), nil
+			return false, nil
 		}
 
-		if len(describe.RuntimeInfo.Containers) == 0 {
-			return w.From(), nil
+		if describe.RuntimeInfo == nil || len(describe.RuntimeInfo.Containers) == 0 {
+			return false, nil
 		}
 
-		langFound := false
+		// Check if at least one container has a detected language
 		for _, c := range describe.RuntimeInfo.Containers {
 			langStr, ok := c.Language.Value.(string)
 			if !ok {
@@ -144,14 +82,33 @@ func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj clien
 
 			langParsed := common.ProgrammingLanguage(langStr)
 			if langParsed != common.UnknownProgrammingLanguage && langParsed != common.IgnoredProgrammingLanguage {
-				langFound = true
-				break
+				return true, nil
 			}
 		}
-		if !langFound {
-			w.log("Failed to detect language, skipping")
-			return UnknownState, nil
+	}
+
+	return false, nil
+}
+
+func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object) error {
+	return wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
+		detected, err := w.checkLanguageDetected(ctx, obj)
+		if err != nil {
+			w.log("Error checking language detection: " + err.Error())
+			return false, nil
 		}
+		return detected, nil
+	})
+}
+
+func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
+	detected, err := w.checkLanguageDetected(ctx, obj)
+	if err != nil {
+		return UnknownState, err
+	}
+
+	if !detected {
+		return w.From(), nil
 	}
 
 	return w.To(), nil
