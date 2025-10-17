@@ -11,4 +11,4 @@ type Check interface {
 	Execute(client *kube.Client, ctx context.Context, remote bool) error
 }
 
-var AllChecks = []Check{&isOdigosInstalled{}}
+var AllChecks = []Check{&isOdigosInstalled{}, &isDestinationConfigured{}}
