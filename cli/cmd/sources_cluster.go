@@ -44,21 +44,21 @@ func enableClusterSource(cmd *cobra.Command) {
 		}
 	}()
 
-	excludeNamespaces, err := readAppListFromFile(excludeNamespacesFileFlag)
+	excludeNamespaces, err := readAppListFromFile(sourceExcludeNamespacesFileFlag)
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot read exclude namespaces file: %+v\n", err)
 		os.Exit(1)
 	}
 
-	excludeApps, err := readAppListFromFile(excludeAppsFileFlag)
+	excludeApps, err := readAppListFromFile(sourceExcludeWorkloadsFileFlag)
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot read exclude apps file: %+v\n", err)
 		os.Exit(1)
 	}
 
-	dryRun := cmd.Flag(dryRunFlagName).Changed && cmd.Flag(dryRunFlagName).Value.String() == "true"
-	isRemote := cmd.Flag(remoteFlagName).Changed && cmd.Flag(remoteFlagName).Value.String() == "true"
-	coolOffStr := cmd.Flag(instrumentationCoolOffFlagName).Value.String()
+	dryRun := cmd.Flag(sourceDryRunFlagName).Changed && cmd.Flag(sourceDryRunFlagName).Value.String() == "true"
+	isRemote := cmd.Flag(sourceRemoteFlagName).Changed && cmd.Flag(sourceRemoteFlagName).Value.String() == "true"
+	coolOffStr := cmd.Flag(sourceInstrumentationCoolOffFlagName).Value.String()
 	coolOff, err := time.ParseDuration(coolOffStr)
 	ctx = lifecycle.SetCoolOff(ctx, coolOff)
 	if err != nil {
@@ -66,8 +66,8 @@ func enableClusterSource(cmd *cobra.Command) {
 		os.Exit(1)
 	}
 
-	onlyDeployment := cmd.Flag(onlyDeploymentFlagName).Value.String()
-	onlyNamespace := cmd.Flag(onlyNamespaceFlagName).Value.String()
+	onlyDeployment := cmd.Flag(sourceOnlyDeploymentFlagName).Value.String()
+	onlyNamespace := cmd.Flag(sourceOnlyNamespaceFlagName).Value.String()
 
 	if (onlyDeployment != "" && onlyNamespace == "") || (onlyDeployment == "" && onlyNamespace != "") {
 		fmt.Printf("\033[31mERROR\033[0m --only-deployment and --only-namespace must be set together\n")
@@ -284,9 +284,9 @@ func readAppListFromFile(filename string) (map[string]struct{}, error) {
 }
 
 func runPreflightChecks(ctx context.Context, cmd *cobra.Command, client *kube.Client, remote bool) {
-	shouldSkip := cmd.Flag(skipPreflightChecksFlagName).Changed && cmd.Flag(skipPreflightChecksFlagName).Value.String() == "true"
+	shouldSkip := cmd.Flag(sourceSkipPreflightChecksFlagName).Changed && cmd.Flag(sourceSkipPreflightChecksFlagName).Value.String() == "true"
 	if shouldSkip {
-		fmt.Printf("Skipping preflight checks due to --%s flag\n", skipPreflightChecksFlagName)
+		fmt.Printf("Skipping preflight checks due to --%s flag\n", sourceSkipPreflightChecksFlagName)
 		return
 	}
 	fmt.Printf("Running preflight checks:\n")
