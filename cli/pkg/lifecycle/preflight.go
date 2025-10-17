@@ -13,7 +13,7 @@ type PreflightCheck struct {
 }
 
 func (p *PreflightCheck) From() State {
-	return NotInstrumentedState
+	return NoSourceCreatedState
 }
 
 func (p *PreflightCheck) To() State {

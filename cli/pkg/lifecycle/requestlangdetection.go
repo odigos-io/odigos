@@ -24,7 +24,7 @@ func (r *RequestLangDetection) From() State {
 }
 
 func (r *RequestLangDetection) To() State {
-	return LangDetectionInProgress
+	return SourceCreated
 }
 
 func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object, isRemote bool) error {
