@@ -28,6 +28,8 @@ import (
 
 func enableClusterSource(cmd *cobra.Command) {
 	ctx, cancel := context.WithCancel(cmd.Context())
+	defer cancel()
+
 	var uiClient *remote.UIClientViaPortForward
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
@@ -116,7 +118,7 @@ func enableClusterSource(cmd *cobra.Command) {
 
 		fmt.Println("Flag --remote is set, starting port-forward to UI pod ...")
 		go func() {
-			if err := uiClient.Start(); err != nil {
+			if err := uiClient.PortForwarder.ForwardPorts(); err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Cannot start remote UI client: %s\n", err)
 				os.Exit(1)
 			}
@@ -124,7 +126,7 @@ func enableClusterSource(cmd *cobra.Command) {
 
 		// Wait for UI client to be ready with timeout
 		select {
-		case <-uiClient.Ready():
+		case <-uiClient.PortForwarder.Ready:
 			port, err := uiClient.DiscoverLocalPort()
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Cannot discover local port for UI client: %s\n", err)
