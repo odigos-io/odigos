@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/spf13/cobra"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -254,7 +255,7 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 	}
 	for _, dep := range deps.Items {
 		err = instrumentApp(ctx, &dep, excludedApps, orchestrator, dryRun, "Deployment")
-		if errors.Is(err, context.Canceled) {
+		if isFatalError(err) {
 			return err
 		}
 	}
@@ -267,7 +268,7 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 	}
 	for _, sts := range statefulsets.Items {
 		err = instrumentApp(ctx, &sts, excludedApps, orchestrator, dryRun, "StatefulSet")
-		if errors.Is(err, context.Canceled) {
+		if isFatalError(err) {
 			return err
 		}
 	}
@@ -280,7 +281,7 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 	}
 	for _, ds := range daemonsets.Items {
 		err = instrumentApp(ctx, &ds, excludedApps, orchestrator, dryRun, "DaemonSet")
-		if errors.Is(err, context.Canceled) {
+		if isFatalError(err) {
 			return err
 		}
 	}
@@ -296,7 +297,7 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 		}
 		for _, cj := range cronjobs.Items {
 			err = instrumentApp(ctx, &cj, excludedApps, orchestrator, dryRun, "CronJob (v1beta1)")
-			if errors.Is(err, context.Canceled) {
+			if isFatalError(err) {
 				return err
 			}
 		}
@@ -309,13 +310,18 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 		}
 		for _, cj := range cronjobs.Items {
 			err = instrumentApp(ctx, &cj, excludedApps, orchestrator, dryRun, "CronJob (v1)")
-			if errors.Is(err, context.Canceled) {
+			if isFatalError(err) {
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+// isFatalError checks for likely unrecoverable errors that should stop the instrumentation process.
+func isFatalError(err error) bool {
+	return errors.Is(err, context.Canceled) || apierrors.IsForbidden(err) || apierrors.IsUnauthorized(err)
 }
 
 func sliceToMap(slice []string) map[string]struct{} {
