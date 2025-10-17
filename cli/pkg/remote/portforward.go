@@ -17,18 +17,18 @@ var (
 
 func NewUIClient(fw *portforward.PortForwarder) (*UIClientViaPortForward, error) {
 	return &UIClientViaPortForward{
-		pf:       fw,
-		isClosed: false,
+		PortForwarder: fw,
+		isClosed:      false,
 	}, nil
 }
 
 type UIClientViaPortForward struct {
-	pf       *portforward.PortForwarder
-	isClosed bool
+	PortForwarder *portforward.PortForwarder
+	isClosed      bool
 }
 
 func (u *UIClientViaPortForward) DiscoverLocalPort() (string, error) {
-	ports, err := u.pf.GetPorts()
+	ports, err := u.PortForwarder.GetPorts()
 	if err != nil {
 		return "", err
 	}
@@ -43,19 +43,11 @@ func (u *UIClientViaPortForward) DiscoverLocalPort() (string, error) {
 	return port, nil
 }
 
-func (u *UIClientViaPortForward) Start() error {
-	return u.pf.ForwardPorts()
-}
-
-func (u *UIClientViaPortForward) Ready() <-chan struct{} {
-	return u.pf.Ready
-}
-
 func (u *UIClientViaPortForward) Close() error {
 	// Check if channel is closed
 	if !u.isClosed {
 		fmt.Println("Closing port-forward to UI pod")
-		u.pf.Close()
+		u.PortForwarder.Close()
 		u.isClosed = true
 	}
 	return nil
