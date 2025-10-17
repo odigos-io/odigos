@@ -100,13 +100,22 @@ func enableClusterSource(cmd *cobra.Command) {
 			}
 		}()
 
-		<-uiClient.Ready()
-		port, err := uiClient.DiscoverLocalPort()
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot discover local port for UI client: %s\n", err)
+		// Wait for UI client to be ready with timeout
+		select {
+		case <-uiClient.Ready():
+			port, err := uiClient.DiscoverLocalPort()
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Cannot discover local port for UI client: %s\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Remote client is using local port %s\n", port)
+		case <-ctx.Done():
+			fmt.Printf("\033[31mERROR\033[0m Context canceled while waiting for UI client to be ready\n")
+			os.Exit(1)
+		case <-time.After(30 * time.Second):
+			fmt.Printf("\033[31mERROR\033[0m Timeout waiting for UI client to be ready\n")
 			os.Exit(1)
 		}
-		fmt.Printf("Remote client is using local port %s\n", port)
 	}
 
 	runPreflightChecks(ctx, cmd, client, isRemote)
