@@ -22,7 +22,7 @@ func (p *PreflightCheck) To() State {
 }
 
 func (p *PreflightCheck) Execute(ctx context.Context, obj client.Object) error {
-	allPodsRunning, err := utils.VerifyAllPodsAreRunning(ctx, p.client, obj)
+	allPodsRunning, err := utils.VerifyAllPodsAreRunning(ctx, p.client, obj, false)
 	if err != nil {
 		return err
 	}
