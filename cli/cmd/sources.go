@@ -464,7 +464,7 @@ app1
 app2
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			enableClusterSource(cmd, args)
+			enableClusterSource(cmd)
 		},
 	}
 }

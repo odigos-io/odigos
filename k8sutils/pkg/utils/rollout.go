@@ -15,19 +15,20 @@ import (
 )
 
 func checkAllPodsRunning(pods *corev1.PodList) bool {
-	for _, pod := range pods.Items {
+	for i := range pods.Items {
+		pod := &pods.Items[i]
 		if pod.Status.Phase != corev1.PodRunning {
 			return false
 		}
 
 		// Check if restart count is 0
-		for _, containerStatus := range pod.Status.ContainerStatuses {
-			if containerStatus.RestartCount != 0 {
+		for j := range pod.Status.ContainerStatuses {
+			if pod.Status.ContainerStatuses[j].RestartCount != 0 {
 				return false
 			}
 		}
 
-		if !container.AllContainersReady(&pod) {
+		if !container.AllContainersReady(pod) {
 			return false
 		}
 	}
@@ -35,10 +36,9 @@ func checkAllPodsRunning(pods *corev1.PodList) bool {
 	return true
 }
 
-func VerifyAllPodsAreRunning(ctx context.Context, client kubernetes.Interface, obj client.Object) (bool, error) {
+func VerifyAllPodsAreRunning(ctx context.Context, k8sclient kubernetes.Interface, obj client.Object) (bool, error) {
 	labels := GetMatchLabels(obj)
-
-	pods, err := client.CoreV1().Pods(obj.GetNamespace()).List(ctx, metav1.ListOptions{
+	pods, err := k8sclient.CoreV1().Pods(obj.GetNamespace()).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: labels}),
 	})
 
@@ -51,22 +51,17 @@ func VerifyAllPodsAreRunning(ctx context.Context, client kubernetes.Interface, o
 
 func GetMatchLabels(obj client.Object) map[string]string {
 	var labels map[string]string
-	switch obj.(type) {
+	switch obj := obj.(type) {
 	case *appsv1.Deployment:
-		deployment := obj.(*appsv1.Deployment)
-		labels = deployment.Spec.Selector.MatchLabels
+		labels = obj.Spec.Selector.MatchLabels
 	case *appsv1.StatefulSet:
-		statefulSet := obj.(*appsv1.StatefulSet)
-		labels = statefulSet.Spec.Selector.MatchLabels
+		labels = obj.Spec.Selector.MatchLabels
 	case *appsv1.DaemonSet:
-		daemonSet := obj.(*appsv1.DaemonSet)
-		labels = daemonSet.Spec.Selector.MatchLabels
+		labels = obj.Spec.Selector.MatchLabels
 	case *v1.CronJob:
-		cronJob := obj.(*v1.CronJob)
-		labels = cronJob.Spec.JobTemplate.Spec.Selector.MatchLabels
+		labels = obj.Spec.JobTemplate.Spec.Selector.MatchLabels
 	case *v1beta1.CronJob:
-		cronJob := obj.(*v1beta1.CronJob)
-		labels = cronJob.Spec.JobTemplate.Spec.Selector.MatchLabels
+		labels = obj.Spec.JobTemplate.Spec.Selector.MatchLabels
 	}
 	return labels
 }

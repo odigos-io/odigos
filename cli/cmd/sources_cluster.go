@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func enableClusterSource(cmd *cobra.Command, args []string) {
+func enableClusterSource(cmd *cobra.Command) {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	var uiClient *remote.UIClientViaPortForward
 	ch := make(chan os.Signal, 1)
@@ -113,13 +113,12 @@ func enableClusterSource(cmd *cobra.Command, args []string) {
 
 func instrumentCluster(ctx context.Context, client *kube.Client, excludeNamespaces map[string]struct{}, excludeApps map[string]struct{}, dryRun bool, isRemote bool, onlyNamespace string, onlyDeployment string) {
 	systemNs := sliceToMap(k8sconsts.DefaultIgnoredNamespaces)
+	orchestrator, err := lifecycle.NewOrchestrator(client, ctx, isRemote)
+	if err != nil {
+		fmt.Printf("\033[31mERROR\033[0m Cannot create orchestrator: %s\n", err)
+		os.Exit(1)
+	}
 	if onlyDeployment != "" {
-		orchestrator, err := lifecycle.NewOrchestrator(client, ctx, isRemote)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot create orchestrator: %s\n", err)
-			os.Exit(1)
-		}
-
 		dep, err := client.AppsV1().Deployments(onlyNamespace).Get(ctx, onlyDeployment, metav1.GetOptions{})
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot get deployment %s in namespace %s: %s\n", onlyDeployment, onlyNamespace, err)
@@ -142,12 +141,6 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludeNamespac
 	nsList, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("\033[31mERROR\033[0m Cannot list namespaces: %s\n", err)
-		os.Exit(1)
-	}
-
-	orchestrator, err := lifecycle.NewOrchestrator(client, ctx, isRemote)
-	if err != nil {
-		fmt.Printf("\033[31mERROR\033[0m Cannot create orchestrator: %s\n", err)
 		os.Exit(1)
 	}
 

@@ -3,6 +3,11 @@ package lifecycle
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/cli/pkg/remote"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,7 +24,37 @@ func (i *InstrumentationStarted) To() State {
 }
 
 func (i *InstrumentationStarted) Execute(ctx context.Context, obj client.Object, isRemote bool) error {
+	// Instrumentation is started already, nothing to execute here. This transition just verifies that the pods are running.
 	return nil
+}
+
+func (i *InstrumentationStarted) GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+	kind := workload.WorkloadKindFromClientObject(obj)
+	if !isRemote {
+		icName := workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), kind)
+		ic, err := i.client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
+		if err != nil {
+			if !apierrors.IsNotFound(err) {
+				i.log("Error while fetching InstrumentationConfig: " + err.Error())
+				return UnknownState, err
+			}
+			return i.From(), nil
+		}
+
+		if len(ic.Spec.Containers) == 0 {
+			return i.From(), nil
+		}
+	}
+
+	describe, err := remote.DescribeSource(ctx, i.client, obj.GetNamespace(), string(kind), obj.GetNamespace(), obj.GetName())
+	if err != nil {
+		return UnknownState, err
+	}
+	if describe.OtelAgents.Containers == nil || len(describe.OtelAgents.Containers) == 0 {
+		return i.From(), nil
+	}
+
+	return i.To(), nil
 }
 
 var _ Transition = &InstrumentationStarted{}
