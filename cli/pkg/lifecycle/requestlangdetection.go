@@ -27,9 +27,9 @@ func (r *RequestLangDetection) To() State {
 	return SourceCreated
 }
 
-func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object, isRemote bool) error {
+func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object) error {
 	workloadKind := workload.WorkloadKindFromClientObject(obj)
-	if !isRemote {
+	if !r.remote {
 		var source *odigosv1.Source
 		selector := labels.SelectorFromSet(labels.Set{
 			k8sconsts.WorkloadNameLabel:      obj.GetName(),
@@ -80,9 +80,9 @@ func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object, i
 	return nil
 }
 
-func (r *RequestLangDetection) GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+func (r *RequestLangDetection) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
 	workloadKind := workload.WorkloadKindFromClientObject(obj)
-	if !isRemote {
+	if !r.remote {
 		labeled := labels.Set{
 			k8sconsts.WorkloadNameLabel:      obj.GetName(),
 			k8sconsts.WorkloadNamespaceLabel: obj.GetNamespace(),
@@ -96,7 +96,7 @@ func (r *RequestLangDetection) GetTransitionState(ctx context.Context, obj clien
 			return r.From(), nil
 		}
 	} else {
-		des, err := remote.DescribeSource(ctx, r.client, odigosNamespace, string(workloadKind), obj.GetNamespace(), obj.GetName())
+		des, err := remote.DescribeSource(ctx, r.client, r.odigosNamespace, string(workloadKind), obj.GetNamespace(), obj.GetName())
 		if err != nil || des.Name.Value == nil {
 			// name value will be nil for unsupported kinds
 			return UnknownState, err

@@ -24,7 +24,7 @@ func (i *InstrumentationEnded) To() State {
 	return InstrumentedState
 }
 
-func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object, isRemote bool) error {
+func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object) error {
 	return wait.PollUntilContextTimeout(ctx, 5*time.Second, 30*time.Minute, true, func(ctx context.Context) (bool, error) {
 		i.log("Waiting for all pods to be instrumented ...")
 		rolloutCompleted, err := utils.VerifyAllPodsAreRunning(ctx, i.client, obj)
@@ -78,7 +78,7 @@ func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object, i
 	})
 }
 
-func (i *InstrumentationEnded) GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+func (i *InstrumentationEnded) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
 	rolloutCompleted, err := utils.VerifyAllPodsAreRunning(ctx, i.client, obj)
 	if err != nil {
 		i.log("Error verifying all pods are instrumented")
