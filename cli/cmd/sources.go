@@ -449,19 +449,30 @@ odigos sources enable cluster --dry-run
 # Enable the cluster for Odigos instrumentation with excluded namespaces
 odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt
 
-# Enable the cluster for Odigos instrumentation with excluded apps
-odigos sources enable cluster --exclude-apps-file=excluded-apps.txt
+# Enable the cluster for Odigos instrumentation with excluded workloads
+odigos sources enable cluster --exclude-workloads-file=excluded-workloads.txt
 
-# Enable the cluster for Odigos instrumentation with excluded namespaces and apps
-odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt --exclude-apps-file=excluded-apps.txt
+# Enable the cluster for Odigos instrumentation with excluded namespaces and workloads
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt --exclude-workloads-file=excluded-workloads.txt
 
 For example, excluded-namespaces.txt:
 namespace1
 namespace2
 
-For example, excluded-apps.txt:
-app1
-app2
+For example, excluded-workloads.txt (supports three formats):
+# Format 1: <namespace>/<kind>/<name> - most specific
+production/Deployment/my-app
+
+# Format 2: <kind>/<name> - excludes in all namespaces
+StatefulSet/redis
+
+# Format 3: <name> - excludes workload with this name regardless of kind or namespace
+nginx
+
+# Note: Kind matching is case-insensitive (deployment, Deployment, DEPLOYMENT all work)
+test/dePloyMent/my-other-app
+
+Workloads can be Deployments, DaemonSets, StatefulSets, CronJobs, or Jobs.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			enableClusterSource(cmd)
@@ -657,7 +668,7 @@ func init() {
 	}
 
 	enableClusterSourceCmd := enableClusterSourceCmd()
-	enableClusterSourceCmd.Flags().StringVar(&sourceExcludeWorkloadsFileFlag, sourceExcludeWorkloadsFileFlagName, "", "Path to file containing apps to exclude")
+	enableClusterSourceCmd.Flags().StringVar(&sourceExcludeWorkloadsFileFlag, sourceExcludeWorkloadsFileFlagName, "", "Path to file containing workloads to exclude")
 	enableClusterSourceCmd.Flags().StringVar(&sourceExcludeNamespacesFileFlag, sourceExcludeNamespacesFileFlagName, "", "Path to file containing namespaces to exclude")
 	enableClusterSourceCmd.Flags().BoolVar(&sourceDryRunFlag, sourceDryRunFlagName, false, "dry run")
 	enableClusterSourceCmd.Flags().BoolVar(&sourceRemoteFlag, sourceRemoteFlagName, false, "remote")

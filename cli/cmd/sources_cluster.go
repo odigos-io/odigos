@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -171,8 +172,7 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludeNamespac
 
 func instrumentApp(ctx context.Context, app client.Object, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool, kind string) error {
 	fmt.Printf("  - Inspecting %s: %s\n", kind, app.GetName())
-	_, excluded := excludedApps[app.GetName()]
-	if excluded {
+	if isAppExcluded(app, excludedApps, kind) {
 		fmt.Printf("    - Skipping %s due to exclusion file\n", kind)
 		return nil
 	}
@@ -182,6 +182,59 @@ func instrumentApp(ctx context.Context, app client.Object, excludedApps map[stri
 	}
 	err := orchestrator.Apply(ctx, app)
 	return err
+}
+
+// isAppExcluded checks if an app should be excluded based on the exclusion list.
+// It checks three formats in order of specificity:
+//  1. <namespace>/<kind>/<name> - most specific
+//  2. <kind>/<name> - without namespace
+//  3. <name> - just the name
+//
+// Kind matching is case-insensitive.
+func isAppExcluded(app client.Object, excludedApps map[string]struct{}, kind string) bool {
+	if excludedApps == nil {
+		return false
+	}
+
+	name := app.GetName()
+	namespace := app.GetNamespace()
+
+	// Normalize kind string by removing any version suffixes like " (v1beta1)" or " (v1)"
+	// This ensures "CronJob (v1)" matches "CronJob" in exclusion file
+	normalizedKind := kind
+	if idx := strings.Index(kind, " ("); idx != -1 {
+		normalizedKind = kind[:idx]
+	}
+
+	// Convert kind to lowercase for case-insensitive matching
+	lowerKind := strings.ToLower(normalizedKind)
+
+	// Check all possible patterns with case-insensitive kind matching
+	for excludedPattern := range excludedApps {
+		// Check format: <namespace>/<kind>/<name>
+		parts := strings.Split(excludedPattern, "/")
+		if len(parts) == 3 {
+			if parts[0] == namespace && strings.ToLower(parts[1]) == lowerKind && parts[2] == name {
+				return true
+			}
+		}
+
+		// Check format: <kind>/<name>
+		if len(parts) == 2 {
+			if strings.ToLower(parts[0]) == lowerKind && parts[1] == name {
+				return true
+			}
+		}
+
+		// Check format: <name>
+		if len(parts) == 1 {
+			if parts[0] == name {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool) error {
