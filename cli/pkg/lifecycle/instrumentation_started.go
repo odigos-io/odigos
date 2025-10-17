@@ -44,14 +44,14 @@ func (i *InstrumentationStarted) GetTransitionState(ctx context.Context, obj cli
 		if len(ic.Spec.Containers) == 0 {
 			return i.From(), nil
 		}
-	}
-
-	describe, err := remote.DescribeSource(ctx, i.client, obj.GetNamespace(), string(kind), obj.GetNamespace(), obj.GetName())
-	if err != nil {
-		return UnknownState, err
-	}
-	if describe.OtelAgents.Containers == nil || len(describe.OtelAgents.Containers) == 0 {
-		return i.From(), nil
+	} else {
+		describe, err := remote.DescribeSource(ctx, i.client, obj.GetNamespace(), string(kind), obj.GetNamespace(), obj.GetName())
+		if err != nil {
+			return UnknownState, err
+		}
+		if describe.OtelAgents.Containers == nil || len(describe.OtelAgents.Containers) == 0 {
+			return i.From(), nil
+		}
 	}
 
 	return i.To(), nil

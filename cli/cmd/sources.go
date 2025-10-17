@@ -438,12 +438,12 @@ func enableClusterSourceCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "cluster",
 		Short: "Enable an entire cluster for Odigos instrumentation",
-		Long:  "This command enables the cluster for Odigos instrumentation. It will create Source objects for all apps in the cluster, except those that are excluded.",
+		Long:  "This command enables the cluster for Odigos instrumentation. It will create Source objects for all apps in the cluster, except those that are excluded or in system namespaces.",
 		Example: `
 # Enable the cluster for Odigos instrumentation
 odigos sources enable cluster
 
-# Enable the cluster for Odigos instrumentation, but dry run
+# Enable the cluster for Odigos instrumentation, but dry run (don't actually create any Sources)
 odigos sources enable cluster --dry-run
 
 # Enable the cluster for Odigos instrumentation with excluded namespaces
