@@ -146,3 +146,20 @@ func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object
 		return nil
 	}
 }
+
+func WorkloadKindFromClientObject(obj client.Object) k8sconsts.WorkloadKind {
+	switch obj.(type) {
+	case *v1.Deployment:
+		return k8sconsts.WorkloadKindDeployment
+	case *v1.StatefulSet:
+		return k8sconsts.WorkloadKindStatefulSet
+	case *v1.DaemonSet:
+		return k8sconsts.WorkloadKindDaemonSet
+	case *batchv1beta1.CronJob:
+		return k8sconsts.WorkloadKindCronJob
+	case *batchv1.CronJob:
+		return k8sconsts.WorkloadKindCronJob
+	default:
+		return k8sconsts.WorkloadKind("")
+	}
+}

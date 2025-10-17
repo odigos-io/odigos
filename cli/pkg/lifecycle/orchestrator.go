@@ -4,23 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/cli/pkg/remote"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -37,10 +22,19 @@ const (
 	InstrumentedState         State = "Instrumented"
 )
 
+var orderedStates = []State{
+	NotInstrumentedState,
+	PreflightChecksPassed,
+	LangDetectionInProgress,
+	LangDetectedState,
+	InstrumentationInProgress,
+	InstrumentedState,
+}
+
 type Orchestrator struct {
 	Client          *kube.Client
 	OdigosNamespace string
-	TransitionsMap  map[string]Transition
+	TransitionsMap  map[State]Transition
 	Remote          bool
 }
 
@@ -50,15 +44,33 @@ func NewOrchestrator(client *kube.Client, ctx context.Context, isRemote bool) (*
 		return nil, err
 	}
 
-	transitions := make(map[string]Transition)
-	for _, t := range allTransitions {
-		t.Init(client)
-		transitions[string(t.From())] = t
+	baseTransition := BaseTransition{client: client}
+
+	// stateToTransitionMap is a map of states to transitions.
+	// The current state determines which transition to execute while an app is in that state.
+	var stateToTransitionMap = map[State]Transition{
+		// When an app is not currently instrumented, we need to check if it's eligible for instrumentation.
+		NotInstrumentedState: &PreflightCheck{baseTransition},
+
+		// If the app is eligible for instrumentation, we need to request the language detection.
+		PreflightChecksPassed: &RequestLangDetection{baseTransition},
+
+		// If the language detection is in progress, we need to wait for it to complete.
+		LangDetectionInProgress: &WaitForLangDetection{baseTransition},
+
+		// If the language detection is complete, we need to start the instrumentation.
+		LangDetectedState: &InstrumentationStarted{baseTransition},
+
+		// If the instrumentation is in progress, we need to wait for it to complete.
+		InstrumentationInProgress: &InstrumentationEnded{baseTransition},
+
+		// If the instrumentation is complete, we don't need to do anything.
+		InstrumentedState: nil,
 	}
 
 	return &Orchestrator{Client: client,
 		OdigosNamespace: ns,
-		TransitionsMap:  transitions,
+		TransitionsMap:  stateToTransitionMap,
 		Remote:          isRemote,
 	}, nil
 }
@@ -70,35 +82,45 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 
 	go func() {
 		defer close(done)
-		state := o.getCurrentState(ctx, obj)
-		o.log(fmt.Sprintf("Current state: %s", state))
 
-		nextTransition := o.TransitionsMap[string(state)]
-		for nextTransition != nil {
+		// Start by assuming the app is not instrumented and run preflight checks.
+		state := NotInstrumentedState
+		prevState := UnknownState
+		currentTransition := o.TransitionsMap[state]
+
+		for currentTransition != nil {
 			select {
 			case <-ctx.Done():
 				finalErr = ctx.Err()
 				return
 			default:
-				if err := nextTransition.Execute(ctx, obj, o.Remote); err != nil {
+
+				// Execute the current transition
+				if err := currentTransition.Execute(ctx, obj, o.Remote); err != nil {
 					o.log(fmt.Sprintf("Error executing transition: %s", err))
 					finalErr = fmt.Errorf("failed to execute transition: %w", err)
 					return
 				}
 
-				// Special case: PreflightCheck change state manually
-				if nextTransition.To() == PreflightChecksPassed {
-					state = PreflightChecksPassed
-				} else {
-					state = o.getCurrentState(ctx, obj)
+				currentState, err := o.getCurrentState(ctx, obj, o.Remote, o.OdigosNamespace)
+				if err != nil {
+					o.log(fmt.Sprintf("Error getting current state: %s", err))
+					finalErr = fmt.Errorf("failed to get current state: %w", err)
+					return
 				}
-				o.log(fmt.Sprintf("Current state: %s", state))
+				state = currentState
+				if state != prevState {
+					o.log(fmt.Sprintf("Current state: %s", state))
+					prevState = state
+				}
 
 				if state == UnknownState {
+					o.log(fmt.Sprintf("Unknown state: %s", state))
+					finalErr = fmt.Errorf("unknown state: %s", state)
 					return
 				}
 
-				nextTransition = o.TransitionsMap[string(state)]
+				currentTransition = o.TransitionsMap[state]
 			}
 		}
 	}()
@@ -117,131 +139,23 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 	}
 }
 
-func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object) State {
-	var kind k8sconsts.WorkloadKind
-	switch obj.(type) {
-	case *appsv1.Deployment:
-		kind = k8sconsts.WorkloadKindDeployment
-	case *appsv1.StatefulSet:
-		kind = k8sconsts.WorkloadKindStatefulSet
-	case *appsv1.DaemonSet:
-		kind = k8sconsts.WorkloadKindDaemonSet
-	case *batchv1beta1.CronJob:
-		kind = k8sconsts.WorkloadKindCronJob
-	case *batchv1.CronJob:
-		kind = k8sconsts.WorkloadKindCronJob
-	}
-
-	var describe *source.SourceAnalyze
-	if !o.Remote {
-		labeled := labels.Set{
-			k8sconsts.WorkloadNameLabel:      obj.GetName(),
-			k8sconsts.WorkloadNamespaceLabel: obj.GetNamespace(),
-			k8sconsts.WorkloadKindLabel:      string(kind),
+func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+	for _, state := range orderedStates {
+		transition := o.TransitionsMap[state]
+		if transition == nil {
+			// InstrumentedState is the last state, so if we reach it, we can return it.
+			break
 		}
-		sources, err := o.Client.OdigosClient.Sources(obj.GetNamespace()).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labeled).String()})
-		if err != nil {
-			return UnknownState
+		transitionState, err := transition.GetTransitionState(ctx, obj, isRemote, odigosNamespace)
+		if err != nil || transitionState == UnknownState {
+			return UnknownState, err
 		}
-		if len(sources.Items) == 0 {
-			return NotInstrumentedState
-		}
-	} else {
-		des, err := remote.DescribeSource(ctx, o.Client, o.OdigosNamespace, string(kind), obj.GetNamespace(), obj.GetName())
-		if err != nil || des.Name.Value == nil {
-			// name value will be nil for unsupported kinds
-			return UnknownState
-		}
-
-		if des.SourceObjectsAnalysis.Instrumented.Value != true {
-			return NotInstrumentedState
-		}
-		describe = des
-	}
-
-	icName := workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), kind)
-
-	// Check if the instrumentation config exists for lang detection
-	var ic *odigosv1.InstrumentationConfig
-	var lang common.ProgrammingLanguage
-	if !o.Remote {
-		instrumentationConfig, err := o.Client.OdigosClient.InstrumentationConfigs(obj.GetNamespace()).Get(ctx, icName, metav1.GetOptions{})
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return LangDetectionInProgress
-			}
-			return UnknownState
-		}
-		ic = instrumentationConfig
-		if ic.Status.Conditions == nil {
-			if status := meta.FindStatusCondition(ic.Status.Conditions, odigosv1.RuntimeDetectionStatusConditionType); status != nil {
-				if status.Reason == string(odigosv1.RuntimeDetectionReasonDetectedSuccessfully) && status.Status != metav1.ConditionTrue {
-					return LangDetectionInProgress
-				}
-			}
-		}
-
-		if ic.Spec.SdkConfigs == nil || len(ic.Spec.SdkConfigs) == 0 {
-			return LangDetectionInProgress
-		}
-
-		langFound := false
-		for _, sdkConfig := range ic.Spec.SdkConfigs {
-			if sdkConfig.Language != common.UnknownProgrammingLanguage && sdkConfig.Language != common.IgnoredProgrammingLanguage {
-				lang = sdkConfig.Language
-				langFound = true
-				break
-			}
-		}
-
-		if !langFound {
-			o.log("Failed to detect language, skipping")
-			return UnknownState
-		}
-	} else {
-		if describe.RuntimeInfo == nil {
-			return LangDetectionInProgress
-		}
-
-		if len(describe.RuntimeInfo.Containers) == 0 {
-			return LangDetectionInProgress
-		}
-
-		langFound := false
-		for _, c := range describe.RuntimeInfo.Containers {
-			langStr, ok := c.Language.Value.(string)
-			if !ok {
-				continue
-			}
-
-			langParsed := common.ProgrammingLanguage(langStr)
-			if langParsed != common.UnknownProgrammingLanguage && langParsed != common.IgnoredProgrammingLanguage {
-				langFound = true
-				lang = langParsed
-				break
-			}
-		}
-		if !langFound {
-			o.log("Failed to detect language, skipping")
-			return UnknownState
+		// If the transition returns its From() state (the state we came from), then we need to run the transition for that state.
+		if transitionState == state {
+			return state, nil
 		}
 	}
-
-	o.log(fmt.Sprintf("Language detected: %s", lang))
-
-	if kind != k8sconsts.WorkloadKindCronJob && kind != k8sconsts.WorkloadKindJob {
-		instrumented, err := utils.VerifyAllPodsAreRunning(ctx, o.Client, obj)
-		if err != nil {
-			o.log(fmt.Sprintf("Error verifying all pods are instrumented: %s", err))
-			return UnknownState
-		}
-
-		if !instrumented {
-			return InstrumentationInProgress
-		}
-	}
-
-	return InstrumentedState
+	return InstrumentedState, nil
 }
 
 func (o *Orchestrator) log(str string) {
@@ -252,25 +166,13 @@ type Transition interface {
 	From() State
 	To() State
 	Execute(ctx context.Context, obj client.Object, isRemote bool) error
-	Init(client *kube.Client)
+	GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error)
 }
 
 type BaseTransition struct {
 	client *kube.Client
 }
 
-func (b *BaseTransition) Init(client *kube.Client) {
-	b.client = client
-}
-
 func (b *BaseTransition) log(str string) {
 	fmt.Printf("    > %s\n", str)
-}
-
-var allTransitions = []Transition{
-	&PreflightCheck{},
-	&RequestLangDetection{},
-	&WaitForLangDetection{},
-	&InstrumentationStarted{},
-	&InstrumentationEnded{},
 }

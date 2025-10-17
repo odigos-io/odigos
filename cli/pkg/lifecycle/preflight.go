@@ -42,4 +42,9 @@ func (p *PreflightCheck) Execute(ctx context.Context, obj client.Object, isRemot
 	return nil
 }
 
+func (p *PreflightCheck) GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+	// If Execute passed, then the transition is successful.
+	return p.To(), nil
+}
+
 var _ Transition = &PreflightCheck{}

@@ -77,3 +77,17 @@ func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object, i
 		return false, nil
 	})
 }
+
+func (i *InstrumentationEnded) GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+	rolloutCompleted, err := utils.VerifyAllPodsAreRunning(ctx, i.client, obj)
+	if err != nil {
+		i.log("Error verifying all pods are instrumented")
+		return UnknownState, err
+	}
+	if !rolloutCompleted {
+		return i.From(), nil
+	}
+	return i.To(), nil
+}
+
+var _ Transition = &InstrumentationEnded{}

@@ -2,16 +2,12 @@ package lifecycle
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/cli/pkg/remote"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,22 +28,7 @@ func (r *RequestLangDetection) To() State {
 }
 
 func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object, isRemote bool) error {
-	var workloadKind k8sconsts.WorkloadKind
-	switch obj.(type) {
-	case *appsv1.Deployment:
-		workloadKind = k8sconsts.WorkloadKindDeployment
-	case *appsv1.StatefulSet:
-		workloadKind = k8sconsts.WorkloadKindStatefulSet
-	case *appsv1.DaemonSet:
-		workloadKind = k8sconsts.WorkloadKindDaemonSet
-	case *batchv1beta1.CronJob:
-		workloadKind = k8sconsts.WorkloadKindCronJob
-	case *batchv1.CronJob:
-		workloadKind = k8sconsts.WorkloadKindCronJob
-	default:
-		return fmt.Errorf("unsupported object type: %T", obj)
-	}
-
+	workloadKind := workload.WorkloadKindFromClientObject(obj)
 	if !isRemote {
 		var source *odigosv1.Source
 		selector := labels.SelectorFromSet(labels.Set{
@@ -97,4 +78,33 @@ func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object, i
 	}
 
 	return nil
+}
+
+func (r *RequestLangDetection) GetTransitionState(ctx context.Context, obj client.Object, isRemote bool, odigosNamespace string) (State, error) {
+	workloadKind := workload.WorkloadKindFromClientObject(obj)
+	if !isRemote {
+		labeled := labels.Set{
+			k8sconsts.WorkloadNameLabel:      obj.GetName(),
+			k8sconsts.WorkloadNamespaceLabel: obj.GetNamespace(),
+			k8sconsts.WorkloadKindLabel:      string(workloadKind),
+		}
+		sources, err := r.client.OdigosClient.Sources(obj.GetNamespace()).List(ctx, metav1.ListOptions{LabelSelector: labels.SelectorFromSet(labeled).String()})
+		if err != nil {
+			return UnknownState, err
+		}
+		if len(sources.Items) == 0 {
+			return r.From(), nil
+		}
+	} else {
+		des, err := remote.DescribeSource(ctx, r.client, odigosNamespace, string(workloadKind), obj.GetNamespace(), obj.GetName())
+		if err != nil || des.Name.Value == nil {
+			// name value will be nil for unsupported kinds
+			return UnknownState, err
+		}
+
+		if des.SourceObjectsAnalysis.Instrumented.Value != true {
+			return r.From(), nil
+		}
+	}
+	return r.To(), nil
 }
