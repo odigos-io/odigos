@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/remote"
 )
 
 type isOdigosInstalled struct{}
@@ -23,6 +26,42 @@ func (c *isOdigosInstalled) Execute(client *kube.Client, ctx context.Context, re
 		} else {
 			return fmt.Errorf("Error detecting Odigos namespace in the current cluster: %s", err)
 		}
+	}
+
+	return nil
+}
+
+type isDestinationConfigured struct{}
+
+func (c *isDestinationConfigured) Description() string {
+	return "Checking if at least one destination is configured"
+}
+
+func (c *isDestinationConfigured) Execute(client *kube.Client, ctx context.Context, isRemote bool) error {
+	ns, err := resources.GetOdigosNamespace(client, ctx)
+	if err != nil {
+		return fmt.Errorf("Error detecting Odigos namespace in the current cluster: %s", err)
+	}
+
+	if isRemote {
+		numDests, err := remote.GetNumberOfDestinations(ctx)
+		if err != nil {
+			return fmt.Errorf("Error listing Odigos destinations: %s", err)
+		}
+
+		if numDests == 0 {
+			return errors.New("No Odigos destinations found")
+		}
+
+		return nil
+	}
+
+	destinations, err := client.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("Error listing Odigos destinations: %s", err)
+	}
+	if len(destinations.Items) == 0 {
+		return errors.New("No Odigos destinations found")
 	}
 
 	return nil
