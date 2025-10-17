@@ -51,6 +51,37 @@ func GetNumberOfDestinations(ctx context.Context) (int, error) {
 	return odigosAnalyze.NumberOfDestinations, nil
 }
 
+func DescribeOdigos(ctx context.Context) (*odigos.OdigosAnalyze, error) {
+	url, err := url.Parse(DescribeOdigosEndpoint())
+	if err != nil {
+		return nil, err
+	}
+
+	req := http.Request{
+		Method: http.MethodGet,
+		URL:    url,
+		Header: http.Header{"Accept": []string{"application/json"}},
+	}
+
+	resp, err := http.DefaultClient.Do(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var odigosAnalyze odigos.OdigosAnalyze
+	if err := json.Unmarshal(respBody, &odigosAnalyze); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON response: %w", err)
+	}
+
+	return &odigosAnalyze, nil
+}
+
 func GetDescribeSourceEndpoint(workloadKind string, workloadNs string, workloadName string) string {
 	return fmt.Sprintf("http://localhost:%s/describe/source/namespace/%s/kind/%s/name/%s", DefaultLocalPort, workloadNs, strings.ToLower(workloadKind), workloadName)
 }
