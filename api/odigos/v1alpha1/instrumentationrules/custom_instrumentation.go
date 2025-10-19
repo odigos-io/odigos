@@ -21,13 +21,13 @@ func (ci *CustomInstrumentations) Verify() error {
 	// Validate Golang probes
 	for _, p := range ci.Golang {
 		if err := p.Verify(); err != nil {
-			return fmt.Errorf("invalid custom instrumentation golang: %w", err)
+			return fmt.Errorf("invalid configuration for golang custom instrumentation: %w", err)
 		}
 	}
 	// Validate Java probes
 	for _, p := range ci.Java {
 		if err := p.Verify(); err != nil {
-			return fmt.Errorf("invalid custom instrumentation java: %w", err)
+			return fmt.Errorf("invalid configuration for java custom instrumentation: %w", err)
 		}
 	}
 	return nil
@@ -45,10 +45,10 @@ type JavaCustomProbe struct {
 // For java we always require both class name and method name
 func (jcp *JavaCustomProbe) Verify() error {
 	if jcp.ClassName == "" {
-		return errors.New("class name is required for Java Custom Probe")
+		return errors.New("class name is required")
 	}
 	if jcp.MethodName == "" {
-		return errors.New("method Name is required for Java Custom Probe")
+		return errors.New("method Name is required")
 	}
 	return nil
 }
@@ -75,13 +75,13 @@ type GolangCustomProbe struct {
 func (gcp *GolangCustomProbe) Verify() error {
 	switch {
 	case gcp.PackageName == "":
-		return errors.New("package name is required for Golang Custom Probe")
+		return errors.New("package name is required")
 	case gcp.FunctionName != "" && gcp.ReceiverName != "" && gcp.ReceiverMethodName != "":
-		return errors.New("too many arguments; either function name or receiver name + method name is required for GolangCustomProbe")
+		return errors.New("too many arguments; either function name or receiver name + method name are required")
 	case gcp.FunctionName == "" && gcp.ReceiverName == "" && gcp.ReceiverMethodName == "":
-		return errors.New("too few arguments; either function name or receiver name + method name is required for GolangCustomProbe")
+		return errors.New("too few arguments; either function name or receiver name + method name are required")
 	case (gcp.ReceiverName == "" && gcp.ReceiverMethodName != "") || (gcp.ReceiverName != "" && gcp.ReceiverMethodName == ""):
-		return errors.New("both receiver name and method name are required for Golang Custom Probe when using receiver methods")
+		return errors.New("both receiver name and receiver method name are required when using receiver methods")
 	default:
 		return nil
 	}
