@@ -189,7 +189,6 @@ func findExistingHashVersionFiles(basePath string) ([]string, error) {
 		}
 
 		if matched {
-			fmt.Println("Found matching hash version file", entry.Name())
 			fullPath := filepath.Join(dir, entry.Name())
 			matchingFiles = append(matchingFiles, fullPath)
 		}
