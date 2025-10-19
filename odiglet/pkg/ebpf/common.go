@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/features"
 	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/go-logr/logr"
@@ -63,7 +65,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	}
 
 	// Check if the current kernel supports the ring buffer
-	ringEn := IsRingBufferSupported()
+	ringEn := features.HaveMapType(ebpf.RingBuf) == nil
 
 	if ringEn {
 		mapType = cilumebpf.RingBuf

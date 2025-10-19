@@ -95,14 +95,8 @@ func NewBufferReader(m *ebpf.Map, logger *zap.Logger) (BufferReader, error) {
 	}
 }
 
-// Common error variables that can be checked by callers
-var (
-	ErrClosed = errors.New("buffer reader closed")
-)
-
 // Helper function to check if an error indicates the reader was closed
 func IsClosedError(err error) bool {
 	return errors.Is(err, perf.ErrClosed) ||
-		errors.Is(err, ringbuf.ErrClosed) ||
-		errors.Is(err, ErrClosed)
+		errors.Is(err, ringbuf.ErrClosed)
 }
