@@ -34,6 +34,7 @@ const (
 	GrafanaCloudTempoDestinationType      DestinationType = "grafanacloudtempo"
 	GreptimeDestinationType               DestinationType = "greptime"
 	GroundcoverDestinationType            DestinationType = "groundcover"
+	HighlightDestinationType              DestinationType = "highlight"
 	HoneycombDestinationType              DestinationType = "honeycomb"
 	HyperDxDestinationType                DestinationType = "hyperdx"
 	InstanaDestinationType                DestinationType = "instana"
