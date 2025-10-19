@@ -49,13 +49,52 @@ resource "aws_security_group" "monitoring_ec2_sg" {
   description = "SG for Prometheus/Grafana/ClickHouse EC2"
   vpc_id      = data.terraform_remote_state.eks.outputs.vpc_id
 
+  # HTTP/HTTPS for package downloads and API calls
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
+  
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  # DNS resolution
+  egress {
+    from_port   = 53
+    to_port     = 53
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  egress {
+    from_port   = 53
+    to_port     = 53
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  # NTP for time synchronization
+  egress {
+    from_port   = 123
+    to_port     = 123
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  # SSH (if needed for debugging)
+  egress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
   tags = { Name = "monitoring-ec2-sg" }
 }
 
@@ -70,6 +109,7 @@ resource "aws_security_group_rule" "in_9090_from_nodesg" {
   description              = "Prometheus remote_write from EKS nodes"
 }
 
+
 # ClickHouse HTTP (8123) from EKS nodes
 resource "aws_security_group_rule" "in_8123_from_nodesg" {
   type                     = "ingress"
@@ -81,6 +121,7 @@ resource "aws_security_group_rule" "in_8123_from_nodesg" {
   description              = "ClickHouse HTTP from EKS nodes"
 }
 
+
 # ClickHouse Native TCP (9000) from EKS nodes
 resource "aws_security_group_rule" "in_9000_from_nodesg" {
   type                     = "ingress"
@@ -91,6 +132,7 @@ resource "aws_security_group_rule" "in_9000_from_nodesg" {
   source_security_group_id = data.terraform_remote_state.eks.outputs.node_security_group_id
   description              = "ClickHouse native TCP from EKS nodes"
 }
+
 
 # This rule was moved to the main EKS configuration
 
@@ -343,20 +385,6 @@ EOF
   <interserver_http_port>9012</interserver_http_port>
 </clickhouse>
 EOF
-
-    mkdir -p /etc/clickhouse-server/users.d
-    cat >/etc/clickhouse-server/users.d/default-password.xml <<'EOF'
-<clickhouse>
-  <users>
-    <default>
-      <password>stresstest</password>
-    </default>
-  </users>
-</clickhouse>
-EOF
-
-    chown clickhouse:clickhouse /etc/clickhouse-server/users.d/default-password.xml
-    chmod 640 /etc/clickhouse-server/users.d/default-password.xml
 
     chown root:root /etc/clickhouse-server/config.d/*.xml
     chmod 644 /etc/clickhouse-server/config.d/*.xml
