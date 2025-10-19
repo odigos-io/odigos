@@ -102,6 +102,18 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		// Convert host path to container path
 		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
 
+		// Find and preserve existing hash version files for this base file
+		existingHashVersionFiles, err := findExistingHashVersionFiles(hostPath)
+		if err != nil {
+			log.Logger.Error(err, "Error finding existing hash version files", "basePath", hostPath)
+		} else {
+			// Add all existing hash version files to the keep map
+			for _, hashVersionFile := range existingHashVersionFiles {
+				updatedFilesToKeepMap[hashVersionFile] = struct{}{}
+				log.Logger.V(0).Info("Preserving existing hash version file", "file", hashVersionFile)
+			}
+		}
+
 		// If either file doesn't exist, mark as changed and remove from filesToKeepMap
 		_, hostErr := os.Stat(hostPath)
 		_, containerErr := os.Stat(containerPath)
@@ -139,6 +151,51 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 	}
 
 	return updatedFilesToKeepMap, nil
+}
+
+// findExistingHashVersionFiles searches for existing files with _hash_version pattern
+// for the given base file path. For example, if basePath is "/var/odigos/python-ebpf/pythonUSDT.abi3.so",
+// it will search for files like "/var/odigos/python-ebpf/pythonUSDT.abi3_hash_version-*.so"
+func findExistingHashVersionFiles(basePath string) ([]string, error) {
+	// Extract directory and base filename
+	dir := filepath.Dir(basePath)
+	ext := filepath.Ext(basePath)
+	baseNameWithoutExt := strings.TrimSuffix(filepath.Base(basePath), ext)
+
+	// Create the pattern to search for: basefilename_hash_version-*
+	pattern := baseNameWithoutExt + "_hash_version-*" + ext
+
+	// Read directory contents
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Directory doesn't exist, return empty slice
+			return []string{}, nil
+		}
+		return nil, fmt.Errorf("failed to read directory %s: %w", dir, err)
+	}
+
+	var matchingFiles []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		// Check if filename matches our pattern
+		matched, err := filepath.Match(pattern, entry.Name())
+		if err != nil {
+			log.Logger.Error(err, "Error matching pattern", "pattern", pattern, "filename", entry.Name())
+			continue
+		}
+
+		if matched {
+			fmt.Println("Found matching hash version file", entry.Name())
+			fullPath := filepath.Join(dir, entry.Name())
+			matchingFiles = append(matchingFiles, fullPath)
+		}
+	}
+
+	return matchingFiles, nil
 }
 
 // Helper function to rename a file using the first 12 characters of its hash
