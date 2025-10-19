@@ -188,8 +188,16 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		customInstrumentations.Java = make([]instrumentationrules.JavaCustomProbe, 0, len(input.CustomInstrumentations.Java))
 		for _, probe := range input.CustomInstrumentations.Java {
 			apiProbe := instrumentationrules.JavaCustomProbe{}
-			apiProbe.ClassName = *probe.ClassName
-			apiProbe.MethodName = *probe.MethodName
+			if probe.ClassName != nil {
+				apiProbe.ClassName = *probe.ClassName
+			} else {
+				apiProbe.ClassName = ""
+			}
+			if probe.MethodName != nil {
+				apiProbe.MethodName = *probe.MethodName
+			} else {
+				apiProbe.MethodName = ""
+			}
 			customInstrumentations.Java = append(customInstrumentations.Java, apiProbe)
 		}
 	}
@@ -198,10 +206,26 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		customInstrumentations.Golang = make([]instrumentationrules.GolangCustomProbe, 0, len(input.CustomInstrumentations.Golang))
 		for _, probe := range input.CustomInstrumentations.Golang {
 			apiProbe := instrumentationrules.GolangCustomProbe{}
-			apiProbe.PackageName = *probe.PackageName
-			apiProbe.FunctionName = *probe.FunctionName
-			apiProbe.ReceiverName = *probe.ReceiverName
-			apiProbe.ReceiverMethodName = *probe.ReceiverMethodName
+			if probe.PackageName != nil {
+				apiProbe.PackageName = *probe.PackageName
+			} else {
+				apiProbe.PackageName = ""
+			}
+			if probe.FunctionName != nil {
+				apiProbe.FunctionName = *probe.FunctionName
+			} else {
+				apiProbe.FunctionName = ""
+			}
+			if probe.ReceiverName != nil {
+				apiProbe.ReceiverName = *probe.ReceiverName
+			} else {
+				apiProbe.ReceiverName = ""
+			}
+			if probe.ReceiverMethodName != nil {
+				apiProbe.ReceiverMethodName = *probe.ReceiverMethodName
+			} else {
+				apiProbe.ReceiverMethodName = ""
+			}
 			customInstrumentations.Golang = append(customInstrumentations.Golang, apiProbe)
 		}
 	}
