@@ -42,7 +42,7 @@ icon: 'signal-stream'
 - **AZURE_MONITOR_INSTRUMENTATION_KEY** `string` : Instrumentation Key. Application Insights instrumentation key, which can be found in the Application Insights resource in the Azure Portal. While it is currently supported, its use is discouraged and it is slated for deprecation.
   - This field is optional
 - **AZURE_MONITOR_ENDPOINT** `string` : Endpoint. The endpoint URL where data will be submitted. While this option remains available, it is important to note that the use of the Connection String is recommended, as it encompasses the endpoint information. The direct configuration of the endpoint is considered to be on a deprecation path.
-  - This field is optional and defaults to `https://dc.services.visualstudio.com/v2/track`
+  - This field is optional
 
 <Warning>
   Do not configure the `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable. It will override this configuration!
