@@ -121,7 +121,7 @@ resource "aws_iam_instance_profile" "ssm_core" {
 # ---------------- EC2 instance (attach data EBS at launch) ----------------
 resource "aws_instance" "monitoring" {
   ami           = data.aws_ami.amazon_linux.id
-  instance_type = "m6i.large"
+  instance_type = "m6i.xlarge"
 
   subnet_id = data.terraform_remote_state.eks.outputs.private_subnet_ids[0]
   vpc_security_group_ids      = [aws_security_group.monitoring_ec2_sg.id]
@@ -139,7 +139,7 @@ resource "aws_instance" "monitoring" {
   # Prometheus data volume -> will appear as /dev/nvme1n1 on Nitro
   ebs_block_device {
     device_name           = "/dev/sdf"
-    volume_size           = 50
+    volume_size           = 25
     volume_type           = "gp3"
     delete_on_termination = true
   }
@@ -147,7 +147,7 @@ resource "aws_instance" "monitoring" {
   # Grafana data volume -> will appear as /dev/nvme2n1 on Nitro
   ebs_block_device {
     device_name           = "/dev/sdg"
-    volume_size           = 20
+    volume_size           = 1
     volume_type           = "gp3"
     delete_on_termination = true
   }
