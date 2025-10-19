@@ -188,10 +188,8 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		customInstrumentations.Java = make([]instrumentationrules.JavaCustomProbe, 0, len(input.CustomInstrumentations.Java))
 		for _, probe := range input.CustomInstrumentations.Java {
 			apiProbe := instrumentationrules.JavaCustomProbe{}
-			if probe.ClassName != nil && *probe.ClassName != "" && probe.MethodName != nil && *probe.MethodName != "" {
-				apiProbe.ClassName = *probe.ClassName
-				apiProbe.MethodName = *probe.MethodName
-			}
+			apiProbe.ClassName = *probe.ClassName
+			apiProbe.MethodName = *probe.MethodName
 			customInstrumentations.Java = append(customInstrumentations.Java, apiProbe)
 		}
 	}
@@ -200,17 +198,11 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 		customInstrumentations.Golang = make([]instrumentationrules.GolangCustomProbe, 0, len(input.CustomInstrumentations.Golang))
 		for _, probe := range input.CustomInstrumentations.Golang {
 			apiProbe := instrumentationrules.GolangCustomProbe{}
-			if probe.PackageName != nil && *probe.PackageName != "" {
-				apiProbe.PackageName = *probe.PackageName
-				// Golang probe has either functionName or receiverName + receiverMethodName
-				if probe.FunctionName != nil && *probe.FunctionName != "" {
-					apiProbe.FunctionName = *probe.FunctionName
-				} else if probe.ReceiverName != nil && *probe.ReceiverName != "" && probe.ReceiverMethodName != nil && *probe.ReceiverMethodName != "" {
-					apiProbe.ReceiverName = *probe.ReceiverName
-					apiProbe.ReceiverMethodName = *probe.ReceiverMethodName
-				}
-				customInstrumentations.Golang = append(customInstrumentations.Golang, apiProbe)
-			}
+			apiProbe.PackageName = *probe.PackageName
+			apiProbe.FunctionName = *probe.FunctionName
+			apiProbe.ReceiverName = *probe.ReceiverName
+			apiProbe.ReceiverMethodName = *probe.ReceiverMethodName
+			customInstrumentations.Golang = append(customInstrumentations.Golang, apiProbe)
 		}
 	}
 
