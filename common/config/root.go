@@ -15,6 +15,7 @@ var availableConfigers = []Configer{
 	&AWSXRay{},
 	&Axiom{},
 	&AzureBlobStorage{},
+	&AzureMonitor{},
 	&BetterStack{},
 	&Bonree{},
 	&Causely{},
