@@ -1,52 +1,20 @@
 # Odigos Stress Testing Infrastructure
 
-This directory contains the complete infrastructure setup for running stress tests on Odigos with integrated monitoring and telemetry collection.
+Complete infrastructure setup for running stress tests on Odigos with integrated monitoring and telemetry collection.
 
-## Quick Start
+## Deployment Options
 
+### Quick Start (Automated)
 ```bash
-# Deploy everything (EKS + EC2 + Kubernetes apps + load-test workloads)
+# Deploy everything:  EKS cluster, EC2 monitoring stack, and all Kubernetes applications including load-test workloads.
 ./deploy.sh deploy
-
-# Deploy only Kubernetes applications (without load test workloads)
-./deploy.sh k8s-apps
-
-# Deploy Kubernetes applications with load test workloads
-./deploy.sh k8s-apps --with-load-test
 
 # Check status
 ./deploy.sh status
 
-# Get cluster info
-tofu output cluster_info
-
-# Get ClickHouse connection info
-tofu output clickhouse_connection_info
+# Deploy only EKS applications
+./deploy.sh k8s-apps
 ```
-
-## Directory Structure
-
-```
-stress-test/
-├── main.tf                 # EKS cluster configuration
-├── ec2/                    # Monitoring stack (EC2)
-├── deploy/                 # Kubernetes manifests
-│   ├── workloads/          # Test applications
-│   ├── monitoring-stack/   # Prometheus, Grafana
-│   └── odigos/            # Odigos configurations
-├── deploy.sh              # Main deployment script
-├── README.md              # This file
-├── DEPLOYMENT_GUIDE.md    # Detailed deployment guide
-└── TOFU_USAGE.md         # Tofu-specific instructions
-```
-
-## Deployment Options
-
-### Full Deployment
-```bash
-./deploy.sh deploy
-```
-Deploys everything: EKS cluster, EC2 monitoring stack, and all Kubernetes applications including load-test workloads.
 
 ### Kubernetes Applications Only
 ```bash
@@ -57,169 +25,70 @@ Deploys everything: EKS cluster, EC2 monitoring stack, and all Kubernetes applic
 ./deploy.sh k8s-apps --with-load-test
 ```
 
-### Infrastructure Only
-```bash
-# Deploy only EKS cluster
-./deploy.sh infrastructure
-
-# Deploy only EC2 monitoring stack
-./deploy.sh ec2
 ```
 
-## Documentation
+### Configuration
 
-- [Deployment Guide](DEPLOYMENT_GUIDE.md)
-- [Tofu Usage](TOFU_USAGE.md)
+Edit `terraform.tfvars` to customize settings:
 
-## Accessing Services
-
-### Get Connection Information
-```bash
-# Get ClickHouse connection info
-tofu output clickhouse_connection_info
-
-# Get EC2 instance ID
-tofu output ec2_instance_id
-
-# Get cluster info
-tofu output cluster_info
-```
-
-### Port Forwarding to EC2 Services
-```bash
-# Get instance ID first
-INSTANCE_ID=$(tofu output -raw ec2_instance_id)
-
-# Grafana (port 3000)
-aws ssm start-session --target $INSTANCE_ID \
-  --document-name AWS-StartPortForwardingSession \
-  --parameters '{"portNumber":["3000"],"localPortNumber":["3000"]}'
-
-# Prometheus (port 9090)
-aws ssm start-session --target $INSTANCE_ID \
-  --document-name AWS-StartPortForwardingSession \
-  --parameters '{"portNumber":["9090"],"localPortNumber":["9090"]}'
-
-# ClickHouse HTTP (port 8123)
-aws ssm start-session --target $INSTANCE_ID \
-  --document-name AWS-StartPortForwardingSession \
-  --parameters '{"portNumber":["8123"],"localPortNumber":["8123"]}'
-```
-
-## Key Features
-
-- **EKS Cluster**: Managed Kubernetes cluster with auto-scaling
-- **Monitoring Stack**: Prometheus, Grafana, ClickHouse on EC2
-- **Odigos Integration**: Automatic telemetry collection and routing
-- **Test Workloads**: High-performance span generators (Go, Java, Node.js, Python)
-- **Automatic Instrumentation**: Odigos auto-detects and instruments applications
-- **Load Testing**: K6 integration for performance testing
-
-
-## Architecture
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   EKS Cluster   │    │  EC2 Monitoring  │    │  Test Workloads │
-│                 │    │  Stack           │    │                 │
-│ • Kubernetes    │◄──►│ • Prometheus     │    │ • Span Gen      │
-│ • Odigos        │    │ • Grafana        │    │ • Test Apps     │
-│ • Applications  │    │ • ClickHouse     │    │ • Auto-instr.   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+```hcl
+cluster_name = "your-cluster-name"
+region       = "us-east-1"
+node_spec    = "c6a.2xlarge"
+node_desired_size = 3
+node_max_size = 5
 ```
 
 ### Data Flow
 ```
-Test Apps → Odigos Sources → Odigos Gateway → ClickHouse (EC2)
-                                              ↓
-                                         Prometheus (EC2)
-                                              ↓
-                                          Grafana (EC2)
+Test Apps (Odigos Sources) → Data Collection → Odigos Gateway → ClickHouse (EC2)
+              ↓                    ↓              ↓
+         Prometheus (EC2) ←────────┴──────────────┘
+              ↓
+          Grafana (EC2)
 ```
 
-## Prerequisites
+## Directory Structure
 
-- AWS CLI configured
-- Terraform/OpenTofu >= 1.0.0
-- kubectl
-- Docker (for building test applications)
-
-## Configuration
-
-Edit `terraform.tfvars` to customize your deployment:
-
-```hcl
-cluster_name = "your-stress-test-cluster"
-region       = "us-east-1"
-node_count   = 3
-node_spec    = "c6a.2xlarge"
+```
+stress-test/
+├── README.md                    # This file
+├── main.tf                      # EKS infrastructure
+├── variables.tf                 # EKS variables
+├── outputs.tf                   # EKS outputs
+├── provider.tf                  # AWS provider config
+├── terraform.tfvars             # Configuration
+├── ec2/                         # Monitoring stack
+│   ├── main.tf                  # EC2 instance with monitoring tools
+│   ├── variables.tf             # EC2 variables
+│   └── outputs.tf               # EC2 outputs
+├── deploy/                      # Kubernetes manifests
+│   ├── workloads/               # Test applications
+│   │   ├── generators/          # Span generators (Go, Java, Node, Python)
+│   │   
+│   │   └── applications/        # Full applications
+│   ├── monitoring-stack/        # Prometheus configuration
+│   └── odigos/                  # Odigos configurations
+├── deploy.sh                    # Main deployment script
+└── TOFU_USAGE.md               # Tofu-specific instructions
 ```
 
-## Monitoring
+## Monitoring Access
 
-### Service URLs (after port forwarding)
-- **Grafana**: http://localhost:3000 (admin/admin)
-  - Kubernetes Pods View dashboard (ID: 15760) - Comprehensive pod monitoring
-- **Prometheus**: http://localhost:9090
-- **ClickHouse HTTP**: http://localhost:8123
-- **ClickHouse Native**: tcp://<EC2_IP>:9000
+Services run on EC2 instance. Use AWS SSM for port forwarding:
 
-### Odigos Telemetry
-- **Odigos UI**: Available in EKS cluster
-- **Sources**: Auto-detected workload generators
-- **Destinations**: ClickHouse integration configured
-- **Data Flow**: Traces, Metrics, Logs → ClickHouse → Grafana
-
-## Troubleshooting
-
-### EKS Cluster
-```bash
-# Check cluster status
-kubectl get nodes
-kubectl get pods --all-namespaces
-
-# Check Odigos status
-kubectl get pods -n odigos-system
-kubectl get sources -n load-test
-kubectl get destinations -n odigos-system
-
-# Check workload generators
-kubectl get pods -n load-test
-```
-
-### EC2 Monitoring Stack
 ```bash
 # Get instance ID
-INSTANCE_ID=$(tofu output -raw ec2_instance_id)
+cd ec2/ && tofu output monitoring_instance_id && cd ..
 
-# Check instance status
-aws ec2 describe-instances --instance-ids $INSTANCE_ID
-
-# Check services via SSM
-aws ssm start-session --target $INSTANCE_ID
-sudo systemctl status prometheus grafana-server clickhouse-server
-```
-
-### Odigos Integration
-```bash
-# Check destination configuration
-kubectl describe destination clickhouse-destination -n odigos-system
-
-# Check gateway logs
-kubectl logs -l app.kubernetes.io/name=odigos -n odigos-system
-
-# Test ClickHouse connectivity
-kubectl run test-clickhouse --image=busybox --rm -it --restart=Never -- sh -c "nc -zv <EC2_IP> 9000"
-```
-
-### View Terraform Outputs
-```bash
-tofu output
+# Access services (replace <instance-id>)
+aws ssm start-session --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["3000"],"localPortNumber":["3000"]}'  # Grafana
+aws ssm start-session --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["9090"],"localPortNumber":["9090"]}'  # Prometheus
+aws ssm start-session --target <instance-id> --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8123"],"localPortNumber":["8123"]}'  # ClickHouse
 ```
 
 ## Cleanup
 
 ```bash
-# Destroy infrastructure
+# Automated cleanup
 ./deploy.sh destroy
-```
