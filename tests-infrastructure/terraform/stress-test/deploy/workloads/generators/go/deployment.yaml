@@ -24,10 +24,6 @@ spec:
           image: public.ecr.aws/odigos/go-span-gen:v0.0.1
           imagePullPolicy: Always
           env:
-            - name: OTEL_SERVICE_NAME
-              value: go-span-generator
-            - name: OTEL_RESOURCE_ATTRIBUTES
-              value: service.name=go-span-generator,service.version=v1.0.0
             - name: SPANS_PER_SEC
               value: "1000"
             - name: SPAN_BYTES

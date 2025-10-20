@@ -24,21 +24,17 @@ spec:
           image: public.ecr.aws/odigos/java-span-gen:v0.0.1
           imagePullPolicy: Always
           env:
-            - name: OTEL_SERVICE_NAME
-              value: java-span-generator
-            - name: OTEL_RESOURCE_ATTRIBUTES
-              value: service.name=java-span-generator,service.version=v1.0.0
             - name: SPANS_PER_SEC
               value: "1000"
             - name: SPAN_BYTES
               value: "2000"
           resources:
             requests:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: "300m"
+              memory: "256Mi"
             limits:
-              cpu: "1500m"
-              memory: "2Gi"
+              cpu: "300m"
+              memory: "256Mi"
           livenessProbe:
             exec:
               command:
