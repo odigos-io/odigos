@@ -337,7 +337,6 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	odigosConfiguration.Psp = odigos.Spec.PodSecurityPolicy
 	odigosConfiguration.ImagePrefix = odigos.Spec.ImagePrefix
 	odigosConfiguration.Profiles = odigos.Spec.Profiles
-
 	// "normal" is deprecated. Kept here for backwards compatibility with operator CRD.
 	if odigos.Spec.UIMode == "normal" {
 		odigosConfiguration.UiMode = common.UiModeDefault

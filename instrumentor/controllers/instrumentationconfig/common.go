@@ -83,9 +83,6 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					if rule.Spec.TraceConfig != nil {
 						libraryConfig.TraceConfig = mergeTracingConfig(libraryConfig.TraceConfig, rule.Spec.TraceConfig)
 					}
-					// if rule.Spec.CustomInstrumentations != nil {
-					// 	libraryConfig.CustomInstrumentations = mergeCustomInstrumentations(libraryConfig.CustomInstrumentations, rule.Spec.CustomInstrumentations)
-					// }
 				}
 			}
 		}
