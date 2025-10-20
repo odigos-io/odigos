@@ -86,15 +86,7 @@ resource "aws_security_group" "monitoring_ec2_sg" {
     protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
-  # SSH (if needed for debugging)
-  egress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  
+
   tags = { Name = "monitoring-ec2-sg" }
 }
 
@@ -330,10 +322,22 @@ EOF
 #!/bin/bash
 set -e
 
-# Wait for Grafana to be ready
-until curl -s http://127.0.0.1:3000/api/health > /dev/null; do
-  sleep 2
+# Wait for Grafana to be ready (max 5 minutes)
+echo "Waiting for Grafana to be ready..."
+for i in {1..60}; do
+  if curl -s http://127.0.0.1:3000/api/health > /dev/null 2>&1; then
+    echo "Grafana is ready after $((i*5)) seconds"
+    break
+  fi
+  echo "Attempt $i/60: Grafana not ready yet, waiting 5 seconds..."
+  sleep 5
 done
+
+# Check if Grafana is actually ready
+if ! curl -s http://127.0.0.1:3000/api/health > /dev/null 2>&1; then
+  echo "ERROR: Grafana failed to start within 5 minutes"
+  exit 1
+fi
 
 # Wait for Grafana to fully initialize
 sleep 10
