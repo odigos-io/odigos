@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
@@ -113,6 +114,7 @@ type WorkloadSources struct {
 func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodWorkload) (*WorkloadSources, error) {
 	var err error
 	workloadSources := &WorkloadSources{}
+	logger := log.FromContext(ctx)
 
 	namespace := pw.Namespace
 	if len(namespace) == 0 && pw.Kind == k8sconsts.WorkloadKindNamespace {
@@ -140,11 +142,12 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 		}
 
 		activeCount := len(activeSources)
-		// Only sort if there are multiple sources in order to get deterministic results
 		if activeCount > 1 {
+			// Sort deterministically (oldest first) and pick the first
 			sort.Slice(activeSources, func(i, j int) bool {
 				return activeSources[i].CreationTimestamp.Before(&activeSources[j].CreationTimestamp)
 			})
+			logger.Error(ErrorTooManySources, "multiple workload Sources found; using oldest", "count", activeCount, "workload.name", pw.Name, "workload.namespace", namespace, "workload.kind", pw.Kind)
 		}
 
 		// Only assign if there are active sources
@@ -175,9 +178,11 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 
 	activeNamespaceCount := len(activeNamespaceSources)
 	if activeNamespaceCount > 1 {
+		// Sort deterministically (oldest first) and pick the first
 		sort.Slice(activeNamespaceSources, func(i, j int) bool {
 			return activeNamespaceSources[i].CreationTimestamp.Before(&activeNamespaceSources[j].CreationTimestamp)
 		})
+		logger.Error(ErrorTooManySources, "multiple namespace Sources found; using oldest", "count", activeNamespaceCount, "namespace", namespace)
 	}
 
 	if activeNamespaceCount >= 1 {
