@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	v1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type State int
@@ -101,7 +105,7 @@ func NewOrchestrator(client *kube.Client, ctx context.Context, isRemote bool) (*
 }
 
 // Apply is called sequentially on workloads to instrument them.
-func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
+func (o *Orchestrator) Apply(ctx context.Context, obj metav1.Object) error {
 	// Create a channel to handle cancellation
 	done := make(chan struct{})
 	var finalErr error
@@ -165,7 +169,7 @@ func (o *Orchestrator) Apply(ctx context.Context, obj client.Object) error {
 	}
 }
 
-func (o *Orchestrator) getCurrentState(ctx context.Context, obj client.Object) (State, error) {
+func (o *Orchestrator) getCurrentState(ctx context.Context, obj metav1.Object) (State, error) {
 	for state := StateNoSourceCreated; state <= StateInstrumented; state++ {
 		transition := o.TransitionsMap[state]
 		if transition == nil {
@@ -191,8 +195,8 @@ func (o *Orchestrator) log(str string) {
 type Transition interface {
 	From() State
 	To() State
-	Execute(ctx context.Context, obj client.Object) error
-	GetTransitionState(ctx context.Context, obj client.Object) (State, error)
+	Execute(ctx context.Context, obj metav1.Object) error
+	GetTransitionState(ctx context.Context, obj metav1.Object) (State, error)
 }
 
 type BaseTransition struct {
@@ -203,4 +207,21 @@ type BaseTransition struct {
 
 func (b *BaseTransition) log(str string) {
 	fmt.Printf("    > %s\n", str)
+}
+
+func WorkloadKindFrombject(obj metav1.Object) k8sconsts.WorkloadKind {
+	switch obj.(type) {
+	case *v1.Deployment:
+		return k8sconsts.WorkloadKindDeployment
+	case *v1.StatefulSet:
+		return k8sconsts.WorkloadKindStatefulSet
+	case *v1.DaemonSet:
+		return k8sconsts.WorkloadKindDaemonSet
+	case *batchv1beta1.CronJob:
+		return k8sconsts.WorkloadKindCronJob
+	case *batchv1.CronJob:
+		return k8sconsts.WorkloadKindCronJob
+	default:
+		return k8sconsts.WorkloadKind("")
+	}
 }

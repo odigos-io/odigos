@@ -7,7 +7,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -25,7 +24,7 @@ func (i *InstrumentationEnded) To() State {
 	return StateInstrumented
 }
 
-func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object) error {
+func (i *InstrumentationEnded) Execute(ctx context.Context, obj metav1.Object) error {
 	return wait.PollUntilContextTimeout(ctx, 5*time.Second, 30*time.Minute, true, func(ctx context.Context) (bool, error) {
 		i.log("Waiting for all pods to be instrumented ...")
 		rolloutCompleted, err := utils.VerifyAllPodsAreRunning(ctx, i.client, obj, true)
@@ -96,7 +95,7 @@ func (i *InstrumentationEnded) Execute(ctx context.Context, obj client.Object) e
 	})
 }
 
-func (i *InstrumentationEnded) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
+func (i *InstrumentationEnded) GetTransitionState(ctx context.Context, obj metav1.Object) (State, error) {
 	rolloutCompleted, err := utils.VerifyAllPodsAreRunning(ctx, i.client, obj, true)
 	if err != nil {
 		i.log("Error verifying all pods are instrumented")

@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func checkAllPodsRunning(pods *corev1.PodList) bool {
@@ -36,7 +35,7 @@ func checkAllPodsRunning(pods *corev1.PodList) bool {
 	return true
 }
 
-func VerifyAllPodsAreRunning(ctx context.Context, k8sclient kubernetes.Interface, obj client.Object, instrumentedOnly bool) (bool, error) {
+func VerifyAllPodsAreRunning(ctx context.Context, k8sclient kubernetes.Interface, obj metav1.Object, instrumentedOnly bool) (bool, error) {
 	if !IsWorkloadRolloutDone(obj) {
 		return false, nil
 	}
@@ -71,7 +70,7 @@ func VerifyAllPodsAreRunning(ctx context.Context, k8sclient kubernetes.Interface
 	return checkAllPodsRunning(pods), nil
 }
 
-func GetMatchLabels(obj client.Object) map[string]string {
+func GetMatchLabels(obj metav1.Object) map[string]string {
 	var labels map[string]string
 	switch obj := obj.(type) {
 	case *appsv1.Deployment:
@@ -89,7 +88,7 @@ func GetMatchLabels(obj client.Object) map[string]string {
 // IsWorkloadRolloutDone checks if the rollout of the given workload is done.
 // this is based on the kubectl implementation of checking the rollout status:
 // https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/rollout_status.go
-func IsWorkloadRolloutDone(obj client.Object) bool {
+func IsWorkloadRolloutDone(obj metav1.Object) bool {
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
 		if o.Generation <= o.Status.ObservedGeneration {

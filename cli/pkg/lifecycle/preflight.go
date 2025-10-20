@@ -6,7 +6,7 @@ import (
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type PreflightCheck struct {
@@ -21,7 +21,7 @@ func (p *PreflightCheck) To() State {
 	return StatePreflightChecksPassed
 }
 
-func (p *PreflightCheck) Execute(ctx context.Context, obj client.Object) error {
+func (p *PreflightCheck) Execute(ctx context.Context, obj metav1.Object) error {
 	allPodsRunning, err := utils.VerifyAllPodsAreRunning(ctx, p.client, obj, false)
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ func (p *PreflightCheck) Execute(ctx context.Context, obj client.Object) error {
 	return nil
 }
 
-func (p *PreflightCheck) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
+func (p *PreflightCheck) GetTransitionState(ctx context.Context, obj metav1.Object) (State, error) {
 	// If Execute passed, then the transition is successful.
 	return p.To(), nil
 }

@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type WaitForLangDetection struct {
@@ -32,8 +31,8 @@ func (w *WaitForLangDetection) To() State {
 // Returns (detected, error) where:
 // - detected is true if language detection succeeded
 // - error is non-nil only for actual errors (not for "not ready yet" cases)
-func (w *WaitForLangDetection) checkLanguageDetected(ctx context.Context, obj client.Object) (bool, error) {
-	workloadKind := workload.WorkloadKindFromClientObject(obj)
+func (w *WaitForLangDetection) checkLanguageDetected(ctx context.Context, obj metav1.Object) (bool, error) {
+	workloadKind := WorkloadKindFrombject(obj)
 	icName := workload.CalculateWorkloadRuntimeObjectName(obj.GetName(), workloadKind)
 
 	if !w.remote {
@@ -90,7 +89,7 @@ func (w *WaitForLangDetection) checkLanguageDetected(ctx context.Context, obj cl
 	return false, nil
 }
 
-func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object) error {
+func (w *WaitForLangDetection) Execute(ctx context.Context, obj metav1.Object) error {
 	return wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
 		detected, err := w.checkLanguageDetected(ctx, obj)
 		if err != nil {
@@ -101,7 +100,7 @@ func (w *WaitForLangDetection) Execute(ctx context.Context, obj client.Object) e
 	})
 }
 
-func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
+func (w *WaitForLangDetection) GetTransitionState(ctx context.Context, obj metav1.Object) (State, error) {
 	detected, err := w.checkLanguageDetected(ctx, obj)
 	if err != nil {
 		return StateUnknown, err

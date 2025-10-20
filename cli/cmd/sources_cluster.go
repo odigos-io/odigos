@@ -19,7 +19,6 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/preflight"
 	"github.com/odigos-io/odigos/cli/pkg/remote"
 	"k8s.io/apimachinery/pkg/util/version"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -203,7 +202,7 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludeNamespac
 	}
 }
 
-func instrumentApp(ctx context.Context, app client.Object, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool, kind string) error {
+func instrumentApp(ctx context.Context, app metav1.Object, excludedApps map[string]struct{}, orchestrator *lifecycle.Orchestrator, dryRun bool, kind string) error {
 	fmt.Printf("  - Inspecting %s: %s\n", kind, app.GetName())
 	if isAppExcluded(app, excludedApps, kind) {
 		fmt.Printf("    - Skipping %s due to exclusion file\n", kind)
@@ -224,7 +223,7 @@ func instrumentApp(ctx context.Context, app client.Object, excludedApps map[stri
 //  3. <name> - just the name
 //
 // Kind matching is case-insensitive.
-func isAppExcluded(app client.Object, excludedApps map[string]struct{}, kind string) bool {
+func isAppExcluded(app metav1.Object, excludedApps map[string]struct{}, kind string) bool {
 	if excludedApps == nil {
 		return false
 	}

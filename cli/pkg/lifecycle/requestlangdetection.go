@@ -10,7 +10,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type RequestLangDetection struct {
@@ -27,8 +26,8 @@ func (r *RequestLangDetection) To() State {
 	return StateSourceCreated
 }
 
-func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object) error {
-	workloadKind := workload.WorkloadKindFromClientObject(obj)
+func (r *RequestLangDetection) Execute(ctx context.Context, obj metav1.Object) error {
+	workloadKind := WorkloadKindFrombject(obj)
 	if !r.remote {
 		var source *odigosv1.Source
 		selector := labels.SelectorFromSet(labels.Set{
@@ -80,8 +79,8 @@ func (r *RequestLangDetection) Execute(ctx context.Context, obj client.Object) e
 	return nil
 }
 
-func (r *RequestLangDetection) GetTransitionState(ctx context.Context, obj client.Object) (State, error) {
-	workloadKind := workload.WorkloadKindFromClientObject(obj)
+func (r *RequestLangDetection) GetTransitionState(ctx context.Context, obj metav1.Object) (State, error) {
+	workloadKind := WorkloadKindFrombject(obj)
 	if !r.remote {
 		labeled := labels.Set{
 			k8sconsts.WorkloadNameLabel:      obj.GetName(),
