@@ -35,7 +35,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.39.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
-  name: odigos-operator.v1.0.212
+  name: odigos-operator.v1.8.0
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -460,62 +460,74 @@ spec:
                 kubectl.kubernetes.io/default-container: manager
               labels:
                 control-plane: controller-manager
-            spec:
-              containers:
-              - args:
-                - --metrics-bind-address=:8443
-                - --leader-elect
-                - --health-probe-bind-address=:8081
-                command:
-                - /manager
-                env:
-                - name: CURRENT_NS
-                  valueFrom:
-                    fieldRef:
-                      apiVersion: v1
-                      fieldPath: metadata.namespace
-                - name: ODIGOS_VERSION
-                  valueFrom:
-                    configMapKeyRef:
-                      key: ODIGOS_VERSION
-                      name: odigos-operator-odigos-version-5472996t4d
-                - name: RELATED_IMAGE_AUTOSCALER
-                  value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.212
-                - name: RELATED_IMAGE_COLLECTOR
-                  value: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.212
-                - name: RELATED_IMAGE_FRONTEND
-                  value: registry.connect.redhat.com/odigos/odigos-ui-ubi9:v1.0.212
-                - name: RELATED_IMAGE_INSTRUMENTOR
-                  value: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v1.0.212
-                - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9:v1.0.212
-                - name: RELATED_IMAGE_ODIGLET
-                  value: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9:v1.0.212
-                - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9:v1.0.212
-                - name: RELATED_IMAGE_SCHEDULER
-                  value: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9:v1.0.212
-                image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.0.212
-                livenessProbe:
-                  httpGet:
-                    path: /healthz
-                    port: 8081
-                  initialDelaySeconds: 15
-                  periodSeconds: 20
-                name: manager
-                readinessProbe:
-                  httpGet:
-                    path: /readyz
-                    port: 8081
-                  initialDelaySeconds: 5
-                  periodSeconds: 10
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 128Mi
-                  requests:
-                    cpu: 10m
-                    memory: 64Mi
+            strategy: {}
+            template:
+              metadata:
+                annotations:
+                  kubectl.kubernetes.io/default-container: manager
+                labels:
+                  control-plane: controller-manager
+              spec:
+                containers:
+                  - args:
+                      - --metrics-bind-address=:8443
+                      - --leader-elect
+                      - --health-probe-bind-address=:8081
+                    command:
+                      - /manager
+                    env:
+                      - name: CURRENT_NS
+                        valueFrom:
+                          fieldRef:
+                            apiVersion: v1
+                            fieldPath: metadata.namespace
+                      - name: ODIGOS_VERSION
+                        valueFrom:
+                          configMapKeyRef:
+                            key: ODIGOS_VERSION
+                            name: odigos-operator-odigos-version-2b69t4d487
+                      - name: RELATED_IMAGE_AUTOSCALER
+                        value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:4da3ace23a9ae7a97f6b3fd0e271c4b853312aa8add6fd76d2d50224dcf5b52d
+                      - name: RELATED_IMAGE_COLLECTOR
+                        value: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:a3f35268de797ee326f08584ca25b76464a3a612500d2f95a2686c0e8b6fcf67
+                      - name: RELATED_IMAGE_FRONTEND
+                        value: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:f11f1ef06e7efcf89d1e9906f5a289a12864e519da8a3de10df96ead20672098
+                      - name: RELATED_IMAGE_INSTRUMENTOR
+                        value: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:d96d9bd1d0ac4c9acaf1e56fe46372217f79d888f9743b931a5c815745957b8b
+                      - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:63f5ec3c3b1aa7190c558e4cafe5563dfcfec6c0a8b166856e2bdfc6952df94e
+                      - name: RELATED_IMAGE_ODIGLET
+                        value: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:1a1f7ab783285a76204f4e2a5470fef7446beb32d2a65bb8cc3e5dbe1e00bc08
+                      - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
+                        value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:3b04ff5d65c80fcae7be799a85d3417e3f36b182d9af5067367a0dae7014cb7e
+                      - name: RELATED_IMAGE_SCHEDULER
+                        value: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:9bd5a96b45aab7d9b2a52cbd28587f34e823369186a4180400c0e02ef5fe6a05
+                    image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:ef45b967043beb8efddc5e2fb2b3071329ca03c1038a48bc25b827e7c8da988a
+                    livenessProbe:
+                      httpGet:
+                        path: /healthz
+                        port: 8081
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+                    name: manager
+                    readinessProbe:
+                      httpGet:
+                        path: /readyz
+                        port: 8081
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                    resources:
+                      limits:
+                        cpu: 500m
+                        memory: 128Mi
+                      requests:
+                        cpu: 10m
+                        memory: 64Mi
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      capabilities:
+                        drop:
+                          - ALL
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
@@ -610,3 +622,4 @@ spec:
   - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9:v1.0.212
     name: scheduler
   version: 1.0.212
+  
