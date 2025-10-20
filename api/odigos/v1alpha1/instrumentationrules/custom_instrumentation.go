@@ -64,10 +64,17 @@ func (jcp *JavaCustomProbe) String() string {
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type GolangCustomProbe struct {
-	// Package name is required
-	PackageName        string `json:"packageName"`
-	FunctionName       string `json:"functionName,omitempty"`
-	ReceiverName       string `json:"receiverName,omitempty"`
+	// PackageName is the name of the golang pacakge (ie net/http); Package name is always required
+	PackageName string `json:"packageName"`
+	// FunctionName is the name of the golang function to be instrumented, ie net/http.ListenAndServe
+	// Function name is optional if ReceiverName and ReceiverMethodName are provided
+	FunctionName string `json:"functionName,omitempty"`
+	// ReceiverName is the name of the golang receiver struct to be instrumented, ie http.Server
+	// ReceiverName is optional if FunctionName is provided
+	ReceiverName string `json:"receiverName,omitempty"`
+	// ReceiverMethodName is the name of the golang method, given a receiver struct, to be instrumented
+	// for example for http.Server.ListenAndServe, ReceiverMethodName is ListenAndServe
+	// ReceiverMethodName is optional if FunctionName is provided but required if ReceiverName is provided
 	ReceiverMethodName string `json:"receiverMethodName,omitempty"`
 }
 
