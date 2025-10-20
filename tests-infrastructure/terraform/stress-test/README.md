@@ -48,6 +48,22 @@ Test Apps (Odigos Sources) → Data Collection → Odigos Gateway → ClickHouse
           Grafana (EC2)
 ```
 
+## Workload Generators
+
+The infrastructure includes two types of span generators for load testing:
+
+### Continuous Generators (`generators/`)
+- **Purpose**: Long-running span generation for sustained load testing
+- **Languages**: Go, Python, Node.js, Java
+- **Behavior**: Continuously generate spans until manually stopped
+- **Use Case**: Endurance testing and monitoring system behavior under sustained load
+
+### Fixed Span Generators (`fixed-span-generators/`)
+- **Purpose**: Controlled, predictable load testing scenarios
+- **Languages**: Go, Python, Node.js, Java
+- **Behavior**: Generate exactly 10,000 spans per run, then terminate
+- **Use Case**: Performance benchmarking, burst testing, and controlled experiments
+
 ## Directory Structure
 
 ```
@@ -64,8 +80,8 @@ stress-test/
 │   └── outputs.tf               # EC2 outputs
 ├── deploy/                      # Kubernetes manifests
 │   ├── workloads/               # Test applications
-│   │   ├── generators/          # Span generators (Go, Java, Node, Python)
-│   │   
+│   │   ├── generators/          # Continuous span generators (Go, Java, Node, Python)
+│   │   ├── fixed-span-generators/ # Fixed span generators (10,000 spans each)
 │   │   └── applications/        # Full applications
 │   ├── monitoring-stack/        # Prometheus configuration
 │   └── odigos/                  # Odigos configurations

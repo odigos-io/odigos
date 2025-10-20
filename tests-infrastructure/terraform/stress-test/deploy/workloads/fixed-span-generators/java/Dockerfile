@@ -21,11 +21,11 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Copy the built JAR from builder stage
-COPY --from=builder /app/target/java-span-gen-1.0.0.jar ./app.jar
+COPY --from=builder /app/target/java-fixed-span-gen-1.0.0.jar ./app.jar
 
 # Set environment variables
-ENV SPANS_PER_SEC=1000
-ENV SPAN_BYTES=1000
+ENV TOTAL_SPANS=10000
+ENV SPAN_BYTES=2000
 
 # Run the application
 CMD ["java", "-jar", "app.jar"]
