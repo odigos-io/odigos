@@ -35,8 +35,11 @@ const (
 	// InstrumentationInProgress indicates the instrumentation is in progress, but the pods are not yet running.
 	StateInstrumentationInProgress
 
-	// Instrumented indicates the instrumentation has completed and the workload is instrumented and the pods are running.
+	// Instrumented indicates the instrumentation has completed and the workload is instrumented.
 	StateInstrumented
+
+	// PostCheckPassed indicates all pods in the workload are healthy and the post check has completed and the workload is ready for use.
+	StatePostCheckPassed
 )
 
 func (s State) String() string {
@@ -55,6 +58,8 @@ func (s State) String() string {
 		return "InstrumentationInProgress"
 	case StateInstrumented:
 		return "Instrumented"
+	case StatePostCheckPassed:
+		return "PostCheckPassed"
 	default:
 		return "Unknown"
 	}
@@ -93,8 +98,11 @@ func NewOrchestrator(client *kube.Client, ctx context.Context, isRemote bool) (*
 		// If the instrumentation is in progress, we need to wait for it to complete.
 		StateInstrumentationInProgress: &InstrumentationEnded{baseTransition},
 
-		// If the instrumentation is complete, we don't need to do anything.
-		StateInstrumented: nil,
+		// If the instrumentation is complete, check that all pods are healthy.
+		StateInstrumented: &PostCheck{baseTransition},
+
+		// If the post check is complete, the workload is ready for use.
+		StatePostCheckPassed: nil,
 	}
 
 	return &Orchestrator{Client: client,
@@ -170,10 +178,10 @@ func (o *Orchestrator) Apply(ctx context.Context, obj metav1.Object) error {
 }
 
 func (o *Orchestrator) getCurrentState(ctx context.Context, obj metav1.Object) (State, error) {
-	for state := StateNoSourceCreated; state <= StateInstrumented; state++ {
+	for state := StateNoSourceCreated; state <= StatePostCheckPassed; state++ {
 		transition := o.TransitionsMap[state]
 		if transition == nil {
-			// InstrumentedState is the last state, so if we reach it, we can return it.
+			// PostCheckPassed is the last state, so if we reach it, we can return it.
 			break
 		}
 		transitionState, err := transition.GetTransitionState(ctx, obj)
@@ -185,7 +193,7 @@ func (o *Orchestrator) getCurrentState(ctx context.Context, obj metav1.Object) (
 			return state, nil
 		}
 	}
-	return StateInstrumented, nil
+	return StatePostCheckPassed, nil
 }
 
 func (o *Orchestrator) log(str string) {

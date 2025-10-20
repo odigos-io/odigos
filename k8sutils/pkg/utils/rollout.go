@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
 
@@ -35,7 +34,7 @@ func checkAllPodsRunning(pods *corev1.PodList) bool {
 	return true
 }
 
-func VerifyAllPodsAreRunning(ctx context.Context, k8sclient kubernetes.Interface, obj metav1.Object, instrumentedOnly bool) (bool, error) {
+func VerifyAllPodsAreRunning(ctx context.Context, k8sclient kubernetes.Interface, obj metav1.Object) (bool, error) {
 	if !IsWorkloadRolloutDone(obj) {
 		return false, nil
 	}
@@ -45,18 +44,8 @@ func VerifyAllPodsAreRunning(ctx context.Context, k8sclient kubernetes.Interface
 		return true, nil
 	}
 
-	// Build label selector that also requires the agents-meta-hash label to exist
 	labelSelector := &metav1.LabelSelector{
 		MatchLabels: labels,
-	}
-
-	if instrumentedOnly {
-		labelSelector.MatchExpressions = []metav1.LabelSelectorRequirement{
-			{
-				Key:      k8sconsts.OdigosAgentsMetaHashLabel,
-				Operator: metav1.LabelSelectorOpExists,
-			},
-		}
 	}
 
 	pods, err := k8sclient.CoreV1().Pods(obj.GetNamespace()).List(ctx, metav1.ListOptions{

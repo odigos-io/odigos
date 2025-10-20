@@ -22,7 +22,7 @@ func (p *PreflightCheck) To() State {
 }
 
 func (p *PreflightCheck) Execute(ctx context.Context, obj metav1.Object) error {
-	allPodsRunning, err := utils.VerifyAllPodsAreRunning(ctx, p.client, obj, false)
+	allPodsRunning, err := utils.VerifyAllPodsAreRunning(ctx, p.client, obj)
 	if err != nil {
 		return err
 	}
