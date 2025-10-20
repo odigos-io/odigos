@@ -300,8 +300,8 @@ spec:
                             properties:
                               functionName:
                                 description: |-
-                                  FunctionName is the name of the golang function to be instrumented, ie net/http.ListenAndServe
-                                  Function name is optional if ReceiverName and ReceiverMethodName are provided
+                                  FunctionName is the name of the golang function to be instrumented, ie package name is "net/http" and the function
+                                  name will be "ListenAndServe"; Function name is disallowed if ReceiverName and ReceiverMethodName are provided
                                 type: string
                               packageName:
                                 description: PackageName is the name of the golang
@@ -310,13 +310,13 @@ spec:
                               receiverMethodName:
                                 description: |-
                                   ReceiverMethodName is the name of the golang method, given a receiver struct, to be instrumented
-                                  for example for http.Server.ListenAndServe, ReceiverMethodName is ListenAndServe
-                                  ReceiverMethodName is optional if FunctionName is provided but required if ReceiverName is provided
+                                  for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
+                                  ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
                                 type: string
                               receiverName:
                                 description: |-
-                                  ReceiverName is the name of the golang receiver struct to be instrumented, ie http.Server
-                                  ReceiverName is optional if FunctionName is provided
+                                  ReceiverName is the name of the golang receiver struct to be instrumented, ie for the "net/http" package, "response" is a receiver struct
+                                  ReceiverName is disallowed if FunctionName is provided; Receiver must be a concrete type (not an interface)
                                 type: string
                             required:
                             - packageName
