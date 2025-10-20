@@ -589,6 +589,11 @@ func init() {
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
 
+	// register and configure central uninstall command
+	centralCmd.AddCommand(centralUninstallCmd)
+	centralUninstallCmd.Flags().Bool("yes", false, "Confirm the uninstall without prompting")
+	centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower uninstallation")
+
 	// register and configure central upgrade command
 	centralCmd.AddCommand(centralUpgradeCmd)
 	centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")

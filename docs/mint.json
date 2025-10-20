@@ -249,6 +249,7 @@
             "backends/awsxray",
             "backends/axiom",
             "backends/azureblob",
+            "backends/azuremonitor",
             "backends/betterstack",
             "backends/bonree",
             "backends/causely",
