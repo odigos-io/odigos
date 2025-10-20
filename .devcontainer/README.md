@@ -16,10 +16,10 @@ kind create cluster --name kind --image kindest/node:v1.31.4
 ```
 
 2. Start the devcontainer (`CMD + Shift + P` -> Reopen in Container)
-3. Install odigos CLI (either via the Makefile or via other means)
+3. Install odigos CLI (this can be done by following the [documentation](https://docs.odigos.io/quickstart/installation) or by running `make helm-install` )
 
 ```sh
-make cli-install ODIGOS_CLI_VERSION=1.2.x
+make helm-install ODIGOS_CLI_VERSION=1.2.x
 # or 
 odigos install
 ```
@@ -42,49 +42,46 @@ kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/ku
 odigos ui
 ```
 ## (Re)connecting to the `kind` cluster
-If you restarted the devcontainer or the kind cluster, you might need to reconnect to the cluster. You can do this by running:
+If you re-started the devcontainer or the kind cluster you might need to reconnect the devcontainer to the kind cluster. You can do so by running the following script from within the devcontainer:
 ```sh
 ./.devcontainer/connect-kind.sh
 ```
 
-## Selective/Manual Setup (or: how to plug-and-play your own stuff during development)
-
-> Note: The cluster is using `kind` at the host level, and we are using a devcontainer, any changes to the cluster (like installing `odigos` or `jaeger`) need to be done at the host level. This is why we need to make sure the devcontainer can communicate with the the kubeconfig(`kubectl`), kind, docker daemon, etc. Overall, everything is set up to work out of the box, but if you need to make any manual changes to the cluster, you will need to do around these domains.
+## Developers Setup (or: how to plug-and-play your own stuff during development)
+> Note: The cluster is using `kind` at the host level and we are using a devcontainer, which are running on the same docker VM, therefore - any changes to the cluster (like installing `odigos` or `jaeger`) need to be applied against the docker daemon at the host; Therefore - we need to make sure that the devcontainer can communicate with the the kubeconfig(`kubectl`), kind, docker daemon, etc. Overall, everything is set up to work out of the box, but if you need to make any special changes to the cluster or other magic - the bugs will probably reside at the above domains.
 
 ### Overall deployment flow
 The flow of deploying a new version of Odigos to the `kind` cluster is as follows:
-1. Build the image at your desired tag
+1. Build the image(s) at your desired tag
 2. Load the tag into kind
-3. Update the k8 object
-
-And in order to make this easier, we have a Makefile that automates these steps.
+3. Update the k8 object to use the new tag
+In order to make this easier, we have a Makefile that automates these steps.
 
 ### Building, installing and deploying a custom version of Odigos
-
 Following these steps will allow you to build, load and deploy a custom version of Odigos to your `kind` cluster.
 
 1. Install the CLI at your desired version
 ```sh
-make cli-install ODIGOS_CLI_VERSION=1.2.x
+make helm-install ODIGOS_CLI_VERSION=1.2.x
 ```
 > At this point, given a non-existing tag, you will see an error when trying to deploy, which is expected.
 
 > If Odigos CLI is already installed, you can skip this step or upgrade it to the desired version:
 ```sh
-make cli-upgrade ODIGOS_CLI_VERSION=1.2.x
+make helm-upgrade ODIGOS_CLI_VERSION=1.2.x
 ```
 
 2. Build Odigos images at your desired tag
 ```sh
 make deploy TAG=<YOUR_DESIRED_TAG> # e.g. TAG=1.2.x
 ```
-By doing this, you will build the image and load it into kind and everything should be set up.
+By doing this, you will build the image and load it into kind so everything should be set up properly.
 
 
-### Even more grained steps
-If you need to deploy a specific container, or just the CRDs or just the UI, you can do so by following these steps:
+### Further granularity
+If you need to deploy a specific container, or just the CRDs, or just the UI, you can do so by following these steps:
 
-#### Building and deploying an image
+#### Building and deploying a specific component
 ```sh
 make deploy-ui TAG=<YOUR_DESIRED_TAG>
 # Options:
@@ -98,7 +95,7 @@ make deploy-ui TAG=<YOUR_DESIRED_TAG>
 # 8. deploy-agents
 ```
 
-#### Loading an image into the kind context
+#### Loading a specific component into kind
 ```sh
 make load-to-kind-% TAG=<YOUR_DESIRED_TAG>
 # Options:
