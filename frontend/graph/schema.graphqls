@@ -272,6 +272,7 @@ type InstrumentationRule {
   profileName: String!
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
+  conditions: [Condition!]
   codeAttributes: CodeAttributes
   headersCollection: HeadersCollection
   payloadCollection: PayloadCollection

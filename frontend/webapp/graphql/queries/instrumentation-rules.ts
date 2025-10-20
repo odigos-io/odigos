@@ -11,6 +11,13 @@ export const GET_INSTRUMENTATION_RULES = gql`
         disabled
         mutable
         profileName
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
+        }
         payloadCollection {
           httpRequest {
             mimeTypes
@@ -43,11 +50,11 @@ export const GET_INSTRUMENTATION_RULES = gql`
           headerKeys
         }
         customInstrumentations {
-            probes {
-                className
-                methodName
-            }
-         }
+          probes {
+            className
+            methodName
+          }
+        }
       }
     }
   }
