@@ -66,15 +66,15 @@ func (jcp *JavaCustomProbe) String() string {
 type GolangCustomProbe struct {
 	// PackageName is the name of the golang pacakge (ie net/http); Package name is always required
 	PackageName string `json:"packageName"`
-	// FunctionName is the name of the golang function to be instrumented, ie net/http.ListenAndServe
-	// Function name is optional if ReceiverName and ReceiverMethodName are provided
+	// FunctionName is the name of the golang function to be instrumented, ie package name is "net/http" and the function
+	// name will be "ListenAndServe"; Function name is disallowed if ReceiverName and ReceiverMethodName are provided
 	FunctionName string `json:"functionName,omitempty"`
-	// ReceiverName is the name of the golang receiver struct to be instrumented, ie http.Server
-	// ReceiverName is optional if FunctionName is provided
+	// ReceiverName is the name of the golang receiver struct to be instrumented, ie for the "net/http" package, "response" is a receiver struct
+	// ReceiverName is disallowed if FunctionName is provided; Receiver must be a concrete type (not an interface)
 	ReceiverName string `json:"receiverName,omitempty"`
 	// ReceiverMethodName is the name of the golang method, given a receiver struct, to be instrumented
-	// for example for http.Server.ListenAndServe, ReceiverMethodName is ListenAndServe
-	// ReceiverMethodName is optional if FunctionName is provided but required if ReceiverName is provided
+	// for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
+	// ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
 	ReceiverMethodName string `json:"receiverMethodName,omitempty"`
 }
 
