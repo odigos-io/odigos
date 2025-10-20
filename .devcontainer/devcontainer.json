@@ -33,7 +33,8 @@
         "ms-kubernetes-tools.vscode-kubernetes-tools",
         "ms-kubernetes-tools.kind-vscode",
         "eamodio.gitlens",
-        "GraphQL.vscode-graphql-syntax"
+        "GraphQL.vscode-graphql-syntax",
+        "foxundermoon.shell-format"
       ]
     }
   }
