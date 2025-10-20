@@ -446,8 +446,6 @@ type InstrumentationLibraryConfig struct {
 	CodeAttributes *instrumentationrules.CodeAttributes `json:"codeAttributes,omitempty"`
 
 	HeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
-
-	// CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 type InstrumentationLibraryId struct {
