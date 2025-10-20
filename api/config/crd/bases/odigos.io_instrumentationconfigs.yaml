@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.16.1
   labels:
     odigos.io/system-object: "true"
   name: instrumentationconfigs.odigos.io
@@ -299,13 +299,24 @@ spec:
                               which includes the package name, function name or receiver name and method name to be instrumented.
                             properties:
                               functionName:
+                                description: |-
+                                  FunctionName is the name of the golang function to be instrumented, ie net/http.ListenAndServe
+                                  Function name is optional if ReceiverName and ReceiverMethodName are provided
                                 type: string
                               packageName:
-                                description: Package name is required
+                                description: PackageName is the name of the golang
+                                  pacakge (ie net/http); Package name is always required
                                 type: string
                               receiverMethodName:
+                                description: |-
+                                  ReceiverMethodName is the name of the golang method, given a receiver struct, to be instrumented
+                                  for example for http.Server.ListenAndServe, ReceiverMethodName is ListenAndServe
+                                  ReceiverMethodName is optional if FunctionName is provided but required if ReceiverName is provided
                                 type: string
                               receiverName:
+                                description: |-
+                                  ReceiverName is the name of the golang receiver struct to be instrumented, ie http.Server
+                                  ReceiverName is optional if FunctionName is provided
                                 type: string
                             required:
                             - packageName
@@ -444,40 +455,6 @@ spec:
                                   Should record the `code.stacktrace` attribute.
                                   if unset, the value will resolve from other relevant rules, or fallback to false
                                 type: boolean
-                            type: object
-                          customInstrumentations:
-                            properties:
-                              golang:
-                                items:
-                                  description: |-
-                                    golang custom probe contains the details for a custom probe for golang applications,
-                                    which includes the package name, function name or receiver name and method name to be instrumented.
-                                  properties:
-                                    functionName:
-                                      type: string
-                                    packageName:
-                                      description: Package name is required
-                                      type: string
-                                    receiverMethodName:
-                                      type: string
-                                    receiverName:
-                                      type: string
-                                  required:
-                                  - packageName
-                                  type: object
-                                type: array
-                              java:
-                                items:
-                                  description: |-
-                                    java custom probe contains the details for a custom probe for java applications,
-                                    which includes the class name and method name to be instrumented.
-                                  properties:
-                                    className:
-                                      type: string
-                                    methodName:
-                                      type: string
-                                  type: object
-                                type: array
                             type: object
                           headersCollection:
                             properties:
