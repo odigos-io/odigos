@@ -24,7 +24,7 @@ output "clickhouse_connection_info" {
     endpoint = "tcp://${aws_instance.monitoring.private_ip}:9000"
     database = "otel"
     username = "default"
-    password = "stresstest"
+    password = null
     namespace = "odigos-system"
   }
 }
