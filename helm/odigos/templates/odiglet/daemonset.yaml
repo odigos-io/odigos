@@ -41,7 +41,7 @@ spec:
       # if host mounts are not allowed we don't need the init container
       # also, if mount method is k8s-init-container, we don't need odiglet to copy files to host fs
       # since each user pod will have its own init container to copy the agent files
-      {{- if and (not .Values.odiglet.noHostPathMounts) (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
+      {{- if or (not .Values.odiglet.noHostPathMounts) (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
       initContainers:
         - name: init
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
