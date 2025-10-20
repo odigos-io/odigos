@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +39,6 @@ func init() {
 
 type KubeManagerOptions struct {
 	Mgr           ctrl.Manager
-	Clientset     *kubernetes.Clientset
 	ConfigUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
 	CriClient     *criwrapper.CriClient
 	// map where keys are the names of the environment variables that participate in append mechanism
@@ -82,7 +80,7 @@ func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (c
 
 func SetupWithManager(kubeManagerOptions KubeManagerOptions) error {
 
-	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.Clientset, kubeManagerOptions.CriClient, kubeManagerOptions.AppendEnvVarNames)
+	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.CriClient, kubeManagerOptions.AppendEnvVarNames)
 	if err != nil {
 		return err
 	}
