@@ -7,7 +7,7 @@ metadata:
     app: python-span-generator
     odigos-target: "true"
 spec:
-  replicas: 1
+  replicas: 5
   selector:
     matchLabels:
       app: python-span-generator
@@ -21,20 +21,26 @@ spec:
       terminationGracePeriodSeconds: 0
       containers:
         - name: python-span-generator
-          image: public.ecr.aws/odigos/python-span-gen:v0.0.1
+          image: public.ecr.aws/odigos/python-span-gen:v0.2
           imagePullPolicy: Always
           env:
             - name: SPANS_PER_SEC
               value: "1000"                                        
             - name: SPAN_BYTES
               value: "2000"
+            - name: USE_PARALLEL
+              value: "true"
+            - name: MAX_WORKERS
+              value: "4"
+            - name: BATCH_SIZE
+              value: "100"
           resources:
             requests:
               cpu: "1000m"
-              memory: "512Mi"
+              memory: "1Gi"
             limits:
               cpu: "2000m"
-              memory: "3Gi"
+              memory: "1Gi"
           livenessProbe:
             exec:
               command:
