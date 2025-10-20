@@ -330,10 +330,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	} else {
 		existingRule.Spec.CustomInstrumentations = nil
 	}
-	// Print if the rule is enabled or disabled for debugging
-	fmt.Printf("Updating Instrumentation Rule %s: Disabled=%v, Custom Instrumentations: %+v\n", id, existingRule.Spec.Disabled, existingRule.Spec.CustomInstrumentations)
-	// Print the custom instrumentations for debugging
-	fmt.Printf("Updating Instrumentation Rule %s with Custom Instrumentations: %+v\n", id, existingRule.Spec.CustomInstrumentations)
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -342,12 +338,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 
 	annotations := updatedRule.GetAnnotations()
 	profileName := annotations[k8sconsts.OdigosProfileAnnotation]
-
-	// print the custom instrumentation probes for debugging
-	if updatedRule.Spec.CustomInstrumentations != nil {
-		probesJson, _ := json.MarshalIndent(updatedRule.Spec.CustomInstrumentations, "", "  ")
-		fmt.Printf("XXXXX Updated Instrumentation Rule %s Custom Instrumentation Probes: %s\n", id, string(probesJson))
-	}
 
 	rule := model.InstrumentationRule{
 		RuleID:                   updatedRule.Name,
@@ -364,12 +354,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
-	// Print all the probes from the custom instrumentations for debugging
-	if rule.CustomInstrumentations != nil {
-		probesJson, _ := json.MarshalIndent(rule.CustomInstrumentations, "", "  ")
-		fmt.Printf("Updated Instrumentation Rule %s Custom Instrumentation Probes: %s\n", id, string(probesJson))
-	}
-
 	return &rule, nil
 }
 
@@ -433,10 +417,6 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			CustomInstrumentations:   getCustomInstrumentationsInput(input),
 		},
 	}
-	// Print the custom instrumentations for debugging
-	fmt.Printf("Creating Instrumentation Rule with Custom Instrumentations: %+v\n", newRule.Spec.CustomInstrumentations)
-	// Print the disabled status for debugging
-	fmt.Printf("Creating Instrumentation Rule: Disabled=%v\n", newRule.Spec.Disabled)
 	// Create the rule in Kubernetes
 	createdRule, err := CreateResourceWithGenerateName(ctx, func() (*v1alpha1.InstrumentationRule, error) {
 		return kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Create(ctx, newRule, metav1.CreateOptions{})
