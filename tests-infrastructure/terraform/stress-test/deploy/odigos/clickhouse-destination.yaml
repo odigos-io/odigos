@@ -27,12 +27,12 @@ spec:
     dataStreams:
     - default
   type: clickhouse
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: clickhouse-secret
-  namespace: odigos-system
-type: Opaque
-data:
-  CLICKHOUSE_PASSWORD: c3RyZXNzdGVzdA== # base64 encoded "stresstest"  
+# ---
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: clickhouse-secret
+#   namespace: odigos-system
+# type: Opaque
+# data:
+#   CLICKHOUSE_PASSWORD: c3RyZXNzdGVzdA== # base64 encoded "stresstest"  
