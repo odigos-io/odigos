@@ -232,11 +232,11 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 
 	// Remove duplicate Golang probes
 	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
-	goSeen := make(map[instrumentationrules.GolangCustomProbe]struct{})
+	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
 	for _, probe := range customInstrumentations.Golang {
-		goSeen[probe] = struct{}{}
+		uniqGoProbes[probe] = struct{}{}
 	}
-	for probe := range goSeen {
+	for probe := range uniqGoProbes {
 		uniqueGolangProbes = append(uniqueGolangProbes, probe)
 	}
 	customInstrumentations.Golang = uniqueGolangProbes
