@@ -29,15 +29,16 @@ func (irc *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctr
 	var statusUpdateErr error
 	// Verify custom instrumentations if they exist
 	for _, rule := range instrumentationRules.Items {
-		var err error
+		var validationErr error
 		if rule.Spec.CustomInstrumentations != nil {
-			if err = rule.Spec.CustomInstrumentations.Verify(); err != nil {
-				logger.Error(err, "invalid custom instrumentations", "rule", rule.Name)
+			if validationErr = rule.Spec.CustomInstrumentations.Verify(); validationErr != nil {
+				logger.Error(validationErr, "invalid custom instrumentations", "rule", rule.Name)
 			}
 		}
 
-		// We join the errors of each rule validation k8 api update
-		statusUpdateErr = errors.Join(statusUpdateErr, irc.reportRuleValidationStatus(ctx, &rule, err))
+		// write to the rule status on either a successful or un successful verification.
+		// join all the status updates errors for requeue if failed to update the status.
+		statusUpdateErr = errors.Join(statusUpdateErr, irc.reportRuleValidationStatus(ctx, &rule, validationErr))
 	}
 
 	// if the k8 api server errored, we return here such that the instrumentation rule change will get requeued
