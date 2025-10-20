@@ -232,38 +232,25 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 
 	// Remove duplicate Golang probes
 	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
-	seen := make(map[string]struct{})
+	goSeen := make(map[instrumentationrules.GolangCustomProbe]struct{})
 	for _, probe := range customInstrumentations.Golang {
-		var key string
-		key = "pkg:" + probe.PackageName + "|"
-		if probe.FunctionName != "" {
-			key += "function:" + probe.FunctionName
-		} else {
-			key += "receiver:" + probe.ReceiverName + "|method:" + probe.ReceiverMethodName
-		}
-		if _, exists := seen[key]; !exists {
-			seen[key] = struct{}{}
-			uniqueGolangProbes = append(uniqueGolangProbes, probe)
-		}
+		goSeen[probe] = struct{}{}
+	}
+	for probe := range goSeen {
+		uniqueGolangProbes = append(uniqueGolangProbes, probe)
 	}
 	customInstrumentations.Golang = uniqueGolangProbes
 
 	// Remove duplicate Java probes
 	uniqueJavaProbes := make([]instrumentationrules.JavaCustomProbe, 0, len(customInstrumentations.Java))
-	seen = make(map[string]struct{})
+	javaSeen := make(map[instrumentationrules.JavaCustomProbe]struct{})
 	for _, probe := range customInstrumentations.Java {
-		var key string
-		if probe.ClassName != "" && probe.MethodName != "" {
-			key = "class:" + probe.ClassName + "|method:" + probe.MethodName
-		}
-		if _, exists := seen[key]; !exists {
-			seen[key] = struct{}{}
-			uniqueJavaProbes = append(uniqueJavaProbes, probe)
-		}
+		javaSeen[probe] = struct{}{}
+	}
+	for probe := range javaSeen {
+		uniqueJavaProbes = append(uniqueJavaProbes, probe)
 	}
 	customInstrumentations.Java = uniqueJavaProbes
-
-	fmt.Printf("FRONTEND: Custom Instrumentations: %+v\n", customInstrumentations)
 	return customInstrumentations
 }
 
