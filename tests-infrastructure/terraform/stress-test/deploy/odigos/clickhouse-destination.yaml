@@ -16,8 +16,8 @@ spec:
     CLICKHOUSE_METRICS_TABLE_SUMMARY: otel_metrics_summary
     CLICKHOUSE_TRACES_TABLE: otel_traces
     CLICKHOUSE_USERNAME: default
-  secretRef:
-    name: clickhouse-secret
+  # secretRef:
+  #   name: clickhouse-secret
   destinationName: "clickhouse"
   signals:
   - TRACES
