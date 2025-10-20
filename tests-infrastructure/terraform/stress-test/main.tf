@@ -300,13 +300,9 @@ resource "null_resource" "install_odigos" {
       helm upgrade --install odigos odigos/odigos \
         --namespace odigos-system \
         --create-namespace \
-        --set onprem-token=${var.odigos_api_key}
-      
-      # Note: Helm --wait flag already ensures Odigos is ready
-      
-      # Verify installation
-      echo "Verifying Odigos installation..."
-      kubectl get pods -n odigos-system
+        --set onprem-token=${var.odigos_api_key} \
+        --wait \
+        --timeout=4m
       
       echo "Odigos installation completed successfully!"
     EOT
