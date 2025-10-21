@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/odiglet
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
@@ -15,7 +15,7 @@ require (
 	github.com/odigos-io/odigos/opampserver v0.0.0
 	github.com/odigos-io/odigos/procdiscovery v0.0.0
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
-	github.com/odigos-io/runtime-detector v0.0.20
+	github.com/odigos-io/runtime-detector v0.0.21
 	go.opentelemetry.io/auto v0.21.0
 	go.opentelemetry.io/otel v1.37.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.37.0
