@@ -11,6 +11,13 @@ export const GET_INSTRUMENTATION_RULES = gql`
         disabled
         mutable
         profileName
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
+        }
         payloadCollection {
           httpRequest {
             mimeTypes

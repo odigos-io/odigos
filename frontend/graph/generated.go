@@ -345,6 +345,7 @@ type ComplexityRoot struct {
 
 	InstrumentationRule struct {
 		CodeAttributes           func(childComplexity int) int
+		Conditions               func(childComplexity int) int
 		CustomInstrumentations   func(childComplexity int) int
 		Disabled                 func(childComplexity int) int
 		HeadersCollection        func(childComplexity int) int
@@ -2157,6 +2158,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationRule.CodeAttributes(childComplexity), true
+
+	case "InstrumentationRule.conditions":
+		if e.complexity.InstrumentationRule.Conditions == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.Conditions(childComplexity), true
 
 	case "InstrumentationRule.customInstrumentations":
 		if e.complexity.InstrumentationRule.CustomInstrumentations == nil {
@@ -9395,6 +9403,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
+			case "conditions":
+				return ec.fieldContext_InstrumentationRule_conditions(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			case "headersCollection":
@@ -14057,6 +14067,59 @@ func (ec *executionContext) fieldContext_InstrumentationRule_instrumentationLibr
 				return ec.fieldContext_InstrumentationLibraryGlobalId_language(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InstrumentationLibraryGlobalId", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationRule_conditions(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_conditions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Conditions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Condition)
+	fc.Result = res
+	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_conditions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_Condition_status(ctx, field)
+			case "type":
+				return ec.fieldContext_Condition_type(ctx, field)
+			case "reason":
+				return ec.fieldContext_Condition_reason(ctx, field)
+			case "message":
+				return ec.fieldContext_Condition_message(ctx, field)
+			case "lastTransitionTime":
+				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
 	}
 	return fc, nil
@@ -20899,6 +20962,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
+			case "conditions":
+				return ec.fieldContext_InstrumentationRule_conditions(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			case "headersCollection":
@@ -20982,6 +21047,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
+			case "conditions":
+				return ec.fieldContext_InstrumentationRule_conditions(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			case "headersCollection":
@@ -34384,6 +34451,8 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_workloads(ctx, field, obj)
 		case "instrumentationLibraries":
 			out.Values[i] = ec._InstrumentationRule_instrumentationLibraries(ctx, field, obj)
+		case "conditions":
+			out.Values[i] = ec._InstrumentationRule_conditions(ctx, field, obj)
 		case "codeAttributes":
 			out.Values[i] = ec._InstrumentationRule_codeAttributes(ctx, field, obj)
 		case "headersCollection":

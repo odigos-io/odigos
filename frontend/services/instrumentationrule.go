@@ -42,8 +42,8 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 	return model.InstrumentationRuleTypeUnknownType
 }
 
-// ListInstrumentationRules fetches all instrumentation rules
-func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule, error) {
+// GetInstrumentationRules fetches all instrumentation rules
+func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule, error) {
 	ns := env.GetCurrentNamespace()
 
 	instrumentationRules, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).List(ctx, metav1.ListOptions{})
@@ -66,6 +66,7 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 			ProfileName:              profileName,
 			Workloads:                convertWorkloads(r.Spec.Workloads),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
+			Conditions:               ConvertConditions(r.Status.Conditions),
 			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 			HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),

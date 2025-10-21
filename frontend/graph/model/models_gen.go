@@ -450,6 +450,7 @@ type InstrumentationRule struct {
 	ProfileName              string                            `json:"profileName"`
 	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
+	Conditions               []*Condition                      `json:"conditions,omitempty"`
 	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
 	HeadersCollection        *HeadersCollection                `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
