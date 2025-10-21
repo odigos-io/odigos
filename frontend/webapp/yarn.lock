@@ -462,10 +462,10 @@
   resolved "https://registry.npmjs.org/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.112":
-  version "0.0.112"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.112.tgz#e3d8ae51a41472ab7134b1c9ac989d063aca7eab"
-  integrity sha512-O6y8T/hsw+py17ek1IdSXFesprJ0tr/+8VKhnLTSR5JE/b7nwYAPjXJsGoW3gXWtVDApsOTcBZsDdn0Bw3+46g==
+"@odigos/ui-kit@^0.0.114":
+  version "0.0.114"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.114.tgz#4d8750e9957300a78204923b4e14cf13393410c1"
+  integrity sha512-Ma7czNVPXuuwkGV9BeflsPN83bVHDfBKzSGNqi2PBebedt2m9bY+17gQEIFhOp5d2n6qPMwtjaX6KrX2Q0AjYg==
   dependencies:
     "@xyflow/react" "^12.8.6"
     javascript-time-ago "^2.5.12"
@@ -567,12 +567,12 @@
   dependencies:
     undici-types "~7.10.0"
 
-"@types/node@24.8.1":
-  version "24.8.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.8.1.tgz#74c8ae00b045a0a351f2837ec00f25dfed0053be"
-  integrity sha512-alv65KGRadQVfVcG69MuB4IzdYVpRwMG/mq8KWOaoOdyY617P5ivaDiMCGOFDWD2sAn5Q0mR3mRtUOgm99hL9Q==
+"@types/node@24.9.1":
+  version "24.9.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.9.1.tgz#b7360b3c789089e57e192695a855aa4f6981a53c"
+  integrity sha512-QoiaXANRkSXK6p0Duvt56W208du4P9Uye9hWLWgGMDTEoKPhuenzNcC4vGUmrNkiOKTlIrBoyNQYNpSwfEZXSg==
   dependencies:
-    undici-types "~7.14.0"
+    undici-types "~7.16.0"
 
 "@types/prismjs@^1.26.0":
   version "1.26.5"
@@ -4126,10 +4126,10 @@ undici-types@~7.10.0:
   resolved "https://registry.npmjs.org/undici-types/-/undici-types-7.10.0.tgz"
   integrity sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag==
 
-undici-types@~7.14.0:
-  version "7.14.0"
-  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.14.0.tgz#4c037b32ca4d7d62fae042174604341588bc0840"
-  integrity sha512-QQiYxHuyZ9gQUIrmPo3IA+hUl4KYk8uSA7cHrcKd/l3p1OTpZcM0Tbp9x7FAtXdAYhlasd60ncPpgu6ihG6TOA==
+undici-types@~7.16.0:
+  version "7.16.0"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.16.0.tgz#ffccdff36aea4884cbfce9a750a0580224f58a46"
+  integrity sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==
 
 universalify@^2.0.0:
   version "2.0.1"
