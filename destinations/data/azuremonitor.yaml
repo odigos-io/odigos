@@ -1,0 +1,41 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: azuremonitor
+  displayName: Azure Monitor
+  category: managed
+spec:
+  image: azuremonitor.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: AZURE_MONITOR_CONNECTION_STRING
+      displayName: Connection String
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: "The Connection String is the recommended method for configuring the exporter, aligning with Azure Monitor's best practices. If you don't have a Connection String, you can create one in the Azure Portal (after creating an Application Insights resource)."
+    - name: AZURE_MONITOR_INSTRUMENTATION_KEY
+      displayName: Instrumentation Key
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: "Application Insights instrumentation key, which can be found in the Application Insights resource in the Azure Portal. While it is currently supported, its use is discouraged and it is slated for deprecation."
+    - name: AZURE_MONITOR_ENDPOINT
+      displayName: Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: "The endpoint URL where data will be submitted. While this option remains available, it is important to note that the use of the Connection String is recommended, as it encompasses the endpoint information. The direct configuration of the endpoint is considered to be on a deprecation path."
+  note:
+    type: Warning
+    content: |
+      Do not configure the `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable. It will override this configuration!

@@ -65,19 +65,16 @@ userInstrumentationEnvs:
 # See https://docs.odigos.io/pipeline/configuration#1-using-sizing-configuration for more details.
 ResourceSizePreset: size_m
 
-
+# HYBRID CONFIGURATION APPROACH:
+# By default, all values below are automatically set based on the ResourceSizePreset above.
+# Uncomment and modify any value to override the automatic sizing for that specific parameter.
+#
+# IMPORTANT CONSTRAINTS:
+# 1. minReplicas must be less or equal to maxReplicas
+# 2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
+# 3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request
+# 4. Same logic applies to CPU settings
 collectorGateway:
-  # HYBRID CONFIGURATION APPROACH:
-  # By default, all values below are automatically set based on the ResourceSizePreset above.
-  # Uncomment and modify any value to override the automatic sizing for that specific parameter.
-  #
-  # IMPORTANT CONSTRAINTS:
-  # 1. minReplicas must be less or equal to maxReplicas
-  # 2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
-  # 3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request
-  # 4. Same logic applies to CPU settings
-
-
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
   # of the form "memory: <value>Mi".
@@ -337,6 +334,8 @@ odiglet:
       - DAC_READ_SEARCH
       # required for mmap of perf buffers
       - IPC_LOCK
+  # traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
+  # traceIdSuffix: AA
   dataCollection:
     # capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.
     capabilities:
@@ -406,7 +405,6 @@ odiglet:
   noHostPid: false
 
 centralProxy:
-  enabled: false
   # Central backend URL where this proxy will forward data
   centralBackendURL: ''
   resources:

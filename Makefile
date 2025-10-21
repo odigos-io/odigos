@@ -7,7 +7,7 @@ ORG ?= registry.odigos.io
 ifeq ($(STAGING_ORG),true)
     ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
 endif
-GOLANGCI_LINT_VERSION ?= v2.1.6
+GOLANGCI_LINT_VERSION ?= v2.5.0
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
 LINT_CMD = golangci-lint run -c ../.golangci.yml
@@ -343,8 +343,7 @@ helm-install:
 		--set image.tag=$(ODIGOS_CLI_VERSION) \
 		--set clusterName=$(CLUSTER_NAME) \
 		--set centralProxy.centralBackendURL=$(CENTRAL_BACKEND_URL) \
-		--set onPremToken=$(ONPREM_TOKEN) \
-		--set centralProxy.enabled=$(if $(and $(CLUSTER_NAME),$(CENTRAL_BACKEND_URL)),true,false)
+		--set onPremToken=$(ONPREM_TOKEN)
 
 .PHONY: helm-install-central
 helm-install-central:

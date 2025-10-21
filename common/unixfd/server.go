@@ -25,8 +25,9 @@ type Server struct {
 func (s *Server) Run(ctx context.Context) error {
 	// Remove old socket file
 	_ = os.Remove(s.SocketPath)
+	var lc net.ListenConfig
 
-	listener, err := net.Listen("unix", s.SocketPath)
+	listener, err := lc.Listen(ctx, "unix", s.SocketPath)
 	if err != nil {
 		return fmt.Errorf("listen on %s: %w", s.SocketPath, err)
 	}

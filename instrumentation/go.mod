@@ -1,13 +1,13 @@
 module github.com/odigos-io/odigos/instrumentation
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0
-	github.com/odigos-io/runtime-detector v0.0.20
+	github.com/odigos-io/runtime-detector v0.0.21
 	go.opentelemetry.io/otel v1.37.0
 	go.opentelemetry.io/otel/metric v1.37.0
 	golang.org/x/sync v0.16.0

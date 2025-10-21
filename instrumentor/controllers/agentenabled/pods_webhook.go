@@ -26,6 +26,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -192,7 +193,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			return ErrUnknownDistroName
 		}
 
-		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration, distroMetadata)
+		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration, distroMetadata, pod.OwnerReferences)
 		if err != nil {
 			return err
 		}
@@ -306,7 +307,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 }
 
 func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container,
-	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, distroMetadata *distro.OtelDistro) (bool, map[string]struct{}, error) {
+	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, distroMetadata *distro.OtelDistro, ownerReferences []metav1.OwnerReference) (bool, map[string]struct{}, error) {
 	var err error
 
 	// check for existing env vars so we don't introduce them again
@@ -353,7 +354,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		}
 
 		if distroMetadata.RuntimeAgent.K8sAttrsViaEnvVars {
-			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw, serviceName)
+			podswebhook.InjectOtelResourceAndServiceNameEnvVars(existingEnvNames, podContainerSpec, distroMetadata.Name, pw, serviceName, ownerReferences)
 		}
 		// TODO: once we have a flag to enable/disable device injection, we should check it here.
 		if distroMetadata.RuntimeAgent.Device != nil {
