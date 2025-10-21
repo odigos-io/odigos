@@ -35,6 +35,8 @@ const (
 	CentralBackendWsTargetPerPodKey     = "wsTargetPerPod"
 	CentralActiveWsMetricName           = "odigos_central_active_ws"
 	CentralBackendDefaultWsTargetPerPod = "200"
+	// Default CPU utilization target (percentage) for HPA when using CPU-based scaling
+	CentralBackendDefaultCpuTargetUtilization = 70
 )
 
 const (

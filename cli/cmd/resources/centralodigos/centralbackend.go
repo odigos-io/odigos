@@ -38,7 +38,6 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 		NewCentralBackendRoleBinding(m.ns),
 		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion),
 		NewCentralBackendService(m.ns),
-		NewCentralBackendTuningConfigMap(m.ns),
 		NewCentralBackendHPA(m.ns),
 	}, m.managerOpts)
 }
@@ -181,16 +180,6 @@ func NewCentralBackendRole(ns string) *rbacv1.Role {
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
 			},
-			{
-				Verbs:     []string{"get", "list", "watch"},
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-			},
-			{
-				Verbs:     []string{"get", "list", "watch", "patch", "update"},
-				APIGroups: []string{"autoscaling"},
-				Resources: []string{"horizontalpodautoscalers"},
-			},
 		},
 	}
 }
@@ -220,26 +209,10 @@ func NewCentralBackendRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewCentralBackendTuningConfigMap(ns string) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.CentralBackendTuningConfigMapName,
-			Namespace: ns,
-		},
-		Data: map[string]string{
-			k8sconsts.CentralBackendWsTargetPerPodKey: k8sconsts.CentralBackendDefaultWsTargetPerPod,
-		},
-	}
-}
-
 func NewCentralBackendHPA(ns string) *autoscalingv2.HorizontalPodAutoscaler {
 	minReplicas := ptrint32(1)
 	maxReplicas := int32(10)
-	avg := resource.MustParse(k8sconsts.CentralBackendDefaultWsTargetPerPod)
+	targetUtilization := int32(k8sconsts.CentralBackendDefaultCpuTargetUtilization)
 	return &autoscalingv2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "autoscaling/v2",
@@ -259,12 +232,12 @@ func NewCentralBackendHPA(ns string) *autoscalingv2.HorizontalPodAutoscaler {
 			MaxReplicas: maxReplicas,
 			Metrics: []autoscalingv2.MetricSpec{
 				{
-					Type: autoscalingv2.PodsMetricSourceType,
-					Pods: &autoscalingv2.PodsMetricSource{
-						Metric: autoscalingv2.MetricIdentifier{Name: k8sconsts.CentralActiveWsMetricName},
+					Type: autoscalingv2.ResourceMetricSourceType,
+					Resource: &autoscalingv2.ResourceMetricSource{
+						Name: corev1.ResourceCPU,
 						Target: autoscalingv2.MetricTarget{
-							Type:         autoscalingv2.AverageValueMetricType,
-							AverageValue: &avg,
+							Type:               autoscalingv2.UtilizationMetricType,
+							AverageUtilization: &targetUtilization,
 						},
 					},
 				},
