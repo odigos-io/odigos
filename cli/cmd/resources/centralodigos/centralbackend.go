@@ -242,6 +242,28 @@ func NewCentralBackendHPA(ns string) *autoscalingv2.HorizontalPodAutoscaler {
 					},
 				},
 			},
+			Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+				ScaleUp: &autoscalingv2.HPAScalingRules{
+					StabilizationWindowSeconds: int32Ptr(30),
+					SelectPolicy:               selectPolicyPtr(autoscalingv2.MaxChangePolicySelect),
+					Policies: []autoscalingv2.HPAScalingPolicy{
+						{Type: autoscalingv2.PercentScalingPolicy, Value: 100, PeriodSeconds: 30},
+						{Type: autoscalingv2.PodsScalingPolicy, Value: 2, PeriodSeconds: 30},
+					},
+				},
+				ScaleDown: &autoscalingv2.HPAScalingRules{
+					StabilizationWindowSeconds: int32Ptr(600),
+					SelectPolicy:               selectPolicyPtr(autoscalingv2.MinChangePolicySelect),
+					Policies: []autoscalingv2.HPAScalingPolicy{
+						{Type: autoscalingv2.PercentScalingPolicy, Value: 10, PeriodSeconds: 60},
+						{Type: autoscalingv2.PodsScalingPolicy, Value: 1, PeriodSeconds: 60},
+					},
+				},
+			},
 		},
 	}
 }
+
+func int32Ptr(v int32) *int32 { return &v }
+
+func selectPolicyPtr(p autoscalingv2.ScalingPolicySelect) *autoscalingv2.ScalingPolicySelect { return &p }
