@@ -1,0 +1,170 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: odigos-test
+  labels:
+    odigos.io/system-object: "true"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-autoscaler
+  namespace: odigos-test
+status:
+  containerStatuses:
+    - name: manager
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-scheduler
+  namespace: odigos-test
+status:
+  containerStatuses:
+    - name: manager
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-instrumentor
+  namespace: odigos-test
+status:
+  containerStatuses:
+    - name: manager
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: odigos-ui
+  namespace: odigos-test
+status:
+  containerStatuses:
+    - name: ui
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odiglet
+  namespace: odigos-test
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: odiglet
+spec:
+  containers:
+    - name: odiglet
+      resources: {}
+      securityContext:
+        privileged: true
+    - name: data-collection
+      securityContext:
+        privileged: true
+      env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          (value != null): true
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: data-collection
+              divisor: "0"
+              resource: limits.cpu
+      resources:
+        requests:
+          (memory != null): true
+        limits:
+          (memory != null): true
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
+  hostPID: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  serviceAccount: odiglet
+  serviceAccountName: odiglet
+status:
+  containerStatuses:
+    - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
+    - name: odiglet
+      ready: true
+      restartCount: 0
+      started: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: odigos-test
+spec:
+  ports:
+    - name: ui
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+    - name: otlp
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+  selector:
+    app: odigos-ui
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    odigos.io/config: '1'
+    odigos.io/system-object: "true"
+  name: odigos-configuration
+  namespace: odigos-test
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    odigos.io/system-object: "true"
+  name: destinations.odigos.io
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  labels:
+    odigos.io/system-object: "true"
+  name: processors.odigos.io
