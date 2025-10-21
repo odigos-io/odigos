@@ -266,4 +266,6 @@ func NewCentralBackendHPA(ns string) *autoscalingv2.HorizontalPodAutoscaler {
 
 func int32Ptr(v int32) *int32 { return &v }
 
-func selectPolicyPtr(p autoscalingv2.ScalingPolicySelect) *autoscalingv2.ScalingPolicySelect { return &p }
+func selectPolicyPtr(p autoscalingv2.ScalingPolicySelect) *autoscalingv2.ScalingPolicySelect {
+	return &p
+}

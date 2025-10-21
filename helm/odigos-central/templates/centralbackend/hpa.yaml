@@ -20,6 +20,27 @@ spec:
         target:
           type: Utilization
           averageUtilization: {{ .Values.centralBackend.autoscaling.cpuTargetUtilization }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.stabilizationWindowSeconds }}
+      selectPolicy: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.selectPolicy }}
+      policies:
+        - type: Percent
+          value: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.policies.percent.value }}
+          periodSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.policies.percent.periodSeconds }}
+        - type: Pods
+          value: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.policies.pods.value }}
+          periodSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.policies.pods.periodSeconds }}
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.stabilizationWindowSeconds }}
+      selectPolicy: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.selectPolicy }}
+      policies:
+        - type: Percent
+          value: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.policies.percent.value }}
+          periodSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.policies.percent.periodSeconds }}
+        - type: Pods
+          value: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.policies.pods.value }}
+          periodSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.policies.pods.periodSeconds }}
 {{- end }}
 
 
