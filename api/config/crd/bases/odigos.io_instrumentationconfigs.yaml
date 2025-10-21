@@ -289,8 +289,8 @@ spec:
                           type: boolean
                       type: object
                     customInstrumentations:
-                      description: custom instrumentations to be applied by default,
-                        in case the instrumentation library does not provide a configuration.
+                      description: list of the custom instrumentation probes the SDK
+                        should use.
                       properties:
                         golang:
                           items:
