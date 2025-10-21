@@ -14,13 +14,12 @@ spec:
   minReplicas: {{ .Values.centralBackend.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.centralBackend.autoscaling.maxReplicas }}
   metrics:
-    - type: Pods
-      pods:
-        metric:
-          name: odigos_central_active_ws
+    - type: Resource
+      resource:
+        name: cpu
         target:
-          type: AverageValue
-          averageValue: "{{ .Values.centralBackend.autoscaling.wsTargetPerPod }}"
+          type: Utilization
+          averageUtilization: {{ .Values.centralBackend.autoscaling.cpuTargetUtilization }}
 {{- end }}
 
 

@@ -19,7 +19,7 @@ centralBackend:
     enabled: true
     minReplicas: 1
     maxReplicas: 10
-    wsTargetPerPod: 200
+    cpuTargetUtilization: 70
 
 centralUI:
   uiMode: normal
