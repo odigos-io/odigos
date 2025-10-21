@@ -346,7 +346,11 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		odigosConfiguration.UiMode = common.UiMode(odigos.Spec.UIMode)
 	}
 	odigosConfiguration.NodeSelector = nodeSelector
-	odigosConfiguration.AgentEnvVarsInjectionMethod = &odigos.Spec.AgentEnvVarsInjectionMethod
+	agentEnvVarsInjectionMethod := odigos.Spec.AgentEnvVarsInjectionMethod
+	if agentEnvVarsInjectionMethod == "" {
+		agentEnvVarsInjectionMethod = common.PodManifestEnvInjectionMethod
+	}
+	odigosConfiguration.AgentEnvVarsInjectionMethod = &agentEnvVarsInjectionMethod
 
 	ownerReference := metav1.OwnerReference{
 		APIVersion: odigos.APIVersion,
