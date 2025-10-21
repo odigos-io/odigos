@@ -18,6 +18,7 @@ builds:
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosVersion={{ .Tag }}
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosCommit={{ .ShortCommit }}
       - -X github.com/odigos-io/odigos/cli/cmd.OdigosDate={{ .Date }}
+      - -X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion={{ .Tag }}
     tags:
      - embed_manifests
 archives:
