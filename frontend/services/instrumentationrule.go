@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -35,9 +36,7 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 	}
 
 	if rule.CustomInstrumentations != nil {
-		if rule.CustomInstrumentations.Probes != nil && len(rule.CustomInstrumentations.Probes) > 0 {
-			return model.InstrumentationRuleTypeCustomInstrumentation
-		}
+		return model.InstrumentationRuleTypeCustomInstrumentation
 	}
 
 	return model.InstrumentationRuleTypeUnknownType
@@ -184,23 +183,75 @@ func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instr
 	if input.CustomInstrumentations == nil {
 		return nil
 	}
-
 	customInstrumentations := &instrumentationrules.CustomInstrumentations{}
-
-	if input.CustomInstrumentations.Probes != nil {
-		customInstrumentations.Probes = make([]instrumentationrules.Probe, 0, len(input.CustomInstrumentations.Probes))
-		for _, probe := range input.CustomInstrumentations.Probes {
-			apiProbe := instrumentationrules.Probe{}
+	// Iterate Java custom probes and verify input
+	if input.CustomInstrumentations.Java != nil {
+		customInstrumentations.Java = make([]instrumentationrules.JavaCustomProbe, 0, len(input.CustomInstrumentations.Java))
+		for _, probe := range input.CustomInstrumentations.Java {
+			apiProbe := instrumentationrules.JavaCustomProbe{}
 			if probe.ClassName != nil {
 				apiProbe.ClassName = *probe.ClassName
+			} else {
+				apiProbe.ClassName = ""
 			}
 			if probe.MethodName != nil {
 				apiProbe.MethodName = *probe.MethodName
+			} else {
+				apiProbe.MethodName = ""
 			}
-			customInstrumentations.Probes = append(customInstrumentations.Probes, apiProbe)
+			customInstrumentations.Java = append(customInstrumentations.Java, apiProbe)
 		}
 	}
 
+	if input.CustomInstrumentations.Golang != nil {
+		customInstrumentations.Golang = make([]instrumentationrules.GolangCustomProbe, 0, len(input.CustomInstrumentations.Golang))
+		for _, probe := range input.CustomInstrumentations.Golang {
+			apiProbe := instrumentationrules.GolangCustomProbe{}
+			if probe.PackageName != nil {
+				apiProbe.PackageName = *probe.PackageName
+			} else {
+				apiProbe.PackageName = ""
+			}
+			if probe.FunctionName != nil {
+				apiProbe.FunctionName = *probe.FunctionName
+			} else {
+				apiProbe.FunctionName = ""
+			}
+			if probe.ReceiverName != nil {
+				apiProbe.ReceiverName = *probe.ReceiverName
+			} else {
+				apiProbe.ReceiverName = ""
+			}
+			if probe.ReceiverMethodName != nil {
+				apiProbe.ReceiverMethodName = *probe.ReceiverMethodName
+			} else {
+				apiProbe.ReceiverMethodName = ""
+			}
+			customInstrumentations.Golang = append(customInstrumentations.Golang, apiProbe)
+		}
+	}
+
+	// Remove duplicate Golang probes
+	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
+	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Golang {
+		uniqGoProbes[probe] = struct{}{}
+	}
+	for probe := range uniqGoProbes {
+		uniqueGolangProbes = append(uniqueGolangProbes, probe)
+	}
+	customInstrumentations.Golang = uniqueGolangProbes
+
+	// Remove duplicate Java probes
+	uniqueJavaProbes := make([]instrumentationrules.JavaCustomProbe, 0, len(customInstrumentations.Java))
+	javaSeen := make(map[instrumentationrules.JavaCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Java {
+		javaSeen[probe] = struct{}{}
+	}
+	for probe := range javaSeen {
+		uniqueJavaProbes = append(uniqueJavaProbes, probe)
+	}
+	customInstrumentations.Java = uniqueJavaProbes
 	return customInstrumentations
 }
 
@@ -267,7 +318,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 	} else {
 		existingRule.Spec.CustomInstrumentations = nil
 	}
-
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -292,7 +342,6 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
-
 	return &rule, nil
 }
 
@@ -356,7 +405,6 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			CustomInstrumentations:   getCustomInstrumentationsInput(input),
 		},
 	}
-
 	// Create the rule in Kubernetes
 	createdRule, err := CreateResourceWithGenerateName(ctx, func() (*v1alpha1.InstrumentationRule, error) {
 		return kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Create(ctx, newRule, metav1.CreateOptions{})
@@ -476,20 +524,33 @@ func toMessagingPayload(payload *instrumentationrules.MessagingPayloadCollection
 }
 
 // Converts CustomInstrumentations to GraphQL-compatible format
-func convertCustomInstrumentations(custom *instrumentationrules.CustomInstrumentations) *model.CustomInstrumentations {
-	if custom == nil {
+func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrules.CustomInstrumentations) *model.CustomInstrumentations {
+	if customInstruAsInstruRule == nil {
 		return nil
 	}
-
-	probes := make([]*model.Probe, len(custom.Probes))
-	for i, probe := range custom.Probes {
-		probes[i] = &model.Probe{
-			ClassName:  &probe.ClassName,
-			MethodName: &probe.MethodName,
+	customInstruAsGqlModel := &model.CustomInstrumentations{}
+	if customInstruAsInstruRule.Golang != nil {
+		for _, golangProbe := range customInstruAsInstruRule.Golang {
+			customInstruAsGqlModel.Golang = append(customInstruAsGqlModel.Golang, &model.GolangCustomProbe{
+				PackageName:        &golangProbe.PackageName,
+				FunctionName:       &golangProbe.FunctionName,
+				ReceiverName:       &golangProbe.ReceiverName,
+				ReceiverMethodName: &golangProbe.ReceiverMethodName,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Java != nil {
+		for _, javaProbe := range customInstruAsInstruRule.Java {
+			customInstruAsGqlModel.Java = append(customInstruAsGqlModel.Java, &model.JavaCustomProbe{
+				ClassName:  &javaProbe.ClassName,
+				MethodName: &javaProbe.MethodName,
+			})
 		}
 	}
 
-	return &model.CustomInstrumentations{
-		Probes: probes,
-	}
+	// Json stringify the probes for debugging
+	probesJson, _ := json.MarshalIndent(customInstruAsGqlModel, "", "  ")
+	fmt.Printf("Converted Custom Instrumentation Probes: %s\n", string(probesJson))
+
+	return customInstruAsGqlModel
 }
