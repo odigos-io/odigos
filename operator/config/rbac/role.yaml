@@ -10,9 +10,11 @@ rules:
   - configmaps
   - endpoints
   - secrets
+  - services
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch
@@ -85,25 +87,13 @@ rules:
   - patch
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - actions.odigos.io
   resources:
   - '*'
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch
@@ -293,6 +283,7 @@ rules:
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch

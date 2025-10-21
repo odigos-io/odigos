@@ -142,9 +142,11 @@ spec:
                 - configmaps
                 - endpoints
                 - secrets
+                - services
               verbs:
                 - create
                 - delete
+                - deletecollection
                 - get
                 - list
                 - patch
@@ -217,25 +219,13 @@ spec:
                 - patch
                 - watch
             - apiGroups:
-                - ""
-              resources:
-                - services
-              verbs:
-                - create
-                - delete
-                - deletecollection
-                - get
-                - list
-                - patch
-                - update
-                - watch
-            - apiGroups:
                 - actions.odigos.io
               resources:
                 - '*'
               verbs:
                 - create
                 - delete
+                - deletecollection
                 - get
                 - list
                 - patch
@@ -411,6 +401,7 @@ spec:
               verbs:
                 - create
                 - delete
+                - deletecollection
                 - get
                 - list
                 - patch
