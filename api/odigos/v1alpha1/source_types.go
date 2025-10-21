@@ -147,7 +147,7 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 			sort.Slice(activeSources, func(i, j int) bool {
 				return activeSources[i].CreationTimestamp.Before(&activeSources[j].CreationTimestamp)
 			})
-			logger.Error(ErrorTooManySources, "more than one source found for workload", "count", activeCount, "workload.name", pw.Name, "workload.namespace", namespace, "workload.kind", pw.Kind)
+			logger.Error(ErrorTooManySources, "More than one Source found for workload", "count", activeCount, "workload.name", pw.Name, "workload.namespace", namespace, "workload.kind", pw.Kind)
 		}
 
 		// Only assign if there are active sources
@@ -182,7 +182,7 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 		sort.Slice(activeNamespaceSources, func(i, j int) bool {
 			return activeNamespaceSources[i].CreationTimestamp.Before(&activeNamespaceSources[j].CreationTimestamp)
 		})
-		logger.Error(ErrorTooManySources, "more than one source found for namespace", "count", activeNamespaceCount, "namespace", namespace)
+		logger.Error(ErrorTooManySources, "More than one Source found for namespace", "count", activeNamespaceCount, "namespace", namespace)
 	}
 
 	if activeNamespaceCount >= 1 {
