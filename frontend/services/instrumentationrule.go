@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -547,10 +546,5 @@ func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrule
 			})
 		}
 	}
-
-	// Json stringify the probes for debugging
-	probesJson, _ := json.MarshalIndent(customInstruAsGqlModel, "", "  ")
-	fmt.Printf("Converted Custom Instrumentation Probes: %s\n", string(probesJson))
-
 	return customInstruAsGqlModel
 }
