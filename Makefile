@@ -327,7 +327,16 @@ cli-upgrade:
 .PHONY: cli-build
 cli-build:
 	@echo "Building the cli executable for tests"
-	cd cli && go build -tags=embed_manifests -o odigos .
+	TAG=0.0.0-e2e-test; \
+	TMPDIR=$$(mktemp -d); \
+	cp -r ./helm/odigos $$TMPDIR/odigos; \
+	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos/Chart.yaml; \
+	helm package $$TMPDIR/odigos -d cli/pkg/helm/embedded; \
+	cd cli && go build -tags=embed_manifests \
+	  -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=$${TAG#v}" \
+	  -o odigos .; \
+	rm -rf $$TMPDIR
+
 
 .PHONY: cli-diagnose
 cli-diagnose:

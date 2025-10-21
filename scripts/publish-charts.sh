@@ -4,7 +4,6 @@ set -e
 
 # Setup
 TMPDIR="$(mktemp -d)"
-CHARTDIRS=("helm/odigos" "helm/odigos-central")
 
 prefix () {
 	echo "${@:1}"
@@ -25,21 +24,25 @@ if [ -z "$GITHUB_REPOSITORY" ]; then
 	exit 1
 fi
 
-if [[ $(git diff -- ${CHARTDIRS[*]} | wc -c) -ne 0 ]]; then
-	echo "Helm chart dirty. Aborting."
+echo "------------------------------------------------------------"
+echo "📦 Publishing pre-packaged Helm charts for $TAG"
+echo "------------------------------------------------------------"
+
+# Verify that the packaged charts exist
+if [ ! -f "helm/odigos-${TAG#v}.tgz" ] || [ ! -f "helm/odigos-central-${TAG#v}.tgz" ]; then
+	echo "❌ Pre-packaged charts not found in helm/ directory"
+	echo "Expected: helm/odigos-${TAG#v}.tgz and helm/odigos-central-${TAG#v}.tgz"
+	ls -la helm/
 	exit 1
 fi
 
+echo "✅ Found pre-packaged charts:"
+ls -lah helm/odigos-*.tgz
+
 git worktree add $TMPDIR gh-pages -f
 
-# Update index with new packages
-for chart in "${CHARTDIRS[@]}"
-do
-	echo "Updating $chart/Chart.yaml with version ${TAG#v}"
-	sed -i -E 's/0.0.0/'"${TAG#v}"'/' $chart/Chart.yaml
-done
-helm package ${CHARTDIRS[*]} -d $TMPDIR
-cp $TMPDIR/odigos-*.tgz helm/
+# Copy the pre-packaged charts to temp directory
+cp helm/odigos-*.tgz $TMPDIR/
 pushd $TMPDIR
 prefix 'helm-chart-' *.tgz
 helm repo index . --merge index.yaml --url https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/
@@ -58,24 +61,14 @@ if [[ $(git diff -G apiVersion | wc -c) -ne 0 ]]; then
   echo "🔐 Checking GitHub CLI authentication status:"
   gh auth status || echo "⚠️ gh auth status failed"
   echo "------------------------------------------------------------"
-  echo "🔎 Checking if release $TAG exists in $GITHUB_REPOSITORY..."
-  gh release view -R "$GITHUB_REPOSITORY" "$TAG" || echo "⚠️ Release not found, will attempt to create it"
-  echo "------------------------------------------------------------"
-
+  echo "🔎 Verifying release $TAG exists (should be created by GoReleaser)..."
   if ! gh release view -R "$GITHUB_REPOSITORY" "$TAG" > /dev/null 2>&1; then
-    echo "🚀 Creating GitHub release $TAG..."
-    set -x
-    if ! gh release create -R "$GITHUB_REPOSITORY" "$TAG" --title "$TAG" --notes "Auto-created for Helm charts"; then
-      echo "❌ Failed to create release $TAG"
-      exit 1
-    fi
-    set +x
-    echo "✅ Release $TAG created successfully"
-  else
-    echo "✅ Release already exists, continuing"
+    echo "❌ Release $TAG not found. GoReleaser should have created it."
+    exit 1
   fi
-
+  echo "✅ Release $TAG exists, proceeding with upload"
   echo "------------------------------------------------------------"
+
   echo "📦 Uploading Helm chart packages to release $TAG..."
   set -x
   if ! gh release upload -R "$GITHUB_REPOSITORY" "$TAG" "$TMPDIR"/*.tgz; then
@@ -95,7 +88,7 @@ else
   popd
 fi
 
-
-# Roll back chart version changes
-git checkout ${CHARTDIRS[*]}
+# Clean up temp worktree
 git worktree remove $TMPDIR -f || echo " -> Failed to clean up temp worktree"
+
+echo "✅ Helm charts published successfully"
