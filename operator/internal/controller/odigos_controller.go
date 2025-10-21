@@ -169,10 +169,13 @@ func (r *OdigosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		Config:        k8sConfig,
 	}
 
+	// Store original object for patch operations
+	originalOdigos := odigos.DeepCopy()
+
 	if odigos.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.install(ctx, kubeClient, odigos)
+		return r.install(ctx, kubeClient, odigos, originalOdigos)
 	} else {
-		return r.uninstall(ctx, kubeClient, odigos)
+		return r.uninstall(ctx, kubeClient, odigos, originalOdigos)
 	}
 }
 
@@ -184,7 +187,7 @@ func (r *OdigosReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
+func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos, originalOdigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	ns := odigos.GetNamespace()
@@ -193,7 +196,7 @@ func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Clien
 
 	if controllerutil.ContainsFinalizer(odigos, operatorFinalizer) {
 		controllerutil.RemoveFinalizer(odigos, operatorFinalizer)
-		if err := r.Update(ctx, odigos); err != nil {
+		if err := r.Patch(ctx, odigos, client.MergeFrom(originalOdigos)); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -203,12 +206,12 @@ func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Clien
 }
 
 // install Odigos based on the config passed in odigos
-func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
+func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos, originalOdigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	if !controllerutil.ContainsFinalizer(odigos, operatorFinalizer) {
 		controllerutil.AddFinalizer(odigos, operatorFinalizer)
-		if err := r.Update(ctx, odigos); err != nil {
+		if err := r.Patch(ctx, odigos, client.MergeFrom(originalOdigos)); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -251,10 +254,11 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		return ctrl.Result{}, r.Status().Update(ctx, odigos)
 	}
 
+	openshiftEnabled := false
 	details := autodetect.GetK8SClusterDetails(ctx, "", "", kubeClient)
 	if details.Kind == autodetect.KindOpenShift {
 		logger.Info("Detected OpenShift cluster, enabling required configuration")
-		odigos.Spec.OpenShiftEnabled = true
+		openshiftEnabled = true
 	}
 	ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
 
@@ -331,7 +335,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	}
 
 	odigosConfiguration.TelemetryEnabled = odigos.Spec.TelemetryEnabled
-	odigosConfiguration.OpenshiftEnabled = odigos.Spec.OpenShiftEnabled
+	odigosConfiguration.OpenshiftEnabled = openshiftEnabled
 	odigosConfiguration.IgnoredNamespaces = odigos.Spec.IgnoredNamespaces
 	odigosConfiguration.IgnoredContainers = odigos.Spec.IgnoredContainers
 	odigosConfiguration.SkipWebhookIssuerCreation = odigos.Spec.SkipWebhookIssuerCreation
@@ -361,8 +365,8 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	managerOpts := resourcemanager.ManagerOpts{
 		OwnerReferences: []metav1.OwnerReference{ownerReference},
 	}
-	imageReferences := cmd.GetImageReferences(odigosTier, odigos.Spec.OpenShiftEnabled)
-	if odigos.Spec.OpenShiftEnabled {
+	imageReferences := cmd.GetImageReferences(odigosTier, openshiftEnabled)
+	if openshiftEnabled {
 		imageReferences.AutoscalerImage = os.Getenv(relatedImageEnvVars[imageReferences.AutoscalerImage])
 		imageReferences.CollectorImage = os.Getenv(relatedImageEnvVars[imageReferences.CollectorImage])
 		imageReferences.UIImage = os.Getenv(relatedImageEnvVars[imageReferences.UIImage])
@@ -393,7 +397,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		odigosConfiguration.MountMethod = &odigos.Spec.MountMethod
 	}
 
-	if !odigos.Spec.OpenShiftEnabled {
+	if !openshiftEnabled {
 		if odigos.Spec.ImagePrefix == "" {
 			odigosConfiguration.ImagePrefix = k8sconsts.OdigosImagePrefix
 		}
