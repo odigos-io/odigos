@@ -1,0 +1,121 @@
+name: Test Release Candidate
+
+on:
+  pull_request:
+    branches: ['releases/**']
+
+jobs:
+  decide:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Check if PR has prerelease label
+        id: check
+        run: |
+          if [[ "${{ github.event.pull_request.labels.*.name }}" == *"prerelease"* ]]; then
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "✅ PR has prerelease label, running tests"
+          else
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⏭️ PR does not have prerelease label, skipping tests"
+          fi
+
+  verify-offsets:
+    needs: decide
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['enterprise-go-instrumentation']
+    steps:
+      - name: Verify no open offsets PRs
+        id: verify
+        run: |
+          # Fetch open PRs and filter by "offsets" label
+          result=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+
+          pr_links=$(echo "$result" \
+            | jq -r '[.[] | select(.labels | any(.name == "offsets")) | .html_url] | join(" ")')
+
+          count=$(echo "$pr_links" | wc -w)
+          if [ "$count" -gt 0 ]; then
+            # Format PR links for display
+            pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
+
+            echo "❌ Error: Open PRs with label \"offsets\" found!" >&2
+            echo "::error::Open offset PRs found in ${{ matrix.repo }}:"
+            echo "$pr_links_formatted"
+            exit 1
+          else
+            echo "✅ No open PRs with label \"offsets\"."
+            echo "::notice::No open offset PRs in ${{ matrix.repo }}"
+          fi
+
+  verify-dependencies-sync:
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    needs: verify-offsets
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['odigos-enterprise']
+    steps:
+      - name: Verify no open dependencies-syncer-bot PRs
+        id: verify
+        run: |
+          # Fetch open PRs and filter by "dependencies-syncer-bot" label
+          result=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+
+          pr_links=$(echo "$result" \
+            | jq -r '[.[] | select(.labels | any(.name == "dependencies-syncer-bot")) | .html_url] | join(" ")')
+
+          count=$(echo "$pr_links" | wc -w)
+          if [ "$count" -gt 0 ]; then
+            # Format PR links for display
+            pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
+
+            echo "❌ Error: Open PRs with label \"dependencies-syncer-bot\" found!" >&2
+            echo "::error::Open dependencies-syncer-bot PRs found in ${{ matrix.repo }}:"
+            echo "$pr_links_formatted"
+            exit 1
+          else
+            echo "✅ No open PRs with label \"dependencies-syncer-bot\"."
+            echo "::notice::No open dependencies-syncer-bot PRs in ${{ matrix.repo }}"
+          fi
+
+  verify-release-blockers:
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    needs: verify-dependencies-sync
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['odigos', 'odigos-enterprise']
+    steps:
+      - name: Verify no open release-blocker PRs
+        id: verify
+        run: |
+          # Fetch open PRs and filter by "release-blocker" label
+          result=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+
+          pr_links=$(echo "$result" \
+            | jq -r '[.[] | select(.labels | any(.name == "release-blocker")) | .html_url] | join(" ")')
+
+          count=$(echo "$pr_links" | wc -w)
+          if [ "$count" -gt 0 ]; then
+            # Format PR links for display
+            pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
+
+            echo "❌ Error: Open PRs with label \"release-blocker\" found!" >&2
+            echo "::error::Open release-blocker PRs found in ${{ matrix.repo }}:"
+            echo "$pr_links_formatted"
+            exit 1
+          else
+            echo "✅ No open PRs with label \"release-blocker\"."
+            echo "::notice::No open release-blocker PRs in ${{ matrix.repo }}"
+          fi
