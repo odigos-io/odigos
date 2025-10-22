@@ -8,8 +8,6 @@ COPY ../agents/python ./agents/configurator
 RUN pip install ./agents/configurator/  --target workspace
 RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
 
-FROM public.ecr.aws/odigos/agents/nodejs-community:v0.0.4 AS nodejs-community
-
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
@@ -79,7 +77,7 @@ RUN for v in ${RUBY_VERSIONS}; do \
 
 # Compile rsync statically for distroless image
 # don't specify the platform here, since we want to compile for multi architecture natively with gcc
-FROM registry.odigos.io/odiglet-base:v1.8 AS rsync-builder
+FROM debian:bookworm-slim AS rsync-builder
 ARG RSYNC_VERSION=3.2.7
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -104,7 +102,7 @@ RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz 
     && rm -rf rsync-${RSYNC_VERSION}*
 
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
+FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.9 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -152,8 +150,8 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=nodejs-community /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=nodejs-community /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.5 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.5 /instrumentations/nodejs-community /instrumentations/nodejs-community
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
