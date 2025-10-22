@@ -171,16 +171,23 @@ func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
 func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
 	finalizersUpdate := []rbacv1.PolicyRule{}
 	if ownerPermissionEnforcement {
-		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
-			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
-			// When we create a collector COnfigMap, we set the OwnerReference to the collectorsgroups.
-			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
-			// update finalizers on the collectorsgroup so that they can block deletion.
-			// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
-			APIGroups: []string{"odigos.io"},
-			Resources: []string{"collectorsgroups/finalizers"},
-			Verbs:     []string{"update"},
-		})
+		finalizersUpdate = append(finalizersUpdate,
+			rbacv1.PolicyRule{
+				// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+				// When we create a collector COnfigMap, we set the OwnerReference to the collectorsgroups.
+				// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+				// update finalizers on the collectorsgroup so that they can block deletion.
+				// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/finalizers"},
+				Verbs:     []string{"update"},
+			},
+			rbacv1.PolicyRule{
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/finalizers"},
+				Verbs:     []string{"update"},
+			},
+		)
 	}
 
 	return &rbacv1.ClusterRole{

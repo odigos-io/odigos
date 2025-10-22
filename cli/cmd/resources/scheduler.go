@@ -168,11 +168,18 @@ func NewSchedulerClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
 	}
 
 	if openshiftEnabled {
-		rules = append(rules, rbacv1.PolicyRule{
-			APIGroups: []string{""},
-			Resources: []string{"configmaps/finalizers"},
-			Verbs:     []string{"update"},
-		})
+		rules = append(rules,
+			rbacv1.PolicyRule{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps/finalizers"},
+				Verbs:     []string{"update"},
+			},
+			rbacv1.PolicyRule{
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments/finalizers"},
+				Verbs:     []string{"update"},
+			},
+		)
 	}
 
 	return &rbacv1.ClusterRole{
