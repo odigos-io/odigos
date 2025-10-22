@@ -55,7 +55,72 @@ func NewSchedulerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewSchedulerRole(ns string) *rbacv1.Role {
+func NewSchedulerRole(ns string, openshiftEnabled bool) *rbacv1.Role {
+	rules := []rbacv1.PolicyRule{
+		{ // Needed to react and reconcile odigos-configuration changes to effective config
+			APIGroups: []string{""},
+			Resources: []string{"configmaps"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{ // Needed to apply effective config after reconciling (defaulting and profile applying) and react to it
+			APIGroups:     []string{""},
+			Resources:     []string{"configmaps"},
+			ResourceNames: []string{consts.OdigosEffectiveConfigName, k8sconsts.OdigosDeploymentConfigMapName, k8sconsts.GoOffsetsConfigMap},
+			Verbs:         []string{"patch", "create", "update"},
+		},
+		{ // Needed because the scheduler is managing the collectorsgroups
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"collectorsgroups"},
+			Verbs:     []string{"get", "list", "create", "patch", "update", "watch", "delete"},
+		},
+		{ // Needed to read the status of the gateway collector, to wake the data collector
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"collectorsgroups/status"},
+			Verbs:     []string{"get"},
+		},
+		{ // apply profiles
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"processors", "instrumentationrules", "actions"},
+			Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
+		},
+		{ // read odigos pro token
+			APIGroups: []string{""},
+			Resources: []string{"secrets"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{ // manage go offsets CronJob
+			APIGroups:     []string{"batch"},
+			Resources:     []string{"cronjobs"},
+			ResourceNames: []string{k8sconsts.OffsetCronJobName},
+			Verbs:         []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+		},
+		{ // restart odiglet daemonset after updating go offsets
+			APIGroups:     []string{"apps"},
+			Resources:     []string{"daemonsets"},
+			ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
+			Verbs:         []string{"patch"},
+		},
+		{
+			APIGroups:     []string{"apps"},
+			Resources:     []string{"deployments"},
+			ResourceNames: []string{k8sconsts.SchedulerDeploymentName},
+			Verbs:         []string{"get", "list", "watch"},
+		},
+		{ // for calculating collectors group config based on the active destinations
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"destinations"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+
+	if openshiftEnabled {
+		rules = append(rules, rbacv1.PolicyRule{
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Role",
@@ -65,62 +130,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			Name:      k8sconsts.SchedulerRoleName,
 			Namespace: ns,
 		},
-		Rules: []rbacv1.PolicyRule{
-			{ // Needed to react and reconcile odigos-configuration changes to effective config
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed to apply effective config after reconciling (defaulting and profile applying) and react to it
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName, k8sconsts.OdigosDeploymentConfigMapName, k8sconsts.GoOffsetsConfigMap},
-				Verbs:         []string{"patch", "create", "update"},
-			},
-			{ // Needed because the scheduler is managing the collectorsgroups
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups"},
-				Verbs:     []string{"get", "list", "create", "patch", "update", "watch", "delete"},
-			},
-			{ // Needed to read the status of the gateway collector, to wake the data collector
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/status"},
-				Verbs:     []string{"get"},
-			},
-			{ // apply profiles
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"processors", "instrumentationrules", "actions"},
-				Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
-			},
-			{ // read odigos pro token
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // manage go offsets CronJob
-				APIGroups:     []string{"batch"},
-				Resources:     []string{"cronjobs"},
-				ResourceNames: []string{k8sconsts.OffsetCronJobName},
-				Verbs:         []string{"get", "list", "watch", "create", "update", "patch", "delete"},
-			},
-			{ // restart odiglet daemonset after updating go offsets
-				APIGroups:     []string{"apps"},
-				Resources:     []string{"daemonsets"},
-				ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
-				Verbs:         []string{"patch"},
-			},
-			{
-				APIGroups:     []string{"apps"},
-				Resources:     []string{"deployments"},
-				ResourceNames: []string{k8sconsts.SchedulerDeploymentName},
-				Verbs:         []string{"get", "list", "watch"},
-			},
-			{ // for calculating collectors group config based on the active destinations
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
+		Rules: rules,
 	}
 }
 
@@ -172,11 +182,6 @@ func NewSchedulerClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
 			rbacv1.PolicyRule{
 				APIGroups: []string{""},
 				Resources: []string{"configmaps/finalizers"},
-				Verbs:     []string{"update"},
-			},
-			rbacv1.PolicyRule{
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/finalizers"},
 				Verbs:     []string{"update"},
 			},
 		)
@@ -414,7 +419,7 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 	resources := []kube.Object{
 		NewSchedulerServiceAccount(a.ns),
 		NewSchedulerLeaderElectionRoleBinding(a.ns),
-		NewSchedulerRole(a.ns),
+		NewSchedulerRole(a.ns, a.config.OpenshiftEnabled),
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(a.config.OpenshiftEnabled),
 		NewSchedulerClusterRoleBinding(a.ns),

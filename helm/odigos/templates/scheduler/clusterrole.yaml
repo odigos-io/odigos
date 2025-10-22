@@ -20,12 +20,6 @@ rules:
       - configmaps/finalizers
     verbs:
       - update
-  - apiGroups:
-      - 'apps'
-    resources:
-      - deployments/finalizers
-    verbs:
-      - update
 {{- end }}
   - apiGroups:
       - 'batch'

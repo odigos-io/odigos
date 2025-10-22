@@ -30,12 +30,6 @@ rules:
       - get
       - patch
       - update
-  - apiGroups:
-      - 'apps'
-    resources:
-      - deployments/finalizers
-    verbs:
-      - update
 {{- end }}
   - apiGroups:
       - admissionregistration.k8s.io
