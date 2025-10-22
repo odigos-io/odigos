@@ -19,8 +19,8 @@ locals {
 
   # Sensible defaults for each arch (may be overridden by var.node_spec)
   default_instance_map = {
-    amd = "m6a.large"
-    arm = "m6g.large"
+    amd = "m6a.xlarge"
+    arm = "m6g.xlarge"
   }
 
   # Resolve final values
