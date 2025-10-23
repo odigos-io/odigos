@@ -230,33 +230,8 @@ func NewCentralBackendHPA(ns string, client *kube.Client) kube.Object {
 	// - 1.23–1.24 → autoscaling/v2beta2 (limited Behavior support)
 	// - ≥ 1.25 or unknown → autoscaling/v2 (full Behavior)
 
-	if parsed == nil || !parsed.LessThan(version.MustParse("1.23.0")) && parsed.LessThan(version.MustParse("1.25.0")) {
-		if parsed != nil && parsed.LessThan(version.MustParse("1.25.0")) && !parsed.LessThan(version.MustParse("1.23.0")) {
-			return &autoscalingv2beta2.HorizontalPodAutoscaler{
-				TypeMeta:   metav1.TypeMeta{APIVersion: "autoscaling/v2beta2", Kind: "HorizontalPodAutoscaler"},
-				ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.CentralBackendName, Namespace: ns},
-				Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
-					ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{APIVersion: "apps/v1", Kind: "Deployment", Name: k8sconsts.CentralBackendName},
-					MinReplicas:    minReplicas,
-					MaxReplicas:    maxReplicas,
-					Metrics: []autoscalingv2beta2.MetricSpec{
-						{
-							Type: autoscalingv2beta2.ResourceMetricSourceType,
-							Resource: &autoscalingv2beta2.ResourceMetricSource{
-								Name: corev1.ResourceCPU,
-								Target: autoscalingv2beta2.MetricTarget{
-									Type:               autoscalingv2beta2.UtilizationMetricType,
-									AverageUtilization: &targetUtilization,
-								},
-							},
-						},
-					},
-					Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
-						ScaleDown: &autoscalingv2beta2.HPAScalingRules{StabilizationWindowSeconds: int32Ptr(600)},
-					},
-				},
-			}
-		}
+
+	if parsed == nil || !parsed.LessThan(version.MustParse("1.25.0")) {
 		return &autoscalingv2.HorizontalPodAutoscaler{
 			TypeMeta:   metav1.TypeMeta{APIVersion: "autoscaling/v2", Kind: "HorizontalPodAutoscaler"},
 			ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.CentralBackendName, Namespace: ns},
@@ -288,6 +263,27 @@ func NewCentralBackendHPA(ns string, client *kube.Client) kube.Object {
 						Policies: []autoscalingv2.HPAScalingPolicy{
 							{Type: autoscalingv2.PercentScalingPolicy, Value: 10, PeriodSeconds: 60},
 							{Type: autoscalingv2.PodsScalingPolicy, Value: 1, PeriodSeconds: 60},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	if parsed != nil && !parsed.LessThan(version.MustParse("1.23.0")) && parsed.LessThan(version.MustParse("1.25.0")) {
+		return &autoscalingv2beta2.HorizontalPodAutoscaler{
+			TypeMeta:   metav1.TypeMeta{APIVersion: "autoscaling/v2beta2", Kind: "HorizontalPodAutoscaler"},
+			ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.CentralBackendName, Namespace: ns},
+			Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
+				ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{APIVersion: "apps/v1", Kind: "Deployment", Name: k8sconsts.CentralBackendName},
+				MinReplicas:    minReplicas,
+				MaxReplicas:    maxReplicas,
+				Metrics: []autoscalingv2beta2.MetricSpec{
+					{
+						Type: autoscalingv2beta2.ResourceMetricSourceType,
+						Resource: &autoscalingv2beta2.ResourceMetricSource{
+							Name: corev1.ResourceCPU,
+							Target: autoscalingv2beta2.MetricTarget{Type: autoscalingv2beta2.UtilizationMetricType, AverageUtilization: &targetUtilization},
 						},
 					},
 				},
