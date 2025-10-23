@@ -133,6 +133,11 @@ func NewAutoscalerRole(ns string, openshiftEnabled bool) *rbacv1.Role {
 		},
 	}
 
+	// This is needed for OpenShift to update the finalizers of the deployments
+	// Used when setting the OwnerReference of the CollectorsGroup to the scheduler deployment
+	// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+	// update finalizers on the autoscaler deployment so that they can block deletion.
+	// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
 	if openshiftEnabled {
 		rules = append(rules, rbacv1.PolicyRule{
 			APIGroups: []string{"apps"},
