@@ -49,6 +49,14 @@ rules:
       - list
       - watch
   - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationrules/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
       - ''
     resources:
       - secrets

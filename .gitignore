@@ -15,6 +15,7 @@ serving-certs/
 gha-creds-*.json
 artifacts/
 /preflight*
+.env
 
 **.tfstate
 **.tfstate.backup

@@ -197,7 +197,8 @@ type ComplexityRoot struct {
 	}
 
 	CustomInstrumentations struct {
-		Probes func(childComplexity int) int
+		Golang func(childComplexity int) int
+		Java   func(childComplexity int) int
 	}
 
 	CustomReadDataLabel struct {
@@ -301,6 +302,13 @@ type ComplexityRoot struct {
 		Categories func(childComplexity int) int
 	}
 
+	GolangCustomProbe struct {
+		FunctionName       func(childComplexity int) int
+		PackageName        func(childComplexity int) int
+		ReceiverMethodName func(childComplexity int) int
+		ReceiverName       func(childComplexity int) int
+	}
+
 	HeadersCollection struct {
 		HeaderKeys func(childComplexity int) int
 	}
@@ -337,6 +345,7 @@ type ComplexityRoot struct {
 
 	InstrumentationRule struct {
 		CodeAttributes           func(childComplexity int) int
+		Conditions               func(childComplexity int) int
 		CustomInstrumentations   func(childComplexity int) int
 		Disabled                 func(childComplexity int) int
 		HeadersCollection        func(childComplexity int) int
@@ -356,6 +365,11 @@ type ComplexityRoot struct {
 		InstrumentedText func(childComplexity int) int
 		Namespace        func(childComplexity int) int
 		Workload         func(childComplexity int) int
+	}
+
+	JavaCustomProbe struct {
+		ClassName  func(childComplexity int) int
+		MethodName func(childComplexity int) int
 	}
 
 	JsonCondition struct {
@@ -684,11 +698,6 @@ type ComplexityRoot struct {
 		Kind      func(childComplexity int) int
 		Name      func(childComplexity int) int
 		Namespace func(childComplexity int) int
-	}
-
-	Probe struct {
-		ClassName  func(childComplexity int) int
-		MethodName func(childComplexity int) int
 	}
 
 	Query struct {
@@ -1597,12 +1606,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ContainerRuntimeInfoAnalyze.RuntimeVersion(childComplexity), true
 
-	case "CustomInstrumentations.probes":
-		if e.complexity.CustomInstrumentations.Probes == nil {
+	case "CustomInstrumentations.golang":
+		if e.complexity.CustomInstrumentations.Golang == nil {
 			break
 		}
 
-		return e.complexity.CustomInstrumentations.Probes(childComplexity), true
+		return e.complexity.CustomInstrumentations.Golang(childComplexity), true
+
+	case "CustomInstrumentations.java":
+		if e.complexity.CustomInstrumentations.Java == nil {
+			break
+		}
+
+		return e.complexity.CustomInstrumentations.Java(childComplexity), true
 
 	case "CustomReadDataLabel.condition":
 		if e.complexity.CustomReadDataLabel.Condition == nil {
@@ -1996,6 +2012,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GetDestinationCategories.Categories(childComplexity), true
 
+	case "GolangCustomProbe.functionName":
+		if e.complexity.GolangCustomProbe.FunctionName == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.FunctionName(childComplexity), true
+
+	case "GolangCustomProbe.packageName":
+		if e.complexity.GolangCustomProbe.PackageName == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.PackageName(childComplexity), true
+
+	case "GolangCustomProbe.receiverMethodName":
+		if e.complexity.GolangCustomProbe.ReceiverMethodName == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.ReceiverMethodName(childComplexity), true
+
+	case "GolangCustomProbe.receiverName":
+		if e.complexity.GolangCustomProbe.ReceiverName == nil {
+			break
+		}
+
+		return e.complexity.GolangCustomProbe.ReceiverName(childComplexity), true
+
 	case "HeadersCollection.headerKeys":
 		if e.complexity.HeadersCollection.HeaderKeys == nil {
 			break
@@ -2115,6 +2159,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationRule.CodeAttributes(childComplexity), true
 
+	case "InstrumentationRule.conditions":
+		if e.complexity.InstrumentationRule.Conditions == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationRule.Conditions(childComplexity), true
+
 	case "InstrumentationRule.customInstrumentations":
 		if e.complexity.InstrumentationRule.CustomInstrumentations == nil {
 			break
@@ -2226,6 +2277,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationSourcesAnalyze.Workload(childComplexity), true
+
+	case "JavaCustomProbe.className":
+		if e.complexity.JavaCustomProbe.ClassName == nil {
+			break
+		}
+
+		return e.complexity.JavaCustomProbe.ClassName(childComplexity), true
+
+	case "JavaCustomProbe.methodName":
+		if e.complexity.JavaCustomProbe.MethodName == nil {
+			break
+		}
+
+		return e.complexity.JavaCustomProbe.MethodName(childComplexity), true
 
 	case "JsonCondition.expectedValue":
 		if e.complexity.JsonCondition.ExpectedValue == nil {
@@ -3773,20 +3838,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PodWorkload.Namespace(childComplexity), true
 
-	case "Probe.className":
-		if e.complexity.Probe.ClassName == nil {
-			break
-		}
-
-		return e.complexity.Probe.ClassName(childComplexity), true
-
-	case "Probe.methodName":
-		if e.complexity.Probe.MethodName == nil {
-			break
-		}
-
-		return e.complexity.Probe.MethodName(childComplexity), true
-
 	case "Query.computePlatform":
 		if e.complexity.Query.ComputePlatform == nil {
 			break
@@ -4293,11 +4344,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDestinationInput,
 		ec.unmarshalInputExportedSignalsInput,
 		ec.unmarshalInputFieldInput,
+		ec.unmarshalInputGolangCustomProbeInput,
 		ec.unmarshalInputHeadersCollectionInput,
 		ec.unmarshalInputHttpPayloadCollectionInput,
 		ec.unmarshalInputHttpRouteFilterInput,
 		ec.unmarshalInputInstrumentationLibraryGlobalIdInput,
 		ec.unmarshalInputInstrumentationRuleInput,
+		ec.unmarshalInputJavaCustomProbeInput,
 		ec.unmarshalInputJsonConditionInput,
 		ec.unmarshalInputK8sAnnotationAttributeInput,
 		ec.unmarshalInputK8sDesiredNamespaceInput,
@@ -4314,7 +4367,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPersistNamespaceItemInput,
 		ec.unmarshalInputPersistNamespaceSourceInput,
 		ec.unmarshalInputPodWorkloadInput,
-		ec.unmarshalInputProbeInput,
 		ec.unmarshalInputRolloutConfigurationInput,
 		ec.unmarshalInputServiceNameFilterInput,
 		ec.unmarshalInputSpanAttributeFilterInput,
@@ -9351,6 +9403,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_instrumentationRules(_ 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
+			case "conditions":
+				return ec.fieldContext_InstrumentationRule_conditions(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			case "headersCollection":
@@ -10102,8 +10156,8 @@ func (ec *executionContext) fieldContext_ContainerRuntimeInfoAnalyze_envVars(_ c
 	return fc, nil
 }
 
-func (ec *executionContext) _CustomInstrumentations_probes(ctx context.Context, field graphql.CollectedField, obj *model.CustomInstrumentations) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CustomInstrumentations_probes(ctx, field)
+func (ec *executionContext) _CustomInstrumentations_golang(ctx context.Context, field graphql.CollectedField, obj *model.CustomInstrumentations) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CustomInstrumentations_golang(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10116,7 +10170,7 @@ func (ec *executionContext) _CustomInstrumentations_probes(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Probes, nil
+		return obj.Golang, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10125,12 +10179,63 @@ func (ec *executionContext) _CustomInstrumentations_probes(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Probe)
+	res := resTmp.([]*model.GolangCustomProbe)
 	fc.Result = res
-	return ec.marshalOProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProbe(ctx, field.Selections, res)
+	return ec.marshalOGolangCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGolangCustomProbe(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CustomInstrumentations_probes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CustomInstrumentations_golang(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CustomInstrumentations",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "packageName":
+				return ec.fieldContext_GolangCustomProbe_packageName(ctx, field)
+			case "functionName":
+				return ec.fieldContext_GolangCustomProbe_functionName(ctx, field)
+			case "receiverName":
+				return ec.fieldContext_GolangCustomProbe_receiverName(ctx, field)
+			case "receiverMethodName":
+				return ec.fieldContext_GolangCustomProbe_receiverMethodName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type GolangCustomProbe", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CustomInstrumentations_java(ctx context.Context, field graphql.CollectedField, obj *model.CustomInstrumentations) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CustomInstrumentations_java(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Java, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.JavaCustomProbe)
+	fc.Result = res
+	return ec.marshalOJavaCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbe(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CustomInstrumentations_java(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "CustomInstrumentations",
 		Field:      field,
@@ -10139,11 +10244,11 @@ func (ec *executionContext) fieldContext_CustomInstrumentations_probes(_ context
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "className":
-				return ec.fieldContext_Probe_className(ctx, field)
+				return ec.fieldContext_JavaCustomProbe_className(ctx, field)
 			case "methodName":
-				return ec.fieldContext_Probe_methodName(ctx, field)
+				return ec.fieldContext_JavaCustomProbe_methodName(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Probe", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type JavaCustomProbe", field.Name)
 		},
 	}
 	return fc, nil
@@ -12687,6 +12792,170 @@ func (ec *executionContext) fieldContext_GetDestinationCategories_categories(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _GolangCustomProbe_packageName(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_packageName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PackageName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_packageName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GolangCustomProbe_functionName(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_functionName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FunctionName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_functionName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GolangCustomProbe_receiverName(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_receiverName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReceiverName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_receiverName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GolangCustomProbe_receiverMethodName(ctx context.Context, field graphql.CollectedField, obj *model.GolangCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GolangCustomProbe_receiverMethodName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReceiverMethodName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GolangCustomProbe_receiverMethodName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GolangCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _HeadersCollection_headerKeys(ctx context.Context, field graphql.CollectedField, obj *model.HeadersCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_HeadersCollection_headerKeys(ctx, field)
 	if err != nil {
@@ -13803,6 +14072,59 @@ func (ec *executionContext) fieldContext_InstrumentationRule_instrumentationLibr
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationRule_conditions(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationRule_conditions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Conditions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Condition)
+	fc.Result = res
+	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationRule_conditions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_Condition_status(ctx, field)
+			case "type":
+				return ec.fieldContext_Condition_type(ctx, field)
+			case "reason":
+				return ec.fieldContext_Condition_reason(ctx, field)
+			case "message":
+				return ec.fieldContext_Condition_message(ctx, field)
+			case "lastTransitionTime":
+				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationRule_codeAttributes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationRule) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 	if err != nil {
@@ -13990,8 +14312,10 @@ func (ec *executionContext) fieldContext_InstrumentationRule_customInstrumentati
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "probes":
-				return ec.fieldContext_CustomInstrumentations_probes(ctx, field)
+			case "golang":
+				return ec.fieldContext_CustomInstrumentations_golang(ctx, field)
+			case "java":
+				return ec.fieldContext_CustomInstrumentations_java(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CustomInstrumentations", field.Name)
 		},
@@ -14201,6 +14525,88 @@ func (ec *executionContext) fieldContext_InstrumentationSourcesAnalyze_instrumen
 				return ec.fieldContext_EntityProperty_explain(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EntityProperty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JavaCustomProbe_className(ctx context.Context, field graphql.CollectedField, obj *model.JavaCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_JavaCustomProbe_className(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClassName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_JavaCustomProbe_className(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JavaCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _JavaCustomProbe_methodName(ctx context.Context, field graphql.CollectedField, obj *model.JavaCustomProbe) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_JavaCustomProbe_methodName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MethodName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_JavaCustomProbe_methodName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "JavaCustomProbe",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -20556,6 +20962,8 @@ func (ec *executionContext) fieldContext_Mutation_createInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
+			case "conditions":
+				return ec.fieldContext_InstrumentationRule_conditions(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			case "headersCollection":
@@ -20639,6 +21047,8 @@ func (ec *executionContext) fieldContext_Mutation_updateInstrumentationRule(ctx 
 				return ec.fieldContext_InstrumentationRule_workloads(ctx, field)
 			case "instrumentationLibraries":
 				return ec.fieldContext_InstrumentationRule_instrumentationLibraries(ctx, field)
+			case "conditions":
+				return ec.fieldContext_InstrumentationRule_conditions(ctx, field)
 			case "codeAttributes":
 				return ec.fieldContext_InstrumentationRule_codeAttributes(ctx, field)
 			case "headersCollection":
@@ -24361,88 +24771,6 @@ func (ec *executionContext) fieldContext_PodWorkload_kind(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type K8sResourceKind does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Probe_className(ctx context.Context, field graphql.CollectedField, obj *model.Probe) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Probe_className(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClassName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Probe_className(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Probe",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Probe_methodName(ctx context.Context, field graphql.CollectedField, obj *model.Probe) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Probe_methodName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MethodName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Probe_methodName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Probe",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -30350,20 +30678,27 @@ func (ec *executionContext) unmarshalInputCustomInstrumentationsInput(ctx contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"probes"}
+	fieldsInOrder := [...]string{"golang", "java"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
-		case "probes":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("probes"))
-			data, err := ec.unmarshalOProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProbeInput(ctx, v)
+		case "golang":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("golang"))
+			data, err := ec.unmarshalOGolangCustomProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGolangCustomProbeInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Probes = data
+			it.Golang = data
+		case "java":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("java"))
+			data, err := ec.unmarshalOJavaCustomProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbeInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Java = data
 		}
 	}
 
@@ -30562,6 +30897,54 @@ func (ec *executionContext) unmarshalInputFieldInput(ctx context.Context, obj an
 				return it, err
 			}
 			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputGolangCustomProbeInput(ctx context.Context, obj any) (model.GolangCustomProbeInput, error) {
+	var it model.GolangCustomProbeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"packageName", "functionName", "receiverName", "receiverMethodName"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "packageName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("packageName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PackageName = data
+		case "functionName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("functionName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FunctionName = data
+		case "receiverName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("receiverName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReceiverName = data
+		case "receiverMethodName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("receiverMethodName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReceiverMethodName = data
 		}
 	}
 
@@ -30802,6 +31185,40 @@ func (ec *executionContext) unmarshalInputInstrumentationRuleInput(ctx context.C
 				return it, err
 			}
 			it.CustomInstrumentations = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputJavaCustomProbeInput(ctx context.Context, obj any) (model.JavaCustomProbeInput, error) {
+	var it model.JavaCustomProbeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"className", "methodName"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "className":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("className"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClassName = data
+		case "methodName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("methodName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MethodName = data
 		}
 	}
 
@@ -31570,40 +31987,6 @@ func (ec *executionContext) unmarshalInputPodWorkloadInput(ctx context.Context, 
 				return it, err
 			}
 			it.Name = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputProbeInput(ctx context.Context, obj any) (model.ProbeInput, error) {
-	var it model.ProbeInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"className", "methodName"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "className":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("className"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClassName = data
-		case "methodName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("methodName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MethodName = data
 		}
 	}
 
@@ -32923,8 +33306,10 @@ func (ec *executionContext) _CustomInstrumentations(ctx context.Context, sel ast
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("CustomInstrumentations")
-		case "probes":
-			out.Values[i] = ec._CustomInstrumentations_probes(ctx, field, obj)
+		case "golang":
+			out.Values[i] = ec._CustomInstrumentations_golang(ctx, field, obj)
+		case "java":
+			out.Values[i] = ec._CustomInstrumentations_java(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -33720,6 +34105,48 @@ func (ec *executionContext) _GetDestinationCategories(ctx context.Context, sel a
 	return out
 }
 
+var golangCustomProbeImplementors = []string{"GolangCustomProbe"}
+
+func (ec *executionContext) _GolangCustomProbe(ctx context.Context, sel ast.SelectionSet, obj *model.GolangCustomProbe) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, golangCustomProbeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GolangCustomProbe")
+		case "packageName":
+			out.Values[i] = ec._GolangCustomProbe_packageName(ctx, field, obj)
+		case "functionName":
+			out.Values[i] = ec._GolangCustomProbe_functionName(ctx, field, obj)
+		case "receiverName":
+			out.Values[i] = ec._GolangCustomProbe_receiverName(ctx, field, obj)
+		case "receiverMethodName":
+			out.Values[i] = ec._GolangCustomProbe_receiverMethodName(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var headersCollectionImplementors = []string{"HeadersCollection"}
 
 func (ec *executionContext) _HeadersCollection(ctx context.Context, sel ast.SelectionSet, obj *model.HeadersCollection) graphql.Marshaler {
@@ -34024,6 +34451,8 @@ func (ec *executionContext) _InstrumentationRule(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._InstrumentationRule_workloads(ctx, field, obj)
 		case "instrumentationLibraries":
 			out.Values[i] = ec._InstrumentationRule_instrumentationLibraries(ctx, field, obj)
+		case "conditions":
+			out.Values[i] = ec._InstrumentationRule_conditions(ctx, field, obj)
 		case "codeAttributes":
 			out.Values[i] = ec._InstrumentationRule_codeAttributes(ctx, field, obj)
 		case "headersCollection":
@@ -34077,6 +34506,44 @@ func (ec *executionContext) _InstrumentationSourcesAnalyze(ctx context.Context, 
 			out.Values[i] = ec._InstrumentationSourcesAnalyze_namespace(ctx, field, obj)
 		case "instrumentedText":
 			out.Values[i] = ec._InstrumentationSourcesAnalyze_instrumentedText(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var javaCustomProbeImplementors = []string{"JavaCustomProbe"}
+
+func (ec *executionContext) _JavaCustomProbe(ctx context.Context, sel ast.SelectionSet, obj *model.JavaCustomProbe) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, javaCustomProbeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JavaCustomProbe")
+		case "className":
+			out.Values[i] = ec._JavaCustomProbe_className(ctx, field, obj)
+		case "methodName":
+			out.Values[i] = ec._JavaCustomProbe_methodName(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36787,44 +37254,6 @@ func (ec *executionContext) _PodWorkload(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var probeImplementors = []string{"Probe"}
-
-func (ec *executionContext) _Probe(ctx context.Context, sel ast.SelectionSet, obj *model.Probe) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, probeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Probe")
-		case "className":
-			out.Values[i] = ec._Probe_className(ctx, field, obj)
-		case "methodName":
-			out.Values[i] = ec._Probe_methodName(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -41495,6 +41924,80 @@ func (ec *executionContext) marshalOGetDestinationCategories2ᚖgithubᚗcomᚋo
 	return ec._GetDestinationCategories(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOGolangCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGolangCustomProbe(ctx context.Context, sel ast.SelectionSet, v []*model.GolangCustomProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOGolangCustomProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGolangCustomProbe(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOGolangCustomProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGolangCustomProbe(ctx context.Context, sel ast.SelectionSet, v *model.GolangCustomProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._GolangCustomProbe(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOGolangCustomProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGolangCustomProbeInput(ctx context.Context, v any) ([]*model.GolangCustomProbeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.GolangCustomProbeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOGolangCustomProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGolangCustomProbeInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOGolangCustomProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGolangCustomProbeInput(ctx context.Context, v any) (*model.GolangCustomProbeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputGolangCustomProbeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalOHeadersCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐHeadersCollection(ctx context.Context, sel ast.SelectionSet, v *model.HeadersCollection) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -41669,6 +42172,80 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOJavaCustomProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbe(ctx context.Context, sel ast.SelectionSet, v []*model.JavaCustomProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOJavaCustomProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbe(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOJavaCustomProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbe(ctx context.Context, sel ast.SelectionSet, v *model.JavaCustomProbe) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._JavaCustomProbe(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOJavaCustomProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbeInput(ctx context.Context, v any) ([]*model.JavaCustomProbeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.JavaCustomProbeInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOJavaCustomProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbeInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOJavaCustomProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJavaCustomProbeInput(ctx context.Context, v any) (*model.JavaCustomProbeInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputJavaCustomProbeInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOJsonCondition2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐJSONCondition(ctx context.Context, sel ast.SelectionSet, v *model.JSONCondition) graphql.Marshaler {
@@ -42243,80 +42820,6 @@ func (ec *executionContext) unmarshalOPodWorkloadInput2ᚕᚖgithubᚗcomᚋodig
 		}
 	}
 	return res, nil
-}
-
-func (ec *executionContext) marshalOProbe2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProbe(ctx context.Context, sel ast.SelectionSet, v []*model.Probe) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProbe(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
-func (ec *executionContext) marshalOProbe2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProbe(ctx context.Context, sel ast.SelectionSet, v *model.Probe) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Probe(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOProbeInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProbeInput(ctx context.Context, v any) ([]*model.ProbeInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []any
-	vSlice = graphql.CoerceList(v)
-	var err error
-	res := make([]*model.ProbeInput, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProbeInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalOProbeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProbeInput(ctx context.Context, v any) (*model.ProbeInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputProbeInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOProgrammingLanguage2ᚕgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐProgrammingLanguageᚄ(ctx context.Context, v any) ([]model.ProgrammingLanguage, error) {
