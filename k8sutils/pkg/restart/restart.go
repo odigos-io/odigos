@@ -32,25 +32,3 @@ func RestartDeployment(ctx context.Context, client kubernetes.Interface, namespa
 	)
 	return err
 }
-
-func RestartDaemonSet(ctx context.Context, client kubernetes.Interface, namespace string, daemonSetName string) error {
-	_, err := client.AppsV1().DaemonSets(namespace).Get(ctx, daemonSetName, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":%q}}}}}`,
-		time.Now().Format(time.RFC3339))
-
-	_, err = client.AppsV1().DaemonSets(namespace).Patch(
-		ctx,
-		daemonSetName,
-		k8stypes.StrategicMergePatchType,
-		[]byte(patch),
-		metav1.PatchOptions{},
-	)
-	return err
-}
