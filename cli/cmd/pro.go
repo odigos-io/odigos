@@ -544,8 +544,15 @@ func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := kube.PortForwardWithContext(ctx, pod, client, port, localAddress); err != nil {
+		fw, err := kube.PortForwardWithContext(ctx, pod, client, port, port, localAddress)
+		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+			return
+		}
+		err = fw.ForwardPorts()
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+			return
 		}
 	}()
 }

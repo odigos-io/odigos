@@ -94,6 +94,7 @@ var relatedImageEnvVars = map[string]string{
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos/finalizers,verbs=update
 // +kubebuilder:rbac:groups=actions.odigos.io,resources=*,verbs=get;list;watch;create;patch;update;delete
 // +kubebuilder:rbac:groups=actions.odigos.io,resources=*/status,verbs=get;patch;update
+// +kubebuilder:rbac:groups=odigos.io,resources=instrumentationrules/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=*,verbs=*
 // +kubebuilder:rbac:groups=odigos.io,resources=destinations/status;instrumentationinstances/status;instrumentationconfigs/status;collectorsgroups/status,verbs=get;list;watch;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=sources/finalizers,verbs=update
