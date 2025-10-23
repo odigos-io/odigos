@@ -175,6 +175,9 @@ func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string, api
 }
 
 func applyCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJob client.Object, config *common.OdigosConfiguration) error {
+
+	logger := ctrl.LoggerFrom(ctx)
+
 	// Apply the CronJob
 	objApplyBytes, err := yaml.Marshal(cronJob)
 	if err != nil {
@@ -216,7 +219,7 @@ func applyCronJob(ctx context.Context, kubeClient client.Client, ns string, cron
 			return fmt.Errorf("failed to create initial offset updater job: %v", err)
 		}
 	} else {
-		fmt.Printf("Triggered initial offset-updater job %s/%s\n", ns, k8sconsts.OffsetInitialJobName)
+		logger.Info("Triggered initial offset-updater job", "namespace", ns, "jobName", k8sconsts.OffsetInitialJobName)
 	}
 
 	return nil
