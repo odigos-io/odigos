@@ -19,10 +19,12 @@ package v1alpha1
 import (
 	"context"
 	"errors"
+	"sort"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
@@ -112,6 +114,7 @@ type WorkloadSources struct {
 func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodWorkload) (*WorkloadSources, error) {
 	var err error
 	workloadSources := &WorkloadSources{}
+	logger := log.FromContext(ctx)
 
 	namespace := pw.Namespace
 	if len(namespace) == 0 && pw.Kind == k8sconsts.WorkloadKindNamespace {
@@ -129,12 +132,29 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 		if err != nil {
 			return nil, err
 		}
-		if len(sourceList.Items) > 1 {
-			return nil, ErrorTooManySources
+
+		// Filter out sources that are being deleted (have deletionTimestamp)
+		var activeSources []Source
+		for _, source := range sourceList.Items {
+			if source.DeletionTimestamp == nil || source.DeletionTimestamp.IsZero() {
+				activeSources = append(activeSources, source)
+			}
 		}
-		if len(sourceList.Items) == 1 {
-			workloadSources.Workload = &sourceList.Items[0]
+
+		activeCount := len(activeSources)
+		if activeCount > 1 {
+			// Sort deterministically (oldest first) and pick the first
+			sort.Slice(activeSources, func(i, j int) bool {
+				return activeSources[i].CreationTimestamp.Before(&activeSources[j].CreationTimestamp)
+			})
+			logger.Error(ErrorTooManySources, "More than one Source found for workload", "count", activeCount, "workload.name", pw.Name, "workload.namespace", namespace, "workload.kind", pw.Kind)
 		}
+
+		// Only assign if there are active sources
+		if activeCount >= 1 {
+			workloadSources.Workload = &activeSources[0]
+		}
+
 	}
 
 	namespaceSourceList := SourceList{}
@@ -147,11 +167,26 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 	if err != nil {
 		return nil, err
 	}
-	if len(namespaceSourceList.Items) > 1 {
-		return nil, ErrorTooManySources
+
+	var activeNamespaceSources []Source
+	// Filter out namespace sources that are being deleted (have deletionTimestamp)
+	for _, source := range namespaceSourceList.Items {
+		if source.DeletionTimestamp == nil || source.DeletionTimestamp.IsZero() {
+			activeNamespaceSources = append(activeNamespaceSources, source)
+		}
 	}
-	if len(namespaceSourceList.Items) == 1 {
-		workloadSources.Namespace = &namespaceSourceList.Items[0]
+
+	activeNamespaceCount := len(activeNamespaceSources)
+	if activeNamespaceCount > 1 {
+		// Sort deterministically (oldest first) and pick the first
+		sort.Slice(activeNamespaceSources, func(i, j int) bool {
+			return activeNamespaceSources[i].CreationTimestamp.Before(&activeNamespaceSources[j].CreationTimestamp)
+		})
+		logger.Error(ErrorTooManySources, "More than one Source found for namespace", "count", activeNamespaceCount, "namespace", namespace)
+	}
+
+	if activeNamespaceCount >= 1 {
+		workloadSources.Namespace = &activeNamespaceSources[0]
 	}
 
 	return workloadSources, nil
