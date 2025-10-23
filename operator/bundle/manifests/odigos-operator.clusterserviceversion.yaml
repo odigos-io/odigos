@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:ef45b967043beb8efddc5e2fb2b3071329ca03c1038a48bc25b827e7c8da988a
-    createdAt: "2025-10-23T12:51:10Z"
+    createdAt: "2025-10-23T13:37:14Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -586,28 +586,28 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
-    - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:d96d9bd1d0ac4c9acaf1e56fe46372217f79d888f9743b931a5c815745957b8b
-      name: instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:63f5ec3c3b1aa7190c558e4cafe5563dfcfec6c0a8b166856e2bdfc6952df94e
-      name: enterprise-instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9@sha256:1a1f7ab783285a76204f4e2a5470fef7446beb32d2a65bb8cc3e5dbe1e00bc08
       name: odiglet
     - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9@sha256:9bd5a96b45aab7d9b2a52cbd28587f34e823369186a4180400c0e02ef5fe6a05
       name: scheduler
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:63f5ec3c3b1aa7190c558e4cafe5563dfcfec6c0a8b166856e2bdfc6952df94e
+      name: enterprise_instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:3b04ff5d65c80fcae7be799a85d3417e3f36b182d9af5067367a0dae7014cb7e
       name: enterprise_odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:ef45b967043beb8efddc5e2fb2b3071329ca03c1038a48bc25b827e7c8da988a
-      name: odigos-certified-operator-ubi9-ef45b967043beb8efddc5e2fb2b3071329ca03c1038a48bc25b827e7c8da988a-annotation
-    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:4da3ace23a9ae7a97f6b3fd0e271c4b853312aa8add6fd76d2d50224dcf5b52d
-      name: autoscaler
-    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:a3f35268de797ee326f08584ca25b76464a3a612500d2f95a2686c0e8b6fcf67
-      name: collector
     - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9@sha256:f11f1ef06e7efcf89d1e9906f5a289a12864e519da8a3de10df96ead20672098
       name: frontend
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9@sha256:3b04ff5d65c80fcae7be799a85d3417e3f36b182d9af5067367a0dae7014cb7e
       name: enterprise-odiglet
     - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:ef45b967043beb8efddc5e2fb2b3071329ca03c1038a48bc25b827e7c8da988a
       name: manager
+    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9@sha256:ef45b967043beb8efddc5e2fb2b3071329ca03c1038a48bc25b827e7c8da988a
+      name: odigos-certified-operator-ubi9-ef45b967043beb8efddc5e2fb2b3071329ca03c1038a48bc25b827e7c8da988a-annotation
+    - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9@sha256:4da3ace23a9ae7a97f6b3fd0e271c4b853312aa8add6fd76d2d50224dcf5b52d
+      name: autoscaler
+    - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9@sha256:a3f35268de797ee326f08584ca25b76464a3a612500d2f95a2686c0e8b6fcf67
+      name: collector
+    - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@sha256:d96d9bd1d0ac4c9acaf1e56fe46372217f79d888f9743b931a5c815745957b8b
+      name: instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9@sha256:63f5ec3c3b1aa7190c558e4cafe5563dfcfec6c0a8b166856e2bdfc6952df94e
-      name: enterprise_instrumentor
+      name: enterprise-instrumentor
   version: 1.8.0
