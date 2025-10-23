@@ -48,7 +48,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 	}
 
 	existing := &v1.ConfigMap{}
-	if err := b.Client.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, existing); err != nil {
+	if err := b.Client.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorConfigMapName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(0).Info("creating config map")
 			_, err := b.createConfigMap(desired, ctx)
