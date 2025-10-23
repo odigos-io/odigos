@@ -23,6 +23,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// InstrumentationRuleVerified indicates that the InstrumentationRule has been successfully verified.
+	InstrumentationRuleVerified = "InstrumentationRuleValidation"
+)
+
 // Includes the instrumentation library name, span kind (for golang) and language
 // which identifies a specific library globally.
 type InstrumentationLibraryGlobalId struct {
@@ -78,6 +83,15 @@ type InstrumentationRuleSpec struct {
 
 	// Add custom instrumentation probes
 	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+}
+
+// Verify validates the InstrumentationRuleSpec.
+// for future usage, you can add more validation logic here for other fields.
+func (irs *InstrumentationRuleSpec) Verify() error {
+	if irs.CustomInstrumentations != nil {
+		return irs.CustomInstrumentations.Verify()
+	}
+	return nil
 }
 
 type InstrumentationRuleStatus struct {
