@@ -14,7 +14,8 @@ serving-certs/
 /odigos
 gha-creds-*.json
 artifacts/
-preflight*
+/preflight*
+.env
 
 **.tfstate
 **.tfstate.backup
@@ -22,3 +23,6 @@ preflight*
 
 *.log
 *.logs
+
+# CLI embedded Helm charts (generated during build)
+cli/pkg/helm/embedded/*.tgz

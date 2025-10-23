@@ -11,11 +11,11 @@ spec:
         - script:
             content: |
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                ../../../cli/odigos install --namespace odigos-test --version "$COMMIT_HASH" --image-prefix=public.ecr.aws/y2v0v6s7
+                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
               else
-                ../../../cli/odigos install --namespace odigos-test --version e2e-test
+                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               fi
-
+              kubectl label namespace odigos-test odigos.io/system-object="true"
               ../../common/verify_odigos_installation.sh odigos-test
             timeout: 4m
         - assert:

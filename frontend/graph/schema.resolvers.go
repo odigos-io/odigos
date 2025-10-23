@@ -192,7 +192,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 
 // InstrumentationRules is the resolver for the instrumentationRules field.
 func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj *model.ComputePlatform) ([]*model.InstrumentationRule, error) {
-	return services.ListInstrumentationRules(ctx)
+	return services.GetInstrumentationRules(ctx)
 }
 
 // DataStreams is the resolver for the dataStreams field.

@@ -230,11 +230,13 @@ type ContainerRuntimeInfoAnalyze struct {
 }
 
 type CustomInstrumentations struct {
-	Probes []*Probe `json:"probes,omitempty"`
+	Golang []*GolangCustomProbe `json:"golang,omitempty"`
+	Java   []*JavaCustomProbe   `json:"java,omitempty"`
 }
 
 type CustomInstrumentationsInput struct {
-	Probes []*ProbeInput `json:"probes,omitempty"`
+	Golang []*GolangCustomProbeInput `json:"golang,omitempty"`
+	Java   []*JavaCustomProbeInput   `json:"java,omitempty"`
 }
 
 type CustomReadDataLabel struct {
@@ -367,6 +369,20 @@ type GetDestinationCategories struct {
 	Categories []*DestinationsCategory `json:"categories"`
 }
 
+type GolangCustomProbe struct {
+	PackageName        *string `json:"packageName,omitempty"`
+	FunctionName       *string `json:"functionName,omitempty"`
+	ReceiverName       *string `json:"receiverName,omitempty"`
+	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+}
+
+type GolangCustomProbeInput struct {
+	PackageName        *string `json:"packageName,omitempty"`
+	FunctionName       *string `json:"functionName,omitempty"`
+	ReceiverName       *string `json:"receiverName,omitempty"`
+	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
+}
+
 type HeadersCollection struct {
 	HeaderKeys []*string `json:"headerKeys,omitempty"`
 }
@@ -434,6 +450,7 @@ type InstrumentationRule struct {
 	ProfileName              string                            `json:"profileName"`
 	Workloads                []*PodWorkload                    `json:"workloads,omitempty"`
 	InstrumentationLibraries []*InstrumentationLibraryGlobalID `json:"instrumentationLibraries,omitempty"`
+	Conditions               []*Condition                      `json:"conditions,omitempty"`
 	CodeAttributes           *CodeAttributes                   `json:"codeAttributes,omitempty"`
 	HeadersCollection        *HeadersCollection                `json:"headersCollection,omitempty"`
 	PayloadCollection        *PayloadCollection                `json:"payloadCollection,omitempty"`
@@ -457,6 +474,16 @@ type InstrumentationSourcesAnalyze struct {
 	Workload         *EntityProperty `json:"workload,omitempty"`
 	Namespace        *EntityProperty `json:"namespace,omitempty"`
 	InstrumentedText *EntityProperty `json:"instrumentedText,omitempty"`
+}
+
+type JavaCustomProbe struct {
+	ClassName  *string `json:"className,omitempty"`
+	MethodName *string `json:"methodName,omitempty"`
+}
+
+type JavaCustomProbeInput struct {
+	ClassName  *string `json:"className,omitempty"`
+	MethodName *string `json:"methodName,omitempty"`
 }
 
 type JSONCondition struct {
@@ -878,16 +905,6 @@ type PodWorkloadInput struct {
 	Namespace string          `json:"namespace"`
 	Kind      K8sResourceKind `json:"kind"`
 	Name      string          `json:"name"`
-}
-
-type Probe struct {
-	ClassName  *string `json:"className,omitempty"`
-	MethodName *string `json:"methodName,omitempty"`
-}
-
-type ProbeInput struct {
-	ClassName  *string `json:"className,omitempty"`
-	MethodName *string `json:"methodName,omitempty"`
 }
 
 type Query struct {
