@@ -120,3 +120,11 @@ rules:
       - 'get'
       - 'list'
       - 'watch'
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - 'apps'
+    resources:
+      - deployments/finalizers
+    verbs:
+      - update
+{{- end }}
