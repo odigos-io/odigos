@@ -197,6 +197,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
