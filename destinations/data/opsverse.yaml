@@ -12,7 +12,8 @@ spec:
     metrics:
       supported: true
     logs:
-      supported: true
+    # used to rely on loki exporter which is deprecated for OTLP
+      supported: false
   fields:
     - name: OPSVERSE_USERNAME
       displayName: User

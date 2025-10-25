@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	opsverseLogsUrl    = "OPSVERSE_LOGS_URL"
 	opsverseMetricsUrl = "OPSVERSE_METRICS_URL"
 	opsverseTracesUrl  = "OPSVERSE_TRACES_URL"
 	opsverseUserName   = "OPSVERSE_USERNAME"
@@ -71,33 +70,7 @@ func (g *OpsVerse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	if isLoggingEnabled(dest) {
-		e := g.isLogsVarsExists(dest)
-		if e != nil {
-			err = errors.Join(err, e)
-		} else {
-			url := fmt.Sprintf("%s/loki/api/v1/push", dest.GetConfig()[opsverseLogsUrl])
-
-			lokiExporterName := "loki/opsverse-" + dest.GetID()
-			currentConfig.Exporters[lokiExporterName] = GenericMap{
-				"endpoint": url,
-				"headers": GenericMap{
-					"Authorization": fmt.Sprintf("Basic %s", "${OPSVERSE_AUTH_TOKEN}"),
-				},
-				"labels": GenericMap{
-					"attributes": GenericMap{
-						"k8s.container.name": "k8s_container_name",
-						"k8s.pod.name":       "k8s_pod_name",
-						"k8s.namespace.name": "k8s_namespace_name",
-					},
-				},
-			}
-
-			logsPipelineName := "logs/opsverse-" + dest.GetID()
-			currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
-				Exporters: []string{lokiExporterName},
-			}
-			pipelineNames = append(pipelineNames, logsPipelineName)
-		}
+		// OpsVerse used to rely on the loki exported which is deprecated in favor of OTLP
 	}
 
 	return pipelineNames, err
@@ -112,20 +85,6 @@ func (g *OpsVerse) isTracingVarsExists(dest ExporterConfigurer) error {
 	_, exists = dest.GetConfig()[opsverseUserName]
 	if !exists {
 		return errors.New("OpsVerse user not specified, gateway will not be configured for traces")
-	}
-
-	return nil
-}
-
-func (g *OpsVerse) isLogsVarsExists(dest ExporterConfigurer) error {
-	_, exists := dest.GetConfig()[opsverseLogsUrl]
-	if !exists {
-		return errors.New("OpsVerse logs endpoint not specified, gateway will not be configured for logs")
-	}
-
-	_, exists = dest.GetConfig()[opsverseUserName]
-	if !exists {
-		return errors.New("OpsVerse user not specified, gateway will not be configured for logs")
 	}
 
 	return nil
