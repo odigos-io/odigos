@@ -9,8 +9,8 @@ require (
 
 require (
 	github.com/go-logr/logr v1.4.3
-	go.opentelemetry.io/otel v1.37.0 // indirect
-	go.opentelemetry.io/otel/trace v1.37.0 // indirect
+	go.opentelemetry.io/otel v1.38.0 // indirect
+	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 )
 
 replace github.com/odigos-io/odigos/common => ../common

@@ -34,7 +34,6 @@ icon: 'signal-stream'
 <Accordion title="Supported Signals:">
   ✅ Traces
   ✅ Metrics
-  ✅ Logs
 </Accordion>
 
 - **OPSVERSE_USERNAME** `string` : User.
@@ -79,7 +78,6 @@ There are two primary methods for configuring destinations in Odigos:
       namespace: odigos-system
     spec:
       data:
-        OPSVERSE_LOGS_URL: <Logs Endpoint>
         OPSVERSE_METRICS_URL: <Metrics Endpoint>
         OPSVERSE_TRACES_URL: <Traces Endpoint>
         OPSVERSE_USERNAME: <User>
