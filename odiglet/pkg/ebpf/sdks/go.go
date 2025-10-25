@@ -70,8 +70,9 @@ func (g *GoOtelEbpfSdk) Run(ctx context.Context) error {
 	return g.inst.Run(ctx)
 }
 
-func (g *GoOtelEbpfSdk) Load(ctx context.Context) error {
-	return g.inst.Load(ctx)
+func (g *GoOtelEbpfSdk) Load(ctx context.Context) ([]instrumentation.InstrumentationLibrary, error) {
+	loadErr := g.inst.Load(ctx)
+	return nil, loadErr
 }
 
 func (g *GoOtelEbpfSdk) Close(_ context.Context) error {
