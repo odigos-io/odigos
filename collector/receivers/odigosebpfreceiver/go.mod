@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/cilium/ebpf v0.19.0
+	github.com/odigos-io/go-rtml v0.0.1
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.44.0
