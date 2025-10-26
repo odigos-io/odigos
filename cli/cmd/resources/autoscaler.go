@@ -32,7 +32,120 @@ func NewAutoscalerServiceAccount(ns string) *corev1.ServiceAccount {
 	}
 }
 
-func NewAutoscalerRole(ns string) *rbacv1.Role {
+func NewAutoscalerRole(ns string, openshiftEnabled bool) *rbacv1.Role {
+	rules := []rbacv1.PolicyRule{
+		{ // Needed to manage the configmaps of the data-collector and gateway-collector
+			APIGroups: []string{""},
+			Resources: []string{"configmaps"},
+			Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete"},
+		},
+		{ // Needed to manage the k8s-service of gateway-collector
+			APIGroups: []string{""},
+			Resources: []string{"services"},
+			Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete", "deletecollection"},
+		},
+		{ // Needed to manage the daemonsets for data-collector
+			APIGroups: []string{"apps"},
+			Resources: []string{"daemonsets"},
+			Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete", "deletecollection"},
+		},
+		{ // Needed to read the "readiness" status of the collectorsgroup
+			APIGroups: []string{"apps"},
+			Resources: []string{"daemonsets/status"},
+			Verbs:     []string{"get"},
+		},
+		{ // Needed to manage the deployments for data-collector
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments"},
+			Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
+		},
+		{ // Needed to read the "readiness" status of the collectorsgroup
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments/status"},
+			Verbs:     []string{"get"},
+		},
+		{ // Needed to apply autoscaling to the gateway-collector
+			APIGroups: []string{"autoscaling"},
+			Resources: []string{"horizontalpodautoscalers"},
+			Verbs:     []string{"create", "patch", "update", "delete"},
+		},
+		{ // Needed to track changes and restart gateway-collector
+			APIGroups: []string{""},
+			Resources: []string{"secrets"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{ // Needed to update the webhook certificates and manage rotation
+			APIGroups:     []string{""},
+			Resources:     []string{"secrets"},
+			ResourceNames: []string{k8sconsts.AutoscalerWebhookSecretName},
+			Verbs:         []string{"update"},
+		},
+		{ // Needed to migrate away from the old secret
+			APIGroups:     []string{""},
+			Resources:     []string{"secrets"},
+			ResourceNames: []string{k8sconsts.DeprecatedAutoscalerWebhookSecretName},
+			Verbs:         []string{"delete"},
+		},
+		{ // Needed to sync the gateway-collector configuration
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"destinations"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{ // Needed to track destination-config changes and update the status accordingly
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"destinations/status"},
+			Verbs:     []string{"get", "patch", "update"},
+		},
+		{ // Needed to identify changes to pipeline-actions and update the data & gateway collectors configmap
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"processors"},
+			Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
+		},
+		{ // Needed to read actions transform them to processors and to update to generic CRDS
+			APIGroups: []string{"actions.odigos.io"},
+			Resources: []string{"*"},
+			Verbs:     []string{"get", "list", "watch", "update"},
+		},
+		{ // Needed to updated the status of the actions (confirms the user-made-changes)
+			APIGroups: []string{"actions.odigos.io"},
+			Resources: []string{"*/status"},
+			Verbs:     []string{"get", "patch", "update"},
+		},
+		{ // Needed to watch for changes made in the the collectorgroups and apply them to the cluster
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"collectorsgroups"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{ // After applying the collectorgroups tot he cluster, we need to update the status of the operation
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"collectorsgroups/status"},
+			Verbs:     []string{"get", "patch", "update"},
+		},
+		{ // Needed to watch and manage actions in order to transform them to processors
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"actions"},
+			Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
+		},
+		{ // Update conditions of the action after transforming it to a processor
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"actions/status"},
+			Verbs:     []string{"get", "patch", "update"},
+		},
+	}
+
+	// This is needed for OpenShift to update the finalizers of the deployments
+	// Used when setting the OwnerReference of the CollectorsGroup to the scheduler deployment
+	// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+	// update finalizers on the autoscaler deployment so that they can block deletion.
+	// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+	if openshiftEnabled {
+		rules = append(rules, rbacv1.PolicyRule{
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Role",
@@ -42,105 +155,7 @@ func NewAutoscalerRole(ns string) *rbacv1.Role {
 			Name:      k8sconsts.AutoScalerRoleName,
 			Namespace: ns,
 		},
-		Rules: []rbacv1.PolicyRule{
-			{ // Needed to manage the configmaps of the data-collector and gateway-collector
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete"},
-			},
-			{ // Needed to manage the k8s-service of gateway-collector
-				APIGroups: []string{""},
-				Resources: []string{"services"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete", "deletecollection"},
-			},
-			{ // Needed to manage the daemonsets for data-collector
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "update", "delete", "deletecollection"},
-			},
-			{ // Needed to read the "readiness" status of the collectorsgroup
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets/status"},
-				Verbs:     []string{"get"},
-			},
-			{ // Needed to manage the deployments for data-collector
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments"},
-				Verbs:     []string{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
-			},
-			{ // Needed to read the "readiness" status of the collectorsgroup
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments/status"},
-				Verbs:     []string{"get"},
-			},
-			{ // Needed to apply autoscaling to the gateway-collector
-				APIGroups: []string{"autoscaling"},
-				Resources: []string{"horizontalpodautoscalers"},
-				Verbs:     []string{"create", "patch", "update", "delete"},
-			},
-			{ // Needed to track changes and restart gateway-collector
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed to update the webhook certificates and manage rotation
-				APIGroups:     []string{""},
-				Resources:     []string{"secrets"},
-				ResourceNames: []string{k8sconsts.AutoscalerWebhookSecretName},
-				Verbs:         []string{"update"},
-			},
-			{ // Needed to migrate away from the old secret
-				APIGroups:     []string{""},
-				Resources:     []string{"secrets"},
-				ResourceNames: []string{k8sconsts.DeprecatedAutoscalerWebhookSecretName},
-				Verbs:         []string{"delete"},
-			},
-			{ // Needed to sync the gateway-collector configuration
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed to track destination-config changes and update the status accordingly
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
-			{ // Needed to identify changes to pipeline-actions and update the data & gateway collectors configmap
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"processors"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
-			},
-			{ // Needed to read actions transform them to processors and to update to generic CRDS
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*"},
-				Verbs:     []string{"get", "list", "watch", "update"},
-			},
-			{ // Needed to updated the status of the actions (confirms the user-made-changes)
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
-			{ // Needed to watch for changes made in the the collectorgroups and apply them to the cluster
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // After applying the collectorgroups tot he cluster, we need to update the status of the operation
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
-			{ // Needed to watch and manage actions in order to transform them to processors
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"actions"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "update"},
-			},
-			{ // Update conditions of the action after transforming it to a processor
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"actions/status"},
-				Verbs:     []string{"get", "patch", "update"},
-			},
-		},
+		Rules: rules,
 	}
 }
 
@@ -171,16 +186,18 @@ func NewAutoscalerRoleBinding(ns string) *rbacv1.RoleBinding {
 func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
 	finalizersUpdate := []rbacv1.PolicyRule{}
 	if ownerPermissionEnforcement {
-		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
-			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
-			// When we create a collector COnfigMap, we set the OwnerReference to the collectorsgroups.
-			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
-			// update finalizers on the collectorsgroup so that they can block deletion.
-			// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
-			APIGroups: []string{"odigos.io"},
-			Resources: []string{"collectorsgroups/finalizers"},
-			Verbs:     []string{"update"},
-		})
+		finalizersUpdate = append(finalizersUpdate,
+			rbacv1.PolicyRule{
+				// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
+				// When we create a collector COnfigMap, we set the OwnerReference to the collectorsgroups.
+				// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+				// update finalizers on the collectorsgroup so that they can block deletion.
+				// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"collectorsgroups/finalizers"},
+				Verbs:     []string{"update"},
+			},
+		)
 	}
 
 	return &rbacv1.ClusterRole{
@@ -563,7 +580,7 @@ func (a *autoScalerResourceManager) Name() string { return "AutoScaler" }
 func (a *autoScalerResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewAutoscalerServiceAccount(a.ns),
-		NewAutoscalerRole(a.ns),
+		NewAutoscalerRole(a.ns, a.config.OpenshiftEnabled),
 		NewAutoscalerRoleBinding(a.ns),
 		NewAutoscalerClusterRole(a.config.OpenshiftEnabled),
 		NewAutoscalerClusterRoleBinding(a.ns),
