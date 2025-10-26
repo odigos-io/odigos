@@ -25,7 +25,7 @@ import (
 )
 
 func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
-	datacollection *odigosv1.CollectorsGroup) error {
+	datacollection *odigosv1.CollectorsGroup, loadBalancingNeeded bool) error {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
@@ -41,7 +41,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		b.autoscalerDeployment = autoscalerDeployment
 	}
 
-	desired, err := b.getDesiredConfigMap(sources, clusterCollectorSignals, processors, datacollection)
+	desired, err := b.getDesiredConfigMap(sources, clusterCollectorSignals, processors, datacollection, loadBalancingNeeded)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -151,7 +151,7 @@ func noopConfigMap() (string, error) {
 }
 
 func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
-	cg *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
+	cg *odigosv1.CollectorsGroup, loadBalancingNeeded bool) (*v1.ConfigMap, error) {
 	if b.autoscalerDeployment == nil {
 		return nil, errors.New("autoscaler deployment is not set in the reconciler, cannot set owner reference")
 	}
@@ -163,7 +163,7 @@ func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.Inst
 		// this can happen if no sources are instrumented yet or no destinations are added.
 		cmData, err = noopConfigMap()
 	} else {
-		cmData, err = calculateConfigMapData(cg, sources, clusterCollectorSignals, processors, commonconf.ControllerConfig.OnGKE)
+		cmData, err = calculateConfigMapData(cg, sources, clusterCollectorSignals, processors, commonconf.ControllerConfig.OnGKE, loadBalancingNeeded)
 	}
 
 	if err != nil {
@@ -195,7 +195,8 @@ func calculateConfigMapData(
 	sources *odigosv1.InstrumentationConfigList,
 	clusterCollectorSignals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor,
-	onGKE bool) (string, error) {
+	onGKE bool,
+	loadBalancingNeeded bool) (string, error) {
 
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 	odigosNamespace := env.GetCurrentNamespace()
@@ -238,7 +239,7 @@ func calculateConfigMapData(
 	// - cluster collector has traces enabled (trace destination is enabled)
 	// - there are additional trace exporters (e.g. spanmetrics connector)
 	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
-		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, additionalTraceProcessors, additionalTraceExporters, tracesEnabledInClusterCollector)
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, additionalTraceProcessors, additionalTraceExporters, tracesEnabledInClusterCollector, loadBalancingNeeded)
 		activeConfigDomains = append(activeConfigDomains, tracesConfig)
 	}
 

@@ -2,6 +2,7 @@ package nodecollector
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -60,7 +61,27 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 		return ctrl.Result{}, err
 	}
 
-	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, dataCollectionCollectorGroup)
+	actions := odigosv1.ActionList{}
+	if err := b.Client.List(ctx, &actions); err != nil {
+		logger.Error(err, "Failed to list actions")
+		return ctrl.Result{}, err
+	}
+
+	// We're enabling load balancing only if one of the following conditions is met:
+	// 1. Sampling actions are enabled
+	// 2. Service graph is enabled
+	SamplingActionsEnabled := IsSamplingActionsEnabled(&actions)
+	fmt.Println("SamplingActionsEnabled", SamplingActionsEnabled)
+	// Service graph is enabled only if ServiceGraphDisabled is not set (nil) or is set to false.
+	// If ServiceGraphDisabled is true, it is disabled.
+	ServiceGraphEnabled := clusterCollectorCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorCollectorGroup.Spec.ServiceGraphDisabled
+	fmt.Println("ServiceGraphEnabled", ServiceGraphEnabled)
+
+	loadBalancingNeeded := SamplingActionsEnabled || ServiceGraphEnabled
+
+	fmt.Println("loadBalancingNeeded", loadBalancingNeeded)
+
+	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, dataCollectionCollectorGroup, loadBalancingNeeded)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -69,7 +90,7 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 }
 
 func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []common.ObservabilitySignal, processors *odigosv1.ProcessorList,
-	dataCollection *odigosv1.CollectorsGroup) error {
+	dataCollection *odigosv1.CollectorsGroup, loadBalancingNeeded bool) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
 
@@ -79,7 +100,7 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 		return err
 	}
 
-	err = b.SyncConfigMap(ctx, sources, clusterCollectorSignals, processors, dataCollection)
+	err = b.SyncConfigMap(ctx, sources, clusterCollectorSignals, processors, dataCollection, loadBalancingNeeded)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
@@ -100,4 +121,13 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 	dm.RunSyncDaemonSetWithDelayAndSkipNewCalls(time.Duration(env.GetSyncDaemonSetDelay())*time.Second, syncDaemonsetRetry, enabledSignals, dataCollection, ctx, b.Client)
 
 	return nil
+}
+
+func IsSamplingActionsEnabled(actions *odigosv1.ActionList) bool {
+	for _, action := range actions.Items {
+		if action.Spec.Samplers != nil {
+			return true
+		}
+	}
+	return false
 }
