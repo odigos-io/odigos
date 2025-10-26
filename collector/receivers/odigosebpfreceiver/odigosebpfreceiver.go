@@ -53,8 +53,6 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	}
 	r.telemetry = telemetryBuilder
 
-	r.telemetry.EbpfLostSamples.Add(ctx, int64(1))
-
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
