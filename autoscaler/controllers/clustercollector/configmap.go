@@ -103,6 +103,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	}
 
 	c.Service.Telemetry.Metrics = config.GenericMap{
+		"level": "detailed",
 		"readers": []config.GenericMap{
 			{
 				"pull": config.GenericMap{
