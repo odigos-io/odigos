@@ -99,7 +99,7 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.GatewayDeploymentSta
         if dep.Status.Replicas == dep.Status.UpdatedReplicas && dep.Status.Replicas == dep.Status.AvailableReplicas && dep.Status.Replicas == dep.Status.ReadyReplicas {
             return model.GatewayDeploymentStatusHealthy, false
         }
-        // otherwise still updating
+
         return model.GatewayDeploymentStatusUpdating, true
     }
 
