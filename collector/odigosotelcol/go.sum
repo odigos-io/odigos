@@ -744,6 +744,8 @@ github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWm
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grafana/clusterurl v0.2.1 h1:ygU7u8z1Ie1dfdoOViLZPmhuu26wMBKMXPXJXBk7t8M=
 github.com/grafana/clusterurl v0.2.1/go.mod h1:IdIOq5skvcUaZWe+pj732lxtn1wQ0t+br7dn7Z5W6Xw=
+github.com/grafana/loki/pkg/push v0.0.0-20240514112848-a1b1eeb09583 h1:dN3eF1S5fvVu2l9WoqYSvmNmPK8Uh2vjE4yUsBq80l4=
+github.com/grafana/loki/pkg/push v0.0.0-20240514112848-a1b1eeb09583/go.mod h1:lJEF/Wh5MYlmBem6tOYAFObkLsuikfrEf8Iy9AdMPiQ=
 github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc h1:GN2Lv3MGO7AS6PrRoT6yV5+wkrOpcszoIsO4+4ds248=
 github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc/go.mod h1:+JKpmjMGhpgPL+rXZ5nsZieVzvarn86asRlBg4uNGnk=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
@@ -1089,6 +1091,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logicmonitore
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logicmonitorexporter v0.138.0/go.mod h1:L2QcDIZZQuLMNTomDGEVo2o5SKPNl87GOXUFFmuRfC4=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter v0.138.0 h1:LViUtkhSiUl2EZhPLZE2FCUDwS90cR4XT0KfbNXQR8Y=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter v0.138.0/go.mod h1:yi8MBa4c9+ncsqEooUVZEI6GX+V3IjYHkIn1Vq84HD8=
+github.com/open-telemetry/opentelemetry-collector-contrib/exporter/lokiexporter v0.130.0 h1:xm6hANEFaPEN7nDS7Nwmzzpmi4eKma59o4H1QZR6VcU=
+github.com/open-telemetry/opentelemetry-collector-contrib/exporter/lokiexporter v0.130.0/go.mod h1:cnOWKTTX/jjVN2JVAGQYisNOdNEi1U70WanXbG4tZkg=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/mezmoexporter v0.138.0 h1:1Kmo1YxHaOoiUfcqF+NHuDiaIiSON82eoCcQf6LMXJg=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/mezmoexporter v0.138.0/go.mod h1:WFAGhT2L54NIbybHo1TpopZ/JMjb7CbQJU6BczcqBxw=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opensearchexporter v0.138.0 h1:Qe+AjdyZ/a81WJiK5ecYz+70Dw4S1uPBcH0n33B49po=
@@ -1201,6 +1205,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.138.0 h1
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.138.0/go.mod h1:7mGMnOuPu9kz90BipuCZhtqoEK/025oBlOhsRXMc5Zc=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.138.0 h1:PxSS/v+P1Dv0WyLvDmWaj5ANCnpoqjghrI/6aj+F64o=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.138.0/go.mod h1:J08dwGXpWZuXZOVNr6xaN1tG2h/zyAyC9Au26Bi/6uY=
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/loki v0.130.0 h1:rn5WmEOpFh+UO/n2kqPvQMzThar8FuOMxLx9EU5xujY=
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/loki v0.130.0/go.mod h1:8dopNWO5mdJUK2R4PBOkhjrs7BXyzE5RFG1kDN+uj+k=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.138.0 h1:7UPpJywzxwATZCVAE4rjt7N4ycIcSE75b0J+9ZlWXO0=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.138.0/go.mod h1:joSYWsiqwdkdEXfB/c40eQNHPW9MAW83etykx2C3ejY=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheusremotewrite v0.138.0 h1:CCBqR16xBqlCrmyhvya4gg1ZnJPerQrmWRBeqOZ57EQ=
