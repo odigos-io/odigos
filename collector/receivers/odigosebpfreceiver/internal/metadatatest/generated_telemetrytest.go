@@ -24,7 +24,7 @@ func NewSettings(tt *componenttest.Telemetry) receiver.Settings {
 func AssertEqualEbpfLostSamples(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_ebpf_lost_samples",
-		Description: "Number of samples lost from eBPF ring buffer",
+		Description: "The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0.",
 		Unit:        "{samples}",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
@@ -40,7 +40,7 @@ func AssertEqualEbpfLostSamples(t *testing.T, tt *componenttest.Telemetry, dps [
 func AssertEqualEbpfMemoryPressureWaitTimeTotal(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_ebpf_memory_pressure_wait_time_total",
-		Description: "Total time spent waiting due to memory pressure",
+		Description: "Total time spent waiting due to memory pressure. Can be compared with otelcol_process_uptime_seconds_total to calculate the percentage of time spent in memory pressure: (ebpf_memory_pressure_wait_time_total_milliseconds / (otelcol_process_uptime_seconds_total * 1000)) * 100",
 		Unit:        "ms",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,

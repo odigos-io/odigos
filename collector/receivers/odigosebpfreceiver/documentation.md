@@ -8,7 +8,7 @@ The following telemetry is emitted by this component.
 
 ### otelcol_ebpf_lost_samples
 
-Number of samples lost from eBPF ring buffer
+The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0.
 
 | Unit | Metric Type | Value Type | Monotonic |
 | ---- | ----------- | ---------- | --------- |
@@ -16,7 +16,7 @@ Number of samples lost from eBPF ring buffer
 
 ### otelcol_ebpf_memory_pressure_wait_time_total
 
-Total time spent waiting due to memory pressure
+Total time spent waiting due to memory pressure. Can be compared with otelcol_process_uptime_seconds_total to calculate the percentage of time spent in memory pressure: (ebpf_memory_pressure_wait_time_total_milliseconds / (otelcol_process_uptime_seconds_total * 1000)) * 100
 
 | Unit | Metric Type | Value Type | Monotonic |
 | ---- | ----------- | ---------- | --------- |

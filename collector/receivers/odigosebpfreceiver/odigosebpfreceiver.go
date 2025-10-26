@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/cilium/ebpf"
-	rtml "github.com/odigos-io/go-rtml"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
+
+	rtml "github.com/odigos-io/go-rtml"
 
 	"go.opentelemetry.io/collector/receiver"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
