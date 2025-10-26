@@ -10,9 +10,15 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 
+<<<<<<< HEAD
 	"github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver/internal/metadata"
 
 	"go.opentelemetry.io/collector/component/componenttest"
+=======
+	"go.opentelemetry.io/collector/component/componenttest"
+
+	"github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver/internal/metadata"
+>>>>>>> 10e812ac3 (CORE-324 | chore: bump otel collector to v1.44/v0.138.0 (#3669))
 )
 
 func TestSetupTelemetry(t *testing.T) {
