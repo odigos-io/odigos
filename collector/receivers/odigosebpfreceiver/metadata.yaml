@@ -11,7 +11,7 @@ telemetry:
   metrics:
     ebpf_lost_samples:
       enabled: true
-      description: "Number of samples lost from eBPF ring buffer"
+      description: "The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0."
       unit: "{samples}"
       sum:
         value_type: int
