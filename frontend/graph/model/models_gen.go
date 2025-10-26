@@ -358,6 +358,32 @@ type FieldInput struct {
 	Value string `json:"value"`
 }
 
+type GatewayDeploymentInfo struct {
+	Status            GatewayDeploymentStatus `json:"status"`
+	Hpa               *GatewayHpa             `json:"hpa,omitempty"`
+	Resources         *GatewayResources       `json:"resources,omitempty"`
+	ImageVersion      *string                 `json:"imageVersion,omitempty"`
+	LastRolloutAt     *string                 `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress bool                    `json:"rolloutInProgress"`
+}
+
+type GatewayHpa struct {
+	Min     *int `json:"min,omitempty"`
+	Max     *int `json:"max,omitempty"`
+	Current *int `json:"current,omitempty"`
+	Desired *int `json:"desired,omitempty"`
+}
+
+type GatewayResourceAmounts struct {
+	CPUM      int `json:"cpuM"`
+	MemoryMiB int `json:"memoryMiB"`
+}
+
+type GatewayResources struct {
+	Requests *GatewayResourceAmounts `json:"requests,omitempty"`
+	Limits   *GatewayResourceAmounts `json:"limits,omitempty"`
+}
+
 type GetConfigResponse struct {
 	Readonly           bool               `json:"readonly"`
 	Tier               Tier               `json:"tier"`
@@ -1279,6 +1305,51 @@ func (e *DesiredStateProgress) UnmarshalGQL(v any) error {
 }
 
 func (e DesiredStateProgress) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type GatewayDeploymentStatus string
+
+const (
+	GatewayDeploymentStatusHealthy  GatewayDeploymentStatus = "Healthy"
+	GatewayDeploymentStatusUpdating GatewayDeploymentStatus = "Updating"
+	GatewayDeploymentStatusDegraded GatewayDeploymentStatus = "Degraded"
+	GatewayDeploymentStatusDown     GatewayDeploymentStatus = "Down"
+)
+
+var AllGatewayDeploymentStatus = []GatewayDeploymentStatus{
+	GatewayDeploymentStatusHealthy,
+	GatewayDeploymentStatusUpdating,
+	GatewayDeploymentStatusDegraded,
+	GatewayDeploymentStatusDown,
+}
+
+func (e GatewayDeploymentStatus) IsValid() bool {
+	switch e {
+	case GatewayDeploymentStatusHealthy, GatewayDeploymentStatusUpdating, GatewayDeploymentStatusDegraded, GatewayDeploymentStatusDown:
+		return true
+	}
+	return false
+}
+
+func (e GatewayDeploymentStatus) String() string {
+	return string(e)
+}
+
+func (e *GatewayDeploymentStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = GatewayDeploymentStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid GatewayDeploymentStatus", str)
+	}
+	return nil
+}
+
+func (e GatewayDeploymentStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
