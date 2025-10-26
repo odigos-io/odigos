@@ -37,6 +37,12 @@ type GatewayDeploymentInfo {
   rolloutInProgress: Boolean!
 }
 
+enum ManifestFormat {
+  YAML
+  JSON
+}
+
 extend type Query {
   getGatewayDeploymentInfo: GatewayDeploymentInfo!
+  getGatewayDeploymentManifest(format: ManifestFormat = YAML): String!
 }

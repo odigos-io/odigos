@@ -733,6 +733,7 @@ type ComplexityRoot struct {
 		DescribeSource                    func(childComplexity int, namespace string, kind string, name string) int
 		DestinationCategories             func(childComplexity int) int
 		GetGatewayDeploymentInfo          func(childComplexity int) int
+		GetGatewayDeploymentManifest      func(childComplexity int, format *model.ManifestFormat) int
 		GetOverviewMetrics                func(childComplexity int) int
 		GetServiceMap                     func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
@@ -917,6 +918,7 @@ type QueryResolver interface {
 	InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error)
+	GetGatewayDeploymentManifest(ctx context.Context, format *model.ManifestFormat) (string, error)
 }
 
 type executableSchema struct {
@@ -4011,6 +4013,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetGatewayDeploymentInfo(childComplexity), true
 
+	case "Query.getGatewayDeploymentManifest":
+		if e.complexity.Query.GetGatewayDeploymentManifest == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getGatewayDeploymentManifest_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetGatewayDeploymentManifest(childComplexity, args["format"].(*model.ManifestFormat)), true
+
 	case "Query.getOverviewMetrics":
 		if e.complexity.Query.GetOverviewMetrics == nil {
 			break
@@ -5444,6 +5458,34 @@ func (ec *executionContext) field_Query_describeSource_argsName(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getGatewayDeploymentManifest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getGatewayDeploymentManifest_argsFormat(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["format"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_getGatewayDeploymentManifest_argsFormat(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.ManifestFormat, error) {
+	if _, ok := rawArgs["format"]; !ok {
+		var zeroVal *model.ManifestFormat
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("format"))
+	if tmp, ok := rawArgs["format"]; ok {
+		return ec.unmarshalOManifestFormat2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManifestFormat(ctx, tmp)
+	}
+
+	var zeroVal *model.ManifestFormat
 	return zeroVal, nil
 }
 
@@ -26319,6 +26361,61 @@ func (ec *executionContext) fieldContext_Query_getGatewayDeploymentInfo(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_getGatewayDeploymentManifest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getGatewayDeploymentManifest(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetGatewayDeploymentManifest(rctx, fc.Args["format"].(*model.ManifestFormat))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getGatewayDeploymentManifest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getGatewayDeploymentManifest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -38552,6 +38649,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getGatewayDeploymentManifest":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getGatewayDeploymentManifest(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -43737,6 +43856,22 @@ func (ec *executionContext) marshalOK8sWorkloadRuntimeInfoContainer2ᚖgithubᚗ
 		return graphql.Null
 	}
 	return ec._K8sWorkloadRuntimeInfoContainer(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOManifestFormat2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManifestFormat(ctx context.Context, v any) (*model.ManifestFormat, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.ManifestFormat)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOManifestFormat2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐManifestFormat(ctx context.Context, sel ast.SelectionSet, v *model.ManifestFormat) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOMessagingPayloadCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMessagingPayloadCollection(ctx context.Context, sel ast.SelectionSet, v *model.MessagingPayloadCollection) graphql.Marshaler {

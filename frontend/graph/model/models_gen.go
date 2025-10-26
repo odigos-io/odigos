@@ -1586,6 +1586,47 @@ func (e K8sResourceKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type ManifestFormat string
+
+const (
+	ManifestFormatYaml ManifestFormat = "YAML"
+	ManifestFormatJSON ManifestFormat = "JSON"
+)
+
+var AllManifestFormat = []ManifestFormat{
+	ManifestFormatYaml,
+	ManifestFormatJSON,
+}
+
+func (e ManifestFormat) IsValid() bool {
+	switch e {
+	case ManifestFormatYaml, ManifestFormatJSON:
+		return true
+	}
+	return false
+}
+
+func (e ManifestFormat) String() string {
+	return string(e)
+}
+
+func (e *ManifestFormat) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ManifestFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ManifestFormat", str)
+	}
+	return nil
+}
+
+func (e ManifestFormat) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type NumberOperation string
 
 const (

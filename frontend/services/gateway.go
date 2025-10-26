@@ -2,6 +2,7 @@ package services
 
 import (
     "context"
+    "encoding/json"
     "sort"
     "strings"
 
@@ -13,6 +14,8 @@ import (
     autoscalingv2 "k8s.io/api/autoscaling/v2"
     corev1 "k8s.io/api/core/v1"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+    "sigs.k8s.io/yaml"
 )
 
 // GetGatewayDeploymentInfo fetches Deployment/HPA and computes the header info for the gateway deployment.
@@ -204,6 +207,42 @@ func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodA
         h.Desired = &d
     }
     return h
+}
+
+// GetGatewayDeploymentManifest returns the deployment manifest in YAML or JSON.
+func GetGatewayDeploymentManifest(ctx context.Context, format *model.ManifestFormat) (string, error) {
+    ns := env.GetCurrentNamespace()
+    name := k8sconsts.OdigosClusterCollectorDeploymentName
+
+    dep, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
+    if err != nil {
+        return "", err
+    }
+
+    var u unstructured.Unstructured
+    b, err := json.Marshal(dep)
+    if err != nil {
+        return "", err
+    }
+    if err := json.Unmarshal(b, &u.Object); err != nil {
+        return "", err
+    }
+
+    unstructured.RemoveNestedField(u.Object, "metadata", "managedFields")
+
+    if format != nil && *format == model.ManifestFormatJSON {
+        out, err := json.MarshalIndent(u.Object, "", "  ")
+        if err != nil {
+            return "", err
+        }
+        return string(out), nil
+    }
+
+    out, err := yaml.Marshal(u.Object)
+    if err != nil {
+        return "", err
+    }
+    return string(out), nil
 }
 
 

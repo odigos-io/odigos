@@ -15,3 +15,8 @@ import (
 func (r *queryResolver) GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error) {
 	return services.GetGatewayDeploymentInfo(ctx)
 }
+
+// GetGatewayDeploymentManifest is the resolver for the getGatewayDeploymentManifest field.
+func (r *queryResolver) GetGatewayDeploymentManifest(ctx context.Context, format *model.ManifestFormat) (string, error) {
+	return services.GetGatewayDeploymentManifest(ctx, format)
+}
