@@ -2,7 +2,6 @@ package nodecollector
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"time"
 
