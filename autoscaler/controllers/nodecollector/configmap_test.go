@@ -169,7 +169,7 @@ func TestCalculateConfigMapData(t *testing.T) {
 			},
 		},
 		false, /* onGKE */
-		false, /* loadBalancingNeeded */
+		true,  /* loadBalancingNeeded */
 	)
 
 	assert.Equal(t, err, nil)
