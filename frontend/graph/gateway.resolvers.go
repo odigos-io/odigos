@@ -6,12 +6,12 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/services"
 )
 
 // GetGatewayDeploymentInfo is the resolver for the getGatewayDeploymentInfo field.
 func (r *queryResolver) GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error) {
-	panic(fmt.Errorf("not implemented: GetGatewayDeploymentInfo - getGatewayDeploymentInfo"))
+	return services.GetGatewayDeploymentInfo(ctx)
 }
