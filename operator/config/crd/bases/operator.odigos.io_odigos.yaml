@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.18.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: odigos.operator.odigos.io
 spec:
   group: operator.odigos.io
@@ -40,7 +40,6 @@ spec:
             description: OdigosSpec defines the desired state of Odigos
             properties:
               agentEnvVarsInjectionMethod:
-                default: pod-manifest
                 description: |-
                   (Optional) AgentEnvVarsInjectionMethod is the method to inject the Odigos agent env vars into the pod.
                   Default=pod-manifest

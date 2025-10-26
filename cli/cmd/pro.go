@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -24,12 +26,12 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
-	"github.com/odigos-io/odigos/k8sutils/pkg/restart"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -39,6 +41,8 @@ var (
 	downloadFile     string
 	fromFile         string
 )
+
+var centralVersionRegex = regexp.MustCompile(`^v\d+\.\d+\.\d+(?:-(?:pre|rc)\d+)?$`)
 
 var proCmd = &cobra.Command{
 	Use:   "pro",
@@ -74,7 +78,7 @@ var proCmd = &cobra.Command{
 			fmt.Println("\u001B[32mSUCCESS:\u001B[0m Token updated successfully")
 		}
 	},
-	Example: `  
+	Example: `
 # Renew the on-premises token for Odigos,
 odigos pro --onprem-token <token>
 
@@ -283,14 +287,10 @@ var centralUninstallCmd = &cobra.Command{
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-		nsFlag, err := cmd.Flags().GetString("namespace")
+		ns, err := cmd.Flags().GetString("namespace")
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
 			os.Exit(1)
-		}
-		ns := nsFlag
-		if ns == "" {
-			ns = consts.DefaultOdigosCentralNamespace
 		}
 
 		if !cmd.Flag("yes").Changed {
@@ -397,6 +397,50 @@ var activateCmd = &cobra.Command{
 	},
 }
 
+var centralUpgradeCmd = &cobra.Command{
+	Use:   "upgrade",
+	Short: "Upgrade Odigos Tower UI in the central namespace",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+
+		if !cmd.Flag("yes").Changed {
+			fmt.Printf("About to upgrade Odigos Tower UI in namespace %s to version %s\n", ns, versionFlag)
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting upgrade")
+				return
+			}
+		}
+
+		if !centralVersionRegex.MatchString(versionFlag) {
+			fmt.Printf("\033[31mERROR\033[0m Invalid --version value %q. Expected formats: vX.Y.Z, vX.Y.Z-preN, or vX.Y.Z-rcN\n", versionFlag)
+			os.Exit(1)
+		}
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+			SystemObjectLabelKey: k8sconsts.OdigosSystemLabelCentralKey,
+		}
+
+		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
+		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts)
+		if err := resources.ApplyResourceManagers(ctx, client, []resourcemanager.ResourceManager{uiManager, backendManager}, "Upgrading"); err != nil {
+			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Tower UI/Backend:")
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower UI and Backend upgraded to %s.\n", versionFlag)
+	},
+}
+
 func createOdigosCentralSecret(ctx context.Context, client *kube.Client, ns, token string) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -457,13 +501,14 @@ func deleteCentralTokenSecretAdapter(ctx context.Context, client *kube.Client, n
 var portForwardCentralCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Port-forward Odigos Tower UI and Backend to localhost",
-	Long:  "Port-forward the Tower UI (port 3000) and Tower Backend (port 8081) to localhost to enable local access to Odigos UI.",
+	Long:  "Port-forward the Tower UI (port 3000) and Tower Backend (port 8081) to enable local access to Odigos UI. Use --address to bind to specific interfaces.",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(cmd.Context())
 		defer cancel()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		var wg sync.WaitGroup
+		localAddress := cmd.Flag("address").Value.String()
 
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -473,7 +518,7 @@ var portForwardCentralCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Cannot find backend pod: %v\n", err)
 			os.Exit(1)
 		}
-		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
+		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend", localAddress)
 
 		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUIAppName)
 		if err != nil {
@@ -482,19 +527,10 @@ var portForwardCentralCmd = &cobra.Command{
 			wg.Wait()
 			os.Exit(1)
 		}
-		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI")
+		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI", localAddress)
 
-		keycloakPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.KeycloakAppName)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot find Keycloak pod: %v\n", err)
-			cancel()
-			wg.Wait()
-			os.Exit(1)
-		}
-		startPortForward(&wg, ctx, keycloakPod, client, fmt.Sprintf("%d", k8sconsts.KeycloakPort), "Keycloak")
-
-		fmt.Printf("Odigos Tower UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
-		fmt.Printf("Odigos Tower Backend is available at: http://localhost:%s\n", k8sconsts.CentralBackendPort)
+		fmt.Printf("Odigos Tower UI is available at: http://%s:%s\n", localAddress, k8sconsts.CentralUIPort)
+		fmt.Printf("Odigos Tower Backend is available at: http://%s:%s\n", localAddress, k8sconsts.CentralBackendPort)
 		fmt.Printf("Press Ctrl+C to stop\n")
 
 		<-sigCh
@@ -504,12 +540,19 @@ var portForwardCentralCmd = &cobra.Command{
 	},
 }
 
-func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string) {
+func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string, localAddress string) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := kube.PortForwardWithContext(ctx, pod, client, port, "localhost"); err != nil {
+		fw, err := kube.PortForwardWithContext(ctx, pod, client, port, port, localAddress)
+		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+			return
+		}
+		err = fw.ForwardPorts()
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+			return
 		}
 	}()
 }
@@ -532,7 +575,22 @@ func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel 
 }
 
 func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
-	return restart.RestartDaemonSet(ctx, client.Interface, ns, k8sconsts.OdigletDaemonSetName)
+	// Create patch to add/update the restartedAt annotation
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
+		time.Now().Format(time.RFC3339))
+
+	// Patch the Odiglet daemonset
+	_, err := client.AppsV1().DaemonSets(ns).Patch(
+		ctx,
+		k8sconsts.OdigletDaemonSetName,
+		types.StrategicMergePatchType,
+		[]byte(patch),
+		metav1.PatchOptions{},
+	)
+	if apierrors.IsNotFound(err) {
+		return fmt.Errorf("odiglet daemonset not found in namespace %s", ns)
+	}
+	return err
 }
 
 func init() {
@@ -549,21 +607,29 @@ func init() {
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
-	centralCmd.AddCommand(centralUninstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
 
-	// central uninstall flags
+	// register and configure central uninstall command
+	centralCmd.AddCommand(centralUninstallCmd)
+	centralUninstallCmd.Flags().Bool("yes", false, "Confirm the uninstall without prompting")
 	centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower uninstallation")
-	centralUninstallCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
+
+	// register and configure central upgrade command
+	centralCmd.AddCommand(centralUpgradeCmd)
+	centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
+	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower upgrade")
+	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
+	centralUpgradeCmd.MarkFlagRequired("version")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
 	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password")
 	centralInstallCmd.MarkFlagRequired("central-admin-password")
 	centralCmd.AddCommand(portForwardCentralCmd)
+	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 	// migrate subcommand
 	proCmd.AddCommand(activateCmd)
 	activateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")

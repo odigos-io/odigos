@@ -227,6 +227,10 @@ func convertK8sAttributesFromInput(details *model.ActionFieldsInput, existingAct
 					LabelKey:     attr.LabelKey,
 					AttributeKey: attr.AttributeKey,
 				}
+				if attr.From != nil {
+					from := actionsv1.K8sAttributeSource(*attr.From)
+					config.LabelsAttributes[i].From = &from
+				}
 			}
 			withK8sAttributes = true
 		}
@@ -236,6 +240,10 @@ func convertK8sAttributesFromInput(details *model.ActionFieldsInput, existingAct
 				config.AnnotationsAttributes[i] = actionsv1.K8sAnnotationAttribute{
 					AnnotationKey: attr.AnnotationKey,
 					AttributeKey:  attr.AttributeKey,
+				}
+				if attr.From != nil {
+					from := string(*attr.From)
+					config.AnnotationsAttributes[i].From = &from
 				}
 			}
 			withK8sAttributes = true
@@ -639,9 +647,15 @@ func convertLabelsAttributesToModel(labelsAttributes []actionsv1.K8sLabelAttribu
 	var result []*model.K8sLabelAttribute
 
 	for _, attr := range labelsAttributes {
+		var from *model.K8sAttributesFrom
+		if attr.From != nil {
+			tmp := model.K8sAttributesFrom(*attr.From)
+			from = &tmp
+		}
 		result = append(result, &model.K8sLabelAttribute{
 			LabelKey:     attr.LabelKey,
 			AttributeKey: attr.AttributeKey,
+			From:         from,
 		})
 	}
 
@@ -652,9 +666,15 @@ func convertAnnotationsAttributesToModel(annotationsAttributes []actionsv1.K8sAn
 	var result []*model.K8sAnnotationAttribute
 
 	for _, attr := range annotationsAttributes {
+		var from *model.K8sAttributesFrom
+		if attr.From != nil {
+			tmp := model.K8sAttributesFrom(*attr.From)
+			from = &tmp
+		}
 		result = append(result, &model.K8sAnnotationAttribute{
 			AnnotationKey: attr.AnnotationKey,
 			AttributeKey:  attr.AttributeKey,
+			From:          from,
 		})
 	}
 

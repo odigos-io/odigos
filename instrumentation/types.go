@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
@@ -76,7 +77,7 @@ type DistributionMatcher[processDetails ProcessDetails] interface {
 // SettingsGetter is used to fetch the initial settings of an instrumentation.
 type SettingsGetter[processDetails ProcessDetails] interface {
 	// GetSettings will fetch the initial settings of an instrumentation.
-	Settings(context.Context, processDetails, *distro.OtelDistro) (Settings, error)
+	Settings(context.Context, logr.Logger, processDetails, *distro.OtelDistro) (Settings, error)
 }
 
 // Handler is used to classify, report and configure instrumentations.
