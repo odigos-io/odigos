@@ -70,16 +70,13 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 	// We're enabling load balancing only if one of the following conditions is met:
 	// 1. Sampling actions are enabled
 	// 2. Service graph is enabled
+
 	SamplingActionsEnabled := IsSamplingActionsEnabled(&actions)
-	fmt.Println("SamplingActionsEnabled", SamplingActionsEnabled)
 	// Service graph is enabled only if ServiceGraphDisabled is not set (nil) or is set to false.
 	// If ServiceGraphDisabled is true, it is disabled.
 	ServiceGraphEnabled := clusterCollectorCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorCollectorGroup.Spec.ServiceGraphDisabled
-	fmt.Println("ServiceGraphEnabled", ServiceGraphEnabled)
 
 	loadBalancingNeeded := SamplingActionsEnabled || ServiceGraphEnabled
-
-	fmt.Println("loadBalancingNeeded", loadBalancingNeeded)
 
 	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, dataCollectionCollectorGroup, loadBalancingNeeded)
 	if err != nil {
