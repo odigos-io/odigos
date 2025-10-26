@@ -35,12 +35,11 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 			compression = "gzip"
 		}
 
+		// Add loadbalancing exporter for traces to ensure consistent gateway routing.
+		// This needed for the service graph to work correctly and for the sampling actions to work correctly.
+		// If load balancing is not needed, we use the common cluster collector exporter without load balancing.
 		if loadBalancingNeeded {
 			service := fmt.Sprintf("%s.%s", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
-
-			// Add loadbalancing exporter for traces to ensure consistent gateway routing.
-			// This allows the servicegraph connector to properly aggregate trace data
-			// by sending all traces from a node collector to the same gateway instance.
 			exporters[odigosTracesLoadbalancingExporterName] = config.GenericMap{
 				"protocol": config.GenericMap{
 					"otlp": config.GenericMap{
