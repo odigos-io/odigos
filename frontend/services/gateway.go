@@ -11,9 +11,8 @@ import (
     "github.com/odigos-io/odigos/k8sutils/pkg/env"
     appsv1 "k8s.io/api/apps/v1"
     autoscalingv2 "k8s.io/api/autoscaling/v2"
+    corev1 "k8s.io/api/core/v1"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    "k8s.io/apimachinery/pkg/labels"
-    "k8s.io/apimachinery/pkg/api/resource"
 )
 
 // GetGatewayDeploymentInfo fetches Deployment/HPA and computes the header info for the gateway deployment.
@@ -52,8 +51,7 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
 }
 
 func computeDeploymentStatus(dep *appsv1.Deployment) (model.GatewayDeploymentStatus, bool) {
-    
-    var availableCond, progressingCond *metav1.Condition
+    var availableCond, progressingCond *appsv1.DeploymentCondition
     for i := range dep.Status.Conditions {
         c := dep.Status.Conditions[i]
         if c.Type == appsv1.DeploymentAvailable {
@@ -75,7 +73,7 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.GatewayDeploymentSta
 
     // Failed: Progressing=False or reason ProgressDeadlineExceeded
     if progressingCond != nil {
-        if progressingCond.Status == metav1.ConditionFalse || progressingCond.Reason == "ProgressDeadlineExceeded" {
+        if progressingCond.Status == corev1.ConditionFalse || progressingCond.Reason == "ProgressDeadlineExceeded" {
             return model.GatewayDeploymentStatusFailed, false
         }
     }
@@ -85,17 +83,17 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.GatewayDeploymentSta
     if dep.Spec.Replicas != nil {
         desired = *dep.Spec.Replicas
     }
-    if progressingCond != nil && progressingCond.Status == metav1.ConditionTrue && dep.Status.UpdatedReplicas < desired {
+    if progressingCond != nil && progressingCond.Status == corev1.ConditionTrue && dep.Status.UpdatedReplicas < desired {
         return model.GatewayDeploymentStatusUpdating, true
     }
 
     // Degraded: Available=False but Progressing=True
-    if availableCond != nil && availableCond.Status == metav1.ConditionFalse && progressingCond != nil && progressingCond.Status == metav1.ConditionTrue {
+    if availableCond != nil && availableCond.Status == corev1.ConditionFalse && progressingCond != nil && progressingCond.Status == corev1.ConditionTrue {
         return model.GatewayDeploymentStatusDegraded, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
     }
 
     // Healthy: Available=True and Progressing=True and all replicas up to date
-    if availableCond != nil && availableCond.Status == metav1.ConditionTrue && progressingCond != nil && progressingCond.Status == metav1.ConditionTrue {
+    if availableCond != nil && availableCond.Status == corev1.ConditionTrue && progressingCond != nil && progressingCond.Status == corev1.ConditionTrue {
         if dep.Status.Replicas == dep.Status.UpdatedReplicas && dep.Status.Replicas == dep.Status.AvailableReplicas && dep.Status.Replicas == dep.Status.ReadyReplicas {
             return model.GatewayDeploymentStatusHealthy, false
         }
@@ -111,15 +109,17 @@ func extractGatewayResources(dep *appsv1.Deployment) *model.GatewayResources {
         if c.Name == k8sconsts.OdigosClusterCollectorContainerName {
             var req, lim *model.GatewayResourceAmounts
             if len(c.Resources.Requests) > 0 {
+                memBytes := c.Resources.Requests.Memory().Value()
                 req = &model.GatewayResourceAmounts{
-                    CpuM:     int(c.Resources.Requests.Cpu().MilliValue()),
-                    MemoryMiB: int(c.Resources.Requests.Memory().ScaledValue(resource.Mebi)),
+                    CPUM:      int(c.Resources.Requests.Cpu().MilliValue()),
+                    MemoryMiB: int(memBytes / (1024 * 1024)),
                 }
             }
             if len(c.Resources.Limits) > 0 {
+                memBytes := c.Resources.Limits.Memory().Value()
                 lim = &model.GatewayResourceAmounts{
-                    CpuM:     int(c.Resources.Limits.Cpu().MilliValue()),
-                    MemoryMiB: int(c.Resources.Limits.Memory().ScaledValue(resource.Mebi)),
+                    CPUM:      int(c.Resources.Limits.Cpu().MilliValue()),
+                    MemoryMiB: int(memBytes / (1024 * 1024)),
                 }
             }
             return &model.GatewayResources{Requests: req, Limits: lim}
@@ -182,12 +182,12 @@ func findLastRolloutTime(ctx context.Context, dep *appsv1.Deployment) string {
     return Metav1TimeToString(owned[0].CreationTimestamp)
 }
 
-func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodAutoscaler) *model.GatewayHPA {
+func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodAutoscaler) *model.GatewayHpa {
     if hpa == nil {
         return nil
     }
 
-    h := &model.GatewayHPA{}
+    h := &model.GatewayHpa{}
     if hpa.Spec.MinReplicas != nil {
         v := int(*hpa.Spec.MinReplicas)
         h.Min = &v
