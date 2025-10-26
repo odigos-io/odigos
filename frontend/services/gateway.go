@@ -26,7 +26,6 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
         return nil, err
     }
 
-    // Try to get HPA (v2). If not found, hpa will be nil and that's fine for UI.
     var hpa *autoscalingv2.HorizontalPodAutoscaler
     if h, err := kube.DefaultClient.AutoscalingV2().HorizontalPodAutoscalers(ns).Get(ctx, name, metav1.GetOptions{}); err == nil {
         hpa = h
@@ -34,49 +33,26 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
 
     result := &model.GatewayDeploymentInfo{}
 
-    // Compute status and rollout
+    
     status, rolloutInProgress := computeDeploymentStatus(dep)
     result.Status = status
     result.RolloutInProgress = rolloutInProgress
 
-    // HPA fields
-    if hpa != nil {
-        h := &model.GatewayHPA{}
-        if hpa.Spec.MinReplicas != nil {
-            v := int(*hpa.Spec.MinReplicas)
-            h.Min = &v
-        }
-        max := int(hpa.Spec.MaxReplicas)
-        h.Max = &max
-        cur := int(dep.Status.Replicas)
-        h.Current = &cur
-        // desired from HPA status if available, fallback to deployment spec replicas
-        if hpa.Status.DesiredReplicas > 0 {
-            d := int(hpa.Status.DesiredReplicas)
-            h.Desired = &d
-        } else if dep.Spec.Replicas != nil {
-            d := int(*dep.Spec.Replicas)
-            h.Desired = &d
-        }
-        result.Hpa = h
-    }
+    result.Hpa = computeGatewayHPA(dep, hpa)
 
-    // Resources (requests/limits) for gateway container
     if rr := extractGatewayResources(dep); rr != nil {
         result.Resources = rr
     }
 
-    // Image version
     result.ImageVersion = StringPtr(extractGatewayImageVersion(dep))
 
-    // Last rollout timestamp
     result.LastRolloutAt = StringPtr(findLastRolloutTime(ctx, dep))
 
     return result, nil
 }
 
 func computeDeploymentStatus(dep *appsv1.Deployment) (model.GatewayDeploymentStatus, bool) {
-    // Defaults
+    
     var availableCond, progressingCond *metav1.Condition
     for i := range dep.Status.Conditions {
         c := dep.Status.Conditions[i]
@@ -171,14 +147,13 @@ func extractGatewayImageVersion(dep *appsv1.Deployment) string {
 }
 
 func findLastRolloutTime(ctx context.Context, dep *appsv1.Deployment) string {
-    // Prefer restartedAt annotation on template
+    
     if dep.Spec.Template.Annotations != nil {
         if v, ok := dep.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"]; ok {
             return v
         }
     }
 
-    // Else infer from newest ReplicaSet owned by this Deployment
     if dep.Spec.Selector == nil {
         return ""
     }
@@ -191,7 +166,6 @@ func findLastRolloutTime(ctx context.Context, dep *appsv1.Deployment) string {
         return ""
     }
 
-    // Filter owned by deployment
     owned := make([]appsv1.ReplicaSet, 0, len(rsList.Items))
     for _, rs := range rsList.Items {
         for _, owner := range rs.OwnerReferences {
@@ -206,6 +180,30 @@ func findLastRolloutTime(ctx context.Context, dep *appsv1.Deployment) string {
     }
     sort.Slice(owned, func(i, j int) bool { return owned[i].CreationTimestamp.After(owned[j].CreationTimestamp.Time) })
     return Metav1TimeToString(owned[0].CreationTimestamp)
+}
+
+func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodAutoscaler) *model.GatewayHPA {
+    if hpa == nil {
+        return nil
+    }
+
+    h := &model.GatewayHPA{}
+    if hpa.Spec.MinReplicas != nil {
+        v := int(*hpa.Spec.MinReplicas)
+        h.Min = &v
+    }
+    max := int(hpa.Spec.MaxReplicas)
+    h.Max = &max
+    cur := int(dep.Status.Replicas)
+    h.Current = &cur
+    if hpa.Status.DesiredReplicas > 0 {
+        d := int(hpa.Status.DesiredReplicas)
+        h.Desired = &d
+    } else if dep.Spec.Replicas != nil {
+        d := int(*dep.Spec.Replicas)
+        h.Desired = &d
+    }
+    return h
 }
 
 

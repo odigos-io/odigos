@@ -1314,19 +1314,23 @@ const (
 	GatewayDeploymentStatusHealthy  GatewayDeploymentStatus = "Healthy"
 	GatewayDeploymentStatusUpdating GatewayDeploymentStatus = "Updating"
 	GatewayDeploymentStatusDegraded GatewayDeploymentStatus = "Degraded"
+	GatewayDeploymentStatusFailed   GatewayDeploymentStatus = "Failed"
 	GatewayDeploymentStatusDown     GatewayDeploymentStatus = "Down"
+	GatewayDeploymentStatusUnknown  GatewayDeploymentStatus = "Unknown"
 )
 
 var AllGatewayDeploymentStatus = []GatewayDeploymentStatus{
 	GatewayDeploymentStatusHealthy,
 	GatewayDeploymentStatusUpdating,
 	GatewayDeploymentStatusDegraded,
+	GatewayDeploymentStatusFailed,
 	GatewayDeploymentStatusDown,
+	GatewayDeploymentStatusUnknown,
 }
 
 func (e GatewayDeploymentStatus) IsValid() bool {
 	switch e {
-	case GatewayDeploymentStatusHealthy, GatewayDeploymentStatusUpdating, GatewayDeploymentStatusDegraded, GatewayDeploymentStatusDown:
+	case GatewayDeploymentStatusHealthy, GatewayDeploymentStatusUpdating, GatewayDeploymentStatusDegraded, GatewayDeploymentStatusFailed, GatewayDeploymentStatusDown, GatewayDeploymentStatusUnknown:
 		return true
 	}
 	return false
