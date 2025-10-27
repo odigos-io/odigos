@@ -21,7 +21,7 @@ spec:
         type: text
         required: true
         tooltip: The endpoint of your Grafana Cloud Loki instance
-        placeholder: https://logs-prod-{REGION/SHARD}.grafana.net/loki/api/v1/push
+        placeholder: https://logs-prod-{REGION/SHARD}.grafana.net/otlp
     - name: GRAFANA_CLOUD_LOKI_USERNAME
       displayName: Username
       componentType: input
