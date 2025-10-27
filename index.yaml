@@ -26,6 +26,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v1.9.0-pre0/helm-chart-odigos-1.9.0-pre0.tgz
     version: 1.9.0-pre0
   - apiVersion: v2
+    appVersion: v1.8.5
+    created: "2025-10-27T15:40:54.46937827Z"
+    description: Instant Distributed Tracing
+    digest: cfcda80f4af28b3fca4c7b7d8877095f1a41d57d55fa372af51d9d5abd1dcf47
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.20.15-0'
+    name: odigos
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v1.8.5/helm-chart-odigos-1.8.5.tgz
+    version: 1.8.5
+  - apiVersion: v2
     appVersion: v1.8.4
     created: "2025-10-23T20:03:13.182871982Z"
     description: Instant Distributed Tracing
@@ -2433,6 +2445,18 @@ entries:
     - https://github.com/odigos-io/odigos/releases/download/v1.9.0-pre0/helm-chart-odigos-central-1.9.0-pre0.tgz
     version: 1.9.0-pre0
   - apiVersion: v2
+    appVersion: v1.8.5
+    created: "2025-10-27T15:40:54.469735055Z"
+    description: Centralized components for Odigos (UI + Backend)
+    digest: 40e42bcb62f6bcb2b64c36fd0f388947b6f6856ff712ac35b910efee7ac042f7
+    icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
+    kubeVersion: '>= 1.20.15-0'
+    name: odigos-central
+    type: application
+    urls:
+    - https://github.com/odigos-io/odigos/releases/download/v1.8.5/helm-chart-odigos-central-1.8.5.tgz
+    version: 1.8.5
+  - apiVersion: v2
     appVersion: v1.8.4
     created: "2025-10-23T20:03:13.183258631Z"
     description: Centralized components for Odigos (UI + Backend)
@@ -2600,4 +2624,4 @@ entries:
     urls:
     - https://github.com/odigos-io/odigos/releases/download/v1.5.0/helm-chart-odigos-central-1.5.0.tgz
     version: 1.5.0
-generated: "2025-10-23T20:03:13.179822311Z"
+generated: "2025-10-27T15:40:54.466912338Z"
