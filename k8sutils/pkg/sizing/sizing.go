@@ -145,6 +145,77 @@ func IsValidSizing(s string) bool {
 	return ok
 }
 
+// ComputeEffectiveCollectorConfig computes the effective collector configuration by merging
+// the sizing preset with the existing configuration, preserving all non-sizing attributes.
+// This replaces the pattern of overriding configurations and manually preserving specific fields.
+func ComputeEffectiveCollectorConfig(c *common.OdigosConfiguration) (
+	*common.CollectorGatewayConfiguration,
+	*common.CollectorNodeConfiguration,
+) {
+	// Get the sizing preset
+	effectiveSizing := ComputeResourceSizePreset(c)
+
+	// Merge gateway configuration: preserve existing config, update only sizing fields
+	effectiveGateway := mergeGatewayConfiguration(c.CollectorGateway, effectiveSizing.CollectorGatewayConfig)
+
+	// Merge node configuration: preserve existing config, update only sizing fields
+	effectiveNode := mergeNodeConfiguration(c.CollectorNode, effectiveSizing.CollectorNodeConfig)
+
+	return effectiveGateway, effectiveNode
+}
+
+// mergeGatewayConfiguration merges sizing information from preset into existing gateway configuration
+// while preserving non-sizing configuration fields like ServiceGraphDisabled, ClusterMetricsEnabled, etc.
+func mergeGatewayConfiguration(existing *common.CollectorGatewayConfiguration, preset common.CollectorGatewayConfiguration) *common.CollectorGatewayConfiguration {
+	if existing == nil {
+		return &preset
+	}
+
+	// Create a copy of existing config to preserve all non-sizing fields
+	merged := *existing
+
+	// Update only sizing-related fields from preset
+	merged.MinReplicas = preset.MinReplicas
+	merged.MaxReplicas = preset.MaxReplicas
+	merged.RequestMemoryMiB = preset.RequestMemoryMiB
+	merged.LimitMemoryMiB = preset.LimitMemoryMiB
+	merged.RequestCPUm = preset.RequestCPUm
+	merged.LimitCPUm = preset.LimitCPUm
+	merged.MemoryLimiterLimitMiB = preset.MemoryLimiterLimitMiB
+	merged.MemoryLimiterSpikeLimitMiB = preset.MemoryLimiterSpikeLimitMiB
+	merged.GoMemLimitMib = preset.GoMemLimitMib
+
+	// All other fields (ServiceGraphDisabled, ClusterMetricsEnabled, HttpsProxyAddress)
+	// are preserved from the existing configuration
+
+	return &merged
+}
+
+// mergeNodeConfiguration merges sizing information from preset into existing node configuration
+// while preserving non-sizing configuration fields like CollectorOwnMetricsPort, EnableDataCompression, etc.
+func mergeNodeConfiguration(existing *common.CollectorNodeConfiguration, preset common.CollectorNodeConfiguration) *common.CollectorNodeConfiguration {
+	if existing == nil {
+		return &preset
+	}
+
+	// Create a copy of existing config to preserve all non-sizing fields
+	merged := *existing
+
+	// Update only sizing-related fields from preset
+	merged.RequestMemoryMiB = preset.RequestMemoryMiB
+	merged.LimitMemoryMiB = preset.LimitMemoryMiB
+	merged.RequestCPUm = preset.RequestCPUm
+	merged.LimitCPUm = preset.LimitCPUm
+	merged.MemoryLimiterLimitMiB = preset.MemoryLimiterLimitMiB
+	merged.MemoryLimiterSpikeLimitMiB = preset.MemoryLimiterSpikeLimitMiB
+	merged.GoMemLimitMib = preset.GoMemLimitMib
+
+	// All other fields (CollectorOwnMetricsPort, EnableDataCompression)
+	// are preserved from the existing configuration
+
+	return &merged
+}
+
 // copyNonZeroGateway overlays only non-zero numeric fields from src onto dst.
 func copyNonZeroGateway(dst common.CollectorGatewayConfiguration, src *common.CollectorGatewayConfiguration) common.CollectorGatewayConfiguration {
 	if src == nil {

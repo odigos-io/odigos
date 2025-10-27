@@ -24,8 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []odigoscommon.ObservabilitySignal, allProcessors *odigosv1.ProcessorList,
-	datacollection *odigosv1.CollectorsGroup, loadBalancingNeeded bool) error {
+func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList,
+	datacollection *odigosv1.CollectorsGroup) error {
 	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
@@ -41,7 +41,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		b.autoscalerDeployment = autoscalerDeployment
 	}
 
-	desired, err := b.getDesiredConfigMap(sources, clusterCollectorSignals, processors, datacollection, loadBalancingNeeded)
+	desired, err := b.getDesiredConfigMap(sources, clusterCollectorGroup, processors, datacollection)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -150,20 +150,25 @@ func noopConfigMap() (string, error) {
 	return string(yamlData), nil
 }
 
-func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []odigoscommon.ObservabilitySignal, processors []*odigosv1.Processor,
-	cg *odigosv1.CollectorsGroup, loadBalancingNeeded bool) (*v1.ConfigMap, error) {
+func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, processors []*odigosv1.Processor,
+	cg *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
 	if b.autoscalerDeployment == nil {
 		return nil, errors.New("autoscaler deployment is not set in the reconciler, cannot set owner reference")
 	}
 	var err error
 	var cmData string
 
-	if cg == nil || len(clusterCollectorSignals) == 0 {
+	tracingLoadBalancingNeeded, err := isTracingLoadBalancingNeeded(b.Client, clusterCollectorGroup)
+	if err != nil {
+		return nil, err
+	}
+
+	if cg == nil || len(clusterCollectorGroup.Status.ReceiverSignals) == 0 {
 		// if collectors group is not created yet, or there are no signals to collect, return a no-op configmap
 		// this can happen if no sources are instrumented yet or no destinations are added.
 		cmData, err = noopConfigMap()
 	} else {
-		cmData, err = calculateConfigMapData(cg, sources, clusterCollectorSignals, processors, commonconf.ControllerConfig.OnGKE, loadBalancingNeeded)
+		cmData, err = calculateConfigMapData(cg, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
 	}
 
 	if err != nil {
@@ -310,4 +315,22 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	}
 
 	return signals, nil
+}
+
+func isTracingLoadBalancingNeeded(client client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
+	actions := odigosv1.ActionList{}
+	if err := client.List(context.Background(), &actions); err != nil {
+		return false, err
+	}
+
+	// We're enabling load balancing for traces only if one of the following conditions is met:
+	// 1. Sampling actions are enabled
+	// 2. Service graph is enabled
+
+	SamplingActionsEnabled := IsSamplingActionsEnabled(&actions)
+	// Service graph is enabled only if ServiceGraphDisabled is not set (nil) or is set to false.
+	// If ServiceGraphDisabled is true, it is disabled.
+	ServiceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
+
+	return SamplingActionsEnabled || ServiceGraphEnabled, nil
 }

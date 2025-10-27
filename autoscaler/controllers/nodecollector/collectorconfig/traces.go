@@ -59,20 +59,8 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 		} else {
 			// Use the common cluster collector exporter, but add compression if needed
 			// Note: The actual exporter merge by commonExporters before this function is called.
-			// Here we just add it to the exporter names and handle compression if needed
+			// Here we just add it to the exporter name
 			exporterNames = append(exporterNames, clusterCollectorExporterName)
-
-			// If compression is enabled, we need to override the common exporter with compression
-			if compression != "none" {
-				exporters[clusterCollectorExporterName] = config.GenericMap{
-					"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace),
-					"tls": config.GenericMap{
-						"insecure": true,
-					},
-					"balancer_name": "round_robin",
-					"compression":   compression,
-				}
-			}
 		}
 	}
 
