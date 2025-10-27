@@ -342,6 +342,11 @@ func calculateDataStreams(
 		dataStreamDetailsList = append(dataStreamDetailsList, *ds)
 	}
 
+	// Sort by Name to ensure consistent ordering
+	slices.SortFunc(dataStreamDetailsList, func(a, b pipelinegen.DataStreams) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
 	return dataStreamDetailsList, nil
 }
 
@@ -385,6 +390,17 @@ func getSourcesForDataStream(
 			Name:      pw.Name,
 		})
 	}
+
+	// Sort by Namespace, then Kind, then Name to ensure consistent ordering
+	slices.SortFunc(sourcesFilters, func(a, b pipelinegen.SourceFilter) int {
+		if a.Namespace != b.Namespace {
+			return strings.Compare(a.Namespace, b.Namespace)
+		}
+		if a.Kind != b.Kind {
+			return strings.Compare(a.Kind, b.Kind)
+		}
+		return strings.Compare(a.Name, b.Name)
+	})
 
 	return sourcesFilters, nil
 }
