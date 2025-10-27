@@ -925,6 +925,16 @@ type PodContainerAnalyze struct {
 	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
+type PodInfo struct {
+	Name     string `json:"name"`
+	Ready    string `json:"ready"`
+	Status   string `json:"status"`
+	Restarts int    `json:"restarts"`
+	NodeName string `json:"nodeName"`
+	Age      string `json:"age"`
+	Image    string `json:"image"`
+}
+
 type PodWorkload struct {
 	Namespace string          `json:"namespace"`
 	Name      string          `json:"name"`
