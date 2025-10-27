@@ -29,6 +29,19 @@ rules:
       - delete
   {{- end }}
   - apiGroups:
+      - apps
+    resources:
+      - replicasets
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - get
+  - apiGroups:
       - odigos.io
     resources:
       - instrumentationrules
