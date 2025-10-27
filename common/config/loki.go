@@ -43,7 +43,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 	}
 
 	rawLokiLabels, exists := destConfig[lokiLabelsKey]
-	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetID())
+	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, uniqueUri)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
 	}
