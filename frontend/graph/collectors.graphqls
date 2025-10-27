@@ -1,0 +1,68 @@
+# =====================
+# Collectors
+# Centralized common types for collector headers (Gateway Deployment, Data Collection DaemonSet)
+# =====================
+
+enum WorkloadStatus {
+  Healthy
+  Updating
+  Degraded
+  Failed
+  Down
+  Unknown
+}
+
+type ResourceAmounts {
+  cpuM: Int!
+  memoryMiB: Int!
+}
+
+type Resources {
+  requests: ResourceAmounts
+  limits: ResourceAmounts
+}
+
+type NodesSummary {
+  desired: Int!
+  ready: Int!
+}
+
+type HorizontalPodAutoscalerInfo {
+  min: Int
+  max: Int
+  current: Int
+  desired: Int
+}
+
+enum ManifestFormat {
+  YAML
+  JSON
+}
+
+type GatewayDeploymentInfo {
+  status: WorkloadStatus!
+  hpa: HorizontalPodAutoscalerInfo
+  resources: Resources
+  imageVersion: String
+  lastRolloutAt: String
+  rolloutInProgress: Boolean!
+}
+
+type CollectorDaemonSetInfo {
+  status: WorkloadStatus!
+  nodes: NodesSummary!
+  resources: Resources
+  imageVersion: String
+  lastRolloutAt: String
+  rolloutInProgress: Boolean!
+}
+
+extend type Query {
+  # Gateway (Deployment)
+  getGatewayDeploymentInfo: GatewayDeploymentInfo!
+  getGatewayDeploymentManifest(format: ManifestFormat = YAML): String!
+
+  # Odiglet (DaemonSet)
+  getDataCollectionDaemonSetInfo: CollectorDaemonSetInfo!
+  getDataCollectionDaemonSetManifest(format: ManifestFormat = YAML): String!
+}

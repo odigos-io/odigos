@@ -145,6 +145,15 @@ type CodeAttributesInput struct {
 	Stacktrace *bool `json:"stacktrace,omitempty"`
 }
 
+type CollectorDaemonSetInfo struct {
+	Status            WorkloadStatus `json:"status"`
+	Nodes             *NodesSummary  `json:"nodes"`
+	Resources         *Resources     `json:"resources,omitempty"`
+	ImageVersion      *string        `json:"imageVersion,omitempty"`
+	LastRolloutAt     *string        `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress bool           `json:"rolloutInProgress"`
+}
+
 type CollectorGateway struct {
 	RequestMemoryMiB           *int `json:"requestMemoryMiB,omitempty"`
 	LimitMemoryMiB             *int `json:"limitMemoryMiB,omitempty"`
@@ -359,29 +368,12 @@ type FieldInput struct {
 }
 
 type GatewayDeploymentInfo struct {
-	Status            GatewayDeploymentStatus `json:"status"`
-	Hpa               *GatewayHpa             `json:"hpa,omitempty"`
-	Resources         *GatewayResources       `json:"resources,omitempty"`
-	ImageVersion      *string                 `json:"imageVersion,omitempty"`
-	LastRolloutAt     *string                 `json:"lastRolloutAt,omitempty"`
-	RolloutInProgress bool                    `json:"rolloutInProgress"`
-}
-
-type GatewayHpa struct {
-	Min     *int `json:"min,omitempty"`
-	Max     *int `json:"max,omitempty"`
-	Current *int `json:"current,omitempty"`
-	Desired *int `json:"desired,omitempty"`
-}
-
-type GatewayResourceAmounts struct {
-	CPUM      int `json:"cpuM"`
-	MemoryMiB int `json:"memoryMiB"`
-}
-
-type GatewayResources struct {
-	Requests *GatewayResourceAmounts `json:"requests,omitempty"`
-	Limits   *GatewayResourceAmounts `json:"limits,omitempty"`
+	Status            WorkloadStatus               `json:"status"`
+	Hpa               *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
+	Resources         *Resources                   `json:"resources,omitempty"`
+	ImageVersion      *string                      `json:"imageVersion,omitempty"`
+	LastRolloutAt     *string                      `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress bool                         `json:"rolloutInProgress"`
 }
 
 type GetConfigResponse struct {
@@ -415,6 +407,13 @@ type HeadersCollection struct {
 
 type HeadersCollectionInput struct {
 	HeaderKeys []*string `json:"headerKeys,omitempty"`
+}
+
+type HorizontalPodAutoscalerInfo struct {
+	Min     *int `json:"min,omitempty"`
+	Max     *int `json:"max,omitempty"`
+	Current *int `json:"current,omitempty"`
+	Desired *int `json:"desired,omitempty"`
 }
 
 type HTTPPayloadCollection struct {
@@ -765,6 +764,11 @@ type NodeCollectorAnalyze struct {
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
 }
 
+type NodesSummary struct {
+	Desired int `json:"desired"`
+	Ready   int `json:"ready"`
+}
+
 type NonIdentifyingAttribute struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -934,6 +938,16 @@ type PodWorkloadInput struct {
 }
 
 type Query struct {
+}
+
+type ResourceAmounts struct {
+	CPUM      int `json:"cpuM"`
+	MemoryMiB int `json:"memoryMiB"`
+}
+
+type Resources struct {
+	Requests *ResourceAmounts `json:"requests,omitempty"`
+	Limits   *ResourceAmounts `json:"limits,omitempty"`
 }
 
 type RolloutConfiguration struct {
@@ -1305,55 +1319,6 @@ func (e *DesiredStateProgress) UnmarshalGQL(v any) error {
 }
 
 func (e DesiredStateProgress) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type GatewayDeploymentStatus string
-
-const (
-	GatewayDeploymentStatusHealthy  GatewayDeploymentStatus = "Healthy"
-	GatewayDeploymentStatusUpdating GatewayDeploymentStatus = "Updating"
-	GatewayDeploymentStatusDegraded GatewayDeploymentStatus = "Degraded"
-	GatewayDeploymentStatusFailed   GatewayDeploymentStatus = "Failed"
-	GatewayDeploymentStatusDown     GatewayDeploymentStatus = "Down"
-	GatewayDeploymentStatusUnknown  GatewayDeploymentStatus = "Unknown"
-)
-
-var AllGatewayDeploymentStatus = []GatewayDeploymentStatus{
-	GatewayDeploymentStatusHealthy,
-	GatewayDeploymentStatusUpdating,
-	GatewayDeploymentStatusDegraded,
-	GatewayDeploymentStatusFailed,
-	GatewayDeploymentStatusDown,
-	GatewayDeploymentStatusUnknown,
-}
-
-func (e GatewayDeploymentStatus) IsValid() bool {
-	switch e {
-	case GatewayDeploymentStatusHealthy, GatewayDeploymentStatusUpdating, GatewayDeploymentStatusDegraded, GatewayDeploymentStatusFailed, GatewayDeploymentStatusDown, GatewayDeploymentStatusUnknown:
-		return true
-	}
-	return false
-}
-
-func (e GatewayDeploymentStatus) String() string {
-	return string(e)
-}
-
-func (e *GatewayDeploymentStatus) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = GatewayDeploymentStatus(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid GatewayDeploymentStatus", str)
-	}
-	return nil
-}
-
-func (e GatewayDeploymentStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1912,5 +1877,54 @@ func (e *Tier) UnmarshalGQL(v any) error {
 }
 
 func (e Tier) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type WorkloadStatus string
+
+const (
+	WorkloadStatusHealthy  WorkloadStatus = "Healthy"
+	WorkloadStatusUpdating WorkloadStatus = "Updating"
+	WorkloadStatusDegraded WorkloadStatus = "Degraded"
+	WorkloadStatusFailed   WorkloadStatus = "Failed"
+	WorkloadStatusDown     WorkloadStatus = "Down"
+	WorkloadStatusUnknown  WorkloadStatus = "Unknown"
+)
+
+var AllWorkloadStatus = []WorkloadStatus{
+	WorkloadStatusHealthy,
+	WorkloadStatusUpdating,
+	WorkloadStatusDegraded,
+	WorkloadStatusFailed,
+	WorkloadStatusDown,
+	WorkloadStatusUnknown,
+}
+
+func (e WorkloadStatus) IsValid() bool {
+	switch e {
+	case WorkloadStatusHealthy, WorkloadStatusUpdating, WorkloadStatusDegraded, WorkloadStatusFailed, WorkloadStatusDown, WorkloadStatusUnknown:
+		return true
+	}
+	return false
+}
+
+func (e WorkloadStatus) String() string {
+	return string(e)
+}
+
+func (e *WorkloadStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WorkloadStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WorkloadStatus", str)
+	}
+	return nil
+}
+
+func (e WorkloadStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

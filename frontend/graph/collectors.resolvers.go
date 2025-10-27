@@ -20,3 +20,13 @@ func (r *queryResolver) GetGatewayDeploymentInfo(ctx context.Context) (*model.Ga
 func (r *queryResolver) GetGatewayDeploymentManifest(ctx context.Context, format *model.ManifestFormat) (string, error) {
 	return services.GetGatewayDeploymentManifest(ctx, format)
 }
+
+// GetDataCollectionDaemonSetInfo is the resolver for the getDataCollectionDaemonSetInfo field.
+func (r *queryResolver) GetDataCollectionDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error) {
+	return services.GetDataCollectionDaemonSetInfo(ctx)
+}
+
+// GetDataCollectionDaemonSetManifest is the resolver for the getDataCollectionDaemonSetManifest field.
+func (r *queryResolver) GetDataCollectionDaemonSetManifest(ctx context.Context, format *model.ManifestFormat) (string, error) {
+	return services.GetDataCollectionDaemonSetManifest(ctx, format)
+}

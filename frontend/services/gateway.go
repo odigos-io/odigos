@@ -53,7 +53,7 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
     return result, nil
 }
 
-func computeDeploymentStatus(dep *appsv1.Deployment) (model.GatewayDeploymentStatus, bool) {
+func computeDeploymentStatus(dep *appsv1.Deployment) (model.WorkloadStatus, bool) {
     var availableCond, progressingCond *appsv1.DeploymentCondition
     for i := range dep.Status.Conditions {
         c := dep.Status.Conditions[i]
@@ -66,18 +66,18 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.GatewayDeploymentSta
 
     // Down: no available replicas
     if dep.Status.AvailableReplicas == 0 {
-        return model.GatewayDeploymentStatusDown, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
+        return model.WorkloadStatusDown, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
     }
 
     // Unknown: no conditions
     if availableCond == nil && progressingCond == nil {
-        return model.GatewayDeploymentStatusUnknown, false
+        return model.WorkloadStatusUnknown, false
     }
 
     // Failed: Progressing=False or reason ProgressDeadlineExceeded
     if progressingCond != nil {
         if progressingCond.Status == corev1.ConditionFalse || progressingCond.Reason == "ProgressDeadlineExceeded" {
-            return model.GatewayDeploymentStatusFailed, false
+            return model.WorkloadStatusFailed, false
         }
     }
 
@@ -87,45 +87,45 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.GatewayDeploymentSta
         desired = *dep.Spec.Replicas
     }
     if progressingCond != nil && progressingCond.Status == corev1.ConditionTrue && dep.Status.UpdatedReplicas < desired {
-        return model.GatewayDeploymentStatusUpdating, true
+        return model.WorkloadStatusUpdating, true
     }
 
     // Degraded: Available=False but Progressing=True
     if availableCond != nil && availableCond.Status == corev1.ConditionFalse && progressingCond != nil && progressingCond.Status == corev1.ConditionTrue {
-        return model.GatewayDeploymentStatusDegraded, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
+        return model.WorkloadStatusDegraded, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
     }
 
     // Healthy: Available=True and Progressing=True and all replicas up to date
     if availableCond != nil && availableCond.Status == corev1.ConditionTrue && progressingCond != nil && progressingCond.Status == corev1.ConditionTrue {
         if dep.Status.Replicas == dep.Status.UpdatedReplicas && dep.Status.Replicas == dep.Status.AvailableReplicas && dep.Status.Replicas == dep.Status.ReadyReplicas {
-            return model.GatewayDeploymentStatusHealthy, false
+            return model.WorkloadStatusHealthy, false
         }
 
-        return model.GatewayDeploymentStatusUpdating, true
+        return model.WorkloadStatusUpdating, true
     }
 
-    return model.GatewayDeploymentStatusUnknown, false
+    return model.WorkloadStatusUnknown, false
 }
 
-func extractGatewayResources(dep *appsv1.Deployment) *model.GatewayResources {
+func extractGatewayResources(dep *appsv1.Deployment) *model.Resources {
     for _, c := range dep.Spec.Template.Spec.Containers {
         if c.Name == k8sconsts.OdigosClusterCollectorContainerName {
-            var req, lim *model.GatewayResourceAmounts
+            var req, lim *model.ResourceAmounts
             if len(c.Resources.Requests) > 0 {
                 memBytes := c.Resources.Requests.Memory().Value()
-                req = &model.GatewayResourceAmounts{
+                req = &model.ResourceAmounts{
                     CPUM:      int(c.Resources.Requests.Cpu().MilliValue()),
                     MemoryMiB: int(memBytes / (1024 * 1024)),
                 }
             }
             if len(c.Resources.Limits) > 0 {
                 memBytes := c.Resources.Limits.Memory().Value()
-                lim = &model.GatewayResourceAmounts{
+                lim = &model.ResourceAmounts{
                     CPUM:      int(c.Resources.Limits.Cpu().MilliValue()),
                     MemoryMiB: int(memBytes / (1024 * 1024)),
                 }
             }
-            return &model.GatewayResources{Requests: req, Limits: lim}
+            return &model.Resources{Requests: req, Limits: lim}
         }
     }
     return nil
@@ -185,12 +185,12 @@ func findLastRolloutTime(ctx context.Context, dep *appsv1.Deployment) string {
     return Metav1TimeToString(owned[0].CreationTimestamp)
 }
 
-func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodAutoscaler) *model.GatewayHpa {
+func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodAutoscaler) *model.HorizontalPodAutoscalerInfo {
     if hpa == nil {
         return nil
     }
 
-    h := &model.GatewayHpa{}
+    h := &model.HorizontalPodAutoscalerInfo{}
     if hpa.Spec.MinReplicas != nil {
         v := int(*hpa.Spec.MinReplicas)
         h.Min = &v
