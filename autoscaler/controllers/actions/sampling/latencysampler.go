@@ -58,7 +58,7 @@ func (h *LatencySamplerHandler) List(ctx context.Context, c client.Client, names
 	}
 	items := make([]metav1.Object, 0)
 	for i, item := range list.Items {
-		if item.Spec.Samplers.LatencySampler != nil {
+		if item.Spec.Samplers != nil && item.Spec.Samplers.LatencySampler != nil {
 			items = append(items, &list.Items[i])
 		}
 	}
@@ -90,6 +90,10 @@ func (h *LatencySamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
 	}
 	if a, ok := action.(*odigosv1.Action); ok {
 		latencysampler = a
+	}
+
+	if latencysampler.Spec.Samplers == nil || latencysampler.Spec.Samplers.LatencySampler == nil {
+		return []Rule{}
 	}
 
 	actionRules := []Rule{}

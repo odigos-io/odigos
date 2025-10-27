@@ -56,7 +56,7 @@ func (h *ServiceNameSamplerHandler) List(ctx context.Context, c client.Client, n
 	}
 	items := make([]metav1.Object, 0)
 	for i, item := range list.Items {
-		if item.Spec.Samplers.ServiceNameSampler != nil {
+		if item.Spec.Samplers != nil && item.Spec.Samplers.ServiceNameSampler != nil {
 			items = append(items, &list.Items[i])
 		}
 	}
@@ -88,6 +88,10 @@ func (h *ServiceNameSamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
 	}
 	if a, ok := action.(*odigosv1.Action); ok {
 		serviceNameSampler = a
+	}
+
+	if serviceNameSampler.Spec.Samplers == nil || serviceNameSampler.Spec.Samplers.ServiceNameSampler == nil {
+		return []Rule{}
 	}
 
 	rules := make([]Rule, 0, len(serviceNameSampler.Spec.Samplers.ServiceNameSampler.ServicesNameFilters))

@@ -198,7 +198,8 @@
             "pipeline/rules/introduction",
             "pipeline/rules/codeattributes",
             "pipeline/rules/headerscollection",
-            "pipeline/rules/payloadcollection"
+            "pipeline/rules/payloadcollection",
+            "pipeline/rules/custominstrumentation"
           ]
         },
         {

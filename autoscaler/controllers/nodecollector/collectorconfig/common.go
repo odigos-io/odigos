@@ -52,13 +52,31 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 }
 
 var staticProcessors config.GenericMap
-var commonExporters config.GenericMap
 var commonReceivers config.GenericMap
 var commonExtensions config.GenericMap
 var commonService config.Service
 
-func init() {
+func getCommonExporters(enableDataCompression *bool) config.GenericMap {
+
 	odigosNamespace := env.GetCurrentNamespace()
+
+	compression := "none"
+	if enableDataCompression != nil && *enableDataCompression {
+		compression = "gzip"
+	}
+
+	return config.GenericMap{
+		clusterCollectorExporterName: config.GenericMap{
+			"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorDeploymentName, odigosNamespace),
+			"tls": config.GenericMap{
+				"insecure": true,
+			},
+			"compression": compression,
+		},
+	}
+}
+
+func init() {
 
 	staticProcessors = config.GenericMap{
 		batchProcessorName: config.GenericMap{},
@@ -68,16 +86,6 @@ func init() {
 				"value":  "${NODE_NAME}",
 				"action": "upsert",
 			}},
-		},
-	}
-
-	commonExporters = config.GenericMap{
-		clusterCollectorExporterName: config.GenericMap{
-			"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorDeploymentName, odigosNamespace),
-			"tls": config.GenericMap{
-				"insecure": true,
-			},
-			"balancer_name": "round_robin",
 		},
 	}
 
@@ -114,7 +122,7 @@ func init() {
 func CommonConfig(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.Config {
 	return config.Config{
 		Receivers:  commonReceivers,
-		Exporters:  commonExporters,
+		Exporters:  getCommonExporters(nodeCG.Spec.EnableDataCompression),
 		Processors: commonProcessors(nodeCG, runningOnGKE),
 		Extensions: commonExtensions,
 		Service:    commonService,

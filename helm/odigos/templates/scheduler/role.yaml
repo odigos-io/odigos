@@ -3,7 +3,7 @@ kind: Role
 metadata:
   name: odigos-scheduler
   namespace: '{{ .Release.Namespace }}'
-  labels: 
+  labels:
     odigos.io/system-object: "true"
 rules:
   - apiGroups:
@@ -89,6 +89,12 @@ rules:
       - patch
       - delete
   - apiGroups:
+      - 'batch'
+    resources:
+      - 'jobs'
+    verbs:
+      - 'create'
+  - apiGroups:
       - 'apps'
     resources:
       - 'daemonsets'
@@ -114,3 +120,11 @@ rules:
       - 'get'
       - 'list'
       - 'watch'
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - 'apps'
+    resources:
+      - deployments/finalizers
+    verbs:
+      - update
+{{- end }}

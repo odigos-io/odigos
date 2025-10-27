@@ -1465,8 +1465,8 @@ func (in *SdkConfig) DeepCopyInto(out *SdkConfig) {
 		*out = new(instrumentationrules.TraceConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DefaultCustomInstrumentations != nil {
-		in, out := &in.DefaultCustomInstrumentations, &out.DefaultCustomInstrumentations
+	if in.CustomInstrumentations != nil {
+		in, out := &in.CustomInstrumentations, &out.CustomInstrumentations
 		*out = new(instrumentationrules.CustomInstrumentations)
 		(*in).DeepCopyInto(*out)
 	}

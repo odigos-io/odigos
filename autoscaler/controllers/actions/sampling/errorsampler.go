@@ -53,7 +53,7 @@ func (h *ErrorSamplerHandler) List(ctx context.Context, c client.Client, namespa
 	}
 	items := make([]metav1.Object, 0)
 	for i, item := range list.Items {
-		if item.Spec.Samplers.ErrorSampler != nil {
+		if item.Spec.Samplers != nil && item.Spec.Samplers.ErrorSampler != nil {
 			items = append(items, &list.Items[i])
 		}
 	}
@@ -85,6 +85,10 @@ func (h *ErrorSamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
 	}
 	if a, ok := action.(*odigosv1.Action); ok {
 		errorSampler = a
+	}
+
+	if errorSampler.Spec.Samplers == nil || errorSampler.Spec.Samplers.ErrorSampler == nil {
+		return []Rule{}
 	}
 
 	errorDetails := &ErrorConfig{

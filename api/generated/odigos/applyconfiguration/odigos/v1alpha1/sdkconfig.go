@@ -32,7 +32,7 @@ type SdkConfigApplyConfiguration struct {
 	DefaultCodeAttributes         *instrumentationrules.CodeAttributes             `json:"codeAttributes,omitempty"`
 	DefaultHeadersCollection      *instrumentationrules.HttpHeadersCollection      `json:"headersCollection,omitempty"`
 	DefaultTraceConfig            *instrumentationrules.TraceConfig                `json:"traceConfig,omitempty"`
-	DefaultCustomInstrumentations *instrumentationrules.CustomInstrumentations     `json:"customInstrumentations,omitempty"`
+	CustomInstrumentations        *instrumentationrules.CustomInstrumentations     `json:"customInstrumentations,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -102,10 +102,10 @@ func (b *SdkConfigApplyConfiguration) WithDefaultTraceConfig(value instrumentati
 	return b
 }
 
-// WithDefaultCustomInstrumentations sets the DefaultCustomInstrumentations field in the declarative configuration to the given value
+// WithCustomInstrumentations sets the CustomInstrumentations field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DefaultCustomInstrumentations field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithDefaultCustomInstrumentations(value instrumentationrules.CustomInstrumentations) *SdkConfigApplyConfiguration {
-	b.DefaultCustomInstrumentations = &value
+// If called multiple times, the CustomInstrumentations field is set to the value of the last call.
+func (b *SdkConfigApplyConfiguration) WithCustomInstrumentations(value instrumentationrules.CustomInstrumentations) *SdkConfigApplyConfiguration {
+	b.CustomInstrumentations = &value
 	return b
 }

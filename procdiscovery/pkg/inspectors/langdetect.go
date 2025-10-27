@@ -1,6 +1,7 @@
 package inspectors
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -106,13 +107,60 @@ func DetectLanguage(proc process.Details, containerURL string, logger logr.Logge
 	if detectedLanguage, err := runInspectionStage(procContext, containerURL, func(inspector Inspector) InspectFunc {
 		return inspector.QuickScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
+		if err != nil {
+			var conflict ErrLanguageDetectionConflict
+			if errors.As(err, &conflict) {
+				// If one of the languages is C++, prefer the other language and log a warning
+				if l, ok := resolveNonCpp(conflict.languages); ok {
+					logger.Info("Warning: language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
+					resolved := common.ProgramLanguageDetails{Language: l}
+					if inspector, ok := inspectorsByLanguage[l]; ok {
+						if vi, ok := inspector.(VersionInspector); ok {
+							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext, containerURL)
+						}
+					}
+					return resolved, nil
+				}
+			}
+		}
 		return detectedLanguage, err
 	}
 
 	// Try Deep Scan if Quick Scan failed
-	return runInspectionStage(procContext, containerURL, func(inspector Inspector) InspectFunc {
+	if detectedLanguage, err := runInspectionStage(procContext, containerURL, func(inspector Inspector) InspectFunc {
 		return inspector.DeepScan
-	})
+	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
+		if err != nil {
+			var conflict ErrLanguageDetectionConflict
+			if errors.As(err, &conflict) {
+				if l, ok := resolveNonCpp(conflict.languages); ok {
+					logger.Info("Warning: language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
+					resolved := common.ProgramLanguageDetails{Language: l}
+					if inspector, ok := inspectorsByLanguage[l]; ok {
+						if vi, ok := inspector.(VersionInspector); ok {
+							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext, containerURL)
+						}
+					}
+					return resolved, nil
+				}
+			}
+		}
+		return detectedLanguage, err
+	}
+	return common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}, nil
+}
+
+// resolveNonCpp returns the non-C++ language from a conflict pair, if any.
+// If neither or both are C++, returns false.
+func resolveNonCpp(langs [2]common.ProgrammingLanguage) (common.ProgrammingLanguage, bool) {
+	if langs[0] == common.CPlusPlusProgrammingLanguage && langs[1] != common.CPlusPlusProgrammingLanguage {
+		return langs[1], true
+	}
+	if langs[1] == common.CPlusPlusProgrammingLanguage && langs[0] != common.CPlusPlusProgrammingLanguage {
+		return langs[0], true
+	}
+	var none common.ProgrammingLanguage
+	return none, false
 }
 
 func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage, logger logr.Logger) bool {

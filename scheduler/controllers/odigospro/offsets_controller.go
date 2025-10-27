@@ -175,6 +175,9 @@ func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string, api
 }
 
 func applyCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJob client.Object, config *common.OdigosConfiguration) error {
+
+	logger := ctrl.LoggerFrom(ctx)
+
 	// Apply the CronJob
 	objApplyBytes, err := yaml.Marshal(cronJob)
 	if err != nil {
@@ -184,6 +187,39 @@ func applyCronJob(ctx context.Context, kubeClient client.Client, ns string, cron
 	err = kubeClient.Patch(ctx, cronJob, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfig"))
 	if err != nil {
 		return fmt.Errorf("failed to apply go offsets CronJob: %v", err)
+	}
+
+	// Once user has set the cron job, we need to trigger an initial job to update the offsets
+	// so user wont have to wait for the cron job to run.
+	var jobSpec batchv1.JobSpec
+
+	switch cj := cronJob.(type) {
+	case *batchv1.CronJob:
+		jobSpec = cj.Spec.JobTemplate.Spec
+	case *batchv1beta1.CronJob:
+		jobSpec = cj.Spec.JobTemplate.Spec
+	default:
+		return fmt.Errorf("unsupported cronjob type: %T", cronJob)
+	}
+
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OffsetInitialJobName,
+			Namespace: ns,
+			Labels: map[string]string{
+				k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
+			},
+		},
+		Spec: jobSpec,
+	}
+
+	// Try creating the Job, ignore if it already exists
+	if err := kubeClient.Create(ctx, job); err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			return fmt.Errorf("failed to create initial offset updater job: %v", err)
+		}
+	} else {
+		logger.Info("Triggered initial offset-updater job", "namespace", ns, "jobName", k8sconsts.OffsetInitialJobName)
 	}
 
 	return nil

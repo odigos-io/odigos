@@ -10,7 +10,6 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -123,7 +122,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
-		if !isWorkloadRolloutDone(workloadObj) && !rollbackDisabled {
+		if !utils.IsWorkloadRolloutDone(workloadObj) && !rollbackDisabled {
 			timeSinceCrashLoopBackOff, err := crashLoopBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check crashLoopBackOff")
@@ -184,7 +183,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false
-	if !isWorkloadRolloutDone(workloadObj) {
+	if !utils.IsWorkloadRolloutDone(workloadObj) {
 		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionUnknown,
@@ -230,84 +229,6 @@ func rolloutRestartWorkload(ctx context.Context, workload client.Object, c clien
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	default:
 		return errors.New("unknown kind")
-	}
-}
-
-// isWorkloadRolloutDone checks if the rollout of the given workload is done.
-// this is based on the kubectl implementation of checking the rollout status:
-// https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/rollout_status.go
-func isWorkloadRolloutDone(obj client.Object) bool {
-	switch o := obj.(type) {
-	case *appsv1.Deployment:
-		if o.Generation <= o.Status.ObservedGeneration {
-			cond := conditions.GetDeploymentCondition(o.Status, appsv1.DeploymentProgressing)
-			if cond != nil && cond.Reason == conditions.TimedOutReason {
-				// deployment exceeded its progress deadline
-				return false
-			}
-			if o.Spec.Replicas != nil && o.Status.UpdatedReplicas < *o.Spec.Replicas {
-				// Waiting for deployment rollout to finish
-				return false
-			}
-			if o.Status.Replicas > o.Status.UpdatedReplicas {
-				// Waiting for deployment rollout to finish old replicas are pending termination.
-				return false
-			}
-			if o.Status.AvailableReplicas < o.Status.UpdatedReplicas {
-				// Waiting for deployment rollout to finish:  not all updated replicas are available..
-				return false
-			}
-			return true
-		}
-		return false
-	case *appsv1.StatefulSet:
-		if o.Spec.UpdateStrategy.Type != appsv1.RollingUpdateStatefulSetStrategyType {
-			// rollout status is only available for RollingUpdateStatefulSetStrategyType strategy type
-			return true
-		}
-		if o.Status.ObservedGeneration == 0 || o.Generation > o.Status.ObservedGeneration {
-			// Waiting for statefulset spec update to be observed
-			return false
-		}
-		if o.Spec.Replicas != nil && o.Status.ReadyReplicas < *o.Spec.Replicas {
-			// Waiting for pods to be ready
-			return false
-		}
-		if o.Spec.UpdateStrategy.Type == appsv1.RollingUpdateStatefulSetStrategyType && o.Spec.UpdateStrategy.RollingUpdate != nil {
-			if o.Spec.Replicas != nil && o.Spec.UpdateStrategy.RollingUpdate.Partition != nil {
-				if o.Status.UpdatedReplicas < (*o.Spec.Replicas - *o.Spec.UpdateStrategy.RollingUpdate.Partition) {
-					// Waiting for partitioned roll out to finish
-					return false
-				}
-			}
-			// partitioned roll out complete
-			return true
-		}
-		if o.Status.UpdateRevision != o.Status.CurrentRevision {
-			// waiting for statefulset rolling update to complete
-			return false
-		}
-		return true
-	case *appsv1.DaemonSet:
-		if o.Spec.UpdateStrategy.Type != appsv1.RollingUpdateDaemonSetStrategyType {
-			// rollout status is only available for RollingUpdateDaemonSetStrategyType strategy type
-			return true
-		}
-		if o.Generation <= o.Status.ObservedGeneration {
-			if o.Status.UpdatedNumberScheduled < o.Status.DesiredNumberScheduled {
-				// Waiting for daemon set rollout to finish
-				return false
-			}
-			if o.Status.NumberAvailable < o.Status.DesiredNumberScheduled {
-				// Waiting for daemon set rollout to finish
-				return false
-			}
-			return true
-		}
-		// Waiting for daemon set spec update to be observed
-		return false
-	default:
-		return false
 	}
 }
 
