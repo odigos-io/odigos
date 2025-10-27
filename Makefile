@@ -7,7 +7,7 @@ ORG ?= registry.odigos.io
 ifeq ($(STAGING_ORG),true)
     ORG = us-central1-docker.pkg.dev/odigos-cloud/staging-components
 endif
-GOLANGCI_LINT_VERSION ?= v2.1.6
+GOLANGCI_LINT_VERSION ?= v2.5.0
 GOLANGCI_LINT := $(shell go env GOPATH)/bin/golangci-lint
 GO_MODULES := $(shell find . -type f -name "go.mod" -not -path "*/vendor/*" -exec dirname {} \; | grep -v "licenses")
 LINT_CMD = golangci-lint run -c ../.golangci.yml
@@ -248,8 +248,8 @@ update-dep/%: DIR=$*
 update-dep/%:
 	cd $(DIR) && go get $(MODULE)@$(VERSION)
 
-UNSTABLE_COLLECTOR_VERSION=v0.130.0
-STABLE_COLLECTOR_VERSION=v1.36.0
+UNSTABLE_COLLECTOR_VERSION=v0.138.0
+STABLE_COLLECTOR_VERSION=v1.44.0
 STABLE_OTEL_GO_VERSION=v1.37.0
 UNSTABLE_OTEL_GO_VERSION=v0.62.0
 
@@ -265,7 +265,7 @@ update-otel:
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/connector/forwardconnector VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/consumer VERSION=$(STABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/consumer/consumertest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
-	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
+	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter VERSION=$(STABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/debugexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/exportertest VERSION=$(UNSTABLE_COLLECTOR_VERSION)
 	$(MAKE) update-dep MODULE=go.opentelemetry.io/collector/exporter/nopexporter VERSION=$(UNSTABLE_COLLECTOR_VERSION)
@@ -327,7 +327,16 @@ cli-upgrade:
 .PHONY: cli-build
 cli-build:
 	@echo "Building the cli executable for tests"
-	cd cli && go build -tags=embed_manifests -o odigos .
+	TAG=0.0.0-e2e-test; \
+	TMPDIR=$$(mktemp -d); \
+	cp -r ./helm/odigos $$TMPDIR/odigos; \
+	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos/Chart.yaml; \
+	helm package $$TMPDIR/odigos -d cli/pkg/helm/embedded; \
+	cd cli && go build -tags=embed_manifests \
+	  -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=$${TAG#v}" \
+	  -o odigos .; \
+	rm -rf $$TMPDIR
+
 
 .PHONY: cli-diagnose
 cli-diagnose:

@@ -272,6 +272,7 @@ type InstrumentationRule {
   profileName: String!
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
+  conditions: [Condition!]
   codeAttributes: CodeAttributes
   headersCollection: HeadersCollection
   payloadCollection: PayloadCollection
@@ -306,23 +307,41 @@ type HeadersCollection {
   headerKeys: [String]
 }
 
+#### CUSTOM PROBES ####
 type CustomInstrumentations {
-  probes: [Probe]
+  golang: [GolangCustomProbe]
+  java: [JavaCustomProbe]
 }
 
-type Probe {
+type GolangCustomProbe {
+  packageName: String
+  functionName: String
+  receiverName: String
+  receiverMethodName: String
+}
+
+type JavaCustomProbe {
   className: String
   methodName: String
 }
 
 input CustomInstrumentationsInput {
-  probes: [ProbeInput]
+  golang: [GolangCustomProbeInput]
+  java: [JavaCustomProbeInput]
 }
 
-input ProbeInput {
+input GolangCustomProbeInput {
+  packageName: String
+  functionName: String
+  receiverName: String
+  receiverMethodName: String
+}
+
+input JavaCustomProbeInput {
   className: String
   methodName: String
 }
+#### END CUSTOM PROBES ####
 
 input HeadersCollectionInput {
   headerKeys: [String]
@@ -574,11 +593,13 @@ input ActionFieldsInput {
 input K8sLabelAttributeInput {
   labelKey: String!
   attributeKey: String!
+  from: K8sAttributesFrom
 }
 
 input K8sAnnotationAttributeInput {
   annotationKey: String!
   attributeKey: String!
+  from: K8sAttributesFrom
 }
 
 input ClusterAttributeInput {
@@ -666,11 +687,13 @@ type ActionFields {
 type K8sLabelAttribute {
   labelKey: String!
   attributeKey: String!
+  from: K8sAttributesFrom
 }
 
 type K8sAnnotationAttribute {
   annotationKey: String!
   attributeKey: String!
+  from: K8sAttributesFrom
 }
 
 type ClusterAttribute {
@@ -706,6 +729,10 @@ enum StringOperation {
   contains
   not_contains
   regex
+}
+enum K8sAttributesFrom {
+  pod
+  namespace
 }
 enum NumberOperation {
   exists

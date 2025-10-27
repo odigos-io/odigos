@@ -10,6 +10,9 @@ import EnrichmentIntro from '/snippets/enrichment-intro.mdx';
 
 ## Required Dependencies
 
+Odigos fully supports the OpenTelemetry Go eBPF Auto SDK. See the [official docs on the Auto SDK](https://opentelemetry.io/docs/zero-code/go/autosdk/)
+for information on using it.
+
 Add the following dependencies to your project by running:
 
 ```bash
@@ -43,6 +46,13 @@ import (
 
 var tracer = otel.Tracer("github.com/<yourusername>/<reponame>/<packagename>")
 ```
+
+<Warning>
+**Note**: Manually initializing a global TracerProvider will conflict with the Go Auto SDK's ability to link
+eBPF spans to custom spans and lead to broken trace IDs. If you are enriching your Odigos application with
+custom spans, do not initialize a global TracerProvider. See the [OpenTelemetry docs](https://opentelemetry.io/docs/zero-code/go/autosdk/)
+for more information.
+</Warning>
 
 ## Creating Spans
 

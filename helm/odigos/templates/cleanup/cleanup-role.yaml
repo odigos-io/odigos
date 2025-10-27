@@ -6,7 +6,7 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
-# we check installation method using odigos-deployment because when using helm we 
+# we check installation method using odigos-deployment because when using helm we
 # need to explicitly delete the odigos-configuration resource.
 # This is necessary because it has a Helm hook annotation and is not managed by Helm directly.
 # For more context, see the implementation in /cli/cmd/uninstall.go.

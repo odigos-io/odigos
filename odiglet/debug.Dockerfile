@@ -74,35 +74,8 @@ RUN for v in ${RUBY_VERSIONS}; do \
     rm -rf opentelemetry-ruby/$v/arm64; \
     done
 
-
-# Compile rsync statically for distroless image
-# don't specify the platform here, since we want to compile for multi architecture natively with gcc
-FROM registry.odigos.io/odiglet-base:v1.8 AS rsync-builder
-ARG RSYNC_VERSION=3.2.7
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    wget \
-    ca-certificates \
-    libacl1-dev \
-    libattr1-dev \
-    libpopt-dev \
-    liblz4-dev \
-    libzstd-dev \
-    libxxhash-dev \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz \
-    && tar -xzf rsync-${RSYNC_VERSION}.tar.gz \
-    && cd rsync-${RSYNC_VERSION} \
-    && ./configure --prefix=/usr LDFLAGS="-static" \
-    && make \
-    && make install DESTDIR=/rsync-install \
-    && cd .. \
-    && rm -rf rsync-${RSYNC_VERSION}*
-
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
+FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.10 AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -161,7 +134,7 @@ FROM registry.fedoraproject.org/fedora-minimal:38
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/bin/dlv /root/dlv
 # Copy statically compiled rsync (no shared libraries needed)
-COPY --from=rsync-builder /rsync-install/usr/bin/rsync /usr/bin/rsync
+COPY --from=builder /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 
