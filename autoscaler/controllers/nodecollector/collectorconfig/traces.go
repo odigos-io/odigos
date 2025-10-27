@@ -22,48 +22,55 @@ func init() {
 	}
 }
 
-func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, tracesEnabledInClusterCollector bool) (config.GenericMap, []string) {
+func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, tracesEnabledInClusterCollector bool, loadBalancingNeeded bool) (config.GenericMap, []string) {
 
 	exporters := config.GenericMap{}
 	exporterNames := []string{}
 
-	// add loadbalancing exporter only if we are sending traces to the cluster collector
+	// add exporter only if we are sending traces to the cluster collector
 	if tracesEnabledInClusterCollector {
-		compression := "none"
-		dataCompressionEnabled := nodeCG.Spec.EnableDataCompression
-		if dataCompressionEnabled != nil && *dataCompressionEnabled {
-			compression = "gzip"
-		}
-
-		service := fmt.Sprintf("%s.%s", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
 
 		// Add loadbalancing exporter for traces to ensure consistent gateway routing.
-		// This allows the servicegraph connector to properly aggregate trace data
-		// by sending all traces from a node collector to the same gateway instance.
-		exporters[odigosTracesLoadbalancingExporterName] = config.GenericMap{
-			"protocol": config.GenericMap{
-				"otlp": config.GenericMap{
-					"compression": compression,
-					"tls": config.GenericMap{
-						"insecure": true,
+		// This needed for the service graph to work correctly and for the sampling actions to work correctly.
+		// If load balancing is not needed, we use the common cluster collector exporter without load balancing.
+		if loadBalancingNeeded {
+			compression := "none"
+			dataCompressionEnabled := nodeCG.Spec.EnableDataCompression
+			if dataCompressionEnabled != nil && *dataCompressionEnabled {
+				compression = "gzip"
+			}
+			service := fmt.Sprintf("%s.%s", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
+			exporters[odigosTracesLoadbalancingExporterName] = config.GenericMap{
+				"protocol": config.GenericMap{
+					"otlp": config.GenericMap{
+						"compression": compression,
+						"tls": config.GenericMap{
+							"insecure": true,
+						},
 					},
 				},
-			},
-			"resolver": config.GenericMap{
-				"k8s": config.GenericMap{
-					"service": service,
+				"resolver": config.GenericMap{
+					"k8s": config.GenericMap{
+						"service": service,
+					},
 				},
-			},
+			}
+			exporterNames = append(exporterNames, odigosTracesLoadbalancingExporterName)
+		} else {
+			// Use the common cluster collector exporter
+			// Note: The actual exporter merge by commonExporters before this function is called.
+			// Here we just add it to the exporter name
+			exporterNames = append(exporterNames, clusterCollectorExporterName)
 		}
-		exporterNames = append(exporterNames, odigosTracesLoadbalancingExporterName)
 	}
 
 	return exporters, exporterNames
 }
 
-func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, additionalTraceExporters []string, tracesEnabledInClusterCollector bool) config.Config {
+func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, additionalTraceExporters []string, tracesEnabledInClusterCollector bool,
+	loadBalancingNeeded bool) config.Config {
 
-	exporters, pipelineExporterNames := tracesExporters(nodeCG, odigosNamespace, tracesEnabledInClusterCollector)
+	exporters, pipelineExporterNames := tracesExporters(nodeCG, odigosNamespace, tracesEnabledInClusterCollector, loadBalancingNeeded)
 	pipelineExporterNames = append(pipelineExporterNames, additionalTraceExporters...)
 
 	tracePipelineProcessors := append([]string{
