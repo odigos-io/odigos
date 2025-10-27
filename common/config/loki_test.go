@@ -64,6 +64,14 @@ func TestLokiUrlFromInput(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "add default path if missing",
+			args: args{
+				rawUrl: "http://localhost:3100",
+			},
+			want:    "http://localhost:3100/otlp",
+			wantErr: false,
+		},
+		{
 			name: "allow non standard path",
 			args: args{
 				rawUrl: "http://localhost:3100/foo",
