@@ -753,6 +753,7 @@ type ComplexityRoot struct {
 		GetOverviewMetrics                func(childComplexity int) int
 		GetServiceMap                     func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
+		OdigletPods                       func(childComplexity int) int
 		OdigosConfig                      func(childComplexity int) int
 		PotentialDestinations             func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
@@ -947,6 +948,7 @@ type QueryResolver interface {
 	GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error)
 	GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error)
 	GatewayPods(ctx context.Context) ([]*model.PodInfo, error)
+	OdigletPods(ctx context.Context) ([]*model.PodInfo, error)
 }
 
 type executableSchema struct {
@@ -4169,6 +4171,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.InstrumentationInstanceComponents(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
+
+	case "Query.odigletPods":
+		if e.complexity.Query.OdigletPods == nil {
+			break
+		}
+
+		return e.complexity.Query.OdigletPods(childComplexity), true
 
 	case "Query.odigosConfig":
 		if e.complexity.Query.OdigosConfig == nil {
@@ -27231,6 +27240,66 @@ func (ec *executionContext) fieldContext_Query_gatewayPods(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_odigletPods(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_odigletPods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().OdigletPods(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.PodInfo)
+	fc.Result = res
+	return ec.marshalNPodInfo2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodInfoᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_odigletPods(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_PodInfo_name(ctx, field)
+			case "ready":
+				return ec.fieldContext_PodInfo_ready(ctx, field)
+			case "status":
+				return ec.fieldContext_PodInfo_status(ctx, field)
+			case "restarts":
+				return ec.fieldContext_PodInfo_restarts(ctx, field)
+			case "nodeName":
+				return ec.fieldContext_PodInfo_nodeName(ctx, field)
+			case "age":
+				return ec.fieldContext_PodInfo_age(ctx, field)
+			case "image":
+				return ec.fieldContext_PodInfo_image(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PodInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -39786,6 +39855,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_gatewayPods(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "odigletPods":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_odigletPods(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

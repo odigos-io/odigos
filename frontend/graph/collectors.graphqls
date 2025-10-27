@@ -80,4 +80,7 @@ extend type Query {
 
   # Gateway Pods
   gatewayPods: [PodInfo!]!
+
+  # Odiglet Pods
+  odigletPods: [PodInfo!]!
 }

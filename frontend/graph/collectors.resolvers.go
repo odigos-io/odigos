@@ -25,3 +25,8 @@ func (r *queryResolver) GetOdigletDaemonSetInfo(ctx context.Context) (*model.Col
 func (r *queryResolver) GatewayPods(ctx context.Context) ([]*model.PodInfo, error) {
 	return collectors.GetGatewayPods(ctx)
 }
+
+// OdigletPods is the resolver for the odigletPods field.
+func (r *queryResolver) OdigletPods(ctx context.Context) ([]*model.PodInfo, error) {
+	return collectors.GetOdigletPods(ctx)
+}

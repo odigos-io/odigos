@@ -50,6 +50,36 @@ func GetGatewayPods(ctx context.Context) ([]*model.PodInfo, error) {
 	return gatewayPodsInfo, nil
 }
 
+func GetOdigletPods(ctx context.Context) ([]*model.PodInfo, error) {
+	ns := env.GetCurrentNamespace()
+	selector := fmt.Sprintf("%s=%s", k8sconsts.OdigosCollectorRoleLabel, string(k8sconsts.CollectorsRoleNodeCollector))
+	pods, err := kube.DefaultClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*model.PodInfo, 0, len(pods.Items))
+	for _, p := range pods.Items {
+		out = append(out, podToInfo(&p))
+	}
+
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Restarts != out[j].Restarts {
+			return out[i].Restarts > out[j].Restarts
+		}
+		ie, je := isErrorStatus(out[i].Status), isErrorStatus(out[j].Status)
+		if ie != je {
+			return ie
+		}
+		inr, jnr := isNotReady(out[i].Ready), isNotReady(out[j].Ready)
+		if inr != jnr {
+			return inr
+		}
+		return out[i].Name < out[j].Name
+	})
+	return out, nil
+}
+
 func podToInfo(pod *corev1.Pod) *model.PodInfo {
 	ready := formatReady(pod.Status.ContainerStatuses)
 	status := deriveStatus(pod)
