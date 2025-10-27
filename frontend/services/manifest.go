@@ -7,11 +7,11 @@ import (
     "github.com/odigos-io/odigos/frontend/graph/model"
     "github.com/odigos-io/odigos/frontend/kube"
     "github.com/odigos-io/odigos/k8sutils/pkg/env"
-    appsv1 "k8s.io/api/apps/v1"
-    corev1 "k8s.io/api/core/v1"
+
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
     "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
     "sigs.k8s.io/yaml"
+    "fmt"
 )
 
 // GetManifest returns YAML/JSON manifest for supported workloads by kind/name/namespace.

@@ -736,9 +736,9 @@ type ComplexityRoot struct {
 		DescribeOdigos                    func(childComplexity int) int
 		DescribeSource                    func(childComplexity int, namespace string, kind string, name string) int
 		DestinationCategories             func(childComplexity int) int
-		GetDataCollectionDaemonSetInfo    func(childComplexity int) int
 		GetGatewayDeploymentInfo          func(childComplexity int) int
 		GetManifest                       func(childComplexity int, kind model.K8sResourceKind, name string, namespace *string, format *model.ManifestFormat) int
+		GetOdigletDaemonSetInfo           func(childComplexity int) int
 		GetOverviewMetrics                func(childComplexity int) int
 		GetServiceMap                     func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
@@ -934,7 +934,7 @@ type QueryResolver interface {
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	GetManifest(ctx context.Context, kind model.K8sResourceKind, name string, namespace *string, format *model.ManifestFormat) (string, error)
 	GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error)
-	GetDataCollectionDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error)
+	GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error)
 }
 
 type executableSchema struct {
@@ -4050,13 +4050,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.DestinationCategories(childComplexity), true
 
-	case "Query.getDataCollectionDaemonSetInfo":
-		if e.complexity.Query.GetDataCollectionDaemonSetInfo == nil {
-			break
-		}
-
-		return e.complexity.Query.GetDataCollectionDaemonSetInfo(childComplexity), true
-
 	case "Query.getGatewayDeploymentInfo":
 		if e.complexity.Query.GetGatewayDeploymentInfo == nil {
 			break
@@ -4075,6 +4068,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetManifest(childComplexity, args["kind"].(model.K8sResourceKind), args["name"].(string), args["namespace"].(*string), args["format"].(*model.ManifestFormat)), true
+
+	case "Query.getOdigletDaemonSetInfo":
+		if e.complexity.Query.GetOdigletDaemonSetInfo == nil {
+			break
+		}
+
+		return e.complexity.Query.GetOdigletDaemonSetInfo(childComplexity), true
 
 	case "Query.getOverviewMetrics":
 		if e.complexity.Query.GetOverviewMetrics == nil {
@@ -26737,8 +26737,8 @@ func (ec *executionContext) fieldContext_Query_getGatewayDeploymentInfo(_ contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getDataCollectionDaemonSetInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getDataCollectionDaemonSetInfo(ctx, field)
+func (ec *executionContext) _Query_getOdigletDaemonSetInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getOdigletDaemonSetInfo(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -26751,7 +26751,7 @@ func (ec *executionContext) _Query_getDataCollectionDaemonSetInfo(ctx context.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetDataCollectionDaemonSetInfo(rctx)
+		return ec.resolvers.Query().GetOdigletDaemonSetInfo(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26768,7 +26768,7 @@ func (ec *executionContext) _Query_getDataCollectionDaemonSetInfo(ctx context.Co
 	return ec.marshalNCollectorDaemonSetInfo2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorDaemonSetInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getDataCollectionDaemonSetInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getOdigletDaemonSetInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -39249,7 +39249,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "getDataCollectionDaemonSetInfo":
+		case "getOdigletDaemonSetInfo":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -39258,7 +39258,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getDataCollectionDaemonSetInfo(ctx, field)
+				res = ec._Query_getOdigletDaemonSetInfo(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
