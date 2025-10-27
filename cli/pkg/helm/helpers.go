@@ -2,6 +2,7 @@ package helm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -136,10 +137,11 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 func ensureHelmRepo(settings *cli.EnvSettings, name, url string) error {
 	repoFile := settings.RepositoryConfig
 	f, err := repo.LoadFile(repoFile)
-	if err != nil && !os.IsNotExist(err) {
+	// Use errors.Is to properly handle wrapped errors from Helm
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	// check if exists
+	// check if repo already exists
 	if f != nil {
 		for _, r := range f.Repositories {
 			if r.Name == name {
