@@ -43,7 +43,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 	}
 
 	rawLokiLabels, exists := destConfig[lokiLabelsKey]
-	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, uniqueUri)
+	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetID())
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to parse loki labels, gateway will not be configured for Loki"))
 	}
@@ -127,7 +127,7 @@ func lokiUrlFromInput(rawUrl string) (string, error) {
 func lokiLabelsProcessors(rawLabels string, exists bool, destName string) (GenericMap, error) {
 	// backwards compatibility, if the user labels are not provided, we use the default
 	if !exists {
-		processorName := "attributes/" + destName
+		processorName := "attributes/loki-" + destName
 		return GenericMap{
 			processorName: GenericMap{
 				"actions": []GenericMap{
@@ -156,7 +156,7 @@ func lokiLabelsProcessors(rawLabels string, exists bool, destName string) (Gener
 	processors := GenericMap{}
 
 	// since we don't know if the attributes are logs attributes or resource attributes, we will add them to both processors
-	attributesProcessorName := "attributes/" + destName
+	attributesProcessorName := "attributes/loki-" + destName
 	processors[attributesProcessorName] = GenericMap{
 		"actions": []GenericMap{
 			{
@@ -167,7 +167,7 @@ func lokiLabelsProcessors(rawLabels string, exists bool, destName string) (Gener
 		},
 	}
 
-	resourceProcessorName := "resource/" + destName
+	resourceProcessorName := "resource/loki-" + destName
 	processors[resourceProcessorName] = GenericMap{
 		"attributes": []GenericMap{
 			{
