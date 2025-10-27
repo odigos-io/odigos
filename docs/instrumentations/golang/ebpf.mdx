@@ -61,6 +61,11 @@ The following go modules will be auto instrumented by Odigos:
 
 Please note that modules marked with ⭐️ are available in Odigos pro only.
 
+## Custom Instrumentations
+We support adding custom eBPF-based instrumentations for arbitrary Go functions and invokable sites that exist in your application code or its dependencies.
+By defining custom instrumentation rules, you can extend Odigos's auto-instrumentation capabilities and cover your specific use cases and application logic.
+To learn more about creating custom eBPF-based instrumentations for Go applications, refer to the [Custom eBPF Instrumentation for Go Applications](/pipeline/rules/custominstrumentation) guide.
+
 ## About Go Offsets
 
 Auto-instrumentation for Go with eBPF works by using eBPF uprobes to dynamically read variables in memory at runtime. For example,
