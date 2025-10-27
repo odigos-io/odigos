@@ -61,7 +61,7 @@ func (h *SpanAttributeSamplerHandler) List(ctx context.Context, c client.Client,
 	}
 	items := make([]metav1.Object, 0)
 	for i, item := range list.Items {
-		if item.Spec.Samplers.SpanAttributeSampler != nil {
+		if item.Spec.Samplers != nil && item.Spec.Samplers.SpanAttributeSampler != nil {
 			items = append(items, &list.Items[i])
 		}
 	}
@@ -93,6 +93,10 @@ func (h *SpanAttributeSamplerHandler) GetRuleConfig(action metav1.Object) []Rule
 	}
 	if a, ok := action.(*odigosv1.Action); ok {
 		spanAttributeSampler = a
+	}
+
+	if spanAttributeSampler.Spec.Samplers == nil || spanAttributeSampler.Spec.Samplers.SpanAttributeSampler == nil {
+		return []Rule{}
 	}
 
 	rules := make([]Rule, 0, len(spanAttributeSampler.Spec.Samplers.SpanAttributeSampler.AttributeFilters))
