@@ -18,31 +18,31 @@ func TestLokiUrlFromInput(t *testing.T) {
 		{
 			name: "valid url",
 			args: args{
-				rawUrl: "http://localhost:3100/loki/api/v1/push",
+				rawUrl: "http://localhost:3100/otlp",
 			},
-			want:    "http://localhost:3100/loki/api/v1/push",
+			want:    "http://localhost:3100/otlp",
 			wantErr: false,
 		},
 		{
 			name: "add http scheme if missing",
 			args: args{
-				rawUrl: "localhost:3100/loki/api/v1/push",
+				rawUrl: "localhost:3100/otlp",
 			},
-			want:    "http://localhost:3100/loki/api/v1/push",
+			want:    "http://localhost:3100/otlp",
 			wantErr: false,
 		},
 		{
 			name: "allow https scheme",
 			args: args{
-				rawUrl: "https://localhost:3100/loki/api/v1/push",
+				rawUrl: "https://localhost:3100/otlp",
 			},
-			want:    "https://localhost:3100/loki/api/v1/push",
+			want:    "https://localhost:3100/otlp",
 			wantErr: false,
 		},
 		{
 			name: "allow only http and https schemes",
 			args: args{
-				rawUrl: "ftp://localhost:3100/loki/api/v1/push",
+				rawUrl: "ftp://localhost:3100/otlp",
 			},
 			want:    "",
 			wantErr: true,
@@ -52,15 +52,15 @@ func TestLokiUrlFromInput(t *testing.T) {
 			args: args{
 				rawUrl: "http://localhost:3100",
 			},
-			want:    "http://localhost:3100/loki/api/v1/push",
+			want:    "http://localhost:3100/otlp",
 			wantErr: false,
 		},
 		{
 			name: "add default port if missing",
 			args: args{
-				rawUrl: "http://localhost/loki/api/v1/push",
+				rawUrl: "http://localhost/otlp",
 			},
-			want:    "http://localhost:3100/loki/api/v1/push",
+			want:    "http://localhost:3100/otlp",
 			wantErr: false,
 		},
 		{
@@ -74,23 +74,23 @@ func TestLokiUrlFromInput(t *testing.T) {
 		{
 			name: "allow non standard port",
 			args: args{
-				rawUrl: "http://localhost:1234/loki/api/v1/push",
+				rawUrl: "http://localhost:1234/otlp",
 			},
-			want:    "http://localhost:1234/loki/api/v1/push",
+			want:    "http://localhost:1234/otlp",
 			wantErr: false,
 		},
 		{
 			name: "remove whitespaces",
 			args: args{
-				rawUrl: "  http://localhost:3100/loki/api/v1/push  ",
+				rawUrl: "  http://localhost:3100/otlp  ",
 			},
-			want:    "http://localhost:3100/loki/api/v1/push",
+			want:    "http://localhost:3100/otlp",
 			wantErr: false,
 		},
 		{
 			name: "non numeric port",
 			args: args{
-				rawUrl: "http://localhost:port/loki/api/v1/push",
+				rawUrl: "http://localhost:port/otlp",
 			},
 			want:    "",
 			wantErr: true,
@@ -98,17 +98,17 @@ func TestLokiUrlFromInput(t *testing.T) {
 		{
 			name: "ipv6",
 			args: args{
-				rawUrl: "[::1]:3100/loki/api/v1/push",
+				rawUrl: "[::1]:3100/otlp",
 			},
-			want:    "http://[::1]:3100/loki/api/v1/push",
+			want:    "http://[::1]:3100/otlp",
 			wantErr: false,
 		},
 		{
 			name: "ipv4",
 			args: args{
-				rawUrl: "http://127.0.0.1:3100/loki/api/v1/push",
+				rawUrl: "http://127.0.0.1:3100/otlp",
 			},
-			want:    "http://127.0.0.1:3100/loki/api/v1/push",
+			want:    "http://127.0.0.1:3100/otlp",
 			wantErr: false,
 		},
 		{
@@ -116,15 +116,15 @@ func TestLokiUrlFromInput(t *testing.T) {
 			args: args{
 				rawUrl: "[::1]",
 			},
-			want:    "http://[::1]:3100/loki/api/v1/push",
+			want:    "http://[::1]:3100/otlp",
 			wantErr: false,
 		},
 		{
 			name: "host with dots",
 			args: args{
-				rawUrl: "loki.loki:3100/loki/api/v1/push",
+				rawUrl: "loki.loki:3100/otlp",
 			},
-			want:    "http://loki.loki:3100/loki/api/v1/push",
+			want:    "http://loki.loki:3100/otlp",
 			wantErr: false,
 		},
 		{
