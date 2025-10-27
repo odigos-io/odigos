@@ -1,5 +1,6 @@
-######### python Native Community Agent #########
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.10
 
+######### python Native Community Agent #########
 FROM python:3.11.9 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
@@ -74,7 +75,7 @@ RUN for v in ${RUBY_VERSIONS}; do \
     done
 
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.10 AS builder
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -145,12 +146,15 @@ COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ru
 ARG ODIGOS_LOADER_VERSION=v0.0.5
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
+# Note that we do not pass --platform=$BUILDPLATFORM here because we want to build for the target platform
+FROM ${ODIGLET_BASE_IMAGE} AS rsync-base
+
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
-COPY --from=builder /usr/bin/rsync /usr/bin/rsync
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]
