@@ -60,9 +60,7 @@ type CollectorDaemonSetInfo {
 extend type Query {
   # Gateway (Deployment)
   getGatewayDeploymentInfo: GatewayDeploymentInfo!
-  getGatewayDeploymentManifest(format: ManifestFormat = YAML): String!
 
   # Odiglet (DaemonSet)
   getDataCollectionDaemonSetInfo: CollectorDaemonSetInfo!
-  getDataCollectionDaemonSetManifest(format: ManifestFormat = YAML): String!
 }

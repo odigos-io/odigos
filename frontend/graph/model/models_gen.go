@@ -1513,6 +1513,7 @@ const (
 	K8sResourceKindDaemonSet   K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet K8sResourceKind = "StatefulSet"
 	K8sResourceKindCronJob     K8sResourceKind = "CronJob"
+	K8sResourceKindConfigMap   K8sResourceKind = "ConfigMap"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
@@ -1520,11 +1521,12 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
 	K8sResourceKindCronJob,
+	K8sResourceKindConfigMap,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap:
 		return true
 	}
 	return false
