@@ -152,7 +152,7 @@ func ComputeEffectiveCollectorConfig(c *common.OdigosConfiguration) (
 	*common.CollectorGatewayConfiguration,
 	*common.CollectorNodeConfiguration,
 ) {
-	// Get the sizing preset
+	// Get the sizing preset configuration
 	effectiveSizing := ComputeResourceSizePreset(c)
 
 	// Merge gateway configuration: preserve existing config, update only sizing fields
@@ -164,26 +164,27 @@ func ComputeEffectiveCollectorConfig(c *common.OdigosConfiguration) (
 	return effectiveGateway, effectiveNode
 }
 
-// mergeGatewayConfiguration merges sizing information from preset into existing gateway configuration
+// mergeGatewayConfiguration merges sizing information from SizingPreset into existing gateway configuration
 // while preserving non-sizing configuration fields like ServiceGraphDisabled, ClusterMetricsEnabled, etc.
-func mergeGatewayConfiguration(existing *common.CollectorGatewayConfiguration, preset common.CollectorGatewayConfiguration) *common.CollectorGatewayConfiguration {
+func mergeGatewayConfiguration(existing *common.CollectorGatewayConfiguration,
+	sizingPreset common.CollectorGatewayConfiguration) *common.CollectorGatewayConfiguration {
 	if existing == nil {
-		return &preset
+		return &sizingPreset
 	}
 
 	// Create a copy of existing config to preserve all non-sizing fields
 	merged := *existing
 
 	// Update only sizing-related fields from preset
-	merged.MinReplicas = preset.MinReplicas
-	merged.MaxReplicas = preset.MaxReplicas
-	merged.RequestMemoryMiB = preset.RequestMemoryMiB
-	merged.LimitMemoryMiB = preset.LimitMemoryMiB
-	merged.RequestCPUm = preset.RequestCPUm
-	merged.LimitCPUm = preset.LimitCPUm
-	merged.MemoryLimiterLimitMiB = preset.MemoryLimiterLimitMiB
-	merged.MemoryLimiterSpikeLimitMiB = preset.MemoryLimiterSpikeLimitMiB
-	merged.GoMemLimitMib = preset.GoMemLimitMib
+	merged.MinReplicas = sizingPreset.MinReplicas
+	merged.MaxReplicas = sizingPreset.MaxReplicas
+	merged.RequestMemoryMiB = sizingPreset.RequestMemoryMiB
+	merged.LimitMemoryMiB = sizingPreset.LimitMemoryMiB
+	merged.RequestCPUm = sizingPreset.RequestCPUm
+	merged.LimitCPUm = sizingPreset.LimitCPUm
+	merged.MemoryLimiterLimitMiB = sizingPreset.MemoryLimiterLimitMiB
+	merged.MemoryLimiterSpikeLimitMiB = sizingPreset.MemoryLimiterSpikeLimitMiB
+	merged.GoMemLimitMib = sizingPreset.GoMemLimitMib
 
 	// All other fields (ServiceGraphDisabled, ClusterMetricsEnabled, HttpsProxyAddress)
 	// are preserved from the existing configuration
@@ -191,24 +192,25 @@ func mergeGatewayConfiguration(existing *common.CollectorGatewayConfiguration, p
 	return &merged
 }
 
-// mergeNodeConfiguration merges sizing information from preset into existing node configuration
+// mergeNodeConfiguration merges sizing information from SizingPreset into existing node configuration
 // while preserving non-sizing configuration fields like CollectorOwnMetricsPort, EnableDataCompression, etc.
-func mergeNodeConfiguration(existing *common.CollectorNodeConfiguration, preset common.CollectorNodeConfiguration) *common.CollectorNodeConfiguration {
+func mergeNodeConfiguration(existing *common.CollectorNodeConfiguration,
+	sizingPreset common.CollectorNodeConfiguration) *common.CollectorNodeConfiguration {
 	if existing == nil {
-		return &preset
+		return &sizingPreset
 	}
 
 	// Create a copy of existing config to preserve all non-sizing fields
 	merged := *existing
 
 	// Update only sizing-related fields from preset
-	merged.RequestMemoryMiB = preset.RequestMemoryMiB
-	merged.LimitMemoryMiB = preset.LimitMemoryMiB
-	merged.RequestCPUm = preset.RequestCPUm
-	merged.LimitCPUm = preset.LimitCPUm
-	merged.MemoryLimiterLimitMiB = preset.MemoryLimiterLimitMiB
-	merged.MemoryLimiterSpikeLimitMiB = preset.MemoryLimiterSpikeLimitMiB
-	merged.GoMemLimitMib = preset.GoMemLimitMib
+	merged.RequestMemoryMiB = sizingPreset.RequestMemoryMiB
+	merged.LimitMemoryMiB = sizingPreset.LimitMemoryMiB
+	merged.RequestCPUm = sizingPreset.RequestCPUm
+	merged.LimitCPUm = sizingPreset.LimitCPUm
+	merged.MemoryLimiterLimitMiB = sizingPreset.MemoryLimiterLimitMiB
+	merged.MemoryLimiterSpikeLimitMiB = sizingPreset.MemoryLimiterSpikeLimitMiB
+	merged.GoMemLimitMib = sizingPreset.GoMemLimitMib
 
 	// All other fields (CollectorOwnMetricsPort, EnableDataCompression)
 	// are preserved from the existing configuration
