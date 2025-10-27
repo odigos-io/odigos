@@ -60,7 +60,7 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 		return ctrl.Result{}, err
 	}
 
-	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup.Status.ReceiverSignals, &processors, dataCollectionCollectorGroup)
+	err = b.syncDataCollection(ctx, &ics, clusterCollectorCollectorGroup, &processors, dataCollectionCollectorGroup)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -68,7 +68,7 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 	return ctrl.Result{}, nil
 }
 
-func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorSignals []common.ObservabilitySignal, processors *odigosv1.ProcessorList,
+func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, processors *odigosv1.ProcessorList,
 	dataCollection *odigosv1.CollectorsGroup) error {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Syncing data collection")
@@ -79,7 +79,7 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 		return err
 	}
 
-	err = b.SyncConfigMap(ctx, sources, clusterCollectorSignals, processors, dataCollection)
+	err = b.SyncConfigMap(ctx, sources, clusterCollectorGroup, processors, dataCollection)
 	if err != nil {
 		logger.Error(err, "Failed to sync config map")
 		return err
@@ -89,7 +89,7 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 	// e.g - cluster collector can accept only metrics,
 	// while node collector collects both metrics and traces, which it converts to metrics and does not forward downstream.
 	// the enabled signals represents what's actually collected from agents in node collector.
-	enabledSignals := clusterCollectorSignals
+	enabledSignals := clusterCollectorGroup.Status.ReceiverSignals
 	spanMetricsEnabled := dataCollection != nil && dataCollection.Spec.Metrics != nil && dataCollection.Spec.Metrics.SpanMetrics != nil
 	if spanMetricsEnabled {
 		if !slices.Contains(enabledSignals, common.TracesObservabilitySignal) {
