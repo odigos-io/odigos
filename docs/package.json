@@ -12,5 +12,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "mintlify": "^4.2.173"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }
