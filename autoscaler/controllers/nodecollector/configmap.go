@@ -41,7 +41,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		b.autoscalerDeployment = autoscalerDeployment
 	}
 
-	desired, err := b.getDesiredConfigMap(sources, clusterCollectorGroup, processors, datacollection)
+	desired, err := b.getDesiredConfigMap(ctx, sources, clusterCollectorGroup, processors, datacollection)
 	if err != nil {
 		logger.Error(err, "failed to get desired config map")
 		return err
@@ -150,7 +150,7 @@ func noopConfigMap() (string, error) {
 	return string(yamlData), nil
 }
 
-func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, processors []*odigosv1.Processor,
+func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, processors []*odigosv1.Processor,
 	cg *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
 	if b.autoscalerDeployment == nil {
 		return nil, errors.New("autoscaler deployment is not set in the reconciler, cannot set owner reference")
@@ -158,7 +158,7 @@ func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(sources *odigosv1.Inst
 	var err error
 	var cmData string
 
-	tracingLoadBalancingNeeded, err := isTracingLoadBalancingNeeded(b.Client, clusterCollectorGroup)
+	tracingLoadBalancingNeeded, err := isTracingLoadBalancingNeeded(ctx, b.Client, clusterCollectorGroup)
 	if err != nil {
 		return nil, err
 	}
@@ -317,20 +317,35 @@ func getSignalsFromOtelcolConfig(otelcolConfigContent string) ([]odigoscommon.Ob
 	return signals, nil
 }
 
-func isTracingLoadBalancingNeeded(client client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
-	actions := odigosv1.ActionList{}
-	if err := client.List(context.Background(), &actions); err != nil {
-		return false, err
+func isSamplingActionsEnabled(actions *odigosv1.ActionList) bool {
+	for _, action := range actions.Items {
+		// If the action is disabled, skip it
+		if action.Spec.Disabled {
+			continue
+		}
+		// Only sampling actions that are not disabled should be considered
+		if action.Spec.Samplers != nil {
+			return true
+		}
 	}
+	return false
+}
 
+func isTracingLoadBalancingNeeded(ctx context.Context, client client.Client, clusterCollectorGroup odigosv1.CollectorsGroup) (bool, error) {
 	// We're enabling load balancing for traces only if one of the following conditions is met:
 	// 1. Sampling actions are enabled
 	// 2. Service graph is enabled
+	serviceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
 
-	SamplingActionsEnabled := IsSamplingActionsEnabled(&actions)
-	// Service graph is enabled only if ServiceGraphDisabled is not set (nil) or is set to false.
-	// If ServiceGraphDisabled is true, it is disabled.
-	ServiceGraphEnabled := clusterCollectorGroup.Spec.ServiceGraphDisabled == nil || !*clusterCollectorGroup.Spec.ServiceGraphDisabled
+	if serviceGraphEnabled {
+		return true, nil
+	}
 
-	return SamplingActionsEnabled || ServiceGraphEnabled, nil
+	actions := odigosv1.ActionList{}
+	if err := client.List(ctx, &actions); err != nil {
+		return false, err
+	}
+	samplingActionsEnabled := isSamplingActionsEnabled(&actions)
+
+	return samplingActionsEnabled, nil
 }

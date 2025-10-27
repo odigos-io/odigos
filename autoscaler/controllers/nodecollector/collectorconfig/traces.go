@@ -29,16 +29,16 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 
 	// add exporter only if we are sending traces to the cluster collector
 	if tracesEnabledInClusterCollector {
-		compression := "none"
-		dataCompressionEnabled := nodeCG.Spec.EnableDataCompression
-		if dataCompressionEnabled != nil && *dataCompressionEnabled {
-			compression = "gzip"
-		}
 
 		// Add loadbalancing exporter for traces to ensure consistent gateway routing.
 		// This needed for the service graph to work correctly and for the sampling actions to work correctly.
 		// If load balancing is not needed, we use the common cluster collector exporter without load balancing.
 		if loadBalancingNeeded {
+			compression := "none"
+			dataCompressionEnabled := nodeCG.Spec.EnableDataCompression
+			if dataCompressionEnabled != nil && *dataCompressionEnabled {
+				compression = "gzip"
+			}
 			service := fmt.Sprintf("%s.%s", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
 			exporters[odigosTracesLoadbalancingExporterName] = config.GenericMap{
 				"protocol": config.GenericMap{
@@ -57,7 +57,7 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 			}
 			exporterNames = append(exporterNames, odigosTracesLoadbalancingExporterName)
 		} else {
-			// Use the common cluster collector exporter, but add compression if needed
+			// Use the common cluster collector exporter
 			// Note: The actual exporter merge by commonExporters before this function is called.
 			// Here we just add it to the exporter name
 			exporterNames = append(exporterNames, clusterCollectorExporterName)

@@ -101,12 +101,3 @@ func (b *nodeCollectorBaseReconciler) syncDataCollection(ctx context.Context, so
 
 	return nil
 }
-
-func IsSamplingActionsEnabled(actions *odigosv1.ActionList) bool {
-	for _, action := range actions.Items {
-		if action.Spec.Samplers != nil {
-			return true
-		}
-	}
-	return false
-}
