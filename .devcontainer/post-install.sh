@@ -56,5 +56,6 @@ chown -R vscode:vscode /home/vscode/.kube
 # Call connection script (it will no-op gracefully if no cluster yet)
 log "Attempting to connect to kind cluster..."
 .devcontainer/connect-kind.sh || true
+.devcontainer/init-docs.sh || true
 
 log "Essentials setup done."
