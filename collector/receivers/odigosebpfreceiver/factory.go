@@ -8,6 +8,8 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
+//go:generate mdatagen metadata.yaml
+
 const TypeStr = "odigosebpf"
 
 func NewFactory() receiver.Factory {
@@ -29,5 +31,10 @@ func createTracesReceiver(
 	cfg component.Config,
 	next consumer.Traces,
 ) (receiver.Traces, error) {
-	return &ebpfReceiver{config: cfg.(*Config), nextTraces: next, logger: set.Logger}, nil
+	return &ebpfReceiver{
+		config:     cfg.(*Config),
+		nextTraces: next,
+		logger:     set.Logger,
+		settings:   set,
+	}, nil
 }
