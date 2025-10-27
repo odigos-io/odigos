@@ -47,22 +47,9 @@ rules:
       - get
       - list
   - apiGroups:
-      - autoscaling
-    resources:
-      - horizontalpodautoscalers
-    verbs:
-      - get
-  - apiGroups:
       - ''
     resources:
       - services
-    verbs:
-      - get
-      - list
-  - apiGroups:
-      - ''
-    resources:
-      - configmaps
     verbs:
       - get
       - list
