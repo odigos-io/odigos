@@ -1,21 +1,19 @@
-package services
+package collectors
 
 import (
     "context"
-    "encoding/json"
     "sort"
     "strings"
 
     "github.com/odigos-io/odigos/api/k8sconsts"
     "github.com/odigos-io/odigos/frontend/graph/model"
     "github.com/odigos-io/odigos/frontend/kube"
+    "github.com/odigos-io/odigos/frontend/services"
     "github.com/odigos-io/odigos/k8sutils/pkg/env"
     appsv1 "k8s.io/api/apps/v1"
     autoscalingv2 "k8s.io/api/autoscaling/v2"
     corev1 "k8s.io/api/core/v1"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-    "sigs.k8s.io/yaml"
 )
 
 // GetGatewayDeploymentInfo fetches Deployment/HPA and computes the header info for the gateway deployment.
@@ -45,9 +43,9 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
         result.Resources = rr
     }
 
-    result.ImageVersion = StringPtr(extractGatewayImageVersion(dep))
+    result.ImageVersion = services.StringPtr(extractGatewayImageVersion(dep))
 
-    result.LastRolloutAt = StringPtr(findLastRolloutTime(ctx, dep))
+    result.LastRolloutAt = services.StringPtr(findLastRolloutTime(ctx, dep))
 
     return result, nil
 }
@@ -117,9 +115,7 @@ func extractGatewayImageVersion(dep *appsv1.Deployment) string {
     for _, c := range dep.Spec.Template.Spec.Containers {
         if c.Name == k8sconsts.OdigosClusterCollectorContainerName {
             image := c.Image
-            if idx := strings.Index(image, "@"); idx >= 0 {
-                image = image[:idx]
-            }
+            if idx := strings.Index(image, "@"); idx >= 0 { image = image[:idx] }
             parts := strings.Split(image, "/")
             last := parts[len(parts)-1]
             if colon := strings.LastIndex(last, ":"); colon >= 0 { return last[colon+1:] }
@@ -146,7 +142,7 @@ func findLastRolloutTime(ctx context.Context, dep *appsv1.Deployment) string {
     }
     if len(owned) == 0 { owned = rsList.Items }
     sort.Slice(owned, func(i, j int) bool { return owned[i].CreationTimestamp.After(owned[j].CreationTimestamp.Time) })
-    return Metav1TimeToString(owned[0].CreationTimestamp)
+    return services.Metav1TimeToString(owned[0].CreationTimestamp)
 }
 
 func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodAutoscaler) *model.HorizontalPodAutoscalerInfo {

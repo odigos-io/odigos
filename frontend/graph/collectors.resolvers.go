@@ -8,15 +8,15 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	services "github.com/odigos-io/odigos/frontend/services/collectors"
+    "github.com/odigos-io/odigos/frontend/services/collectors"
 )
 
 // GetGatewayDeploymentInfo is the resolver for the getGatewayDeploymentInfo field.
 func (r *queryResolver) GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error) {
-	return services.GetGatewayDeploymentInfo(ctx)
+    return collectors.GetGatewayDeploymentInfo(ctx)
 }
 
 // GetOdigletDaemonSetInfo is the resolver for the getOdigletDaemonSetInfo field.
 func (r *queryResolver) GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error) {
-	return services.GetOdigletDaemonSetInfo(ctx)
+    return collectors.GetOdigletDaemonSetInfo(ctx)
 }

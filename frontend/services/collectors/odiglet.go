@@ -1,20 +1,17 @@
-package services
+package collectors
 
 import (
     "context"
-    "encoding/json"
     "sort"
     "strings"
 
     "github.com/odigos-io/odigos/api/k8sconsts"
     "github.com/odigos-io/odigos/frontend/graph/model"
     "github.com/odigos-io/odigos/frontend/kube"
+    "github.com/odigos-io/odigos/frontend/services"
     "github.com/odigos-io/odigos/k8sutils/pkg/env"
     appsv1 "k8s.io/api/apps/v1"
-    corev1 "k8s.io/api/core/v1"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-    "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-    "sigs.k8s.io/yaml"
 )
 
 func GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error) {
@@ -27,7 +24,7 @@ func GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo
     status, inProgress := computeDaemonSetStatus(ds)
     nodes := &model.NodesSummary{ Desired: int(ds.Status.DesiredNumberScheduled), Ready: int(ds.Status.NumberReady) }
 
-    result := &model.CollectorDaemonSetInfo{ Status: status, Nodes: nodes, RolloutInProgress: inProgress, ImageVersion: StringPtr(extractDaemonSetImageVersion(ds)), LastRolloutAt: StringPtr(findDaemonSetLastRolloutTime(ctx, ds)) }
+    result := &model.CollectorDaemonSetInfo{ Status: status, Nodes: nodes, RolloutInProgress: inProgress, ImageVersion: services.StringPtr(extractDaemonSetImageVersion(ds)), LastRolloutAt: services.StringPtr(findDaemonSetLastRolloutTime(ctx, ds)) }
     
 	if rr := extractDaemonSetResources(ds); rr != nil { result.Resources = rr }
     
@@ -74,9 +71,9 @@ func findDaemonSetLastRolloutTime(ctx context.Context, ds *appsv1.DaemonSet) str
     if err == nil && len(revList.Items) > 0 {
         owned := make([]appsv1.ControllerRevision, 0, len(revList.Items))
         for _, cr := range revList.Items { for _, o := range cr.OwnerReferences { if o.Kind == "DaemonSet" && o.UID == ds.UID { owned = append(owned, cr); break } } }
-        if len(owned) > 0 { sort.Slice(owned, func(i, j int) bool { return owned[i].CreationTimestamp.After(owned[j].CreationTimestamp.Time) }); return Metav1TimeToString(owned[0].CreationTimestamp) }
+        if len(owned) > 0 { sort.Slice(owned, func(i, j int) bool { return owned[i].CreationTimestamp.After(owned[j].CreationTimestamp.Time) }); return services.Metav1TimeToString(owned[0].CreationTimestamp) }
     }
-    return Metav1TimeToString(ds.CreationTimestamp)
+    return services.Metav1TimeToString(ds.CreationTimestamp)
 }
 
 
