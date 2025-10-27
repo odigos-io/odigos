@@ -6,7 +6,7 @@ exporters:
     tls:
       insecure: true
   otlp/out-cluster-collector:
-    balancer_name: round_robin
+    compression: none
     endpoint: dns:///odigos-gateway.odigos-system:4317
     tls:
       insecure: true
