@@ -71,6 +71,10 @@ Read about setting grafana loki labels in the [Loki](/backends/loki#loki-labels)
 - **GRAFANA_CLOUD_LOKI_LABELS** `string[]` : Labels. Use these OpenTelemetry resource attributes as Loki labels for each log record
   - This field is optional and defaults to `["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]`
 
+<Info>
+  The supported Loki version is V3. Please make sure you are using the correct version, and that you have enabled native OTLP support. As part of this version, the path `/loki/api/v1/push` has been deprecated and replaced with `/otlp`.
+</Info>
+
 ### Adding Destination to Odigos
 
 There are two primary methods for configuring destinations in Odigos:
