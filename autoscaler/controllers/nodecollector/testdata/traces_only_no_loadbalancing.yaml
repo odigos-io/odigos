@@ -1,0 +1,106 @@
+exporters:
+  otlp/odigos-own-telemetry-ui:
+    endpoint: ui.odigos-system:4317
+    retry_on_failure:
+      enabled: false
+    tls:
+      insecure: true
+  otlp/out-cluster-collector:
+    compression: none
+    endpoint: dns:///odigos-gateway.odigos-system:4317
+    tls:
+      insecure: true
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+processors:
+  batch: {}
+  memory_limiter:
+    check_interval: 500ms
+    limit_mib: 0
+    spike_limit_mib: 0
+  odigostrafficmetrics:
+    res_attributes_keys:
+    - service.name
+    - k8s.namespace.name
+    - k8s.deployment.name
+    - k8s.statefulset.name
+    - k8s.daemonset.name
+  resource/node-name:
+    attributes:
+    - action: upsert
+      key: k8s.node.name
+      value: ${NODE_NAME}
+  resource/pod-name:
+    attributes:
+    - action: upsert
+      key: k8s.pod.name
+      value: ${POD_NAME}
+  resourcedetection:
+    detectors:
+    - ec2
+    - azure
+    - aks
+    timeout: 2s
+  test_type/test_processor:
+    key: val
+receivers:
+  odigosebpf: {}
+  otlp/in:
+    protocols:
+      grpc:
+        drop_on_overload: true
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus/self-metrics:
+    config:
+      scrape_configs:
+      - job_name: otelcol
+        metric_relabel_configs:
+        - action: keep
+          regex: (.*odigos.*)
+          source_labels:
+          - __name__
+        scrape_interval: 10s
+        static_configs:
+        - targets:
+          - 127.0.0.1:4317
+service:
+  extensions:
+  - health_check
+  - pprof
+  pipelines:
+    metrics/own-metrics:
+      exporters:
+      - otlp/odigos-own-telemetry-ui
+      processors:
+      - resource/pod-name
+      receivers:
+      - prometheus/self-metrics
+    traces:
+      exporters:
+      - otlp/out-cluster-collector
+      processors:
+      - batch
+      - memory_limiter
+      - resource/node-name
+      - resourcedetection
+      - test_type/test_processor
+      - odigostrafficmetrics
+      receivers:
+      - otlp/in
+      - odigosebpf
+  telemetry:
+    metrics:
+      readers:
+      - pull:
+          exporter:
+            prometheus:
+              host: 0.0.0.0
+              port: 4317
+    resource:
+      service.name: null
+      service.version: null

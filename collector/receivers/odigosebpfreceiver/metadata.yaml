@@ -6,3 +6,21 @@ status:
     beta: [traces]
   codeowners:
     active: [tamirdavid]
+
+telemetry:
+  metrics:
+    ebpf_lost_samples:
+      enabled: true
+      description: "The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0."
+      unit: "{samples}"
+      sum:
+        value_type: int
+        monotonic: true
+
+    ebpf_memory_pressure_wait_time_total:
+      enabled: true
+      description: "Total time spent waiting due to memory pressure. Can be compared with otelcol_process_uptime_seconds_total to calculate the percentage of time spent in memory pressure: (ebpf_memory_pressure_wait_time_total_milliseconds / (otelcol_process_uptime_seconds_total * 1000)) * 100"
+      unit: "ms"
+      sum:
+        value_type: int
+        monotonic: true
