@@ -68,6 +68,8 @@ jobs:
             project_id: '6792b077b086a666569d9935'
           - service: operator
             project_id: '67c5cadf8d089ef3612cf861'
+          - service: cli
+            project_id: '68fb9313337ca20d95499695'
     runs-on: ubuntu-latest
     steps:
       - name: Download Preflight Binary
