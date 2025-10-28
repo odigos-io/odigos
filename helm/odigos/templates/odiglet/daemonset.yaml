@@ -162,6 +162,10 @@ spec:
             - name: ODIGOS_PROC_DIR
               value: /hostproc
           {{- end}}
+          {{- if .Values.odiglet.disableGoCodeAttributes }}
+            - name: ODIGOS_GO_DISABLE_CODE_ATTRIBUTES
+              value: "true"
+          {{- end}}
           envFrom:
             - configMapRef:
                 name: odigos-own-telemetry-otel-config
