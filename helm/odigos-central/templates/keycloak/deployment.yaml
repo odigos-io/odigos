@@ -60,9 +60,20 @@ spec:
                   key: admin-password
             - name: KC_HOSTNAME
               value: "localhost"
+          {{- if .Values.auth.persistence.enabled }}
+          volumeMounts:
+            - name: keycloak-data
+              mountPath: /opt/keycloak/data
+          {{- end }}
           ports:
             - containerPort: {{ .Values.auth.port }}
               name: {{ .Values.auth.portName }}
           resources:
             {{- toYaml .Values.auth.resources | nindent 12 }}
+      {{- if .Values.auth.persistence.enabled }}
+      volumes:
+        - name: keycloak-data
+          persistentVolumeClaim:
+            claimName: {{ default "keycloak-data" .Values.auth.persistence.existingClaim }}
+      {{- end }}
 {{- end }}
