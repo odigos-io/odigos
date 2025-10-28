@@ -23,6 +23,33 @@ spec:
         placeholder: 'http://host:port'
         tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`.
 
+    - name: OTLP_HTTP_TRACES_ENDPOINT
+      displayName: OTLP http traces Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'http://host:port/v1/traces'
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/traces will be used.
+
+    - name: OTLP_HTTP_METRICS_ENDPOINT
+      displayName: OTLP http metrics Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'http://host:port/v1/metrics'
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/metrics will be used.
+
+    - name: OTLP_HTTP_LOGS_ENDPOINT
+      displayName: OTLP http logs Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 'http://host:port/v1/logs'
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/logs will be used.
+
     - name: OTLP_HTTP_BASIC_AUTH_USERNAME
       displayName: Basic Auth Username
       componentType: input

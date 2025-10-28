@@ -11,6 +11,9 @@ import (
 
 const (
 	otlpHttpEndpointKey           = "OTLP_HTTP_ENDPOINT"
+	otlpHttpTracesEndpointKey     = "OTLP_HTTP_TRACES_ENDPOINT"
+	otlpHttpMetricsEndpointKey    = "OTLP_HTTP_METRICS_ENDPOINT"
+	otlpHttpLogsEndpointKey       = "OTLP_HTTP_LOGS_ENDPOINT"
 	otlpHttpTlsKey                = "OTLP_HTTP_TLS_ENABLED"
 	otlpHttpCaPemKey              = "OTLP_HTTP_CA_PEM"
 	otlpHttpInsecureSkipVerify    = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
@@ -32,20 +35,29 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 	return common.OtlpHttpDestinationType
 }
 
-//nolint:funlen // TODO: make it shorter
+//nolint:funlen // keep structure as-is; only minimal additions
 func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 
-	url, exists := config[otlpHttpEndpointKey]
-	if !exists {
+	baseURL, baseExists := config[otlpHttpEndpointKey]
+	tracesURL := strings.TrimSpace(config[otlpHttpTracesEndpointKey])
+	metricsURL := strings.TrimSpace(config[otlpHttpMetricsEndpointKey])
+	logsURL := strings.TrimSpace(config[otlpHttpLogsEndpointKey])
+
+	// Require base endpoint only if no per-signal endpoints are provided
+	if !baseExists && tracesURL == "" && metricsURL == "" && logsURL == "" {
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
 	userTlsEnabled := dest.GetConfig()[otlpHttpTlsKey] == "true"
 
-	parsedUrl, err := parseOtlpHttpEndpoint(url, "", "")
-	if err != nil {
-		return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
+	var parsedBase string
+	var err error
+	if baseExists {
+		parsedBase, err = parseOtlpHttpEndpoint(baseURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
+		}
 	}
 
 	// Check for OAuth2 or Basic Auth (OAuth2 takes precedence)
@@ -76,8 +88,9 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	otlpHttpExporterName := "otlphttp/generic-" + dest.GetID()
-	exporterConf := GenericMap{
-		"endpoint": parsedUrl,
+	exporterConf := GenericMap{}
+	if parsedBase != "" {
+		exporterConf["endpoint"] = parsedBase
 	}
 
 	// Only add TLS config if TLS is explicitly enabled or authentication is being used
@@ -85,12 +98,10 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		"insecure": !userTlsEnabled,
 	}
 	if userTlsEnabled || hasAuthentication {
-		caPem, caExists := config[otlpHttpCaPemKey]
-		if caExists && caPem != "" {
+		if caPem, ok := config[otlpHttpCaPemKey]; ok && caPem != "" {
 			tlsConfig["ca_pem"] = caPem
 		}
-		insecureSkipVerify, skipExists := config[otlpHttpInsecureSkipVerify]
-		if skipExists && insecureSkipVerify != "" {
+		if insecureSkipVerify, ok := config[otlpHttpInsecureSkipVerify]; ok && insecureSkipVerify != "" {
 			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
 		}
 	}
@@ -123,6 +134,30 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 		exporterConf["headers"] = mappedHeaders
 	}
+
+	if tracesURL != "" {
+		parsed, err := parseOtlpHttpEndpoint(tracesURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("OTLP_HTTP_TRACES_ENDPOINT invalid"))
+		}
+		exporterConf["traces_endpoint"] = parsed
+	}
+	if metricsURL != "" {
+		parsed, err := parseOtlpHttpEndpoint(metricsURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("OTLP_HTTP_METRICS_ENDPOINT invalid"))
+		}
+		exporterConf["metrics_endpoint"] = parsed
+	}
+	if logsURL != "" {
+		parsed, err := parseOtlpHttpEndpoint(logsURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("OTLP_HTTP_LOGS_ENDPOINT invalid"))
+		}
+		exporterConf["logs_endpoint"] = parsed
+	}
+	// ----------------------------------------------------------------
+
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
 
 	var pipelineNames []string
@@ -165,7 +200,6 @@ func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionCo
 	tokenUrl := config[otlpHttpOAuth2TokenUrlKey]
 
 	// Note: client secret is stored in the secret and injected as environment variable
-	// We don't validate it here since it's not in the regular config data
 	if clientId == "" || tokenUrl == "" {
 		return "", nil, errors.New("when OAuth2 is enabled, client ID and token URL must be provided")
 	}
@@ -179,13 +213,9 @@ func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionCo
 
 	// Add optional endpoint parameters
 	endpointParams := GenericMap{}
-
-	// Add audience if provided
 	if audience := config[otlpHttpOAuth2AudienceKey]; audience != "" {
 		endpointParams["audience"] = audience
 	}
-
-	// Add endpoint_params if we have any
 	if len(endpointParams) > 0 {
 		(*extensionConf)["endpoint_params"] = endpointParams
 	}
@@ -193,7 +223,6 @@ func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionCo
 	// Add scopes if provided
 	if scopes := config[otlpHttpOAuth2ScopesKey]; scopes != "" {
 		scopesList := strings.Split(scopes, ",")
-		// Trim whitespace from each scope
 		for i, scope := range scopesList {
 			scopesList[i] = strings.TrimSpace(scope)
 		}
