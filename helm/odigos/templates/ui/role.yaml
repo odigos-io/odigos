@@ -75,14 +75,14 @@ rules:
     resources:
       - deployments/scale
     resourceNames:
-      - {{ .Values.instrumentor.name | default "odigos-instrumentor" }}
+      - odigos-instrumentor
     verbs: ["get", "update", "patch"]
   - apiGroups:
       - apps
     resources:
       - daemonsets
     resourceNames:
-      - {{ .Values.odiglet.name | default "odiglet" }}
+      - odiglet
     verbs: ["get", "update", "patch"]
   - apiGroups:
       - ''

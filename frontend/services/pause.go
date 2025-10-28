@@ -24,6 +24,9 @@ func PauseOdigos(ctx context.Context) error {
 		return fmt.Errorf("disable odiglet: %w", err)
 	}
 
+	fmt.Printf("Paused Odigos in %q: scaled %q to 0 and patched %q\n",
+		ns, k8sconsts.InstrumentorDeploymentName, k8sconsts.OdigletDaemonSetName)
+
 	return nil
 }
 
@@ -41,7 +44,6 @@ func scaleDeploymentToZero(ctx context.Context, ns string, name string) error {
 
 func disableOdiglet(ctx context.Context, ns string, name string) error {
 	// Patch DaemonSet template with an impossible nodeSelector and bump annotation to force rollout
-	// Also set maxUnavailable to 100% for faster drain
 	patch := []byte(`{
       "spec": {
         "updateStrategy": {
@@ -64,7 +66,6 @@ func disableOdiglet(ctx context.Context, ns string, name string) error {
 	}
 
 	// Delete existing odiglet pods to stop data flow immediately
-	// match by label used in chart
 	selector := fmt.Sprintf("app.kubernetes.io/name=%s", k8sconsts.OdigletDaemonSetName)
 	podList, err := kube.DefaultClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
