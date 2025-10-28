@@ -3,16 +3,23 @@ package odigosebpfreceiver
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/cilium/ebpf"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
+
+	rtml "github.com/odigos-io/go-rtml"
+
+	"go.opentelemetry.io/collector/receiver"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver/internal/metadata"
 	"github.com/odigos-io/odigos/common/unixfd"
 
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -32,10 +39,21 @@ type ebpfReceiver struct {
 	nextMetrics consumer.Metrics
 	nextLogs    consumer.Logs
 
+	// Telemetry
+	telemetry *metadata.TelemetryBuilder
+	settings  receiver.Settings
+
 	wg sync.WaitGroup
 }
 
 func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
+	// Initialize telemetry
+	telemetryBuilder, err := metadata.NewTelemetryBuilder(r.settings.TelemetrySettings)
+	if err != nil {
+		return fmt.Errorf("failed to create telemetry builder: %w", err)
+	}
+	r.telemetry = telemetryBuilder
+
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
@@ -174,6 +192,12 @@ func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 	if r.cancel != nil {
 		r.cancel()
 	}
+
+	// Cleanup telemetry
+	if r.telemetry != nil {
+		r.telemetry.Shutdown()
+	}
+
 	done := make(chan struct{})
 
 	// Wait for all goroutines to finish in a separate goroutine
@@ -210,6 +234,23 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 	}()
 
 	for {
+		// Check memory pressure before each read attempt
+		for rtml.IsMemLimitReached() {
+			delayDuration := 20 * time.Millisecond
+
+			// Track total wait time
+			r.telemetry.EbpfMemoryPressureWaitTimeTotal.Add(ctx, delayDuration.Milliseconds())
+
+			r.logger.Debug("memory pressure detected, sleeping", zap.Duration("duration", delayDuration))
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-time.After(delayDuration):
+				// Continue checking memory pressure
+			}
+		}
+
+		// Only proceed to read when memory pressure is low
 		err := reader.ReadInto(&record)
 		if err != nil {
 			if IsClosedError(err) {
@@ -220,7 +261,10 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 		}
 
 		if record.LostSamples != 0 {
-			r.logger.Error("lost samples", zap.Int("lost", int(record.LostSamples)))
+			// Record the lost samples metric
+			r.telemetry.EbpfLostSamples.Add(ctx, int64(record.LostSamples))
+			// Keep the log for debugging, but at debug level
+			r.logger.Debug("lost samples", zap.Int("lost", int(record.LostSamples)))
 			continue
 		}
 
