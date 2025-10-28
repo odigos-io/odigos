@@ -85,9 +85,9 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
 	odigosConfiguration.Profiles = effectiveProfiles
 
-	effectiveSizing := sizing.ComputeResourceSizePreset(&odigosConfiguration)
-	odigosConfiguration.CollectorGateway = &effectiveSizing.CollectorGatewayConfig
-	odigosConfiguration.CollectorNode = &effectiveSizing.CollectorNodeConfig
+	// compute effective collector configurations that merge sizing presets with existing configurations
+	// preserving all non-sizing attributes (ServiceGraphDisabled, CollectorOwnMetricsPort, etc.)
+	odigosConfiguration.CollectorGateway, odigosConfiguration.CollectorNode = sizing.ComputeEffectiveCollectorConfig(&odigosConfiguration)
 
 	// TODO: revisit doing this here, might be nicer to maintain in a more generic way
 	// and have it on the config object itself.

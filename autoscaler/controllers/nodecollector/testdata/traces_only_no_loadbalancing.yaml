@@ -1,13 +1,4 @@
 exporters:
-  loadbalancing/traces:
-    protocol:
-      otlp:
-        compression: none
-        tls:
-          insecure: true
-    resolver:
-      k8s:
-        service: odigos-gateway.odigos-system
   otlp/odigos-own-telemetry-ui:
     endpoint: ui.odigos-system:4317
     retry_on_failure:
@@ -56,52 +47,6 @@ processors:
   test_type/test_processor:
     key: val
 receivers:
-  filelog:
-    exclude:
-    - /var/log/pods/kube-system_*/**/*
-    - /var/log/pods/odigos-system_*/**/*
-    include:
-    - /var/log/pods/default_test-deployment-*_*/*/*.log
-    - /var/log/pods/default_test-daemonset-*_*/*/*.log
-    - /var/log/pods/other-namespace_test-statefulset-*_*/*/*.log
-    include_file_name: false
-    include_file_path: true
-    operators:
-    - id: container-parser
-      type: container
-    retry_on_failure:
-      enabled: true
-    start_at: end
-  hostmetrics:
-    collection_interval: 33s
-    root_path: /hostfs
-    scrapers:
-      cpu:
-        metrics:
-          system.cpu.utilization:
-            enabled: true
-      disk: {}
-      filesystem:
-        exclude_mount_points:
-          match_type: regexp
-          mount_points:
-          - /var/lib/kubelet/*
-        metrics:
-          system.filesystem.utilization:
-            enabled: true
-      load: {}
-      memory: {}
-      network: {}
-      paging:
-        metrics:
-          system.paging.utilization:
-            enabled: true
-      processes: {}
-  kubeletstats:
-    auth_type: serviceAccount
-    collection_interval: 44s
-    endpoint: https://${env:NODE_IP}:10250
-    insecure_skip_verify: true
   odigosebpf: {}
   otlp/in:
     protocols:
@@ -128,31 +73,6 @@ service:
   - health_check
   - pprof
   pipelines:
-    logs:
-      exporters:
-      - otlp/out-cluster-collector
-      processors:
-      - memory_limiter
-      - resource/node-name
-      - resourcedetection
-      - test_type/test_processor
-      - odigostrafficmetrics
-      receivers:
-      - filelog
-    metrics:
-      exporters:
-      - otlp/out-cluster-collector
-      processors:
-      - batch
-      - memory_limiter
-      - resource/node-name
-      - resourcedetection
-      - test_type/test_processor
-      - odigostrafficmetrics
-      receivers:
-      - otlp/in
-      - kubeletstats
-      - hostmetrics
     metrics/own-metrics:
       exporters:
       - otlp/odigos-own-telemetry-ui
@@ -162,7 +82,7 @@ service:
       - prometheus/self-metrics
     traces:
       exporters:
-      - loadbalancing/traces
+      - otlp/out-cluster-collector
       processors:
       - batch
       - memory_limiter
