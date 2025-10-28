@@ -35,7 +35,7 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 	return common.OtlpHttpDestinationType
 }
 
-//nolint:funlen
+//nolint:gocyclo // complexity acceptable: function configures OTLP HTTP exporter with multiple validation and setup steps
 func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 
