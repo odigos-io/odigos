@@ -404,6 +404,11 @@ odiglet:
   # by default, odiglet will use hostPID to be able to scan running processes and instrument them.
   noHostPid: false
 
+  # When the code-attributes InstrumentationRule is enabled, you can choose to disable collecting code attributes for Go instrumentation.
+  # Collecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.
+  # Set this to true to turn off code attribute recording for Go instrumentation.
+  disableGoCodeAttributes: false
+
 centralProxy:
   # Central backend URL where this proxy will forward data
   centralBackendURL: ''
