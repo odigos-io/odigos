@@ -146,7 +146,7 @@ COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ru
 ARG ODIGOS_LOADER_VERSION=v0.0.5
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
-# Note that we do not pass --platform=$BUILDPLATFORM here because we want to build for the target platform
+# Note that we do not pass --platform=$BUILDPLATFORM here because we want to have the base image for all target architecture - each contains the corresponding rsync binary for the target arch.
 FROM ${ODIGLET_BASE_IMAGE} AS rsync-base
 
 FROM gcr.io/distroless/base:latest
