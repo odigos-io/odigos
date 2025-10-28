@@ -66,6 +66,8 @@ const (
 	KeycloakSecretName          = "keycloak-admin-credentials"
 	KeycloakAdminUsernameKey    = "admin-username"
 	KeycloakAdminPasswordKey    = "admin-password"
+	KeycloakDataPVCName         = "keycloak-data"
+	KeycloakDataVolumeName      = "keycloak-data"
 )
 
 const (
