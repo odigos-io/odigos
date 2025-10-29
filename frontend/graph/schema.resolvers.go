@@ -980,6 +980,45 @@ func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*mo
 	return true, nil
 }
 
+// DeleteCentralProxy is the resolver for the deleteCentralProxy field.
+func (r *mutationResolver) DeleteCentralProxy(ctx context.Context) (bool, error) {
+	ns := env.GetCurrentNamespace()
+
+	err := kube.DefaultClient.AppsV1().Deployments(ns).Delete(ctx, k8sconsts.CentralProxyDeploymentName, metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return false, fmt.Errorf("failed to delete central-proxy deployment: %v", err)
+	}
+
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	if err != nil {
+		return false, fmt.Errorf("failed to get odigos configuration: %v", err)
+	}
+
+	var cfg common.OdigosConfiguration
+	if cm.Data != nil && cm.Data[consts.OdigosConfigurationFileName] != "" {
+		if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &cfg); err != nil {
+			cfg = common.OdigosConfiguration{}
+		}
+	}
+
+	cfg.CentralBackendURL = ""
+
+	yamlBytes, err := yaml.Marshal(cfg)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal odigos configuration: %v", err)
+	}
+	if cm.Data == nil {
+		cm.Data = make(map[string]string)
+	}
+	cm.Data[consts.OdigosConfigurationFileName] = string(yamlBytes)
+
+	if _, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
+		return false, fmt.Errorf("failed to update odigos configuration: %v", err)
+	}
+
+	return true, nil
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
