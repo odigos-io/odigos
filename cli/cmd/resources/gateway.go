@@ -25,6 +25,49 @@ func NewGatewayServiceAccount(ns string) *corev1.ServiceAccount {
 	}
 }
 
+func NewGatewayClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRole",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sconsts.OdigosClusterCollectorClusterRoleName,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs"},
+				Verbs:     []string{"list", "watch"},
+			},
+		},
+	}
+}
+
+func NewGatewayClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sconsts.OdigosClusterCollectorClusterRoleBindingName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      k8sconsts.OdigosClusterCollectorServiceAccountName,
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     k8sconsts.OdigosClusterCollectorClusterRoleName,
+		},
+	}
+}
+
 func NewGatewayRole(ns string) *rbacv1.Role {
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
@@ -87,6 +130,8 @@ func (a *gatewayResourceManager) Name() string { return "Gateway" }
 func (a *gatewayResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewGatewayServiceAccount(a.ns),
+		NewGatewayClusterRole(),
+		NewGatewayClusterRoleBinding(a.ns),
 		NewGatewayRole(a.ns),
 		NewGatewayRoleBinding(a.ns),
 	}

@@ -11,9 +11,11 @@ const (
 	OdigosClusterCollectorCollectorGroupName = OdigosClusterCollectorDeploymentName
 	OdigosClusterCollectorConfigMapKey       = "collector-conf"
 
-	OdigosClusterCollectorServiceAccountName = "odigos-gateway"
-	OdigosClusterCollectorRoleName           = "odigos-gateway"
-	OdigosClusterCollectorRoleBindingName    = "odigos-gateway"
+	OdigosClusterCollectorClusterRoleName        = OdigosClusterCollectorDeploymentName
+	OdigosClusterCollectorClusterRoleBindingName = OdigosClusterCollectorDeploymentName
+	OdigosClusterCollectorServiceAccountName     = OdigosClusterCollectorDeploymentName
+	OdigosClusterCollectorRoleName               = OdigosClusterCollectorDeploymentName
+	OdigosClusterCollectorRoleBindingName        = OdigosClusterCollectorDeploymentName
 
 	OdigosClusterCollectorContainerName = "gateway"
 

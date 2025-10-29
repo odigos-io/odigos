@@ -322,7 +322,7 @@ cli-uninstall:
 .PHONY: cli-upgrade
 cli-upgrade:
 	@echo "Upgrading odigos from source. version: $(ODIGOS_CLI_VERSION)"
-	cd ./cli ; go run -tags=embed_manifests . upgrade --version $(ODIGOS_CLI_VERSION) --yes
+	cd ./cli ; go run -tags=embed_manifests . upgrade-deprecated --version $(ODIGOS_CLI_VERSION) --yes
 
 .PHONY: cli-build
 cli-build:

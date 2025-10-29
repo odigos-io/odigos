@@ -16,6 +16,7 @@ import (
 	semconv1_26 "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 
+	"github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector/internal/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -44,10 +45,19 @@ type routerConnector struct {
 	metricsConfig metricsConfig
 	logsConfig    logsConfig
 	routingTable  *SignalRoutingMap
+	watchClient   *kube.WatchClient
 }
 
-func (r *routerConnector) Start(_ context.Context, _ component.Host) error { return nil }
-func (r *routerConnector) Shutdown(_ context.Context) error                { return nil }
+func (r *routerConnector) Start(_ context.Context, _ component.Host) error {
+	r.watchClient.Start()
+	return nil
+}
+
+func (r *routerConnector) Shutdown(_ context.Context) error {
+	r.watchClient.Stop()
+	return nil
+}
+
 func (r *routerConnector) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
@@ -76,8 +86,13 @@ func createTracesConnector(
 	}
 
 	routeMap := BuildSignalRoutingMap(config.DataStreams)
+	watchClient, err := kube.NewWatchClient(set.TelemetrySettings)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create watch client: %w", err)
+	}
 
 	return &routerConnector{
+		watchClient:  watchClient,
 		routingTable: &routeMap,
 		tracesConfig: tracesConfig{consumers: tr, defaultCons: defaultTracesConsumer, logger: set.Logger},
 	}, nil
