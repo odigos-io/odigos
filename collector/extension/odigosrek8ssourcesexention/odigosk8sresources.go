@@ -1,4 +1,4 @@
-package kube
+package odigosrek8ssourcesexention
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/extension"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,8 +20,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
-
-	"github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector/internal/utils"
 )
 
 const (
@@ -29,19 +28,21 @@ const (
 	SourceDataStreamLabelPrefix = "odigos.io/data-stream-"
 )
 
-type WatchClient struct {
+type OdigosKsResources struct {
 	dynClient  dynamic.Interface
 	icInformer cache.SharedInformer
 	stopCh     chan struct{}
 	logger     *zap.Logger
 
 	m                          sync.RWMutex
-	workloadToDatastreamsCache map[utils.WorkloadKey][]utils.DatastreamName
+	workloadToDatastreamsCache map[WorkloadKey][]DatastreamName
 }
 
-func NewWatchClient(
+var _ extension.Extension = (*OdigosKsResources)(nil)
+
+func NewOdigosKsResources(
 	set component.TelemetrySettings,
-) (*WatchClient, error) {
+) (*OdigosKsResources, error) {
 	logger := set.Logger
 	k8sClusterConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -83,80 +84,16 @@ func NewWatchClient(
 		5*time.Minute,
 	)
 
-	return &WatchClient{
+	return &OdigosKsResources{
 		dynClient:                  dynClient,
 		icInformer:                 informer,
 		stopCh:                     make(chan struct{}),
 		logger:                     logger,
-		workloadToDatastreamsCache: make(map[utils.WorkloadKey][]utils.DatastreamName),
+		workloadToDatastreamsCache: make(map[WorkloadKey][]DatastreamName),
 	}, nil
 }
 
-func (c *WatchClient) HandleIcAddOrUpdate(obj interface{}) {
-	unstructuredObj, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		c.logger.Error("unexpected object type", zap.Any("object", obj))
-		return
-	}
-
-	ns := unstructuredObj.GetNamespace()
-	name := unstructuredObj.GetName()
-	workloadKey, err := utils.InstrumentationConfigToWorkloadKey(ns, name)
-	if err != nil {
-		c.logger.Error("failed to calculate workload key from added or updated instrumentation config", zap.Error(err))
-		return
-	}
-
-	labels := unstructuredObj.GetLabels()
-	if labels == nil {
-		return
-	}
-
-	// get datastream names from labels
-	datastreamNames := make([]utils.DatastreamName, 0)
-	for labelKey, labelValue := range labels {
-		// ignore datastream which are not marked as active
-		if labelValue != "true" {
-			continue
-		}
-
-		// only consider datastream labels
-		if !strings.HasPrefix(labelKey, SourceDataStreamLabelPrefix) {
-			continue
-		}
-
-		// collect the datastream name and save it to store in cache later on
-		dataStreamName := strings.TrimPrefix(labelKey, SourceDataStreamLabelPrefix)
-		datastreamNames = append(datastreamNames, utils.DatastreamName(dataStreamName))
-	}
-
-	c.m.Lock()
-	defer c.m.Unlock()
-	c.workloadToDatastreamsCache[workloadKey] = datastreamNames
-}
-
-func (c *WatchClient) HandleIcDelete(obj interface{}) {
-	unstructuredObj, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		c.logger.Error("unexpected object type", zap.Any("object", obj))
-		return
-	}
-
-	ns := unstructuredObj.GetNamespace()
-	name := unstructuredObj.GetName()
-	workloadKey, err := utils.InstrumentationConfigToWorkloadKey(ns, name)
-	if err != nil {
-		c.logger.Error("failed to calculate workload key from deleted instrumentation config", zap.Error(err))
-		return
-	}
-
-	c.m.Lock()
-	defer c.m.Unlock()
-	delete(c.workloadToDatastreamsCache, workloadKey)
-}
-
-func (c *WatchClient) Start() {
-
+func (c *OdigosKsResources) Start(_ context.Context, _ component.Host) error {
 	// Add event handlers to process the resources
 	c.icInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
@@ -171,13 +108,78 @@ func (c *WatchClient) Start() {
 	})
 
 	go c.icInformer.Run(c.stopCh)
+	return nil
 }
 
-func (c *WatchClient) Stop() {
+func (c *OdigosKsResources) Shutdown(ctx context.Context) error {
 	close(c.stopCh)
+	return nil
 }
 
-func (c *WatchClient) GetDatastreamsForWorkload(workloadKey utils.WorkloadKey) ([]utils.DatastreamName, bool) {
+func (c *OdigosKsResources) HandleIcAddOrUpdate(obj interface{}) {
+	unstructuredObj, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		c.logger.Error("unexpected object type", zap.Any("object", obj))
+		return
+	}
+
+	ns := unstructuredObj.GetNamespace()
+	name := unstructuredObj.GetName()
+	workloadKey, err := InstrumentationConfigToWorkloadKey(ns, name)
+	if err != nil {
+		c.logger.Error("failed to calculate workload key from added or updated instrumentation config", zap.Error(err))
+		return
+	}
+
+	labels := unstructuredObj.GetLabels()
+	if labels == nil {
+		return
+	}
+
+	// get datastream names from labels
+	datastreamNames := make([]DatastreamName, 0)
+	for labelKey, labelValue := range labels {
+		// ignore datastream which are not marked as active
+		if labelValue != "true" {
+			continue
+		}
+
+		// only consider datastream labels
+		if !strings.HasPrefix(labelKey, SourceDataStreamLabelPrefix) {
+			continue
+		}
+
+		// collect the datastream name and save it to store in cache later on
+		dataStreamName := strings.TrimPrefix(labelKey, SourceDataStreamLabelPrefix)
+		datastreamNames = append(datastreamNames, DatastreamName(dataStreamName))
+	}
+
+	c.m.Lock()
+	defer c.m.Unlock()
+	c.workloadToDatastreamsCache[workloadKey] = datastreamNames
+}
+
+func (c *OdigosKsResources) HandleIcDelete(obj interface{}) {
+	unstructuredObj, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		c.logger.Error("unexpected object type", zap.Any("object", obj))
+		return
+	}
+
+	ns := unstructuredObj.GetNamespace()
+	name := unstructuredObj.GetName()
+	workloadKey, err := InstrumentationConfigToWorkloadKey(ns, name)
+	if err != nil {
+		c.logger.Error("failed to calculate workload key from deleted instrumentation config", zap.Error(err))
+		return
+	}
+
+	c.m.Lock()
+	defer c.m.Unlock()
+	delete(c.workloadToDatastreamsCache, workloadKey)
+}
+
+func (c *OdigosKsResources) GetDatastreamsForWorkload(workloadKey WorkloadKey) ([]DatastreamName, bool) {
 	c.m.RLock()
 	defer c.m.RUnlock()
 	datastreams, ok := c.workloadToDatastreamsCache[workloadKey]
@@ -185,6 +187,6 @@ func (c *WatchClient) GetDatastreamsForWorkload(workloadKey utils.WorkloadKey) (
 }
 
 // Wait for cache to sync
-func (c *WatchClient) WaitForCacheSync(ctx context.Context) bool {
+func (c *OdigosKsResources) WaitForCacheSync(ctx context.Context) bool {
 	return cache.WaitForCacheSync(ctx.Done(), c.icInformer.HasSynced)
 }

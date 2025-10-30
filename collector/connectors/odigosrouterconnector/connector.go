@@ -17,6 +17,7 @@ import (
 
 	"github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector/internal/kube"
 	"github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector/internal/utils"
+	"github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -44,10 +45,11 @@ type logsConfig struct {
 
 // routerConnector is the main struct for all signal types.
 type routerConnector struct {
-	tracesConfig  tracesConfig
-	metricsConfig metricsConfig
-	logsConfig    logsConfig
-	watchClient   *kube.WatchClient
+	tracesConfig      tracesConfig
+	metricsConfig     metricsConfig
+	logsConfig        logsConfig
+	watchClient       *kube.WatchClient
+	odigosKsResources *odigosrek8ssourcesexention.OdigosKsResources
 }
 
 func (r *routerConnector) Start(_ context.Context, _ component.Host) error {
