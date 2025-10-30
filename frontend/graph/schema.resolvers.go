@@ -980,6 +980,11 @@ func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*mo
 	return true, nil
 }
 
+// DeleteCentralProxy is the resolver for the deleteCentralProxy field.
+func (r *mutationResolver) DeleteCentralProxy(ctx context.Context) (bool, error) {
+	return services.DeleteCentralProxy(ctx)
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
