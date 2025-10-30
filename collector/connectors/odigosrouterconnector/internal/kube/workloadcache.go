@@ -83,10 +83,11 @@ func NewWatchClient(
 	)
 
 	return &WatchClient{
-		dynClient:  dynClient,
-		icInformer: informer,
-		stopCh:     make(chan struct{}),
-		logger:     logger,
+		dynClient:                  dynClient,
+		icInformer:                 informer,
+		stopCh:                     make(chan struct{}),
+		logger:                     logger,
+		workloadToDatastreamsCache: make(map[utils.WorkloadKey][]utils.DatastreamName),
 	}, nil
 }
 
@@ -173,6 +174,13 @@ func (c *WatchClient) Start() {
 
 func (c *WatchClient) Stop() {
 	close(c.stopCh)
+}
+
+func (c *WatchClient) GetDatastreamsForWorkload(workloadKey utils.WorkloadKey) ([]utils.DatastreamName, bool) {
+	c.m.RLock()
+	defer c.m.RUnlock()
+	datastreams, ok := c.workloadToDatastreamsCache[workloadKey]
+	return datastreams, ok
 }
 
 // Wait for cache to sync
