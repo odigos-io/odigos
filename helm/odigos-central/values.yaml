@@ -15,6 +15,32 @@ centralBackend:
     kubernetes.io/os: linux
   tolerations: []
   affinity: []
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 10
+    cpuTargetUtilization: 70
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 30
+        selectPolicy: Max
+        policies:
+          percent:
+            value: 100
+            periodSeconds: 30
+          pods:
+            value: 2
+            periodSeconds: 30
+      scaleDown:
+        stabilizationWindowSeconds: 600
+        selectPolicy: Min
+        policies:
+          percent:
+            value: 10
+            periodSeconds: 60
+          pods:
+            value: 1
+            periodSeconds: 60
 
 centralUI:
   uiMode: normal

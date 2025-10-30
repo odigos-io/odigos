@@ -30,6 +30,8 @@ const (
 	CentralBackendServiceAccountName = "central-backend"
 	CentralBackendRoleName           = "central-backend"
 	CentralBackendRoleBindingName    = "central-backend"
+	// Default CPU utilization target (percentage) for HPA when using CPU-based scaling
+	CentralBackendDefaultCpuTargetUtilization = 70
 )
 
 const (
