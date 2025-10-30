@@ -1029,4 +1029,7 @@ type Mutation {
   updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
   deleteDataStream(id: ID!): Boolean!
   restartWorkloads(sourceIds: [K8sSourceId!]!): Boolean!
+
+  # enterprise: remove the central-proxy from this cluster
+  deleteCentralProxy: Boolean!
 }
