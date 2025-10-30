@@ -69,6 +69,13 @@ auth:
   adminUsername: admin
   port: 8080
   portName: http
+  persistence:
+    enabled: true
+    size: 1Gi
+    accessModes:
+      - ReadWriteOnce
+    storageClassName: ''
+    existingClaim: ''
   resources:
     requests:
       cpu: 100m
