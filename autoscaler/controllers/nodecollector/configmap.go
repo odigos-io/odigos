@@ -206,8 +206,8 @@ func calculateConfigMapData(
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 	odigosNamespace := env.GetCurrentNamespace()
 
-	manifestProcessosrsConfig, additionalTraceProcessors, additionalTraceProcessorsPostSpanMetrics, additionalMetricsProcessors, additionalLogsProcessors, errs := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
-	for name, err := range errs {
+	processorsResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
+	for name, err := range processorsResults.Errs {
 		log.Log.V(0).Error(err, "failed to convert processor manifest to config", "processor", name)
 		return "", err
 	}
@@ -216,7 +216,7 @@ func calculateConfigMapData(
 	activeConfigDomains := []config.Config{
 		collectorconfig.CommonConfig(nodeCG, onGKE),
 		collectorconfig.OwnMetricsConfig(ownMetricsPort),
-		manifestProcessosrsConfig,
+		processorsResults.ProcessorsConfig,
 	}
 
 	// metrics
@@ -234,7 +234,7 @@ func calculateConfigMapData(
 			activeConfigDomains = append(activeConfigDomains, spanMetricsConfig)
 		}
 
-		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, additionalMetricsProcessors, additionalMetricsRecivers, metricsConfigSettings)
+		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, processorsResults.MetricsProcessors, additionalMetricsRecivers, metricsConfigSettings)
 		activeConfigDomains = append(activeConfigDomains, metricsConfig)
 	}
 
@@ -244,14 +244,14 @@ func calculateConfigMapData(
 	// - cluster collector has traces enabled (trace destination is enabled)
 	// - there are additional trace exporters (e.g. spanmetrics connector)
 	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
-		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, additionalTraceProcessors, additionalTraceProcessorsPostSpanMetrics, additionalTraceExporters, tracesEnabledInClusterCollector, loadBalancingNeeded)
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, processorsResults.TracesProcessors, processorsResults.TracesProcessorsPostSpanMetrics, additionalTraceExporters, tracesEnabledInClusterCollector, loadBalancingNeeded)
 		activeConfigDomains = append(activeConfigDomains, tracesConfig)
 	}
 
 	// logs
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
-		logsConfig := collectorconfig.LogsConfig(nodeCG, odigosNamespace, additionalLogsProcessors, sources)
+		logsConfig := collectorconfig.LogsConfig(nodeCG, odigosNamespace, processorsResults.LogsProcessors, sources)
 		activeConfigDomains = append(activeConfigDomains, logsConfig)
 	}
 
