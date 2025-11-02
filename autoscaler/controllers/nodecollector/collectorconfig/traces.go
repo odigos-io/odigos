@@ -51,8 +51,14 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 
 			// Add retry_on_failure configuration if present
 			if nodeCG.Spec.OtlpExporterConfiguration != nil && nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure != nil {
-				retryConfig := config.GenericMap{
-					"enabled": nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.Enabled,
+				retryConfig := config.GenericMap{}
+
+				// Only set enabled if not nil to avoid possible nil pointer dereference
+				if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.Enabled != nil {
+					retryConfig["enabled"] = *nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.Enabled
+				} else {
+					// by default, retry on failure is enabled
+					retryConfig["enabled"] = true
 				}
 
 				// Only add the interval fields if they are not empty

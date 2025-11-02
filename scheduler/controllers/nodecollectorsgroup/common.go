@@ -253,6 +253,8 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 	}
 
 	otlpExporterConfiguration := odigosConfiguration.CollectorNode.OtlpExporterConfiguration
+	// TODO: remove after sometime it is a temporary workaround to support the deprecated field CollectorNode.EnableDataCompression
+	// which replaced with OtlpExporterConfiguration.EnableDataCompression.
 	if otlpExporterConfiguration == nil {
 		otlpExporterConfiguration = &common.OtlpExporterConfiguration{
 			EnableDataCompression: odigosConfiguration.CollectorNode.EnableDataCompression,

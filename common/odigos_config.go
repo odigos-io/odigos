@@ -74,7 +74,7 @@ type OtlpExporterConfiguration struct {
 }
 
 type RetryOnFailure struct {
-	Enabled         bool   `json:"enabled,omitempty"`
+	Enabled         *bool  `json:"enabled,omitempty"`
 	InitialInterval string `json:"initialInterval,omitempty"`
 	MaxInterval     string `json:"maxInterval,omitempty"`
 	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`

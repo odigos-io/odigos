@@ -5,7 +5,7 @@ exporters:
       enabled: false
     tls:
       insecure: true
-  otlp/out-cluster-collector:
+  otlp/out-cluster-collector-trace:
     compression: none
     endpoint: dns:///odigos-gateway.odigos-system:4317
     tls:

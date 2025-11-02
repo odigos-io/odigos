@@ -53,7 +53,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	fmt.Println("odigosConfiguration.GoAutoOffsetsCron before", odigosConfiguration.GoAutoOffsetsCron)
 	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
 	availableProfiles := profiles.GetAvailableProfilesForTier(r.Tier)
 
@@ -96,7 +95,6 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	resolveMountMethod(&odigosConfiguration)
 	resolveEnvInjectionMethod(&odigosConfiguration)
 
-	fmt.Println("odigosConfiguration.GoAutoOffsetsCron after", odigosConfiguration.GoAutoOffsetsCron)
 	err = r.persistEffectiveConfig(ctx, &odigosConfiguration, odigosConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err

@@ -78,8 +78,14 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 
 	// Add retry_on_failure configuration if present
 	if otlpExporterConfiguration != nil && otlpExporterConfiguration.RetryOnFailure != nil {
-		retryConfig := config.GenericMap{
-			"enabled": otlpExporterConfiguration.RetryOnFailure.Enabled,
+
+		retryConfig := config.GenericMap{}
+		// Only set enabled if not nil to avoid possible nil pointer dereference
+		if otlpExporterConfiguration.RetryOnFailure.Enabled != nil {
+			retryConfig["enabled"] = *otlpExporterConfiguration.RetryOnFailure.Enabled
+		} else {
+			// by default, retry on failure is enabled
+			retryConfig["enabled"] = true
 		}
 
 		// Only add the interval fields if they are not empty

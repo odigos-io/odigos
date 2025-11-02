@@ -158,7 +158,7 @@ type CollectorsGroupSpec struct {
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
 	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
 
-	// OtlpExporterConfiguration is the configuration for the OTLP exporter.
+	// OtlpExporterConfiguration is the configuration for the OTLP exporter from node collector to cluster gateway collector.
 	OtlpExporterConfiguration *common.OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
 
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.

@@ -196,10 +196,9 @@ collectorNode:
     enableDataCompression: false
     # Time to wait per individual attempt to send data to a backend
     timeout: 5s
-    # Maximum number of attempts to send data to a backend
     retryOnFailure:
       # Whether to retry on failure
-      enabled: true
+      enabled: false
       # Time to wait after the first failure before retrying; ignored if `enabled` is `false`.
       initialInterval: 5s
       # Is the upper bound on backoff; ignored if `enabled` is `false`.
