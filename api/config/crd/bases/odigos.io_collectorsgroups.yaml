@@ -209,7 +209,7 @@ spec:
                 type: object
               otlpExporterConfiguration:
                 description: OtlpExporterConfiguration is the configuration for the
-                  OTLP exporter.
+                  OTLP exporter from node collector to cluster gateway collector.
                 properties:
                   enableDataCompression:
                     type: boolean
