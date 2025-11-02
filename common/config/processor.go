@@ -5,7 +5,7 @@ import (
 )
 
 func CrdProcessorToConfig(processors []ProcessorConfigurer) (cfg Config,
-	tracesProcessors []string, metricsProcessors []string, logsProcessors []string, errs map[string]error) {
+	tracesProcessors []string, tracesProcessorsPostSpanMetrics []string, metricsProcessors []string, logsProcessors []string, errs map[string]error) {
 	errs = make(map[string]error)
 	processorsMap := GenericMap{}
 	for _, processor := range processors {
@@ -23,7 +23,15 @@ func CrdProcessorToConfig(processors []ProcessorConfigurer) (cfg Config,
 		processorsMap[processorKey] = processorsConfig
 
 		if isTracingEnabled(processor) {
-			tracesProcessors = append(tracesProcessors, processorKey)
+			// for traces processors, we differentiate between 2:
+			// - regular ones with order hint < 10
+			// - those that have order hint >= 10, which are applied for exporting, but after spanmetrics is calculated.
+			// it can be used to add simple sampling (not tail) in node-collector, which will happen after the span metrics are calculated.
+			if processor.GetOrderHint() < 10 {
+				tracesProcessors = append(tracesProcessors, processorKey)
+			} else {
+				tracesProcessorsPostSpanMetrics = append(tracesProcessorsPostSpanMetrics, processorKey)
+			}
 		}
 		if isMetricsEnabled(processor) {
 			metricsProcessors = append(metricsProcessors, processorKey)
@@ -36,8 +44,8 @@ func CrdProcessorToConfig(processors []ProcessorConfigurer) (cfg Config,
 		Processors: processorsMap,
 	}
 	if len(errs) != 0 {
-		return cfg, tracesProcessors, metricsProcessors, logsProcessors, errs
+		return cfg, tracesProcessors, tracesProcessorsPostSpanMetrics, metricsProcessors, logsProcessors, errs
 	}
 
-	return cfg, tracesProcessors, metricsProcessors, logsProcessors, errs
+	return cfg, tracesProcessors, tracesProcessorsPostSpanMetrics, metricsProcessors, logsProcessors, errs
 }

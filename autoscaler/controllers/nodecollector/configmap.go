@@ -206,7 +206,7 @@ func calculateConfigMapData(
 	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
 	odigosNamespace := env.GetCurrentNamespace()
 
-	manifestProcessosrsConfig, additionalTraceProcessors, additionalMetricsProcessors, additionalLogsProcessors, errs := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
+	manifestProcessosrsConfig, additionalTraceProcessors, additionalTraceProcessorsPostSpanMetrics, additionalMetricsProcessors, additionalLogsProcessors, errs := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range errs {
 		log.Log.V(0).Error(err, "failed to convert processor manifest to config", "processor", name)
 		return "", err
@@ -244,7 +244,7 @@ func calculateConfigMapData(
 	// - cluster collector has traces enabled (trace destination is enabled)
 	// - there are additional trace exporters (e.g. spanmetrics connector)
 	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
-		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, additionalTraceProcessors, additionalTraceExporters, tracesEnabledInClusterCollector, loadBalancingNeeded)
+		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, additionalTraceProcessors, additionalTraceProcessorsPostSpanMetrics, additionalTraceExporters, tracesEnabledInClusterCollector, loadBalancingNeeded)
 		activeConfigDomains = append(activeConfigDomains, tracesConfig)
 	}
 
