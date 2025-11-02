@@ -60,7 +60,7 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 			// Use the common cluster collector exporter
 			// Note: The actual exporter merge by commonExporters before this function is called.
 			// Here we just add it to the exporter name
-			exporterNames = append(exporterNames, clusterCollectorExporterName)
+			exporterNames = append(exporterNames, clusterCollectorTraceExporterName)
 		}
 	}
 

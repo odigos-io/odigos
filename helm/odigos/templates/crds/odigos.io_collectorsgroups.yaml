@@ -54,6 +54,7 @@ spec:
                 type: integer
               enableDataCompression:
                 description: |-
+                  Deprecated - use OtlpExporterConfiguration instead.
                   EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
                   It is disabled by default and can be enabled by setting the enabled flag to true.
                 type: boolean
@@ -205,6 +206,26 @@ spec:
                           default is 5m (five minutes).
                         type: string
                     type: object
+                type: object
+              otlpExporterConfiguration:
+                description: OtlpExporterConfiguration is the configuration for the
+                  OTLP exporter.
+                properties:
+                  enableDataCompression:
+                    type: boolean
+                  retryOnFailure:
+                    properties:
+                      enabled:
+                        type: boolean
+                      initialInterval:
+                        type: string
+                      maxElapsedTime:
+                        type: string
+                      maxInterval:
+                        type: string
+                    type: object
+                  timeout:
+                    type: string
                 type: object
               resourcesSettings:
                 description: |-
