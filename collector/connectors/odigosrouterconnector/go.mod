@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector
 go 1.25.0
 
 require (
-	github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention v0.0.0
+	github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.44.0
@@ -86,4 +86,4 @@ require (
 
 replace github.com/odigos-io/odigos/common => ../../../common
 
-replace github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention => ../../extension/odigosrek8ssourcesexention
+replace github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention => ../../extension/odigosk8sresourcesexention

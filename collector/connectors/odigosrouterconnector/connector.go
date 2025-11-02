@@ -15,28 +15,33 @@ import (
 	collectorpipeline "go.opentelemetry.io/collector/pipeline"
 	"go.uber.org/zap"
 
-	"github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention"
+	"github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
+// k8sResourcesProvider is an interface that provides access to k8s resources for workload routing
+type k8sResourcesProvider interface {
+	GetDatastreamsForWorkload(odigosk8sresourcesexention.WorkloadKey) ([]odigosk8sresourcesexention.DatastreamName, bool)
+}
+
 type tracesConfig struct {
 	consumers   connector.TracesRouterAndConsumer
-	datastreams map[odigosrek8ssourcesexention.DatastreamName]struct{}
+	datastreams map[odigosk8sresourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Traces
 	logger      *zap.Logger
 }
 
 type metricsConfig struct {
 	consumers   connector.MetricsRouterAndConsumer
-	datastreams map[odigosrek8ssourcesexention.DatastreamName]struct{}
+	datastreams map[odigosk8sresourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Metrics
 	logger      *zap.Logger
 }
 
 type logsConfig struct {
 	consumers   connector.LogsRouterAndConsumer
-	datastreams map[odigosrek8ssourcesexention.DatastreamName]struct{}
+	datastreams map[odigosk8sresourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Logs
 	logger      *zap.Logger
 }
@@ -47,7 +52,7 @@ type routerConnector struct {
 	metricsConfig                metricsConfig
 	logsConfig                   logsConfig
 	odigosKsResourcesExtensionID component.ID
-	odigosKsResources            *odigosrek8ssourcesexention.OdigosKsResources
+	odigosKsResources            k8sResourcesProvider
 }
 
 func (r *routerConnector) Start(_ context.Context, host component.Host) error {
@@ -56,9 +61,9 @@ func (r *routerConnector) Start(_ context.Context, host component.Host) error {
 	if !ok {
 		return fmt.Errorf("odigos k8s resources extension not found")
 	}
-	odigosKsResourcesExtension, ok := odigosKsResourcesExtensionComponent.(*odigosrek8ssourcesexention.OdigosKsResources)
+	odigosKsResourcesExtension, ok := odigosKsResourcesExtensionComponent.(k8sResourcesProvider)
 	if !ok {
-		return fmt.Errorf("odigos k8s resources extension is not a OdigosKsResources")
+		return fmt.Errorf("odigos k8s resources extension does not implement k8sResourcesProvider interface")
 	}
 	r.odigosKsResources = odigosKsResourcesExtension
 	return nil
@@ -180,8 +185,8 @@ func createLogsConnector(
 	}, nil
 }
 
-func (r *routerConnector) determineWorkloadDataStreams(attrs pcommon.Map, availableDataStreams map[odigosrek8ssourcesexention.DatastreamName]struct{}) ([]string, string) {
-	wk := odigosrek8ssourcesexention.ResourceAttributesToWorkloadKey(attrs)
+func (r *routerConnector) determineWorkloadDataStreams(attrs pcommon.Map, availableDataStreams map[odigosk8sresourcesexention.DatastreamName]struct{}) ([]string, string) {
+	wk := odigosk8sresourcesexention.ResourceAttributesToWorkloadKey(attrs)
 	if wk == nil {
 		return nil, ""
 	}

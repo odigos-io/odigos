@@ -61,7 +61,7 @@ import (
 	syslogexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter"
 	tencentcloudlogserviceexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter"
 	zipkinexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter"
-	odigosrek8ssourcesexention "github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention"
+	odigosk8sresourcesexention "github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention"
 	zpagesextension "go.opentelemetry.io/collector/extension/zpagesextension"
 	memorylimiterextension "go.opentelemetry.io/collector/extension/memorylimiterextension"
 	healthcheckextension "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
@@ -110,7 +110,7 @@ func components() (otelcol.Factories, error) {
 	factories := otelcol.Factories{}
 
 	factories.Extensions, err = otelcol.MakeFactoryMap[extension.Factory](
-		odigosrek8ssourcesexention.NewFactory(),
+		odigosk8sresourcesexention.NewFactory(),
 		zpagesextension.NewFactory(),
 		memorylimiterextension.NewFactory(),
 		healthcheckextension.NewFactory(),
@@ -124,7 +124,7 @@ func components() (otelcol.Factories, error) {
 		return otelcol.Factories{}, err
 	}
 	factories.ExtensionModules = make(map[component.Type]string, len(factories.Extensions))
-	factories.ExtensionModules[odigosrek8ssourcesexention.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention v0.138.0"
+	factories.ExtensionModules[odigosk8sresourcesexention.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention v0.138.0"
 	factories.ExtensionModules[zpagesextension.NewFactory().Type()] = "go.opentelemetry.io/collector/extension/zpagesextension v0.138.0"
 	factories.ExtensionModules[memorylimiterextension.NewFactory().Type()] = "go.opentelemetry.io/collector/extension/memorylimiterextension v0.138.0"
 	factories.ExtensionModules[healthcheckextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.138.0"

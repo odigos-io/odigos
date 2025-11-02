@@ -1,4 +1,4 @@
-package odigosrek8ssourcesexention
+package odigosk8sresourcesexention
 
 import "go.opentelemetry.io/collector/component"
 

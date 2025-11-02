@@ -1,4 +1,4 @@
-module github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention
+module github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention
 
 go 1.25.0
 

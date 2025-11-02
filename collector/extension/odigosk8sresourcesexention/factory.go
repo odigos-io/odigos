@@ -1,4 +1,4 @@
-package odigosrek8ssourcesexention
+package odigosk8sresourcesexention
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/extension"
 
-	"github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention/internal/metadata"
+	"github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention/internal/metadata"
 )
 
 //go:generate mdatagen metadata.yaml

@@ -8,7 +8,7 @@ import (
 
 var (
 	Type      = component.MustNewType("odigos_k8s_resources")
-	ScopeName = "github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention"
+	ScopeName = "github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention"
 )
 
 const (

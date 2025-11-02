@@ -6,7 +6,7 @@ dist:
   output_path: ./odigosotelcol
 
 extensions:
-  - gomod: github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention v0.138.0
+  - gomod: github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention v0.138.0
   - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.138.0
   - gomod: go.opentelemetry.io/collector/extension/memorylimiterextension v0.138.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.138.0
@@ -132,4 +132,4 @@ replaces:
   - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
   - github.com/odigos-io/odigos/common => ../../common
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
-  - github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention => ../extension/odigosrek8ssourcesexention
+  - github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention => ../extension/odigosk8sresourcesexention
