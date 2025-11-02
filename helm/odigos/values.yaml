@@ -197,8 +197,8 @@ collectorNode:
     # Time to wait per individual attempt to send data to a backend
     timeout: 5s
     retryOnFailure:
-      # Whether to retry on failure
-      enabled: false
+      # Whether to retry on failure, by default it is enabled.
+      enabled: true
       # Time to wait after the first failure before retrying; ignored if `enabled` is `false`.
       initialInterval: 5s
       # Is the upper bound on backoff; ignored if `enabled` is `false`.
