@@ -30,6 +30,8 @@ const (
 	CentralBackendServiceAccountName = "central-backend"
 	CentralBackendRoleName           = "central-backend"
 	CentralBackendRoleBindingName    = "central-backend"
+	// Default CPU utilization target (percentage) for HPA when using CPU-based scaling
+	CentralBackendDefaultCpuTargetUtilization = 70
 )
 
 const (
@@ -72,6 +74,8 @@ const (
 	KeycloakOidcClientSecretKey = "client-secret"
 	KeycloakOidcDiscoveryUrlKey = "discovery-url"
 	KeycloakOidcTenantIdKey     = "tenant-id"
+	KeycloakDataPVCName         = "keycloak-data"
+	KeycloakDataVolumeName      = "keycloak-data"
 )
 
 const (
