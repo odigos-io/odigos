@@ -13,41 +13,66 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	collectorpipeline "go.opentelemetry.io/collector/pipeline"
-	semconv1_26 "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 
+	"github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
+// k8sResourcesProvider is an interface that provides access to k8s resources for workload routing
+type k8sResourcesProvider interface {
+	GetDatastreamsForWorkload(odigosk8sresourcesexention.WorkloadKey) ([]odigosk8sresourcesexention.DatastreamName, bool)
+}
+
 type tracesConfig struct {
 	consumers   connector.TracesRouterAndConsumer
+	datastreams map[odigosk8sresourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Traces
 	logger      *zap.Logger
 }
 
 type metricsConfig struct {
 	consumers   connector.MetricsRouterAndConsumer
+	datastreams map[odigosk8sresourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Metrics
 	logger      *zap.Logger
 }
 
 type logsConfig struct {
 	consumers   connector.LogsRouterAndConsumer
+	datastreams map[odigosk8sresourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Logs
 	logger      *zap.Logger
 }
 
 // routerConnector is the main struct for all signal types.
 type routerConnector struct {
-	tracesConfig  tracesConfig
-	metricsConfig metricsConfig
-	logsConfig    logsConfig
-	routingTable  *SignalRoutingMap
+	tracesConfig                 tracesConfig
+	metricsConfig                metricsConfig
+	logsConfig                   logsConfig
+	odigosKsResourcesExtensionID component.ID
+	odigosKsResources            k8sResourcesProvider
 }
 
-func (r *routerConnector) Start(_ context.Context, _ component.Host) error { return nil }
-func (r *routerConnector) Shutdown(_ context.Context) error                { return nil }
+func (r *routerConnector) Start(_ context.Context, host component.Host) error {
+	extensions := host.GetExtensions()
+	odigosKsResourcesExtensionComponent, ok := extensions[r.odigosKsResourcesExtensionID]
+	if !ok {
+		return fmt.Errorf("odigos k8s resources extension not found")
+	}
+	odigosKsResourcesExtension, ok := odigosKsResourcesExtensionComponent.(k8sResourcesProvider)
+	if !ok {
+		return fmt.Errorf("odigos k8s resources extension does not implement k8sResourcesProvider interface")
+	}
+	r.odigosKsResources = odigosKsResourcesExtension
+	return nil
+}
+
+func (r *routerConnector) Shutdown(_ context.Context) error {
+	return nil
+}
+
 func (r *routerConnector) Capabilities() consumer.Capabilities {
 	return consumer.Capabilities{MutatesData: false}
 }
@@ -75,11 +100,16 @@ func createTracesConnector(
 		defaultTracesConsumer = nil
 	}
 
-	routeMap := BuildSignalRoutingMap(config.DataStreams)
+	datastreams := calculateDatastreamsForSignals(config, common.TracesObservabilitySignal)
 
 	return &routerConnector{
-		routingTable: &routeMap,
-		tracesConfig: tracesConfig{consumers: tr, defaultCons: defaultTracesConsumer, logger: set.Logger},
+		odigosKsResourcesExtensionID: config.OdigosK8sResourcesExtensionID,
+		tracesConfig: tracesConfig{
+			consumers:   tr,
+			defaultCons: defaultTracesConsumer,
+			logger:      set.Logger,
+			datastreams: datastreams,
+		},
 	}, nil
 }
 
@@ -106,11 +136,16 @@ func createMetricsConnector(
 		defaultMetricsConsumer = nil
 	}
 
-	routeMap := BuildSignalRoutingMap(config.DataStreams)
+	datastreams := calculateDatastreamsForSignals(config, common.MetricsObservabilitySignal)
 
 	return &routerConnector{
-		routingTable:  &routeMap,
-		metricsConfig: metricsConfig{consumers: tr, defaultCons: defaultMetricsConsumer, logger: set.Logger},
+		odigosKsResourcesExtensionID: config.OdigosK8sResourcesExtensionID,
+		metricsConfig: metricsConfig{
+			consumers:   tr,
+			defaultCons: defaultMetricsConsumer,
+			logger:      set.Logger,
+			datastreams: datastreams,
+		},
 	}, nil
 }
 
@@ -137,39 +172,37 @@ func createLogsConnector(
 		// This can happen if the default pipeline is not configured (Sources and Destinations)
 		defaultLogsConsumer = nil
 	}
-	routeMap := BuildSignalRoutingMap(config.DataStreams)
+	datastreams := calculateDatastreamsForSignals(config, common.LogsObservabilitySignal)
 
 	return &routerConnector{
-		routingTable: &routeMap,
-		logsConfig:   logsConfig{consumers: tr, defaultCons: defaultLogsConsumer, logger: set.Logger},
+		odigosKsResourcesExtensionID: config.OdigosK8sResourcesExtensionID,
+		logsConfig: logsConfig{
+			consumers:   tr,
+			defaultCons: defaultLogsConsumer,
+			logger:      set.Logger,
+			datastreams: datastreams,
+		},
 	}, nil
 }
 
-func determineRoutingPipelines(attrs pcommon.Map, m SignalRoutingMap, signal common.ObservabilitySignal) ([]string, string) {
-	nsAttr, ok := attrs.Get(string(semconv1_26.K8SNamespaceNameKey))
+func (r *routerConnector) determineWorkloadDataStreams(attrs pcommon.Map, availableDataStreams map[odigosk8sresourcesexention.DatastreamName]struct{}) ([]string, string) {
+	wk := odigosk8sresourcesexention.ResourceAttributesToWorkloadKey(attrs)
+	if wk == nil {
+		return nil, ""
+	}
+	ds, ok := r.odigosKsResources.GetDatastreamsForWorkload(*wk)
 	if !ok {
-		return nil, ""
-	}
-	ns := nsAttr.Str()
-
-	name, kind := getDynamicNameAndKind(attrs)
-	if name == "" || kind == "" {
-		return nil, ""
+		return nil, string(*wk)
 	}
 
-	key := fmt.Sprintf("%s/%s/%s", ns, NormalizeKind(kind), name)
-
-	routingIndex, ok := m[key]
-	if !ok {
-		return nil, ""
+	effectiveDataStreams := []string{}
+	for _, datastream := range ds {
+		if _, ok := availableDataStreams[datastream]; ok {
+			effectiveDataStreams = append(effectiveDataStreams, string(datastream))
+		}
 	}
 
-	pipelines, ok := routingIndex[signal]
-	if !ok {
-		return nil, ""
-	}
-
-	return pipelines, key
+	return effectiveDataStreams, string(*wk)
 }
 
 func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {
@@ -186,19 +219,19 @@ func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) e
 	for i := 0; i < rSpans.Len(); i++ {
 		rs := rSpans.At(i)
 
-		// Determine pipelines for this resource
-		pipelines, key := determineRoutingPipelines(rs.Resource().Attributes(), *r.routingTable, common.TracesObservabilitySignal)
+		// Determine dataStreams for this resource
+		dataStreams, workloadKey := r.determineWorkloadDataStreams(rs.Resource().Attributes(), cfg.datastreams)
 
 		// if no pipelines matched, copy the resource span to the default consumer
-		if len(pipelines) == 0 {
-			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
+		if len(dataStreams) == 0 {
+			cfg.logger.Debug("no pipelines matched for", zap.Any("key", workloadKey))
 			rs.CopyTo(defaultTraces.ResourceSpans().AppendEmpty())
 			continue
 		}
 
-		for _, pipeline := range pipelines {
+		for _, dataStream := range dataStreams {
 
-			pipelineID := collectorpipeline.NewIDWithName(collectorpipeline.SignalTraces, pipeline)
+			pipelineID := collectorpipeline.NewIDWithName(collectorpipeline.SignalTraces, dataStream)
 			consumer, err := cfg.consumers.Consumer(pipelineID)
 			if err != nil {
 				errs = errors.Join(errs, fmt.Errorf("failed to get consumer for pipeline %s: %w", pipelineID, err))
@@ -246,11 +279,11 @@ func (r *routerConnector) ConsumeMetrics(ctx context.Context, md pmetric.Metrics
 	rMetrics := md.ResourceMetrics()
 	for i := 0; i < rMetrics.Len(); i++ {
 		rm := rMetrics.At(i)
-		pipelines, key := determineRoutingPipelines(rm.Resource().Attributes(), *r.routingTable, common.MetricsObservabilitySignal)
+		pipelines, workloadKey := r.determineWorkloadDataStreams(rm.Resource().Attributes(), cfg.datastreams)
 
 		// If no pipeline matched, copy the resource metrics to the default consumer
 		if len(pipelines) == 0 {
-			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
+			cfg.logger.Debug("no pipelines matched for", zap.Any("key", workloadKey))
 			rm.CopyTo(defaultMetrics.ResourceMetrics().AppendEmpty())
 			continue
 		}
@@ -303,11 +336,11 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	for i := 0; i < rLogs.Len(); i++ {
 		rl := rLogs.At(i)
 		// Determine destination pipelines based on resource metadata
-		pipelines, key := determineRoutingPipelines(rl.Resource().Attributes(), *r.routingTable, common.LogsObservabilitySignal)
+		pipelines, workloadKey := r.determineWorkloadDataStreams(rl.Resource().Attributes(), cfg.datastreams)
 
 		// If no pipeline matched, copy the resource logs to the default consumer
 		if len(pipelines) == 0 {
-			cfg.logger.Debug("no pipelines matched for", zap.Any("key", key))
+			cfg.logger.Debug("no pipelines matched for", zap.Any("key", workloadKey))
 			rl.CopyTo(defaultLogs.ResourceLogs().AppendEmpty())
 			continue
 		}
@@ -350,24 +383,4 @@ func (r *routerConnector) ConsumeLogs(ctx context.Context, ld plog.Logs) error {
 	}
 
 	return errs
-}
-
-// getDynamicNameAndKind extracts the workload name and kind from a resource's attributes.
-// It searches for known Kubernetes keys such as deployment, statefulset, and daemonset,
-// and returns the first matched workload name and its corresponding kind.
-// If none are found, it returns empty strings for both.
-
-var kindKeyMap = map[string]string{
-	string(semconv1_26.K8SDeploymentNameKey):  "Deployment",
-	string(semconv1_26.K8SStatefulSetNameKey): "StatefulSet",
-	string(semconv1_26.K8SDaemonSetNameKey):   "DaemonSet",
-}
-
-func getDynamicNameAndKind(attrs pcommon.Map) (name string, kind string) {
-	for key, kindType := range kindKeyMap {
-		if val, ok := attrs.Get(key); ok {
-			return val.Str(), kindType
-		}
-	}
-	return "", ""
 }

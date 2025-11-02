@@ -16,14 +16,11 @@ connectors:
   odigosrouterconnector/logs:
     datastreams:
     - name: dummy-group
-      sources:
-      - namespace: dummy-namespace
-        kind: dummy-kind
-        name: dummy-name
       destinations:
       - destinationname: dummy
         configuredsignals:
         - LOGS
+    odigos_k8s_resources_extension_id: odigos_k8s_resources
 service:
   extensions: []
   pipelines:

@@ -1,0 +1,9 @@
+type: odigos_k8s_resources
+github_project: odigos-io/odigos
+
+status:
+  class: extension
+  stability:
+    development: [extension]
+  codeowners:
+    active: [blumamir]

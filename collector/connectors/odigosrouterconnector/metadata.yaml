@@ -6,3 +6,7 @@ status:
   codeowners:
     active: [tamirdavid]
     seeking_new: false
+
+tests:
+  config:
+    odigos_k8s_resources_extension_id: odigos_k8s_resources

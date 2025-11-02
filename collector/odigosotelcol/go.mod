@@ -6,6 +6,7 @@ go 1.25.0
 
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.138.0
+	github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention v0.138.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.138.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.138.0
 	github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor v0.138.0
@@ -343,7 +344,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250903184740-5d135037bd4d // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/getsentry/sentry-go v0.36.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
@@ -717,9 +718,9 @@ require (
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/kubelet v0.32.3 // indirect
-	k8s.io/utils v0.0.0-20250321185631-1f6e0b77f77e // indirect
+	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
 	sigs.k8s.io/controller-runtime v0.20.4 // indirect
-	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
+	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
@@ -752,5 +753,7 @@ replace github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ..
 replace github.com/odigos-io/odigos/common => ../../common
 
 replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
+
+replace github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention => ../extension/odigosk8sresourcesexention
 
 exclude github.com/knadh/koanf v1.5.0

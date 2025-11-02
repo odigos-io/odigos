@@ -8,7 +8,8 @@ import (
 
 type Config struct {
 	component.Config
-	DataStreams []pipelinegen.DataStreams `mapstructure:"datastreams"`
+	DataStreams                   []pipelinegen.DataStreams `mapstructure:"datastreams"`
+	OdigosK8sResourcesExtensionID component.ID              `mapstructure:"odigos_k8s_resources_extension_id"`
 }
 
 func (c *Config) Validate() error {

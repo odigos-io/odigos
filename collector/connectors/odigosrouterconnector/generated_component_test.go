@@ -15,6 +15,8 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/pipeline"
+
+	"github.com/odigos-io/odigos/collector/extension/odigosk8sresourcesexention"
 )
 
 var typ = component.MustNewType("odigosrouterconnector")
@@ -98,9 +100,30 @@ func newMdatagenNopHost() component.Host {
 }
 
 func (mnh *mdatagenNopHost) GetExtensions() map[component.ID]component.Component {
-	return nil
+	// Create a mock OdigosKsResources extension for testing
+	mockExtension := &mockOdigosKsResources{}
+	extensionID := component.MustNewID("odigos_k8s_resources")
+	return map[component.ID]component.Component{
+		extensionID: mockExtension,
+	}
 }
 
 func (mnh *mdatagenNopHost) GetFactory(_ component.Kind, _ component.Type) component.Factory {
 	return nil
+}
+
+// mockOdigosKsResources is a mock implementation of the k8sResourcesProvider interface for testing
+type mockOdigosKsResources struct{}
+
+func (m *mockOdigosKsResources) Start(_ context.Context, _ component.Host) error {
+	return nil
+}
+
+func (m *mockOdigosKsResources) Shutdown(_ context.Context) error {
+	return nil
+}
+
+func (m *mockOdigosKsResources) GetDatastreamsForWorkload(_ odigosk8sresourcesexention.WorkloadKey) ([]odigosk8sresourcesexention.DatastreamName, bool) {
+	// Return empty slice for testing purposes
+	return []odigosk8sresourcesexention.DatastreamName{}, false
 }
