@@ -15,8 +15,6 @@ import (
 	collectorpipeline "go.opentelemetry.io/collector/pipeline"
 	"go.uber.org/zap"
 
-	"github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector/internal/kube"
-	"github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector/internal/utils"
 	"github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -24,41 +22,49 @@ import (
 
 type tracesConfig struct {
 	consumers   connector.TracesRouterAndConsumer
-	datastreams map[utils.DatastreamName]struct{}
+	datastreams map[odigosrek8ssourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Traces
 	logger      *zap.Logger
 }
 
 type metricsConfig struct {
 	consumers   connector.MetricsRouterAndConsumer
-	datastreams map[utils.DatastreamName]struct{}
+	datastreams map[odigosrek8ssourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Metrics
 	logger      *zap.Logger
 }
 
 type logsConfig struct {
 	consumers   connector.LogsRouterAndConsumer
-	datastreams map[utils.DatastreamName]struct{}
+	datastreams map[odigosrek8ssourcesexention.DatastreamName]struct{}
 	defaultCons consumer.Logs
 	logger      *zap.Logger
 }
 
 // routerConnector is the main struct for all signal types.
 type routerConnector struct {
-	tracesConfig      tracesConfig
-	metricsConfig     metricsConfig
-	logsConfig        logsConfig
-	watchClient       *kube.WatchClient
-	odigosKsResources *odigosrek8ssourcesexention.OdigosKsResources
+	tracesConfig                 tracesConfig
+	metricsConfig                metricsConfig
+	logsConfig                   logsConfig
+	odigosKsResourcesExtensionID component.ID
+	odigosKsResources            *odigosrek8ssourcesexention.OdigosKsResources
 }
 
-func (r *routerConnector) Start(_ context.Context, _ component.Host) error {
-	r.watchClient.Start()
+func (r *routerConnector) Start(_ context.Context, host component.Host) error {
+	extensions := host.GetExtensions()
+	odigosKsResourcesExtensionComponent, ok := extensions[r.odigosKsResourcesExtensionID]
+	if !ok {
+		return fmt.Errorf("odigos k8s resources extension not found")
+	}
+	odigosKsResourcesExtension, ok := odigosKsResourcesExtensionComponent.(*odigosrek8ssourcesexention.OdigosKsResources)
+	if !ok {
+		return fmt.Errorf("odigos k8s resources extension is not a OdigosKsResources")
+	}
+	r.odigosKsResources = odigosKsResourcesExtension
 	return nil
 }
 
 func (r *routerConnector) Shutdown(_ context.Context) error {
-	r.watchClient.Stop()
 	return nil
 }
 
@@ -90,13 +96,9 @@ func createTracesConnector(
 	}
 
 	datastreams := calculateDatastreamsForSignals(config, common.TracesObservabilitySignal)
-	watchClient, err := kube.NewWatchClient(set.TelemetrySettings)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create watch client: %w", err)
-	}
 
 	return &routerConnector{
-		watchClient: watchClient,
+		odigosKsResourcesExtensionID: config.OdigosKsResourcesExtensionID,
 		tracesConfig: tracesConfig{
 			consumers:   tr,
 			defaultCons: defaultTracesConsumer,
@@ -130,13 +132,9 @@ func createMetricsConnector(
 	}
 
 	datastreams := calculateDatastreamsForSignals(config, common.MetricsObservabilitySignal)
-	watchClient, err := kube.NewWatchClient(set.TelemetrySettings)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create watch client: %w", err)
-	}
 
 	return &routerConnector{
-		watchClient: watchClient,
+		odigosKsResourcesExtensionID: config.OdigosKsResourcesExtensionID,
 		metricsConfig: metricsConfig{
 			consumers:   tr,
 			defaultCons: defaultMetricsConsumer,
@@ -170,13 +168,9 @@ func createLogsConnector(
 		defaultLogsConsumer = nil
 	}
 	datastreams := calculateDatastreamsForSignals(config, common.LogsObservabilitySignal)
-	watchClient, err := kube.NewWatchClient(set.TelemetrySettings)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create watch client: %w", err)
-	}
 
 	return &routerConnector{
-		watchClient: watchClient,
+		odigosKsResourcesExtensionID: config.OdigosKsResourcesExtensionID,
 		logsConfig: logsConfig{
 			consumers:   tr,
 			defaultCons: defaultLogsConsumer,
@@ -186,25 +180,24 @@ func createLogsConnector(
 	}, nil
 }
 
-func (r *routerConnector) determineWorkloadDataStreams(attrs pcommon.Map, availableDataStreams map[utils.DatastreamName]struct{}) ([]string, string) {
-	workloadKey := utils.ResourceAttributesToWorkloadKey(attrs)
-	if workloadKey == nil {
+func (r *routerConnector) determineWorkloadDataStreams(attrs pcommon.Map, availableDataStreams map[odigosrek8ssourcesexention.DatastreamName]struct{}) ([]string, string) {
+	wk := odigosrek8ssourcesexention.ResourceAttributesToWorkloadKey(attrs)
+	if wk == nil {
 		return nil, ""
 	}
-
-	datastreams, ok := r.watchClient.GetDatastreamsForWorkload(*workloadKey)
+	ds, ok := r.odigosKsResources.GetDatastreamsForWorkload(*wk)
 	if !ok {
-		return nil, string(*workloadKey)
+		return nil, string(*wk)
 	}
 
 	effectiveDataStreams := []string{}
-	for _, datastream := range datastreams {
+	for _, datastream := range ds {
 		if _, ok := availableDataStreams[datastream]; ok {
 			effectiveDataStreams = append(effectiveDataStreams, string(datastream))
 		}
 	}
 
-	return effectiveDataStreams, string(*workloadKey)
+	return effectiveDataStreams, string(*wk)
 }
 
 func (r *routerConnector) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {

@@ -61,7 +61,6 @@ import (
 	syslogexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter"
 	tencentcloudlogserviceexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter"
 	zipkinexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter"
-	lokiexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/lokiexporter"
 	odigosrek8ssourcesexention "github.com/odigos-io/odigos/collector/extension/odigosrek8ssourcesexention"
 	zpagesextension "go.opentelemetry.io/collector/extension/zpagesextension"
 	memorylimiterextension "go.opentelemetry.io/collector/extension/memorylimiterextension"

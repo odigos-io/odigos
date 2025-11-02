@@ -218,7 +218,8 @@ func applyRootPipelineForSignal(currentConfig *config.Config, signal common.Obse
 
 	connectorName := fmt.Sprintf("odigosrouterconnector/%s", strings.ToLower(string(signal)))
 	currentConfig.Connectors[connectorName] = config.GenericMap{
-		"datastreams": dataStreamsDetails,
+		"datastreams":                      dataStreamsDetails,
+		"odigos_ks_resources_extension_id": "odigos_k8s_resources",
 	}
 
 	currentConfig.Service.Pipelines[rootPipelineName] = config.Pipeline{
