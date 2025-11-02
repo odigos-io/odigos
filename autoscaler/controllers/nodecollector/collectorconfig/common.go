@@ -76,6 +76,10 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 		"compression": compression,
 	}
 
+	if otlpExporterConfiguration != nil && otlpExporterConfiguration.Timeout != "" {
+		traceExporterConfig["timeout"] = otlpExporterConfiguration.Timeout
+	}
+
 	// Add retry_on_failure configuration if present
 	if otlpExporterConfiguration != nil && otlpExporterConfiguration.RetryOnFailure != nil {
 

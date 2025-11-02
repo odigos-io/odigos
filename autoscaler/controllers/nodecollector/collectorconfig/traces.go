@@ -49,6 +49,10 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 				},
 			}
 
+			if nodeCG.Spec.OtlpExporterConfiguration != nil && nodeCG.Spec.OtlpExporterConfiguration.Timeout != "" {
+				otlpConfig["timeout"] = nodeCG.Spec.OtlpExporterConfiguration.Timeout
+			}
+
 			// Add retry_on_failure configuration if present
 			if nodeCG.Spec.OtlpExporterConfiguration != nil && nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure != nil {
 				retryConfig := config.GenericMap{}
