@@ -25,16 +25,19 @@ processors:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  odigos_k8s_resources: {}
   pprof:
     endpoint: 0.0.0.0:1777
 connectors:
   forward/logs/debug-d1: {}
   odigosrouterconnector/logs:
     datastreams: []
+    odigos_k8s_resources_extension_id: odigos_k8s_resources
 service:
   extensions:
   - health_check
   - pprof
+  - odigos_k8s_resources
   pipelines:
     logs/debug-d1:
       receivers:

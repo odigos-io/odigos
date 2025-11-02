@@ -98,7 +98,7 @@ func createTracesConnector(
 	datastreams := calculateDatastreamsForSignals(config, common.TracesObservabilitySignal)
 
 	return &routerConnector{
-		odigosKsResourcesExtensionID: config.OdigosKsResourcesExtensionID,
+		odigosKsResourcesExtensionID: config.OdigosK8sResourcesExtensionID,
 		tracesConfig: tracesConfig{
 			consumers:   tr,
 			defaultCons: defaultTracesConsumer,
@@ -134,7 +134,7 @@ func createMetricsConnector(
 	datastreams := calculateDatastreamsForSignals(config, common.MetricsObservabilitySignal)
 
 	return &routerConnector{
-		odigosKsResourcesExtensionID: config.OdigosKsResourcesExtensionID,
+		odigosKsResourcesExtensionID: config.OdigosK8sResourcesExtensionID,
 		metricsConfig: metricsConfig{
 			consumers:   tr,
 			defaultCons: defaultMetricsConsumer,
@@ -170,7 +170,7 @@ func createLogsConnector(
 	datastreams := calculateDatastreamsForSignals(config, common.LogsObservabilitySignal)
 
 	return &routerConnector{
-		odigosKsResourcesExtensionID: config.OdigosKsResourcesExtensionID,
+		odigosKsResourcesExtensionID: config.OdigosK8sResourcesExtensionID,
 		logsConfig: logsConfig{
 			consumers:   tr,
 			defaultCons: defaultLogsConsumer,
