@@ -48,6 +48,8 @@ spec:
           image: {{ .Values.auth.image | quote }}
           args: ["start", "--optimized", "--http-enabled=true"]
           env:
+            - name: KC_HOSTNAME
+              value: "localhost"
             - name: KEYCLOAK_ADMIN
               valueFrom:
                 secretKeyRef:
@@ -58,8 +60,31 @@ spec:
                 secretKeyRef:
                   name: keycloak-admin-credentials
                   key: admin-password
-            - name: KC_HOSTNAME
-              value: "localhost"
+            - name: KEYCLOAK_OIDC_PROVIDER
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-oidc-credentials
+                  key: provider
+            - name: KEYCLOAK_OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-oidc-credentials
+                  key: client-id
+            - name: KEYCLOAK_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-oidc-credentials
+                  key: client-secret
+            - name: KEYCLOAK_OIDC_DISCOVERY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-oidc-credentials
+                  key: discovery-url
+            - name: KEYCLOAK_OIDC_TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-oidc-credentials
+                  key: tenant-id
           ports:
             - containerPort: {{ .Values.auth.port }}
               name: {{ .Values.auth.portName }}

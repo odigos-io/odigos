@@ -1,6 +1,6 @@
 image:
-  tag: ''
-imagePrefix: ''
+  tag: ""
+imagePrefix: ""
 imagePullSecrets: []
 
 centralBackend:
@@ -19,7 +19,7 @@ centralBackend:
 centralUI:
   uiMode: normal
   uiPaginationLimit: 0
-  centralBackendURL: ''
+  centralBackendURL: ""
   resources:
     requests:
       cpu: 100m
@@ -41,6 +41,12 @@ auth:
   enabled: true
   image: quay.io/keycloak/keycloak:24.0.3
   adminUsername: admin
+  adminPassword: ""
+  oidcProvider: ""
+  oidcClientId: ""
+  oidcClientSecret: ""
+  oidcDiscoveryUrl: ""
+  oidcTenantId: ""
   port: 8080
   portName: http
   resources:

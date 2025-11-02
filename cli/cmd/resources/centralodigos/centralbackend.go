@@ -94,6 +94,10 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string) *ap
 									Name:  "KEYCLOAK_SECRET_NAME",
 									Value: k8sconsts.KeycloakSecretName,
 								},
+								{
+									Name:  "KEYCLOAK_OIDC_SECRET_NAME",
+									Value: k8sconsts.KeycloakOidcSecretName,
+								},
 							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{

@@ -260,8 +260,13 @@ var centralCmd = &cobra.Command{
 }
 
 var (
-	centralAdminUser     string
-	centralAdminPassword string
+	centralAdminUser        string
+	centralAdminPassword    string
+	centralOidcProvider     string
+	centralOidcClientId     string
+	centralOidcClientSecret string
+	centralOidcDiscoveryUrl string
+	centralOidcTenantId     string
 )
 
 var centralInstallCmd = &cobra.Command{
@@ -459,7 +464,6 @@ func createOdigosCentralSecret(ctx context.Context, client *kube.Client, ns, tok
 }
 
 func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns string, onPremToken string) error {
-
 	_, err := client.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralBackendName, metav1.GetOptions{})
 	if err == nil {
 		fmt.Printf("\n\u001B[33mINFO:\u001B[0m Odigos Tower is already installed in namespace %s\n", ns)
@@ -481,8 +485,13 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	}
 	config := resources.CentralManagersConfig{
 		Auth: centralodigos.AuthConfig{
-			AdminUsername: centralAdminUser,
-			AdminPassword: centralAdminPassword,
+			AdminUsername:    centralAdminUser,
+			AdminPassword:    centralAdminPassword,
+			OidcProvider:     centralOidcProvider,
+			OidcClientId:     centralOidcClientId,
+			OidcClientSecret: centralOidcClientSecret,
+			OidcDiscoveryUrl: centralOidcDiscoveryUrl,
+			OidcTenantId:     centralOidcTenantId,
 		},
 	}
 	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
@@ -625,14 +634,19 @@ func init() {
 	centralUpgradeCmd.MarkFlagRequired("version")
 
 	// Central configuration flags
+	centralCmd.AddCommand(portForwardCentralCmd)
+	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
 	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password")
 	centralInstallCmd.MarkFlagRequired("central-admin-password")
-	centralCmd.AddCommand(portForwardCentralCmd)
-	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
+	centralInstallCmd.Flags().StringVar(&centralOidcProvider, "central-oidc-provider", "", "Central OIDC provider")
+	centralInstallCmd.Flags().StringVar(&centralOidcClientId, "central-oidc-client-id", "", "Central OIDC client ID")
+	centralInstallCmd.Flags().StringVar(&centralOidcClientSecret, "central-oidc-client-secret", "", "Central OIDC client secret")
+	centralInstallCmd.Flags().StringVar(&centralOidcDiscoveryUrl, "central-oidc-discovery-url", "", "Central OIDC discovery URL")
+	centralInstallCmd.Flags().StringVar(&centralOidcTenantId, "central-oidc-tenant-id", "", "Central OIDC tenant ID")
+
 	// migrate subcommand
 	proCmd.AddCommand(activateCmd)
 	activateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	activateCmd.MarkFlagRequired("onprem-token")
-
 }

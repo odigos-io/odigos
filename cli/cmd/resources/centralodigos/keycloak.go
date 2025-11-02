@@ -12,8 +12,13 @@ import (
 )
 
 type AuthConfig struct {
-	AdminUsername string
-	AdminPassword string
+	AdminUsername    string
+	AdminPassword    string
+	OidcProvider     string
+	OidcClientId     string
+	OidcClientSecret string
+	OidcDiscoveryUrl string
+	OidcTenantId     string
 }
 
 type keycloakResourceManager struct {
@@ -37,6 +42,7 @@ func (m *keycloakResourceManager) Name() string { return k8sconsts.KeycloakResou
 func (m *keycloakResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewKeycloakSecret(m.ns, m.config),
+		NewKeycloakOidcSecret(m.ns, m.config),
 		NewKeycloakDeployment(m.ns, m.config),
 		NewKeycloakService(m.ns),
 	}
@@ -58,6 +64,28 @@ func NewKeycloakSecret(ns string, config AuthConfig) *corev1.Secret {
 		StringData: map[string]string{
 			k8sconsts.KeycloakAdminUsernameKey: config.AdminUsername,
 			k8sconsts.KeycloakAdminPasswordKey: config.AdminPassword,
+		},
+	}
+}
+
+func NewKeycloakOidcSecret(ns string, config AuthConfig) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.KeycloakOidcSecretName,
+			Namespace: ns,
+			Labels:    map[string]string{"app": k8sconsts.KeycloakAppName},
+		},
+		Type: corev1.SecretTypeOpaque,
+		StringData: map[string]string{
+			k8sconsts.KeycloakOidcProviderKey:     config.OidcProvider,
+			k8sconsts.KeycloakOidcClientIdKey:     config.OidcClientId,
+			k8sconsts.KeycloakOidcClientSecretKey: config.OidcClientSecret,
+			k8sconsts.KeycloakOidcDiscoveryUrlKey: config.OidcDiscoveryUrl,
+			k8sconsts.KeycloakOidcTenantIdKey:     config.OidcTenantId,
 		},
 	}
 }
@@ -90,6 +118,10 @@ func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
 							Args:  []string{"start", "--optimized", "--http-enabled=true"},
 							Env: []corev1.EnvVar{
 								{
+									Name:  "KC_HOSTNAME",
+									Value: "localhost",
+								},
+								{
 									Name: "KEYCLOAK_ADMIN",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
@@ -111,10 +143,67 @@ func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
 										},
 									},
 								},
-								{Name: "KC_HOSTNAME", Value: "localhost"},
+								{
+									Name: "KEYCLOAK_OIDC_PROVIDER",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.KeycloakOidcSecretName,
+											},
+											Key: k8sconsts.KeycloakOidcProviderKey,
+										},
+									},
+								},
+								{
+									Name: "KEYCLOAK_OIDC_CLIENT_ID",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.KeycloakOidcSecretName,
+											},
+											Key: k8sconsts.KeycloakOidcClientIdKey,
+										},
+									},
+								},
+								{
+									Name: "KEYCLOAK_OIDC_CLIENT_SECRET",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.KeycloakOidcSecretName,
+											},
+											Key: k8sconsts.KeycloakOidcClientSecretKey,
+										},
+									},
+								},
+								{
+									Name: "KEYCLOAK_OIDC_DISCOVERY_URL",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.KeycloakOidcSecretName,
+											},
+											Key: k8sconsts.KeycloakOidcDiscoveryUrlKey,
+										},
+									},
+								},
+								{
+									Name: "KEYCLOAK_OIDC_TENANT_ID",
+									ValueFrom: &corev1.EnvVarSource{
+										SecretKeyRef: &corev1.SecretKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.KeycloakOidcSecretName,
+											},
+											Key: k8sconsts.KeycloakOidcTenantIdKey,
+										},
+									},
+								},
 							},
 							Ports: []corev1.ContainerPort{
-								{Name: k8sconsts.KeycloakPortName, ContainerPort: k8sconsts.KeycloakPort},
+								{
+									Name:          k8sconsts.KeycloakPortName,
+									ContainerPort: k8sconsts.KeycloakPort,
+								},
 							},
 						},
 					},
