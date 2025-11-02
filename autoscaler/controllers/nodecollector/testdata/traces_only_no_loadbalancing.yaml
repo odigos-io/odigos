@@ -5,6 +5,11 @@ exporters:
       enabled: false
     tls:
       insecure: true
+  otlp/out-cluster-collector:
+    compression: none
+    endpoint: dns:///odigos-gateway.odigos-system:4317
+    tls:
+      insecure: true
   otlp/out-cluster-collector-trace:
     compression: none
     endpoint: dns:///odigos-gateway.odigos-system:4317
@@ -82,7 +87,7 @@ service:
       - prometheus/self-metrics
     traces:
       exporters:
-      - otlp/out-cluster-collector
+      - otlp/out-cluster-collector-trace
       processors:
       - batch
       - memory_limiter
