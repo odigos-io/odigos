@@ -7,6 +7,13 @@ metadata:
     odigos.io/system-object: "true"
 rules:
   - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationconfigs
+    verbs:
+      - list
+      - watch
+  - apiGroups:
       - ""
     resources:
       - events
