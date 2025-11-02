@@ -209,7 +209,7 @@ jobs:
           --image-label version=${{ env.TAG }} \
           --image-label release=${{ env.TAG }} \
           --image-label summary="Odigos CLI" \
-          --image-label description="Odigos CLI installs, manages, and uninstalls Odigos in your Kubernetes cluster." \
+          --image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
           --platform=all .
 
       - name: Install crane
