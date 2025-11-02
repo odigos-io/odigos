@@ -37,19 +37,53 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 		// If load balancing is not needed, we use the common cluster collector exporter without load balancing.
 		if loadBalancingNeeded {
 			compression := "none"
-			dataCompressionEnabled := nodeCG.Spec.EnableDataCompression
-			if dataCompressionEnabled != nil && *dataCompressionEnabled {
+			if nodeCG.Spec.OtlpExporterConfiguration != nil && nodeCG.Spec.OtlpExporterConfiguration.EnableDataCompression != nil && *nodeCG.Spec.OtlpExporterConfiguration.EnableDataCompression {
 				compression = "gzip"
 			}
+
 			service := fmt.Sprintf("%s.%s", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
+
+			// Build the OTLP protocol configuration
+			otlpConfig := config.GenericMap{
+				"compression": compression,
+				"tls": config.GenericMap{
+					"insecure": true,
+				},
+			}
+
+			if nodeCG.Spec.OtlpExporterConfiguration != nil && nodeCG.Spec.OtlpExporterConfiguration.Timeout != "" {
+				otlpConfig["timeout"] = nodeCG.Spec.OtlpExporterConfiguration.Timeout
+			}
+
+			// Add retry_on_failure configuration if present
+			if nodeCG.Spec.OtlpExporterConfiguration != nil && nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure != nil {
+				retryConfig := config.GenericMap{}
+
+				// Only set enabled if not nil to avoid possible nil pointer dereference
+				if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.Enabled != nil {
+					retryConfig["enabled"] = *nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.Enabled
+				} else {
+					// by default, retry on failure is enabled
+					retryConfig["enabled"] = true
+				}
+
+				// Only add the interval fields if they are not empty
+				if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.InitialInterval != "" {
+					retryConfig["initial_interval"] = nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.InitialInterval
+				}
+				if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.MaxInterval != "" {
+					retryConfig["max_interval"] = nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.MaxInterval
+				}
+				if nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.MaxElapsedTime != "" {
+					retryConfig["max_elapsed_time"] = nodeCG.Spec.OtlpExporterConfiguration.RetryOnFailure.MaxElapsedTime
+				}
+
+				otlpConfig["retry_on_failure"] = retryConfig
+			}
+
 			exporters[odigosTracesLoadbalancingExporterName] = config.GenericMap{
 				"protocol": config.GenericMap{
-					"otlp": config.GenericMap{
-						"compression": compression,
-						"tls": config.GenericMap{
-							"insecure": true,
-						},
-					},
+					"otlp": otlpConfig,
 				},
 				"resolver": config.GenericMap{
 					"k8s": config.GenericMap{
@@ -62,7 +96,7 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 			// Use the common cluster collector exporter
 			// Note: The actual exporter merge by commonExporters before this function is called.
 			// Here we just add it to the exporter name
-			exporterNames = append(exporterNames, clusterCollectorExporterName)
+			exporterNames = append(exporterNames, clusterCollectorTraceExporterName)
 		}
 	}
 

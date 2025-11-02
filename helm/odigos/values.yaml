@@ -189,9 +189,24 @@ collectorNode:
   # to some other directory (for example, '/mnt/var/log')
   k8sNodeLogsDirectory: ''
 
-  # EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
-  # It is disabled by default and can be enabled by setting the enabled flag to true.
-  enableDataCompression: false
+
+  otlpExporterConfiguration:
+    # EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+    # It is disabled by default and can be enabled by setting the enabled flag to true.
+    enableDataCompression: false
+    # Time to wait per individual attempt to send data to a backend
+    timeout: 5s
+    retryOnFailure:
+      # Whether to retry on failure, by default it is enabled.
+      enabled: true
+      # Time to wait after the first failure before retrying; ignored if `enabled` is `false`.
+      initialInterval: 5s
+      # Is the upper bound on backoff; ignored if `enabled` is `false`.
+      maxInterval: 30s
+      # Is the maximum amount of time spent trying to send a batch; ignored if `enabled` is `false`.
+      # If set to 0, the retry will continue indefinitely until the data is sent successfully.
+      maxElapsedTime: 300s
+
 
 autoscaler:
   nodeSelector:
