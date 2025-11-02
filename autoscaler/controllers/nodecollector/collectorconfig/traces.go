@@ -9,9 +9,11 @@ import (
 )
 
 const (
-	odigosEbpfReceiverName                = "odigosebpf"
-	odigosTracesLoadbalancingExporterName = "loadbalancing/traces"
-	odigosTracesPipelineName              = "traces"
+	odigosEbpfReceiverName                    = "odigosebpf"
+	odigosTracesLoadbalancingExporterName     = "loadbalancing/traces"
+	odigosTracesPipelineName                  = "traces"
+	odigosTracesExportingForwardConnectorName = "forward/traces-exporting"
+	odigosTracesExportingPipelineName         = "traces/exporting"
 )
 
 var staticTracesReceivers config.GenericMap
@@ -101,11 +103,13 @@ func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, t
 	return exporters, exporterNames
 }
 
-func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, additionalTraceExporters []string, tracesEnabledInClusterCollector bool,
+func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, postSpanMetricsProcessorNames []string, additionalTraceExporters []string, tracesEnabledInClusterCollector bool,
 	loadBalancingNeeded bool) config.Config {
 
-	exporters, pipelineExporterNames := tracesExporters(nodeCG, odigosNamespace, tracesEnabledInClusterCollector, loadBalancingNeeded)
-	pipelineExporterNames = append(pipelineExporterNames, additionalTraceExporters...)
+	exporters, traceExporterNames := tracesExporters(nodeCG, odigosNamespace, tracesEnabledInClusterCollector, loadBalancingNeeded)
+
+	// traces pipeline also feeds the spanmetrics connector.
+	// users may want some custom processors (manifestProcessorNames)
 
 	tracePipelineProcessors := append([]string{
 		batchProcessorName,         // always start with batch
@@ -115,17 +119,43 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, mani
 	}, manifestProcessorNames...)
 	tracePipelineProcessors = append(tracePipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
+	// conditionally, create another pipeline for span exporting,
+	// which will run after spanmetrics, but before exporting.
+	// the use case is: filter spans in node-collector, but include them in the span metrics.
+	connectors := config.GenericMap{}
+	tracesMainPipelineExporterNames := []string{}
+	additionalPipeline := map[string]config.Pipeline{}
+	if len(postSpanMetricsProcessorNames) == 0 {
+		tracesMainPipelineExporterNames = append(traceExporterNames, additionalTraceExporters...)
+	} else {
+		connectors[odigosTracesExportingForwardConnectorName] = config.GenericMap{}
+		additionalPipeline[odigosTracesExportingPipelineName] = config.Pipeline{
+			Receivers:  []string{odigosTracesExportingForwardConnectorName},
+			Processors: postSpanMetricsProcessorNames,
+			Exporters:  traceExporterNames,
+		}
+		tracesMainPipelineExporterNames = append(additionalTraceExporters, odigosTracesExportingForwardConnectorName)
+	}
+
+	tracePipeline := map[string]config.Pipeline{
+		odigosTracesPipelineName: {
+			Receivers:  []string{OTLPInReceiverName, odigosEbpfReceiverName},
+			Processors: tracePipelineProcessors,
+			Exporters:  tracesMainPipelineExporterNames,
+		},
+	}
+	if len(additionalPipeline) > 0 {
+		for pipelineName, pipeline := range additionalPipeline {
+			tracePipeline[pipelineName] = pipeline
+		}
+	}
+
 	return config.Config{
-		Receivers: staticTracesReceivers,
-		Exporters: exporters,
+		Connectors: connectors,
+		Receivers:  staticTracesReceivers,
+		Exporters:  exporters,
 		Service: config.Service{
-			Pipelines: map[string]config.Pipeline{
-				odigosTracesPipelineName: {
-					Receivers:  []string{OTLPInReceiverName, odigosEbpfReceiverName},
-					Processors: tracePipelineProcessors,
-					Exporters:  pipelineExporterNames,
-				},
-			},
+			Pipelines: tracePipeline,
 		},
 	}
 }
