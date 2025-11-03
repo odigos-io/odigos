@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common/consts"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +14,6 @@ import (
 
 const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
 const otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
-const odigosWorkloadKindAttributeKey = "odigos.workload.kind"
 
 type resourceAttribute struct {
 	Key   attribute.Key
@@ -43,7 +43,7 @@ func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName stri
 			// Add Odigos-specific attribute to track the actual workload kind
 			// This is needed because some workload types (like DeploymentConfig)
 			// use the same semconv key as other types (Deployment)
-			Key:   attribute.Key(odigosWorkloadKindAttributeKey),
+			Key:   attribute.Key(consts.OdigosWorkloadKindAttribute),
 			Value: string(podWorkload.Kind),
 		},
 	}
