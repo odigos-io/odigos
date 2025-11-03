@@ -3,9 +3,10 @@ package utils
 import (
 	"context"
 
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -81,94 +82,110 @@ func GetMatchLabels(obj metav1.Object) map[string]string {
 // IsWorkloadRolloutDone checks if the rollout of the given workload is done.
 // this is based on the kubectl implementation of checking the rollout status:
 // https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/rollout_status.go
+func isDeploymentRolloutDone(d *appsv1.Deployment) bool {
+	if d.Generation > d.Status.ObservedGeneration {
+		return false
+	}
+
+	cond := conditions.GetDeploymentCondition(d.Status, appsv1.DeploymentProgressing)
+	if cond != nil && cond.Reason == conditions.TimedOutReason {
+		// deployment exceeded its progress deadline
+		return false
+	}
+	if d.Spec.Replicas != nil && d.Status.UpdatedReplicas < *d.Spec.Replicas {
+		// Waiting for deployment rollout to finish
+		return false
+	}
+	if d.Status.Replicas > d.Status.UpdatedReplicas {
+		// Waiting for deployment rollout to finish old replicas are pending termination.
+		return false
+	}
+	if d.Status.AvailableReplicas < d.Status.UpdatedReplicas {
+		// Waiting for deployment rollout to finish:  not all updated replicas are available..
+		return false
+	}
+	return true
+}
+
+func isStatefulSetRolloutDone(s *appsv1.StatefulSet) bool {
+	if s.Spec.UpdateStrategy.Type != appsv1.RollingUpdateStatefulSetStrategyType {
+		// rollout status is only available for RollingUpdateStatefulSetStrategyType strategy type
+		return true
+	}
+	if s.Status.ObservedGeneration == 0 || s.Generation > s.Status.ObservedGeneration {
+		// Waiting for statefulset spec update to be observed
+		return false
+	}
+	if s.Spec.Replicas != nil && s.Status.ReadyReplicas < *s.Spec.Replicas {
+		// Waiting for pods to be ready
+		return false
+	}
+	if s.Spec.UpdateStrategy.Type == appsv1.RollingUpdateStatefulSetStrategyType && s.Spec.UpdateStrategy.RollingUpdate != nil {
+		if s.Spec.Replicas != nil && s.Spec.UpdateStrategy.RollingUpdate.Partition != nil {
+			if s.Status.UpdatedReplicas < (*s.Spec.Replicas - *s.Spec.UpdateStrategy.RollingUpdate.Partition) {
+				// Waiting for partitioned roll out to finish
+				return false
+			}
+		}
+		// partitioned roll out complete
+		return true
+	}
+	if s.Status.UpdateRevision != s.Status.CurrentRevision {
+		// waiting for statefulset rolling update to complete
+		return false
+	}
+	return true
+}
+
+func isDaemonSetRolloutDone(d *appsv1.DaemonSet) bool {
+	if d.Spec.UpdateStrategy.Type != appsv1.RollingUpdateDaemonSetStrategyType {
+		// rollout status is only available for RollingUpdateDaemonSetStrategyType strategy type
+		return true
+	}
+	if d.Generation > d.Status.ObservedGeneration {
+		// Waiting for daemon set spec update to be observed
+		return false
+	}
+	if d.Status.UpdatedNumberScheduled < d.Status.DesiredNumberScheduled {
+		// Waiting for daemon set rollout to finish
+		return false
+	}
+	if d.Status.NumberAvailable < d.Status.DesiredNumberScheduled {
+		// Waiting for daemon set rollout to finish
+		return false
+	}
+	return true
+}
+
+func isDeploymentConfigRolloutDone(dc *openshiftappsv1.DeploymentConfig) bool {
+	if dc.Generation > dc.Status.ObservedGeneration {
+		return false
+	}
+	if dc.Status.Replicas > dc.Status.UpdatedReplicas {
+		// Waiting for deploymentconfig rollout to finish old replicas are pending termination.
+		return false
+	}
+	if dc.Status.AvailableReplicas < dc.Status.UpdatedReplicas {
+		// Waiting for deploymentconfig rollout to finish: not all updated replicas are available.
+		return false
+	}
+	if dc.Status.UnavailableReplicas > 0 {
+		// Waiting for deploymentconfig rollout to finish: replicas are unavailable.
+		return false
+	}
+	return true
+}
+
 func IsWorkloadRolloutDone(obj metav1.Object) bool {
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
-		if o.Generation <= o.Status.ObservedGeneration {
-			cond := conditions.GetDeploymentCondition(o.Status, appsv1.DeploymentProgressing)
-			if cond != nil && cond.Reason == conditions.TimedOutReason {
-				// deployment exceeded its progress deadline
-				return false
-			}
-			if o.Spec.Replicas != nil && o.Status.UpdatedReplicas < *o.Spec.Replicas {
-				// Waiting for deployment rollout to finish
-				return false
-			}
-			if o.Status.Replicas > o.Status.UpdatedReplicas {
-				// Waiting for deployment rollout to finish old replicas are pending termination.
-				return false
-			}
-			if o.Status.AvailableReplicas < o.Status.UpdatedReplicas {
-				// Waiting for deployment rollout to finish:  not all updated replicas are available..
-				return false
-			}
-			return true
-		}
-		return false
+		return isDeploymentRolloutDone(o)
 	case *appsv1.StatefulSet:
-		if o.Spec.UpdateStrategy.Type != appsv1.RollingUpdateStatefulSetStrategyType {
-			// rollout status is only available for RollingUpdateStatefulSetStrategyType strategy type
-			return true
-		}
-		if o.Status.ObservedGeneration == 0 || o.Generation > o.Status.ObservedGeneration {
-			// Waiting for statefulset spec update to be observed
-			return false
-		}
-		if o.Spec.Replicas != nil && o.Status.ReadyReplicas < *o.Spec.Replicas {
-			// Waiting for pods to be ready
-			return false
-		}
-		if o.Spec.UpdateStrategy.Type == appsv1.RollingUpdateStatefulSetStrategyType && o.Spec.UpdateStrategy.RollingUpdate != nil {
-			if o.Spec.Replicas != nil && o.Spec.UpdateStrategy.RollingUpdate.Partition != nil {
-				if o.Status.UpdatedReplicas < (*o.Spec.Replicas - *o.Spec.UpdateStrategy.RollingUpdate.Partition) {
-					// Waiting for partitioned roll out to finish
-					return false
-				}
-			}
-			// partitioned roll out complete
-			return true
-		}
-		if o.Status.UpdateRevision != o.Status.CurrentRevision {
-			// waiting for statefulset rolling update to complete
-			return false
-		}
-		return true
+		return isStatefulSetRolloutDone(o)
 	case *appsv1.DaemonSet:
-		if o.Spec.UpdateStrategy.Type != appsv1.RollingUpdateDaemonSetStrategyType {
-			// rollout status is only available for RollingUpdateDaemonSetStrategyType strategy type
-			return true
-		}
-		if o.Generation <= o.Status.ObservedGeneration {
-			if o.Status.UpdatedNumberScheduled < o.Status.DesiredNumberScheduled {
-				// Waiting for daemon set rollout to finish
-				return false
-			}
-			if o.Status.NumberAvailable < o.Status.DesiredNumberScheduled {
-				// Waiting for daemon set rollout to finish
-				return false
-			}
-			return true
-		}
-		// Waiting for daemon set spec update to be observed
-		return false
+		return isDaemonSetRolloutDone(o)
 	case *openshiftappsv1.DeploymentConfig:
-		// DeploymentConfig rollout logic similar to Deployment
-		if o.Generation <= o.Status.ObservedGeneration {
-			if o.Status.Replicas > o.Status.UpdatedReplicas {
-				// Waiting for deploymentconfig rollout to finish old replicas are pending termination.
-				return false
-			}
-			if o.Status.AvailableReplicas < o.Status.UpdatedReplicas {
-				// Waiting for deploymentconfig rollout to finish: not all updated replicas are available.
-				return false
-			}
-			if o.Status.UnavailableReplicas > 0 {
-				// Waiting for deploymentconfig rollout to finish: replicas are unavailable.
-				return false
-			}
-			return true
-		}
-		return false
+		return isDeploymentConfigRolloutDone(o)
 	default:
 		return false
 	}
