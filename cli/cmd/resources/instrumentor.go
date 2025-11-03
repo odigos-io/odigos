@@ -160,7 +160,7 @@ func NewInstrumentorClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
 		}, rbacv1.PolicyRule{
 			// OpenShift DeploymentConfigs support
 			APIGroups: []string{"apps.openshift.io"},
-			Resources: []string{"deploymentconfigs"},
+			Resources: []string{"deploymentconfigs", "deploymentconfigs/finalizers"},
 			Verbs:     []string{"get", "list", "watch", "update", "patch"},
 		})
 	}
