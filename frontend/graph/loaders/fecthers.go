@@ -14,12 +14,15 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -329,6 +332,54 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}
 			return workloadManifests, nil
 
+		case k8sconsts.WorkloadKindDeploymentConfig:
+			// Use dynamic client for DeploymentConfig
+			gvr := schema.GroupVersionResource{
+				Group:    "apps.openshift.io",
+				Version:  "v1",
+				Resource: "deploymentconfigs",
+			}
+
+			unstructuredDC, err := timedAPICall(
+				logger,
+				fmt.Sprintf("Get DeploymentConfig %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
+				func() (*openshiftappsv1.DeploymentConfig, error) {
+					uDC, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+					if err != nil {
+						return nil, err
+					}
+					var dc openshiftappsv1.DeploymentConfig
+					err = runtime.DefaultUnstructuredConverter.FromUnstructured(uDC.Object, &dc)
+					return &dc, err
+				},
+			)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					// workload can be not found and it is not an error.
+					// we will just skip it.
+					return nil, nil
+				}
+				return nil, err
+			}
+			workloadHealthStatus := status.CalculateDeploymentConfigHealthStatus(unstructuredDC.Status)
+
+			// Convert map[string]string selector to *metav1.LabelSelector
+			labelSelector := &metav1.LabelSelector{
+				MatchLabels: unstructuredDC.Spec.Selector,
+			}
+
+			workloadManifests[model.K8sWorkloadID{
+				Namespace: unstructuredDC.Namespace,
+				Kind:      model.K8sResourceKindDeploymentConfig,
+				Name:      unstructuredDC.Name,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    unstructuredDC.Status.AvailableReplicas,
+				Selector:             labelSelector,
+				PodTemplateSpec:      unstructuredDC.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
+			}
+			return workloadManifests, nil
+
 		default:
 			return nil, fmt.Errorf("invalid workload kind: %s", filters.SingleWorkload.WorkloadKind)
 		}
@@ -336,10 +387,11 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 
 	g, ctx := errgroup.WithContext(ctx)
 	var (
-		deps      = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-		statefuls = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-		daemons   = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-		crons     = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		deps              = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		statefuls         = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		daemons           = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		crons             = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		deploymentconfigs = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 	)
 
 	g.Go(func() error {
@@ -450,6 +502,66 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		return nil
 	})
 
+	g.Go(func() error {
+		// Use dynamic client for DeploymentConfigs
+		gvr := schema.GroupVersionResource{
+			Group:    "apps.openshift.io",
+			Version:  "v1",
+			Resource: "deploymentconfigs",
+		}
+
+		dcListUnstructured, err := timedAPICall(
+			logger,
+			formatOperationMessage("List DeploymentConfigs", filters.NamespaceString),
+			func() ([]openshiftappsv1.DeploymentConfig, error) {
+				uList, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+				if err != nil {
+					// If DeploymentConfig API is not available (not on OpenShift), skip silently
+					if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) {
+						return []openshiftappsv1.DeploymentConfig{}, nil
+					}
+					return nil, err
+				}
+
+				dcList := make([]openshiftappsv1.DeploymentConfig, 0, len(uList.Items))
+				for _, uDC := range uList.Items {
+					var dc openshiftappsv1.DeploymentConfig
+					if err := runtime.DefaultUnstructuredConverter.FromUnstructured(uDC.Object, &dc); err != nil {
+						// Log the error but continue with other items
+						logger.Error(err, "failed to convert DeploymentConfig", "name", uDC.GetName())
+						continue
+					}
+					dcList = append(dcList, dc)
+				}
+				return dcList, nil
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, dc := range dcListUnstructured {
+			workloadHealthStatus := status.CalculateDeploymentConfigHealthStatus(dc.Status)
+
+			// Convert map[string]string selector to *metav1.LabelSelector
+			labelSelector := &metav1.LabelSelector{
+				MatchLabels: dc.Spec.Selector,
+			}
+
+			deploymentconfigs[model.K8sWorkloadID{
+				Namespace: dc.Namespace,
+				Kind:      model.K8sResourceKindDeploymentConfig,
+				Name:      dc.Name,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    dc.Status.AvailableReplicas,
+				Selector:             labelSelector,
+				PodTemplateSpec:      dc.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
+			}
+		}
+		return nil
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
@@ -474,6 +586,12 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range crons {
+		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+			continue
+		}
+		workloadManifests[id] = manifest
+	}
+	for id, manifest := range deploymentconfigs {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
