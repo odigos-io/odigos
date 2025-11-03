@@ -13,6 +13,7 @@ import (
 
 const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
 const otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
+const odigosWorkloadKindAttributeKey = "odigos.workload.kind"
 
 type resourceAttribute struct {
 	Key   attribute.Key
@@ -37,6 +38,13 @@ func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName stri
 		{
 			Key:   workloadKindKey,
 			Value: podWorkload.Name,
+		},
+		{
+			// Add Odigos-specific attribute to track the actual workload kind
+			// This is needed because some workload types (like DeploymentConfig)
+			// use the same semconv key as other types (Deployment)
+			Key:   attribute.Key(odigosWorkloadKindAttributeKey),
+			Value: string(podWorkload.Kind),
 		},
 	}
 	// Get otel resource attributes for the owner reference (job/replicaset name and uid)

@@ -74,12 +74,13 @@ type OdigosMetricsConsumer struct {
 }
 
 var (
-	K8SNamespaceNameKey   = string(semconv.K8SNamespaceNameKey)
-	K8SDeploymentNameKey  = string(semconv.K8SDeploymentNameKey)
-	K8SStatefulSetNameKey = string(semconv.K8SStatefulSetNameKey)
-	K8SDaemonSetNameKey   = string(semconv.K8SDaemonSetNameKey)
-	K8SCronJobNameKey     = string(semconv.K8SCronJobNameKey)
-	K8SJobNameKey         = string(semconv.K8SJobNameKey)
+	K8SNamespaceNameKey         = string(semconv.K8SNamespaceNameKey)
+	K8SDeploymentNameKey        = string(semconv.K8SDeploymentNameKey)
+	K8SStatefulSetNameKey       = string(semconv.K8SStatefulSetNameKey)
+	K8SDaemonSetNameKey         = string(semconv.K8SDaemonSetNameKey)
+	K8SCronJobNameKey           = string(semconv.K8SCronJobNameKey)
+	K8SJobNameKey               = string(semconv.K8SJobNameKey)
+	OdigosWorkloadKindAttribute = "odigos.workload.kind"
 )
 
 func (c *OdigosMetricsConsumer) Capabilities() consumer.Capabilities {
