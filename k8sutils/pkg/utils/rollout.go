@@ -5,6 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -68,6 +69,9 @@ func GetMatchLabels(obj metav1.Object) map[string]string {
 		labels = obj.Spec.Selector.MatchLabels
 	case *appsv1.DaemonSet:
 		labels = obj.Spec.Selector.MatchLabels
+	case *openshiftappsv1.DeploymentConfig:
+		// DeploymentConfig selector is map[string]string directly
+		labels = obj.Spec.Selector
 	default:
 		return nil
 	}
@@ -146,6 +150,24 @@ func IsWorkloadRolloutDone(obj metav1.Object) bool {
 			return true
 		}
 		// Waiting for daemon set spec update to be observed
+		return false
+	case *openshiftappsv1.DeploymentConfig:
+		// DeploymentConfig rollout logic similar to Deployment
+		if o.Generation <= o.Status.ObservedGeneration {
+			if o.Status.Replicas > o.Status.UpdatedReplicas {
+				// Waiting for deploymentconfig rollout to finish old replicas are pending termination.
+				return false
+			}
+			if o.Status.AvailableReplicas < o.Status.UpdatedReplicas {
+				// Waiting for deploymentconfig rollout to finish: not all updated replicas are available.
+				return false
+			}
+			if o.Status.UnavailableReplicas > 0 {
+				// Waiting for deploymentconfig rollout to finish: replicas are unavailable.
+				return false
+			}
+			return true
+		}
 		return false
 	default:
 		return false
