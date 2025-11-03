@@ -31,6 +31,9 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # odigos.io/odigos-operator-bundle:$VERSION and odigos.io/odigos-operator-catalog:$VERSION.
 IMAGE_TAG_BASE ?= us-central1-docker.pkg.dev/odigos-cloud/components/odigos-operator
 
+# ORG defines the base for component images. Can be set to your docker registry for testing.
+ORG ?= registry.connect.redhat.com/odigos
+
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
 BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
@@ -51,14 +54,14 @@ endif
 OPERATOR_SDK_VERSION ?= v1.39.1
 # Image URL to use all building/pushing image targets
 IMG ?= registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v$(VERSION)
-AUTOSCALER_IMG ?= registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v$(VERSION)
-COLLECTOR_IMG ?= registry.connect.redhat.com/odigos/odigos-collector-ubi9:v$(VERSION)
-FRONTEND_IMG ?= registry.connect.redhat.com/odigos/odigos-ui-ubi9:v$(VERSION)
-INSTRUMENTOR_IMG ?= registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v$(VERSION)
-ENTERPRISE_INSTRUMENTOR_IMG ?= registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9:v$(VERSION)
-ODIGLET_IMG ?= registry.connect.redhat.com/odigos/odigos-odiglet-ubi9:v$(VERSION)
-ENTERPRISE_ODIGLET_IMG ?= registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9:v$(VERSION)
-SCHEDULER_IMG ?= registry.connect.redhat.com/odigos/odigos-scheduler-ubi9:v$(VERSION)
+AUTOSCALER_IMG ?= $(ORG)/odigos-autoscaler-ubi9:v$(VERSION)
+COLLECTOR_IMG ?= $(ORG)/odigos-collector-ubi9:v$(VERSION)
+FRONTEND_IMG ?= $(ORG)/odigos-ui-ubi9:v$(VERSION)
+INSTRUMENTOR_IMG ?= $(ORG)/odigos-instrumentor-ubi9:v$(VERSION)
+ENTERPRISE_INSTRUMENTOR_IMG ?= $(ORG)/odigos-enterprise-instrumentor-ubi9:v$(VERSION)
+ODIGLET_IMG ?= $(ORG)/odigos-odiglet-ubi9:v$(VERSION)
+ENTERPRISE_ODIGLET_IMG ?= $(ORG)/odigos-enterprise-odiglet-ubi9:v$(VERSION)
+SCHEDULER_IMG ?= $(ORG)/odigos-scheduler-ubi9:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.31.0
 
