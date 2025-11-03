@@ -1,5 +1,4 @@
 TAG ?= $(shell odigos version --cluster)
-CLI_TAG ?= 0.0.0-e2e-test
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
@@ -328,7 +327,7 @@ cli-upgrade:
 .PHONY: cli-build
 cli-build:
 	@echo "Building the cli executable for tests"
-	TAG=$(CLI_TAG); \
+	TAG=0.0.0-e2e-test; \
 	TMPDIR=$$(mktemp -d); \
 	cp -r ./helm/odigos $$TMPDIR/odigos; \
 	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos/Chart.yaml; \
