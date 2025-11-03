@@ -37,6 +37,8 @@ func init() {
 				string(semconv.K8SDeploymentNameKey),
 				string(semconv.K8SStatefulSetNameKey),
 				string(semconv.K8SDaemonSetNameKey),
+				string(semconv.K8SCronJobNameKey),
+				"odigos.workload.kind", // Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
 			},
 		},
 		podNameProcessorName: config.GenericMap{
