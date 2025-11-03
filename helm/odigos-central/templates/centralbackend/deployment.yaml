@@ -37,6 +37,8 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: KEYCLOAK_SECRET_NAME
               value: "keycloak-admin-credentials"
+            - name: KEYCLOAK_OIDC_SECRET_NAME
+              value: "keycloak-oidc-credentials"
           resources:
             requests:
               cpu: {{ .Values.centralBackend.resources.requests.cpu }}

@@ -68,6 +68,12 @@ const (
 	KeycloakSecretName          = "keycloak-admin-credentials"
 	KeycloakAdminUsernameKey    = "admin-username"
 	KeycloakAdminPasswordKey    = "admin-password"
+	KeycloakOidcSecretName      = "keycloak-oidc-credentials"
+	KeycloakOidcProviderKey     = "provider"
+	KeycloakOidcClientIdKey     = "client-id"
+	KeycloakOidcClientSecretKey = "client-secret"
+	KeycloakOidcDiscoveryUrlKey = "discovery-url"
+	KeycloakOidcTenantIdKey     = "tenant-id"
 	KeycloakDataPVCName         = "keycloak-data"
 	KeycloakDataVolumeName      = "keycloak-data"
 )
