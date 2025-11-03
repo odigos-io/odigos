@@ -5,13 +5,24 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
-var DefaultClient *Client
+var (
+	DefaultClient *Client
+	Scheme        = runtime.NewScheme()
+)
+
+func init() {
+	// Register OpenShift types with the scheme
+	_ = openshiftappsv1.AddToScheme(Scheme)
+}
 
 func SetDefaultClient(client *Client) {
 	DefaultClient = client
@@ -22,6 +33,7 @@ type Client struct {
 	OdigosClient   odigosv1alpha1.OdigosV1alpha1Interface
 	ActionsClient  actionsv1alpha1.ActionsV1alpha1Interface
 	MetadataClient metadata.Interface
+	DynamicClient  dynamic.Interface
 }
 
 func CreateClient(kubeConfig string, kContext string) (*Client, error) {
@@ -53,10 +65,16 @@ func CreateClient(kubeConfig string, kContext string) (*Client, error) {
 		return nil, err
 	}
 
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
 		Interface:      clientset,
 		OdigosClient:   odigosClient,
 		ActionsClient:  actionsClient,
 		MetadataClient: metadataClient,
+		DynamicClient:  dynamicClient,
 	}, nil
 }
