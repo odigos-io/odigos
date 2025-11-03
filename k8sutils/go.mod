@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44
 	github.com/stretchr/testify v1.11.1
 	github.com/tj/assert v0.0.3
 	go.opentelemetry.io/otel/exporters/prometheus v0.59.0

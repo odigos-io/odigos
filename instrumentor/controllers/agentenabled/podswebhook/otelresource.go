@@ -90,6 +90,9 @@ func getWorkloadKindAttributeKey(workloadKind k8sconsts.WorkloadKind) attribute.
 		return semconv.K8SCronJobNameKey
 	case k8sconsts.WorkloadKindJob:
 		return semconv.K8SJobNameKey
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		// OpenShift DeploymentConfig - use Deployment key as closest analog
+		return semconv.K8SDeploymentNameKey
 	}
 	return attribute.Key("")
 }

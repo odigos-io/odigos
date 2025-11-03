@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,6 +42,7 @@ func syncNamespaceWorkloads(
 		k8sconsts.WorkloadKindDeployment,
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindCronJob,
+		k8sconsts.WorkloadKindDeploymentConfig,
 	} {
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
@@ -80,6 +82,14 @@ func syncNamespaceWorkloads(
 					Name:      job.GetName(),
 					Namespace: job.GetNamespace(),
 					Kind:      k8sconsts.WorkloadKindCronJob,
+				})
+			}
+		case *openshiftappsv1.DeploymentConfigList:
+			for _, dc := range obj.Items {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      dc.GetName(),
+					Namespace: dc.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
 				})
 			}
 		}

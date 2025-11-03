@@ -1,6 +1,7 @@
 package sourceinstrumentation
 
 import (
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -109,6 +110,19 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		For(&v1alpha1.InstrumentationConfig{}).
 		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&InstrumentationConfigReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("sourceinstrumentation-deploymentconfig").
+		For(&openshiftappsv1.DeploymentConfig{}).
+		WithEventFilter(&odigospredicate.CreationPredicate{}).
+		Complete(&DeploymentConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})

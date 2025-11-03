@@ -76,6 +76,16 @@ rules:
       - daemonsets/finalizers
     verbs:
       - update
+  - apiGroups:
+      - apps.openshift.io
+    resources:
+      - deploymentconfigs
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
 {{- end }}
   - apiGroups:
       - operator.odigos.io

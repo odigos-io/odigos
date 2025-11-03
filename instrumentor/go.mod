@@ -13,6 +13,8 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.38.2
 	go.opentelemetry.io/otel v1.37.0
+	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44
+	go.opentelemetry.io/otel v1.38.0
 	golang.org/x/sync v0.17.0
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
