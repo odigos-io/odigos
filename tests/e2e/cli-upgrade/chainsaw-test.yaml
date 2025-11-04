@@ -60,7 +60,7 @@ spec:
               tar -xvzf odigos-latest.tar.gz
 
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
-              ./odigos uninstall --yes
+              ./odigos uninstall
               ./odigos install --ns odigos-test --set image.tag=e2e-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
