@@ -59,8 +59,8 @@ type CollectorDaemonSetInfo {
 
 extend type Query {
   # Gateway (Deployment)
-  getGatewayDeploymentInfo: GatewayDeploymentInfo!
+  gatewayDeploymentInfo: GatewayDeploymentInfo!
 
   # Odiglet (DaemonSet)
-  getOdigletDaemonSetInfo: CollectorDaemonSetInfo!
+  odigletDaemonSetInfo: CollectorDaemonSetInfo!
 }
