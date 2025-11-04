@@ -120,6 +120,8 @@ github.com/open-policy-agent/cert-controller v0.14.0 h1:TPc19BOHOs4tARruTT5o4bzi
 github.com/open-policy-agent/cert-controller v0.14.0/go.mod h1:UhE/FU54DnKo+Rt0Yf3r+oKjgy6kqSH8Vsjo+5bGrSo=
 github.com/open-policy-agent/frameworks/constraint v0.0.0-20241101234656-e78c8abd754a h1:gQtOJ50XFyL2Xh3lDD9zP4KQ2PY4mZKQ9hDcWc81Sp8=
 github.com/open-policy-agent/frameworks/constraint v0.0.0-20241101234656-e78c8abd754a/go.mod h1:tI7nc6H6os2UYZRvSm9Y7bq4oMoXqhwA0WfnqKpoAgc=
+github.com/openshift/api v0.0.0-20251103120323-33ccad512a44 h1:oHdmUWOnmyOIPmK5bxy6t1FE7BbhBMBYp6XO5UPUcI4=
+github.com/openshift/api v0.0.0-20251103120323-33ccad512a44/go.mod h1:d5uzF0YN2nQQFA0jIEWzzOZ+edmo6wzlGLvx5Fhz4uY=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
