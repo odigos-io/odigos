@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -229,6 +230,8 @@ func WorkloadKindFrombject(obj metav1.Object) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindCronJob
 	case *batchv1.CronJob:
 		return k8sconsts.WorkloadKindCronJob
+	case *openshiftappsv1.DeploymentConfig:
+		return k8sconsts.WorkloadKindDeploymentConfig
 	default:
 		return k8sconsts.WorkloadKind("")
 	}
