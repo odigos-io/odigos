@@ -414,6 +414,11 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.OtlpExporterConfiguration != nil {
+		in, out := &in.OtlpExporterConfiguration, &out.OtlpExporterConfiguration
+		*out = new(common.OtlpExporterConfiguration)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ClusterMetricsEnabled != nil {
 		in, out := &in.ClusterMetricsEnabled, &out.ClusterMetricsEnabled
 		*out = new(bool)

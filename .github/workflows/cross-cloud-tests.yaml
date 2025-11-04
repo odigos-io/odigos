@@ -43,7 +43,7 @@ jobs:
 
   test:
     needs: build-images
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
       matrix:

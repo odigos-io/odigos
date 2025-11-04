@@ -55,6 +55,13 @@ const (
 
 	ServiceGraphConnectorName = "servicegraph"
 	ServiceGraphEndpointPort  = 9090
+
+	// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
+	// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.
+	// Since DeploymentConfig uses k8s.deployment.name as the semconv key, we need to add this attribute to the list of attributes to be collected.
+	// This is needed to distinguish between workloads that share the same semconv key
+	// (e.g., DeploymentConfig uses k8s.deployment.name)
+	OdigosWorkloadKindAttribute = "odigos.workload.kind"
 )
 
 // Odigos config properties

@@ -56,8 +56,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
   const { fetchDataStreams } = useDataStreamsCRUD();
   const { createDestination, updateDestination } = useDestinationCRUD();
   const { setSelectedStreamName, selectedStreamName } = useDataStreamStore();
-  const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } =
-    useSetupStore();
+  const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -83,9 +82,8 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
     }
 
     if (sourceFormRef?.current) {
-      const { initial, apps, futureApps } = sourceFormRef.current.getFormValues();
+      const { apps, futureApps } = sourceFormRef.current.getFormValues();
 
-      setAvailableSources(initial);
       setConfiguredSources(apps);
       setConfiguredFutureApps(futureApps);
     }

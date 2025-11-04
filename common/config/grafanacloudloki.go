@@ -23,10 +23,13 @@ func (g *GrafanaCloudLoki) DestType() common.DestinationType {
 
 func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	if !isLoggingEnabled(dest) {
-		return nil, errors.New("logging not enabled, gateway will not be configured for grafana cloud Loki")
+		return nil, errors.New("logging not enabled, gateway will not be configured for Grafana Cloud Loki")
 	}
 
-	lokiUrl, exists := dest.GetConfig()[grafanaCloudLokiEndpointKey]
+	destConfig := dest.GetConfig()
+	uniqueUri := "grafana-" + dest.GetID()
+
+	lokiUrl, exists := destConfig[grafanaCloudLokiEndpointKey]
 	if !exists {
 		return nil, errors.New("Grafana Cloud Loki endpoint not specified, gateway will not be configured for Loki")
 	}
@@ -36,18 +39,18 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		return nil, errors.Join(err, errors.New("failed to parse grafana cloud loki endpoint, gateway will not be configured for Loki"))
 	}
 
-	lokiUsername, exists := dest.GetConfig()[grafanaCloudLokiUsernameKey]
+	lokiUsername, exists := destConfig[grafanaCloudLokiUsernameKey]
 	if !exists {
 		return nil, errors.New("Grafana Cloud Loki username not specified, gateway will not be configured for Loki")
 	}
 
-	rawLokiLabels, exists := dest.GetConfig()[grafanaCloudLokiLabelsKey]
+	rawLokiLabels, exists := destConfig[grafanaCloudLokiLabelsKey]
 	lokiProcessors, err := lokiLabelsProcessors(rawLokiLabels, exists, dest.GetID())
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to parse grafana cloud loki labels, gateway will not be configured for Loki"))
 	}
 
-	authExtensionName := "basicauth/grafana" + dest.GetID()
+	authExtensionName := "basicauth/" + uniqueUri
 	currentConfig.Extensions[authExtensionName] = GenericMap{
 		"client_auth": GenericMap{
 			"username": lokiUsername,
@@ -55,7 +58,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		},
 	}
 
-	exporterName := "loki/grafana-" + dest.GetID()
+	exporterName := "otlphttp/" + uniqueUri
 	currentConfig.Exporters[exporterName] = GenericMap{
 		"endpoint": lokiExporterEndpoint,
 		"auth": GenericMap{
@@ -69,7 +72,7 @@ func (g *GrafanaCloudLoki) ModifyConfig(dest ExporterConfigurer, currentConfig *
 		processorNames = append(processorNames, k)
 	}
 
-	logsPipelineName := "logs/grafana-" + dest.GetID()
+	logsPipelineName := "logs/" + uniqueUri
 	currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{
 		Processors: processorNames,

@@ -40,7 +40,7 @@ jobs:
     uses: ./.github/workflows/build-dev-images.yml
 
   chaos-tests:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     needs: build-images
     steps:
       - name: Checkout Code
@@ -60,7 +60,7 @@ jobs:
 
 
   cross-cloud-tests:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     needs: build-images
     strategy:
       fail-fast: false

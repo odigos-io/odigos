@@ -59,6 +59,8 @@ func GetWorkloadNameAndKind(ownerName, ownerKind string) (string, k8sconsts.Work
 	switch ownerKind {
 	case "ReplicaSet":
 		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeployment)
+	case "ReplicationController":
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeploymentConfig)
 	case "Job":
 		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindCronJob)
 	default:

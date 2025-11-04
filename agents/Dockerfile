@@ -125,3 +125,7 @@ WORKDIR /instrumentations/
 
 # Copy all instrumentation assets from the build stage
 COPY --from=builder /instrumentations/ .
+
+# make sure we run as non root user
+# this is required when this container is added to a pod that has runAsNonRoot: true
+USER 1000:1000

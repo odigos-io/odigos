@@ -19,20 +19,22 @@ package v1alpha1
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	common "github.com/odigos-io/odigos/common"
 )
 
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
 type CollectorsGroupSpecApplyConfiguration struct {
-	Role                    *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
-	CollectorOwnMetricsPort *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
-	K8sNodeLogsDirectory    *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
-	ResourcesSettings       *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
-	ServiceGraphDisabled    *bool                                                       `json:"serviceGraphDisabled,omitempty"`
-	EnableDataCompression   *bool                                                       `json:"enableDataCompression,omitempty"`
-	ClusterMetricsEnabled   *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
-	HttpsProxyAddress       *string                                                     `json:"httpsProxyAddress,omitempty"`
-	Metrics                 *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
+	Role                      *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
+	CollectorOwnMetricsPort   *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
+	K8sNodeLogsDirectory      *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
+	ResourcesSettings         *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
+	ServiceGraphDisabled      *bool                                                       `json:"serviceGraphDisabled,omitempty"`
+	EnableDataCompression     *bool                                                       `json:"enableDataCompression,omitempty"`
+	OtlpExporterConfiguration *common.OtlpExporterConfiguration                           `json:"otlpExporterConfiguration,omitempty"`
+	ClusterMetricsEnabled     *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
+	HttpsProxyAddress         *string                                                     `json:"httpsProxyAddress,omitempty"`
+	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -86,6 +88,14 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithServiceGraphDisabled(value b
 // If called multiple times, the EnableDataCompression field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithEnableDataCompression(value bool) *CollectorsGroupSpecApplyConfiguration {
 	b.EnableDataCompression = &value
+	return b
+}
+
+// WithOtlpExporterConfiguration sets the OtlpExporterConfiguration field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OtlpExporterConfiguration field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithOtlpExporterConfiguration(value common.OtlpExporterConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.OtlpExporterConfiguration = &value
 	return b
 }
 

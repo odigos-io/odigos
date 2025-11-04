@@ -19,6 +19,11 @@ exporters:
     endpoint: dns:///odigos-gateway.odigos-system:4317
     tls:
       insecure: true
+  otlp/out-cluster-collector-trace:
+    compression: none
+    endpoint: dns:///odigos-gateway.odigos-system:4317
+    tls:
+      insecure: true
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
@@ -37,6 +42,8 @@ processors:
     - k8s.deployment.name
     - k8s.statefulset.name
     - k8s.daemonset.name
+    - k8s.cronjob.name
+    - odigos.workload.kind
   resource/node-name:
     attributes:
     - action: upsert

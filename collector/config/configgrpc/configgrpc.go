@@ -232,21 +232,15 @@ type ServerConfig struct {
 
 // NewDefaultServerConfig returns a new instance of ServerConfig with default values.
 func NewDefaultServerConfig() ServerConfig {
-	netAddr := confignet.NewDefaultAddrConfig()
-
-	// We typically want to create a TCP server and listen over a network.
-	netAddr.Transport = confignet.TransportTypeTCP
-
 	return ServerConfig{
 		Keepalive: configoptional.Some(NewDefaultKeepaliveServerConfig()),
-		NetAddr:   netAddr,
 	}
 }
 
-func (cc *ClientConfig) Validate() error {
-	if cc.BalancerName != "" {
-		if balancer.Get(cc.BalancerName) == nil {
-			return fmt.Errorf("invalid balancer_name: %s", cc.BalancerName)
+func (gcs *ClientConfig) Validate() error {
+	if gcs.BalancerName != "" {
+		if balancer.Get(gcs.BalancerName) == nil {
+			return fmt.Errorf("invalid balancer_name: %s", gcs.BalancerName)
 		}
 	}
 
@@ -254,23 +248,23 @@ func (cc *ClientConfig) Validate() error {
 }
 
 // sanitizedEndpoint strips the prefix of either http:// or https:// from configgrpc.ClientConfig.Endpoint.
-func (cc *ClientConfig) sanitizedEndpoint() string {
+func (gcs *ClientConfig) sanitizedEndpoint() string {
 	switch {
-	case cc.isSchemeHTTP():
-		return strings.TrimPrefix(cc.Endpoint, "http://")
-	case cc.isSchemeHTTPS():
-		return strings.TrimPrefix(cc.Endpoint, "https://")
+	case gcs.isSchemeHTTP():
+		return strings.TrimPrefix(gcs.Endpoint, "http://")
+	case gcs.isSchemeHTTPS():
+		return strings.TrimPrefix(gcs.Endpoint, "https://")
 	default:
-		return cc.Endpoint
+		return gcs.Endpoint
 	}
 }
 
-func (cc *ClientConfig) isSchemeHTTP() bool {
-	return strings.HasPrefix(cc.Endpoint, "http://")
+func (gcs *ClientConfig) isSchemeHTTP() bool {
+	return strings.HasPrefix(gcs.Endpoint, "http://")
 }
 
-func (cc *ClientConfig) isSchemeHTTPS() bool {
-	return strings.HasPrefix(cc.Endpoint, "https://")
+func (gcs *ClientConfig) isSchemeHTTPS() bool {
+	return strings.HasPrefix(gcs.Endpoint, "https://")
 }
 
 // ToClientConnOption is a sealed interface wrapping options for [ClientConfig.ToClientConn].
@@ -292,68 +286,69 @@ func (grpcDialOptionWrapper) isToClientConnOption() {}
 // a non-blocking dial (the function won't wait for connections to be
 // established, and connecting happens in the background). To make it a blocking
 // dial, use the WithGrpcDialOption(grpc.WithBlock()) option.
-func (cc *ClientConfig) ToClientConn(
+func (gcs *ClientConfig) ToClientConn(
 	ctx context.Context,
 	host component.Host,
 	settings component.TelemetrySettings,
 	extraOpts ...ToClientConnOption,
 ) (*grpc.ClientConn, error) {
-	grpcOpts, err := cc.getGrpcDialOptions(ctx, host, settings, extraOpts)
+	grpcOpts, err := gcs.getGrpcDialOptions(ctx, host, settings, extraOpts)
 	if err != nil {
 		return nil, err
 	}
 	//nolint:staticcheck // SA1019 see https://github.com/open-telemetry/opentelemetry-collector/pull/11575
-	return grpc.DialContext(ctx, cc.sanitizedEndpoint(), grpcOpts...)
+	return grpc.DialContext(ctx, gcs.sanitizedEndpoint(), grpcOpts...)
 }
 
-func (cc *ClientConfig) addHeadersIfAbsent(ctx context.Context) context.Context {
-	kv := make([]string, 0, 2*len(cc.Headers))
+func (gcs *ClientConfig) addHeadersIfAbsent(ctx context.Context) context.Context {
+	kv := make([]string, 0, 2*len(gcs.Headers))
 	existingMd, _ := metadata.FromOutgoingContext(ctx)
-	for k, v := range cc.Headers {
+	for k, v := range gcs.Headers {
 		if len(existingMd.Get(k)) == 0 {
-			kv = append(kv, k, string(v))
+			kv = append(kv, k)
+			kv = append(kv, string(v))
 		}
 	}
 	return metadata.AppendToOutgoingContext(ctx, kv...)
 }
 
-func (cc *ClientConfig) getGrpcDialOptions(
+func (gcs *ClientConfig) getGrpcDialOptions(
 	ctx context.Context,
 	host component.Host,
 	settings component.TelemetrySettings,
 	extraOpts []ToClientConnOption,
 ) ([]grpc.DialOption, error) {
 	var opts []grpc.DialOption
-	if cc.Compression.IsCompressed() {
-		cp, err := getGRPCCompressionName(cc.Compression)
+	if gcs.Compression.IsCompressed() {
+		cp, err := getGRPCCompressionName(gcs.Compression)
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts, grpc.WithDefaultCallOptions(grpc.UseCompressor(cp)))
 	}
 
-	tlsCfg, err := cc.TLS.LoadTLSConfig(ctx)
+	tlsCfg, err := gcs.TLS.LoadTLSConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	cred := insecure.NewCredentials()
 	if tlsCfg != nil {
 		cred = credentials.NewTLS(tlsCfg)
-	} else if cc.isSchemeHTTPS() {
+	} else if gcs.isSchemeHTTPS() {
 		cred = credentials.NewTLS(&tls.Config{})
 	}
 	opts = append(opts, grpc.WithTransportCredentials(cred))
 
-	if cc.ReadBufferSize > 0 {
-		opts = append(opts, grpc.WithReadBufferSize(cc.ReadBufferSize))
+	if gcs.ReadBufferSize > 0 {
+		opts = append(opts, grpc.WithReadBufferSize(gcs.ReadBufferSize))
 	}
 
-	if cc.WriteBufferSize > 0 {
-		opts = append(opts, grpc.WithWriteBufferSize(cc.WriteBufferSize))
+	if gcs.WriteBufferSize > 0 {
+		opts = append(opts, grpc.WithWriteBufferSize(gcs.WriteBufferSize))
 	}
 
-	if cc.Keepalive.HasValue() {
-		keepaliveConfig := cc.Keepalive.Get()
+	if gcs.Keepalive.HasValue() {
+		keepaliveConfig := gcs.Keepalive.Get()
 		keepAliveOption := grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                keepaliveConfig.Time,
 			Timeout:             keepaliveConfig.Timeout,
@@ -362,12 +357,12 @@ func (cc *ClientConfig) getGrpcDialOptions(
 		opts = append(opts, keepAliveOption)
 	}
 
-	if cc.Auth.HasValue() {
+	if gcs.Auth.HasValue() {
 		if host.GetExtensions() == nil {
 			return nil, errors.New("no extensions configuration available")
 		}
 
-		grpcAuthenticator, cerr := cc.Auth.Get().GetGRPCClientAuthenticator(ctx, host.GetExtensions())
+		grpcAuthenticator, cerr := gcs.Auth.Get().GetGRPCClientAuthenticator(ctx, host.GetExtensions())
 		if cerr != nil {
 			return nil, cerr
 		}
@@ -379,12 +374,12 @@ func (cc *ClientConfig) getGrpcDialOptions(
 		opts = append(opts, grpc.WithPerRPCCredentials(perRPCCredentials))
 	}
 
-	if cc.BalancerName != "" {
-		opts = append(opts, grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingPolicy":%q}`, cc.BalancerName)))
+	if gcs.BalancerName != "" {
+		opts = append(opts, grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingPolicy":"%s"}`, gcs.BalancerName)))
 	}
 
-	if cc.Authority != "" {
-		opts = append(opts, grpc.WithAuthority(cc.Authority))
+	if gcs.Authority != "" {
+		opts = append(opts, grpc.WithAuthority(gcs.Authority))
 	}
 
 	otelOpts := []otelgrpc.Option{
@@ -396,19 +391,19 @@ func (cc *ClientConfig) getGrpcDialOptions(
 	// Enable OpenTelemetry observability plugin.
 	opts = append(opts, grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)))
 
-	if len(cc.Headers) > 0 {
+	if len(gcs.Headers) > 0 {
 		opts = append(opts,
-			grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply any, gcc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-				return invoker(cc.addHeadersIfAbsent(ctx), method, req, reply, gcc, opts...)
+			grpc.WithUnaryInterceptor(func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+				return invoker(gcs.addHeadersIfAbsent(ctx), method, req, reply, cc, opts...)
 			}),
-			grpc.WithStreamInterceptor(func(ctx context.Context, desc *grpc.StreamDesc, gcc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-				return streamer(cc.addHeadersIfAbsent(ctx), desc, gcc, method, opts...)
+			grpc.WithStreamInterceptor(func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+				return streamer(gcs.addHeadersIfAbsent(ctx), desc, cc, method, opts...)
 			}),
 		)
 	}
 
 	// Apply middleware options. Note: OpenTelemetry could be registered as an extension.
-	for _, middleware := range cc.Middlewares {
+	for _, middleware := range gcs.Middlewares {
 		middlewareOptions, err := middleware.GetGRPCClientOptions(ctx, host.GetExtensions())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get gRPC client options from middleware: %w", err)
@@ -425,17 +420,17 @@ func (cc *ClientConfig) getGrpcDialOptions(
 	return opts, nil
 }
 
-func (sc *ServerConfig) Validate() error {
-	if sc.MaxRecvMsgSizeMiB*1024*1024 < 0 {
-		return fmt.Errorf("invalid max_recv_msg_size_mib value, must be between 1 and %d: %d", math.MaxInt/1024/1024, sc.MaxRecvMsgSizeMiB)
+func (gss *ServerConfig) Validate() error {
+	if gss.MaxRecvMsgSizeMiB*1024*1024 < 0 {
+		return fmt.Errorf("invalid max_recv_msg_size_mib value, must be between 1 and %d: %d", math.MaxInt/1024/1024, gss.MaxRecvMsgSizeMiB)
 	}
 
-	if sc.ReadBufferSize < 0 {
-		return fmt.Errorf("invalid read_buffer_size value: %d", sc.ReadBufferSize)
+	if gss.ReadBufferSize < 0 {
+		return fmt.Errorf("invalid read_buffer_size value: %d", gss.ReadBufferSize)
 	}
 
-	if sc.WriteBufferSize < 0 {
-		return fmt.Errorf("invalid write_buffer_size value: %d", sc.WriteBufferSize)
+	if gss.WriteBufferSize < 0 {
+		return fmt.Errorf("invalid write_buffer_size value: %d", gss.WriteBufferSize)
 	}
 
 	return nil
@@ -457,20 +452,20 @@ func WithGrpcServerOption(opt grpc.ServerOption) ToServerOption {
 func (grpcServerOptionWrapper) isToServerOption() {}
 
 // ToServer returns a [grpc.Server] for the configuration.
-func (sc *ServerConfig) ToServer(
+func (gss *ServerConfig) ToServer(
 	ctx context.Context,
 	host component.Host,
 	settings component.TelemetrySettings,
 	extraOpts ...ToServerOption,
 ) (*grpc.Server, error) {
-	grpcOpts, err := sc.getGrpcServerOptions(ctx, host, settings, extraOpts)
+	grpcOpts, err := gss.getGrpcServerOptions(ctx, host, settings, extraOpts)
 	if err != nil {
 		return nil, err
 	}
 	return grpc.NewServer(grpcOpts...), nil
 }
 
-func (sc *ServerConfig) getGrpcServerOptions(
+func (gss *ServerConfig) getGrpcServerOptions(
 	ctx context.Context,
 	host component.Host,
 	settings component.TelemetrySettings,
@@ -478,36 +473,36 @@ func (sc *ServerConfig) getGrpcServerOptions(
 ) ([]grpc.ServerOption, error) {
 	var opts []grpc.ServerOption
 
-	if sc.TLS.HasValue() {
-		tlsCfg, err := sc.TLS.Get().LoadTLSConfig(ctx)
+	if gss.TLS.HasValue() {
+		tlsCfg, err := gss.TLS.Get().LoadTLSConfig(context.Background())
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts, grpc.Creds(credentials.NewTLS(tlsCfg)))
 	}
 
-	if sc.MaxRecvMsgSizeMiB > 0 && sc.MaxRecvMsgSizeMiB*1024*1024 > 0 {
-		opts = append(opts, grpc.MaxRecvMsgSize(sc.MaxRecvMsgSizeMiB*1024*1024))
+	if gss.MaxRecvMsgSizeMiB > 0 && gss.MaxRecvMsgSizeMiB*1024*1024 > 0 {
+		opts = append(opts, grpc.MaxRecvMsgSize(gss.MaxRecvMsgSizeMiB*1024*1024))
 	}
 
-	if sc.MaxConcurrentStreams > 0 {
-		opts = append(opts, grpc.MaxConcurrentStreams(sc.MaxConcurrentStreams))
+	if gss.MaxConcurrentStreams > 0 {
+		opts = append(opts, grpc.MaxConcurrentStreams(gss.MaxConcurrentStreams))
 	}
 
-	if sc.ReadBufferSize > 0 {
-		opts = append(opts, grpc.ReadBufferSize(sc.ReadBufferSize))
+	if gss.ReadBufferSize > 0 {
+		opts = append(opts, grpc.ReadBufferSize(gss.ReadBufferSize))
 	}
 
-	if sc.WriteBufferSize > 0 {
-		opts = append(opts, grpc.WriteBufferSize(sc.WriteBufferSize))
+	if gss.WriteBufferSize > 0 {
+		opts = append(opts, grpc.WriteBufferSize(gss.WriteBufferSize))
 	}
 
 	// The default values referenced in the GRPC docs are set within the server, so this code doesn't need
 	// to apply them over zero/nil values before passing these as grpc.ServerOptions.
 	// The following shows the server code for applying default grpc.ServerOptions.
 	// https://github.com/grpc/grpc-go/blob/120728e1f775e40a2a764341939b78d666b08260/internal/transport/http2_server.go#L184-L200
-	if sc.Keepalive.HasValue() {
-		keepaliveConfig := sc.Keepalive.Get()
+	if gss.Keepalive.HasValue() {
+		keepaliveConfig := gss.Keepalive.Get()
 		if keepaliveConfig.ServerParameters.HasValue() {
 			svrParams := keepaliveConfig.ServerParameters.Get()
 			opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
@@ -534,14 +529,18 @@ func (sc *ServerConfig) getGrpcServerOptions(
 	var uInterceptors []grpc.UnaryServerInterceptor
 	var sInterceptors []grpc.StreamServerInterceptor
 
-	if sc.Auth.HasValue() {
-		authenticator, err := sc.Auth.Get().GetServerAuthenticator(ctx, host.GetExtensions())
+	if gss.Auth.HasValue() {
+		authenticator, err := gss.Auth.Get().GetServerAuthenticator(context.Background(), host.GetExtensions())
 		if err != nil {
 			return nil, err
 		}
 
-		uInterceptors = append(uInterceptors, authUnaryServerInterceptor(authenticator))
-		sInterceptors = append(sInterceptors, authStreamServerInterceptor(authenticator)) //nolint:contextcheck // context already handled
+		uInterceptors = append(uInterceptors, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+			return authUnaryServerInterceptor(ctx, req, info, handler, authenticator)
+		})
+		sInterceptors = append(sInterceptors, func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+			return authStreamServerInterceptor(srv, ss, info, handler, authenticator)
+		})
 	}
 
 	otelOpts := []otelgrpc.Option{
@@ -552,14 +551,14 @@ func (sc *ServerConfig) getGrpcServerOptions(
 
 	// Enable OpenTelemetry observability plugin.
 
-	uInterceptors = append(uInterceptors, enhanceWithClientInformation(sc.IncludeMetadata))
-	sInterceptors = append(sInterceptors, enhanceStreamWithClientInformation(sc.IncludeMetadata)) //nolint:contextcheck // context already handled
+	uInterceptors = append(uInterceptors, enhanceWithClientInformation(gss.IncludeMetadata))
+	sInterceptors = append(sInterceptors, enhanceStreamWithClientInformation(gss.IncludeMetadata))
 
 	opts = append(opts, grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)), grpc.ChainUnaryInterceptor(uInterceptors...), grpc.ChainStreamInterceptor(sInterceptors...))
 
 	opts = append(opts, grpc.InTapHandle(func(ctx context.Context, info *tap.Info) (context.Context, error) {
 		if rtml.IsMemLimitReached() {
-			if sc.DropOnOverload {
+			if gss.DropOnOverload {
 				settings.Logger.Info("OTLP gRPC receiver detected memory limit reached, dropping a batch")
 				return ctx, errMemoryLimitReachedDataDropped
 			} else {
@@ -570,7 +569,7 @@ func (sc *ServerConfig) getGrpcServerOptions(
 	}))
 
 	// Apply middleware options. Note: OpenTelemetry could be registered as an extension.
-	for _, middleware := range sc.Middlewares {
+	for _, middleware := range gss.Middlewares {
 		middlewareOptions, err := middleware.GetGRPCServerOptions(ctx, host.GetExtensions())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get gRPC server options from middleware: %w", err)
@@ -603,13 +602,13 @@ func getGRPCCompressionName(compressionType configcompression.Type) (string, err
 
 // enhanceWithClientInformation intercepts the incoming RPC, replacing the incoming context with one that includes
 // a client.Info, potentially with the peer's address.
-func enhanceWithClientInformation(includeMetadata bool) grpc.UnaryServerInterceptor {
+func enhanceWithClientInformation(includeMetadata bool) func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		return handler(contextWithClient(ctx, includeMetadata), req)
 	}
 }
 
-func enhanceStreamWithClientInformation(includeMetadata bool) grpc.StreamServerInterceptor {
+func enhanceStreamWithClientInformation(includeMetadata bool) func(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	return func(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		return handler(srv, wrapServerStream(contextWithClient(ss.Context(), includeMetadata), ss))
 	}
@@ -634,35 +633,31 @@ func contextWithClient(ctx context.Context, includeMetadata bool) context.Contex
 	return client.NewContext(ctx, cl)
 }
 
-func authUnaryServerInterceptor(server extensionauth.Server) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		headers, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, errMetadataNotFound
-		}
-
-		ctx, err := server.Authenticate(ctx, headers)
-		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, err.Error())
-		}
-
-		return handler(ctx, req)
+func authUnaryServerInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler, server extensionauth.Server) (any, error) {
+	headers, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errMetadataNotFound
 	}
+
+	ctx, err := server.Authenticate(ctx, headers)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	return handler(ctx, req)
 }
 
-func authStreamServerInterceptor(server extensionauth.Server) grpc.StreamServerInterceptor {
-	return func(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		ctx := stream.Context()
-		headers, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return errMetadataNotFound
-		}
-
-		ctx, err := server.Authenticate(ctx, headers)
-		if err != nil {
-			return status.Error(codes.Unauthenticated, err.Error())
-		}
-
-		return handler(srv, wrapServerStream(ctx, stream))
+func authStreamServerInterceptor(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler, server extensionauth.Server) error {
+	ctx := stream.Context()
+	headers, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return errMetadataNotFound
 	}
+
+	ctx, err := server.Authenticate(ctx, headers)
+	if err != nil {
+		return status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	return handler(srv, wrapServerStream(ctx, stream))
 }

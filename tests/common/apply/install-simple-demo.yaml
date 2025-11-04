@@ -26,6 +26,11 @@ spec:
               value: membership:8080
           ports:
             - containerPort: 8080
+      # coupon container should run with non root user
+      # adding runAsNonRoot requirement here to test cases where we might
+      # add addition container and make sure we handle this
+      securityContext:
+        runAsNonRoot: true
 ---
 kind: Service
 apiVersion: v1

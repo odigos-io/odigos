@@ -19,7 +19,6 @@ import (
 
 	cilumebpf "github.com/cilium/ebpf"
 	processdetector "github.com/odigos-io/runtime-detector"
-	"go.opentelemetry.io/otel/metric"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -28,7 +27,6 @@ const numOfPages = 2048
 type InstrumentationManagerOptions struct {
 	Factories                  map[string]instrumentation.Factory
 	DistributionGetter         *distros.Getter
-	MeterProvider              metric.MeterProvider
 	OdigletHealthProbeBindPort int
 }
 
@@ -85,7 +83,6 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		Handler:         newHandler(logger, client, opts.DistributionGetter),
 		DetectorOptions: detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
 		ConfigUpdates:   configUpdates,
-		MeterProvider:   opts.MeterProvider,
 		TracesMap:       m,
 	}
 

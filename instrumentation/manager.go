@@ -8,7 +8,6 @@ import (
 
 	cilumebpf "github.com/cilium/ebpf"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
@@ -25,7 +24,10 @@ var (
 
 const (
 	shutdownCleanupTimeout = 10 * time.Second
+	otelMeterName          = "github.com/odigos.io/odigos/instrumentation"
 )
+
+var meter = otel.Meter(otelMeterName)
 
 // ConfigUpdate is used to send a configuration update request to the manager.
 // The manager will apply the configuration to all instrumentations that match the config group.
@@ -67,10 +69,6 @@ type ManagerOptions[processDetails ProcessDetails, configGroup ConfigGroup] stru
 	//
 	// The caller is responsible for closing the channel once no more updates are expected.
 	ConfigUpdates <-chan ConfigUpdate[configGroup]
-
-	// MeterProvider is used to create a meter for recording metrics.
-	// If non provided, a no-op provider will be used from the global OpenTelemetry API.
-	MeterProvider metric.MeterProvider
 
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
 	TracesMap *cilumebpf.Map
@@ -138,11 +136,6 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 		return nil, errors.New("config updates channel is required for ebpf instrumentation manager")
 	}
 
-	mp := options.MeterProvider
-	if mp == nil {
-		mp = otel.GetMeterProvider()
-	}
-	meter := mp.Meter("github.com/odigos.io/odigos/instrumentation")
 	managerMetrics, err := newManagerMetrics(meter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf instrumentation manager metrics: %w", err)

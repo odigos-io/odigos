@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,6 +38,7 @@ func (m *keycloakResourceManager) Name() string { return k8sconsts.KeycloakResou
 func (m *keycloakResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewKeycloakSecret(m.ns, m.config),
+		NewKeycloakPVC(m.ns),
 		NewKeycloakDeployment(m.ns, m.config),
 		NewKeycloakService(m.ns),
 	}
@@ -113,8 +115,24 @@ func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
 								},
 								{Name: "KC_HOSTNAME", Value: "localhost"},
 							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      k8sconsts.KeycloakDataVolumeName,
+									MountPath: "/opt/keycloak/data",
+								},
+							},
 							Ports: []corev1.ContainerPort{
 								{Name: k8sconsts.KeycloakPortName, ContainerPort: k8sconsts.KeycloakPort},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: k8sconsts.KeycloakDataVolumeName,
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: k8sconsts.KeycloakDataPVCName,
+								},
 							},
 						},
 					},
@@ -140,6 +158,28 @@ func NewKeycloakService(ns string) *corev1.Service {
 				{
 					Name: k8sconsts.KeycloakPortName,
 					Port: k8sconsts.KeycloakPort,
+				},
+			},
+		},
+	}
+}
+
+func NewKeycloakPVC(ns string) *corev1.PersistentVolumeClaim {
+	return &corev1.PersistentVolumeClaim{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PersistentVolumeClaim",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.KeycloakDataPVCName,
+			Namespace: ns,
+			Labels:    map[string]string{"app": k8sconsts.KeycloakAppName},
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("1Gi"),
 				},
 			},
 		},

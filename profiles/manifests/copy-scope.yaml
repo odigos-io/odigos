@@ -10,7 +10,7 @@ spec:
     trace_statements:
       - context: span
         statements:
-        - set(attributes["otel.instrumentation.scope"], instrumentation_scope.name)
+        - set(span.attributes["otel.instrumentation.scope"], instrumentation_scope.name)
   signals:
     - TRACES
   collectorRoles:

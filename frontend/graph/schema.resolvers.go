@@ -474,6 +474,14 @@ func (r *mutationResolver) UninstrumentCluster(ctx context.Context) (bool, error
 	return true, nil
 }
 
+// PauseOdigos is the resolver for the pauseOdigos field.
+func (r *mutationResolver) PauseOdigos(ctx context.Context) (bool, error) {
+	if err := services.PauseOdigos(ctx); err != nil {
+		return false, fmt.Errorf("failed to pause odigos: %v", err)
+	}
+	return true, nil
+}
+
 // PersistK8sNamespaces is the resolver for the persistK8sNamespaces field.
 func (r *mutationResolver) PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error) {
 	persistObjects := []*model.PersistNamespaceSourceInput{}
@@ -978,6 +986,11 @@ func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*mo
 		return false, err
 	}
 	return true, nil
+}
+
+// DeleteCentralProxy is the resolver for the deleteCentralProxy field.
+func (r *mutationResolver) DeleteCentralProxy(ctx context.Context) (bool, error) {
+	return services.DeleteCentralProxy(ctx)
 }
 
 // ComputePlatform is the resolver for the computePlatform field.

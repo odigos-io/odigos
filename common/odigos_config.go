@@ -58,9 +58,26 @@ type CollectorNodeConfiguration struct {
 	// A common target directory is '/mnt/var/log'.
 	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
 
+	// Deprecated - use OtlpExporterConfiguration instead.
 	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
 	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
+
+	// OtlpExporterConfiguration is the configuration for the OTLP exporter.
+	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+}
+
+type OtlpExporterConfiguration struct {
+	EnableDataCompression *bool           `json:"enableDataCompression,omitempty"`
+	Timeout               string          `json:"timeout,omitempty"`
+	RetryOnFailure        *RetryOnFailure `json:"retryOnFailure,omitempty"`
+}
+
+type RetryOnFailure struct {
+	Enabled         *bool  `json:"enabled,omitempty"`
+	InitialInterval string `json:"initialInterval,omitempty"`
+	MaxInterval     string `json:"maxInterval,omitempty"`
+	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {

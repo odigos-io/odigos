@@ -10,11 +10,15 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
+	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
 type centralBackendResourceManager struct {
@@ -37,6 +41,7 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 		NewCentralBackendRoleBinding(m.ns),
 		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion),
 		NewCentralBackendService(m.ns),
+		NewCentralBackendHPA(m.ns, m.client),
 	}, m.managerOpts)
 }
 
@@ -205,4 +210,109 @@ func NewCentralBackendRoleBinding(ns string) *rbacv1.RoleBinding {
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
+}
+
+
+
+func NewCentralBackendHPA(ns string, client *kube.Client) kube.Object {
+	minReplicas := ptrint32(1)
+	maxReplicas := int32(10)
+	targetUtilization := int32(k8sconsts.CentralBackendDefaultCpuTargetUtilization)
+
+	sv, err := client.Discovery().ServerVersion()
+	var parsed *version.Version
+	if err == nil {
+		parsed, _ = version.Parse(sv.GitVersion)
+	}
+
+	// HPA apiVersion selection by server version:
+	// - < 1.23   → autoscaling/v2beta1 (no Behavior fields)
+	// - 1.23–1.24 → autoscaling/v2beta2 (limited Behavior support)
+	// - ≥ 1.25 or unknown → autoscaling/v2 (full Behavior)
+
+
+	if parsed == nil || !parsed.LessThan(version.MustParse("1.25.0")) {
+		return &autoscalingv2.HorizontalPodAutoscaler{
+			TypeMeta:   metav1.TypeMeta{APIVersion: "autoscaling/v2", Kind: "HorizontalPodAutoscaler"},
+			ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.CentralBackendName, Namespace: ns},
+			Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
+				ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{APIVersion: "apps/v1", Kind: "Deployment", Name: k8sconsts.CentralBackendName},
+				MinReplicas:    minReplicas,
+				MaxReplicas:    maxReplicas,
+				Metrics: []autoscalingv2.MetricSpec{
+					{
+						Type: autoscalingv2.ResourceMetricSourceType,
+						Resource: &autoscalingv2.ResourceMetricSource{
+							Name:   corev1.ResourceCPU,
+							Target: autoscalingv2.MetricTarget{Type: autoscalingv2.UtilizationMetricType, AverageUtilization: &targetUtilization},
+						},
+					},
+				},
+				Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
+					ScaleUp: &autoscalingv2.HPAScalingRules{
+						StabilizationWindowSeconds: int32Ptr(30),
+						SelectPolicy:               selectPolicyPtr(autoscalingv2.MaxChangePolicySelect),
+						Policies: []autoscalingv2.HPAScalingPolicy{
+							{Type: autoscalingv2.PercentScalingPolicy, Value: 100, PeriodSeconds: 30},
+							{Type: autoscalingv2.PodsScalingPolicy, Value: 2, PeriodSeconds: 30},
+						},
+					},
+					ScaleDown: &autoscalingv2.HPAScalingRules{
+						StabilizationWindowSeconds: int32Ptr(600),
+						SelectPolicy:               selectPolicyPtr(autoscalingv2.MinChangePolicySelect),
+						Policies: []autoscalingv2.HPAScalingPolicy{
+							{Type: autoscalingv2.PercentScalingPolicy, Value: 10, PeriodSeconds: 60},
+							{Type: autoscalingv2.PodsScalingPolicy, Value: 1, PeriodSeconds: 60},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	if parsed != nil && !parsed.LessThan(version.MustParse("1.23.0")) && parsed.LessThan(version.MustParse("1.25.0")) {
+		return &autoscalingv2beta2.HorizontalPodAutoscaler{
+			TypeMeta:   metav1.TypeMeta{APIVersion: "autoscaling/v2beta2", Kind: "HorizontalPodAutoscaler"},
+			ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.CentralBackendName, Namespace: ns},
+			Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
+				ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{APIVersion: "apps/v1", Kind: "Deployment", Name: k8sconsts.CentralBackendName},
+				MinReplicas:    minReplicas,
+				MaxReplicas:    maxReplicas,
+				Metrics: []autoscalingv2beta2.MetricSpec{
+					{
+						Type: autoscalingv2beta2.ResourceMetricSourceType,
+						Resource: &autoscalingv2beta2.ResourceMetricSource{
+							Name: corev1.ResourceCPU,
+							Target: autoscalingv2beta2.MetricTarget{Type: autoscalingv2beta2.UtilizationMetricType, AverageUtilization: &targetUtilization},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	return &autoscalingv2beta1.HorizontalPodAutoscaler{
+		TypeMeta:   metav1.TypeMeta{APIVersion: "autoscaling/v2beta1", Kind: "HorizontalPodAutoscaler"},
+		ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.CentralBackendName, Namespace: ns},
+		Spec: autoscalingv2beta1.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv2beta1.CrossVersionObjectReference{APIVersion: "apps/v1", Kind: "Deployment", Name: k8sconsts.CentralBackendName},
+			MinReplicas:    minReplicas,
+			MaxReplicas:    maxReplicas,
+			Metrics: []autoscalingv2beta1.MetricSpec{
+				{
+					Type: autoscalingv2beta1.ResourceMetricSourceType,
+					Resource: &autoscalingv2beta1.ResourceMetricSource{
+						Name:                     corev1.ResourceCPU,
+						TargetAverageUtilization: &targetUtilization,
+					},
+				},
+			},
+		},
+	}
+}
+
+func int32Ptr(v int32) *int32 { return &v }
+
+func selectPolicyPtr(p autoscalingv2.ScalingPolicySelect) *autoscalingv2.ScalingPolicySelect {
+	return &p
 }

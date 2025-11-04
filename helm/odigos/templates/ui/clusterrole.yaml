@@ -39,6 +39,19 @@ rules:
       - update
       - patch
       {{- end }}
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - apps.openshift.io
+    resources:
+      - deploymentconfigs
+    verbs:
+      - get
+      - list
+      {{- if ne .Values.ui.uiMode "readonly" }}
+      - update
+      - patch
+      {{- end }}
+{{- end }}
   - apiGroups:
       - apps
     resources:

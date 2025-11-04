@@ -32,6 +32,10 @@ func (proc DummyProcessor) GetType() string {
 	return "resource"
 }
 
+func (proc DummyProcessor) GetOrderHint() int {
+	return 0
+}
+
 type DummyDestination struct {
 	ID string
 }

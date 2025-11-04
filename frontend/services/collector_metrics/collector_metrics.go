@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configgrpc"
@@ -74,12 +75,13 @@ type OdigosMetricsConsumer struct {
 }
 
 var (
-	K8SNamespaceNameKey   = string(semconv.K8SNamespaceNameKey)
-	K8SDeploymentNameKey  = string(semconv.K8SDeploymentNameKey)
-	K8SStatefulSetNameKey = string(semconv.K8SStatefulSetNameKey)
-	K8SDaemonSetNameKey   = string(semconv.K8SDaemonSetNameKey)
-	K8SCronJobNameKey     = string(semconv.K8SCronJobNameKey)
-	K8SJobNameKey         = string(semconv.K8SJobNameKey)
+	K8SNamespaceNameKey         = string(semconv.K8SNamespaceNameKey)
+	K8SDeploymentNameKey        = string(semconv.K8SDeploymentNameKey)
+	K8SStatefulSetNameKey       = string(semconv.K8SStatefulSetNameKey)
+	K8SDaemonSetNameKey         = string(semconv.K8SDaemonSetNameKey)
+	K8SCronJobNameKey           = string(semconv.K8SCronJobNameKey)
+	K8SJobNameKey               = string(semconv.K8SJobNameKey)
+	OdigosWorkloadKindAttribute = consts.OdigosWorkloadKindAttribute
 )
 
 func (c *OdigosMetricsConsumer) Capabilities() consumer.Capabilities {

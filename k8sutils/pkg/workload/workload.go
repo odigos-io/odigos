@@ -3,6 +3,7 @@ package workload
 import (
 	"errors"
 
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -22,6 +23,7 @@ var _ Workload = &DaemonSetWorkload{}
 var _ Workload = &StatefulSetWorkload{}
 var _ Workload = &CronJobWorkloadV1{}
 var _ Workload = &CronJobWorkloadBeta{}
+var _ Workload = &DeploymentConfigWorkload{}
 
 type DeploymentWorkload struct {
 	*v1.Deployment
@@ -83,6 +85,18 @@ func (c *CronJobWorkloadBeta) PodTemplateSpec() *corev1.PodTemplateSpec {
 	return &c.Spec.JobTemplate.Spec.Template
 }
 
+type DeploymentConfigWorkload struct {
+	*openshiftappsv1.DeploymentConfig
+}
+
+func (d *DeploymentConfigWorkload) AvailableReplicas() int32 {
+	return d.Status.AvailableReplicas
+}
+
+func (d *DeploymentConfigWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
+	return d.Spec.Template
+}
+
 func ObjectToWorkload(obj client.Object) (Workload, error) {
 	switch t := obj.(type) {
 	case *v1.Deployment:
@@ -95,6 +109,8 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 		return &CronJobWorkloadV1{CronJob: t}, nil
 	case *batchv1beta1.CronJob:
 		return &CronJobWorkloadBeta{CronJob: t}, nil
+	case *openshiftappsv1.DeploymentConfig:
+		return &DeploymentConfigWorkload{DeploymentConfig: t}, nil
 	default:
 		return nil, errors.New("unknown kind")
 	}

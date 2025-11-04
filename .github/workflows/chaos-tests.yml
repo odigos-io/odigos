@@ -14,7 +14,7 @@ jobs:
 
   chaos-tests:
     needs: build-images
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Run chaos-tests
         uses: ./.github/actions/chaos-tests

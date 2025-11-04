@@ -110,7 +110,11 @@ func (processor Processor) GetConfig() (config.GenericMap, error) {
 	}
 	return processorConfig, err
 }
+
 func (processor Processor) GetSignals() []common.ObservabilitySignal {
 	return processor.Spec.Signals
+}
 
+func (processor Processor) GetOrderHint() int {
+	return processor.Spec.OrderHint
 }

@@ -53,6 +53,9 @@ var describeCmd = &cobra.Command{
 # Describe a source of kind deployment and name myservice in the default namespace
 odigos describe source deployment myservice -n default
 
+# Describe a source of kind deploymentconfig and name myservice in the default namespace (OpenShift)
+odigos describe source deploymentconfig myservice -n default
+
 Output:
 
 Name:  myservice
@@ -185,6 +188,34 @@ var describeSourceStatefulSetCmd = &cobra.Command{
 	},
 }
 
+var describeSourceDeploymentConfigCmd = &cobra.Command{
+	Use:     "deploymentconfig <name>",
+	Short:   "Show details of a specific odigos source of type deploymentconfig",
+	Long:    `Print detailed description of a specific odigos source of type deploymentconfig, which can be used to troubleshoot issues`,
+	Aliases: []string{"dc", "deploymentconfigs", "dc.apps.openshift.io", "deploymentconfig.apps.openshift.io", "deploymentconfigs.apps.openshift.io"},
+	Args:    cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		name := args[0]
+		ns := cmd.Flag("namespace").Value.String()
+
+		var describeText string
+		if describeRemoteFlag {
+			describeText = executeRemoteSourceDescribe(ctx, client, "deploymentconfig", ns, name)
+		} else {
+			desc, err := describe.DescribeDeploymentConfig(ctx, client.Interface, client.Dynamic, client.OdigosClient, ns, name)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe deploymentconfig: %s", err)
+			} else {
+				describeText = describe.DescribeSourceToText(desc)
+			}
+		}
+		fmt.Println(describeText)
+	},
+}
+
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
 	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/odigos", odigosNs, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort)
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
@@ -234,4 +265,5 @@ func init() {
 	describeSourceCmd.AddCommand(describeSourceDeploymentCmd)
 	describeSourceCmd.AddCommand(describeSourceDaemonSetCmd)
 	describeSourceCmd.AddCommand(describeSourceStatefulSetCmd)
+	describeSourceCmd.AddCommand(describeSourceDeploymentConfigCmd)
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -34,7 +35,8 @@ func IgnoreErrorKindNotSupported(err error) error {
 func IsValidWorkloadKind(kind k8sconsts.WorkloadKind) bool {
 	switch kind {
 	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet,
-		k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace, k8sconsts.WorkloadKindCronJob:
+		k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace, k8sconsts.WorkloadKindCronJob,
+		k8sconsts.WorkloadKindDeploymentConfig:
 		return true
 	}
 	return false
@@ -54,6 +56,8 @@ func WorkloadKindLowerCaseFromKind(pascalCase k8sconsts.WorkloadKind) k8sconsts.
 		return k8sconsts.WorkloadKindLowerCaseCronJob
 	case k8sconsts.WorkloadKindJob:
 		return k8sconsts.WorkloadKindLowerCaseJob
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		return k8sconsts.WorkloadKindLowerCaseDeploymentConfig
 	}
 	return ""
 }
@@ -70,6 +74,8 @@ func WorkloadKindFromLowerCase(lowerCase k8sconsts.WorkloadKindLowerCase) k8scon
 		return k8sconsts.WorkloadKindCronJob
 	case k8sconsts.WorkloadKindLowerCaseJob:
 		return k8sconsts.WorkloadKindJob
+	case k8sconsts.WorkloadKindLowerCaseDeploymentConfig:
+		return k8sconsts.WorkloadKindDeploymentConfig
 	}
 	return ""
 }
@@ -86,6 +92,8 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindCronJob
 	case string(k8sconsts.WorkloadKindLowerCaseJob):
 		return k8sconsts.WorkloadKindJob
+	case string(k8sconsts.WorkloadKindLowerCaseDeploymentConfig):
+		return k8sconsts.WorkloadKindDeploymentConfig
 	default:
 		return k8sconsts.WorkloadKind("")
 	}
@@ -116,6 +124,8 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 		}
 	case k8sconsts.WorkloadKindJob:
 		return &batchv1.Job{}
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		return &openshiftappsv1.DeploymentConfig{}
 	default:
 		return nil
 	}
@@ -142,6 +152,8 @@ func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object
 		}
 	case k8sconsts.WorkloadKindJob:
 		return &batchv1.JobList{}
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		return &openshiftappsv1.DeploymentConfigList{}
 	default:
 		return nil
 	}

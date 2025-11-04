@@ -1,10 +1,12 @@
 package sourceinstrumentation
 
 import (
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/version"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -14,6 +16,21 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
+
+// isDeploymentConfigAvailable checks if the DeploymentConfig resource is available in the cluster
+// using the RESTMapper to avoid permission errors on non-OpenShift clusters
+func isDeploymentConfigAvailable(mgr ctrl.Manager) bool {
+	gvk := schema.GroupVersionKind{
+		Group:   "apps.openshift.io",
+		Version: "v1",
+		Kind:    "DeploymentConfig",
+	}
+
+	// Try to get the REST mapping for DeploymentConfig
+	// This will fail if the resource doesn't exist in the cluster
+	_, err := mgr.GetRESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
+	return err == nil
+}
 
 func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 	err := builder.
@@ -114,6 +131,23 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		})
 	if err != nil {
 		return err
+	}
+
+	// Only register the DeploymentConfig controller if the resource is available (OpenShift clusters)
+	// This avoids permission errors on non-OpenShift clusters where the resource doesn't exist
+	if isDeploymentConfigAvailable(mgr) {
+		err = builder.
+			ControllerManagedBy(mgr).
+			Named("sourceinstrumentation-deploymentconfig").
+			For(&openshiftappsv1.DeploymentConfig{}).
+			WithEventFilter(&odigospredicate.CreationPredicate{}).
+			Complete(&DeploymentConfigReconciler{
+				Client: mgr.GetClient(),
+				Scheme: mgr.GetScheme(),
+			})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

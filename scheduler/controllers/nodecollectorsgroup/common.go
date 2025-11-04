@@ -252,9 +252,13 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		k8sNodeLogsDirectory = odigosConfiguration.CollectorNode.K8sNodeLogsDirectory
 	}
 
-	enableDataCompression := false
-	if odigosConfiguration.CollectorNode != nil && odigosConfiguration.CollectorNode.EnableDataCompression != nil {
-		enableDataCompression = *odigosConfiguration.CollectorNode.EnableDataCompression
+	otlpExporterConfiguration := odigosConfiguration.CollectorNode.OtlpExporterConfiguration
+	// TODO: remove after sometime it is a temporary workaround to support the deprecated field CollectorNode.EnableDataCompression
+	// which replaced with OtlpExporterConfiguration.EnableDataCompression.
+	if otlpExporterConfiguration == nil {
+		otlpExporterConfiguration = &common.OtlpExporterConfiguration{
+			EnableDataCompression: odigosConfiguration.CollectorNode.EnableDataCompression,
+		}
 	}
 
 	return &odigosv1.CollectorsGroup{
@@ -267,12 +271,12 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			Namespace: env.GetCurrentNamespace(),
 		},
 		Spec: odigosv1.CollectorsGroupSpec{
-			Role:                    odigosv1.CollectorsGroupRoleNodeCollector,
-			CollectorOwnMetricsPort: ownMetricsPort,
-			K8sNodeLogsDirectory:    k8sNodeLogsDirectory,
-			EnableDataCompression:   &enableDataCompression,
-			ResourcesSettings:       getResourceSettings(odigosConfiguration),
-			Metrics:                 metricsConfig, // not nil if any destination has metrics enabled
+			Role:                      odigosv1.CollectorsGroupRoleNodeCollector,
+			CollectorOwnMetricsPort:   ownMetricsPort,
+			K8sNodeLogsDirectory:      k8sNodeLogsDirectory,
+			ResourcesSettings:         getResourceSettings(odigosConfiguration),
+			OtlpExporterConfiguration: otlpExporterConfiguration,
+			Metrics:                   metricsConfig, // not nil if any destination has metrics enabled
 		},
 	}
 }

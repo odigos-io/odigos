@@ -167,6 +167,17 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  - deploymentconfigs/finalizers
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - autoscaling
   resources:
   - horizontalpodautoscalers

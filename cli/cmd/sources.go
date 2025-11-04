@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/version"
 
 	"github.com/spf13/cobra"
@@ -102,10 +103,11 @@ odigos sources delete --group mygroup --all-namespaces
 }
 
 var kindAliases = map[k8sconsts.WorkloadKind][]string{
-	k8sconsts.WorkloadKindDeployment:  []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
-	k8sconsts.WorkloadKindDaemonSet:   []string{"ds", "daemonsets", "ds.apps", "daemonset.apps", "daemonsets.apps"},
-	k8sconsts.WorkloadKindStatefulSet: []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
-	k8sconsts.WorkloadKindNamespace:   []string{"ns", "namespaces"},
+	k8sconsts.WorkloadKindDeployment:       []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
+	k8sconsts.WorkloadKindDaemonSet:        []string{"ds", "daemonsets", "ds.apps", "daemonset.apps", "daemonsets.apps"},
+	k8sconsts.WorkloadKindStatefulSet:      []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
+	k8sconsts.WorkloadKindNamespace:        []string{"ns", "namespaces"},
+	k8sconsts.WorkloadKindDeploymentConfig: []string{"dc", "deploymentconfigs", "dc.apps.openshift.io", "deploymentconfig.apps.openshift.io", "deploymentconfigs.apps.openshift.io"},
 }
 
 var sourceDisableCmd = &cobra.Command{
@@ -524,6 +526,22 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 		objName = obj.GetName()
 		objNamespace = obj.GetNamespace()
 		sourceNamespace = sourceNamespaceFlag
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		// For DeploymentConfig, we use the dynamic client to fetch the resource
+		// as it's an OpenShift-specific resource
+		gvr := kube.TypeMetaToDynamicResource(schema.GroupVersionKind{
+			Group:   "apps.openshift.io",
+			Version: "v1",
+			Kind:    "DeploymentConfig",
+		})
+		unstructuredObj, err := client.Dynamic.Resource(gvr).Namespace(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		obj = unstructuredObj
+		objName = obj.GetName()
+		objNamespace = obj.GetNamespace()
+		sourceNamespace = sourceNamespaceFlag
 	}
 	if err != nil {
 		return nil, err
@@ -643,7 +661,7 @@ func parseSourceLabelFlags() (string, string, string, labels.Set) {
 func init() {
 	sourceFlags = pflag.NewFlagSet("sourceFlags", pflag.ContinueOnError)
 	sourceFlags.StringVarP(&sourceNamespaceFlag, sourceNamespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
-	sourceFlags.StringVar(&sourceWorkloadKindFlag, sourceWorkloadKindFlagName, "", "Kubernetes Kind for entity (one of: Deployment, DaemonSet, StatefulSet, Namespace)")
+	sourceFlags.StringVar(&sourceWorkloadKindFlag, sourceWorkloadKindFlagName, "", "Kubernetes Kind for entity (one of: Deployment, DaemonSet, StatefulSet, Namespace, DeploymentConfig)")
 	sourceFlags.StringVar(&sourceWorkloadNameFlag, sourceWorkloadNameFlagName, "", "Name of entity for Source")
 	sourceFlags.StringVar(&sourceWorkloadNamespaceFlag, sourceWorkloadNamespaceFlagName, "", "Namespace of entity for Source")
 	sourceFlags.StringVar(&sourceGroupFlag, sourceGroupFlagName, "", "Name of Source group to use")
@@ -663,6 +681,7 @@ func init() {
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindNamespace,
 		k8sconsts.WorkloadKindCronJob,
+		k8sconsts.WorkloadKindDeploymentConfig,
 	} {
 		enableCmd := enableOrDisableSourceCmd(kind, false)
 		disableCmd := enableOrDisableSourceCmd(kind, true)
