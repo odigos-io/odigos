@@ -61,7 +61,7 @@ spec:
 
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
               ./odigos uninstall
-              ./odigos install --ns odigos-test --set image.tag=e2e-test
+              ./odigos install --ns odigos-test
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
             timeout: 4m
