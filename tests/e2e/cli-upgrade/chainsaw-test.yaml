@@ -61,7 +61,7 @@ spec:
 
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
               ./odigos uninstall --yes
-              ./odigos install --namespace odigos-test
+              ./odigos install --ns odigos-test --set image.tag=e2e-test
         - assert:
             timeout: 4m
             file: ../../common/assert/latest-odigos-version-installed.yaml
