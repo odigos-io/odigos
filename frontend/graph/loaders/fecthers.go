@@ -20,6 +20,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -517,7 +518,8 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 				uList, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(filters.NamespaceString).List(ctx, metav1.ListOptions{})
 				if err != nil {
 					// If DeploymentConfig API is not available (not on OpenShift), skip silently
-					if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) {
+					// This happens when the DeploymentConfig CRD doesn't exist on standard Kubernetes clusters
+					if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || meta.IsNoMatchError(err) {
 						return []openshiftappsv1.DeploymentConfig{}, nil
 					}
 					return nil, err
