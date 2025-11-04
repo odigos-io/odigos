@@ -21,7 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -47,8 +46,14 @@ func syncNamespaceWorkloads(
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
 		if err != nil {
-			// Ignore "no matches for kind" errors - this happens on non-OpenShift clusters
-			// where DeploymentConfig resource doesn't exist.
+			// Ignore "no matches for kind" and "forbidden" errors for DeploymentConfig
+			// This happens on non-OpenShift clusters where:
+			// - The DeploymentConfig resource doesn't exist (NoMatchError)
+			// - RBAC permissions aren't granted (Forbidden)
+			if kind == k8sconsts.WorkloadKindDeploymentConfig && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
+				continue
+			}
+			// For other errors or other workload kinds, collect the error
 			if !meta.IsNoMatchError(err) {
 				errs = errors.Join(errs, err)
 			}
@@ -174,7 +179,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	desiredServiceName := calculateDesiredServiceName(pw, sources)
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
-	ic := &v1alpha1.InstrumentationConfig{}
+	ic := &odigosv1.InstrumentationConfig{}
 	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: pw.Namespace}, ic)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -218,9 +223,9 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string) (*v1alpha1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string) (*odigosv1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
-	instConfig := v1alpha1.InstrumentationConfig{
+	instConfig := odigosv1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
 			Kind:       "InstrumentationConfig",
@@ -254,7 +259,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	logger := log.FromContext(ctx)
 	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 
-	err := kubeClient.Delete(ctx, &v1alpha1.InstrumentationConfig{
+	err := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: pw.Namespace,
 			Name:      instrumentationConfigName,
@@ -269,7 +274,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	return nil
 }
 
-func updateContainerOverride(ic *v1alpha1.InstrumentationConfig, desiredContainers []odigosv1.ContainerOverride, desiredContainersHashString string) (updated bool) {
+func updateContainerOverride(ic *odigosv1.InstrumentationConfig, desiredContainers []odigosv1.ContainerOverride, desiredContainersHashString string) (updated bool) {
 	if ic.Spec.ContainerOverridesHash != desiredContainersHashString {
 		ic.Spec.ContainersOverrides = desiredContainers
 		ic.Spec.ContainerOverridesHash = desiredContainersHashString
@@ -314,7 +319,7 @@ func calculateDesiredServiceName(pw k8sconsts.PodWorkload, sources *odigosv1.Wor
 	return sources.Workload.Spec.OtelServiceName
 }
 
-func updateServiceName(ic *v1alpha1.InstrumentationConfig, desiredServiceName string) (updated bool) {
+func updateServiceName(ic *odigosv1.InstrumentationConfig, desiredServiceName string) (updated bool) {
 	if desiredServiceName != ic.Spec.ServiceName {
 		ic.Spec.ServiceName = desiredServiceName
 		return true

@@ -20,7 +20,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -334,6 +333,11 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindDeploymentConfig:
+			// Only try to get DeploymentConfig if it's available in the cluster
+			if !kube.IsDeploymentConfigAvailable() {
+				return nil, nil
+			}
+
 			// Use dynamic client for DeploymentConfig
 			gvr := schema.GroupVersionResource{
 				Group:    "apps.openshift.io",
@@ -504,6 +508,12 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 	})
 
 	g.Go(func() error {
+		// Only try to list DeploymentConfigs if they're available in the cluster
+		// This avoids permission errors on non-OpenShift clusters
+		if !kube.IsDeploymentConfigAvailable() {
+			return nil
+		}
+
 		// Use dynamic client for DeploymentConfigs
 		gvr := schema.GroupVersionResource{
 			Group:    "apps.openshift.io",
@@ -517,11 +527,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			func() ([]openshiftappsv1.DeploymentConfig, error) {
 				uList, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(filters.NamespaceString).List(ctx, metav1.ListOptions{})
 				if err != nil {
-					// If DeploymentConfig API is not available (not on OpenShift), skip silently
-					// This happens when the DeploymentConfig CRD doesn't exist on standard Kubernetes clusters
-					if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || meta.IsNoMatchError(err) {
-						return []openshiftappsv1.DeploymentConfig{}, nil
-					}
 					return nil, err
 				}
 
