@@ -47,7 +47,11 @@ func syncNamespaceWorkloads(
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
 		if err != nil {
-			errs = errors.Join(errs, err)
+			// Ignore "no matches for kind" errors - this happens on non-OpenShift clusters
+			// where DeploymentConfig resource doesn't exist.
+			if !meta.IsNoMatchError(err) {
+				errs = errors.Join(errs, err)
+			}
 			continue
 		}
 
