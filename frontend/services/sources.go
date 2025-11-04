@@ -85,6 +85,11 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 	})
 
 	g.Go(func() error {
+		// Only try to get DeploymentConfigs if they're available
+		if !kube.IsDeploymentConfigAvailable() {
+			deployConfigs = []model.K8sActualSource{}
+			return nil
+		}
 		var err error
 		deployConfigs, err = getDeploymentConfigs(ctx, *namespace)
 		return err
@@ -229,8 +234,8 @@ func getDeploymentConfigs(ctx context.Context, namespace corev1.Namespace) ([]mo
 	// List all DeploymentConfigs in the namespace
 	dcList, err := dcClient.List(ctx, metav1.ListOptions{})
 	if err != nil {
-		// If DeploymentConfigs API is not available (not OpenShift), just return empty list
-		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) {
+		// If DeploymentConfigs API is not available (not OpenShift) or we don't have permission, just return empty list
+		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || apierrors.IsForbidden(err) {
 			return response, nil
 		}
 		return nil, err
@@ -315,6 +320,11 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 		return nil
 
 	case WorkloadKindDeploymentConfig:
+		// Check if DeploymentConfig is available first
+		if !kube.IsDeploymentConfigAvailable() {
+			return fmt.Errorf("deploymentconfig resources are not available in this cluster")
+		}
+
 		// Use dynamic client for DeploymentConfig
 		dcClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
 			Group:    "apps.openshift.io",
