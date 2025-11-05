@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	containersutil "github.com/odigos-io/odigos/k8sutils/pkg/containers"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,22 +59,17 @@ func computeDaemonSetStatus(ds *appsv1.DaemonSet) (model.WorkloadStatus, bool) {
 }
 
 func extractDaemonSetResources(ds *appsv1.DaemonSet) *model.Resources {
-	for _, c := range ds.Spec.Template.Spec.Containers {
-		if c.Name == k8sconsts.OdigosNodeCollectorContainerName {
-			req := buildResourceAmounts(c.Resources.Requests)
-			lim := buildResourceAmounts(c.Resources.Limits)
-
-			return &model.Resources{Requests: req, Limits: lim}
-		}
+	if c := containersutil.GetContainerByName(ds.Spec.Template.Spec.Containers, k8sconsts.OdigosNodeCollectorContainerName); c != nil {
+		req := buildResourceAmounts(c.Resources.Requests)
+		lim := buildResourceAmounts(c.Resources.Limits)
+		return &model.Resources{Requests: req, Limits: lim}
 	}
 	return nil
 }
 
 func extractDaemonSetImageVersion(ds *appsv1.DaemonSet) string {
-	for _, c := range ds.Spec.Template.Spec.Containers {
-		if c.Name == k8sconsts.OdigosNodeCollectorContainerName {
-			return services.ExtractImageVersion(c.Image)
-		}
+	if c := containersutil.GetContainerByName(ds.Spec.Template.Spec.Containers, k8sconsts.OdigosNodeCollectorContainerName); c != nil {
+		return services.ExtractImageVersion(c.Image)
 	}
 	return ""
 }

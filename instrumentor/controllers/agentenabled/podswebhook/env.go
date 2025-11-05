@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros/distro"
+	containersutil "github.com/odigos-io/odigos/k8sutils/pkg/containers"
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -139,7 +140,7 @@ func InjectUserEnvForLang(odigosConfiguration *common.OdigosConfiguration, pod *
 			continue
 		}
 
-		container := getContainerByName(pod, containerDetailes.ContainerName)
+		container := containersutil.GetContainerByName(pod.Spec.Containers, containerDetailes.ContainerName)
 		if container == nil {
 			continue
 		}
@@ -154,15 +155,6 @@ func InjectUserEnvForLang(odigosConfiguration *common.OdigosConfiguration, pod *
 			)
 		}
 	}
-}
-
-func getContainerByName(pod *corev1.Pod, name string) *corev1.Container {
-	for i := range pod.Spec.Containers {
-		if pod.Spec.Containers[i].Name == name {
-			return &pod.Spec.Containers[i]
-		}
-	}
-	return nil
 }
 
 // Create a set of existing environment variable names

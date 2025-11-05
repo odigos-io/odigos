@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	containersutil "github.com/odigos-io/odigos/k8sutils/pkg/containers"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -100,22 +101,17 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.WorkloadStatus, bool
 }
 
 func extractGatewayResources(dep *appsv1.Deployment) *model.Resources {
-	for _, c := range dep.Spec.Template.Spec.Containers {
-		if c.Name == k8sconsts.OdigosClusterCollectorContainerName {
-			req := buildResourceAmounts(c.Resources.Requests)
-			lim := buildResourceAmounts(c.Resources.Limits)
-
-			return &model.Resources{Requests: req, Limits: lim}
-		}
+	if c := containersutil.GetContainerByName(dep.Spec.Template.Spec.Containers, k8sconsts.OdigosClusterCollectorContainerName); c != nil {
+		req := buildResourceAmounts(c.Resources.Requests)
+		lim := buildResourceAmounts(c.Resources.Limits)
+		return &model.Resources{Requests: req, Limits: lim}
 	}
 	return nil
 }
 
 func extractGatewayImageVersion(dep *appsv1.Deployment) string {
-	for _, c := range dep.Spec.Template.Spec.Containers {
-		if c.Name == k8sconsts.OdigosClusterCollectorContainerName {
-			return services.ExtractImageVersion(c.Image)
-		}
+	if c := containersutil.GetContainerByName(dep.Spec.Template.Spec.Containers, k8sconsts.OdigosClusterCollectorContainerName); c != nil {
+		return services.ExtractImageVersion(c.Image)
 	}
 	return ""
 }
