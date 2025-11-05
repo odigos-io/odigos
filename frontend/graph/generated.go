@@ -332,10 +332,11 @@ type ComplexityRoot struct {
 	}
 
 	HorizontalPodAutoscalerInfo struct {
-		Current func(childComplexity int) int
-		Desired func(childComplexity int) int
-		Max     func(childComplexity int) int
-		Min     func(childComplexity int) int
+		Conditions func(childComplexity int) int
+		Current    func(childComplexity int) int
+		Desired    func(childComplexity int) int
+		Max        func(childComplexity int) int
+		Min        func(childComplexity int) int
 	}
 
 	HttpPayloadCollection struct {
@@ -2180,6 +2181,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HeadersCollection.HeaderKeys(childComplexity), true
+
+	case "HorizontalPodAutoscalerInfo.conditions":
+		if e.complexity.HorizontalPodAutoscalerInfo.Conditions == nil {
+			break
+		}
+
+		return e.complexity.HorizontalPodAutoscalerInfo.Conditions(childComplexity), true
 
 	case "HorizontalPodAutoscalerInfo.current":
 		if e.complexity.HorizontalPodAutoscalerInfo.Current == nil {
@@ -13261,6 +13269,8 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_hpa(_ context.Con
 				return ec.fieldContext_HorizontalPodAutoscalerInfo_current(ctx, field)
 			case "desired":
 				return ec.fieldContext_HorizontalPodAutoscalerInfo_desired(ctx, field)
+			case "conditions":
+				return ec.fieldContext_HorizontalPodAutoscalerInfo_conditions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HorizontalPodAutoscalerInfo", field.Name)
 		},
@@ -14033,6 +14043,59 @@ func (ec *executionContext) fieldContext_HorizontalPodAutoscalerInfo_desired(_ c
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HorizontalPodAutoscalerInfo_conditions(ctx context.Context, field graphql.CollectedField, obj *model.HorizontalPodAutoscalerInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HorizontalPodAutoscalerInfo_conditions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Conditions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Condition)
+	fc.Result = res
+	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCondition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HorizontalPodAutoscalerInfo_conditions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HorizontalPodAutoscalerInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "status":
+				return ec.fieldContext_Condition_status(ctx, field)
+			case "type":
+				return ec.fieldContext_Condition_type(ctx, field)
+			case "reason":
+				return ec.fieldContext_Condition_reason(ctx, field)
+			case "message":
+				return ec.fieldContext_Condition_message(ctx, field)
+			case "lastTransitionTime":
+				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
 	}
 	return fc, nil
@@ -35873,6 +35936,8 @@ func (ec *executionContext) _HorizontalPodAutoscalerInfo(ctx context.Context, se
 			out.Values[i] = ec._HorizontalPodAutoscalerInfo_current(ctx, field, obj)
 		case "desired":
 			out.Values[i] = ec._HorizontalPodAutoscalerInfo_desired(ctx, field, obj)
+		case "conditions":
+			out.Values[i] = ec._HorizontalPodAutoscalerInfo_conditions(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -43686,6 +43751,47 @@ func (ec *executionContext) marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑi
 	return ec._ComputePlatform(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v []*model.Condition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOCondition2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCondition(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Condition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -43731,6 +43837,13 @@ func (ec *executionContext) marshalOCondition2ᚕᚖgithubᚗcomᚋodigosᚑio�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOCondition2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v *model.Condition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Condition(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOCustomInstrumentations2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomInstrumentations(ctx context.Context, sel ast.SelectionSet, v *model.CustomInstrumentations) graphql.Marshaler {

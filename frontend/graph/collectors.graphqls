@@ -42,6 +42,7 @@ type HorizontalPodAutoscalerInfo {
   max: Int
   current: Int
   desired: Int
+  conditions: [Condition]
 }
 
 enum ManifestFormat {

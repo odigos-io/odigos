@@ -410,10 +410,11 @@ type HeadersCollectionInput struct {
 }
 
 type HorizontalPodAutoscalerInfo struct {
-	Min     *int `json:"min,omitempty"`
-	Max     *int `json:"max,omitempty"`
-	Current *int `json:"current,omitempty"`
-	Desired *int `json:"desired,omitempty"`
+	Min        *int         `json:"min,omitempty"`
+	Max        *int         `json:"max,omitempty"`
+	Current    *int         `json:"current,omitempty"`
+	Desired    *int         `json:"desired,omitempty"`
+	Conditions []*Condition `json:"conditions,omitempty"`
 }
 
 type HTTPPayloadCollection struct {
