@@ -3,13 +3,11 @@ package collectors
 import (
 	"context"
 	"log"
-	"sort"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
-	containersutil "github.com/odigos-io/odigos/k8sutils/pkg/containers"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
@@ -42,11 +40,11 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
 
 	result.Hpa = computeGatewayHPA(dep, hpa)
 
-	if rr := extractGatewayResources(dep); rr != nil {
+	if rr := extractResourcesForContainer(dep.Spec.Template.Spec.Containers, k8sconsts.OdigosClusterCollectorContainerName); rr != nil {
 		result.Resources = rr
 	}
 
-	result.ImageVersion = services.StringPtr(extractGatewayImageVersion(dep))
+	result.ImageVersion = services.StringPtr(extractImageVersionForContainer(dep.Spec.Template.Spec.Containers, k8sconsts.OdigosClusterCollectorContainerName))
 
 	result.LastRolloutAt = services.StringPtr(findLastRolloutTime(ctx, dep))
 
@@ -100,22 +98,6 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.WorkloadRolloutStatu
 	return model.WorkloadRolloutStatusUnknown, false
 }
 
-func extractGatewayResources(dep *appsv1.Deployment) *model.Resources {
-	if c := containersutil.GetContainerByName(dep.Spec.Template.Spec.Containers, k8sconsts.OdigosClusterCollectorContainerName); c != nil {
-		req := buildResourceAmounts(c.Resources.Requests)
-		lim := buildResourceAmounts(c.Resources.Limits)
-		return &model.Resources{Requests: req, Limits: lim}
-	}
-	return nil
-}
-
-func extractGatewayImageVersion(dep *appsv1.Deployment) string {
-	if c := containersutil.GetContainerByName(dep.Spec.Template.Spec.Containers, k8sconsts.OdigosClusterCollectorContainerName); c != nil {
-		return services.ExtractImageVersion(c.Image)
-	}
-	return ""
-}
-
 func findLastRolloutTime(ctx context.Context, dep *appsv1.Deployment) string {
 	if dep.Spec.Template.Annotations != nil {
 		if v, ok := dep.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"]; ok {
@@ -129,24 +111,33 @@ func findLastRolloutTime(ctx context.Context, dep *appsv1.Deployment) string {
 	if err != nil {
 		return ""
 	}
-	rsList, err := kube.DefaultClient.AppsV1().ReplicaSets(dep.Namespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
+	labelSelector := selector.String() + "," + k8sconsts.OdigosCollectorRoleLabel + "=" + string(k8sconsts.CollectorsRoleClusterGateway)
+	rsList, err := kube.DefaultClient.AppsV1().ReplicaSets(dep.Namespace).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil || len(rsList.Items) == 0 {
 		return ""
 	}
-	owned := make([]appsv1.ReplicaSet, 0, len(rsList.Items))
+	var latestOwned metav1.Time
+	var latestAny metav1.Time
 	for _, rs := range rsList.Items {
+		if latestAny.IsZero() || rs.CreationTimestamp.After(latestAny.Time) {
+			latestAny = rs.CreationTimestamp
+		}
 		for _, owner := range rs.OwnerReferences {
 			if owner.Kind == "Deployment" && owner.UID == dep.UID {
-				owned = append(owned, rs)
+				if latestOwned.IsZero() || rs.CreationTimestamp.After(latestOwned.Time) {
+					latestOwned = rs.CreationTimestamp
+				}
 				break
 			}
 		}
 	}
-	if len(owned) == 0 {
-		owned = rsList.Items
+	if !latestOwned.IsZero() {
+		return services.Metav1TimeToString(latestOwned)
 	}
-	sort.Slice(owned, func(i, j int) bool { return owned[i].CreationTimestamp.After(owned[j].CreationTimestamp.Time) })
-	return services.Metav1TimeToString(owned[0].CreationTimestamp)
+	if !latestAny.IsZero() {
+		return services.Metav1TimeToString(latestAny)
+	}
+	return ""
 }
 
 func computeGatewayHPA(dep *appsv1.Deployment, hpa *autoscalingv2.HorizontalPodAutoscaler) *model.HorizontalPodAutoscalerInfo {
