@@ -84,16 +84,16 @@ func (r *k8sReporter) OnInit(ctx context.Context, pid int, err error, e K8sProce
 		return nil
 	}
 
-	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToInitialize, err.Error(), nil)
+	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToInitialize, err.Error(), instrumentation.Status{})
 }
 
-func (r *k8sReporter) OnLoad(ctx context.Context, pid int, err error, e K8sProcessDetails, libraries []instrumentation.InstrumentationLibrary) error {
+func (r *k8sReporter) OnLoad(ctx context.Context, pid int, err error, e K8sProcessDetails, status instrumentation.Status) error {
 	if err != nil {
-		return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToLoad, err.Error(), libraries)
+		return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToLoad, err.Error(), status)
 	}
 
 	msg := fmt.Sprintf("Successfully loaded eBPF probes to pod: %s container: %s", e.pod.Name, e.containerName)
-	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationHealthy, LoadedSuccessfully, msg, libraries)
+	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationHealthy, LoadedSuccessfully, msg, status)
 }
 
 func (r *k8sReporter) OnRun(ctx context.Context, pid int, err error, e K8sProcessDetails) error {
@@ -102,7 +102,7 @@ func (r *k8sReporter) OnRun(ctx context.Context, pid int, err error, e K8sProces
 		return nil
 	}
 
-	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToRun, err.Error(), nil)
+	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToRun, err.Error(), instrumentation.Status{})
 }
 
 func (r *k8sReporter) OnExit(ctx context.Context, pid int, e K8sProcessDetails) error {
@@ -117,16 +117,18 @@ func (r *k8sReporter) OnExit(ctx context.Context, pid int, e K8sProcessDetails) 
 	return nil
 }
 
-func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, ke K8sProcessDetails, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string, libraries []instrumentation.InstrumentationLibrary) error {
+func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, ke K8sProcessDetails, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string, status instrumentation.Status) error {
 	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(ke.pw.Name, ke.pw.Kind)
 	healthy := bool(health)
-	components := make([]odigosv1.InstrumentationLibraryStatus, 0, len(libraries))
-	for _, library := range libraries {
+	components := make([]odigosv1.InstrumentationLibraryStatus, 0, len(status.Libraries))
+	for name, libraryStatus := range status.Libraries {
+		libraryHealthy := bool(libraryStatus.Healthy)
 		components = append(components, odigosv1.InstrumentationLibraryStatus{
-			Name:           library.Name,
+			Name:           name,
 			Type:           odigosv1.InstrumentationLibraryTypeInstrumentation,
 			LastStatusTime: metav1.Now(),
-			Healthy:        &healthy,
+			Healthy:        &libraryHealthy,
+			Message:        libraryStatus.Message,
 		})
 	}
 	return instance.UpdateInstrumentationInstanceStatus(ctx, ke.pod, ke.containerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
