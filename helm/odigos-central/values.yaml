@@ -1,9 +1,14 @@
+# Global image controls
+# -- Override image tag for all Odigos components (empty = chart default)
 image:
   tag: ''
+# -- Prefix/registry for all Odigos images (empty = built-in defaults)
 imagePrefix: ''
+# -- Image pull secrets for private registries (k8s secret names)
 imagePullSecrets: []
 
 centralBackend:
+  # Resources and scheduling for the Central backend
   resources:
     requests:
       cpu: 100m
@@ -15,10 +20,14 @@ centralBackend:
     kubernetes.io/os: linux
   tolerations: []
   affinity: []
+  # HorizontalPodAutoscaler for the backend
   autoscaling:
+    # -- Enable HPA for the backend
     enabled: true
+    # -- HPA replica bounds
     minReplicas: 1
     maxReplicas: 10
+    # -- Target average CPU utilization percentage
     cpuTargetUtilization: 70
     behavior:
       scaleUp:
@@ -43,8 +52,10 @@ centralBackend:
             periodSeconds: 60
 
 centralUI:
+  # Central UI settings
   uiMode: normal
   uiPaginationLimit: 0
+  # -- Override backend URL (empty = in-cluster service)
   centralBackendURL: ''
   resources:
     requests:
@@ -64,17 +75,36 @@ redis:
   portName: redis
 
 auth:
+  # Built-in Keycloak configuration
   enabled: true
   image: quay.io/keycloak/keycloak:24.0.3
   adminUsername: admin
   port: 8080
   portName: http
-  persistence:
+  # Ensure volume permissions are compatible when persistence is enabled
+  podSecurityContext:
     enabled: true
+    fsGroup: 1000
+  securityContext:
+    enabled: true
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+
+  # Persistence (disabled by default). Enable to keep Keycloak data via PVC.
+  # ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+  persistence:
+    enabled: false
     size: 1Gi
+    # -- PVC access modes
+    # See: kubectl explain persistentvolumeclaim.spec.accessModes
     accessModes:
       - ReadWriteOnce
+    # -- Storage class behavior:
+    #    - Omit key to use the cluster default (if any)
+    #    - Set to a class name to bind to that class
     storageClassName: ''
+    # -- Use an existing PVC by name instead of creating one
+    # If set, the chart will not create a PVC and will mount this claim
     existingClaim: ''
   resources:
     requests:
@@ -88,19 +118,12 @@ auth:
   tolerations: []
   affinity: []
 
+# OpenShift-specific toggles (RBAC/SELinux/images)
 openshift:
   enabled: false
 
+# GKE-specific toggles (reserved)
 gke:
   enabled: false
 
-# Refer to the official Kubernetes documentation for structure and field details:
-# https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
-#
-# Example: Odigos components should be evenly spread across zones.
-# No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
-# topologySpreadConstraints:
-#   - maxSkew: 1
-#     topologyKey: "topology.kubernetes.io/zone"
-#     whenUnsatisfiable: "ScheduleAnyway"
 topologySpreadConstraints: []
