@@ -106,7 +106,7 @@ jobs:
       - name: Retag existing images to stable
         run: |
             ALL_REGISTRIES_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
-            # TODO: make sure central images are working well in all registries
+
             ONLY_GCR_IMAGE_NAMES=("odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
 
             ALL_REGISTRIES=(${GCR_REPO} ${GHCR_REPO} ${DOCKERHUB_REPO})
