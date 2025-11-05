@@ -89,13 +89,10 @@ auth:
     enabled: true
     runAsNonRoot: true
     allowPrivilegeEscalation: false
-  # Persistence for Keycloak data
-  # Enable persistence using a PersistentVolumeClaim (PVC)
+
+  # Persistence (disabled by default). Enable to keep Keycloak data via PVC.
   # ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
-  # When enabled and no existingClaim is provided, the chart will create a PVC
-  # and mount it at /opt/keycloak/data to retain realm and user data across restarts.
   persistence:
-    # -- Persist Keycloak data (PVC); disable to run ephemeral
     enabled: false
     size: 1Gi
     # -- PVC access modes
