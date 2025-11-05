@@ -8,9 +8,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 )
 
-// extractResourcesForContainer finds a container by name and builds its Requests/Limits resources.
-// Returns nil only if the container is not found; otherwise returns a Resources object
-// (even if both Requests and Limits are nil) to reflect the current state.
 func extractResourcesForContainer(containers []corev1.Container, containerName string) *model.Resources {
 	c := containersutil.GetContainerByName(containers, containerName)
 	if c == nil {
