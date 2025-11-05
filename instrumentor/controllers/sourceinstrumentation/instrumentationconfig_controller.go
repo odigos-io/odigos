@@ -23,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -74,6 +75,12 @@ func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, own
 			err := k8sClient.Get(ctx, key, cj)
 			return cj, err
 		}
+	}
+
+	if ownerRef.Kind == "DeploymentConfig" {
+		dc := &openshiftappsv1.DeploymentConfig{}
+		err := k8sClient.Get(ctx, key, dc)
+		return dc, err
 	}
 
 	return nil, fmt.Errorf("unsupported owner kind %s", ownerRef.Kind)

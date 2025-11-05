@@ -277,7 +277,7 @@ func NewUIRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
+func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole {
 	rules := []rbacv1.PolicyRule{}
 
 	if readonly {
@@ -325,6 +325,14 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 				Verbs:     []string{"get", "list"},
 			},
 		}
+		if openshiftEnabled {
+			rules = append(rules, rbacv1.PolicyRule{
+				// OpenShift DeploymentConfigs support
+				APIGroups: []string{"apps.openshift.io"},
+				Resources: []string{"deploymentconfigs"},
+				Verbs:     []string{"get", "list"},
+			})
+		}
 	} else {
 		rules = []rbacv1.PolicyRule{
 			{ // Needed to get and instrument namespaces
@@ -371,6 +379,14 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 				Resources: []string{"sources"},
 				Verbs:     []string{"get", "list", "create", "patch", "delete"},
 			},
+		}
+		if openshiftEnabled {
+			rules = append(rules, rbacv1.PolicyRule{
+				// OpenShift DeploymentConfigs support
+				APIGroups: []string{"apps.openshift.io"},
+				Resources: []string{"deploymentconfigs"},
+				Verbs:     []string{"get", "list", "patch", "update"},
+			})
 		}
 	}
 
@@ -446,7 +462,7 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns, u.readonly),
 		NewUIRoleBinding(u.ns),
-		NewUIClusterRole(u.readonly),
+		NewUIClusterRole(u.readonly, u.config.OpenshiftEnabled),
 		NewUIClusterRoleBinding(u.ns),
 		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage, u.config.NodeSelector),
 		NewUIService(u.ns),

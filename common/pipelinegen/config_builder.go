@@ -63,17 +63,22 @@ func CalculateGatewayConfig(
 	logsEnabled := false
 
 	// Configure processors
-	processorsCfg, tracesProcessors, metricsProcessors, logsProcessors, errs := config.CrdProcessorToConfig(processors)
-	if errs != nil {
-		status.Processor = errs
+	processorsResults := config.CrdProcessorToConfig(processors)
+	if len(processorsResults.Errs) != 0 {
+		for processorKey, err := range processorsResults.Errs {
+			status.Processor[processorKey] = err
+		}
 	}
-	for processorKey, processorCfg := range processorsCfg.Processors {
+	for processorKey, processorCfg := range processorsResults.ProcessorsConfig.Processors {
 		currentConfig.Processors[processorKey] = processorCfg
 	}
+	allTracesProcessors := make([]string, 0, len(processorsResults.TracesProcessors)+len(processorsResults.TracesProcessorsPostSpanMetrics))
+	allTracesProcessors = append(allTracesProcessors, processorsResults.TracesProcessors...)
+	allTracesProcessors = append(allTracesProcessors, processorsResults.TracesProcessorsPostSpanMetrics...)
 
 	// TODO: this is a temporary solution to add the small batches processor to the destination pipelines
 	// we need to remove this once we have a proper way to processors per pipeline.
-	tracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(tracesProcessors)
+	allTracesProcessors, smallBatchesEnabled := filterSmallBatchesProcessor(allTracesProcessors)
 
 	unifiedDestinationPipelineNames := []string{}
 	for _, dest := range dests {
@@ -142,7 +147,12 @@ func CalculateGatewayConfig(
 	}
 
 	// Create root pipelines for each signal and connectors
-	insertRootPipelinesToConfig(currentConfig, dataStreamsDetails, tracesProcessors, metricsProcessors, logsProcessors, enabledSignals)
+	insertRootPipelinesToConfig(currentConfig,
+		dataStreamsDetails,
+		allTracesProcessors,
+		processorsResults.MetricsProcessors,
+		processorsResults.LogsProcessors,
+		enabledSignals)
 
 	// Optional: Add collector self-observability
 	if applySelfTelemetry != nil {

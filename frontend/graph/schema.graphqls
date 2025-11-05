@@ -9,6 +9,7 @@ enum K8sResourceKind {
   StatefulSet
   CronJob
   ConfigMap
+  DeploymentConfig
 }
 
 enum ConditionStatus {
@@ -1011,6 +1012,7 @@ type Mutation {
   updateApiToken(token: String!): Boolean!
   updateOdigosConfig(odigosConfig: OdigosConfigurationInput!): Boolean!
   uninstrumentCluster: Boolean!
+  pauseOdigos: Boolean!
   persistK8sNamespaces(namespaces: [PersistNamespaceItemInput!]!): Boolean!
   persistK8sSources(sources: [PersistNamespaceSourceInput!]!): Boolean!
   updateK8sActualSource(
@@ -1037,4 +1039,7 @@ type Mutation {
   updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
   deleteDataStream(id: ID!): Boolean!
   restartWorkloads(sourceIds: [K8sSourceId!]!): Boolean!
+
+  # enterprise: remove the central-proxy from this cluster
+  deleteCentralProxy: Boolean!
 }

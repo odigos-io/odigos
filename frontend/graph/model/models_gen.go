@@ -1509,11 +1509,12 @@ func (e K8sAttributesFrom) MarshalGQL(w io.Writer) {
 type K8sResourceKind string
 
 const (
-	K8sResourceKindDeployment  K8sResourceKind = "Deployment"
-	K8sResourceKindDaemonSet   K8sResourceKind = "DaemonSet"
-	K8sResourceKindStatefulSet K8sResourceKind = "StatefulSet"
-	K8sResourceKindCronJob     K8sResourceKind = "CronJob"
-	K8sResourceKindConfigMap   K8sResourceKind = "ConfigMap"
+	K8sResourceKindDeployment       K8sResourceKind = "Deployment"
+	K8sResourceKindDaemonSet        K8sResourceKind = "DaemonSet"
+	K8sResourceKindStatefulSet      K8sResourceKind = "StatefulSet"
+	K8sResourceKindCronJob          K8sResourceKind = "CronJob"
+	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
+	K8sResourceKindDeploymentConfig K8sResourceKind = "DeploymentConfig"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
@@ -1522,11 +1523,12 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindStatefulSet,
 	K8sResourceKindCronJob,
 	K8sResourceKindConfigMap,
+	K8sResourceKindDeploymentConfig,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindDeploymentConfig:
 		return true
 	}
 	return false
