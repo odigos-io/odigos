@@ -941,8 +941,8 @@ type Query struct {
 }
 
 type ResourceAmounts struct {
-	CPUM      int `json:"cpuM"`
-	MemoryMiB int `json:"memoryMiB"`
+	CPU    *string `json:"cpu,omitempty"`
+	Memory *string `json:"memory,omitempty"`
 }
 
 type Resources struct {

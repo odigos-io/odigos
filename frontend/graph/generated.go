@@ -751,8 +751,8 @@ type ComplexityRoot struct {
 	}
 
 	ResourceAmounts struct {
-		CPUM      func(childComplexity int) int
-		MemoryMiB func(childComplexity int) int
+		CPU    func(childComplexity int) int
+		Memory func(childComplexity int) int
 	}
 
 	Resources struct {
@@ -4153,19 +4153,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Workloads(childComplexity, args["filter"].(*model.WorkloadFilter)), true
 
-	case "ResourceAmounts.cpuM":
-		if e.complexity.ResourceAmounts.CPUM == nil {
+	case "ResourceAmounts.cpu":
+		if e.complexity.ResourceAmounts.CPU == nil {
 			break
 		}
 
-		return e.complexity.ResourceAmounts.CPUM(childComplexity), true
+		return e.complexity.ResourceAmounts.CPU(childComplexity), true
 
-	case "ResourceAmounts.memoryMiB":
-		if e.complexity.ResourceAmounts.MemoryMiB == nil {
+	case "ResourceAmounts.memory":
+		if e.complexity.ResourceAmounts.Memory == nil {
 			break
 		}
 
-		return e.complexity.ResourceAmounts.MemoryMiB(childComplexity), true
+		return e.complexity.ResourceAmounts.Memory(childComplexity), true
 
 	case "Resources.limits":
 		if e.complexity.Resources.Limits == nil {
@@ -27032,8 +27032,8 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _ResourceAmounts_cpuM(ctx context.Context, field graphql.CollectedField, obj *model.ResourceAmounts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ResourceAmounts_cpuM(ctx, field)
+func (ec *executionContext) _ResourceAmounts_cpu(ctx context.Context, field graphql.CollectedField, obj *model.ResourceAmounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ResourceAmounts_cpu(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -27046,38 +27046,35 @@ func (ec *executionContext) _ResourceAmounts_cpuM(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CPUM, nil
+		return obj.CPU, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ResourceAmounts_cpuM(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ResourceAmounts_cpu(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ResourceAmounts",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _ResourceAmounts_memoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.ResourceAmounts) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ResourceAmounts_memoryMiB(ctx, field)
+func (ec *executionContext) _ResourceAmounts_memory(ctx context.Context, field graphql.CollectedField, obj *model.ResourceAmounts) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ResourceAmounts_memory(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -27090,31 +27087,28 @@ func (ec *executionContext) _ResourceAmounts_memoryMiB(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MemoryMiB, nil
+		return obj.Memory, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ResourceAmounts_memoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ResourceAmounts_memory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ResourceAmounts",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -27156,10 +27150,10 @@ func (ec *executionContext) fieldContext_Resources_requests(_ context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "cpuM":
-				return ec.fieldContext_ResourceAmounts_cpuM(ctx, field)
-			case "memoryMiB":
-				return ec.fieldContext_ResourceAmounts_memoryMiB(ctx, field)
+			case "cpu":
+				return ec.fieldContext_ResourceAmounts_cpu(ctx, field)
+			case "memory":
+				return ec.fieldContext_ResourceAmounts_memory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ResourceAmounts", field.Name)
 		},
@@ -27203,10 +27197,10 @@ func (ec *executionContext) fieldContext_Resources_limits(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "cpuM":
-				return ec.fieldContext_ResourceAmounts_cpuM(ctx, field)
-			case "memoryMiB":
-				return ec.fieldContext_ResourceAmounts_memoryMiB(ctx, field)
+			case "cpu":
+				return ec.fieldContext_ResourceAmounts_cpu(ctx, field)
+			case "memory":
+				return ec.fieldContext_ResourceAmounts_memory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ResourceAmounts", field.Name)
 		},
@@ -39433,16 +39427,10 @@ func (ec *executionContext) _ResourceAmounts(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ResourceAmounts")
-		case "cpuM":
-			out.Values[i] = ec._ResourceAmounts_cpuM(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "memoryMiB":
-			out.Values[i] = ec._ResourceAmounts_memoryMiB(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
+		case "cpu":
+			out.Values[i] = ec._ResourceAmounts_cpu(ctx, field, obj)
+		case "memory":
+			out.Values[i] = ec._ResourceAmounts_memory(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

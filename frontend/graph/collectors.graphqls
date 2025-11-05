@@ -13,8 +13,8 @@ enum WorkloadStatus {
 }
 
 type ResourceAmounts {
-  cpuM: Int!
-  memoryMiB: Int!
+  cpu: String
+  memory: String
 }
 
 type Resources {
