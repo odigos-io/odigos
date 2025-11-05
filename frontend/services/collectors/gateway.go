@@ -53,7 +53,7 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
 	return result, nil
 }
 
-func computeDeploymentStatus(dep *appsv1.Deployment) (model.WorkloadStatus, bool) {
+func computeDeploymentStatus(dep *appsv1.Deployment) (model.WorkloadRolloutStatus, bool) {
 	var availableCond, progressingCond *appsv1.DeploymentCondition
 	for i := range dep.Status.Conditions {
 		c := dep.Status.Conditions[i]
@@ -65,16 +65,16 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.WorkloadStatus, bool
 	}
 
 	if dep.Status.AvailableReplicas == 0 {
-		return model.WorkloadStatusDown, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
+		return model.WorkloadRolloutStatusDown, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
 	}
 
 	if availableCond == nil && progressingCond == nil {
-		return model.WorkloadStatusUnknown, false
+		return model.WorkloadRolloutStatusUnknown, false
 	}
 
 	if progressingCond != nil {
 		if progressingCond.Status == corev1.ConditionFalse || progressingCond.Reason == "ProgressDeadlineExceeded" {
-			return model.WorkloadStatusFailed, false
+			return model.WorkloadRolloutStatusFailed, false
 		}
 	}
 
@@ -83,21 +83,21 @@ func computeDeploymentStatus(dep *appsv1.Deployment) (model.WorkloadStatus, bool
 		desired = *dep.Spec.Replicas
 	}
 	if progressingCond != nil && progressingCond.Status == corev1.ConditionTrue && dep.Status.UpdatedReplicas < desired {
-		return model.WorkloadStatusUpdating, true
+		return model.WorkloadRolloutStatusUpdating, true
 	}
 
 	if availableCond != nil && availableCond.Status == corev1.ConditionFalse && progressingCond != nil && progressingCond.Status == corev1.ConditionTrue {
-		return model.WorkloadStatusDegraded, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
+		return model.WorkloadRolloutStatusDegraded, dep.Status.UpdatedReplicas < dep.Status.Replicas || dep.Status.AvailableReplicas < dep.Status.Replicas
 	}
 
 	if availableCond != nil && availableCond.Status == corev1.ConditionTrue && progressingCond != nil && progressingCond.Status == corev1.ConditionTrue {
 		if dep.Status.Replicas == dep.Status.UpdatedReplicas && dep.Status.Replicas == dep.Status.AvailableReplicas && dep.Status.Replicas == dep.Status.ReadyReplicas {
-			return model.WorkloadStatusHealthy, false
+			return model.WorkloadRolloutStatusHealthy, false
 		}
-		return model.WorkloadStatusUpdating, true
+		return model.WorkloadRolloutStatusUpdating, true
 	}
 
-	return model.WorkloadStatusUnknown, false
+	return model.WorkloadRolloutStatusUnknown, false
 }
 
 func extractGatewayResources(dep *appsv1.Deployment) *model.Resources {

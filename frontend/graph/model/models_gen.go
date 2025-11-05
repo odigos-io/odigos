@@ -146,12 +146,12 @@ type CodeAttributesInput struct {
 }
 
 type CollectorDaemonSetInfo struct {
-	Status            WorkloadStatus `json:"status"`
-	Nodes             *NodesSummary  `json:"nodes"`
-	Resources         *Resources     `json:"resources,omitempty"`
-	ImageVersion      *string        `json:"imageVersion,omitempty"`
-	LastRolloutAt     *string        `json:"lastRolloutAt,omitempty"`
-	RolloutInProgress bool           `json:"rolloutInProgress"`
+	Status            WorkloadRolloutStatus `json:"status"`
+	Nodes             *NodesSummary         `json:"nodes"`
+	Resources         *Resources            `json:"resources,omitempty"`
+	ImageVersion      *string               `json:"imageVersion,omitempty"`
+	LastRolloutAt     *string               `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress bool                  `json:"rolloutInProgress"`
 }
 
 type CollectorGateway struct {
@@ -368,7 +368,7 @@ type FieldInput struct {
 }
 
 type GatewayDeploymentInfo struct {
-	Status            WorkloadStatus               `json:"status"`
+	Status            WorkloadRolloutStatus        `json:"status"`
 	Hpa               *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
 	Resources         *Resources                   `json:"resources,omitempty"`
 	ImageVersion      *string                      `json:"imageVersion,omitempty"`
@@ -1884,51 +1884,59 @@ func (e Tier) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-type WorkloadStatus string
+// Rollout/availability status of a workload.
+//
+// - Healthy: All desired replicas are updated, available, and ready.
+// - Updating: Workload is progressing towards desired state (e.g., updating pods).
+// - Degraded: Progressing but with availability issues (e.g., not enough available replicas).
+// - Failed: Progress deadline exceeded or an unrecoverable error occurred.
+// - Down: No available replicas.
+// - Unknown: Status cannot be determined from current signals.
+type WorkloadRolloutStatus string
 
 const (
-	WorkloadStatusHealthy  WorkloadStatus = "Healthy"
-	WorkloadStatusUpdating WorkloadStatus = "Updating"
-	WorkloadStatusDegraded WorkloadStatus = "Degraded"
-	WorkloadStatusFailed   WorkloadStatus = "Failed"
-	WorkloadStatusDown     WorkloadStatus = "Down"
-	WorkloadStatusUnknown  WorkloadStatus = "Unknown"
+	WorkloadRolloutStatusHealthy  WorkloadRolloutStatus = "Healthy"
+	WorkloadRolloutStatusUpdating WorkloadRolloutStatus = "Updating"
+	WorkloadRolloutStatusDegraded WorkloadRolloutStatus = "Degraded"
+	WorkloadRolloutStatusFailed   WorkloadRolloutStatus = "Failed"
+	WorkloadRolloutStatusDown     WorkloadRolloutStatus = "Down"
+	WorkloadRolloutStatusUnknown  WorkloadRolloutStatus = "Unknown"
 )
 
-var AllWorkloadStatus = []WorkloadStatus{
-	WorkloadStatusHealthy,
-	WorkloadStatusUpdating,
-	WorkloadStatusDegraded,
-	WorkloadStatusFailed,
-	WorkloadStatusDown,
-	WorkloadStatusUnknown,
+var AllWorkloadRolloutStatus = []WorkloadRolloutStatus{
+	WorkloadRolloutStatusHealthy,
+	WorkloadRolloutStatusUpdating,
+	WorkloadRolloutStatusDegraded,
+	WorkloadRolloutStatusFailed,
+	WorkloadRolloutStatusDown,
+	WorkloadRolloutStatusUnknown,
 }
 
-func (e WorkloadStatus) IsValid() bool {
+func (e WorkloadRolloutStatus) IsValid() bool {
 	switch e {
-	case WorkloadStatusHealthy, WorkloadStatusUpdating, WorkloadStatusDegraded, WorkloadStatusFailed, WorkloadStatusDown, WorkloadStatusUnknown:
+	case WorkloadRolloutStatusHealthy, WorkloadRolloutStatusUpdating, WorkloadRolloutStatusDegraded, WorkloadRolloutStatusFailed, WorkloadRolloutStatusDown, WorkloadRolloutStatusUnknown:
 		return true
 	}
 	return false
 }
 
-func (e WorkloadStatus) String() string {
+func (e WorkloadRolloutStatus) String() string {
 	return string(e)
 }
 
-func (e *WorkloadStatus) UnmarshalGQL(v any) error {
+func (e *WorkloadRolloutStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = WorkloadStatus(str)
+	*e = WorkloadRolloutStatus(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid WorkloadStatus", str)
+		return fmt.Errorf("%s is not a valid WorkloadRolloutStatus", str)
 	}
 	return nil
 }
 
-func (e WorkloadStatus) MarshalGQL(w io.Writer) {
+func (e WorkloadRolloutStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

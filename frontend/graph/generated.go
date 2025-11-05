@@ -8493,9 +8493,9 @@ func (ec *executionContext) _CollectorDaemonSetInfo_status(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.WorkloadStatus)
+	res := resTmp.(model.WorkloadRolloutStatus)
 	fc.Result = res
-	return ec.marshalNWorkloadStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadStatus(ctx, field.Selections, res)
+	return ec.marshalNWorkloadRolloutStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadRolloutStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8505,7 +8505,7 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_status(_ context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type WorkloadStatus does not have child fields")
+			return nil, errors.New("field of type WorkloadRolloutStatus does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13199,9 +13199,9 @@ func (ec *executionContext) _GatewayDeploymentInfo_status(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.WorkloadStatus)
+	res := resTmp.(model.WorkloadRolloutStatus)
 	fc.Result = res
-	return ec.marshalNWorkloadStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadStatus(ctx, field.Selections, res)
+	return ec.marshalNWorkloadRolloutStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadRolloutStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_GatewayDeploymentInfo_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13211,7 +13211,7 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_status(_ context.
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type WorkloadStatus does not have child fields")
+			return nil, errors.New("field of type WorkloadRolloutStatus does not have child fields")
 		},
 	}
 	return fc, nil
@@ -43260,13 +43260,13 @@ func (ec *executionContext) marshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋf
 	return v
 }
 
-func (ec *executionContext) unmarshalNWorkloadStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadStatus(ctx context.Context, v any) (model.WorkloadStatus, error) {
-	var res model.WorkloadStatus
+func (ec *executionContext) unmarshalNWorkloadRolloutStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadRolloutStatus(ctx context.Context, v any) (model.WorkloadRolloutStatus, error) {
+	var res model.WorkloadRolloutStatus
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNWorkloadStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadStatus(ctx context.Context, sel ast.SelectionSet, v model.WorkloadStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNWorkloadRolloutStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadRolloutStatus(ctx context.Context, sel ast.SelectionSet, v model.WorkloadRolloutStatus) graphql.Marshaler {
 	return v
 }
 

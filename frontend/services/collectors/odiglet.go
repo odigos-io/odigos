@@ -2,7 +2,6 @@ package collectors
 
 import (
 	"context"
-	"sort"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -35,7 +34,7 @@ func GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo
 	return result, nil
 }
 
-func computeDaemonSetStatus(ds *appsv1.DaemonSet) (model.WorkloadStatus, bool) {
+func computeDaemonSetStatus(ds *appsv1.DaemonSet) (model.WorkloadRolloutStatus, bool) {
 	desired := ds.Status.DesiredNumberScheduled
 	updated := ds.Status.UpdatedNumberScheduled
 	available := ds.Status.NumberAvailable
@@ -43,19 +42,19 @@ func computeDaemonSetStatus(ds *appsv1.DaemonSet) (model.WorkloadStatus, bool) {
 	unavailable := ds.Status.NumberUnavailable
 
 	if available == 0 {
-		return model.WorkloadStatusDown, updated < desired || available < desired
+		return model.WorkloadRolloutStatusDown, updated < desired || available < desired
 	}
 	if updated < desired || available < desired {
 		if unavailable > 0 {
-			return model.WorkloadStatusDegraded, true
+			return model.WorkloadRolloutStatusDegraded, true
 		}
-		return model.WorkloadStatusUpdating, true
+		return model.WorkloadRolloutStatusUpdating, true
 	}
 	if desired == updated && desired == available && desired == ready && unavailable == 0 {
-		return model.WorkloadStatusHealthy, false
+		return model.WorkloadRolloutStatusHealthy, false
 	}
 
-	return model.WorkloadStatusUnknown, false
+	return model.WorkloadRolloutStatusUnknown, false
 }
 
 func extractDaemonSetResources(ds *appsv1.DaemonSet) *model.Resources {
@@ -80,20 +79,21 @@ func findDaemonSetLastRolloutTime(ctx context.Context, ds *appsv1.DaemonSet) str
 			return v
 		}
 	}
-	revList, err := kube.DefaultClient.AppsV1().ControllerRevisions(ds.Namespace).List(ctx, metav1.ListOptions{})
+	revList, err := kube.DefaultClient.AppsV1().ControllerRevisions(ds.Namespace).List(ctx, metav1.ListOptions{LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(k8sconsts.CollectorsRoleNodeCollector)})
 	if err == nil && len(revList.Items) > 0 {
-		owned := make([]appsv1.ControllerRevision, 0, len(revList.Items))
+		var latest metav1.Time
 		for _, cr := range revList.Items {
 			for _, o := range cr.OwnerReferences {
 				if o.Kind == "DaemonSet" && o.UID == ds.UID {
-					owned = append(owned, cr)
+					if latest.IsZero() || cr.CreationTimestamp.After(latest.Time) {
+						latest = cr.CreationTimestamp
+					}
 					break
 				}
 			}
 		}
-		if len(owned) > 0 {
-			sort.Slice(owned, func(i, j int) bool { return owned[i].CreationTimestamp.After(owned[j].CreationTimestamp.Time) })
-			return services.Metav1TimeToString(owned[0].CreationTimestamp)
+		if !latest.IsZero() {
+			return services.Metav1TimeToString(latest)
 		}
 	}
 	return services.Metav1TimeToString(ds.CreationTimestamp)
