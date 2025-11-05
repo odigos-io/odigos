@@ -69,8 +69,15 @@ auth:
   adminUsername: admin
   port: 8080
   portName: http
-  persistence:
+  podSecurityContext:
     enabled: true
+    fsGroup: 1000
+  securityContext:
+    enabled: true
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+  persistence:
+    enabled: false
     size: 1Gi
     accessModes:
       - ReadWriteOnce

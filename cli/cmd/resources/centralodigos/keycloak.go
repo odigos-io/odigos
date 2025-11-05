@@ -13,8 +13,9 @@ import (
 )
 
 type AuthConfig struct {
-	AdminUsername string
-	AdminPassword string
+	AdminUsername    string
+	AdminPassword    string
+	StorageClassName *string
 }
 
 type keycloakResourceManager struct {
@@ -38,7 +39,7 @@ func (m *keycloakResourceManager) Name() string { return k8sconsts.KeycloakResou
 func (m *keycloakResourceManager) InstallFromScratch(ctx context.Context) error {
 	resources := []kube.Object{
 		NewKeycloakSecret(m.ns, m.config),
-		NewKeycloakPVC(m.ns),
+		NewKeycloakPVC(m.ns, m.config),
 		NewKeycloakDeployment(m.ns, m.config),
 		NewKeycloakService(m.ns),
 	}
@@ -65,6 +66,10 @@ func NewKeycloakSecret(ns string, config AuthConfig) *corev1.Secret {
 }
 
 func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
+	fsGroup := int64(1000)
+	runAsNonRoot := true
+	allowPrivilegeEscalation := false
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -85,11 +90,18 @@ func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
 					Labels: map[string]string{"app": k8sconsts.KeycloakAppName},
 				},
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						FSGroup: &fsGroup,
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.KeycloakContainerName,
 							Image: k8sconsts.KeycloakImage,
 							Args:  []string{"start", "--optimized", "--http-enabled=true"},
+							SecurityContext: &corev1.SecurityContext{
+								RunAsNonRoot:             &runAsNonRoot,
+								AllowPrivilegeEscalation: &allowPrivilegeEscalation,
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name: "KEYCLOAK_ADMIN",
@@ -164,8 +176,8 @@ func NewKeycloakService(ns string) *corev1.Service {
 	}
 }
 
-func NewKeycloakPVC(ns string) *corev1.PersistentVolumeClaim {
-	return &corev1.PersistentVolumeClaim{
+func NewKeycloakPVC(ns string, config AuthConfig) *corev1.PersistentVolumeClaim {
+	pvc := &corev1.PersistentVolumeClaim{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "PersistentVolumeClaim",
 			APIVersion: "v1",
@@ -184,4 +196,8 @@ func NewKeycloakPVC(ns string) *corev1.PersistentVolumeClaim {
 			},
 		},
 	}
+	if config.StorageClassName != nil {
+		pvc.Spec.StorageClassName = config.StorageClassName
+	}
+	return pvc
 }
