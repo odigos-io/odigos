@@ -43,7 +43,7 @@ spec:
       affinity:
         {{- toYaml .Values.auth.affinity | nindent 8 }}
       {{- end }}
-      {{- if .Values.auth.podSecurityContext.enabled }}
+      {{- if and .Values.auth.persistence.enabled .Values.auth.podSecurityContext.enabled }}
       securityContext:
         fsGroup: {{ .Values.auth.podSecurityContext.fsGroup }}
       {{- end }}
@@ -51,7 +51,7 @@ spec:
         - name: keycloak
           image: {{ .Values.auth.image | quote }}
           args: ["start", "--optimized", "--http-enabled=true"]
-          {{- if .Values.auth.securityContext.enabled }}
+          {{- if and .Values.auth.persistence.enabled .Values.auth.securityContext.enabled }}
           securityContext:
             runAsNonRoot: {{ .Values.auth.securityContext.runAsNonRoot }}
             allowPrivilegeEscalation: {{ .Values.auth.securityContext.allowPrivilegeEscalation }}
