@@ -78,8 +78,15 @@ data:
       {{- with .Values.collectorNode.k8sNodeLogsDirectory }}
       k8sNodeLogsDirectory: {{ . }}
       {{- end }}
-      {{- with .Values.collectorNode.enableDataCompression }}
-      enableDataCompression: {{ . }}
+      {{- with .Values.collectorNode.otlpExporterConfiguration}}
+      otlpExporterConfiguration:
+        enableDataCompression: {{ .enableDataCompression }}
+        timeout: {{ .timeout }}
+        retryOnFailure:
+          enabled: {{ .retryOnFailure.enabled }}
+          initialInterval: {{ .retryOnFailure.initialInterval }}
+          maxInterval: {{ .retryOnFailure.maxInterval }}
+          maxElapsedTime: {{ .retryOnFailure.maxElapsedTime }}
       {{- end }}
     {{- end }}
     {{- if include "utils.shouldRenderUserInstrumentationEnvs" . | eq "true" }}
