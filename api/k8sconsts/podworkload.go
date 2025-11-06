@@ -5,12 +5,13 @@ package k8sconsts
 type WorkloadKind string
 
 const (
-	WorkloadKindDeployment  WorkloadKind = "Deployment"
-	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
-	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
-	WorkloadKindNamespace   WorkloadKind = "Namespace"
-	WorkloadKindCronJob     WorkloadKind = "CronJob"
-	WorkloadKindJob         WorkloadKind = "Job"
+	WorkloadKindDeployment       WorkloadKind = "Deployment"
+	WorkloadKindDaemonSet        WorkloadKind = "DaemonSet"
+	WorkloadKindStatefulSet      WorkloadKind = "StatefulSet"
+	WorkloadKindNamespace        WorkloadKind = "Namespace"
+	WorkloadKindCronJob          WorkloadKind = "CronJob"
+	WorkloadKindJob              WorkloadKind = "Job"
+	WorkloadKindDeploymentConfig WorkloadKind = "DeploymentConfig"
 )
 
 // 2. the lower case representation of the workload kind
@@ -18,12 +19,13 @@ const (
 type WorkloadKindLowerCase string
 
 const (
-	WorkloadKindLowerCaseDeployment  WorkloadKindLowerCase = "deployment"
-	WorkloadKindLowerCaseDaemonSet   WorkloadKindLowerCase = "daemonset"
-	WorkloadKindLowerCaseStatefulSet WorkloadKindLowerCase = "statefulset"
-	WorkloadKindLowerCaseNamespace   WorkloadKindLowerCase = "namespace"
-	WorkloadKindLowerCaseCronJob     WorkloadKindLowerCase = "cronjob"
-	WorkloadKindLowerCaseJob         WorkloadKindLowerCase = "job"
+	WorkloadKindLowerCaseDeployment       WorkloadKindLowerCase = "deployment"
+	WorkloadKindLowerCaseDaemonSet        WorkloadKindLowerCase = "daemonset"
+	WorkloadKindLowerCaseStatefulSet      WorkloadKindLowerCase = "statefulset"
+	WorkloadKindLowerCaseNamespace        WorkloadKindLowerCase = "namespace"
+	WorkloadKindLowerCaseCronJob          WorkloadKindLowerCase = "cronjob"
+	WorkloadKindLowerCaseJob              WorkloadKindLowerCase = "job"
+	WorkloadKindLowerCaseDeploymentConfig WorkloadKindLowerCase = "deploymentconfig"
 )
 
 // PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.

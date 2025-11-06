@@ -1086,8 +1086,20 @@ It is enabled by default and can be disabled by setting the enabled flag to fals
 <code>bool</code>
 </td>
 <td>
-   <p>EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+   <p>Deprecated - use OtlpExporterConfiguration instead.
+EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
 It is disabled by default and can be enabled by setting the enabled flag to true.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otlpExporterConfiguration</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#OtlpExporterConfiguration"><code>common.OtlpExporterConfiguration</code></a>
+</td>
+<td>
+   <p>OtlpExporterConfiguration is the configuration for the OTLP exporter.</p>
 </td>
 </tr>
 <tr>
@@ -2048,17 +2060,6 @@ if set, but internal fields are empty, those fields will be used from the defaul
    <span class="text-muted">No description provided.</span>
    </td>
 </tr>
-<tr>
-<td>
-<code>customInstrumentations</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
 </tbody>
 </table>
 
@@ -2841,7 +2842,7 @@ In the Future we might add another level of configuration base on the parent spa
 <a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
 </td>
 <td>
-   <p>custom instrumentations to be applied by default, in case the instrumentation library does not provide a configuration.</p>
+   <p>list of the custom instrumentation probes the SDK should use.</p>
 </td>
 </tr>
 </tbody>

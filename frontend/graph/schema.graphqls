@@ -9,6 +9,7 @@ enum K8sResourceKind {
   StatefulSet
   CronJob
   ConfigMap
+  DeploymentConfig
 }
 
 enum ConditionStatus {
@@ -997,20 +998,13 @@ type Query {
 
   # get all sources that match the filter
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
-
-  # Generic manifest fetcher for any supported K8s resource (workloads & config)
-  getManifest(
-    kind: K8sResourceKind!
-    name: String!
-    namespace: String
-    format: ManifestFormat = YAML
-  ): String!
 }
 
 type Mutation {
   updateApiToken(token: String!): Boolean!
   updateOdigosConfig(odigosConfig: OdigosConfigurationInput!): Boolean!
   uninstrumentCluster: Boolean!
+  pauseOdigos: Boolean!
   persistK8sNamespaces(namespaces: [PersistNamespaceItemInput!]!): Boolean!
   persistK8sSources(sources: [PersistNamespaceSourceInput!]!): Boolean!
   updateK8sActualSource(
@@ -1037,4 +1031,7 @@ type Mutation {
   updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
   deleteDataStream(id: ID!): Boolean!
   restartWorkloads(sourceIds: [K8sSourceId!]!): Boolean!
+
+  # enterprise: remove the central-proxy from this cluster
+  deleteCentralProxy: Boolean!
 }

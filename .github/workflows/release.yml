@@ -190,7 +190,27 @@ jobs:
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
           DATE: ${{ steps.vars.outputs.date }}
         run: |
-          ko build --bare --tags latest --tags ${{ env.TAG }} --platform=all .
+          ko build --bare --tags latest --tags ${{ env.TAG }}
+
+      - name: publish cli UBI9 image to GCR registry
+        working-directory: ./cli
+        env:
+          KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-ubi9
+          KO_CONFIG_PATH: ./.ko.yaml
+          VERSION: ${{ env.TAG }}
+          SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
+          DATE: ${{ steps.vars.outputs.date }}
+          KO_DEFAULTBASEIMAGE: registry.access.redhat.com/ubi9/ubi-micro:latest
+        run: |
+          ko build --bare --tags latest --tags ${{ env.TAG }} \
+          --image-label name=odigos-cli \
+          --image-label vendor=Odigos \
+          --image-label maintainer=Odigos \
+          --image-label version=${{ env.TAG }} \
+          --image-label release=${{ env.TAG }} \
+          --image-label summary="Odigos CLI" \
+          --image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
+          --platform=all .
 
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4

@@ -3,7 +3,17 @@
 # Centralized common types for collector headers (Gateway Deployment, Data Collection DaemonSet)
 # =====================
 
-enum WorkloadStatus {
+"""
+Rollout/availability status of a workload.
+
+- Healthy: All desired replicas are updated, available, and ready.
+- Updating: Workload is progressing towards desired state (e.g., updating pods).
+- Degraded: Progressing but with availability issues (e.g., not enough available replicas).
+- Failed: Progress deadline exceeded or an unrecoverable error occurred.
+- Down: No available replicas.
+- Unknown: Status cannot be determined from current signals.
+"""
+enum WorkloadRolloutStatus {
   Healthy
   Updating
   Degraded
@@ -13,8 +23,8 @@ enum WorkloadStatus {
 }
 
 type ResourceAmounts {
-  cpuM: Int!
-  memoryMiB: Int!
+  cpu: String
+  memory: String
 }
 
 type Resources {
@@ -32,6 +42,7 @@ type HorizontalPodAutoscalerInfo {
   max: Int
   current: Int
   desired: Int
+  conditions: [Condition]
 }
 
 enum ManifestFormat {
@@ -40,7 +51,7 @@ enum ManifestFormat {
 }
 
 type GatewayDeploymentInfo {
-  status: WorkloadStatus!
+  status: WorkloadRolloutStatus!
   hpa: HorizontalPodAutoscalerInfo
   resources: Resources
   imageVersion: String
@@ -49,7 +60,7 @@ type GatewayDeploymentInfo {
 }
 
 type CollectorDaemonSetInfo {
-  status: WorkloadStatus!
+  status: WorkloadRolloutStatus!
   nodes: NodesSummary!
   resources: Resources
   imageVersion: String
@@ -73,10 +84,10 @@ type PodInfo {
 
 extend type Query {
   # Gateway (Deployment)
-  getGatewayDeploymentInfo: GatewayDeploymentInfo!
+  gatewayDeploymentInfo: GatewayDeploymentInfo!
 
   # Odiglet (DaemonSet)
-  getOdigletDaemonSetInfo: CollectorDaemonSetInfo!
+  odigletDaemonSetInfo: CollectorDaemonSetInfo!
 
   # Gateway Pods
   gatewayPods: [PodInfo!]!

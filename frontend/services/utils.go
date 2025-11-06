@@ -10,8 +10,10 @@ import (
 	"path"
 	"slices"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/distribution/reference"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -254,4 +256,26 @@ func k8sLastTransitionTimeToGql(t metav1.Time) *string {
 	}
 	str := t.UTC().Format(time.RFC3339)
 	return &str
+}
+
+// ExtractImageVersion extracts the tag (version) from a full container image reference.
+func ExtractImageVersion(image string) string {
+	if image == "" {
+		return ""
+	}
+
+	if idx := strings.Index(image, "@"); idx >= 0 {
+		image = image[:idx]
+	}
+
+	ref, err := reference.ParseNormalizedNamed(image)
+	if err != nil {
+		return ""
+	}
+
+	if tagged, ok := ref.(reference.Tagged); ok {
+		return tagged.Tag()
+	}
+
+	return ""
 }

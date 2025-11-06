@@ -23,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/client-go/kubernetes"
@@ -54,6 +55,8 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		return nil, fmt.Errorf("failed to create controller-runtime manager %w", err)
 	}
 
+	// Create an OpenTelemetry MeterProvider that is based on controller-runtime prometheus registry
+	// and register it as the global MeterProvider for the Odiglet
 	provider, err := metrics.NewMeterProviderForController(resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.K8SNodeName(env.Current.NodeName),
@@ -61,7 +64,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OpenTelemetry MeterProvider: %w", err)
 	}
-	instrumentationMgrOpts.MeterProvider = provider
+	otel.SetMeterProvider(provider)
 
 	appendEnvVarNames := distro.GetAppendEnvVarNames(instrumentationMgrOpts.DistributionGetter.GetAllDistros())
 
