@@ -235,6 +235,11 @@ func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRo
 					"watch",
 				},
 			},
+			{
+				APIGroups: []string{"apiregistration.k8s.io"},
+				Resources: []string{"apiservices"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch"},
+			},
 		}, finalizersUpdate...),
 	}
 }
