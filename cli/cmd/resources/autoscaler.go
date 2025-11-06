@@ -240,6 +240,11 @@ func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRo
 				Resources: []string{"apiservices"},
 				Verbs:     []string{"get", "list", "watch", "create", "update", "patch"},
 			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
 		}, finalizersUpdate...),
 	}
 }

@@ -58,3 +58,11 @@ rules:
       - create
       - update
       - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
