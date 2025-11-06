@@ -1,5 +1,8 @@
 {{- if (include "odigos.secretExists" .) }}
-{{- if not .Values.auth.adminPassword }}{{- fail "Central admin password is required. Please use --set auth.adminPassword=<your-password>" }}{{- end }}
+{{- if not .Values.auth.adminPassword }}
+{{- fail "Central admin password is required. Please use --set auth.adminPassword=<your-password>" }}
+{{- end }}
+
 {{- if and .Values.auth.persistence.enabled (not .Values.auth.persistence.existingClaim) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -10,12 +13,15 @@ metadata:
     app: keycloak
     odigos.io/system-object: "true"
 spec:
-  accessModes: {{- toYaml .Values.auth.persistence.accessModes | nindent 2 }}
+  accessModes:
+    {{- toYaml .Values.auth.persistence.accessModes | nindent 4 }}
   resources:
     requests:
       storage: {{ .Values.auth.persistence.size | quote }}
   {{- if .Values.auth.persistence.storageClassName }}
   storageClassName: {{ .Values.auth.persistence.storageClassName | quote }}
+  {{- else }}
+  storageClassName: ""
   {{- end }}
 {{- end }}
 {{- end }}

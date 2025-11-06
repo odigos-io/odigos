@@ -60,8 +60,9 @@ spec:
               tar -xvzf odigos-latest.tar.gz
 
               # cleanup any existing installation of odigos the might be left over from previous runs while developing
-              ./odigos uninstall --yes
-              ./odigos install --namespace odigos-test
+              ./odigos uninstall
+              ./odigos install --ns odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
             timeout: 4m
             file: ../../common/assert/latest-odigos-version-installed.yaml
