@@ -265,6 +265,8 @@ func main() {
 		}
 
 		// Register Custom Metrics API
+		// We use this to trigger the HPA of the gateway collector by aggregating the metrics
+		// from all the gateway collector pods.
 		if err := metricshandler.RegisterCustomMetricsAPI(mgr); err != nil {
 			setupLog.Error(err, "failed to register custom metrics API")
 		} else {
