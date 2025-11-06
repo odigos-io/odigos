@@ -35,6 +35,7 @@ jobs:
             --exclude "^https://d15jtxgb40qetw\\.cloudfront\\.net/.*"
             --exclude "https://github.com/odigos-io/ui-kit"
             --exclude "http://host:port*"
+            --exclude "https://www.npmjs.com/*"
             --timeout 30
             --max-concurrency 2
             --retry-wait-time 15
