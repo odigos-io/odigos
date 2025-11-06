@@ -21,3 +21,4 @@ spec:
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "cli" "Tag" $imageTag) }}
         args: ["cleanup", "--yes", "--instrumentation-only", "--namespace", "{{ .Release.Namespace }}"]
       restartPolicy: Never
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}

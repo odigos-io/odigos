@@ -192,7 +192,7 @@ func (r *computePlatformResolver) Actions(ctx context.Context, obj *model.Comput
 
 // InstrumentationRules is the resolver for the instrumentationRules field.
 func (r *computePlatformResolver) InstrumentationRules(ctx context.Context, obj *model.ComputePlatform) ([]*model.InstrumentationRule, error) {
-	return services.ListInstrumentationRules(ctx)
+	return services.GetInstrumentationRules(ctx)
 }
 
 // DataStreams is the resolver for the dataStreams field.
@@ -470,6 +470,14 @@ func (r *mutationResolver) UninstrumentCluster(ctx context.Context) (bool, error
 	err := services.UninstrumentCluster(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to uninstrument cluster: %v", err)
+	}
+	return true, nil
+}
+
+// PauseOdigos is the resolver for the pauseOdigos field.
+func (r *mutationResolver) PauseOdigos(ctx context.Context) (bool, error) {
+	if err := services.PauseOdigos(ctx); err != nil {
+		return false, fmt.Errorf("failed to pause odigos: %v", err)
 	}
 	return true, nil
 }
@@ -978,6 +986,11 @@ func (r *mutationResolver) RestartWorkloads(ctx context.Context, sourceIds []*mo
 		return false, err
 	}
 	return true, nil
+}
+
+// DeleteCentralProxy is the resolver for the deleteCentralProxy field.
+func (r *mutationResolver) DeleteCentralProxy(ctx context.Context) (bool, error) {
+	return services.DeleteCentralProxy(ctx)
 }
 
 // ComputePlatform is the resolver for the computePlatform field.

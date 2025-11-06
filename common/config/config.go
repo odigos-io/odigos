@@ -24,6 +24,7 @@ type ProcessorConfigurer interface {
 	// expected to be unique across all instances of exporters used in collector config, [a-zA-Z0-9-_]+
 	GetID() string
 	GetConfig() (GenericMap, error)
+	GetOrderHint() int
 }
 
 type GenericMap map[string]interface{}

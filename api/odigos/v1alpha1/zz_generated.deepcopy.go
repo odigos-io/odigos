@@ -414,6 +414,11 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.OtlpExporterConfiguration != nil {
+		in, out := &in.OtlpExporterConfiguration, &out.OtlpExporterConfiguration
+		*out = new(common.OtlpExporterConfiguration)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ClusterMetricsEnabled != nil {
 		in, out := &in.ClusterMetricsEnabled, &out.ClusterMetricsEnabled
 		*out = new(bool)
@@ -1465,8 +1470,8 @@ func (in *SdkConfig) DeepCopyInto(out *SdkConfig) {
 		*out = new(instrumentationrules.TraceConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DefaultCustomInstrumentations != nil {
-		in, out := &in.DefaultCustomInstrumentations, &out.DefaultCustomInstrumentations
+	if in.CustomInstrumentations != nil {
+		in, out := &in.CustomInstrumentations, &out.CustomInstrumentations
 		*out = new(instrumentationrules.CustomInstrumentations)
 		(*in).DeepCopyInto(*out)
 	}

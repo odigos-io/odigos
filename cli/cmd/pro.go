@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -25,12 +26,12 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
-	"github.com/odigos-io/odigos/k8sutils/pkg/restart"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -259,8 +260,9 @@ var centralCmd = &cobra.Command{
 }
 
 var (
-	centralAdminUser     string
-	centralAdminPassword string
+	centralAdminUser            string
+	centralAdminPassword        string
+	centralAuthStorageClassName string
 )
 
 var centralInstallCmd = &cobra.Command{
@@ -271,7 +273,11 @@ var centralInstallCmd = &cobra.Command{
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
-		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken); err != nil {
+		var storageClassNamePtr *string
+		if cmd.Flags().Changed("central-storage-class-name") {
+			storageClassNamePtr = &centralAuthStorageClassName
+		}
+		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken, storageClassNamePtr); err != nil {
 			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos Tower:")
 			fmt.Println(err)
 			os.Exit(1)
@@ -457,7 +463,7 @@ func createOdigosCentralSecret(ctx context.Context, client *kube.Client, ns, tok
 	return nil
 }
 
-func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns string, onPremToken string) error {
+func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns string, onPremToken string, storageClassNamePtr *string) error {
 
 	_, err := client.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralBackendName, metav1.GetOptions{})
 	if err == nil {
@@ -480,8 +486,9 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	}
 	config := resources.CentralManagersConfig{
 		Auth: centralodigos.AuthConfig{
-			AdminUsername: centralAdminUser,
-			AdminPassword: centralAdminPassword,
+			AdminUsername:    centralAdminUser,
+			AdminPassword:    centralAdminPassword,
+			StorageClassName: storageClassNamePtr,
 		},
 	}
 	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
@@ -574,7 +581,22 @@ func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel 
 }
 
 func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
-	return restart.RestartDaemonSet(ctx, client.Interface, ns, k8sconsts.OdigletDaemonSetName)
+	// Create patch to add/update the restartedAt annotation
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
+		time.Now().Format(time.RFC3339))
+
+	// Patch the Odiglet daemonset
+	_, err := client.AppsV1().DaemonSets(ns).Patch(
+		ctx,
+		k8sconsts.OdigletDaemonSetName,
+		types.StrategicMergePatchType,
+		[]byte(patch),
+		metav1.PatchOptions{},
+	)
+	if apierrors.IsNotFound(err) {
+		return fmt.Errorf("odiglet daemonset not found in namespace %s", ns)
+	}
+	return err
 }
 
 func init() {
@@ -611,6 +633,7 @@ func init() {
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
 	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password")
+	centralInstallCmd.Flags().StringVar(&centralAuthStorageClassName, "central-storage-class-name", "", "StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)")
 	centralInstallCmd.MarkFlagRequired("central-admin-password")
 	centralCmd.AddCommand(portForwardCentralCmd)
 	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")

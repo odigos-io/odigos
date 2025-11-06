@@ -1,0 +1,41 @@
+{
+  "name": "Odigos DevContainer",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": true
+    }
+  },
+  "mounts": [
+    "source=${env:HOME}/.kube,target=/home/vscode/.kube-host,type=bind",
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "remoteUser": "root",
+  "postCreateCommand": "/bin/bash .devcontainer/post-install.sh",
+  "workspaceFolder": "/workspaces/odigos",
+  "containerEnv": {
+    "KUBECONFIG": "/home/vscode/.kube/config"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "golang.Go",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "redhat.vscode-yaml",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "ms-kubernetes-tools.kind-vscode",
+        "eamodio.gitlens",
+        "GraphQL.vscode-graphql-syntax",
+        "foxundermoon.shell-format"
+      ]
+    }
+  }
+}

@@ -8,6 +8,7 @@ enum K8sResourceKind {
   DaemonSet
   StatefulSet
   CronJob
+  DeploymentConfig
 }
 
 enum ConditionStatus {
@@ -272,6 +273,7 @@ type InstrumentationRule {
   profileName: String!
   workloads: [PodWorkload!]
   instrumentationLibraries: [InstrumentationLibraryGlobalId!]
+  conditions: [Condition!]
   codeAttributes: CodeAttributes
   headersCollection: HeadersCollection
   payloadCollection: PayloadCollection
@@ -306,23 +308,41 @@ type HeadersCollection {
   headerKeys: [String]
 }
 
+#### CUSTOM PROBES ####
 type CustomInstrumentations {
-  probes: [Probe]
+  golang: [GolangCustomProbe]
+  java: [JavaCustomProbe]
 }
 
-type Probe {
+type GolangCustomProbe {
+  packageName: String
+  functionName: String
+  receiverName: String
+  receiverMethodName: String
+}
+
+type JavaCustomProbe {
   className: String
   methodName: String
 }
 
 input CustomInstrumentationsInput {
-  probes: [ProbeInput]
+  golang: [GolangCustomProbeInput]
+  java: [JavaCustomProbeInput]
 }
 
-input ProbeInput {
+input GolangCustomProbeInput {
+  packageName: String
+  functionName: String
+  receiverName: String
+  receiverMethodName: String
+}
+
+input JavaCustomProbeInput {
   className: String
   methodName: String
 }
+#### END CUSTOM PROBES ####
 
 input HeadersCollectionInput {
   headerKeys: [String]
@@ -983,6 +1003,7 @@ type Mutation {
   updateApiToken(token: String!): Boolean!
   updateOdigosConfig(odigosConfig: OdigosConfigurationInput!): Boolean!
   uninstrumentCluster: Boolean!
+  pauseOdigos: Boolean!
   persistK8sNamespaces(namespaces: [PersistNamespaceItemInput!]!): Boolean!
   persistK8sSources(sources: [PersistNamespaceSourceInput!]!): Boolean!
   updateK8sActualSource(
@@ -1009,4 +1030,7 @@ type Mutation {
   updateDataStream(id: ID!, dataStream: DataStreamInput!): DataStream!
   deleteDataStream(id: ID!): Boolean!
   restartWorkloads(sourceIds: [K8sSourceId!]!): Boolean!
+
+  # enterprise: remove the central-proxy from this cluster
+  deleteCentralProxy: Boolean!
 }

@@ -10,9 +10,11 @@ rules:
   - configmaps
   - endpoints
   - secrets
+  - services
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch
@@ -85,25 +87,13 @@ rules:
   - patch
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - actions.odigos.io
   resources:
   - '*'
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch
@@ -137,6 +127,7 @@ rules:
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch
@@ -176,6 +167,17 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  - deploymentconfigs/finalizers
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - autoscaling
   resources:
   - horizontalpodautoscalers
@@ -196,6 +198,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -234,6 +242,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - odigos.io
+  resources:
+  - instrumentationrules/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - operator.odigos.io
   resources:
@@ -278,6 +294,7 @@ rules:
   verbs:
   - create
   - delete
+  - deletecollection
   - get
   - list
   - patch

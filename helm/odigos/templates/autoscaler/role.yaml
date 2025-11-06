@@ -182,3 +182,11 @@ rules:
       - get
       - patch
       - update
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - 'apps'
+    resources:
+      - deployments/finalizers
+    verbs:
+      - update
+{{- end }}

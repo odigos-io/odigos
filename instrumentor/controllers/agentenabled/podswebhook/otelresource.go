@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common/consts"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +38,13 @@ func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName stri
 		{
 			Key:   workloadKindKey,
 			Value: podWorkload.Name,
+		},
+		{
+			// Add Odigos-specific attribute to track the actual workload kind
+			// This is needed because some workload types (like DeploymentConfig)
+			// use the same semconv key as other types (Deployment)
+			Key:   attribute.Key(consts.OdigosWorkloadKindAttribute),
+			Value: string(podWorkload.Kind),
 		},
 	}
 	// Get otel resource attributes for the owner reference (job/replicaset name and uid)
@@ -90,6 +98,9 @@ func getWorkloadKindAttributeKey(workloadKind k8sconsts.WorkloadKind) attribute.
 		return semconv.K8SCronJobNameKey
 	case k8sconsts.WorkloadKindJob:
 		return semconv.K8SJobNameKey
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		// OpenShift DeploymentConfig - use Deployment key as closest analog
+		return semconv.K8SDeploymentNameKey
 	}
 	return attribute.Key("")
 }

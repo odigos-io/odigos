@@ -18,6 +18,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -32,11 +33,12 @@ import (
 )
 
 const (
-	WorkloadKindNamespace   model.K8sResourceKind = "Namespace"
-	WorkloadKindDeployment  model.K8sResourceKind = "Deployment"
-	WorkloadKindStatefulSet model.K8sResourceKind = "StatefulSet"
-	WorkloadKindDaemonSet   model.K8sResourceKind = "DaemonSet"
-	WorkloadKindCronJob     model.K8sResourceKind = "CronJob"
+	WorkloadKindNamespace        model.K8sResourceKind = "Namespace"
+	WorkloadKindDeployment       model.K8sResourceKind = "Deployment"
+	WorkloadKindStatefulSet      model.K8sResourceKind = "StatefulSet"
+	WorkloadKindDaemonSet        model.K8sResourceKind = "DaemonSet"
+	WorkloadKindCronJob          model.K8sResourceKind = "CronJob"
+	WorkloadKindDeploymentConfig model.K8sResourceKind = "DeploymentConfig"
 )
 
 type InstanceCounts struct {
@@ -52,10 +54,11 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 
 	g, ctx := errgroup.WithContext(ctx)
 	var (
-		deps      []model.K8sActualSource
-		statefuls []model.K8sActualSource
-		daemons   []model.K8sActualSource
-		crons     []model.K8sActualSource
+		deps          []model.K8sActualSource
+		statefuls     []model.K8sActualSource
+		daemons       []model.K8sActualSource
+		crons         []model.K8sActualSource
+		deployConfigs []model.K8sActualSource
 	)
 
 	g.Go(func() error {
@@ -82,15 +85,27 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 		return err
 	})
 
+	g.Go(func() error {
+		// Only try to get DeploymentConfigs if they're available
+		if !kube.IsDeploymentConfigAvailable() {
+			deployConfigs = []model.K8sActualSource{}
+			return nil
+		}
+		var err error
+		deployConfigs, err = getDeploymentConfigs(ctx, *namespace)
+		return err
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
-	items := make([]model.K8sActualSource, len(deps)+len(statefuls)+len(daemons)+len(crons))
+	items := make([]model.K8sActualSource, len(deps)+len(statefuls)+len(daemons)+len(crons)+len(deployConfigs))
 	copy(items, deps)
 	copy(items[len(deps):], statefuls)
 	copy(items[len(deps)+len(statefuls):], daemons)
 	copy(items[len(deps)+len(statefuls)+len(daemons):], crons)
+	copy(items[len(deps)+len(statefuls)+len(daemons)+len(crons):], deployConfigs)
 
 	return items, nil
 }
@@ -207,6 +222,47 @@ func getCronJobs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sAc
 	return response, nil
 }
 
+func getDeploymentConfigs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
+	var response []model.K8sActualSource
+
+	// Use dynamic client for DeploymentConfigs
+	dcClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "apps.openshift.io",
+		Version:  "v1",
+		Resource: "deploymentconfigs",
+	}).Namespace(namespace.Name)
+
+	// List all DeploymentConfigs in the namespace
+	dcList, err := dcClient.List(ctx, metav1.ListOptions{})
+	if err != nil {
+		// If DeploymentConfigs API is not available (not OpenShift) or we don't have permission, just return empty list
+		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || apierrors.IsForbidden(err) {
+			return response, nil
+		}
+		return nil, err
+	}
+
+	// Convert unstructured to typed
+	for _, dcUnstructured := range dcList.Items {
+		var dc openshiftappsv1.DeploymentConfig
+		err := kube.Scheme.Convert(&dcUnstructured, &dc, nil)
+		if err != nil {
+			// If conversion fails, skip this item
+			continue
+		}
+
+		numberOfInstances := int(dc.Status.AvailableReplicas)
+		response = append(response, model.K8sActualSource{
+			Namespace:         dc.Namespace,
+			Name:              dc.Name,
+			Kind:              WorkloadKindDeploymentConfig,
+			NumberOfInstances: &numberOfInstances,
+		})
+	}
+
+	return response, nil
+}
+
 func RolloutRestartWorkload(ctx context.Context, namespace string, name string, kind model.K8sResourceKind) error {
 	now := time.Now().Format(time.RFC3339)
 
@@ -264,8 +320,52 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 		// We return nil here to prevent an error, as this is a no-op.
 		return nil
 
+	case WorkloadKindDeploymentConfig:
+		// Check if DeploymentConfig is available first
+		if !kube.IsDeploymentConfigAvailable() {
+			return fmt.Errorf("deploymentconfig resources are not available in this cluster")
+		}
+
+		// Use dynamic client for DeploymentConfig
+		dcClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+			Group:    "apps.openshift.io",
+			Version:  "v1",
+			Resource: "deploymentconfigs",
+		}).Namespace(namespace)
+
+		dcUnstructured, err := dcClient.Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to get deploymentconfig: %w", err)
+		}
+
+		// Convert to typed
+		var dc openshiftappsv1.DeploymentConfig
+		err = kube.Scheme.Convert(dcUnstructured, &dc, nil)
+		if err != nil {
+			return fmt.Errorf("failed to convert deploymentconfig: %w", err)
+		}
+
+		if dc.Spec.Template.Annotations == nil {
+			dc.Spec.Template.Annotations = map[string]string{}
+		}
+		dc.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
+
+		// Convert back to unstructured
+		var dcUnstructuredUpdated map[string]interface{}
+		err = kube.Scheme.Convert(&dc, &dcUnstructuredUpdated, nil)
+		if err != nil {
+			return fmt.Errorf("failed to convert deploymentconfig back to unstructured: %w", err)
+		}
+
+		dcUnstructured.Object = dcUnstructuredUpdated
+
+		_, err = dcClient.Update(ctx, dcUnstructured, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update deploymentconfig: %w", err)
+		}
+
 	default:
-		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, DaemonSet or CronJob)", kind)
+		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, DaemonSet, CronJob or DeploymentConfig)", kind)
 	}
 
 	return nil
@@ -358,7 +458,7 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
-	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob:
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob, WorkloadKindDeploymentConfig:
 		break
 	default:
 		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
