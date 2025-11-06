@@ -15,69 +15,38 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func GetGatewayPods(ctx context.Context) ([]*model.PodInfo, error) {
+func GetPodsBySelector(ctx context.Context, selector string) ([]*model.PodInfo, error) {
 	ns := env.GetCurrentNamespace()
-	selector := fmt.Sprintf("%s=%s", k8sconsts.OdigosCollectorRoleLabel, string(k8sconsts.CollectorsRoleClusterGateway))
-	gatewayPods, err := kube.DefaultClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
-	if err != nil {
-		return nil, err
-	}
-
-	gatewayPodsInfo := make([]*model.PodInfo, 0, len(gatewayPods.Items))
-	for _, p := range gatewayPods.Items {
-		gatewayPodsInfo = append(gatewayPodsInfo, podToInfo(&p))
-	}
-
-	// Sort: more restarts first, then error status, then not ready
-	sort.Slice(gatewayPodsInfo, func(i, j int) bool {
-
-		if gatewayPodsInfo[i].Restarts != gatewayPodsInfo[j].Restarts {
-			return gatewayPodsInfo[i].Restarts > gatewayPodsInfo[j].Restarts
-		}
-
-		ie, je := isErrorStatus(gatewayPodsInfo[i].Status), isErrorStatus(gatewayPodsInfo[j].Status)
-		if ie != je {
-			return ie
-		}
-
-		inr, jnr := isNotReady(gatewayPodsInfo[i].Ready), isNotReady(gatewayPodsInfo[j].Ready)
-		if inr != jnr {
-			return inr
-		}
-
-		return gatewayPodsInfo[i].Name < gatewayPodsInfo[j].Name
-	})
-	return gatewayPodsInfo, nil
-}
-
-func GetOdigletPods(ctx context.Context) ([]*model.PodInfo, error) {
-	ns := env.GetCurrentNamespace()
-	selector := fmt.Sprintf("%s=%s", k8sconsts.OdigosCollectorRoleLabel, string(k8sconsts.CollectorsRoleNodeCollector))
 	pods, err := kube.DefaultClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return nil, err
 	}
 
-	out := make([]*model.PodInfo, 0, len(pods.Items))
+	podsInfo := make([]*model.PodInfo, 0, len(pods.Items))
 	for _, p := range pods.Items {
-		out = append(out, podToInfo(&p))
+		podsInfo = append(podsInfo, podToInfo(&p))
 	}
 
-	sort.Slice(out, func(i, j int) bool {
-		if out[i].Restarts != out[j].Restarts {
-			return out[i].Restarts > out[j].Restarts
+	// Sort: more restarts first, then error status, then not ready
+	sort.Slice(podsInfo, func(i, j int) bool {
+		if podsInfo[i].Restarts != podsInfo[j].Restarts {
+			return podsInfo[i].Restarts > podsInfo[j].Restarts
 		}
-		ie, je := isErrorStatus(out[i].Status), isErrorStatus(out[j].Status)
+
+		ie, je := isErrorStatus(podsInfo[i].Status), isErrorStatus(podsInfo[j].Status)
 		if ie != je {
 			return ie
 		}
-		inr, jnr := isNotReady(out[i].Ready), isNotReady(out[j].Ready)
+
+		inr, jnr := isNotReady(podsInfo[i].Ready), isNotReady(podsInfo[j].Ready)
 		if inr != jnr {
 			return inr
 		}
-		return out[i].Name < out[j].Name
+
+		return podsInfo[i].Name < podsInfo[j].Name
 	})
-	return out, nil
+
+	return podsInfo, nil
 }
 
 func podToInfo(pod *corev1.Pod) *model.PodInfo {
