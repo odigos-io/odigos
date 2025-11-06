@@ -3,13 +3,12 @@ package collectors
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/containers"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,25 +26,6 @@ func GetPodsBySelector(ctx context.Context, selector string) ([]*model.PodInfo, 
 		podsInfo = append(podsInfo, podToInfo(&p))
 	}
 
-	// Sort: more restarts first, then error status, then not ready
-	sort.Slice(podsInfo, func(i, j int) bool {
-		if podsInfo[i].Restarts != podsInfo[j].Restarts {
-			return podsInfo[i].Restarts > podsInfo[j].Restarts
-		}
-
-		ie, je := isErrorStatus(podsInfo[i].Status), isErrorStatus(podsInfo[j].Status)
-		if ie != je {
-			return ie
-		}
-
-		inr, jnr := isNotReady(podsInfo[i].Ready), isNotReady(podsInfo[j].Ready)
-		if inr != jnr {
-			return inr
-		}
-
-		return podsInfo[i].Name < podsInfo[j].Name
-	})
-
 	return podsInfo, nil
 }
 
@@ -54,8 +34,10 @@ func podToInfo(pod *corev1.Pod) *model.PodInfo {
 	status := deriveStatus(pod)
 	restarts := sumRestarts(pod.Status.ContainerStatuses)
 	node := pod.Spec.NodeName
-	age := humanizeAge(pod.CreationTimestamp.Time)
-	image := gatewayImageTag(pod)
+	age := strings.ToLower(pod.CreationTimestamp.Time.Format(time.RFC3339))
+
+	containerName := containers.GetCollectorContainerName(pod)
+	imageVersion := extractImageVersionForContainer(pod.Spec.Containers, containerName)
 	return &model.PodInfo{
 		Name:     pod.Name,
 		Ready:    ready,
@@ -63,7 +45,7 @@ func podToInfo(pod *corev1.Pod) *model.PodInfo {
 		Restarts: restarts,
 		NodeName: node,
 		Age:      age,
-		Image:    image,
+		Image:    imageVersion,
 	}
 }
 
@@ -103,87 +85,4 @@ func sumRestarts(statuses []corev1.ContainerStatus) int {
 		sum += int(cs.RestartCount)
 	}
 	return sum
-}
-
-func humanizeAge(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	d := time.Since(t)
-
-	if d < time.Minute {
-		return fmt.Sprintf("%ds", int(d.Seconds()))
-	}
-	if d < time.Hour {
-		return fmt.Sprintf("%dm", int(d.Minutes()))
-	}
-	if d < 24*time.Hour {
-		return fmt.Sprintf("%dh", int(d.Hours()))
-	}
-	return fmt.Sprintf("%dd", int(d.Hours()/24))
-}
-
-func gatewayImageTag(pod *corev1.Pod) string {
-	for _, c := range pod.Spec.Containers {
-		if c.Name == k8sconsts.OdigosClusterCollectorContainerName {
-			return extractImageTag(c.Image)
-		}
-	}
-	if len(pod.Spec.Containers) > 0 {
-		return extractImageTag(pod.Spec.Containers[0].Image)
-	}
-	return ""
-}
-
-func extractImageTag(image string) string {
-	if idx := strings.Index(image, "@"); idx >= 0 {
-		image = image[:idx]
-	}
-	parts := strings.Split(image, "/")
-	last := parts[len(parts)-1]
-	if colon := strings.LastIndex(last, ":"); colon >= 0 {
-		return last[colon+1:]
-	}
-	return last
-}
-
-func isErrorStatus(status string) bool {
-	if status == "" {
-		return false
-	}
-	s := strings.ToLower(status)
-
-	if strings.Contains(s, "backoff") {
-		return true
-	}
-	if strings.Contains(s, "errimagepull") || strings.Contains(s, "imagepullbackoff") {
-		return true
-	}
-	if strings.Contains(s, "crashloopbackoff") {
-		return true
-	}
-	if strings.Contains(s, "oomkilled") {
-		return true
-	}
-	if strings.Contains(s, "error") {
-		return true
-	}
-	if strings.Contains(s, "failed") {
-		return true
-	}
-	return false
-}
-
-func isNotReady(readyStr string) bool {
-	parts := strings.Split(readyStr, "/")
-	if len(parts) != 2 {
-		return false
-	}
-	x, y := parts[0], parts[1]
-
-	var xi, yi int
-	fmt.Sscanf(x, "%d", &xi)
-	fmt.Sscanf(y, "%d", &yi)
-
-	return yi > 0 && xi < yi
 }
