@@ -998,14 +998,6 @@ type Query {
 
   # get all sources that match the filter
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
-
-  # Generic manifest fetcher for any supported K8s resource (workloads & config)
-  getManifest(
-    kind: K8sResourceKind!
-    name: String!
-    namespace: String
-    format: ManifestFormat = YAML
-  ): String!
 }
 
 type Mutation {
