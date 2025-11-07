@@ -69,6 +69,13 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 		rejectingPods := 0
 
 		for _, pod := range podList.Items {
+			// Check if pod is OOMKilled (CrashLoopBackOff due to OOM)
+			// if so, we consider it as rejecting requests due to memory pressure
+			if isPodOOMKilled(&pod) {
+				rejectingPods++
+				continue
+			}
+
 			value := scrapeGatewayMetric(pod.Status.PodIP)
 
 			if value < 0 {
@@ -277,4 +284,27 @@ func scrapeGatewayMetric(podIP string) float64 {
 	}
 
 	return total
+}
+
+// isPodOOMKilled checks if the pod is in CrashLoopBackOff due to OOM or currently OOMKilled
+func isPodOOMKilled(pod *corev1.Pod) bool {
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		// Scenario 1: Container is waiting in CrashLoopBackOff after being OOMKilled
+		if containerStatus.State.Waiting != nil &&
+			containerStatus.State.Waiting.Reason == "CrashLoopBackOff" {
+			// Check if last termination was due to OOM
+			if containerStatus.LastTerminationState.Terminated != nil &&
+				containerStatus.LastTerminationState.Terminated.Reason == "OOMKilled" {
+				return true
+			}
+		}
+
+		// Scenario 2: Container is currently terminated due to OOM
+		if containerStatus.State.Terminated != nil &&
+			containerStatus.State.Terminated.Reason == "OOMKilled" {
+			return true
+		}
+	}
+
+	return false
 }
