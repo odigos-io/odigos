@@ -99,6 +99,10 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
+				&corev1.Pod{}: {
+					Label: clusterCollectorLabelSelector,
+					Field: nsSelector,
+				},
 				&appsv1.DaemonSet{}: {
 					Field: nsSelector,
 				},
