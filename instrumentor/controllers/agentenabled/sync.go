@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -402,6 +403,25 @@ func calculateContainerInstrumentationConfig(containerName string,
 	var logsConfig *odigosv1.AgentLogsConfig
 	if tracesEnabled {
 		tracesConfig = &odigosv1.AgentTracesConfig{}
+
+		// for traces, also allow to configure the id generator as "timedwall",
+		// if trace id suffix is provided.
+		if effectiveConfig.TraceIdSuffix != "" {
+			sourceId, err := strconv.ParseUint(effectiveConfig.TraceIdSuffix, 16, 8)
+			if err != nil {
+				return odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+					AgentEnabledMessage: fmt.Sprintf("failed to parse trace id suffix: %s. trace id suffix must be a single byte hex value (for example 'A3')", err),
+				}
+			}
+			tracesConfig.IdGenerator = &odigosv1.IdGeneratorConfig{
+				TimedWall: &odigosv1.IdGeneratorTimedWallConfig{
+					SourceId: uint8(sourceId),
+				},
+			}
+		}
 	}
 	if metricsEnabled {
 		metricsConfig = &odigosv1.AgentMetricsConfig{}
