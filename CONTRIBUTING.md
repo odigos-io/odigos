@@ -128,6 +128,40 @@ Make sure you are able to:
 
 After you have a working odigos setup, you can start making changes to the code and test them locally.
 
+### Pre-commit hooks
+
+We use `pre-commit` to run fast, consistent checks on staged files (formatting, basic linting and safety checks).
+
+- Install `pre-commit` (one-time):
+
+```bash
+brew install pre-commit            # macOS (Homebrew)
+# or
+pipx install pre-commit            # recommended if you use pipx
+# or
+pip install --user pre-commit
+```
+
+- Enable hooks in this repo:
+
+```bash
+pre-commit install
+```
+
+- Run on all files (optional, first time):
+
+```bash
+pre-commit run --all-files
+```
+
+Configured hooks include:
+
+- Prettier for JSON/MD/MDX/YAML/CSS/HTML
+- Go formatting (`gofmt`) and `golangci-lint` (using `.golangci.yml`)
+- YAML/JSON syntax checks, whitespace and EOF fixes, merge conflict detection
+- Shell script linting (`shellcheck`)
+- Terraform formatting (`terraform fmt`)
+
 ### Run Odigos Cli from code
 
 The code for the odigos cli tool is found in the `cli` directory [here](https://github.com/odigos-io/odigos/tree/main/cli).
