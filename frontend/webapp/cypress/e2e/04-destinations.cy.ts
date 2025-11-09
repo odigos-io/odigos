@@ -19,7 +19,7 @@ describe('Destinations CRUD', () => {
     getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
-  it(`Should create ${totalEntities} destinations via API, and notify with SSE`, () => {
+  it(`Should create ${totalEntities} destinations via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_DESTINATION).click();
       cy.get(DATA_IDS.MODAL_ADD_DESTINATION).should('exist');
@@ -29,7 +29,7 @@ describe('Destinations CRUD', () => {
 
       // Wait for destinations to create
       cy.wait('@gql').then(() => {
-        awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
+        awaitToast({ message: TEXTS.NOTIF_DESTINATION_CREATED(totalEntities) });
       });
     });
   });
@@ -48,7 +48,6 @@ describe('Destinations CRUD', () => {
           fieldValue: TEXTS.UPDATED_NAME,
         },
         () => {
-          awaitToast({ message: TEXTS.NOTIF_DESTINATION_UPDATING });
           // Wait for the destination to update
           cy.wait('@gql').then(() => {
             awaitToast({ message: TEXTS.NOTIF_DESTINATION_UPDATED(SELECTED_ENTITIES.DESTINATION.TYPE) });
@@ -66,7 +65,7 @@ describe('Destinations CRUD', () => {
     });
   });
 
-  it(`Should delete ${totalEntities} destinations via API, and notify with SSE`, () => {
+  it(`Should delete ${totalEntities} destinations via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       deleteEntity(
         {
@@ -78,7 +77,7 @@ describe('Destinations CRUD', () => {
         () => {
           // Wait for the destination to delete
           cy.wait('@gql').then(() => {
-            awaitToast({ message: TEXTS.NOTIF_DESTINATION_DELETED(SELECTED_ENTITIES.DESTINATION.TYPE) }, () => {
+            awaitToast({ message: TEXTS.NOTIF_DESTINATION_DELETED(totalEntities) }, () => {
               getCrdIds({ namespace, crdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
             });
           });

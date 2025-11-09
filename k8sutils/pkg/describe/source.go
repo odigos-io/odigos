@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
@@ -160,6 +164,41 @@ func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, o
 		ObjectMeta:      ss.ObjectMeta,
 		PodTemplateSpec: &ss.Spec.Template,
 		LabelSelector:   ss.Spec.Selector,
+	}
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+}
+
+func DescribeDeploymentConfig(ctx context.Context, kubeClient kubernetes.Interface, dynamicClient dynamic.Interface,
+	odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+	// Use dynamic client to fetch the DeploymentConfig
+	gvr := schema.GroupVersionResource{
+		Group:    "apps.openshift.io",
+		Version:  "v1",
+		Resource: "deploymentconfigs",
+	}
+
+	unstructuredDC, err := dynamicClient.Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to typed DeploymentConfig
+	var dc openshiftappsv1.DeploymentConfig
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredDC.Object, &dc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert unstructured to DeploymentConfig: %w", err)
+	}
+
+	// Convert map[string]string selector to *metav1.LabelSelector
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: dc.Spec.Selector,
+	}
+
+	workloadObj := &source.K8sSourceObject{
+		Kind:            k8sconsts.WorkloadKindDeploymentConfig,
+		ObjectMeta:      dc.ObjectMeta,
+		PodTemplateSpec: dc.Spec.Template,
+		LabelSelector:   labelSelector,
 	}
 	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }

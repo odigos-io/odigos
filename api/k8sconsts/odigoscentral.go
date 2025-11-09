@@ -24,9 +24,14 @@ const (
 
 const (
 	// Odigos Central Backend
-	CentralBackendAppName = "central-backend"
-	CentralBackendName    = "central-backend"
-	CentralBackendImage   = "odigos-enterprise-central-backend"
+	CentralBackendAppName            = "central-backend"
+	CentralBackendName               = "central-backend"
+	CentralBackendImage              = "odigos-enterprise-central-backend"
+	CentralBackendServiceAccountName = "central-backend"
+	CentralBackendRoleName           = "central-backend"
+	CentralBackendRoleBindingName    = "central-backend"
+	// Default CPU utilization target (percentage) for HPA when using CPU-based scaling
+	CentralBackendDefaultCpuTargetUtilization = 70
 )
 
 const (
@@ -34,8 +39,8 @@ const (
 	CentralUI               = "central-ui"
 	CentralUIAppName        = "central-ui"
 	CentralUIDeploymentName = "central-ui"
-	CentralUILabelAppValue  = "central-ui"
 	CentralUIContainerName  = "central-ui"
+	CentralUIServiceName    = "central-ui"
 	CentralUIImage          = "odigos-enterprise-central-ui"
 )
 
@@ -49,6 +54,22 @@ const (
 	RedisPort                = 6379
 	RedisPortName            = "redis"
 	RedisCommand             = "redis-server"
+)
+
+const (
+	KeycloakResourceManagerName = "Keycloak"
+	KeycloakAppName             = "keycloak"
+	KeycloakDeploymentName      = "keycloak"
+	KeycloakServiceName         = "keycloak"
+	KeycloakContainerName       = "keycloak"
+	KeycloakImage               = "quay.io/keycloak/keycloak:24.0.3"
+	KeycloakPort                = 8080
+	KeycloakPortName            = "http"
+	KeycloakSecretName          = "keycloak-admin-credentials"
+	KeycloakAdminUsernameKey    = "admin-username"
+	KeycloakAdminPasswordKey    = "admin-password"
+	KeycloakDataPVCName         = "keycloak-data"
+	KeycloakDataVolumeName      = "keycloak-data"
 )
 
 const (

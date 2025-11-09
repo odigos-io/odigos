@@ -22,6 +22,7 @@ type ManagerOpts struct {
 type ImageReferences struct {
 	AutoscalerImage     string
 	CollectorImage      string
+	InitContainerImage  string
 	InstrumentorImage   string
 	OdigletImage        string
 	KeyvalProxyImage    string

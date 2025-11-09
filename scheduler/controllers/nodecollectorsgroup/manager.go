@@ -24,9 +24,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
-		Named("nodecollectorgroup-odigosconfig").
+		Named("nodecollectorgroup-odigosconfiguration").
 		WithEventFilter(&odigospredicates.OdigosEffectiveConfigMapPredicate).
-		Complete(&odigosConfigController{
+		Complete(&odigosConfigurationController{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
@@ -39,6 +39,19 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		Named("nodecollectorgroup-clustercollectorsgroup").
 		WithEventFilter(predicate.And(&odigospredicates.OdigosCollectorsGroupClusterPredicate, &odigospredicates.CgBecomesReadyPredicate{})).
 		Complete(&clusterCollectorsGroupController{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&odigosv1.Destination{}).
+		Named("nodecollectorgroup-destinations").
+		// we care if destinations are created or deleted, or enabled/disabled
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		Complete(&DestinationsReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})

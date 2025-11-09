@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: odigos.operator.odigos.io
 spec:
   group: operator.odigos.io
@@ -40,7 +40,6 @@ spec:
             description: OdigosSpec defines the desired state of Odigos
             properties:
               agentEnvVarsInjectionMethod:
-                default: pod-manifest
                 description: |-
                   (Optional) AgentEnvVarsInjectionMethod is the method to inject the Odigos agent env vars into the pod.
                   Default=pod-manifest
@@ -75,6 +74,7 @@ spec:
                 enum:
                 - k8s-virtual-device
                 - k8s-host-path
+                - k8s-init-container
                 type: string
               nodeSelector:
                 additionalProperties:
@@ -119,10 +119,11 @@ spec:
                   In "normal" mode the UI is fully interactive, allowing users to view and edit
                   Odigos configuration and settings. In "readonly" mode, the UI can only be
                   used to view current Odigos configuration and is not interactive.
-                  Default=normal
+                  Default=default
                 enum:
-                - normal
+                - default
                 - readonly
+                - normal
                 type: string
             type: object
           status:

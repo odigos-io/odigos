@@ -58,6 +58,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
+	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
 
 	//+kubebuilder:scaffold:imports
 
@@ -138,6 +139,13 @@ func main() {
 	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: logger, Secret: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      k8sconsts.DeprecatedAutoscalerWebhookSecretName,
+	}})
+
+	// remove the data collection daemonset if exists because it is part of the odiglet pod now.
+	// TODO: once we're done with the migration, we can remove this.
+	mgr.Add(&nodecollector.DataCollectionDSMigration{Client: mgr.GetClient(), Logger: logger, DataCollectionDaemonSet: types.NamespacedName{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
 	}})
 
 	collectorImage := defaultCollectorImage
@@ -257,13 +265,9 @@ func main() {
 
 	err = g.Wait()
 	if err != nil {
-		setupLog.Error(err, "Instrumentor exited with error")
-	}
-
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
-		os.Exit(1)
+		setupLog.Error(err, "autoscaler exited with error")
+	} else {
+		setupLog.V(0).Info("autoscaler exiting")
 	}
 }
 

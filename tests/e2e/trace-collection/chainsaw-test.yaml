@@ -1,0 +1,103 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: trace-collection
+spec:
+  description: |
+    This e2e test verifies end-to-end trace collection functionality.
+    It deploys instrumented workloads, generates traffic, and verifies traces are collected.
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Test Apps
+      try:
+        - apply:
+            file: install-test-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            content: |
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+            timeout: 4m
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Apps installed
+      try:
+        - assert:
+            timeout: 5m
+            file: assert-apps-ready.yaml
+
+    - name: Instrument Namespaces
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert Pipeline
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Assert Deployments Ready
+      try:
+        - assert:
+            timeout: 3m
+            file: assert-apps-ready.yaml
+
+    - name: Assert Instrumentation Configs Ready
+      try:
+        - assert:
+            timeout: 30s
+            file: assert-instrumentation-configs.yaml
+
+    ############# Generate Traffic #############
+    - name: Apply Traffic Generator
+      try:
+        - apply:
+            file: apply-traffic-generator.yaml
+
+    - name: Assert Traffic Job Complete
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              kubectl wait --for=condition=complete job/step-01-generate-traffic --timeout=120s
+
+    - name: Cleanup Traffic Generator
+      try:
+        - delete:
+            file: delete-traffic-generator.yaml
+
+    ############# Wait for Traces #############
+    - name: Assert Initial Traces
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh initial-trace-validation.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done

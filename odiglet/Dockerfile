@@ -1,60 +1,12 @@
-######### python Native Community Agent #########
+ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.10
 
+######### python Native Community Agent #########
 FROM python:3.11.9 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation
 COPY agents/python ./agents/configurator
 RUN pip install ./agents/configurator/  --target workspace
 RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
-
-######### Node.js Native Community Agent #########
-#
-# The Node.js agent is built in multiple stages so it can be built with either upstream
-# @odigos/opentelemetry-node or with a local clone to test changes during development.
-# The implemntation is based on the following blog post:
-# https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
-
-# The first build stage 'nodejs-agent-clone' clones the agent sources from github main branch.
-FROM alpine AS nodejs-agent-clone
-RUN apk add git
-WORKDIR /src
-ARG NODEJS_AGENT_VERSION=main
-RUN git clone https://github.com/odigos-io/opentelemetry-node.git && cd opentelemetry-node && git checkout $NODEJS_AGENT_VERSION
-
-# The second build stage 'nodejs-agent-src' prepares the actual code we are going to compile and embed in odiglet.
-# By default, it uses the previous 'nodejs-agent-src' stage, but one can override it by setting the 
-# --build-context nodejs-agent-src=../opentelemetry-node flag in the docker build command.
-# This allows us to nobe the agent sources and test changes during development.
-# The output of this stage is the resolved source code to be used in the next stage.
-FROM scratch AS nodejs-agent-src
-COPY --from=nodejs-agent-clone /src/opentelemetry-node /
-
-# The third step 'nodejs-agent-build' compiles the agent sources and prepares it for 
-# being dependency of the native-community agent.
-FROM node:18 AS nodejs-agent-build
-ARG ODIGOS_VERSION
-WORKDIR /opentelemetry-node
-COPY --from=nodejs-agent-src package.json yarn.lock ./
-# install dependencies with dev so we can build the agent
-RUN yarn --frozen-lockfile
-COPY --from=nodejs-agent-src / .
-RUN echo "export const VERSION = \"$ODIGOS_VERSION\";" > ./src/version.ts
-RUN yarn compile
-
-# The fourth step 'nodejs-agent-native-community-src' prepares the agent sources for the native-community agent.
-# it COPY the nodejs agent source from 'nodejs-agent-build' stage and then build the agent in the 'agents/nodejs-native-community' directory.
-# The output of this stage is the compiled agent code in:
-#    - package source code in '/nodejs-instrumentation/build/src' directory.
-#    - all required dependencies in '/nodejs-instrumentation/prod_node_modules' directory.
-# These artifacts are later copied into the odiglet final image to be mounted into auto-instrumented pods at runtime.
-FROM node:18 AS nodejs-agent-native-community-builder
-ARG ODIGOS_VERSION
-WORKDIR /repos
-COPY ./agents/nodejs-native-community ./odigos/agents/nodejs-native-community
-COPY --from=nodejs-agent-build /opentelemetry-node opentelemetry-node
-# prepare the production node_modules content in a separate directory
-RUN yarn --cwd ./odigos/agents/nodejs-native-community --production --frozen-lockfile
-
 
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
@@ -70,18 +22,19 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
-    mv linux-$ARCH_SUFFIX linux-glibc-$ARCH_SUFFIX && \
+    mv linux-$ARCH_SUFFIX linux-glibc
+RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
-    unzip opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip "linux-musl-$ARCH_SUFFIX/*" -d . && \
-    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip
+    unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    rm opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
+    mv linux-musl-$ARCH_SUFFIX linux-musl
 
 # TODO(edenfed): Currently .NET Automatic instrumentation does not work on dotnet 6.0 with glibc,
 # This is due to compilation of the .so file on a newer version of glibc than the one used by the dotnet runtime.
 # The following override the .so file with our own which is compiled on the same glibc version as the dotnet runtime.
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
-    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc-${ARCH_SUFFIX}/OpenTelemetry.AutoInstrumentation.Native.so
-
+    mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so
 
 # PHP
 FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
@@ -101,8 +54,28 @@ RUN for v in ${PHP_VERSIONS}; do \
     done
 
 
+# Ruby
+FROM --platform=$BUILDPLATFORM maniator/gh AS ruby-agents
+WORKDIR /ruby-agents
+ARG TARGETARCH
+ARG RUBY_AGENT_VERSION="v0.0.5"
+ARG RUBY_VERSIONS="3.1 3.2 3.3 3.4"
+ENV RUBY_VERSIONS=${RUBY_VERSIONS}
+# Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each Ruby version)
+RUN git clone https://github.com/odigos-io/opentelemetry-ruby \
+    && cd opentelemetry-ruby \
+    && git checkout tags/${RUBY_AGENT_VERSION}
+# Move the gems & binaries to the correct directories
+RUN for v in ${RUBY_VERSIONS}; do \
+    mv opentelemetry-ruby/$v/${TARGETARCH}/* opentelemetry-ruby/$v/; \
+    cp opentelemetry-ruby/Gemfile opentelemetry-ruby/$v/Gemfile; \
+    cp opentelemetry-ruby/index.rb opentelemetry-ruby/$v/index.rb; \
+    rm -rf opentelemetry-ruby/$v/amd64; \
+    rm -rf opentelemetry-ruby/$v/arm64; \
+    done
+
 ######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM registry.odigos.io/odiglet-base:v1.8 AS builder
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -121,6 +94,24 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
 
+
+# Build deviceplugin binary
+WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
+COPY deviceplugin/ .
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
+
+# Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        GRPC_ARCH="arm64"; \
+    else \
+        GRPC_ARCH="amd64"; \
+    fi && \
+    wget -O /tmp/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${GRPC_ARCH} && \
+    chmod +x /tmp/grpc_health_probe
+
 WORKDIR /instrumentations
 
 # Java
@@ -132,7 +123,8 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=nodejs-agent-native-community-builder /repos/odigos/agents/nodejs-native-community /instrumentations/nodejs
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.5 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.5 /instrumentations/nodejs-community /instrumentations/nodejs-community
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
@@ -144,12 +136,25 @@ COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8
 COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
 COPY --from=php-agents /php-agents/opentelemetry-php/8.4 /instrumentations/php/8.4
 
+# Ruby
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.1 /instrumentations/ruby/3.1
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.2 /instrumentations/ruby/3.2
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.3 /instrumentations/ruby/3.3
+COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ruby/3.4
+
 # loader
-ARG ODIGOS_LOADER_VERSION=v0.0.3
+ARG ODIGOS_LOADER_VERSION=v0.0.5
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
+
+# Note that we do not pass --platform=$BUILDPLATFORM here because we want to have the base image for all target architecture - each contains the corresponding rsync binary for the target arch.
+FROM ${ODIGLET_BASE_IMAGE} AS rsync-base
 
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+# Copy statically compiled rsync (no shared libraries needed)
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
 COPY --from=builder /instrumentations/ .
 CMD ["/root/odiglet"]

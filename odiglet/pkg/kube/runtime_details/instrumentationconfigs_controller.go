@@ -54,6 +54,10 @@ type InstrumentationConfigReconciler struct {
 	// which can be expensive (memory and CPU)
 	Clientset *kubernetes.Clientset
 	CriClient *criwrapper.CriClient
+
+	// map where keys are the names of the environment variables that participate in append mechanism
+	// they need to be recorded by runtime detection into the runtime info, and this list instruct what to collect.
+	RuntimeDetectionEnvs map[string]struct{}
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -105,7 +109,7 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, nil
 	}
 
-	runtimeResults, err := runtimeInspection(ctx, selectedPods, r.CriClient)
+	runtimeResults, err := runtimeInspection(ctx, selectedPods, r.CriClient, r.RuntimeDetectionEnvs)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -115,6 +119,6 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, err
 	}
 
-	logger.Info("Completed runtime detection for new instrumentation config", "namespace", request.Namespace, "name", request.Name)
+	logger.Info("Completed runtime detection for new instrumentation config", "namespace", request.Namespace, "name", request.Name, "runtimeResults", runtimeResults)
 	return reconcile.Result{}, nil
 }

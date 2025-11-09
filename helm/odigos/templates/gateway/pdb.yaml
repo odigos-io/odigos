@@ -1,0 +1,22 @@
+{{- if .Values.pdb.enabled }}
+{{- $pdbApiVersion := "policy/v1" }}
+{{- if semverCompare "<1.21.0-0" (include "utils.cleanKubeVersion" .) }}
+{{- $pdbApiVersion = "policy/v1beta1" }}
+{{- end }}
+apiVersion: {{ $pdbApiVersion }}
+kind: PodDisruptionBudget
+metadata:
+  name: odigos-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: odigos-gateway
+    odigos.io/system-object: "true"
+spec:
+  # This PDB protects the odigos-gateway collector, which is critical for trace delivery.
+  # It ensures at least one gateway pod is always available during voluntary disruptions (e.g., node drains, upgrades).
+  # It is safe to install even if the gateway deployment does not exist yet — it becomes active once matching pods are running.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      odigos.io/collector-role: CLUSTER_GATEWAY
+{{- end }}

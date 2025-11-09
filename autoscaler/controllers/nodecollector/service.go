@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,10 +20,15 @@ var (
 	}
 )
 
-func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, dc *odigosv1.CollectorsGroup) error {
+func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigosv1.CollectorsGroup) error {
 	if !feature.ServiceInternalTrafficPolicy(feature.GA) {
 		return nil
 	}
+	if dc == nil {
+		// it is valid to not have a data collection collector group until it is created by the scheduler
+		return nil
+	}
+
 	logger := log.FromContext(ctx)
 
 	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
@@ -51,16 +55,22 @@ func syncService(ctx context.Context, c client.Client, scheme *runtime.Scheme, d
 					Port:       4318,
 					TargetPort: intstr.FromInt(4318),
 				},
+				{
+					Name:       "metrics",
+					Protocol:   "TCP",
+					Port:       8888,
+					TargetPort: intstr.FromInt32(k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault),
+				},
 			},
 			InternalTrafficPolicy: &localTrafficPolicy,
 		},
 	}
 
-	if err := ctrl.SetControllerReference(dc, dcService, scheme); err != nil {
+	if err := ctrl.SetControllerReference(dc, dcService, b.scheme); err != nil {
 		logger.Error(err, "failed to set controller reference")
 		return err
 	}
 
-	err := c.Create(ctx, dcService)
+	err := b.Client.Create(ctx, dcService)
 	return client.IgnoreAlreadyExists(err)
 }

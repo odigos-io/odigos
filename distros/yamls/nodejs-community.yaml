@@ -14,11 +14,13 @@ spec:
   environmentVariables:
     opAmpClientEnvironments: true
     otlpHttpLocalNode: true
+    appendOdigosVariables:
+      - envName: NODE_OPTIONS
+        replacePattern: '{{ORIGINAL_ENV_VALUE}} --require {{ODIGOS_AGENTS_DIR}}/nodejs/autoinstrumentation.js'
   runtimeAgent:
     directoryNames:
-      - "{{ODIGOS_AGENTS_DIR}}/nodejs"
+      - "{{ODIGOS_AGENTS_DIR}}/nodejs-community"
+      - "{{ODIGOS_AGENTS_DIR}}/opentelemetry-node"
     device: 'instrumentation.odigos.io/generic'
-    environmentVariables:
-      - envName: NODE_OPTIONS
-        envValue: '--require {{ODIGOS_AGENTS_DIR}}/nodejs/autoinstrumentation.js'
-        delimiter: ' '
+    k8sAttrsViaEnvVars: true
+    ldPreloadInjectionSupported: true

@@ -4,19 +4,29 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
 
 const (
-	otlpHttpEndpointKey          = "OTLP_HTTP_ENDPOINT"
-	otlpHttpTlsKey               = "OTLP_HTTP_TLS_ENABLED"
-	otlpHttpCaPemKey             = "OTLP_HTTP_CA_PEM"
-	otlpHttpInsecureSkipVerify   = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
-	otlpHttpBasicAuthUsernameKey = "OTLP_HTTP_BASIC_AUTH_USERNAME"
-	otlpHttpBasicAuthPasswordKey = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
-	otlpHttpCompression          = "OTLP_HTTP_COMPRESSION"
-	otlpHttpHeaders              = "OTLP_HTTP_HEADERS"
+	otlpHttpEndpointKey           = "OTLP_HTTP_ENDPOINT"
+	otlpHttpTracesEndpointKey     = "OTLP_HTTP_TRACES_ENDPOINT"
+	otlpHttpMetricsEndpointKey    = "OTLP_HTTP_METRICS_ENDPOINT"
+	otlpHttpLogsEndpointKey       = "OTLP_HTTP_LOGS_ENDPOINT"
+	otlpHttpTlsKey                = "OTLP_HTTP_TLS_ENABLED"
+	otlpHttpCaPemKey              = "OTLP_HTTP_CA_PEM"
+	otlpHttpInsecureSkipVerify    = "OTLP_HTTP_INSECURE_SKIP_VERIFY"
+	otlpHttpBasicAuthUsernameKey  = "OTLP_HTTP_BASIC_AUTH_USERNAME"
+	otlpHttpBasicAuthPasswordKey  = "OTLP_HTTP_BASIC_AUTH_PASSWORD"
+	otlpHttpOAuth2EnabledKey      = "OTLP_HTTP_OAUTH2_ENABLED"
+	otlpHttpOAuth2ClientIdKey     = "OTLP_HTTP_OAUTH2_CLIENT_ID"
+	otlpHttpOAuth2ClientSecretKey = "OTLP_HTTP_OAUTH2_CLIENT_SECRET"
+	otlpHttpOAuth2TokenUrlKey     = "OTLP_HTTP_OAUTH2_TOKEN_URL"
+	otlpHttpOAuth2ScopesKey       = "OTLP_HTTP_OAUTH2_SCOPES"
+	otlpHttpOAuth2AudienceKey     = "OTLP_HTTP_OAUTH2_AUDIENCE"
+	otlpHttpCompression           = "OTLP_HTTP_COMPRESSION"
+	otlpHttpHeaders               = "OTLP_HTTP_HEADERS"
 )
 
 type OTLPHttp struct{}
@@ -25,50 +35,81 @@ func (g *OTLPHttp) DestType() common.DestinationType {
 	return common.OtlpHttpDestinationType
 }
 
+//nolint:funlen,gocyclo // required complexity: function handles full OTLP HTTP config (auth, tls, headers, pipelines)
 func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
 	config := dest.GetConfig()
 
-	url, exists := config[otlpHttpEndpointKey]
-	if !exists {
+	baseURL, baseExists := config[otlpHttpEndpointKey]
+	tracesURL := strings.TrimSpace(config[otlpHttpTracesEndpointKey])
+	metricsURL := strings.TrimSpace(config[otlpHttpMetricsEndpointKey])
+	logsURL := strings.TrimSpace(config[otlpHttpLogsEndpointKey])
+
+	// Require base endpoint only if no per-signal endpoints are provided
+	if !baseExists && tracesURL == "" && metricsURL == "" && logsURL == "" {
 		return nil, errors.New("OTLP http endpoint not specified, gateway will not be configured for otlp http")
 	}
 
-	tls := dest.GetConfig()[otlpHttpTlsKey]
-	tlsEnabled := tls == "true"
+	userTlsEnabled := dest.GetConfig()[otlpHttpTlsKey] == "true"
 
-	parsedUrl, err := parseOtlpHttpEndpoint(url, "", "")
+	var parsedBase string
+	var err error
+	if baseExists {
+		parsedBase, err = parseOtlpHttpEndpoint(baseURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
+		}
+	}
+
+	// Check for OAuth2 or Basic Auth (OAuth2 takes precedence)
+	oauth2ExtensionName, oauth2ExtensionConf, err := applyOAuth2Auth(dest)
 	if err != nil {
-		return nil, errors.Join(err, errors.New("otlp http endpoint invalid, gateway will not be configured for otlp http"))
+		return nil, err
 	}
-
-	tlsConfig := GenericMap{
-		"insecure": !tlsEnabled,
-	}
-	caPem, caExists := config[otlpHttpCaPemKey]
-	if caExists && caPem != "" {
-		tlsConfig["ca_pem"] = caPem
-	}
-	insecureSkipVerify, skipExists := config[otlpHttpInsecureSkipVerify]
-	if skipExists && insecureSkipVerify != "" {
-		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
-	}
-
 	basicAuthExtensionName, basicAuthExtensionConf := applyBasicAuth(dest)
 
+	// OAuth2 takes precedence over Basic Auth
+	var authExtensionName string
+	var authExtensionConf *GenericMap
+	hasAuthentication := false
+	if oauth2ExtensionName != "" && oauth2ExtensionConf != nil {
+		authExtensionName = oauth2ExtensionName
+		authExtensionConf = oauth2ExtensionConf
+		hasAuthentication = true
+	} else if basicAuthExtensionName != "" && basicAuthExtensionConf != nil {
+		authExtensionName = basicAuthExtensionName
+		authExtensionConf = basicAuthExtensionConf
+		hasAuthentication = true
+	}
+
 	// add authenticator extension
-	if basicAuthExtensionName != "" && basicAuthExtensionConf != nil {
-		currentConfig.Extensions[basicAuthExtensionName] = *basicAuthExtensionConf
-		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, basicAuthExtensionName)
+	if authExtensionName != "" && authExtensionConf != nil {
+		currentConfig.Extensions[authExtensionName] = *authExtensionConf
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	}
 
 	otlpHttpExporterName := "otlphttp/generic-" + dest.GetID()
-	exporterConf := GenericMap{
-		"endpoint": parsedUrl,
-		"tls":      tlsConfig,
+	exporterConf := GenericMap{}
+	if parsedBase != "" {
+		exporterConf["endpoint"] = parsedBase
 	}
-	if basicAuthExtensionName != "" {
+
+	// Only add TLS config if TLS is explicitly enabled or authentication is being used
+	tlsConfig := GenericMap{
+		"insecure": !userTlsEnabled,
+	}
+	if userTlsEnabled || hasAuthentication {
+		if caPem, ok := config[otlpHttpCaPemKey]; ok && caPem != "" {
+			tlsConfig["ca_pem"] = caPem
+		}
+		if insecureSkipVerify, ok := config[otlpHttpInsecureSkipVerify]; ok && insecureSkipVerify != "" {
+			tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+		}
+	}
+	exporterConf["tls"] = tlsConfig
+
+	if authExtensionName != "" {
 		exporterConf["auth"] = GenericMap{
-			"authenticator": basicAuthExtensionName,
+			"authenticator": authExtensionName,
 		}
 	}
 	if compression, ok := config[otlpHttpCompression]; ok {
@@ -93,6 +134,30 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 		}
 		exporterConf["headers"] = mappedHeaders
 	}
+
+	if tracesURL != "" {
+		parsed, err := parseOtlpHttpEndpoint(tracesURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("OTLP_HTTP_TRACES_ENDPOINT invalid"))
+		}
+		exporterConf["traces_endpoint"] = parsed
+	}
+	if metricsURL != "" {
+		parsed, err := parseOtlpHttpEndpoint(metricsURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("OTLP_HTTP_METRICS_ENDPOINT invalid"))
+		}
+		exporterConf["metrics_endpoint"] = parsed
+	}
+	if logsURL != "" {
+		parsed, err := parseOtlpHttpEndpoint(logsURL, "", "")
+		if err != nil {
+			return nil, errors.Join(err, errors.New("OTLP_HTTP_LOGS_ENDPOINT invalid"))
+		}
+		exporterConf["logs_endpoint"] = parsed
+	}
+	// ----------------------------------------------------------------
+
 	currentConfig.Exporters[otlpHttpExporterName] = exporterConf
 
 	var pipelineNames []string
@@ -121,6 +186,50 @@ func (g *OTLPHttp) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	return pipelineNames, nil
+}
+
+func applyOAuth2Auth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap, err error) {
+	config := dest.GetConfig()
+
+	oauth2Enabled := config[otlpHttpOAuth2EnabledKey]
+	if oauth2Enabled != "true" {
+		return "", nil, nil
+	}
+
+	clientId := config[otlpHttpOAuth2ClientIdKey]
+	tokenUrl := config[otlpHttpOAuth2TokenUrlKey]
+
+	// Note: client secret is stored in the secret and injected as environment variable
+	if clientId == "" || tokenUrl == "" {
+		return "", nil, errors.New("when OAuth2 is enabled, client ID and token URL must be provided")
+	}
+
+	extensionName = "oauth2client/otlphttp-" + dest.GetID()
+	extensionConf = &GenericMap{
+		"client_id":     clientId,
+		"client_secret": fmt.Sprintf("${%s}", otlpHttpOAuth2ClientSecretKey),
+		"token_url":     tokenUrl,
+	}
+
+	// Add optional endpoint parameters
+	endpointParams := GenericMap{}
+	if audience := config[otlpHttpOAuth2AudienceKey]; audience != "" {
+		endpointParams["audience"] = audience
+	}
+	if len(endpointParams) > 0 {
+		(*extensionConf)["endpoint_params"] = endpointParams
+	}
+
+	// Add scopes if provided
+	if scopes := config[otlpHttpOAuth2ScopesKey]; scopes != "" {
+		scopesList := strings.Split(scopes, ",")
+		for i, scope := range scopesList {
+			scopesList[i] = strings.TrimSpace(scope)
+		}
+		(*extensionConf)["scopes"] = scopesList
+	}
+
+	return extensionName, extensionConf, nil
 }
 
 func applyBasicAuth(dest ExporterConfigurer) (extensionName string, extensionConf *GenericMap) {

@@ -6,43 +6,38 @@ spec:
   description: Run E2E tests against Odigos UI using Cypress
   skipDelete: true
   steps:
-    - name: Install Odigos CLI
+    - name: Install - Jaeger
       try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../../cli/odigos install --version e2e-test --namespace odigos-test
-              ../../common/verify_odigos_installation.sh odigos-test
-        - assert:
-            timeout: 3m
-            file: ../../common/assert/odigos-installed.yaml
+        - apply:
+            file: ../../common/apply/install-jaeger.yaml
 
     - name: Install - Simple Demo Apps
       try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
-        - script:
-            timeout: 2m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
-        - assert:
-            file: ../../common/assert/simple-demo-installed.yaml
 
-    - name: Install - Jaeger
+    - name: Install Odigos CLI
       try:
-        - apply:
-            file: ../../common/apply/install-jaeger.yaml
         - script:
-            timeout: 1m
+            timeout: 3m
             content: |
-              kubectl wait --for=condition=ready pod -l app=jaeger -n tracing --timeout=60s
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify - Jaeger Installed
+      try:
         - assert:
             file: ../../common/assert/jaeger-installed.yaml
+
+    - name: Assert - Simple Demo Apps Installed
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Start UI from CLI
       try:

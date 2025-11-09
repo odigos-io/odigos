@@ -92,14 +92,15 @@ var relatedImageEnvVars = map[string]string{
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos/finalizers,verbs=update
-// +kubebuilder:rbac:groups=actions.odigos.io,resources=*,verbs=get;list;watch;create;patch;update;delete
+// +kubebuilder:rbac:groups=actions.odigos.io,resources=*,verbs=get;list;watch;create;patch;update;delete;deletecollection
 // +kubebuilder:rbac:groups=actions.odigos.io,resources=*/status,verbs=get;patch;update
+// +kubebuilder:rbac:groups=odigos.io,resources=instrumentationrules/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=*,verbs=*
 // +kubebuilder:rbac:groups=odigos.io,resources=destinations/status;instrumentationinstances/status;instrumentationconfigs/status;collectorsgroups/status,verbs=get;list;watch;patch;update
 // +kubebuilder:rbac:groups=odigos.io,resources=sources/finalizers,verbs=update
 // +kubebuilder:rbac:groups=odigos.io,resources=collectorsgroups/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete;deletecollection
-// +kubebuilder:rbac:groups="",resources=configmaps;endpoints;secrets,verbs=get;list;watch;create;update;delete;patch
+// +kubebuilder:rbac:groups="",resources=configmaps;endpoints;secrets,verbs=get;list;watch;create;update;delete;patch;deletecollection
 // +kubebuilder:rbac:groups="",resources=configmaps/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;get;list;watch;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;patch
@@ -113,14 +114,16 @@ var relatedImageEnvVars = map[string]string{
 // +kubebuilder:rbac:groups=apps,resources=deployments;replicasets;daemonsets;statefulsets,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers;replicasets/finalizers;daemonsets/finalizers;statefulsets/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps,resources=deployments/status;daemonsets/status;statefulsets/status,verbs=get
-// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;update;patch;watch
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;roles;rolebindings,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;create;update;patch;watch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=create
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;roles;rolebindings,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=use
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations;validatingwebhookconfigurations,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=create;patch;update;delete
 // +kubebuilder:rbac:groups=policy,resources=podsecuritypolicies,resourceNames=privileged,verbs=use
+// +kubebuilder:rbac:groups=apps.openshift.io,resources=deploymentconfigs;deploymentconfigs/finalizers,verbs=get;list;watch;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -167,10 +170,13 @@ func (r *OdigosReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		Config:        k8sConfig,
 	}
 
+	// Store original object for patch operations
+	originalOdigos := odigos.DeepCopy()
+
 	if odigos.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.install(ctx, kubeClient, odigos)
+		return r.install(ctx, kubeClient, odigos, originalOdigos)
 	} else {
-		return r.uninstall(ctx, kubeClient, odigos)
+		return r.uninstall(ctx, kubeClient, odigos, originalOdigos)
 	}
 }
 
@@ -182,7 +188,7 @@ func (r *OdigosReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
+func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos, originalOdigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	ns := odigos.GetNamespace()
@@ -191,7 +197,7 @@ func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Clien
 
 	if controllerutil.ContainsFinalizer(odigos, operatorFinalizer) {
 		controllerutil.RemoveFinalizer(odigos, operatorFinalizer)
-		if err := r.Update(ctx, odigos); err != nil {
+		if err := r.Patch(ctx, odigos, client.MergeFrom(originalOdigos)); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -201,12 +207,12 @@ func (r *OdigosReconciler) uninstall(ctx context.Context, kubeClient *kube.Clien
 }
 
 // install Odigos based on the config passed in odigos
-func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
+func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client, odigos *operatorv1alpha1.Odigos, originalOdigos *operatorv1alpha1.Odigos) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	if !controllerutil.ContainsFinalizer(odigos, operatorFinalizer) {
 		controllerutil.AddFinalizer(odigos, operatorFinalizer)
-		if err := r.Update(ctx, odigos); err != nil {
+		if err := r.Patch(ctx, odigos, client.MergeFrom(originalOdigos)); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -249,10 +255,11 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		return ctrl.Result{}, r.Status().Update(ctx, odigos)
 	}
 
+	openshiftEnabled := false
 	details := autodetect.GetK8SClusterDetails(ctx, "", "", kubeClient)
 	if details.Kind == autodetect.KindOpenShift {
 		logger.Info("Detected OpenShift cluster, enabling required configuration")
-		odigos.Spec.OpenShiftEnabled = true
+		openshiftEnabled = true
 	}
 	ctx = cmdcontext.ContextWithClusterDetails(ctx, details)
 
@@ -298,7 +305,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		selectedProfiles = append(selectedProfiles, common.ProfileName(profile))
 	}
 
-	odigosConfig := common.OdigosConfiguration{}
+	odigosConfiguration := common.OdigosConfiguration{}
 	upgrade := false
 	config, err := resources.GetCurrentConfig(ctx, kubeClient, ns)
 	if err != nil {
@@ -314,12 +321,12 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 			return ctrl.Result{}, r.Status().Update(ctx, odigos)
 		}
 
-		odigosConfig = common.OdigosConfiguration{
+		odigosConfiguration = common.OdigosConfiguration{
 			ConfigVersion: 1,
 		}
 	} else {
-		odigosConfig = *config
-		odigosConfig.ConfigVersion = odigosConfig.ConfigVersion + 1
+		odigosConfiguration = *config
+		odigosConfiguration.ConfigVersion = odigosConfiguration.ConfigVersion + 1
 		upgrade = true
 	}
 
@@ -328,17 +335,27 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 		nodeSelector = odigos.Spec.NodeSelector
 	}
 
-	odigosConfig.TelemetryEnabled = odigos.Spec.TelemetryEnabled
-	odigosConfig.OpenshiftEnabled = odigos.Spec.OpenShiftEnabled
-	odigosConfig.IgnoredNamespaces = odigos.Spec.IgnoredNamespaces
-	odigosConfig.IgnoredContainers = odigos.Spec.IgnoredContainers
-	odigosConfig.SkipWebhookIssuerCreation = odigos.Spec.SkipWebhookIssuerCreation
-	odigosConfig.Psp = odigos.Spec.PodSecurityPolicy
-	odigosConfig.ImagePrefix = odigos.Spec.ImagePrefix
-	odigosConfig.Profiles = odigos.Spec.Profiles
-	odigosConfig.UiMode = common.UiMode(odigos.Spec.UIMode)
-	odigosConfig.NodeSelector = nodeSelector
-	odigosConfig.AgentEnvVarsInjectionMethod = &odigos.Spec.AgentEnvVarsInjectionMethod
+	odigosConfiguration.TelemetryEnabled = odigos.Spec.TelemetryEnabled
+	odigosConfiguration.OpenshiftEnabled = openshiftEnabled
+	odigosConfiguration.IgnoredNamespaces = odigos.Spec.IgnoredNamespaces
+	odigosConfiguration.IgnoredContainers = odigos.Spec.IgnoredContainers
+	odigosConfiguration.SkipWebhookIssuerCreation = odigos.Spec.SkipWebhookIssuerCreation
+	odigosConfiguration.Psp = odigos.Spec.PodSecurityPolicy
+	odigosConfiguration.ImagePrefix = odigos.Spec.ImagePrefix
+	odigosConfiguration.Profiles = odigos.Spec.Profiles
+
+	// "normal" is deprecated. Kept here for backwards compatibility with operator CRD.
+	if odigos.Spec.UIMode == "normal" {
+		odigosConfiguration.UiMode = common.UiModeDefault
+	} else {
+		odigosConfiguration.UiMode = common.UiMode(odigos.Spec.UIMode)
+	}
+	odigosConfiguration.NodeSelector = nodeSelector
+	agentEnvVarsInjectionMethod := odigos.Spec.AgentEnvVarsInjectionMethod
+	if agentEnvVarsInjectionMethod == "" {
+		agentEnvVarsInjectionMethod = common.PodManifestEnvInjectionMethod
+	}
+	odigosConfiguration.AgentEnvVarsInjectionMethod = &agentEnvVarsInjectionMethod
 
 	ownerReference := metav1.OwnerReference{
 		APIVersion: odigos.APIVersion,
@@ -349,8 +366,8 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	managerOpts := resourcemanager.ManagerOpts{
 		OwnerReferences: []metav1.OwnerReference{ownerReference},
 	}
-	imageReferences := cmd.GetImageReferences(odigosTier, odigos.Spec.OpenShiftEnabled)
-	if odigos.Spec.OpenShiftEnabled {
+	imageReferences := cmd.GetImageReferences(odigosTier, openshiftEnabled)
+	if openshiftEnabled {
 		imageReferences.AutoscalerImage = os.Getenv(relatedImageEnvVars[imageReferences.AutoscalerImage])
 		imageReferences.CollectorImage = os.Getenv(relatedImageEnvVars[imageReferences.CollectorImage])
 		imageReferences.UIImage = os.Getenv(relatedImageEnvVars[imageReferences.UIImage])
@@ -362,7 +379,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 	if len(odigos.Spec.MountMethod) == 0 {
-		odigosConfig.MountMethod = &defaultMountMethod
+		odigosConfiguration.MountMethod = &defaultMountMethod
 	} else {
 		switch odigos.Spec.MountMethod {
 		case common.K8sHostPathMountMethod:
@@ -378,18 +395,18 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 			logger.Error(fmt.Errorf("invalid mount method (valid values: %s, %s)", common.K8sHostPathMountMethod, common.K8sVirtualDeviceMountMethod), "mountMethod", odigos.Spec.MountMethod)
 			return ctrl.Result{}, r.Status().Update(ctx, odigos)
 		}
-		odigosConfig.MountMethod = &odigos.Spec.MountMethod
+		odigosConfiguration.MountMethod = &odigos.Spec.MountMethod
 	}
 
-	if !odigos.Spec.OpenShiftEnabled {
+	if !openshiftEnabled {
 		if odigos.Spec.ImagePrefix == "" {
-			odigosConfig.ImagePrefix = k8sconsts.OdigosImagePrefix
+			odigosConfiguration.ImagePrefix = k8sconsts.OdigosImagePrefix
 		}
 	}
 
 	logger.Info("Installing Odigos version " + version + " in namespace " + ns)
 
-	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfig, version, installationmethod.K8sInstallationMethodOdigosOperator, managerOpts)
+	resourceManagers := resources.CreateResourceManagers(kubeClient, ns, odigosTier, &odigosProToken, &odigosConfiguration, version, installationmethod.K8sInstallationMethodOdigosOperator, managerOpts)
 	err = resources.ApplyResourceManagers(ctx, kubeClient, resourceManagers, "Creating")
 	if err != nil {
 		return ctrl.Result{}, err
@@ -405,7 +422,7 @@ func (r *OdigosReconciler) install(ctx context.Context, kubeClient *kube.Client,
 	})
 
 	if upgrade {
-		err = resources.DeleteOldOdigosSystemObjects(ctx, kubeClient, ns, &odigosConfig)
+		err = resources.DeleteOldOdigosSystemObjects(ctx, kubeClient, ns, &odigosConfiguration)
 		if err != nil {
 			meta.SetStatusCondition(&odigos.Status.Conditions, metav1.Condition{
 				Type:               odigosUpgradeCondition,

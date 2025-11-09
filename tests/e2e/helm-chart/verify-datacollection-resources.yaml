@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odiglet
+  namespace: odigos-test
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: odiglet
+spec:
+  containers:
+    - name: odiglet
+      resources: {}
+      securityContext:
+        privileged: true
+    - name: data-collection
+      securityContext:
+        privileged: true
+      env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          (value != null): true
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: data-collection
+              divisor: "0"
+              resource: limits.cpu
+      resources:
+        requests:
+          memory: 560Mi
+          cpu: 550m
+        limits:
+          memory: 560Mi
+          cpu: 550m
+    - name: deviceplugin
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
+  hostPID: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  serviceAccount: odiglet
+  serviceAccountName: odiglet
+status:
+  containerStatuses:
+    - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
+    - name: deviceplugin
+      ready: true
+      restartCount: 0
+      started: true
+    - name: odiglet
+      ready: true
+      restartCount: 0
+      started: true

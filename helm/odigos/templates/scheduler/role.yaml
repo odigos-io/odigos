@@ -3,7 +3,7 @@ kind: Role
 metadata:
   name: odigos-scheduler
   namespace: '{{ .Release.Namespace }}'
-  labels: 
+  labels:
     odigos.io/system-object: "true"
 rules:
   - apiGroups:
@@ -21,10 +21,20 @@ rules:
     resourceNames:
       - effective-config
       - odigos-deployment
+      - odigos-go-offsets
     verbs:
       - patch
       - create
       - update
+  # migration from the old odigos-config file - this can be removed once we are confident that the old config have been deleted
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    resourceNames:
+      - odigos-config
+    verbs:
+      - delete
   - apiGroups:
       - odigos.io
     resources:
@@ -48,6 +58,7 @@ rules:
     resources:
       - instrumentationrules
       - processors
+      - actions
     verbs:
       - get
       - list
@@ -63,3 +74,57 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - 'batch'
+    resources:
+      - cronjobs
+    resourceNames:
+      - 'odigos-go-offsets-updater'
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - 'batch'
+    resources:
+      - 'jobs'
+    verbs:
+      - 'create'
+  - apiGroups:
+      - 'apps'
+    resources:
+      - 'daemonsets'
+    resourceNames:
+      - 'odiglet'
+    verbs:
+      - 'patch'
+  - apiGroups:
+      - 'apps'
+    resources:
+      - 'deployments'
+    resourceNames:
+      - 'odigos-scheduler'
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+  - apiGroups:
+      - 'odigos.io'
+    resources:
+      - 'destinations'
+    verbs:
+      - 'get'
+      - 'list'
+      - 'watch'
+{{- if .Values.openshift.enabled }}
+  - apiGroups:
+      - 'apps'
+    resources:
+      - deployments/finalizers
+    verbs:
+      - update
+{{- end }}

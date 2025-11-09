@@ -6,7 +6,10 @@ inputs:
     description: "Cloud provider to test against (e.g., eks or aks)"
     required: true
   test_scenario:
-    description: "Test scenario to run (e.g., multi-apps, helm-chart)"
+    description: "Test scenario to run (e.g., source, helm-chart)"
+    required: true
+  platform:
+    description: "The platform to use [arm/amd]"
     required: true
 
 runs:
@@ -15,6 +18,13 @@ runs:
     # 1) Check out code
     - name: Checkout Code
       uses: actions/checkout@v4
+
+    - name: Skip - ARM on AKS not yet supported
+      if: ${{ inputs.platform == 'arm' && inputs.provider == 'aks' }}
+      shell: bash
+      run: |
+        echo "ARM platform on AKS is not supported; skipping workflow."
+        exit 78
 
     # 2) Validate Cloud Provider Input & Directory
     - name: Validate Cloud Provider Input & Directory
@@ -47,7 +57,7 @@ runs:
     # 5) Configure AWS Credentials for EKS
     - name: Configure AWS Credentials for EKS
       if: ${{ inputs.provider == 'eks' }}
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v5
       with:
         role-to-assume: arn:aws:iam::061717858829:role/GitHubActionsEKSCreatorRole
         aws-region: us-east-1
@@ -74,16 +84,17 @@ runs:
       shell: bash
       run: |
         export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
-        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
-        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
+        export TF_VAR_platform="${{ inputs.platform }}"
         tofu -chdir="$TF_DIR" init
 
     - name: Tofu Plan
       shell: bash
       run: |
         export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
-        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
         tofu -chdir="$TF_DIR" plan
 
@@ -91,9 +102,9 @@ runs:
       shell: bash
       run: |
         export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
-        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
-        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         tofu -chdir="$TF_DIR" apply -auto-approve
 
     # 8) Configure Kubeconfig for AKS
@@ -101,7 +112,7 @@ runs:
       if: ${{ inputs.provider == 'aks' }}
       shell: bash
       run: |
-        CLUSTER_NAME="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        CLUSTER_NAME="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         az aks get-credentials \
           --resource-group "$CLUSTER_NAME" \
           --name "$CLUSTER_NAME"
@@ -111,7 +122,7 @@ runs:
       if: ${{ inputs.provider == 'eks' }}
       shell: bash
       run: |
-        CLUSTER_NAME="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        CLUSTER_NAME="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         aws eks update-kubeconfig --region "us-east-1" --name "$CLUSTER_NAME"
 
     # 10) Verify Cluster Access
@@ -126,7 +137,7 @@ runs:
 
     # 12) Optional: Install FE dependencies if needed
     - name: Install FE
-      if: ${{ inputs.test_scenario == 'multi-apps' || inputs.test_scenario == 'helm-chart' }}
+      if: ${{ inputs.test_scenario == 'source' || inputs.test_scenario == 'helm-chart' }}
       shell: bash
       run: |
         cd frontend/webapp
@@ -140,14 +151,27 @@ runs:
         export COMMIT_HASH="${GITHUB_SHA}"
         chainsaw test "tests/e2e/${{ inputs.test_scenario }}"
 
-    # 14) Run Diagnose Command (always attempts)
+    # 14) Cluster diagnostics
+    - name: Cluster diagnostics
+      if: failure()
+      shell: bash
+      run: |
+        echo "==== Nodes ===="; kubectl get nodes -o wide
+        echo "==== Pods (all namespaces) ===="; kubectl get pods -A -o wide
+        echo "==== Events (last 10m) ===="; kubectl get events -A --sort-by=.lastTimestamp | tail -n 200
+        echo "==== Deployments not ready ===="; kubectl get deploy -A | awk '$4!="0/0" && $4!=$5 {print $1,$2}' | while read ns name; do
+          echo "--- describe deploy $ns/$name ---"
+          kubectl describe deploy -n "$ns" "$name" || true
+        done
+
+    # 15) Run Diagnose Command (always attempts)
     - name: Run Diagnose Command
       if: always()
       shell: bash
       run: ./cli/odigos diagnose
       continue-on-error: true
 
-    # 15) Upload Artifact (always)
+    # 16) Upload Artifact (always)
     - name: Upload Run Details Artifact
       if: always()
       uses: actions/upload-artifact@v4
@@ -156,19 +180,19 @@ runs:
         path: odigos_debug*.tar.gz
       continue-on-error: true
 
-    # 16) Destroy Resources (always attempts)
+    # 17) Destroy Resources (always attempts)
     - name: Destroy Resources
       if: always()
       shell: bash
       run: |
         export TF_DIR="./tests-infrastructure/terraform/${{ inputs.provider }}"
-        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_cluster_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
-        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${GITHUB_RUN_ID}"
+        export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         tofu -chdir="$TF_DIR" destroy -auto-approve
       continue-on-error: true
 
-    # 17) Extract Tag (optional)
+    # 18) Extract Tag (optional)
     - name: Extract Tag
       if: always()
       id: extract_tag

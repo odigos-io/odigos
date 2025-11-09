@@ -25,12 +25,14 @@ import (
 // DestinationSpecApplyConfiguration represents a declarative configuration of the DestinationSpec type for use
 // with apply.
 type DestinationSpecApplyConfiguration struct {
-	Type            *common.DestinationType           `json:"type,omitempty"`
-	DestinationName *string                           `json:"destinationName,omitempty"`
-	Data            map[string]string                 `json:"data,omitempty"`
-	SecretRef       *v1.LocalObjectReference          `json:"secretRef,omitempty"`
-	Signals         []common.ObservabilitySignal      `json:"signals,omitempty"`
-	SourceSelector  *SourceSelectorApplyConfiguration `json:"sourceSelector,omitempty"`
+	Type            *common.DestinationType                       `json:"type,omitempty"`
+	DestinationName *string                                       `json:"destinationName,omitempty"`
+	Data            map[string]string                             `json:"data,omitempty"`
+	SecretRef       *v1.LocalObjectReference                      `json:"secretRef,omitempty"`
+	Signals         []common.ObservabilitySignal                  `json:"signals,omitempty"`
+	Disabled        *bool                                         `json:"disabled,omitempty"`
+	MetricsSettings *DestinationMetricsSettingsApplyConfiguration `json:"metricsSettings,omitempty"`
+	SourceSelector  *SourceSelectorApplyConfiguration             `json:"sourceSelector,omitempty"`
 }
 
 // DestinationSpecApplyConfiguration constructs a declarative configuration of the DestinationSpec type for use with
@@ -84,6 +86,22 @@ func (b *DestinationSpecApplyConfiguration) WithSignals(values ...common.Observa
 	for i := range values {
 		b.Signals = append(b.Signals, values[i])
 	}
+	return b
+}
+
+// WithDisabled sets the Disabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Disabled field is set to the value of the last call.
+func (b *DestinationSpecApplyConfiguration) WithDisabled(value bool) *DestinationSpecApplyConfiguration {
+	b.Disabled = &value
+	return b
+}
+
+// WithMetricsSettings sets the MetricsSettings field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MetricsSettings field is set to the value of the last call.
+func (b *DestinationSpecApplyConfiguration) WithMetricsSettings(value *DestinationMetricsSettingsApplyConfiguration) *DestinationSpecApplyConfiguration {
+	b.MetricsSettings = value
 	return b
 }
 

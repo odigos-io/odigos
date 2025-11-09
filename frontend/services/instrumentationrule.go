@@ -34,11 +34,15 @@ func deriveTypeFromRule(rule *model.InstrumentationRule) model.InstrumentationRu
 		}
 	}
 
+	if rule.CustomInstrumentations != nil {
+		return model.InstrumentationRuleTypeCustomInstrumentation
+	}
+
 	return model.InstrumentationRuleTypeUnknownType
 }
 
-// ListInstrumentationRules fetches all instrumentation rules
-func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule, error) {
+// GetInstrumentationRules fetches all instrumentation rules
+func GetInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule, error) {
 	ns := env.GetCurrentNamespace()
 
 	instrumentationRules, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).List(ctx, metav1.ListOptions{})
@@ -61,9 +65,11 @@ func ListInstrumentationRules(ctx context.Context) ([]*model.InstrumentationRule
 			ProfileName:              profileName,
 			Workloads:                convertWorkloads(r.Spec.Workloads),
 			InstrumentationLibraries: convertInstrumentationLibraries(r.Spec.InstrumentationLibraries),
+			Conditions:               ConvertConditions(r.Status.Conditions),
 			CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 			HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 			PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
+			CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
 		}
 		rule.Type = deriveTypeFromRule(rule)
 
@@ -96,6 +102,7 @@ func GetInstrumentationRule(ctx context.Context, id string) (*model.Instrumentat
 		CodeAttributes:           (*model.CodeAttributes)(r.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(r.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(r.Spec.PayloadCollection),
+		CustomInstrumentations:   convertCustomInstrumentations(r.Spec.CustomInstrumentations),
 	}
 	rule.Type = deriveTypeFromRule(rule)
 
@@ -171,6 +178,82 @@ func getCodeAttributesInput(input model.InstrumentationRuleInput) *instrumentati
 	return codeAttributes
 }
 
+func getCustomInstrumentationsInput(input model.InstrumentationRuleInput) *instrumentationrules.CustomInstrumentations {
+	if input.CustomInstrumentations == nil {
+		return nil
+	}
+	customInstrumentations := &instrumentationrules.CustomInstrumentations{}
+	// Iterate Java custom probes and verify input
+	if input.CustomInstrumentations.Java != nil {
+		customInstrumentations.Java = make([]instrumentationrules.JavaCustomProbe, 0, len(input.CustomInstrumentations.Java))
+		for _, probe := range input.CustomInstrumentations.Java {
+			apiProbe := instrumentationrules.JavaCustomProbe{}
+			if probe.ClassName != nil {
+				apiProbe.ClassName = *probe.ClassName
+			} else {
+				apiProbe.ClassName = ""
+			}
+			if probe.MethodName != nil {
+				apiProbe.MethodName = *probe.MethodName
+			} else {
+				apiProbe.MethodName = ""
+			}
+			customInstrumentations.Java = append(customInstrumentations.Java, apiProbe)
+		}
+	}
+
+	if input.CustomInstrumentations.Golang != nil {
+		customInstrumentations.Golang = make([]instrumentationrules.GolangCustomProbe, 0, len(input.CustomInstrumentations.Golang))
+		for _, probe := range input.CustomInstrumentations.Golang {
+			apiProbe := instrumentationrules.GolangCustomProbe{}
+			if probe.PackageName != nil {
+				apiProbe.PackageName = *probe.PackageName
+			} else {
+				apiProbe.PackageName = ""
+			}
+			if probe.FunctionName != nil {
+				apiProbe.FunctionName = *probe.FunctionName
+			} else {
+				apiProbe.FunctionName = ""
+			}
+			if probe.ReceiverName != nil {
+				apiProbe.ReceiverName = *probe.ReceiverName
+			} else {
+				apiProbe.ReceiverName = ""
+			}
+			if probe.ReceiverMethodName != nil {
+				apiProbe.ReceiverMethodName = *probe.ReceiverMethodName
+			} else {
+				apiProbe.ReceiverMethodName = ""
+			}
+			customInstrumentations.Golang = append(customInstrumentations.Golang, apiProbe)
+		}
+	}
+
+	// Remove duplicate Golang probes
+	uniqueGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(customInstrumentations.Golang))
+	uniqGoProbes := make(map[instrumentationrules.GolangCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Golang {
+		uniqGoProbes[probe] = struct{}{}
+	}
+	for probe := range uniqGoProbes {
+		uniqueGolangProbes = append(uniqueGolangProbes, probe)
+	}
+	customInstrumentations.Golang = uniqueGolangProbes
+
+	// Remove duplicate Java probes
+	uniqueJavaProbes := make([]instrumentationrules.JavaCustomProbe, 0, len(customInstrumentations.Java))
+	javaSeen := make(map[instrumentationrules.JavaCustomProbe]struct{})
+	for _, probe := range customInstrumentations.Java {
+		javaSeen[probe] = struct{}{}
+	}
+	for probe := range javaSeen {
+		uniqueJavaProbes = append(uniqueJavaProbes, probe)
+	}
+	customInstrumentations.Java = uniqueJavaProbes
+	return customInstrumentations
+}
+
 func UpdateInstrumentationRule(ctx context.Context, id string, input model.InstrumentationRuleInput) (*model.InstrumentationRule, error) {
 	ns := env.GetCurrentNamespace()
 
@@ -223,6 +306,17 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		existingRule.Spec.CodeAttributes = nil
 	}
 
+	if input.HeadersCollection != nil {
+		existingRule.Spec.HeadersCollection = getHeadersCollectionInput(input)
+	} else {
+		existingRule.Spec.HeadersCollection = nil
+	}
+
+	if input.CustomInstrumentations != nil {
+		existingRule.Spec.CustomInstrumentations = getCustomInstrumentationsInput(input)
+	} else {
+		existingRule.Spec.CustomInstrumentations = nil
+	}
 	// Update rule in Kubernetes
 	updatedRule, err := kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Update(ctx, existingRule, metav1.UpdateOptions{})
 	if err != nil {
@@ -244,9 +338,9 @@ func UpdateInstrumentationRule(ctx context.Context, id string, input model.Instr
 		CodeAttributes:           (*model.CodeAttributes)(updatedRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(updatedRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(updatedRule.Spec.PayloadCollection),
+		CustomInstrumentations:   convertCustomInstrumentations(updatedRule.Spec.CustomInstrumentations),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
-
 	return &rule, nil
 }
 
@@ -307,9 +401,9 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 			CodeAttributes:           getCodeAttributesInput(input),
 			HeadersCollection:        getHeadersCollectionInput(input),
 			PayloadCollection:        getPayloadCollectionInput(input),
+			CustomInstrumentations:   getCustomInstrumentationsInput(input),
 		},
 	}
-
 	// Create the rule in Kubernetes
 	createdRule, err := CreateResourceWithGenerateName(ctx, func() (*v1alpha1.InstrumentationRule, error) {
 		return kube.DefaultClient.OdigosClient.InstrumentationRules(ns).Create(ctx, newRule, metav1.CreateOptions{})
@@ -331,6 +425,7 @@ func CreateInstrumentationRule(ctx context.Context, input model.InstrumentationR
 		CodeAttributes:           (*model.CodeAttributes)(createdRule.Spec.CodeAttributes),
 		HeadersCollection:        convertHeadersCollection(createdRule.Spec.HeadersCollection),
 		PayloadCollection:        convertPayloadCollection(createdRule.Spec.PayloadCollection),
+		CustomInstrumentations:   convertCustomInstrumentations(createdRule.Spec.CustomInstrumentations),
 	}
 	rule.Type = deriveTypeFromRule(&rule)
 
@@ -425,4 +520,31 @@ func toMessagingPayload(payload *instrumentationrules.MessagingPayloadCollection
 		return nil
 	}
 	return &model.MessagingPayloadCollection{}
+}
+
+// Converts CustomInstrumentations to GraphQL-compatible format
+func convertCustomInstrumentations(customInstruAsInstruRule *instrumentationrules.CustomInstrumentations) *model.CustomInstrumentations {
+	if customInstruAsInstruRule == nil {
+		return nil
+	}
+	customInstruAsGqlModel := &model.CustomInstrumentations{}
+	if customInstruAsInstruRule.Golang != nil {
+		for _, golangProbe := range customInstruAsInstruRule.Golang {
+			customInstruAsGqlModel.Golang = append(customInstruAsGqlModel.Golang, &model.GolangCustomProbe{
+				PackageName:        &golangProbe.PackageName,
+				FunctionName:       &golangProbe.FunctionName,
+				ReceiverName:       &golangProbe.ReceiverName,
+				ReceiverMethodName: &golangProbe.ReceiverMethodName,
+			})
+		}
+	}
+	if customInstruAsInstruRule.Java != nil {
+		for _, javaProbe := range customInstruAsInstruRule.Java {
+			customInstruAsGqlModel.Java = append(customInstruAsGqlModel.Java, &model.JavaCustomProbe{
+				ClassName:  &javaProbe.ClassName,
+				MethodName: &javaProbe.MethodName,
+			})
+		}
+	}
+	return customInstruAsGqlModel
 }

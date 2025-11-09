@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -18,20 +19,56 @@ type ServiceNameConfig struct {
 	FallbackSamplingRatio float64 `json:"fallback_sampling_ratio"`
 }
 
+func (h *ServiceNameSamplerHandler) ConvertLegacyToAction(legacyAction metav1.Object) metav1.Object {
+	// If the action is already an odigos action, return it
+	if _, ok := legacyAction.(*odigosv1.Action); ok {
+		return legacyAction
+	}
+	legacyServiceNameSampler := legacyAction.(*actionv1.ServiceNameSampler)
+	action := &odigosv1.Action{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "Action",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      legacyServiceNameSampler.Name,
+			Namespace: legacyServiceNameSampler.Namespace,
+		},
+		Spec: odigosv1.ActionSpec{
+			ActionName: legacyServiceNameSampler.Spec.ActionName,
+			Notes:      legacyServiceNameSampler.Spec.Notes,
+			Disabled:   legacyServiceNameSampler.Spec.Disabled,
+			Signals:    legacyServiceNameSampler.Spec.Signals,
+			Samplers: &actionv1.SamplersConfig{
+				ServiceNameSampler: &actionv1.ServiceNameSamplerConfig{
+					ServicesNameFilters: legacyServiceNameSampler.Spec.ServicesNameFilters,
+				},
+			},
+		},
+	}
+	return action
+}
+
 func (h *ServiceNameSamplerHandler) List(ctx context.Context, c client.Client, namespace string) ([]metav1.Object, error) {
-	var list actionv1.ServiceNameSamplerList
+	var list odigosv1.ActionList
 	if err := c.List(ctx, &list, client.InNamespace(namespace)); err != nil && client.IgnoreNotFound(err) != nil {
 		return nil, err
 	}
-	items := make([]metav1.Object, len(list.Items))
-	for i := range list.Items {
-		items[i] = &list.Items[i]
+	items := make([]metav1.Object, 0)
+	for i, item := range list.Items {
+		if item.Spec.Samplers != nil && item.Spec.Samplers.ServiceNameSampler != nil {
+			items = append(items, &list.Items[i])
+		}
 	}
 	return items, nil
 }
 
 func (h *ServiceNameSamplerHandler) IsActionDisabled(action metav1.Object) bool {
-	return action.(*actionv1.ServiceNameSampler).Spec.Disabled
+	// Handle migration from legacy servicenamesampler to odigos action
+	if a, ok := action.(*actionv1.ServiceNameSampler); ok {
+		return a.Spec.Disabled
+	}
+	return action.(*odigosv1.Action).Spec.Disabled
 }
 
 func (h *ServiceNameSamplerHandler) ValidateRuleConfig(config []Rule) error {
@@ -44,10 +81,22 @@ func (h *ServiceNameSamplerHandler) ValidateRuleConfig(config []Rule) error {
 }
 
 func (h *ServiceNameSamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
-	svcAction := action.(*actionv1.ServiceNameSampler)
-	rules := make([]Rule, 0, len(svcAction.Spec.ServicesNameFilters))
+	var serviceNameSampler *odigosv1.Action
+	// Handle migration from legacy servicenamesampler to odigos action
+	if a, ok := action.(*actionv1.ServiceNameSampler); ok {
+		serviceNameSampler = h.ConvertLegacyToAction(a).(*odigosv1.Action)
+	}
+	if a, ok := action.(*odigosv1.Action); ok {
+		serviceNameSampler = a
+	}
 
-	for _, service := range svcAction.Spec.ServicesNameFilters {
+	if serviceNameSampler.Spec.Samplers == nil || serviceNameSampler.Spec.Samplers.ServiceNameSampler == nil {
+		return []Rule{}
+	}
+
+	rules := make([]Rule, 0, len(serviceNameSampler.Spec.Samplers.ServiceNameSampler.ServicesNameFilters))
+
+	for _, service := range serviceNameSampler.Spec.Samplers.ServiceNameSampler.ServicesNameFilters {
 		rules = append(rules, Rule{
 			Name:     fmt.Sprintf("service-%s", service.ServiceName),
 			RuleType: ServiceNameRule,
@@ -62,13 +111,24 @@ func (h *ServiceNameSamplerHandler) GetRuleConfig(action metav1.Object) []Rule {
 }
 
 func (h *ServiceNameSamplerHandler) GetActionReference(action metav1.Object) metav1.OwnerReference {
-	a := action.(*actionv1.ServiceNameSampler)
-	return metav1.OwnerReference{
-		APIVersion: a.APIVersion,
-		Kind:       a.Kind,
-		Name:       a.Name,
-		UID:        a.UID,
+	// Handle migration from legacy servicenamesampler to odigos action
+	if a, ok := action.(*actionv1.ServiceNameSampler); ok {
+		return metav1.OwnerReference{
+			APIVersion: a.APIVersion,
+			Kind:       a.Kind,
+			Name:       a.Name,
+			UID:        a.UID,
+		}
 	}
+	if a, ok := action.(*odigosv1.Action); ok {
+		return metav1.OwnerReference{
+			APIVersion: a.APIVersion,
+			Kind:       a.Kind,
+			Name:       a.Name,
+			UID:        a.UID,
+		}
+	}
+	return metav1.OwnerReference{}
 }
 
 func (h *ServiceNameSamplerHandler) GetActionScope(action metav1.Object) string {

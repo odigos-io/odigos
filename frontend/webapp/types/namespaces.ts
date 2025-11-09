@@ -1,4 +1,7 @@
 export interface NamespaceInstrumentInput {
-  name: string;
-  futureSelected: boolean;
+  namespaces: {
+    namespace: string;
+    selected: boolean;
+    currentStreamName: string;
+  }[];
 }

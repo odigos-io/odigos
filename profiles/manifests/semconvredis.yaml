@@ -1,0 +1,24 @@
+apiVersion: odigos.io/v1alpha1
+kind: Processor
+metadata:
+  name: semconvredis
+spec:
+  type: attributes
+  processorName: "semconvredis-attributes"
+  notes: "Auto generated rule from semconvredis profile. Converts db.system.name to db.system for Redis spans."
+  processorConfig:
+    include:
+      match_type: strict
+      attributes:
+        - key: db.system.name
+          value: "redis"
+    actions:
+      - key: db.system
+        value: "redis"
+        action: insert
+      - key: db.system.name
+        action: delete
+  signals:
+    - TRACES
+  collectorRoles:
+    - CLUSTER_GATEWAY 

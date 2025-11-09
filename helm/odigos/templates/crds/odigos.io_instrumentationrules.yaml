@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     odigos.io/system-object: "true"
   name: instrumentationrules.odigos.io
@@ -74,6 +74,52 @@ spec:
                       if unset, the value will resolve from other relevant rules, or fallback to false
                     type: boolean
                 type: object
+              customInstrumentations:
+                description: Add custom instrumentation probes
+                properties:
+                  golang:
+                    items:
+                      description: |-
+                        golang custom probe contains the details for a custom probe for golang applications,
+                        which includes the package name, function name or receiver name and method name to be instrumented.
+                      properties:
+                        functionName:
+                          description: |-
+                            FunctionName is the name of the golang function to be instrumented, ie package name is "net/http" and the function
+                            name will be "ListenAndServe"; Function name is disallowed if ReceiverName and ReceiverMethodName are provided
+                          type: string
+                        packageName:
+                          description: PackageName is the name of the golang pacakge
+                            (ie net/http); Package name is always required
+                          type: string
+                        receiverMethodName:
+                          description: |-
+                            ReceiverMethodName is the name of the golang method, given a receiver struct, to be instrumented
+                            for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
+                            ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
+                          type: string
+                        receiverName:
+                          description: |-
+                            ReceiverName is the name of the golang receiver struct to be instrumented, ie for the "net/http" package, "response" is a receiver struct
+                            ReceiverName is disallowed if FunctionName is provided; Receiver must be a concrete type (not an interface)
+                          type: string
+                      required:
+                      - packageName
+                      type: object
+                    type: array
+                  java:
+                    items:
+                      description: |-
+                        java custom probe contains the details for a custom probe for java applications,
+                        which includes the class name and method name to be instrumented.
+                      properties:
+                        className:
+                          type: string
+                        methodName:
+                          type: string
+                      type: object
+                    type: array
+                type: object
               disabled:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
@@ -111,6 +157,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis
@@ -268,6 +315,13 @@ spec:
                   convenience. Odigos does not use or assume any meaning from this
                   field.
                 type: string
+              traceConfig:
+                description: Configure the tracing configuration for the library.
+                properties:
+                  disabled:
+                    description: Disabled will disable tracing for the rule.
+                    type: boolean
+                type: object
               workloads:
                 description: An array of workload objects (name, namespace, kind)
                   to which the rule should be applied. If not specified, the rule

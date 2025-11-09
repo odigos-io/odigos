@@ -2,7 +2,11 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 	"path"
 	"slices"
 	"sort"
@@ -34,18 +38,18 @@ func GetPageLimit(ctx context.Context) (int, error) {
 	defaultValue := 100
 	odigosNs := env.GetCurrentNamespace()
 
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosNs).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 	if err != nil {
 		return defaultValue, err
 	}
 
-	var odigosConfig common.OdigosConfiguration
-	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig)
+	var odigosConfiguration common.OdigosConfiguration
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
 		return defaultValue, err
 	}
 
-	configValue := odigosConfig.UiPaginationLimit
+	configValue := odigosConfiguration.UiPaginationLimit
 	if configValue > 0 {
 		return configValue, nil
 	}
@@ -53,15 +57,37 @@ func GetPageLimit(ctx context.Context) (int, error) {
 	return defaultValue, nil
 }
 
+func ConvertConditions(conditions []metav1.Condition) []*model.Condition {
+	var result []*model.Condition
+	for _, c := range conditions {
+		if c.Type != "AppliedInstrumentationDevice" {
+			reason := c.Reason
+			message := c.Message
+			if message == "" {
+				message = string(c.Reason)
+			}
+
+			result = append(result, &model.Condition{
+				Status:             TransformConditionStatus(c.Status, c.Type, reason),
+				Type:               c.Type,
+				Reason:             &reason,
+				Message:            &message,
+				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
+			})
+		}
+	}
+	return result
+}
+
 func ConvertSignals(signals []model.SignalType) ([]common.ObservabilitySignal, error) {
 	var result []common.ObservabilitySignal
 	for _, s := range signals {
 		switch s {
-		case model.SignalTypeTraces:
+		case model.SignalTypeTraces, model.SignalTypetraces:
 			result = append(result, common.TracesObservabilitySignal)
-		case model.SignalTypeMetrics:
+		case model.SignalTypeMetrics, model.SignalTypemetrics:
 			result = append(result, common.MetricsObservabilitySignal)
-		case model.SignalTypeLogs:
+		case model.SignalTypeLogs, model.SignalTypelogs:
 			result = append(result, common.LogsObservabilitySignal)
 		default:
 			return nil, fmt.Errorf("unknown signal type: %v", s)
@@ -145,6 +171,35 @@ func SortConditions(conditions []*model.Condition) {
 	})
 }
 
+func randString(nByte int) (string, error) {
+	b := make([]byte, nByte)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func setCallbackCookie(w http.ResponseWriter, r *http.Request, name string, value string, path string, maxAge int) {
+	if maxAge <= 0 {
+		maxAge = int(time.Hour.Seconds())
+	}
+
+	c := &http.Cookie{
+		Name:     name,
+		Value:    value,
+		HttpOnly: true,
+		Secure:   r.TLS != nil,
+		SameSite: http.SameSiteLaxMode, // prevents CSRF
+		MaxAge:   maxAge,
+	}
+
+	if path != "" {
+		c.Path = path
+	}
+
+	http.SetCookie(w, c)
+}
+
 // generated names can cause conflicts with k8s < 1.32.
 // the best practice is to retry the create operation if we got a conflict error (409).
 // this function takes care of checking the k8s version and retrying the create operation if needed.
@@ -191,4 +246,12 @@ func getKubeVersion() (*version.Version, error) {
 	}
 
 	return parsedVer, nil
+}
+
+func k8sLastTransitionTimeToGql(t metav1.Time) *string {
+	if t.IsZero() {
+		return nil
+	}
+	str := t.UTC().Format(time.RFC3339)
+	return &str
 }

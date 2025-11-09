@@ -19,6 +19,7 @@ package v1alpha1
 
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	common "github.com/odigos-io/odigos/common"
 )
 
 // ContainerAgentConfigApplyConfiguration represents a declarative configuration of the ContainerAgentConfig type for use
@@ -30,6 +31,10 @@ type ContainerAgentConfigApplyConfiguration struct {
 	AgentEnabledMessage *string                            `json:"agentEnabledMessage,omitempty"`
 	OtelDistroName      *string                            `json:"otelDistroName,omitempty"`
 	DistroParams        map[string]string                  `json:"distroParams,omitempty"`
+	EnvInjectionMethod  *common.EnvInjectionDecision       `json:"envInjectionMethod,omitempty"`
+	Traces              *odigosv1alpha1.AgentTracesConfig  `json:"traces,omitempty"`
+	Metrics             *odigosv1alpha1.AgentMetricsConfig `json:"metrics,omitempty"`
+	Logs                *odigosv1alpha1.AgentLogsConfig    `json:"logs,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -89,5 +94,37 @@ func (b *ContainerAgentConfigApplyConfiguration) WithDistroParams(entries map[st
 	for k, v := range entries {
 		b.DistroParams[k] = v
 	}
+	return b
+}
+
+// WithEnvInjectionMethod sets the EnvInjectionMethod field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EnvInjectionMethod field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithEnvInjectionMethod(value common.EnvInjectionDecision) *ContainerAgentConfigApplyConfiguration {
+	b.EnvInjectionMethod = &value
+	return b
+}
+
+// WithTraces sets the Traces field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Traces field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithTraces(value odigosv1alpha1.AgentTracesConfig) *ContainerAgentConfigApplyConfiguration {
+	b.Traces = &value
+	return b
+}
+
+// WithMetrics sets the Metrics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Metrics field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithMetrics(value odigosv1alpha1.AgentMetricsConfig) *ContainerAgentConfigApplyConfiguration {
+	b.Metrics = &value
+	return b
+}
+
+// WithLogs sets the Logs field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Logs field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithLogs(value odigosv1alpha1.AgentLogsConfig) *ContainerAgentConfigApplyConfiguration {
+	b.Logs = &value
 	return b
 }

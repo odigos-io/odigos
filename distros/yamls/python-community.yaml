@@ -17,12 +17,12 @@ spec:
     staticVariables:
       - envName: OTEL_PYTHON_CONFIGURATOR
         envValue: 'odigos-python-configurator'
+    appendOdigosVariables:
+      - envName: PYTHONPATH
+        replacePattern: '{{ORIGINAL_ENV_VALUE}}:{{ODIGOS_AGENTS_DIR}}/python:{{ODIGOS_AGENTS_DIR}}/python/opentelemetry/instrumentation/auto_instrumentation'
   runtimeAgent:
     directoryNames:
       - "{{ODIGOS_AGENTS_DIR}}/python"
     device: 'instrumentation.odigos.io/generic'
-    environmentVariables:
-      - envName: PYTHONPATH
-        envValue: '{{ODIGOS_AGENTS_DIR}}/python:{{ODIGOS_AGENTS_DIR}}/python/opentelemetry/instrumentation/auto_instrumentation'
-        delimiter: ':'
-      
+    k8sAttrsViaEnvVars: true
+    ldPreloadInjectionSupported: true

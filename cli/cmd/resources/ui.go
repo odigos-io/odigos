@@ -116,7 +116,7 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 									},
 								},
 								InitialDelaySeconds: 15,
-								TimeoutSeconds:      0,
+								TimeoutSeconds:      5,
 								PeriodSeconds:       20,
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
@@ -131,7 +131,8 @@ func NewUIDeployment(ns string, version string, imagePrefix string, imageName st
 										},
 									},
 								},
-								PeriodSeconds: 10,
+								PeriodSeconds:  10,
+								TimeoutSeconds: 5,
 							},
 							SecurityContext: &corev1.SecurityContext{},
 						},
@@ -177,7 +178,7 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 
 	if readonly {
 		rules = []rbacv1.PolicyRule{
-			{ // Needed to read odigos-config configmap for settings
+			{ // Needed to read odigos-configuration configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list"},
@@ -197,18 +198,18 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on pipeline actions
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*"},
+			{ // Needed for CRUD on actions
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
 				Verbs:     []string{"get", "list"},
 			},
 		}
 	} else {
 		rules = []rbacv1.PolicyRule{
-			{ // Needed to read odigos-config configmap for settings
+			{ // Needed to read and update odigos-configuration configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list"},
+				Verbs:     []string{"get", "list", "update", "patch"},
 			},
 			{ // Needed for secret values in destinations
 				APIGroups: []string{""},
@@ -230,9 +231,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"collectorsgroups"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on pipeline actions
-				APIGroups: []string{"actions.odigos.io"},
-				Resources: []string{"*"},
+			{ // Needed for CRUD on actions
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"actions"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
 		}
@@ -276,7 +277,7 @@ func NewUIRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
+func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole {
 	rules := []rbacv1.PolicyRule{}
 
 	if readonly {
@@ -324,6 +325,14 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 				Verbs:     []string{"get", "list"},
 			},
 		}
+		if openshiftEnabled {
+			rules = append(rules, rbacv1.PolicyRule{
+				// OpenShift DeploymentConfigs support
+				APIGroups: []string{"apps.openshift.io"},
+				Resources: []string{"deploymentconfigs"},
+				Verbs:     []string{"get", "list"},
+			})
+		}
 	} else {
 		rules = []rbacv1.PolicyRule{
 			{ // Needed to get and instrument namespaces
@@ -370,6 +379,14 @@ func NewUIClusterRole(readonly bool) *rbacv1.ClusterRole {
 				Resources: []string{"sources"},
 				Verbs:     []string{"get", "list", "create", "patch", "delete"},
 			},
+		}
+		if openshiftEnabled {
+			rules = append(rules, rbacv1.PolicyRule{
+				// OpenShift DeploymentConfigs support
+				APIGroups: []string{"apps.openshift.io"},
+				Resources: []string{"deploymentconfigs"},
+				Verbs:     []string{"get", "list", "patch", "update"},
+			})
 		}
 	}
 
@@ -445,7 +462,7 @@ func (u *uiResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewUIServiceAccount(u.ns),
 		NewUIRole(u.ns, u.readonly),
 		NewUIRoleBinding(u.ns),
-		NewUIClusterRole(u.readonly),
+		NewUIClusterRole(u.readonly, u.config.OpenshiftEnabled),
 		NewUIClusterRoleBinding(u.ns),
 		NewUIDeployment(u.ns, u.odigosVersion, u.config.ImagePrefix, u.managerOpts.ImageReferences.UIImage, u.config.NodeSelector),
 		NewUIService(u.ns),
@@ -459,7 +476,7 @@ func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosC
 		ns:            ns,
 		config:        config,
 		odigosVersion: odigosVersion,
-		readonly:      config.UiMode == common.ReadonlyUiMode,
+		readonly:      config.UiMode == common.UiModeReadonly,
 		managerOpts:   managerOpts,
 	}
 }

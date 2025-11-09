@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     odigos.io/system-object: "true"
   name: instrumentationconfigs.odigos.io
@@ -55,6 +55,13 @@ spec:
                   or something else that requires rollout, the hash change will indicate that.
                   if the hash is empty, it means that no agent should be enabled in any pod container.
                 type: string
+              agentsMetaHashChangedTime:
+                description: |-
+                  The last time at which the agents meta hash value was changed.
+                  Pods created before this time may not be in alignment with the AgentsMetaHash.
+                  e.g. can lack the odigos label, or have a different value.
+                format: date-time
+                type: string
               containerOverridesHash:
                 description: |-
                   An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
@@ -82,12 +89,15 @@ spec:
                       - EnabledSuccessfully
                       - WaitingForRuntimeInspection
                       - WaitingForNodeCollector
-                      - UnsupportedProgrammingLanguage
                       - IgnoredContainer
+                      - NoCollectedSignals
+                      - InjectionConflict
+                      - UnsupportedProgrammingLanguage
                       - NoAvailableAgent
                       - UnsupportedRuntimeVersion
                       - MissingDistroParameter
                       - OtherAgentDetected
+                      - RuntimeDetailsUnavailable
                       - CrashLoopBackOff
                       type: string
                     containerName:
@@ -101,11 +111,36 @@ spec:
                         Additional parameters to the distro that controls how it's being applied.
                         Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
                       type: object
+                    envInjectionMethod:
+                      description: |-
+                        What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+                        Can be either "loader" or "pod-manifest".
+                        The injection should still check the actual values in the container manifest before injecting.
+                        Nil means that this container should not have env injection (agent should not be injected, or distro does not specify "loader" injection envs).
+                      enum:
+                      - loader
+                      - pod-manifest
+                      type: string
+                    logs:
+                      description: |-
+                        all "logs" related configuration for an agent running on any process in a specific container.
+                        The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
+                      type: object
+                    metrics:
+                      description: |-
+                        all "metrics" related configuration for an agent running on any process in a specific container.
+                        The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
+                      type: object
                     otelDistroName:
                       description: |-
                         The name of the otel distribution to use for this container.
                         if the name is empty, this container should not be instrumented.
                       type: string
+                    traces:
+                      description: |-
+                        Each enabled signal must be set with a non-nil value (even if the config content is empty).
+                        nil means that the signal is disabled and should not be instrumented/collected by the agent.
+                      type: object
                   required:
                   - agentEnabled
                   - containerName
@@ -130,9 +165,12 @@ spec:
                         containerName:
                           type: string
                         criErrorMessage:
-                          description: Stores the error message from the CRI runtime
-                            if returned to prevent instrumenting the container if
-                            an error exists.
+                          description: |-
+                            CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+                            Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+                            Thus, this field is set only when there is:
+                            - Actual CRI check failed
+                            - The observed environment variables might come from container runtime
                           type: string
                         envFromContainerRuntime:
                           description: Holds the environment variables retrieved from
@@ -170,6 +208,7 @@ spec:
                           - php
                           - ruby
                           - rust
+                          - cplusplus
                           - mysql
                           - nginx
                           - redis
@@ -248,6 +287,53 @@ spec:
                             Should record the `code.stacktrace` attribute.
                             if unset, the value will resolve from other relevant rules, or fallback to false
                           type: boolean
+                      type: object
+                    customInstrumentations:
+                      description: list of the custom instrumentation probes the SDK
+                        should use.
+                      properties:
+                        golang:
+                          items:
+                            description: |-
+                              golang custom probe contains the details for a custom probe for golang applications,
+                              which includes the package name, function name or receiver name and method name to be instrumented.
+                            properties:
+                              functionName:
+                                description: |-
+                                  FunctionName is the name of the golang function to be instrumented, ie package name is "net/http" and the function
+                                  name will be "ListenAndServe"; Function name is disallowed if ReceiverName and ReceiverMethodName are provided
+                                type: string
+                              packageName:
+                                description: PackageName is the name of the golang
+                                  pacakge (ie net/http); Package name is always required
+                                type: string
+                              receiverMethodName:
+                                description: |-
+                                  ReceiverMethodName is the name of the golang method, given a receiver struct, to be instrumented
+                                  for example for "net/http" package, "response" is a receiver struct and "WriteHeader" is a method of that struct
+                                  ReceiverMethodName is mandatory if ReceiverName is provided, and disallowed if FunctionName is provided
+                                type: string
+                              receiverName:
+                                description: |-
+                                  ReceiverName is the name of the golang receiver struct to be instrumented, ie for the "net/http" package, "response" is a receiver struct
+                                  ReceiverName is disallowed if FunctionName is provided; Receiver must be a concrete type (not an interface)
+                                type: string
+                            required:
+                            - packageName
+                            type: object
+                          type: array
+                        java:
+                          items:
+                            description: |-
+                              java custom probe contains the details for a custom probe for java applications,
+                              which includes the class name and method name to be instrumented.
+                            properties:
+                              className:
+                                type: string
+                              methodName:
+                                type: string
+                            type: object
+                          type: array
                       type: object
                     headSamplerConfig:
                       description: |-
@@ -510,6 +596,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis
@@ -602,6 +689,13 @@ spec:
                               type: integer
                           type: object
                       type: object
+                    traceConfig:
+                      description: default configuration for library tracing.
+                      properties:
+                        disabled:
+                          description: Disabled will disable tracing for the rule.
+                          type: boolean
+                      type: object
                   required:
                   - language
                   type: object
@@ -690,9 +784,12 @@ spec:
                     containerName:
                       type: string
                     criErrorMessage:
-                      description: Stores the error message from the CRI runtime if
-                        returned to prevent instrumenting the container if an error
-                        exists.
+                      description: |-
+                        CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+                        Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+                        Thus, this field is set only when there is:
+                        - Actual CRI check failed
+                        - The observed environment variables might come from container runtime
                       type: string
                     envFromContainerRuntime:
                       description: Holds the environment variables retrieved from
@@ -730,6 +827,7 @@ spec:
                       - php
                       - ruby
                       - rust
+                      - cplusplus
                       - mysql
                       - nginx
                       - redis

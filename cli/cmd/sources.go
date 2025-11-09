@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/version"
 
 	"github.com/spf13/cobra"
@@ -26,23 +27,23 @@ import (
 var (
 	sourceFlags *pflag.FlagSet
 
-	namespaceFlagName   = "namespace"
-	sourceNamespaceFlag string
+	sourceNamespaceFlagName = "namespace"
+	sourceNamespaceFlag     string
 
-	allNamespacesFlagName = "all-namespaces"
-	allNamespaceFlag      bool
+	sourceAllNamespacesFlagName = "all-namespaces"
+	sourceAllNamespaceFlag      bool
 
-	workloadKindFlagName = "workload-kind"
-	workloadKindFlag     string
+	sourceWorkloadKindFlagName = "workload-kind"
+	sourceWorkloadKindFlag     string
 
-	workloadNameFlagName = "workload-name"
-	workloadNameFlag     string
+	sourceWorkloadNameFlagName = "workload-name"
+	sourceWorkloadNameFlag     string
 
-	workloadNamespaceFlagName = "workload-namespace"
-	workloadNamespaceFlag     string
+	sourceWorkloadNamespaceFlagName = "workload-namespace"
+	sourceWorkloadNamespaceFlag     string
 
-	disableInstrumentationFlagName = "disable-instrumentation"
-	disableInstrumentationFlag     bool
+	sourceDisableInstrumentationFlagName = "disable-instrumentation"
+	sourceDisableInstrumentationFlag     bool
 
 	sourceGroupFlagName = "group"
 	sourceGroupFlag     string
@@ -55,6 +56,35 @@ var (
 
 	sourceOtelServiceFlagName = "otel-service"
 	sourceOtelServiceFlag     string
+
+	sourceExcludeWorkloadsFileFlagName = "exclude-workloads-file"
+	sourceExcludeWorkloadsFileFlag     string
+
+	sourceExcludeNamespacesFileFlagName = "exclude-namespaces-file"
+	sourceExcludeNamespacesFileFlag     string
+
+	sourceDryRunFlagName = "dry-run"
+	sourceDryRunFlag     bool
+
+	sourceRemoteFlagName = "remote"
+	sourceRemoteFlag     bool
+
+	sourceInstrumentationCoolOffFlagName = "instrumentation-cool-off"
+
+	sourceOnlyDeploymentFlagName = "only-deployment"
+	sourceOnlyNamespaceFlagName  = "only-namespace"
+
+	sourceSkipPreflightChecksFlagName = "skip-preflight-checks"
+	sourceSkipPreflightChecksFlag     bool
+
+	sourceLocalPortFlagName = "local-port"
+	sourceLocalPortFlag     string
+
+	sourceRemotePortFlagName = "remote-port"
+	sourceRemotePortFlag     string
+
+	sourceLocalAddressFlagName = "local-address"
+	sourceLocalAddressFlag     string
 )
 
 var sourcesCmd = &cobra.Command{
@@ -73,10 +103,11 @@ odigos sources delete --group mygroup --all-namespaces
 }
 
 var kindAliases = map[k8sconsts.WorkloadKind][]string{
-	k8sconsts.WorkloadKindDeployment:  []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
-	k8sconsts.WorkloadKindDaemonSet:   []string{"ds", "daemonsets", "ds.apps", "daemonset.apps", "daemonsets.apps"},
-	k8sconsts.WorkloadKindStatefulSet: []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
-	k8sconsts.WorkloadKindNamespace:   []string{"ns", "namespaces"},
+	k8sconsts.WorkloadKindDeployment:       []string{"deploy", "deployments", "deploy.apps", "deployment.apps", "deployments.apps"},
+	k8sconsts.WorkloadKindDaemonSet:        []string{"ds", "daemonsets", "ds.apps", "daemonset.apps", "daemonsets.apps"},
+	k8sconsts.WorkloadKindStatefulSet:      []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
+	k8sconsts.WorkloadKindNamespace:        []string{"ns", "namespaces"},
+	k8sconsts.WorkloadKindDeploymentConfig: []string{"dc", "deploymentconfigs", "dc.apps.openshift.io", "deploymentconfig.apps.openshift.io", "deploymentconfigs.apps.openshift.io"},
 }
 
 var sourceDisableCmd = &cobra.Command{
@@ -121,7 +152,7 @@ var sourceCreateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-		disableInstrumentation := disableInstrumentationFlag
+		disableInstrumentation := sourceDisableInstrumentationFlag
 		sourceName := args[0]
 
 		source := &v1alpha1.Source{
@@ -131,9 +162,9 @@ var sourceCreateCmd = &cobra.Command{
 			},
 			Spec: v1alpha1.SourceSpec{
 				Workload: k8sconsts.PodWorkload{
-					Kind:      k8sconsts.WorkloadKind(workloadKindFlag),
-					Name:      workloadNameFlag,
-					Namespace: workloadNamespaceFlag,
+					Kind:      k8sconsts.WorkloadKind(sourceWorkloadKindFlag),
+					Name:      sourceWorkloadNameFlag,
+					Namespace: sourceWorkloadNamespaceFlag,
 				},
 				DisableInstrumentation: disableInstrumentation,
 				OtelServiceName:        sourceOtelServiceFlag,
@@ -142,7 +173,7 @@ var sourceCreateCmd = &cobra.Command{
 
 		if len(sourceGroupFlag) > 0 {
 			source.Labels = make(map[string]string)
-			source.Labels[k8sconsts.SourceGroupLabelPrefix+sourceGroupFlag] = "true"
+			source.Labels[k8sconsts.SourceDataStreamLabelPrefix+sourceGroupFlag] = "true"
 		}
 
 		_, err := client.OdigosClient.Sources(sourceNamespaceFlag).Create(ctx, source, v1.CreateOptions{})
@@ -303,11 +334,11 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 		}
 
 		for _, source := range sourceList.Items {
-			source.Spec.DisableInstrumentation = disableInstrumentationFlag
+			source.Spec.DisableInstrumentation = sourceDisableInstrumentationFlag
 			if len(sourceRemoveGroupFlag) > 0 {
 				for label, value := range source.Labels {
-					if label == k8sconsts.SourceGroupLabelPrefix+sourceRemoveGroupFlag && value == "true" {
-						delete(source.Labels, k8sconsts.SourceGroupLabelPrefix+sourceRemoveGroupFlag)
+					if label == k8sconsts.SourceDataStreamLabelPrefix+sourceRemoveGroupFlag && value == "true" {
+						delete(source.Labels, k8sconsts.SourceDataStreamLabelPrefix+sourceRemoveGroupFlag)
 					}
 				}
 			}
@@ -315,7 +346,7 @@ It is important to note that if a Source [name] is provided, all --workload-* fl
 				if source.Labels == nil {
 					source.Labels = make(map[string]string)
 				}
-				source.Labels[k8sconsts.SourceGroupLabelPrefix+sourceSetGroupFlag] = "true"
+				source.Labels[k8sconsts.SourceDataStreamLabelPrefix+sourceSetGroupFlag] = "true"
 			}
 
 			if len(sourceOtelServiceFlag) > 0 {
@@ -389,7 +420,11 @@ func enableOrDisableSource(cmd *cobra.Command, args []string, workloadKind k8sco
 		fmt.Printf("\033[31mERROR\033[0m Cannot %s Source: %+v\n", msg, err)
 		os.Exit(1)
 	}
-	fmt.Printf("%sd Source %s for %s %s\n", msg, source.GetName(), source.Spec.Workload.Kind, source.Spec.Workload.Name)
+	dryRunMsg := ""
+	if sourceDryRunFlag {
+		dryRunMsg = "\033[31m(dry run)\033[0m"
+	}
+	fmt.Printf("%s%sd Source %s for %s %s (disabled=%t)\n", dryRunMsg, msg, source.GetName(), source.Spec.Workload.Kind, source.Spec.Workload.Name, disableInstrumentation)
 }
 
 func enableOrDisableSourceCmd(workloadKind k8sconsts.WorkloadKind, disableInstrumentation bool) *cobra.Command {
@@ -406,6 +441,52 @@ func enableOrDisableSourceCmd(workloadKind k8sconsts.WorkloadKind, disableInstru
 		Aliases: kindAliases[workloadKind],
 		Run: func(cmd *cobra.Command, args []string) {
 			enableOrDisableSource(cmd, args, workloadKind, disableInstrumentation)
+		},
+	}
+}
+
+func enableClusterSourceCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "cluster",
+		Short: "Enable an entire cluster for Odigos instrumentation",
+		Long:  "This command enables the cluster for Odigos instrumentation. It will create Source objects for all apps in the cluster, except those that are excluded or in system namespaces.",
+		Example: `
+# Enable the cluster for Odigos instrumentation
+odigos sources enable cluster
+
+# Enable the cluster for Odigos instrumentation, but dry run (don't actually create any Sources)
+odigos sources enable cluster --dry-run
+
+# Enable the cluster for Odigos instrumentation with excluded namespaces
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt
+
+# Enable the cluster for Odigos instrumentation with excluded workloads
+odigos sources enable cluster --exclude-workloads-file=excluded-workloads.txt
+
+# Enable the cluster for Odigos instrumentation with excluded namespaces and workloads
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt --exclude-workloads-file=excluded-workloads.txt
+
+For example, excluded-namespaces.txt:
+namespace1
+namespace2
+
+For example, excluded-workloads.txt (supports three formats):
+# Format 1: <namespace>/<kind>/<name> - most specific
+production/Deployment/my-app
+
+# Format 2: <kind>/<name> - excludes in all namespaces
+StatefulSet/redis
+
+# Format 3: <name> - excludes workload with this name regardless of kind or namespace
+nginx
+
+# Note: Kind matching is case-insensitive (deployment, Deployment, DEPLOYMENT all work)
+test/dePloyMent/my-other-app
+
+Workloads can be Deployments, DaemonSets, StatefulSets, CronJobs, or Jobs.
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			enableClusterSource(cmd)
 		},
 	}
 }
@@ -442,6 +523,22 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 		} else {
 			obj, err = client.Clientset.BatchV1().CronJobs(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
 		}
+		objName = obj.GetName()
+		objNamespace = obj.GetNamespace()
+		sourceNamespace = sourceNamespaceFlag
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		// For DeploymentConfig, we use the dynamic client to fetch the resource
+		// as it's an OpenShift-specific resource
+		gvr := kube.TypeMetaToDynamicResource(schema.GroupVersionKind{
+			Group:   "apps.openshift.io",
+			Version: "v1",
+			Kind:    "DeploymentConfig",
+		})
+		unstructuredObj, err := client.Dynamic.Resource(gvr).Namespace(sourceNamespaceFlag).Get(ctx, argName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		obj = unstructuredObj
 		objName = obj.GetName()
 		objNamespace = obj.GetNamespace()
 		sourceNamespace = sourceNamespaceFlag
@@ -482,13 +579,15 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 
 	source.Spec.DisableInstrumentation = disableInstrumentation
 
-	if len(sources.Items) > 0 {
-		source, err = client.OdigosClient.Sources(sourceNamespace).Update(ctx, source, v1.UpdateOptions{})
-	} else {
-		source, err = client.OdigosClient.Sources(sourceNamespace).Create(ctx, source, v1.CreateOptions{})
-	}
-	if err != nil {
-		return nil, err
+	if !sourceDryRunFlag {
+		if len(sources.Items) > 0 {
+			source, err = client.OdigosClient.Sources(sourceNamespace).Update(ctx, source, v1.UpdateOptions{})
+		} else {
+			source, err = client.OdigosClient.Sources(sourceNamespace).Create(ctx, source, v1.CreateOptions{})
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if workloadKind == k8sconsts.WorkloadKindNamespace {
@@ -534,25 +633,25 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 func parseSourceLabelFlags() (string, string, string, labels.Set) {
 	labelSet := labels.Set{}
 	providedWorkloadFlags := ""
-	if len(workloadKindFlag) > 0 {
-		providedWorkloadFlags = fmt.Sprintf("%s Workload Kind: %s\n", providedWorkloadFlags, workloadKindFlag)
-		labelSet[k8sconsts.WorkloadKindLabel] = workloadKindFlag
+	if len(sourceWorkloadKindFlag) > 0 {
+		providedWorkloadFlags = fmt.Sprintf("%s Workload Kind: %s\n", providedWorkloadFlags, sourceWorkloadKindFlag)
+		labelSet[k8sconsts.WorkloadKindLabel] = sourceWorkloadKindFlag
 	}
-	if len(workloadNameFlag) > 0 {
-		providedWorkloadFlags = fmt.Sprintf("%s Workload Name: %s\n", providedWorkloadFlags, workloadNameFlag)
-		labelSet[k8sconsts.WorkloadNameLabel] = workloadNameFlag
+	if len(sourceWorkloadNameFlag) > 0 {
+		providedWorkloadFlags = fmt.Sprintf("%s Workload Name: %s\n", providedWorkloadFlags, sourceWorkloadNameFlag)
+		labelSet[k8sconsts.WorkloadNameLabel] = sourceWorkloadNameFlag
 	}
-	if len(workloadNamespaceFlag) > 0 {
-		providedWorkloadFlags = fmt.Sprintf("%s Workload Namespace: %s\n", providedWorkloadFlags, workloadNamespaceFlag)
-		labelSet[k8sconsts.WorkloadNamespaceLabel] = workloadNamespaceFlag
+	if len(sourceWorkloadNamespaceFlag) > 0 {
+		providedWorkloadFlags = fmt.Sprintf("%s Workload Namespace: %s\n", providedWorkloadFlags, sourceWorkloadNamespaceFlag)
+		labelSet[k8sconsts.WorkloadNamespaceLabel] = sourceWorkloadNamespaceFlag
 	}
 	if len(sourceGroupFlag) > 0 {
 		providedWorkloadFlags = fmt.Sprintf("%s Source Group: %s\n", providedWorkloadFlags, sourceGroupFlag)
-		labelSet[k8sconsts.SourceGroupLabelPrefix+sourceGroupFlag] = "true"
+		labelSet[k8sconsts.SourceDataStreamLabelPrefix+sourceGroupFlag] = "true"
 	}
 	namespaceList := sourceNamespaceFlag
 	namespaceText := fmt.Sprintf("namespace %s", sourceNamespaceFlag)
-	if allNamespaceFlag {
+	if sourceAllNamespaceFlag {
 		namespaceText = "all namespaces"
 		namespaceList = ""
 	}
@@ -561,10 +660,10 @@ func parseSourceLabelFlags() (string, string, string, labels.Set) {
 
 func init() {
 	sourceFlags = pflag.NewFlagSet("sourceFlags", pflag.ContinueOnError)
-	sourceFlags.StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
-	sourceFlags.StringVar(&workloadKindFlag, workloadKindFlagName, "", "Kubernetes Kind for entity (one of: Deployment, DaemonSet, StatefulSet, Namespace)")
-	sourceFlags.StringVar(&workloadNameFlag, workloadNameFlagName, "", "Name of entity for Source")
-	sourceFlags.StringVar(&workloadNamespaceFlag, workloadNamespaceFlagName, "", "Namespace of entity for Source")
+	sourceFlags.StringVarP(&sourceNamespaceFlag, sourceNamespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
+	sourceFlags.StringVar(&sourceWorkloadKindFlag, sourceWorkloadKindFlagName, "", "Kubernetes Kind for entity (one of: Deployment, DaemonSet, StatefulSet, Namespace, DeploymentConfig)")
+	sourceFlags.StringVar(&sourceWorkloadNameFlag, sourceWorkloadNameFlagName, "", "Name of entity for Source")
+	sourceFlags.StringVar(&sourceWorkloadNamespaceFlag, sourceWorkloadNamespaceFlagName, "", "Namespace of entity for Source")
 	sourceFlags.StringVar(&sourceGroupFlag, sourceGroupFlagName, "", "Name of Source group to use")
 
 	rootCmd.AddCommand(sourcesCmd)
@@ -582,31 +681,48 @@ func init() {
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindNamespace,
 		k8sconsts.WorkloadKindCronJob,
+		k8sconsts.WorkloadKindDeploymentConfig,
 	} {
 		enableCmd := enableOrDisableSourceCmd(kind, false)
 		disableCmd := enableOrDisableSourceCmd(kind, true)
 		if kind != k8sconsts.WorkloadKindNamespace {
-			enableCmd.Flags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
-			disableCmd.Flags().StringVarP(&sourceNamespaceFlag, namespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
+			enableCmd.Flags().StringVarP(&sourceNamespaceFlag, sourceNamespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
+			disableCmd.Flags().StringVarP(&sourceNamespaceFlag, sourceNamespaceFlagName, "n", "default", "Kubernetes Namespace for Source")
 		}
+		enableCmd.Flags().Bool(sourceDryRunFlagName, false, "dry run")
+		disableCmd.Flags().Bool(sourceDryRunFlagName, false, "dry run")
 		sourceEnableCmd.AddCommand(enableCmd)
 		sourceDisableCmd.AddCommand(disableCmd)
 	}
 
+	enableClusterSourceCmd := enableClusterSourceCmd()
+	enableClusterSourceCmd.Flags().StringVar(&sourceExcludeWorkloadsFileFlag, sourceExcludeWorkloadsFileFlagName, "", "Path to file containing workloads to exclude")
+	enableClusterSourceCmd.Flags().StringVar(&sourceExcludeNamespacesFileFlag, sourceExcludeNamespacesFileFlagName, "", "Path to file containing namespaces to exclude")
+	enableClusterSourceCmd.Flags().BoolVar(&sourceDryRunFlag, sourceDryRunFlagName, false, "dry run")
+	enableClusterSourceCmd.Flags().BoolVar(&sourceRemoteFlag, sourceRemoteFlagName, false, "remote")
+	enableClusterSourceCmd.Flags().Duration(sourceInstrumentationCoolOffFlagName, 0, "Cool-off period for instrumentation. Time format is 1h30m")
+	enableClusterSourceCmd.Flags().String(sourceOnlyNamespaceFlagName, "", "Namespace of the deployment to instrument (must be used with --only-deployment)")
+	enableClusterSourceCmd.Flags().String(sourceOnlyDeploymentFlagName, "", "Name of the deployment to instrument (must be used with --only-namespace)")
+	enableClusterSourceCmd.Flags().Bool(sourceSkipPreflightChecksFlagName, false, "Skip preflight checks")
+	enableClusterSourceCmd.Flags().StringVar(&sourceLocalPortFlag, sourceLocalPortFlagName, "0", "Local port to forward to the remote UI (defaults to 0=random)")
+	enableClusterSourceCmd.Flags().StringVar(&sourceRemotePortFlag, sourceRemotePortFlagName, "3000", "Remote port to forward to the local UI")
+	enableClusterSourceCmd.Flags().StringVar(&sourceLocalAddressFlag, sourceLocalAddressFlagName, "localhost", "Local address to forward to the remote UI")
+	sourceEnableCmd.AddCommand(enableClusterSourceCmd)
+
 	sourceCreateCmd.Flags().AddFlagSet(sourceFlags)
-	sourceCreateCmd.Flags().BoolVar(&disableInstrumentationFlag, disableInstrumentationFlagName, false, "Disable instrumentation for Source")
+	sourceCreateCmd.Flags().BoolVar(&sourceDisableInstrumentationFlag, sourceDisableInstrumentationFlagName, false, "Disable instrumentation for Source")
 	sourceCreateCmd.Flags().StringVar(&sourceOtelServiceFlag, sourceOtelServiceFlagName, "", "OpenTelemetry service name to use for the Source")
 
 	sourceDeleteCmd.Flags().AddFlagSet(sourceFlags)
 	sourceDeleteCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
-	sourceDeleteCmd.Flags().Bool(allNamespacesFlagName, false, "apply to all Kubernetes namespaces")
+	sourceDeleteCmd.Flags().Bool(sourceAllNamespacesFlagName, false, "apply to all Kubernetes namespaces")
 
 	sourceUpdateCmd.Flags().AddFlagSet(sourceFlags)
-	sourceUpdateCmd.Flags().BoolVar(&disableInstrumentationFlag, disableInstrumentationFlagName, false, "Disable instrumentation for Source")
+	sourceUpdateCmd.Flags().BoolVar(&sourceDisableInstrumentationFlag, sourceDisableInstrumentationFlagName, false, "Disable instrumentation for Source")
 	sourceUpdateCmd.Flags().StringVar(&sourceSetGroupFlag, sourceSetGroupFlagName, "", "Group name to be applied to the Source")
 	sourceUpdateCmd.Flags().StringVar(&sourceRemoveGroupFlag, sourceRemoveGroupFlagName, "", "Group name to be removed from the Source (if set)")
 	sourceUpdateCmd.Flags().Bool("yes", false, "skip the confirmation prompt")
-	sourceUpdateCmd.Flags().Bool(allNamespacesFlagName, false, "apply to all Kubernetes namespaces")
+	sourceUpdateCmd.Flags().Bool(sourceAllNamespacesFlagName, false, "apply to all Kubernetes namespaces")
 	sourceUpdateCmd.Flags().StringVar(&sourceOtelServiceFlag, sourceOtelServiceFlagName, "", "OpenTelemetry service name to use for the Source")
 
 	sourceStatusCmd.Flags().BoolVar(&errorOnly, "error", false, "Show only sources with errors")

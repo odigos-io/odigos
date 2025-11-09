@@ -8,16 +8,27 @@ import (
 	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
 type GolangInspector struct{}
 
-const GolangVersionRegex = `go(\d+\.\d+\.\d+)`
-
-var re = regexp.MustCompile(GolangVersionRegex)
+var (
+	falseProcessNames = []string{"thrust"}
+	versionRegex      = regexp.MustCompile(`go(\d+\.\d+\.\d+)`)
+)
 
 func (g *GolangInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
+	// 1st:
+	// Check if the process name is in the false list.
+	// This is to avoid false positives for Go processes that init or wrap other processes that are not actually Go applications.
+	if utils.IsProcessEqualProcessNames(pcx, falseProcessNames) {
+		return "", false
+	}
+
+	// 2nd:
+	// Check if the process is actually a Go binary (not in the false list).
 	exeFile, err := pcx.GetExeFile()
 	if err != nil {
 		return "", false
@@ -48,7 +59,14 @@ func (g *GolangInspector) GetRuntimeVersion(pcx *process.ProcessContext, contain
 	if err != nil || buildInfo == nil {
 		return nil
 	}
-	match := re.FindStringSubmatch(buildInfo.GoVersion)
-
+	// versionRegex matches "go1.21.3" and captures "1.21.3" in match[1]
+	// match[0] contains the full match including "go" prefix
+	// match[1] contains just the version number we want to extract
+	match := versionRegex.FindStringSubmatch(buildInfo.GoVersion)
+	if len(match) < 2 {
+		// It is observed that go1.17.0 and maybe others are failing here.
+		// check the match expected length before accessing it so not to panic
+		return nil
+	}
 	return common.GetVersion(match[1])
 }

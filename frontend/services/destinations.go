@@ -192,7 +192,8 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 	destType := k8sDest.Spec.Type
 	destName := k8sDest.Spec.DestinationName
 	mergedFields := mergeDataAndSecrets(k8sDest.Spec.Data, secretFields)
-	destTypeConfig := DestinationTypeConfigToCategoryItem(destinations.GetDestinationByType(string(destType)))
+	dest, _ := destinations.GetDestinationByType(string(destType))
+	destTypeConfig := DestinationTypeConfigToCategoryItem(dest)
 
 	fieldsJSON, err := json.Marshal(mergedFields)
 	if err != nil {
@@ -228,18 +229,17 @@ func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields m
 		})
 	}
 
-	dataStreamNames := make([]*string, 0)
-	if k8sDest.Spec.SourceSelector != nil && k8sDest.Spec.SourceSelector.Groups != nil {
-		for _, streamName := range k8sDest.Spec.SourceSelector.Groups {
-			dataStreamNames = append(dataStreamNames, &streamName)
-		}
+	disabled := false
+	if k8sDest.Spec.Disabled != nil {
+		disabled = *k8sDest.Spec.Disabled
 	}
 
 	return model.Destination{
 		ID:              k8sDest.Name,
-		Name:            destName,
 		Type:            string(destType),
-		DataStreamNames: dataStreamNames,
+		Name:            destName,
+		Disabled:        disabled,
+		DataStreamNames: ExtractDataStreamsFromDestination(k8sDest),
 		ExportedSignals: &model.ExportedSignals{
 			Traces:  isSignalExported(k8sDest, common.TracesObservabilitySignal),
 			Metrics: isSignalExported(k8sDest, common.MetricsObservabilitySignal),

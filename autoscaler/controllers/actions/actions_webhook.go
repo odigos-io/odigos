@@ -31,6 +31,7 @@ import (
 
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
 var validActionConfigNames = []string{
@@ -38,6 +39,8 @@ var validActionConfigNames = []string{
 	actionsv1alpha1.ActionNameDeleteAttribute,
 	actionsv1alpha1.ActionNameRenameAttribute,
 	actionsv1alpha1.ActionNamePiiMasking,
+	actionsv1alpha1.ActionNameK8sAttributes,
+	actionsv1alpha1.ActionNameSamplers,
 }
 
 type ActionsValidator struct {
@@ -90,6 +93,12 @@ func (s *ActionsValidator) ValidateDelete(ctx context.Context, obj runtime.Objec
 
 // TODO: Refactor Action config to cast a generic config field in v1alpha2 to one of the matching action configs to allow type-switch validation.
 func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.Action) field.ErrorList {
+
+	odigosNamespace := env.GetCurrentNamespace()
+	if action.Namespace != odigosNamespace {
+		return field.ErrorList{field.Invalid(field.NewPath("namespace"), action.Namespace, "actions are only allowed in the odigos namespace '"+odigosNamespace+"'")}
+	}
+
 	var allErrs field.ErrorList
 	fields := make(map[*field.Path]ActionConfig)
 	if action.Spec.AddClusterInfo != nil {
@@ -107,6 +116,50 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 	if action.Spec.PiiMasking != nil {
 		path := field.NewPath("spec").Child("piiMasking")
 		fields[path] = action.Spec.PiiMasking
+	}
+	if action.Spec.K8sAttributes != nil {
+		path := field.NewPath("spec").Child("k8sAttributes")
+		fields[path] = action.Spec.K8sAttributes
+	}
+	if action.Spec.Samplers != nil {
+		path := field.NewPath("spec").Child("samplers")
+		fields[path] = action.Spec.Samplers
+
+		var validSamplerFields = []string{
+			actionsv1alpha1.ActionNameSpanAttributeSampler,
+			actionsv1alpha1.ActionNameLatencySampler,
+			actionsv1alpha1.ActionNameErrorSampler,
+			actionsv1alpha1.ActionNameServiceNameSampler,
+			actionsv1alpha1.ActionNameProbabilisticSampler,
+		}
+
+		samplerFields := make(map[*field.Path]interface{})
+		if action.Spec.Samplers.SpanAttributeSampler != nil {
+			path := field.NewPath("spec").Child("samplers").Child("spanAttributeSampler")
+			samplerFields[path] = action.Spec.Samplers.SpanAttributeSampler
+		}
+		if action.Spec.Samplers.LatencySampler != nil {
+			path := field.NewPath("spec").Child("samplers").Child("latencySampler")
+			samplerFields[path] = action.Spec.Samplers.LatencySampler
+		}
+		if action.Spec.Samplers.ErrorSampler != nil {
+			path := field.NewPath("spec").Child("samplers").Child("errorSampler")
+			samplerFields[path] = action.Spec.Samplers.ErrorSampler
+		}
+		if action.Spec.Samplers.ServiceNameSampler != nil {
+			path := field.NewPath("spec").Child("samplers").Child("serviceNameSampler")
+			samplerFields[path] = action.Spec.Samplers.ServiceNameSampler
+		}
+		if action.Spec.Samplers.ProbabilisticSampler != nil {
+			path := field.NewPath("spec").Child("samplers").Child("probabilisticSampler")
+			samplerFields[path] = action.Spec.Samplers.ProbabilisticSampler
+		}
+		if len(samplerFields) == 0 {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers"), samplerFields, fmt.Sprintf("At least one of (%s) must be set", strings.Join(validSamplerFields, ", "))))
+		}
+		if len(samplerFields) > 1 {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers"), samplerFields, fmt.Sprintf("Only one of (%s) may be set", strings.Join(validSamplerFields, ", "))))
+		}
 	}
 
 	if len(fields) == 0 {

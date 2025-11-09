@@ -37,8 +37,11 @@ spec:
       containers:
       - args:
           - --health-probe-bind-address=:8081
-          - --metrics-bind-address=127.0.0.1:8080
+          - --metrics-bind-address=0.0.0.0:8080
           - --leader-elect
+          {{- with .Values.imagePullSecrets }}
+          - --image-pull-secrets={{ include "odigos.joinPullSecrets" $ }}
+          {{- end }}
         command:
           - /app
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
@@ -53,7 +56,7 @@ spec:
             valueFrom:
               configMapKeyRef:
                 key: ODIGOS_VERSION
-                name: odigos-deployment   
+                name: odigos-deployment
           - name: ODIGOS_COLLECTOR_IMAGE
             value: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
         envFrom:
@@ -66,11 +69,13 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /readyz
             port: 8081
           periodSeconds: 10
+          timeoutSeconds: 5
         name: manager
         volumeMounts:
           - name: autoscaler-webhooks-cert
@@ -89,10 +94,7 @@ spec:
             secretName: autoscaler-webhooks-cert
             defaultMode: 420
       terminationGracePeriodSeconds: 10
-{{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 6 }}
-{{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.autoscaler }}
   {{- if .nodeSelector }}
       nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}

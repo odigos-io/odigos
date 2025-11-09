@@ -11,18 +11,7 @@ export const CRD_NAMES = {
   SOURCE: 'sources.odigos.io',
   INSTRUMENTATION_CONFIG: 'instrumentationconfigs.odigos.io',
   DESTINATION: 'destinations.odigos.io',
-  ACTIONS: [
-    'k8sattributesresolvers.actions.odigos.io',
-    'addclusterinfos.actions.odigos.io',
-    'deleteattributes.actions.odigos.io',
-    'renameattributes.actions.odigos.io',
-    'piimaskings.actions.odigos.io',
-    'errorsamplers.actions.odigos.io',
-    'latencysamplers.actions.odigos.io',
-    'probabilisticsamplers.actions.odigos.io',
-    'servicenamesamplers.actions.odigos.io',
-    'spanattributesamplers.actions.odigos.io',
-  ],
+  ACTION: 'actions.odigos.io',
   INSTRUMENTATION_RULE: 'instrumentationrules.odigos.io',
 };
 
@@ -34,7 +23,7 @@ export const NAMESPACES = {
 
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
-  NAMESPACE_SOURCES: ['coupon', 'currency', 'frontend', 'inventory', 'membership', 'pricing'],
+  NAMESPACE_SOURCES: ['coupon', 'currency', 'frontend', 'geolocation', 'inventory', 'membership', 'pricing'],
   DESTINATION: {
     TYPE: 'jaeger',
     DISPLAY_NAME: 'Jaeger',
@@ -97,9 +86,6 @@ export const DATA_IDS = {
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',
   CHECKBOX: '[data-id=checkbox]',
-
-  NOTIF_MANAGER_BUTTON: '[data-id=notif-manager-button]',
-  NOTIF_MANAGER_CONTENR: '[data-id=notif-manager-content]',
 };
 
 export const BUTTONS = {
@@ -142,9 +128,9 @@ export const TEXTS = {
   NOTIF_SOURCES_UPDATED: (name: string) => `Successfully updated "${name}" source`,
   NOTIF_SOURCES_DELETED: (amount: number) => `Successfully deleted ${amount} sources`,
 
-  NOTIF_DESTINATION_CREATED: (destinationType: string) => `Successfully created "${destinationType}" destination`,
-  NOTIF_DESTINATION_UPDATED: (destinationType: string) => `Successfully updated "${destinationType}" destination`,
-  NOTIF_DESTINATION_DELETED: (destinationType: string) => `Successfully deleted "${destinationType}" destination`,
+  NOTIF_DESTINATION_CREATED: (amount: number) => `Successfully created ${amount} destinations`,
+  NOTIF_DESTINATION_UPDATED: (type: string) => `Successfully updated "${type}" destination`,
+  NOTIF_DESTINATION_DELETED: (amount: number) => `Successfully deleted ${amount} destinations`,
 
   NOTIF_ACTION_CREATED: (actionType: string) => `Successfully created "${actionType}" action`,
   NOTIF_ACTION_UPDATED: (actionType: string) => `Successfully updated "${actionType}" action`,

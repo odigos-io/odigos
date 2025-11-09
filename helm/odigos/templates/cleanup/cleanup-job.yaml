@@ -19,5 +19,6 @@ spec:
       containers:
       - name: cleanup
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "cli" "Tag" $imageTag) }}
-        args: ["uninstall", "--yes", "--instrumentation-only", "--namespace", "{{ .Release.Namespace }}"]
+        args: ["cleanup", "--yes", "--instrumentation-only", "--namespace", "{{ .Release.Namespace }}"]
       restartPolicy: Never
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}

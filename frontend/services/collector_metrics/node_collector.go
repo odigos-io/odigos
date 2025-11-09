@@ -184,17 +184,46 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 
 	var kind k8sconsts.WorkloadKind
 	var name pcommon.Value
-	if depName, ok := attrs.Get(K8SDeploymentNameKey); ok {
-		kind = k8sconsts.WorkloadKindDeployment
-		name = depName
-	} else if ssName, ok := attrs.Get(K8SStatefulSetNameKey); ok {
-		kind = k8sconsts.WorkloadKindStatefulSet
-		name = ssName
-	} else if dsName, ok := attrs.Get(K8SDaemonSetNameKey); ok {
-		kind = k8sconsts.WorkloadKindDaemonSet
-		name = dsName
+
+	// Check for Odigos-specific workload kind attribute first
+	// This is needed to distinguish between workloads that share the same semconv key
+	// (e.g., DeploymentConfig uses k8s.deployment.name)
+	if odigosKind, ok := attrs.Get(OdigosWorkloadKindAttribute); ok {
+		kind = k8sconsts.WorkloadKind(odigosKind.Str())
+		// Now get the name based on the actual workload kind
+		if depName, ok := attrs.Get(K8SDeploymentNameKey); ok {
+			name = depName
+		} else if ssName, ok := attrs.Get(K8SStatefulSetNameKey); ok {
+			name = ssName
+		} else if dsName, ok := attrs.Get(K8SDaemonSetNameKey); ok {
+			name = dsName
+		} else if cjName, ok := attrs.Get(K8SCronJobNameKey); ok {
+			name = cjName
+		} else if jobName, ok := attrs.Get(K8SJobNameKey); ok {
+			name = jobName
+		} else {
+			return common.SourceID{}, errors.New("workload name not found")
+		}
 	} else {
-		return common.SourceID{}, errors.New("kind not found")
+		// Fallback to legacy behavior for backwards compatibility
+		if depName, ok := attrs.Get(K8SDeploymentNameKey); ok {
+			kind = k8sconsts.WorkloadKindDeployment
+			name = depName
+		} else if ssName, ok := attrs.Get(K8SStatefulSetNameKey); ok {
+			kind = k8sconsts.WorkloadKindStatefulSet
+			name = ssName
+		} else if dsName, ok := attrs.Get(K8SDaemonSetNameKey); ok {
+			kind = k8sconsts.WorkloadKindDaemonSet
+			name = dsName
+		} else if cjName, ok := attrs.Get(K8SCronJobNameKey); ok {
+			kind = k8sconsts.WorkloadKindCronJob
+			name = cjName
+		} else if jobName, ok := attrs.Get(K8SJobNameKey); ok {
+			kind = k8sconsts.WorkloadKindJob
+			name = jobName
+		} else {
+			return common.SourceID{}, errors.New("kind not found")
+		}
 	}
 
 	return common.SourceID{

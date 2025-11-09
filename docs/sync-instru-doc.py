@@ -15,7 +15,7 @@ TODO: add support for other languages and types of instrumentation libraries.
 instrumentations_dir = './instrumentations'
 
 api_dependency_key = '@opentelemetry/api'
-instrumentation_dependency_prefix = '@opentelemetry/instrumentation-'
+instrumentation_dependency_prefix = ['@opentelemetry/instrumentation-', '@odigos/instrumentation-']
 
 uncategorized_key = 'Other'
 documentation_starting_block = '## Instrumentation Libraries\n\nThe following npm packages will be auto instrumented by Odigos:'
@@ -305,7 +305,9 @@ def get_npm_versions(otel_dependency, otel_dependency_version):
     for row in filtered_text_rows:
         row_words = row.split(' ')
         package_name = row_words[0] if row_words[0].startswith('@') or len(filtered_text_rows) > 1 else otel_dependency.replace(
-            instrumentation_dependency_prefix, ''
+            instrumentation_dependency_prefix[0], ''
+        ).replace(
+            instrumentation_dependency_prefix[1], ''
         )
         package_versions = ' '.join(row_words[1:])
 
@@ -322,9 +324,12 @@ def get_npm_versions(otel_dependency, otel_dependency_version):
             # Node specific
             if row_words[0].replace('.', '').lower() == 'nodejs':
                 package_url = ''
-                package_name = f'node:{otel_dependency.replace(
-                    instrumentation_dependency_prefix, ''
-                )}'
+                clean_package_name = otel_dependency.replace(
+                    instrumentation_dependency_prefix[0], ''
+                ).replace(
+                    instrumentation_dependency_prefix[1], ''
+                )
+                package_name = f'node:{clean_package_name}'
                 package_versions = (
                     f'[`Node.js`](https://nodejs.org/)'
                     + f' {package_versions}'
@@ -401,7 +406,7 @@ def process_nodejs_dependencies(lang_type_config, current_dir):
                     w_file.write(content)
 
         # Handle OTel instrumentation dependencies
-        elif dep.startswith(instrumentation_dependency_prefix):
+        elif dep.startswith(instrumentation_dependency_prefix[0]) or dep.startswith(instrumentation_dependency_prefix[1]):
             for row_obj in get_npm_versions(dep, ver):
                 r_url = row_obj.get('package_url')
                 r_name = row_obj.get('package_name', '')
@@ -500,11 +505,9 @@ if __name__ == '__main__':
 
                             for dep in cat_deps:
                                 note = dep.get('note', '')
-                                documentation += f'\n{
-                                    dep.get('mdx', '')
-                                } {
-                                    f'\n  <Info>{note}</Info>' if note else ''
-                                }'
+                                mdx_text = dep.get('mdx', '')
+                                note_text = f'\n  <Info>{note}</Info>' if note else ''
+                                documentation += f'\n{mdx_text} {note_text}'
                             documentation += '\n'
 
                     mdx_content = replace_section(

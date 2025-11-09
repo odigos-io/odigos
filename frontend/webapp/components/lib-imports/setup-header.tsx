@@ -1,13 +1,15 @@
-import React, { useState, type FC, type RefObject } from 'react';
+import React, { useMemo, useState, type FC, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { safeJsonParse } from '@odigos/ui-kit/functions';
 import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
+import { DEFAULT_DATA_STREAM_NAME } from '@odigos/ui-kit/constants';
 import { Destination, DestinationFormData } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
-import { useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
+import { useConfig, useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
 import { type DataStreamSelectionFormRef, ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
+import { InstallationStatus } from '@/types';
 
 interface SetupHeaderProps {
   step: number;
@@ -15,7 +17,6 @@ interface SetupHeaderProps {
   sourceFormRef?: RefObject<SourceSelectionFormRef | null>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const getFormDataFromDestination = (dest: Destination, selectedStreamName: string): DestinationFormData => {
   const parsedFields = safeJsonParse(dest.fields, {});
   const fieldsArray = Object.entries(parsedFields).map(([key, value]) => ({ key, value: String(value) }));
@@ -23,10 +24,8 @@ const getFormDataFromDestination = (dest: Destination, selectedStreamName: strin
   const payload: DestinationFormData = {
     type: dest.destinationType.type,
     name: dest.destinationType.displayName,
-
-    // TODO: uncomment when Data Streams are ready to use
-    currentStreamName: '', // selectedStreamName,
-
+    disabled: dest.disabled,
+    currentStreamName: selectedStreamName,
     exportedSignals: dest.exportedSignals,
     fields: fieldsArray,
   };
@@ -34,7 +33,11 @@ const getFormDataFromDestination = (dest: Destination, selectedStreamName: strin
   return payload;
 };
 
+const firstStep = 2; // The first step in the setup process
+const lastStep = 5; // The last step in the setup process
+
 const backRoutes = {
+  2: ROUTES.OVERVIEW,
   3: ROUTES.CHOOSE_STREAM,
   4: ROUTES.CHOOSE_SOURCES,
   5: ROUTES.CHOOSE_DESTINATION,
@@ -47,13 +50,13 @@ const nextRoutes = {
 
 const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef }) => {
   const router = useRouter();
+  const { installationStatus } = useConfig();
 
   const { persistSources } = useSourceCRUD();
   const { fetchDataStreams } = useDataStreamsCRUD();
   const { createDestination, updateDestination } = useDestinationCRUD();
   const { setSelectedStreamName, selectedStreamName } = useDataStreamStore();
-  const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setAvailableSources, setConfiguredSources, setConfiguredFutureApps, resetState } =
-    useSetupStore();
+  const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -70,9 +73,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
         Object.entries(configuredSources).reduce((current, [ns, items]) => {
           current[ns] = items.map((item) => ({
             ...item,
-
-            // TODO: uncomment when Data Streams are ready to use
-            currentStreamName: '', // name,
+            currentStreamName: name,
           }));
 
           return current;
@@ -81,9 +82,8 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
     }
 
     if (sourceFormRef?.current) {
-      const { initial, apps, futureApps } = sourceFormRef.current.getFormValues();
+      const { apps, futureApps } = sourceFormRef.current.getFormValues();
 
-      setAvailableSources(initial);
       setConfiguredSources(apps);
       setConfiguredFutureApps(futureApps);
     }
@@ -93,6 +93,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
   };
 
   const onBack = () => {
+    if (step === firstStep) setSelectedStreamName(DEFAULT_DATA_STREAM_NAME);
     const r = backRoutes[step as keyof typeof backRoutes];
     if (r) router.push(r);
   };
@@ -119,32 +120,47 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
     router.push(ROUTES.OVERVIEW);
   };
 
-  const nextBtn: NavigationButtonsProps['buttons'][0] = {
-    label: 'NEXT',
-    icon: ArrowIcon,
-    variant: 'primary',
-    onClick: onNext,
-    disabled: isLoading,
-  };
-  const backBtn: NavigationButtonsProps['buttons'][0] = {
-    label: 'BACK',
-    icon: ArrowIcon,
-    variant: 'secondary',
-    onClick: onBack,
-    disabled: isLoading,
-  };
-  const doneBtn: NavigationButtonsProps['buttons'][0] = {
-    label: 'DONE',
-    variant: 'primary',
-    onClick: onDone,
-    disabled: isLoading,
-  };
+  const buttons = useMemo(() => {
+    const isNewInstallation = installationStatus === InstallationStatus.New;
+    const arr: NavigationButtonsProps['buttons'] = [];
 
-  const buttons = step === 2 ? [nextBtn] : step === 5 ? [backBtn, doneBtn] : [backBtn, nextBtn];
+    const nextBtn: NavigationButtonsProps['buttons'][0] = {
+      label: 'NEXT',
+      icon: ArrowIcon,
+      variant: 'primary',
+      onClick: onNext,
+      disabled: isLoading,
+    };
+    const backBtn: NavigationButtonsProps['buttons'][0] = {
+      label: 'BACK',
+      icon: ArrowIcon,
+      variant: 'secondary',
+      onClick: onBack,
+      disabled: isLoading,
+    };
+    const doneBtn: NavigationButtonsProps['buttons'][0] = {
+      label: 'DONE',
+      variant: 'primary',
+      onClick: onDone,
+      disabled: isLoading,
+    };
+
+    if (backRoutes[step as keyof typeof backRoutes] && !(step === 2 && isNewInstallation)) {
+      arr.push(backBtn);
+    }
+    if (nextRoutes[step as keyof typeof nextRoutes]) {
+      arr.push(nextBtn);
+    }
+    if (step === lastStep) {
+      arr.push(doneBtn);
+    }
+
+    return arr;
+  }, [installationStatus, step, isLoading, onNext, onBack, onDone]);
 
   return (
     <Header
-      left={[<OdigosLogoText key='logo' size={100} />]}
+      left={[<OdigosLogoText key='logo' size={150} />]}
       center={[
         <Text key='msg' family='secondary'>
           START WITH ODIGOS

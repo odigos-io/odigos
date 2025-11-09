@@ -4,6 +4,12 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
+const (
+	gcpProjectIdKey        = "GCP_PROJECT_ID"
+	gcpBillingProjectIdKey = "GCP_BILLING_PROJECT"
+	gcpTimeoutKey          = "GCP_TIMEOUT"
+)
+
 type GoogleCloud struct{}
 
 func (g *GoogleCloud) DestType() common.DestinationType {
@@ -11,23 +17,48 @@ func (g *GoogleCloud) DestType() common.DestinationType {
 }
 
 func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
+	var pipelineNames []string
 	if isTracingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.GetID()
-		currentConfig.Exporters[exporterName] = struct{}{}
+		exporterConfig := GenericMap{}
+		if projectId, exists := dest.GetConfig()[gcpProjectIdKey]; exists {
+			exporterConfig["project"] = projectId
+		}
+		if billingProjectId, exists := dest.GetConfig()[gcpBillingProjectIdKey]; exists {
+			exporterConfig["destination_project_quota"] = billingProjectId
+		}
+		if timeout, exists := dest.GetConfig()[gcpTimeoutKey]; exists {
+			exporterConfig["timeout"] = timeout
+		}
+
+		currentConfig.Exporters[exporterName] = exporterConfig
 
 		tracesPipelineName := "traces/googlecloud-" + dest.GetID()
 		currentConfig.Service.Pipelines[tracesPipelineName] = Pipeline{
 			Exporters: []string{exporterName},
 		}
+		pipelineNames = append(pipelineNames, tracesPipelineName)
 	}
-	var pipelineNames []string
+
 	if isLoggingEnabled(dest) {
 		exporterName := "googlecloud/" + dest.GetID()
-		currentConfig.Exporters[exporterName] = GenericMap{
+		exporterConfig := GenericMap{
 			"log": GenericMap{
 				"default_log_name": "opentelemetry.io/collector-exported-log",
 			},
 		}
+		if timeout, exists := dest.GetConfig()[gcpTimeoutKey]; exists {
+			exporterConfig["timeout"] = timeout
+		}
+
+		if projectId, exists := dest.GetConfig()[gcpProjectIdKey]; exists {
+			exporterConfig["project"] = projectId
+		}
+		if billingProjectId, exists := dest.GetConfig()[gcpBillingProjectIdKey]; exists {
+			exporterConfig["destination_project_quota"] = billingProjectId
+		}
+
+		currentConfig.Exporters[exporterName] = exporterConfig
 
 		logsPipelineName := "logs/googlecloud-" + dest.GetID()
 		currentConfig.Service.Pipelines[logsPipelineName] = Pipeline{

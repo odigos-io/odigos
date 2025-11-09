@@ -1,3 +1,6 @@
+##################################################
+# Coupon (JavaScript)
+##################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,13 +19,18 @@ spec:
     spec:
       containers:
         - name: coupon
-          image: registry.odigos.io/odigos-demo-coupon:v0.1.18
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-coupon:v0.1.27
           imagePullPolicy: IfNotPresent
           env:
             - name: MEMBERSHIP_SERVICE_HOST
               value: membership:8080
           ports:
             - containerPort: 8080
+      # coupon container should run with non root user
+      # adding runAsNonRoot requirement here to test cases where we might
+      # add addition container and make sure we handle this
+      securityContext:
+        runAsNonRoot: true
 ---
 kind: Service
 apiVersion: v1
@@ -36,160 +44,11 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
+
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frontend
-  namespace: default
-  labels:
-    app: frontend
-spec:
-  selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-        - name: frontend
-          image: registry.odigos.io/odigos-demo-frontend:v0.1.18
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: INVENTORY_SERVICE_HOST
-              value: inventory:8080
-            - name: PRICING_SERVICE_HOST
-              value: pricing:8080
-            - name: COUPON_SERVICE_HOST
-              value: coupon:8080
-            - name: CURRENCY_SERVICE_HOST
-              value: currency:8080
-          ports:
-            - containerPort: 8080
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: frontend
-  namespace: default
-spec:
-  selector:
-    app: frontend
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: inventory
-  namespace: default
-  labels:
-    app: inventory
-spec:
-  selector:
-    matchLabels:
-      app: inventory
-  template:
-    metadata:
-      labels:
-        app: inventory
-    spec:
-      containers:
-        - name: inventory
-          image: registry.odigos.io/odigos-demo-inventory:v0.1.18
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8080
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: inventory
-  namespace: default
-spec:
-  selector:
-    app: inventory
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: membership
-  namespace: default
-  labels:
-    app: membership
-spec:
-  selector:
-    matchLabels:
-      app: membership
-  template:
-    metadata:
-      labels:
-        app: membership
-    spec:
-      containers:
-        - name: membership
-          image: registry.odigos.io/odigos-demo-membership:v0.1.18
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8080
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: membership
-  namespace: default
-spec:
-  selector:
-    app: membership
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: pricing
-  namespace: default
-  labels:
-    app: pricing
-spec:
-  selector:
-    matchLabels:
-      app: pricing
-  template:
-    metadata:
-      labels:
-        app: pricing
-    spec:
-      containers:
-        - name: pricing
-          image: registry.odigos.io/odigos-demo-pricing:v0.1.18
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8080
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: pricing
-  namespace: default
-spec:
-  selector:
-    app: pricing
-  ports:
-    - protocol: TCP
-      port: 8080
-      targetPort: 8080
----
+##################################################
+# Currency (PHP)
+##################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -208,12 +67,16 @@ spec:
     spec:
       containers:
         - name: currency
-          image: registry.odigos.io/odigos-demo-currency:v0.1.18
-          imagePullPolicy: Always
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-currency:v0.1.27
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GEOLOCATION_SERVICE_HOST
+              value: geolocation:8080
           ports:
             - containerPort: 9000
         - name: nginx
           image: nginx:1.27.5
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           volumeMounts:
@@ -250,6 +113,234 @@ metadata:
 spec:
   selector:
     app: currency
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+##################################################
+# Frontend (Java)
+##################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: default
+  labels:
+    app: frontend
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.27
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: INVENTORY_SERVICE_HOST
+              value: inventory:8080
+            - name: PRICING_SERVICE_HOST
+              value: pricing:8080
+            - name: COUPON_SERVICE_HOST
+              value: coupon:8080
+            - name: CURRENCY_SERVICE_HOST
+              value: currency:8080
+            - name: GEOLOCATION_SERVICE_HOST
+              value: geolocation:8080
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend
+  namespace: default
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+##################################################
+# Geolocation (Ruby on Rails)
+##################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocation
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geolocation
+  template:
+    metadata:
+      labels:
+        app: geolocation
+    spec:
+      containers:
+        - name: geolocation
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-geolocation:v0.1.27
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: RAILS_ENV
+              value: 'production'
+            - name: RAILS_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: rails-master-key
+                  key: master.key
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rails-master-key
+  namespace: default
+type: Opaque
+stringData:
+  master.key: 'df0300c20246e24d331787f6540a72fa'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geolocation
+  namespace: default
+spec:
+  selector:
+    app: geolocation
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 3000
+  type: LoadBalancer
+
+---
+##################################################
+# Inventory (Python)
+##################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: default
+  labels:
+    app: inventory
+spec:
+  selector:
+    matchLabels:
+      app: inventory
+  template:
+    metadata:
+      labels:
+        app: inventory
+    spec:
+      containers:
+        - name: inventory
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.27
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: inventory
+  namespace: default
+spec:
+  selector:
+    app: inventory
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+##################################################
+# Membership (Golang)
+##################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: membership
+  namespace: default
+  labels:
+    app: membership
+spec:
+  selector:
+    matchLabels:
+      app: membership
+  template:
+    metadata:
+      labels:
+        app: membership
+    spec:
+      containers:
+        - name: membership
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.27
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: membership
+  namespace: default
+spec:
+  selector:
+    app: membership
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+##################################################
+# Pricing (.NET)
+##################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing
+  namespace: default
+  labels:
+    app: pricing
+spec:
+  selector:
+    matchLabels:
+      app: pricing
+  template:
+    metadata:
+      labels:
+        app: pricing
+    spec:
+      containers:
+        - name: pricing
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-pricing:v0.1.27
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: pricing
+  namespace: default
+spec:
+  selector:
+    app: pricing
   ports:
     - protocol: TCP
       port: 8080

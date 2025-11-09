@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	cilumebpf "github.com/cilium/ebpf"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
-
+	"github.com/odigos-io/odigos/common/unixfd"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
 
@@ -24,7 +24,10 @@ var (
 
 const (
 	shutdownCleanupTimeout = 10 * time.Second
+	otelMeterName          = "github.com/odigos.io/odigos/instrumentation"
 )
+
+var meter = otel.Meter(otelMeterName)
 
 // ConfigUpdate is used to send a configuration update request to the manager.
 // The manager will apply the configuration to all instrumentations that match the config group.
@@ -42,12 +45,12 @@ type instrumentationDetails[processDetails ProcessDetails, configGroup ConfigGro
 type ManagerOptions[processDetails ProcessDetails, configGroup ConfigGroup] struct {
 	Logger logr.Logger
 
-	// Factories is a map of OTel distributions to their corresponding instrumentation factories.
+	// Factories is a map of Odigos Otel distribution names to their corresponding instrumentation factories.
 	//
 	// The manager will use this map to create new instrumentations based on the process event.
-	// If a process event is received and the OTel distribution is not found in this map,
+	// If a process event is received and the distribution name is not found in this map,
 	// the manager will ignore the event.
-	Factories map[OtelDistribution]Factory
+	Factories map[string]Factory
 
 	// Handler is used to resolve details, config group, OTel distribution and settings for the instrumentation
 	// based on the process event.
@@ -67,9 +70,8 @@ type ManagerOptions[processDetails ProcessDetails, configGroup ConfigGroup] stru
 	// The caller is responsible for closing the channel once no more updates are expected.
 	ConfigUpdates <-chan ConfigUpdate[configGroup]
 
-	// MeterProvider is used to create a meter for recording metrics.
-	// If non provided, a no-op provider will be used from the global OpenTelemetry API.
-	MeterProvider      metric.MeterProvider
+	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
+	TracesMap *cilumebpf.Map
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -86,7 +88,7 @@ type manager[processDetails ProcessDetails, configGroup ConfigGroup] struct {
 	procEvents <-chan detector.ProcessEvent
 	detector   detector.Detector
 	handler    *Handler[processDetails, configGroup]
-	factories  map[OtelDistribution]Factory
+	factories  map[string]Factory
 	logger     logr.Logger
 
 	// all the created instrumentations by pid,
@@ -100,6 +102,8 @@ type manager[processDetails ProcessDetails, configGroup ConfigGroup] struct {
 	configUpdates <-chan ConfigUpdate[configGroup]
 
 	metrics *managerMetrics
+
+	tracesMap *cilumebpf.Map
 }
 
 func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options ManagerOptions[processDetails, configGroup]) (Manager, error) {
@@ -132,11 +136,6 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 		return nil, errors.New("config updates channel is required for ebpf instrumentation manager")
 	}
 
-	mp := options.MeterProvider
-	if mp == nil {
-		mp = otel.GetMeterProvider()
-	}
-	meter := mp.Meter("github.com/odigos.io/odigos/instrumentation")
 	managerMetrics, err := newManagerMetrics(meter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf instrumentation manager metrics: %w", err)
@@ -159,6 +158,7 @@ func NewManager[processDetails ProcessDetails, configGroup ConfigGroup](options 
 		detailsByWorkload: map[configGroup]map[int]*instrumentationDetails[processDetails, configGroup]{},
 		configUpdates:     options.ConfigUpdates,
 		metrics:           managerMetrics,
+		tracesMap:         options.TracesMap,
 	}, nil
 }
 
@@ -256,7 +256,31 @@ func (m *manager[ProcessDetails, ConfigGroup]) Run(ctx context.Context) error {
 		return nil
 	})
 
+	g.Go(func() error {
+		// Start the FD server
+		server := &unixfd.Server{
+			SocketPath: unixfd.DefaultSocketPath,
+			Logger:     m.logger,
+			FDProvider: func() int {
+				return m.tracesMap.FD()
+			},
+		}
+
+		// Run server in background to serve the map FD to relevant data collection client.
+		// The server will continue running until odiglet shuts down, allowing collectors to reconnect after restarts
+		// and ask for a new FD.
+		if err := server.Run(ctx); err != nil {
+			m.logger.Error(err, "unixfd server failed")
+		}
+
+		m.logger.Info("TracesMap created, FD server started",
+			"socket", unixfd.DefaultSocketPath,
+			"map_fd", m.tracesMap.FD())
+		return nil
+	})
+
 	err := g.Wait()
+
 	return err
 }
 
@@ -300,23 +324,23 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		return errors.Join(err, errFailedToGetDetails)
 	}
 
-	otelDisto, err := m.handler.DistributionMatcher.Distribution(ctx, pd)
+	otelDistro, err := m.handler.DistributionMatcher.Distribution(ctx, pd)
 	if err != nil {
 		return errors.Join(err, errFailedToGetDistribution)
 	}
 
-	configGroup, err := m.handler.ConfigGroupResolver.Resolve(ctx, pd, otelDisto)
+	configGroup, err := m.handler.ConfigGroupResolver.Resolve(ctx, pd, otelDistro)
 	if err != nil {
 		return errors.Join(err, errFailedToGetConfigGroup)
 	}
 
-	factory, found := m.factories[otelDisto]
+	factory, found := m.factories[otelDistro.Name]
 	if !found {
 		return errNoInstrumentationFactory
 	}
 
 	// Fetch initial settings for the instrumentation
-	settings, err := m.handler.SettingsGetter.Settings(ctx, pd, otelDisto)
+	settings, err := m.handler.SettingsGetter.Settings(ctx, m.logger, pd, otelDistro)
 	if err != nil {
 		// for k8s instrumentation config CR will be queried to get the settings
 		// we should always have config for this event.
@@ -325,12 +349,17 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		// - just got deleted and the pod (and the process) will go down soon
 		// TODO: sync reconcilers so inst config is guaranteed be created before the webhook is enabled
 		//
-		m.logger.Info("failed to get initial settings for instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk, "error", err)
+		m.logger.Info("failed to get initial settings for instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name, "error", err)
 		// return nil
 	}
 
+	settings.TracesMap = ReaderMap{
+		Map:            m.tracesMap,
+		ExternalReader: true,
+	}
+
 	inst, initErr := factory.CreateInstrumentation(ctx, e.PID, settings)
-	reporterErr := m.handler.Reporter.OnInit(ctx, e.PID, err, pd)
+	reporterErr := m.handler.Reporter.OnInit(ctx, e.PID, initErr, pd)
 	if reporterErr != nil {
 		m.logger.Error(reporterErr, "failed to report instrumentation init", "initialized", initErr == nil, "pid", e.PID, "process group details", pd)
 	}
@@ -339,7 +368,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		// consider a reporter which writes a persistent record for a failed/successful init
 		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
 		m.startTrackInstrumentation(e.PID, nil, pd, configGroup)
-		m.logger.Error(err, "failed to initialize instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk)
+		m.logger.Error(err, "failed to initialize instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name)
 		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the initialize error? or the handler error? or both?
 		return initErr
@@ -356,7 +385,7 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
 		// saving the inst as nil marking the instrumentation failed to load, and is not valid to run/configure/close.
 		m.startTrackInstrumentation(e.PID, nil, pd, configGroup)
-		m.logger.Error(err, "failed to load instrumentation", "language", otelDisto.Language, "sdk", otelDisto.OtelSdk)
+		m.logger.Error(err, "failed to load instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name)
 		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the load error? or the instance write error? or both?
 		return loadErr

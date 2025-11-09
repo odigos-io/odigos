@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+        uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version: "1.24"
+          go-version: "1.25"
       - name: run make go-mod-tidy
         run: make go-mod-tidy
       - name: Check clean repository

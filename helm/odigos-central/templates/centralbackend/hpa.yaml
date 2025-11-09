@@ -1,0 +1,94 @@
+{{- if and (include "odigos.secretExists" .) .Values.centralBackend.autoscaling.enabled }}
+{{- $vk := .Capabilities.KubeVersion.Version -}}
+{{- if semverCompare "<1.23-0" $vk }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: central-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: central-backend
+  minReplicas: {{ .Values.centralBackend.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.centralBackend.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+      targetAverageUtilization: {{ .Values.centralBackend.autoscaling.cpuTargetUtilization }}
+{{- else if and (semverCompare ">=1.23-0" $vk) (semverCompare "<1.25-0" $vk) }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: central-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: central-backend
+  minReplicas: {{ .Values.centralBackend.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.centralBackend.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.centralBackend.autoscaling.cpuTargetUtilization }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.stabilizationWindowSeconds }}
+{{- else }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: central-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    odigos.io/system-object: "true"
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: central-backend
+  minReplicas: {{ .Values.centralBackend.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.centralBackend.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.centralBackend.autoscaling.cpuTargetUtilization }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.stabilizationWindowSeconds }}
+      selectPolicy: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.selectPolicy }}
+      policies:
+        - type: Percent
+          value: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.policies.percent.value }}
+          periodSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.policies.percent.periodSeconds }}
+        - type: Pods
+          value: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.policies.pods.value }}
+          periodSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleUp.policies.pods.periodSeconds }}
+    scaleDown:
+      stabilizationWindowSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.stabilizationWindowSeconds }}
+      selectPolicy: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.selectPolicy }}
+      policies:
+        - type: Percent
+          value: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.policies.percent.value }}
+          periodSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.policies.percent.periodSeconds }}
+        - type: Pods
+          value: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.policies.pods.value }}
+          periodSeconds: {{ .Values.centralBackend.autoscaling.behavior.scaleDown.policies.pods.periodSeconds }}
+{{- end }}
+{{- end }}
+
+

@@ -9,7 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 type DeploymentReconciler struct {
@@ -18,7 +17,12 @@ type DeploymentReconciler struct {
 }
 
 func (r *DeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindDeployment, req.NamespacedName, r.Scheme)
+	pw := k8sconsts.PodWorkload{
+		Namespace: req.Namespace,
+		Kind:      k8sconsts.WorkloadKindDeployment,
+		Name:      req.Name,
+	}
+	return syncWorkload(ctx, r.Client, r.Scheme, pw)
 }
 
 type DaemonSetReconciler struct {
@@ -27,7 +31,12 @@ type DaemonSetReconciler struct {
 }
 
 func (r *DaemonSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindDaemonSet, req.NamespacedName, r.Scheme)
+	pw := k8sconsts.PodWorkload{
+		Namespace: req.Namespace,
+		Kind:      k8sconsts.WorkloadKindDaemonSet,
+		Name:      req.Name,
+	}
+	return syncWorkload(ctx, r.Client, r.Scheme, pw)
 }
 
 type StatefulSetReconciler struct {
@@ -36,21 +45,38 @@ type StatefulSetReconciler struct {
 }
 
 func (r *StatefulSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileWorkload(ctx, r.Client, k8sconsts.WorkloadKindStatefulSet, req.NamespacedName, r.Scheme)
+	pw := k8sconsts.PodWorkload{
+		Namespace: req.Namespace,
+		Kind:      k8sconsts.WorkloadKindStatefulSet,
+		Name:      req.Name,
+	}
+	return syncWorkload(ctx, r.Client, r.Scheme, pw)
 }
 
-func reconcileWorkload(
-	ctx context.Context,
-	k8sClient client.Client,
-	objKind k8sconsts.WorkloadKind,
-	key client.ObjectKey,
-	scheme *runtime.Scheme) (ctrl.Result, error) {
+type CronJobReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
+}
 
-	obj := workload.ClientObjectFromWorkloadKind(objKind)
-	err := k8sClient.Get(ctx, key, obj)
-	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	pw := k8sconsts.PodWorkload{
+		Namespace: req.Namespace,
+		Kind:      k8sconsts.WorkloadKindCronJob,
+		Name:      req.Name,
 	}
+	return syncWorkload(ctx, r.Client, r.Scheme, pw)
+}
 
-	return syncWorkload(ctx, k8sClient, scheme, obj)
+type DeploymentConfigReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
+}
+
+func (r *DeploymentConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	pw := k8sconsts.PodWorkload{
+		Namespace: req.Namespace,
+		Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+		Name:      req.Name,
+	}
+	return syncWorkload(ctx, r.Client, r.Scheme, pw)
 }

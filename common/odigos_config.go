@@ -2,12 +2,13 @@ package common
 
 type ProfileName string
 
-// +kubebuilder:validation:Enum=normal;readonly
+// "normal" is deprecated. Kept here in the enum for backwards compatibility with operator CRD.
+// +kubebuilder:validation:Enum=default;readonly;normal
 type UiMode string
 
 const (
-	NormalUiMode   UiMode = "normal"
-	ReadonlyUiMode UiMode = "readonly"
+	UiModeDefault  UiMode = "default"
+	UiModeReadonly UiMode = "readonly"
 )
 
 type CollectorNodeConfiguration struct {
@@ -56,6 +57,27 @@ type CollectorNodeConfiguration struct {
 	// This field is used to specify this target directory in these cases.
 	// A common target directory is '/mnt/var/log'.
 	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
+
+	// Deprecated - use OtlpExporterConfiguration instead.
+	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	EnableDataCompression *bool `json:"enableDataCompression,omitempty"`
+
+	// OtlpExporterConfiguration is the configuration for the OTLP exporter.
+	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
+}
+
+type OtlpExporterConfiguration struct {
+	EnableDataCompression *bool           `json:"enableDataCompression,omitempty"`
+	Timeout               string          `json:"timeout,omitempty"`
+	RetryOnFailure        *RetryOnFailure `json:"retryOnFailure,omitempty"`
+}
+
+type RetryOnFailure struct {
+	Enabled         *bool  `json:"enabled,omitempty"`
+	InitialInterval string `json:"initialInterval,omitempty"`
+	MaxInterval     string `json:"maxInterval,omitempty"`
+	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`
 }
 
 type CollectorGatewayConfiguration struct {
@@ -100,6 +122,19 @@ type CollectorGatewayConfiguration struct {
 	// this is when go runtime will start garbage collection.
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
+
+	// ServiceGraphDisabled is a feature that allows you to visualize the service graph of your application.
+	// It is enabled by default and can be disabled by setting the disabled flag to true.
+	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
+
+	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver
+	// It is disabled by default and can be enabled by setting the enabled flag to true.
+	// This feature is only available when metrics destination is configured.
+	ClusterMetricsEnabled *bool `json:"clusterMetricsEnabled,omitempty"`
+
+	// for destinations that uses https for exporting data, this value can be used to set the value for the https proxy.
+	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
@@ -123,32 +158,148 @@ type RolloutConfiguration struct {
 	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled"`
 }
 
+type OidcConfiguration struct {
+	// The URL of the OIDC tenant (e.g. "https://abc-123.okta.com").
+	TenantUrl string `json:"tenantUrl,omitempty"`
+
+	// The client ID of the OIDC application.
+	ClientId string `json:"clientId,omitempty"`
+
+	// The client secret of the OIDC application.
+	ClientSecret string `json:"clientSecret,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceSpanMetricsConfiguration struct {
+
+	// control beahvior for when to collect span metrics.
+	// - true - span metrics will never be collected, even if destinations require it.
+	// - false / nil - span metrics will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for flusing metrics (format: 15s, 1m etc). defaults: 60s (one minute).
+	Interval string `json:"interval,omitempty"`
+
+	// used to remove metrics after time that they are not reporting.
+	// if an app only generates metrics once in a while, this parameter can tune
+	// how much gap is allowed.
+	// format: duration string (15s, 1m, etc).
+	// default is 5m (five minutes).
+	MetricsExpiration string `json:"metricsExpiration,omitempty"`
+
+	// additional dimensions to add to the span metrics.
+	// these are span attributes that you want to convert to metrics attributes during collection.
+	// the values of the attributes must have low cardinality.
+	// it can increase the number of series in the destination.
+	// some dimensions are already added by default, regardless of this setting.
+	AdditionalDimensions []string `json:"additionalDimensions,omitempty"`
+
+	// if true, histogram metrics will not be collected.
+	HistogramDisabled bool `json:"histogramDisabled,omitempty"`
+
+	// explicit buckets list for the histogram metrics.
+	// format is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d` etc).
+	// if not set, the default buckets list will be used.
+	// the buckets must be in ascending order.
+	// example: ["100us", "1ms", "2ms", "6ms", "10ms", "100ms", "250ms"]
+	// Default value when unset:
+	// 		["2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"]
+	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
+	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
+
+	// By default, Odigos does not include process labels meaning
+	// metrics will be aggregated by container as the lowest level.
+	// This means that multiple processes running in the same container
+	// will be aggregated into the same time series.
+	// For more granular metrics, set this option to true.
+	// This will include process-specific labels on metrics,
+	// which will cause more unique time series to be created.
+	IncludedProcessInDimensions *bool `json:"includedProcessInDimensions,omitempty"`
+
+	// exclude resource attributes from being added to span metrics.
+	// for example - if you don't care about the process granularity,
+	// and prefer the metrics to be aggregated for all processes in a pod container,
+	// you can list all "process.*" attributes here to exclude them from being added to span metrics.
+	// any other resource attribute can be set, either for sanitation or to reduce dimenssions for generate metrics.
+	ExcludedResourceAttributes []string `json:"excludedResourceAttributes,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceHostMetricsConfiguration struct {
+
+	// control beahvior for when to collect host metrics.
+	// - true - host metrics will never be collected, even if destinations require it.
+	// - false / nil - host metrics will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for scraping metrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceKubeletStatsConfiguration struct {
+
+	// control beahvior for when to collect kubelet stats.
+	// - true - kubelet stats will never be collected, even if destinations require it.
+	// - false / nil - kubelet stats will be collected if destinations require it (can be opt-in and out in destination level).
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time interval for scraping metrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceConfiguration struct {
+
+	// configuration for span metrics.
+	SpanMetrics *MetricsSourceSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
+
+	// configuration for host metrics.
+	HostMetrics *MetricsSourceHostMetricsConfiguration `json:"hostMetrics,omitempty"`
+
+	// configuration for kubelet stats.
+	KubeletStats *MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
-	ConfigVersion                    int                            `json:"configVersion"`
-	TelemetryEnabled                 bool                           `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled                 bool                           `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces                []string                       `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers                []string                       `json:"ignoredContainers,omitempty"`
-	Psp                              bool                           `json:"psp,omitempty"`
-	ImagePrefix                      string                         `json:"imagePrefix,omitempty"`
-	SkipWebhookIssuerCreation        bool                           `json:"skipWebhookIssuerCreation,omitempty"`
-	CollectorGateway                 *CollectorGatewayConfiguration `json:"collectorGateway,omitempty"`
-	CollectorNode                    *CollectorNodeConfiguration    `json:"collectorNode,omitempty"`
-	Profiles                         []ProfileName                  `json:"profiles,omitempty"`
-	AllowConcurrentAgents            *bool                          `json:"allowConcurrentAgents,omitempty"`
-	UiMode                           UiMode                         `json:"uiMode,omitempty"`
-	UiPaginationLimit                int                            `json:"uiPaginationLimit,omitempty"`
-	CentralBackendURL                string                         `json:"centralBackendURL,omitempty"`
-	MountMethod                      *MountMethod                   `json:"mountMethod,omitempty"`
-	ClusterName                      string                         `json:"clusterName,omitempty"`
-	CustomContainerRuntimeSocketPath string                         `json:"customContainerRuntimeSocketPath,omitempty"`
-	AgentEnvVarsInjectionMethod      *EnvInjectionMethod            `json:"agentEnvVarsInjectionMethod,omitempty"`
-	UserInstrumentationEnvs          *UserInstrumentationEnvs       `json:"UserInstrumentationEnvs,omitempty"`
-	NodeSelector                     map[string]string              `json:"nodeSelector,omitempty"`
-	KarpenterEnabled                 *bool                          `json:"karpenterEnabled,omitempty"`
-	Rollout                          *RolloutConfiguration          `json:"rollout,omitempty"`
-	RollbackDisabled                 *bool                          `json:"rollbackDisabled,omitempty"`
-	RollbackGraceTime                string                         `json:"rollbackGraceTime,omitempty"`
-	RollbackStabilityWindow          string                         `json:"rollbackStabilityWindow,omitempty"`
+	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
+	TelemetryEnabled          bool                           `json:"telemetryEnabled,omitempty" yaml:"telemetryEnabled"`
+	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
+	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
+	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
+	Psp                       bool                           `json:"psp,omitempty" yaml:"psp"`
+	ImagePrefix               string                         `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
+	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
+	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty" yaml:"collectorGateway"`
+	CollectorNode             *CollectorNodeConfiguration    `json:"collectorNode,omitempty" yaml:"collectorNode"`
+	Profiles                  []ProfileName                  `json:"profiles,omitempty" yaml:"profiles"`
+	AllowConcurrentAgents     *bool                          `json:"allowConcurrentAgents,omitempty" yaml:"allowConcurrentAgents"`
+	UiMode                    UiMode                         `json:"uiMode,omitempty" yaml:"uiMode"`
+	UiPaginationLimit         int                            `json:"uiPaginationLimit,omitempty" yaml:"uiPaginationLimit"`
+	UiRemoteUrl               string                         `json:"uiRemoteUrl,omitempty" yaml:"uiRemoteUrl"`
+	CentralBackendURL         string                         `json:"centralBackendURL,omitempty" yaml:"centralBackendURL"`
+	ClusterName               string                         `json:"clusterName,omitempty" yaml:"clusterName"`
+	MountMethod               *MountMethod                   `json:"mountMethod,omitempty" yaml:"mountMethod"`
+	//nolint:lll // CustomContainerRuntimeSocketPath line is long due to struct tag requirements
+	CustomContainerRuntimeSocketPath  string                      `json:"customContainerRuntimeSocketPath,omitempty" yaml:"customContainerRuntimeSocketPath"`
+	AgentEnvVarsInjectionMethod       *EnvInjectionMethod         `json:"agentEnvVarsInjectionMethod,omitempty" yaml:"agentEnvVarsInjectionMethod"`
+	UserInstrumentationEnvs           *UserInstrumentationEnvs    `json:"userInstrumentationEnvs,omitempty" yaml:"userInstrumentationEnvs"`
+	NodeSelector                      map[string]string           `json:"nodeSelector,omitempty" yaml:"nodeSelector"`
+	KarpenterEnabled                  *bool                       `json:"karpenterEnabled,omitempty" yaml:"karpenterEnabled"`
+	Rollout                           *RolloutConfiguration       `json:"rollout,omitempty" yaml:"rollout"`
+	RollbackDisabled                  *bool                       `json:"rollbackDisabled,omitempty" yaml:"rollbackDisabled"`
+	RollbackGraceTime                 string                      `json:"rollbackGraceTime,omitempty" yaml:"rollbackGraceTime"`
+	RollbackStabilityWindow           string                      `json:"rollbackStabilityWindow,omitempty" yaml:"rollbackStabilityWindow"`
+	Oidc                              *OidcConfiguration          `json:"oidc,omitempty" yaml:"oidc"`
+	OdigletHealthProbeBindPort        int                         `json:"odigletHealthProbeBindPort,omitempty" yaml:"odigletHealthProbeBindPort"`
+	GoAutoOffsetsCron                 string                      `json:"goAutoOffsetsCron,omitempty" yaml:"goAutoOffsetsCron"`
+	GoAutoOffsetsMode                 string                      `json:"goAutoOffsetsMode,omitempty" yaml:"goAutoOffsetsMode"`
+	ClickhouseJsonTypeEnabledProperty *bool                       `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection  *bool                       `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset                string                      `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
+	WaspEnabled                       *bool                       `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
+	MetricsSources                    *MetricsSourceConfiguration `json:"metricsSources,omitempty" yaml:"metricsSources"`
+
+	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }

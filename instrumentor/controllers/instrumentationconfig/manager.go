@@ -3,8 +3,10 @@ package instrumentationconfig
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
+	utilpredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
@@ -13,6 +15,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentor-instrumentationconfig-instrumentationrule").
 		For(&odigosv1alpha1.InstrumentationRule{}).
+		// We filter for only created or updated events, and ignore events of status updates (aka no Spec change).
+		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, utilpredicate.CreationPredicate{})).
 		Complete(&InstrumentationRuleReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
@@ -25,23 +29,18 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentor-instrumentationconfig-instrumentationconfig").
 		For(&odigosv1alpha1.InstrumentationConfig{}).
-		WithEventFilter(&instrumentorpredicate.RuntimeDetailsChangedPredicate{}).
+		// The SDK config might need to get updated if either:
+		// - runtime details (auto detection) is updated.
+		// - runtime overrides is updated by the user.
+		WithEventFilter(predicate.Or(
+			&instrumentorpredicate.RuntimeDetailsChangedPredicate{},
+			&instrumentorpredicate.ContainerOverridesChangedPredicate{},
+		)).
 		Complete(&InstrumentationConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
-		return err
-	}
-
-	// Watch for Source changes to update InstrumentationConfig
-	if err := builder.
-		ControllerManagedBy(mgr).
-		Named("instrumentor-instrumentationconfig-source").
-		For(&odigosv1alpha1.Source{}).
-		Complete(&SourceReconciler{
-			Client: mgr.GetClient(),
-		}); err != nil {
 		return err
 	}
 

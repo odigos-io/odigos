@@ -6,13 +6,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	corev1 "k8s.io/api/core/v1"
 
 	"github.com/spf13/cobra"
 )
@@ -52,9 +48,10 @@ var uiCmd = &cobra.Command{
 		}
 
 		localPort := cmd.Flag("port").Value.String()
+		remotePort := cmd.Flag("remote-port").Value.String()
 		localAddress := cmd.Flag("address").Value.String()
 
-		uiPod, err := findOdigosUIPod(client, ctx, ns)
+		uiPod, err := kube.FindOdigosUIPod(client, ctx, ns)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
 			os.Exit(1)
@@ -63,8 +60,14 @@ var uiCmd = &cobra.Command{
 		fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
 		fmt.Printf("Press Ctrl+C to stop\n")
 
-		if err := kube.PortForwardWithContext(ctx, uiPod, client, localPort, localAddress); err != nil {
+		fw, err := kube.PortForwardWithContext(ctx, uiPod, client, localPort, remotePort, localAddress)
+		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
+			os.Exit(1)
+		}
+		err = fw.ForwardPorts()
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Cannot forward ports: %s\n", err)
 			os.Exit(1)
 		}
 
@@ -81,28 +84,9 @@ odigos ui --kubeconfig <path-to-kubeconfig>
 `,
 }
 
-func findOdigosUIPod(client *kube.Client, ctx context.Context, ns string) (*corev1.Pod, error) {
-	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", k8sconsts.UIAppLabelValue),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(pods.Items) != 1 {
-		return nil, fmt.Errorf("expected to get 1 pod got %d", len(pods.Items))
-	}
-
-	pod := &pods.Items[0]
-	if pod.Status.Phase != corev1.PodRunning {
-		return nil, fmt.Errorf("odigos-ui pod is not running")
-	}
-
-	return &pods.Items[0], nil
-}
 func init() {
 	rootCmd.AddCommand(uiCmd)
 	uiCmd.Flags().Int("port", defaultPort, "Port to listen on")
+	uiCmd.Flags().Int("remote-port", defaultPort, "Port to forward to the remote UI")
 	uiCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 }

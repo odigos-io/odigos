@@ -126,10 +126,29 @@ func TestCalculateConfigMapData(t *testing.T) {
 	}
 
 	got, err := calculateConfigMapData(
-		&v1alpha1.InstrumentationConfigList{
+		&odigosv1.CollectorsGroup{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
+			Spec: odigosv1.CollectorsGroupSpec{
+				CollectorOwnMetricsPort: 4317,
+				Metrics: &odigosv1.CollectorsGroupMetricsCollectionSettings{
+					HostMetrics: &common.MetricsSourceHostMetricsConfiguration{
+						Interval: "33s",
+					},
+					KubeletStats: &common.MetricsSourceKubeletStatsConfiguration{
+						Interval: "44s",
+					},
+					AgentsTelemetry: &odigosv1.AgentsTelemetrySettings{},
+				},
+			},
+		},
+		&odigosv1.InstrumentationConfigList{
 			Items: items,
 		},
-		NewMockDestinationList(),
+		[]common.ObservabilitySignal{
+			common.LogsObservabilitySignal,
+			common.MetricsObservabilitySignal,
+			common.TracesObservabilitySignal,
+		},
 		[]*v1alpha1.Processor{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "test_processor"},
@@ -149,7 +168,62 @@ func TestCalculateConfigMapData(t *testing.T) {
 				},
 			},
 		},
-		false, common.CommunityOdigosTier)
+		false, /* onGKE */
+		true,  /* loadBalancingNeeded */
+	)
+
+	assert.Equal(t, err, nil)
+	assert.Equal(t, want, got)
+}
+
+func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
+	want := openTestData(t, "testdata/traces_only_no_loadbalancing.yaml")
+
+	ns := NewMockNamespace("default")
+	ns2 := NewMockNamespace("other-namespace")
+
+	items := []v1alpha1.InstrumentationConfig{
+		*NewMockInstrumentationConfig(NewMockTestDeployment(ns)),
+		*NewMockInstrumentationConfig(NewMockTestDaemonSet(ns)),
+		*NewMockInstrumentationConfig(NewMockTestStatefulSet(ns2)),
+		*NewMockInstrumentationConfigWoOwner(NewMockTestDeployment(ns2)),
+	}
+
+	got, err := calculateConfigMapData(
+		&odigosv1.CollectorsGroup{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
+			Spec: odigosv1.CollectorsGroupSpec{
+				CollectorOwnMetricsPort: 4317,
+				// No metrics configuration - only traces
+			},
+		},
+		&odigosv1.InstrumentationConfigList{
+			Items: items,
+		},
+		[]common.ObservabilitySignal{
+			// Only traces enabled, no logs or metrics
+			common.TracesObservabilitySignal,
+		},
+		[]*v1alpha1.Processor{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test_processor"},
+				Spec: v1alpha1.ProcessorSpec{
+					OrderHint:      1,
+					Type:           "test_type",
+					CollectorRoles: []odigosv1.CollectorsGroupRole{odigosv1.CollectorsGroupRoleNodeCollector},
+					Disabled:       false,
+					ProcessorConfig: runtime.RawExtension{
+						Raw: []byte(`{"key":"val"}`),
+					},
+					Signals: []common.ObservabilitySignal{
+						common.TracesObservabilitySignal,
+					},
+				},
+			},
+		},
+		false, /* onGKE */
+		false, /* loadBalancingNeeded */
+	)
 
 	assert.Equal(t, err, nil)
 	assert.Equal(t, want, got)

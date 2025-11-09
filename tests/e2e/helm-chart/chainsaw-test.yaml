@@ -10,6 +10,17 @@ spec:
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install - Simple Demo Apps
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
+    # Install Odigos with legacy field names to test backward compatibility and mirroring:
+    # - Uses legacy field "memoryLimit" (instead of "limitMemoryMiB")
+    # - Uses field "limitCPUm" (consistent with values.yaml)
+    # - Does NOT set memory/CPU requests to test mirroring functionality
+    # - Expected: requests should mirror the limit values (560Mi memory, 550m CPU)
     - name: Install Odigos
       try:
         - script:
@@ -18,12 +29,20 @@ spec:
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set nodeSelector."kubernetes\.io/os"=linux \
+                  --set collectorNode.memoryLimit=560 \
+                  --set collectorNode.limitCPUm=550
               else
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                  --set image.tag=e2e-test \
+                  --set nodeSelector."kubernetes\.io/os"=linux \
+                  --set collectorNode.memoryLimit=560 \
+                  --set collectorNode.limitCPUm=550
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
-
     - name: Verify Odigos Installation
       try:
         - script:
@@ -50,9 +69,23 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
 
         - assert:
-            timeout: 3m
+            timeout: 10s
             file: ../../common/assert/odigos-installed.yaml
 
+    - name: Verify Backward Compatibility in helm chart fields - Legacy Fields & Mirroring
+      try:
+        - assert:
+            timeout: 30s
+            file: verify-datacollection-resources.yaml
+
+    - name: Verify Backward Compatibility in helm chart fields - New Fields & Mirroring
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              echo "🚀 Running resource verification script..."
+              P="../../.."
+              ./check-data-collection-resources.sh "$P"
       catch:
         - script:
             content: |
@@ -72,20 +105,15 @@ spec:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-    - name: Install - Simple Demo Apps
+    - name: Add Destination
       try:
         - apply:
-            file: ../../common/apply/install-simple-demo.yaml
-        - script:
-            timeout: 2m
-            content: |
-              kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=coupon --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=inventory --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=pricing --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=membership --timeout=120s
-              kubectl wait --for=condition=ready pod -l app=currency --timeout=120s
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert - Simple Demo Apps Installed
+      try:
         - assert:
+            timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
 
     - name: Instrument Namespace
@@ -93,16 +121,23 @@ spec:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
+    - name: Ruby Detected, Rollout Restart
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/ruby-partial-runtime-detected.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl rollout restart deployment geolocation
+              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=60s
+
     - name: Assert Runtime Detected
       try:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
-    - name: Add Destination
-      try:
-        - apply:
-            file: ../../common/apply/add-simple-trace-db-destination.yaml
 
     - name: Odigos pipeline ready
       try:

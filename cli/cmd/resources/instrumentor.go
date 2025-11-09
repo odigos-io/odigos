@@ -91,6 +91,12 @@ func NewInstrumentorRole(ns string) *rbacv1.Role {
 				ResourceNames: []string{k8sconsts.DeprecatedInstrumentorWebhookSecretName},
 				Verbs:         []string{"delete"},
 			},
+			{ // check for odiglet daemonset ready before starting the instrumentation
+				APIGroups:     []string{"apps"},
+				Resources:     []string{"daemonsets"},
+				ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
+				Verbs:         []string{"get", "list", "watch"},
+			},
 			{
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"collectorsgroups"},
@@ -139,10 +145,10 @@ func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
-	finalizersUpdate := []rbacv1.PolicyRule{}
-	if ownerPermissionEnforcement {
-		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
+func NewInstrumentorClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
+	openshiftRules := []rbacv1.PolicyRule{}
+	if openshiftEnabled {
+		openshiftRules = append(openshiftRules, rbacv1.PolicyRule{
 			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
 			// When we create an InstrumentationConfig, we set the OwnerReference to the related workload.
 			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
@@ -151,6 +157,11 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 			APIGroups: []string{"apps"},
 			Resources: []string{"statefulsets/finalizers", "daemonsets/finalizers", "deployments/finalizers"},
 			Verbs:     []string{"update"},
+		}, rbacv1.PolicyRule{
+			// OpenShift DeploymentConfigs support
+			APIGroups: []string{"apps.openshift.io"},
+			Resources: []string{"deploymentconfigs", "deploymentconfigs/finalizers"},
+			Verbs:     []string{"get", "list", "watch", "update", "patch"},
 		})
 	}
 
@@ -245,7 +256,7 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				ResourceNames: []string{k8sconsts.InstrumentorSourceValidatingWebhookName},
 				Verbs:         []string{"update"},
 			},
-		}, finalizersUpdate...),
+		}, openshiftRules...),
 	}
 }
 
@@ -282,6 +293,9 @@ func NewInstrumentorService(ns string) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.InstrumentorServiceName,
 			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.InstrumentorAppLabelValue,
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -289,6 +303,11 @@ func NewInstrumentorService(ns string) *corev1.Service {
 					Name:       "webhook-server",
 					Port:       9443,
 					TargetPort: intstr.FromInt(9443),
+				},
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
 				},
 			},
 			Selector: map[string]string{
@@ -394,7 +413,7 @@ func NewSourceMutatingWebhookConfiguration(ns string) *admissionregistrationv1.M
 					},
 				},
 				FailurePolicy:      ptrGeneric(admissionregistrationv1.Fail),
-				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
+				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.NeverReinvocationPolicy),
 				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds:     intPtr(10),
 				AdmissionReviewVersions: []string{
@@ -439,7 +458,6 @@ func NewPodMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Muta
 					{
 						Operations: []admissionregistrationv1.OperationType{
 							admissionregistrationv1.Create,
-							admissionregistrationv1.Update,
 						},
 						Rule: admissionregistrationv1.Rule{
 							APIGroups:   []string{""},
@@ -450,7 +468,7 @@ func NewPodMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Muta
 					},
 				},
 				FailurePolicy:      ptrGeneric(admissionregistrationv1.Ignore),
-				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.IfNeededReinvocationPolicy),
+				ReinvocationPolicy: ptrGeneric(admissionregistrationv1.NeverReinvocationPolicy),
 				SideEffects:        ptrGeneric(admissionregistrationv1.SideEffectClassNone),
 				TimeoutSeconds:     intPtr(10),
 				AdmissionReviewVersions: []string{
@@ -483,13 +501,13 @@ func NewInstrumentorTLSSecret(ns string) *corev1.Secret {
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string, initContainerImage string) *appsv1.Deployment {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
 	args := []string{
 		"--health-probe-bind-address=:8081",
-		"--metrics-bind-address=127.0.0.1:8080",
+		"--metrics-bind-address=0.0.0.0:8080",
 		"--leader-elect",
 	}
 
@@ -572,6 +590,11 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
+								// This env var is used to set the image (ubi9 or not) of the init container (odigos-agents)
+								{
+									Name:  k8sconsts.OdigosInitContainerEnvVarName,
+									Value: containers.GetImageName(imagePrefix, initContainerImage, version),
+								},
 								// TODO: this tier env var should be removed once we complete the transition to
 								// enterprise and community images, and the webhook code won't rely on this env var
 								{
@@ -582,6 +605,17 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 												Name: k8sconsts.OdigosDeploymentConfigMapName,
 											},
 											Key: k8sconsts.OdigosDeploymentConfigMapTierKey,
+										},
+									},
+								},
+								{
+									Name: consts.OdigosVersionEnvVarName,
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosDeploymentConfigMapVersionKey,
 										},
 									},
 								},
@@ -630,7 +664,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 									},
 								},
 								InitialDelaySeconds: 15,
-								TimeoutSeconds:      0,
+								TimeoutSeconds:      5,
 								PeriodSeconds:       20,
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
@@ -645,7 +679,8 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
-								PeriodSeconds: 10,
+								PeriodSeconds:  10,
+								TimeoutSeconds: 5,
 							},
 							SecurityContext: &corev1.SecurityContext{},
 						},
@@ -718,7 +753,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector, a.managerOpts.ImageReferences.InitContainerImage),
 		NewInstrumentorService(a.ns),
 	}
 

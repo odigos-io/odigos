@@ -32,10 +32,12 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 ## Configuration Options
 
+The LatencySampler action is configured using the `odigos.io/v1alpha1.Action` CRD with the `samplers` configuration section.
+
 <AccordionGroup>
   <Accordion title="actionName">
     **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
-    - This field is
+    - This field is *optional*
     - <AssumeNoMeaning />
   </Accordion>
   <Accordion title="notes">
@@ -48,30 +50,42 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
     - This field is *optional*, and defaults to `false`
   </Accordion>
   <Accordion title="signals *">
-    **signals** `string[]` : An array with the signals that the processor will act on.
+    **signals** `string[]` : An array with the signals that the action will operate on.
     - This field is *required*
     - Supported values: `TRACES`
   </Accordion>
-  <Accordion title="endpoints_filters *">
-    **endpoints_filters** `object[]` : An array of objects representing the filters for the service and http route.
-    - This field is *required*
-
+  <Accordion title="samplers *">
+    **samplers** `object` : Configuration for sampling actions.
+    - This field is *required* for this action type
     <AccordionGroup>
-      <Accordion title="minimum_latency_threshold *">
-        **minimum_latency_threshold** `string` : Specifies the minimum latency in milliseconds; traces with latency below this threshold are ignored.
-        - This field is *required*
-      </Accordion>
-      <Accordion title="service_name *">
-        **service_name** `string` : The rule applies to a specific service name. Only traces originating from this service's root span will be considered.
-        - This field is *required*
-      </Accordion>
-      <Accordion title="http_route *">
-        **http_route** `string` : The specific HTTP route prefix to match for sampling. Only traces with routes beginning with this prefix will be considered. For instance, configuring `/buy` will also match `/buy/product`.
-        - This field is *required*
-      </Accordion>
-      <Accordion title="fallback_sampling_ratio *">
-        **fallback_sampling_ratio** `string` : Specifies the percentage of traces that meet the service/http_route filter but fall below the threshold that you still want to retain. For example, if a rule is set for service A and http_route B with a minimum latency threshold of 1 second, you might still want to keep some traces below this threshold. Setting the ratio to 20% ensures that 20% of these traces will be retained.
-        - This field is *required*
+      <Accordion title="latencySampler *">
+        **latencySampler** `object` : Configuration for the LatencySampler.
+        - This field is *required* for this action type
+        <AccordionGroup>
+          <Accordion title="endpoints_filters *">
+            **endpoints_filters** `object[]` : An array of objects representing the filters for the service and http route.
+            - This field is *required*
+
+            <AccordionGroup>
+              <Accordion title="minimum_latency_threshold *">
+                **minimum_latency_threshold** `string` : Specifies the minimum latency in milliseconds; traces with latency below this threshold are ignored.
+                - This field is *required*
+              </Accordion>
+              <Accordion title="service_name *">
+                **service_name** `string` : The rule applies to a specific service name. Only traces originating from this service's root span will be considered.
+                - This field is *required*
+              </Accordion>
+              <Accordion title="http_route *">
+                **http_route** `string` : The specific HTTP route prefix to match for sampling. Only traces with routes beginning with this prefix will be considered. For instance, configuring `/buy` will also match `/buy/product`.
+                - This field is *required*
+              </Accordion>
+              <Accordion title="fallback_sampling_ratio *">
+                **fallback_sampling_ratio** `string` : Specifies the percentage of traces that meet the service/http_route filter but fall below the threshold that you still want to retain. For example, if a rule is set for service A and http_route B with a minimum latency threshold of 1 second, you might still want to keep some traces below this threshold. Setting the ratio to 20% ensures that 20% of these traces will be retained.
+                - This field is *required*
+              </Accordion>
+            </AccordionGroup>
+          </Accordion>
+        </AccordionGroup>
       </Accordion>
     </AccordionGroup>
   </Accordion>
@@ -85,27 +99,29 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 ## Basic Example
 
-The following example demonstrates how to sample all traces with a latency greater than 1000ms for the `frontend` service and `/buy` http route. Additionally, it retains 20% of the traces that fall below the 1000ms threshold.
+The following example demonstrates how to sample all traces with a latency greater than 1000ms for the `frontend` service and `/buy` http route. Additionally, it retains 20% of the traces that fall below the 1000ms threshold using the new Action CRD.
 
 <Steps>
   <Step>
     Create a YAML file with the following content:
 
     ```yaml latency-sampler.yaml
-    apiVersion: actions.odigos.io/v1alpha1
-    kind: LatencySampler
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
     metadata:
       name: example-latencysampler
       namespace: odigos-system
     spec:
       actionName: "example-latencysampler-action"
-      endpoints_filters:
-      - service_name: "frontend"
-        http_route: "/buy"
-        fallback_sampling_ratio: 20
-        minimum_latency_threshold: 1000
       signals:
-      - TRACES
+        - TRACES
+      samplers:
+        latencySampler:
+          endpoints_filters:
+            - service_name: "frontend"
+              http_route: "/buy"
+              fallback_sampling_ratio: 20
+              minimum_latency_threshold: 1000
     ```
   </Step>
   <Step>

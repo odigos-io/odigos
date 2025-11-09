@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/go-logr/logr"
@@ -96,7 +97,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		return nil, nil, err
 	}
 
-	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName, attrs.ProgrammingLanguage, instrumentationConfig)
+	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName, attrs.ProgrammingLanguage, instrumentationConfig, k8sAttributes.ContainerName)
 	if err != nil {
 		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
 		return nil, nil, err
@@ -183,6 +184,42 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 		// always record healthy status into the CRD, to reflect the current state
 		healthy := message.Health.Healthy
 		dynamicOptions = append(dynamicOptions, instrumentation_instance.WithHealthy(&healthy, message.Health.Status, &message.Health.LastError))
+
+		if len(message.Health.ComponentHealthMap) > 0 {
+			components := make([]odigosv1.InstrumentationLibraryStatus, 0, len(message.Health.ComponentHealthMap))
+			for name, comp := range message.Health.ComponentHealthMap {
+				libStatus := odigosv1.InstrumentationLibraryStatus{
+					Name:           name,
+					Type:           odigosv1.InstrumentationLibraryTypeInstrumentation,
+					Healthy:        &comp.Healthy,
+					LastStatusTime: metav1.Now(),
+				}
+
+				// Try parsing comp.Status JSON string into NonIdentifyingAttributes
+				if comp.Status != "" {
+					var parsed map[string]interface{}
+					err := json.Unmarshal([]byte(comp.Status), &parsed)
+					if err != nil {
+						// fallback to setting it as plain message if parsing fails
+						libStatus.Reason = "instrumentation.details"
+						libStatus.Message = comp.Status
+					} else {
+						// set key-value pairs as NonIdentifyingAttributes
+						attrs := make([]odigosv1.Attribute, 0, len(parsed))
+						for k, v := range parsed {
+							attrs = append(attrs, odigosv1.Attribute{
+								Key:   k,
+								Value: fmt.Sprintf("%v", v),
+							})
+						}
+						libStatus.NonIdentifyingAttributes = attrs
+					}
+				}
+
+				components = append(components, libStatus)
+			}
+			dynamicOptions = append(dynamicOptions, instrumentation_instance.WithComponents(components))
+		}
 	}
 
 	if len(dynamicOptions) > 0 {

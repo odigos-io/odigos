@@ -11,7 +11,9 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -30,19 +32,26 @@ var (
 func GetConfig(ctx context.Context) model.GetConfigResponse {
 	var response model.GetConfigResponse
 
-	response.Readonly = IsReadonlyMode(ctx)
-
 	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		response.Tier = model.Tier(common.CommunityOdigosTier)
-	} else {
-		response.Tier = model.Tier(odigosDeployment.Data[k8sconsts.OdigosDeploymentConfigMapTierKey])
+		// assign default values (should not happen in production, but we want to be safe)
+		odigosDeployment = &corev1.ConfigMap{}
+		odigosDeployment.Data = map[string]string{
+			k8sconsts.OdigosDeploymentConfigMapTierKey:               string(common.CommunityOdigosTier),
+			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
+		}
 	}
+	deploymentData := odigosDeployment.Data
 
-	if !isSourceCreated(ctx) && !isDestinationConnected(ctx) {
-		response.Installation = model.InstallationStatus(NewInstallation)
+	response.Readonly = IsReadonlyMode(ctx)
+	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
+	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
+
+	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
+	if isNewInstallation {
+		response.InstallationStatus = model.InstallationStatus(NewInstallation)
 	} else {
-		response.Installation = model.InstallationStatus(Finished)
+		response.InstallationStatus = model.InstallationStatus(Finished)
 	}
 
 	return response
@@ -51,19 +60,19 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 func IsReadonlyMode(ctx context.Context) bool {
 	ns := env.GetCurrentNamespace()
 
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 	if err != nil {
 		log.Printf("Error getting config maps: %v\n", err)
 		return false
 	}
 
-	var odigosConfig common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
+	var odigosConfiguration common.OdigosConfiguration
+	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
 		log.Printf("Error parsing YAML: %v\n", err)
 		return false
 	}
 
-	return odigosConfig.UiMode == common.ReadonlyUiMode
+	return odigosConfiguration.UiMode == common.UiModeReadonly
 }
 
 func isSourceCreated(ctx context.Context) bool {

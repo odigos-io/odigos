@@ -18,11 +18,16 @@ var KratosProfile = profile.Profile{
 		"hostname-as-podname",
 		"code-attributes",
 		"query-operation-detector",
-		"small-batches",
-		"size_m",
+		// "small-batches", - issue is fixed in receiver. can now handle 85MB
 		"allow_concurrent_agents",
 		"mount-method-k8s-host-path",
 		"reduce-span-name-cardinality",
-		"loader-fallback-to-pod-manifest-env-var-injection",
+		"disable-gin",
+		"semconvdynamo",
+		"semconvredis",
+	},
+	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
+		rollbackDisabled := true
+		config.RollbackDisabled = &rollbackDisabled
 	},
 }

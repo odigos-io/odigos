@@ -23,6 +23,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const ActionMigratedLegacyPrefix = "migrated-legacy-"
+
 // condition types for action CR
 const (
 	// TransformedToProcessor is the condition when the action CR is transformed to a processor CR.
@@ -67,6 +69,12 @@ type ActionSpec struct {
 
 	// PiiMasking is the config for the PiiMasking Action.
 	PiiMasking *actionsv1.PiiMaskingConfig `json:"piiMasking,omitempty"`
+
+	// K8sAttributes is the config for the K8sAttributes Action.
+	K8sAttributes *actionsv1.K8sAttributesConfig `json:"k8sAttributes,omitempty"`
+
+	// Samplers is the config for the Samplers Action.
+	Samplers *actionsv1.SamplersConfig `json:"samplers,omitempty"`
 }
 
 type ActionStatus struct {

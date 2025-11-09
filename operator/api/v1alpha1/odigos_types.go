@@ -32,7 +32,7 @@ type OdigosSpec struct {
 	// In "normal" mode the UI is fully interactive, allowing users to view and edit
 	// Odigos configuration and settings. In "readonly" mode, the UI can only be
 	// used to view current Odigos configuration and is not interactive.
-	// Default=normal
+	// Default=default
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UI Mode",order=2
 	UIMode common.UiMode `json:"uiMode,omitempty"`
 
@@ -56,7 +56,6 @@ type OdigosSpec struct {
 	// (Optional) AgentEnvVarsInjectionMethod is the method to inject the Odigos agent env vars into the pod.
 	// Default=pod-manifest
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=3
-	// +kubebuilder:default=pod-manifest
 	AgentEnvVarsInjectionMethod common.EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
 
 	// (Optional) NodeSelector is a map of key-value Kubernetes NodeSelector labels to apply to all Odigos components.

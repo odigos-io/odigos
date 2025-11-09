@@ -1,0 +1,204 @@
+name: Promote Release-Candidate to Stable
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to promote"
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+  id-token: 'write'
+
+env:
+  DOCKERHUB_REPO: "keyval"
+  GCR_REPO: "us-central1-docker.pkg.dev/odigos-cloud/components"
+  GHCR_REPO: "ghcr.io/odigos-io"
+
+jobs:
+  promote-rc-to-stable:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify the tag is a release candidate
+        run: |
+          # =~ is a bash operator that checks if a string matches a regular expression pattern
+          # Here we check if the tag matches the format vX.Y.Z-rcN where X,Y,Z,N are numbers
+          if [[ "${{ github.event.inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$ ]]; then
+            echo "Tag is a release candidate"
+            echo "RC_TAG=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            echo "Tag is not a release candidate"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # need to fetch all tags for goreleaser to calculate the changelog
+          ref: ${{ env.RC_TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
+          token: ${{ secrets.RELEASE_BOT_TOKEN }} # so we can push the new tag
+
+      - name: Get Stable Tag From Release Candidate
+        run: |
+            # remove the -rc part and number from the tag
+            STABLE_TAG=$(echo "${{ env.RC_TAG }}" | sed 's/-rc[0-9]*$//')
+
+            # Validate the stable tag format
+            if [[ ! "$STABLE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "ERROR: Invalid stable tag format: $STABLE_TAG"
+              exit 1
+            fi
+
+            echo "STABLE_TAG=${STABLE_TAG}" >> $GITHUB_ENV
+            echo "Extracted stable tag: $STABLE_TAG"
+
+      - name: Check if stable tag already exists
+        run: |
+            if git tag -l | grep -q "^${{ env.STABLE_TAG }}$"; then
+                echo "ERROR: Stable tag ${{ env.STABLE_TAG }} already exists"
+                echo "This workflow has likely already been run for this release candidate"
+                exit 1
+            else
+                echo "Stable tag ${{ env.STABLE_TAG }} does not exist, proceeding with promotion"
+            fi
+
+
+      - name: Notify Slack Start
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Starting to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          failure-description: "ERROR: Failed to promote release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          tag: ${{ env.RC_TAG }}
+
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.4
+
+      - id: gcp-auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.gcp-auth.outputs.access_token }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Retag existing images to stable
+        run: |
+            # Define which images go to which registries
+            GCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
+
+            GHCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
+
+            DOCKERHUB_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
+
+            UBI9_SUFFIXES=("" "-ubi9")
+            # Track failed copies for potential rollback
+            FAILED_COPIES=()
+
+            for SUFFIX in "${UBI9_SUFFIXES[@]}"; do
+              # Process GCR images
+              for IMAGE_NAME in "${GCR_IMAGE_NAMES[@]}"; do
+                REPO=${GCR_REPO}
+                echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
+              done
+
+              # Process GHCR images
+              for IMAGE_NAME in "${GHCR_IMAGE_NAMES[@]}"; do
+                REPO=${GHCR_REPO}
+                echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
+              done
+
+              # Process DockerHub images
+              for IMAGE_NAME in "${DOCKERHUB_IMAGE_NAMES[@]}"; do
+                REPO=${DOCKERHUB_REPO}
+                echo "Copying ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} to ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}"
+                if ! crane copy ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.RC_TAG }} ${REPO}/${IMAGE_NAME}${SUFFIX}:${{ env.STABLE_TAG }}; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}${SUFFIX}")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME}${SUFFIX}"
+                fi
+              done
+            done
+
+            # Check if any copies failed
+            if [ ${#FAILED_COPIES[@]} -gt 0 ]; then
+              echo "ERROR: The following image copies failed:"
+              printf '%s\n' "${FAILED_COPIES[@]}"
+              echo "Stable tag creation will be aborted"
+              exit 1
+            fi
+
+            echo "All image copies completed successfully"
+
+      - name: Tag Stable Release in GitHub
+        run: |
+            # Double-check that the tag doesn't exist before creating it
+            if git tag -l | grep -q "^${{ env.STABLE_TAG }}$"; then
+                echo "ERROR: Stable tag ${{ env.STABLE_TAG }} already exists - this should not happen"
+                exit 1
+            fi
+
+            git tag ${{ env.STABLE_TAG }}
+            echo "Successfully created stable tag ${{ env.STABLE_TAG }} (not pushed yet)"
+
+      - name: Tag Modules
+        uses: ./.github/actions/tag-modules
+        with:
+          tag: ${{ env.STABLE_TAG }}
+
+      - name: Push All Tags
+        run: |
+            echo "Pushing all tags (stable + module tags) at once"
+            git push origin --tags
+            echo "Successfully pushed all tags"
+
+      - name: Trigger CLI Release
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            https://api.github.com/repos/odigos-io/odigos/dispatches \
+            -d '{"event_type": "release_cli", "client_payload": {"tag": "${{ env.STABLE_TAG }}"}}'
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Successfully re-tagged release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          failure-description: "ERROR: Failed to re-tag release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          tag: ${{ env.STABLE_TAG }}

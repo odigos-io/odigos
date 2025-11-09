@@ -14,6 +14,8 @@ rules:
       - get
       - list
   {{- if ne .Values.ui.uiMode "readonly" }}
+      - update
+      - patch
   - apiGroups:
       - ''
     resources:
@@ -54,9 +56,9 @@ rules:
       - get
       - list
   - apiGroups:
-      - actions.odigos.io
+      - odigos.io
     resources:
-      - '*'
+      - 'actions'
     verbs:
       - get
       - list
@@ -66,3 +68,25 @@ rules:
       - update
       - delete
       {{- end }}
+  # Permissions for pauseOdigos mutation
+  {{- if ne .Values.ui.uiMode "readonly" }}
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/scale
+    resourceNames:
+      - odigos-instrumentor
+    verbs: ["get", "update", "patch"]
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+    resourceNames:
+      - odiglet
+    verbs: ["get", "update", "patch"]
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs: ["list", "delete"]
+  {{- end }}

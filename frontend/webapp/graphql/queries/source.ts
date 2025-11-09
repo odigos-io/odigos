@@ -1,32 +1,30 @@
 import { gql } from '@apollo/client';
 
 export const GET_SOURCES = gql`
-  query GetSources($nextPage: String!) {
+  query GetSources {
     computePlatform {
-      sources(nextPage: $nextPage) {
-        nextPage
-        items {
-          namespace
-          name
-          kind
-          dataStreamNames
-          selected
-          otelServiceName
-          containers {
-            containerName
-            language
-            runtimeVersion
-            instrumented
-            instrumentationMessage
-            otelDistroName
-          }
-          conditions {
-            status
-            type
-            reason
-            message
-            lastTransitionTime
-          }
+      sources {
+        namespace
+        name
+        kind
+        dataStreamNames
+        selected
+        otelServiceName
+        containers {
+          containerName
+          language
+          runtimeVersion
+          overriden
+          instrumented
+          instrumentationMessage
+          otelDistroName
+        }
+        conditions {
+          status
+          type
+          reason
+          message
+          lastTransitionTime
         }
       }
     }
@@ -47,6 +45,7 @@ export const GET_SOURCE = gql`
           containerName
           language
           runtimeVersion
+          overriden
           instrumented
           instrumentationMessage
           otelDistroName
@@ -57,6 +56,11 @@ export const GET_SOURCE = gql`
           reason
           message
           lastTransitionTime
+        }
+        workloadOdigosHealthStatus {
+          status
+          reasonEnum
+          message
         }
       }
     }
@@ -75,6 +79,18 @@ export const GET_SOURCE_CONDITIONS = gql`
         reason
         message
         lastTransitionTime
+      }
+    }
+  }
+`;
+
+export const GET_SOURCE_LIBRARIES = gql`
+  query GetSourceLibraries($namespace: String!, $kind: String!, $name: String!) {
+    instrumentationInstanceComponents(namespace: $namespace, kind: $kind, name: $name) {
+      name
+      nonIdentifyingAttributes {
+        key
+        value
       }
     }
   }

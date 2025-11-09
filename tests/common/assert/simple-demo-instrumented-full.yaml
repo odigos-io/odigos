@@ -6,15 +6,6 @@ metadata:
   labels:
     app: frontend
 spec:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: odigos.io/odiglet-oss-installed
-                operator: In
-                values:
-                  - 'true'
   containers:
     - name: frontend
       resources:
@@ -43,9 +34,15 @@ spec:
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: frontend
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - value: 'k8s.pod.name=$(ODIGOS_POD_NAME),k8s.container.name=frontend,k8s.namespace.name=default,k8s.deployment.name=frontend'
-      (env[?name == 'JAVA_TOOL_OPTIONS']):
-        - value: '-javaagent:/var/odigos/java/javaagent.jar'
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=frontend,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=frontend,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=frontend-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+      (env[?name == 'LD_PRELOAD']):
+        - value: "/var/odigos/loader/loader.so"
+      (env[?name == 'OTEL_TRACES_EXPORTER']):
+        - value: otlp
+      (env[?name == 'OTEL_METRICS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_LOGS_EXPORTER']):
+        - value: none
 status:
   containerStatuses:
     - name: frontend
@@ -61,15 +58,6 @@ metadata:
   labels:
     app: coupon
 spec:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: odigos.io/odiglet-oss-installed
-                operator: In
-                values:
-                  - 'true'
   containers:
     - name: coupon
       resources:
@@ -97,8 +85,10 @@ spec:
         - (($values.k8sMinorVersion < `26` && value == '$(NODE_IP):4320') || value == 'odiglet-local.odigos-test:4320'): true
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
         - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
-      (env[?name == 'NODE_OPTIONS']):
-        - value: '--require /var/odigos/nodejs/autoinstrumentation.js'
+      (env[?name == 'LD_PRELOAD']):
+        - value: "/var/odigos/loader/loader.so"
+      (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=coupon,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=coupon,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=coupon-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
 status:
   containerStatuses:
     - name: coupon
@@ -114,15 +104,6 @@ metadata:
   labels:
     app: inventory
 spec:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: odigos.io/odiglet-oss-installed
-                operator: In
-                values:
-                  - 'true'
   containers:
     - name: inventory
       resources:
@@ -150,8 +131,10 @@ spec:
         - (($values.k8sMinorVersion < `26` && value == '$(NODE_IP):4320') || value == 'odiglet-local.odigos-test:4320'): true
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
         - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
-      (env[?name == 'PYTHONPATH']):
-        - value: '/bar:/var/odigos/python:/var/odigos/python/opentelemetry/instrumentation/auto_instrumentation'
+      (env[?name == 'LD_PRELOAD']):
+        - value: "/var/odigos/loader/loader.so"
+      (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=inventory,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=inventory,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=inventory-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
 status:
   containerStatuses:
     - name: inventory
@@ -167,15 +150,6 @@ metadata:
   labels:
     app: membership
 spec:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: odigos.io/odiglet-oss-installed
-                operator: In
-                values:
-                  - 'true'
   containers:
     - name: membership
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
@@ -189,6 +163,8 @@ spec:
               fieldPath: metadata.name
       (env[?name == 'ODIGOS_WORKLOAD_NAMESPACE']):
         - value: default
+      (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=membership,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=membership,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=membership-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
 status:
   containerStatuses:
     - name: membership
@@ -204,22 +180,13 @@ metadata:
   labels:
     app: pricing
 spec:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: odigos.io/odiglet-oss-installed
-                operator: In
-                values:
-                  - 'true'
   containers:
     - name: pricing
       resources:
         limits:
-          instrumentation.odigos.io/dotnet-native-community: '1'
+          instrumentation.odigos.io/generic: '1'
         requests:
-          instrumentation.odigos.io/dotnet-native-community: '1'
+          instrumentation.odigos.io/generic: '1'
       (env[?name == 'ODIGOS_CONTAINER_NAME']):
         - value: pricing
       (env[?name == 'ODIGOS_DISTRO_NAME']):
@@ -234,7 +201,29 @@ spec:
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: pricing
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - value: 'k8s.pod.name=$(ODIGOS_POD_NAME),k8s.container.name=pricing,k8s.namespace.name=default,k8s.deployment.name=pricing'
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=pricing,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=pricing,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=pricing-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+      (env[?name == 'CORECLR_ENABLE_PROFILING']):
+        - value: '1'
+      (env[?name == 'CORECLR_PROFILER']):
+        - value: '{918728DD-259F-4A6A-AC2B-B85E1B658318}'
+      (env[?name == 'CORECLR_PROFILER_PATH']):
+        - value: '/var/odigos/dotnet/linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so'
+      (env[?name == 'OTEL_DOTNET_AUTO_HOME']):
+        - value: '/var/odigos/dotnet'
+      (env[?name == 'DOTNET_STARTUP_HOOKS']):
+        - value: '/var/odigos/dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll'
+      (env[?name == 'DOTNET_ADDITIONAL_DEPS']):
+        - value: '/var/odigos/dotnet/AdditionalDeps'
+      (env[?name == 'DOTNET_SHARED_STORE']):
+        - value: '/var/odigos/dotnet/store'
+      (env[?name == 'OTEL_LOGS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_METRICS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_TRACES_EXPORTER']):
+        - value: otlp
+      (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
 status:
   containerStatuses:
     - name: pricing
@@ -250,15 +239,6 @@ metadata:
   labels:
     app: currency
 spec:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: odigos.io/odiglet-oss-installed
-                operator: In
-                values:
-                  - 'true'
   containers:
     - name: currency
       resources:
@@ -280,7 +260,7 @@ spec:
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: currency
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - value: 'k8s.pod.name=$(ODIGOS_POD_NAME),k8s.container.name=currency,k8s.namespace.name=default,k8s.deployment.name=currency'
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=currency,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=currency,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=currency-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
       (env[?name == 'OTEL_LOGS_EXPORTER']):
         - value: none
       (env[?name == 'OTEL_METRICS_EXPORTER']):
@@ -305,6 +285,59 @@ status:
       restartCount: 0
       started: true
     - name: nginx
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: geolocation
+spec:
+  containers:
+    - name: geolocation
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: '1'
+        requests:
+          instrumentation.odigos.io/generic: '1'
+      (env[?name == 'ODIGOS_CONTAINER_NAME']):
+        - value: geolocation
+      (env[?name == 'ODIGOS_DISTRO_NAME']):
+        - value: ruby-community
+      (env[?name == 'ODIGOS_POD_NAME']):
+        - valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+      (env[?name == 'ODIGOS_WORKLOAD_NAMESPACE']):
+        - value: default
+      (env[?name == 'OTEL_SERVICE_NAME']):
+        - value: geolocation
+      (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=geolocation,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=geolocation,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=geolocation-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+      (env[?name == 'OTEL_LOGS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_METRICS_EXPORTER']):
+        - value: none
+      (env[?name == 'OTEL_TRACES_EXPORTER']):
+        - value: otlp
+      (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
+      (env[?name == 'OTEL_EXPORTER_OTLP_PROTOCOL']):
+        - value: 'http/protobuf'
+      (env[?name == 'OTEL_PROPAGATORS']):
+        - value: 'tracecontext,baggage'
+      (env[?name == 'RUBYOPT']):
+        - value: '-r/var/odigos/ruby/3.4/index.rb'
+      (env[?name == 'ODIGOS_GEM_PATH']):
+        - value: '/var/odigos/ruby/3.4/bundle'
+status:
+  containerStatuses:
+    - name: geolocation
       ready: true
       restartCount: 0
       started: true
@@ -360,7 +393,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: inventory
       language: python
-      runtimeVersion: 3.11.12
+      runtimeVersion: 3.11.13
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
@@ -409,11 +442,28 @@ metadata:
 status:
   (runtimeDetailsByContainer[?containerName=='currency']):
     - language: php
-      runtimeVersion: 8.2.28
+      runtimeVersion: 8.2.29
       secureExecutionMode: false
   (runtimeDetailsByContainer[?containerName=='nginx']):
     - language: nginx
       runtimeVersion: 1.27.5
+      secureExecutionMode: false
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-geolocation
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: geolocation
+status:
+  (runtimeDetailsByContainer[?containerName=='geolocation']):
+    - language: ruby
+      runtimeVersion: 3.4.4
       secureExecutionMode: false
 ---
 ### Instrumentation Instances ###
@@ -474,3 +524,117 @@ metadata:
 status:
   healthy: true
   reason: LoadedSuccessfully
+---
+### Simple-demo Deployments ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: membership
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currency
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocation
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---

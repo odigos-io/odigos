@@ -71,7 +71,7 @@ const (
 	MarkedForInstrumentationReasonError MarkedForInstrumentationReason = "RetirableError"
 )
 
-// +kubebuilder:validation:Enum=DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
+// +kubebuilder:validation:Enum=NotMakredForInstrumentation;DetectedSuccessfully;WaitingForDetection;NoRunningPods;Error
 type RuntimeDetectionReason string
 
 const (
@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;UnsupportedProgrammingLanguage;IgnoredContainer;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;CrashLoopBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff
 type AgentEnabledReason string
 
 const (
@@ -95,8 +95,10 @@ const (
 	AgentEnabledReasonWaitingForRuntimeInspection    AgentEnabledReason = "WaitingForRuntimeInspection"
 	AgentEnabledReasonWaitingForNodeCollector        AgentEnabledReason = "WaitingForNodeCollector"
 	AgentEnabledReasonIgnoredContainer               AgentEnabledReason = "IgnoredContainer"
+	AgentEnabledReasonNoCollectedSignals             AgentEnabledReason = "NoCollectedSignals"
 	AgentEnabledReasonUnsupportedProgrammingLanguage AgentEnabledReason = "UnsupportedProgrammingLanguage"
 	AgentEnabledReasonNoAvailableAgent               AgentEnabledReason = "NoAvailableAgent"
+	AgentEnabledReasonInjectionConflict              AgentEnabledReason = "InjectionConflict"
 	AgentEnabledReasonUnsupportedRuntimeVersion      AgentEnabledReason = "UnsupportedRuntimeVersion"
 	AgentEnabledReasonMissingDistroParameter         AgentEnabledReason = "MissingDistroParameter"
 	AgentEnabledReasonOtherAgentDetected             AgentEnabledReason = "OtherAgentDetected"
@@ -138,6 +140,10 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 30
 	case AgentEnabledReasonIgnoredContainer:
 		return 40
+	case AgentEnabledReasonNoCollectedSignals:
+		return 45
+	case AgentEnabledReasonInjectionConflict:
+		return 48
 	case AgentEnabledReasonUnsupportedProgrammingLanguage:
 		return 50
 	case AgentEnabledReasonUnsupportedRuntimeVersion:
@@ -163,8 +169,10 @@ func IsReasonStatusDisabled(reason string) bool {
 	case string(AgentEnabledReasonUnsupportedProgrammingLanguage),
 		string(AgentEnabledReasonUnsupportedRuntimeVersion),
 		string(RuntimeDetectionReasonNoRunningPods),
+		string(AgentEnabledReasonNoCollectedSignals),
 		string(AgentEnabledReasonIgnoredContainer),
 		string(AgentEnabledReasonNoAvailableAgent),
+		string(AgentEnabledReasonInjectionConflict),
 		string(AgentEnabledReasonOtherAgentDetected),
 		string(AgentEnabledReasonCrashLoopBackOff),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
@@ -211,7 +219,11 @@ type RuntimeDetailsByContainer struct {
 	// nil means we were unable to determine the secure-execution mode.
 	SecureExecutionMode *bool `json:"secureExecutionMode,omitempty"`
 
-	// Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.
+	// CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+	// Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+	// Thus, this field is set only when there is:
+	// - Actual CRI check failed
+	// - The observed environment variables might come from container runtime
 	CriErrorMessage *string `json:"criErrorMessage,omitempty"`
 	// Holds the environment variables retrieved from the container runtime.
 	EnvFromContainerRuntime []EnvVar `json:"envFromContainerRuntime,omitempty"`
@@ -247,6 +259,18 @@ func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v
 	return nil
 }
 
+// all "traces" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
+type AgentTracesConfig struct{}
+
+// all "metrics" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
+type AgentMetricsConfig struct{}
+
+// all "logs" related configuration for an agent running on any process in a specific container.
+// The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
+type AgentLogsConfig struct{}
+
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {
 	// The name of the container to which this configuration applies.
@@ -269,6 +293,18 @@ type ContainerAgentConfig struct {
 	// Additional parameters to the distro that controls how it's being applied.
 	// Keys are parameter names (like "libc") and values are the value to use for that parameter (glibc / musl)
 	DistroParams map[string]string `json:"distroParams,omitempty"`
+
+	// What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+	// Can be either "loader" or "pod-manifest".
+	// The injection should still check the actual values in the container manifest before injecting.
+	// Nil means that this container should not have env injection (agent should not be injected, or distro does not specify "loader" injection envs).
+	EnvInjectionMethod *common.EnvInjectionDecision `json:"envInjectionMethod,omitempty"`
+
+	// Each enabled signal must be set with a non-nil value (even if the config content is empty).
+	// nil means that the signal is disabled and should not be instrumented/collected by the agent.
+	Traces  *AgentTracesConfig  `json:"traces,omitempty"`
+	Metrics *AgentMetricsConfig `json:"metrics,omitempty"`
+	Logs    *AgentLogsConfig    `json:"logs,omitempty"`
 }
 
 // Config for the OpenTelemeetry SDKs that should be applied to a workload.
@@ -296,6 +332,11 @@ type InstrumentationConfigSpec struct {
 	// or something else that requires rollout, the hash change will indicate that.
 	// if the hash is empty, it means that no agent should be enabled in any pod container.
 	AgentsMetaHash string `json:"agentsMetaHash,omitempty"`
+
+	// The last time at which the agents meta hash value was changed.
+	// Pods created before this time may not be in alignment with the AgentsMetaHash.
+	// e.g. can lack the odigos label, or have a different value.
+	AgentsMetaHashChangedTime *metav1.Time `json:"agentsMetaHashChangedTime,omitempty"`
 
 	// Configuration for the OpenTelemetry SDKs that this workload should use.
 	// The SDKs are identified by the programming language they are written in.
@@ -332,6 +373,12 @@ type SdkConfig struct {
 
 	// default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.
 	DefaultHeadersCollection *instrumentationrules.HttpHeadersCollection `json:"headersCollection,omitempty"`
+
+	// default configuration for library tracing.
+	DefaultTraceConfig *instrumentationrules.TraceConfig `json:"traceConfig,omitempty"`
+
+	// list of the custom instrumentation probes the SDK should use.
+	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression
@@ -438,4 +485,33 @@ func (ic *InstrumentationConfig) Languages() map[common.ProgrammingLanguage]stru
 		langs[sdkConfig.Language] = struct{}{}
 	}
 	return langs
+}
+
+// RuntimeDetailsByContainer will return a map containing runtime details for each container name present in the instrumented workload.
+// The keys are container names. Each value can be nil in case we have no runtime details for this container
+// from automatic runtime detection or overrides.
+// For each container, if an override is present, it will be taken into account before the automatic detection results.
+func (ic *InstrumentationConfig) RuntimeDetailsByContainer() map[string]*RuntimeDetailsByContainer {
+	detailsByContainer := make(map[string]*RuntimeDetailsByContainer)
+
+	// ContainersOverrides will always list all containers of the workloads, so we can use it to iterate.
+	for i := range ic.Spec.ContainersOverrides {
+		containerName := ic.Spec.ContainersOverrides[i].ContainerName
+		var containerRuntimeDetails *RuntimeDetailsByContainer
+		// always take the override if it exists, before taking the automatic runtime detection.
+		if ic.Spec.ContainersOverrides[i].RuntimeInfo != nil {
+			containerRuntimeDetails = ic.Spec.ContainersOverrides[i].RuntimeInfo
+		} else {
+			// find this container by name in the automatic runtime detection
+			for j := range ic.Status.RuntimeDetailsByContainer {
+				if ic.Status.RuntimeDetailsByContainer[j].ContainerName == containerName {
+					containerRuntimeDetails = &ic.Status.RuntimeDetailsByContainer[j]
+					break
+				}
+			}
+		}
+		detailsByContainer[containerName] = containerRuntimeDetails
+	}
+
+	return detailsByContainer
 }

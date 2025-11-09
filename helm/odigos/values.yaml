@@ -1,3 +1,9 @@
+# User should be specifying the signals they want to collect.
+signals:
+  - traces
+  - metrics
+  - logs
+
 image:
   tag: ''
 imagePullSecrets: []
@@ -54,48 +60,85 @@ userInstrumentationEnvs:
       enabled: false
       env: {}
 
+# Sizing Configurations size_s, size_m, size_l are pre-defined configurations designed to simplify pipeline configurations.
+# The default value is 'size_m', which is the medium size configuration.
+# See https://docs.odigos.io/pipeline/configuration#1-using-sizing-configuration for more details.
+ResourceSizePreset: size_m
+
+# HYBRID CONFIGURATION APPROACH:
+# By default, all values below are automatically set based on the ResourceSizePreset above.
+# Uncomment and modify any value to override the automatic sizing for that specific parameter.
+#
+# IMPORTANT CONSTRAINTS:
+# 1. minReplicas must be less or equal to maxReplicas
+# 2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
+# 3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request
+# 4. Same logic applies to CPU settings
 collectorGateway:
   # the memory request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
   # of the form "memory: <value>Mi".
   # default value is 500Mi
-  requestMemoryMiB: 500
+  # If you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.
+  # requestMemoryMiB: 625
+
   # the memory limit for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource limit
   # of the form "memory: <value>Mi".
   # default value is 625Mi
-  limitMemoryMiB: 625
+  # If you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.
+  # limitMemoryMiB: 625
 
   # the CPU request for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource request
   # of the form "cpu: <value>m".
   # default value is 500m
-  requestCPUm: 500
+  # If you set only requestCPUm, the limitCPUm will be set to the same value.
+  # requestCPUm: 500
+
   # the CPU limit for the cluster gateway collector deployment.
   # it will be embedded in the deployment as a resource limit
   # of the form "cpu: <value>m".
   # default value is 1000m
-  limitCPUm: 1000
+  # If you set only limitCPUm, the requestCPUm will be set to the same value.
+  # limitCPUm: 1000
 
   # The number of replicas for the cluster gateway collector deployment.
   # Also uses in MinReplicas the HPA config.
-  minReplicas: 1
+  # minReplicas: 1
   # The maxReplicas in the HPA config.
-  maxReplicas: 10
+  # maxReplicas: 10
 
   # sets the "limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # it is the hard limit after which a force garbage collection will be performed.
-  # if not set, it will be 50Mi below the memory request.
-  memoryLimiterLimitMiB: 450
+  # if not set, it will be 50Mi below the memory limit.
+  # memoryLimiterLimitMiB: 575
+
   # sets the "spike_limit_mib" parameter in the memory limiter configuration for the collector gateway.
   # note that this is not the processor soft limit, but the diff in MiB between the hard limit and the soft limit.
   # if not specified, this value will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
-  memoryLimiterSpikeLimitMiB: 90
+  # memoryLimiterSpikeLimitMiB: 110
+
   # the GOMEMLIMIT environment variable value for the collector gateway deployment.
   # this is when go runtime will start garbage collection.
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
-  goMemLimitMiB: 340
+  # goMemLimitMiB: 460
 
+  # Service Graph settings
+  # Service Graph is a feature that allows you to visualize the service graph of your application.
+  # It is enabled by default and can be disabled by setting the disabled flag to true.
+  serviceGraphDisabled: false
+  # Cluster Metrics settings
+  # Cluster Metrics is a feature that allows you to enable the cluster metrics.
+  # [https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver]
+  # It is disabled by default and can be enabled by setting the enabled flag to true.
+  clusterMetricsEnabled: false
+
+  # for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+  # when unset or empty, no proxy will be used.
+  # httpsProxyAddress: ''
+
+# Settings for Odigos data-collection (node) Collectors
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
   # This can be used to resolve conflicting ports when a collector is using the host network.
@@ -104,42 +147,66 @@ collectorNode:
   # RequestMemoryMiB is the memory request for the node collector daemonset.
   # it will be embedded in the daemonset as a resource request of the form "memory: <value>Mi"
   # default value is 250Mi
-  requestMemoryMiB: 250
+  # If you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.
+  # requestMemoryMiB: 250
 
   # LimitMemoryMiB is the memory limit for the node collector daemonset.
   # it will be embedded in the daemonset as a resource limit of the form "memory: <value>Mi"
-  # default value is 2x the memory request.
-  limitMemoryMiB: 500
+  # default value is 500Mi
+  # If you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.
+  # limitMemoryMiB: 500
 
   # the CPU request for the node collector daemonset.
   # it will be embedded in the daemonset as a resource request
   # of the form "cpu: <value>m".
   # default value is 250m
-  requestCPUm: 250
+  # If you set only requestCPUm, the limitCPUm will be set to the same value.
+  # requestCPUm: 250
+
   # the CPU limit for the node collector daemonset.
   # it will be embedded in the daemonset as a resource limit
   # of the form "cpu: <value>m".
   # default value is 500m
-  limitCPUm: 500
+  # If you set only limitCPUm, the requestCPUm will be set to the same value.
+  # limitCPUm: 500
 
   # this parameter sets the "limit_mib" parameter in the memory limiter configuration for the node collector.
   # it is the hard limit after which a force garbage collection will be performed.
   # if not set, it will be 50Mi below the memory limit.
-  memoryLimiterLimitMiB: 450
+  # memoryLimiterLimitMiB: 450
 
   # this parameter sets the "spike_limit_mib" parameter in the memory limiter configuration for the node collector.
   # note that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.
   # if not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).
-  memoryLimiterSpikeLimitMiB: 55
+  # memoryLimiterSpikeLimitMiB: 90
 
   # the GOMEMLIMIT environment variable value for the node collector daemonset.
   # this is when go runtime will start garbage collection.
   # if not specified, it will be set to 80% of the hard limit of the memory limiter.
-  goMemLimitMiB: 360
+  # goMemLimitMiB: 360
 
   # this configuration is used for logs collection where '/var/log' in a k8s node is a symlink
   # to some other directory (for example, '/mnt/var/log')
   k8sNodeLogsDirectory: ''
+
+
+  otlpExporterConfiguration:
+    # EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+    # It is disabled by default and can be enabled by setting the enabled flag to true.
+    enableDataCompression: false
+    # Time to wait per individual attempt to send data to a backend
+    timeout: 5s
+    retryOnFailure:
+      # Whether to retry on failure, by default it is enabled.
+      enabled: true
+      # Time to wait after the first failure before retrying; ignored if `enabled` is `false`.
+      initialInterval: 5s
+      # Is the upper bound on backoff; ignored if `enabled` is `false`.
+      maxInterval: 30s
+      # Is the maximum amount of time spent trying to send a batch; ignored if `enabled` is `false`.
+      # If set to 0, the retry will continue indefinitely until the data is sent successfully.
+      maxElapsedTime: 300s
+
 
 autoscaler:
   nodeSelector:
@@ -179,22 +246,46 @@ ui:
     limits:
       cpu: 500m
       memory: 512Mi
-  # uiMode: 'normal' or 'readonly'
+  # uiMode: 'default' or 'readonly'
   #  - This flag controls whether the UI should be in read-only mode.
   #  - Setting this to "readonly" will disable the ability to create, update, or delete objects in the UI.
-  #  - If not set, the UI will be in normal mode.
-  uiMode: 'normal'
+  #  - If not set, the UI will be in default mode.
+  uiMode: 'default'
   # uiPaginationLimit:
   #  - This flag controls the number of items to fetch per paginated-batch in the UI.
   #  - If not set, the UI will fetch 100 items per paginated-batch.
   uiPaginationLimit: 0
+  # uiRemoteUrl:
+  #  - This flag sets the URL of the remote UI (e.g. https://my-odigos-ui.com).
+  #  - If not set, the UI will default to the local UI.
+  #  - This is useful when you are hosting the Odigos UI on a custom/remote URL, and require OIDC authentication.
+  uiRemoteUrl: ''
+  # oidcTenantUrl:
+  #  - This flag sets the URL of the OIDC tenant (e.g. https://my-oidc-tenant.com).
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcTenantUrl: ''
+  # oidcClientId:
+  #  - This flag sets the client ID of the OIDC application.
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcClientId: ''
+  # oidcClientSecret:
+  #  - This flag sets the client secret of the OIDC application.
+  #  - If not set, the UI will not process OIDC authentication.
+  oidcClientSecret: ''
   centralBackendURL: ''
 
 instrumentor:
   # which mount method to use for odigos agent directory
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
+  # k8s-init-container: alternative which uses an init container to copy the agent files to the shared volume
   mountMethod: ''
+  # checkDeviceHealthBeforeInjection is relevant only when mountMethod is k8s-virtual-device.
+  # before injecting odigos agent into a new pod, it will check that all odiglet "deviceplugin"
+  # containers are not in crash loop backoff.
+  # this is to avoid adding a device (as resource request on a container)
+  # where an odiglet might not be able to provide the device on the node and fail k8s scheduling for instrumented pods on all nodes.
+  checkDeviceHealthBeforeInjection: false
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
@@ -223,7 +314,53 @@ instrumentor:
   # loader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.
   agentEnvVarsInjectionMethod: ''
 
+  # the timeout in seconds for the pods webhook.
+  # default is 10 seconds and it is recommended to keep it as is unless you are experiencing issues with the webhook.
+  # value must be 30 seconds max (inforced by kubernetes)
+  # a shorter timeout will relieve API pressure, but may result in more pods failing to instrument
+  # podsWebhookTimeoutSeconds: 25
+
 odiglet:
+  odiglet:
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        # Prior to Kubernetes v1.26, Odigos uses host networking.
+        # In some environments, different ports may already be in use on the host (e.g., due to other daemons or networking constraints).
+        # Use the following values to configure the readiness and liveness probe ports to avoid conflicts.
+        port: 55683
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      timeoutSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 55683
+      periodSeconds: 10
+    # capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.
+    capabilities:
+      # SYS_ADMIN required when running in unprivileged mode if one of the following is true:
+      #  1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
+      #  2. kernel.perf_event_paranoid sysctl is set to 2 or higher
+      - SYS_ADMIN
+      - BPF
+      - PERFMON
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+      # required for mmap of perf buffers
+      - IPC_LOCK
+  # traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
+  # traceIdSuffix: AA
+  dataCollection:
+    # capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.
+    capabilities:
+      # SYS_ADMIN required when running in unprivileged mode if one of the following is true:
+      #  1. kernel version is older than 5.8 (In >= 5.8 BPF and PERMON were added)
+      #  2. kernel.perf_event_paranoid sysctl is set to 2 or higher
+      - SYS_ADMIN
+      - BPF
+      - PERFMON
+      - IPC_LOCK
   nodeSelector:
     kubernetes.io/os: linux
   tolerations:
@@ -240,14 +377,54 @@ odiglet:
   #   limits:
   #     cpu: 500m
   #     memory: 512Mi
+  deviceplugin:
+    resources:
+      requests:
+        cpu: 40m
+        memory: 200Mi
+      limits:
+        cpu: 100m
+        memory: 300Mi
+
+  ## Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
+  ## There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
+  initContainerResources:
+    requests:
+      cpu: 200m
+      memory: 200Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
 
   # in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.
   # In these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)
   # into the Odiglet to ensure it can access the container runtime unix socket.
   customContainerRuntimeSocketPath: ''
 
+  # run the odiglet container without privileged containers.
+  # when set to true, odiglet will use the set of capabilities required for eBPF operations.
+  # by default, odiglet runs as a privileged container.
+  unPrivileged: false
+
+  # noHostPathMounts can be set to true to avoid using hostPath mounts in the odiglet daemonset.
+  # When set to true, instrumentor.mountMethod must be set to "k8s-init-container", since that is the only mount method
+  # that does not rely on host mounts to pass the required agents files to instrumented pods.
+  # by default, odiglet will rely on hostPath mounts in /var/odigos
+  noHostPathMounts: false
+
+  # noHostPid can be set to true to avoid using hostPID in the odiglet daemonset.
+  # when set to true, odiglet will mount /proc from the host to be able scan running processes and instrument them.
+  # when noHostPid and noHostPathMounts are set to true the /proc host mount must be allowed.
+  # setting this to true (i.e avoiding hostPid) may limit some eBPF capabilities, depending on the instrumented workloads.
+  # by default, odiglet will use hostPID to be able to scan running processes and instrument them.
+  noHostPid: false
+
+  # When the code-attributes InstrumentationRule is enabled, you can choose to disable collecting code attributes for Go instrumentation.
+  # Collecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.
+  # Set this to true to turn off code attribute recording for Go instrumentation.
+  disableGoCodeAttributes: false
+
 centralProxy:
-  enabled: false
   # Central backend URL where this proxy will forward data
   centralBackendURL: ''
   resources:
@@ -276,19 +453,18 @@ openshift:
 gke:
   enabled: false
 
+# List of profile names (array). Example (YAML): profiles: [size_l] | (CLI): --set profiles={size_l}
 profiles: []
 
 # Optional NodeSelector to apply to all Odigos components
 # Note: Odigos will only be able to instrument workloads on the same nodes.
 nodeSelector: {}
 
-
 # Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
 # to add the odigos-agent startupTaints configuration.
 # https://docs.odigos.io/setup/odigos-with-karpenter
 karpenter:
   enabled: false
-
 
 # Refer to the official Kubernetes documentation for structure and field details:
 # https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
@@ -300,7 +476,6 @@ karpenter:
 #     topologyKey: "topology.kubernetes.io/zone"
 #     whenUnsatisfiable: "ScheduleAnyway"
 topologySpreadConstraints: []
-
 
 # Auto rollback settings
 # The auto‐rollback feature provides a stability window to test instrumented apps.
@@ -320,3 +495,83 @@ rollout:
 # When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
   automaticRolloutDisabled: false
 
+# Pod Disruption Budgets (PDBs) help ensure high availability during voluntary disruptions like node drains or upgrades.
+# When enabled, Odigos will deploy PDBs for its components based on their importance:
+# - Critical components (e.g., instrumentor) will be protected with stricter disruption limits.
+# - Non-critical components will use more relaxed budgets to allow operational flexibility.
+# This reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.
+# PDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.
+pdb:
+  enabled: false
+
+# Setting for allowing Odigos to run concurrently with other agents
+allowConcurrentAgents:
+  enabled: false
+
+# Enable support for ClickHouse JSON column type when storing Odigos data.
+# When set to true, Odigos will use a new schema with JSON-typed columns (requires ClickHouse v25.3+).
+# If set to false, the default schema using Map-type columns will be used instead.
+clickhouseDestinationJsonType:
+  enabled: false
+
+# controls the wasp settings
+wasp:
+  enabled: false
+
+# configuration for metrics sources (where odigos collects metrics from)
+# only relevant when a metrics destination is enabled
+metricsSources:
+  hostMetrics:
+    ## uncomment the next line to disable host metrics collection globally
+    #disabled: false
+
+    ## set time interval for host metrics scraping
+    ## format is duration string (15s, 1m, etc)
+    # interval: '10s'
+
+  kubeletStats:
+    ## uncomment the next line to disable kubelet stats collection globally
+    #disabled: false
+
+    ## set time interval for kubelet stats scraping
+    ## format is duration string (15s, 1m, etc)
+    # interval: '10s'
+
+  spanMetrics:
+    # uncomment the next line to disable span metrics collection globally
+    #disabled: false
+
+    ## set time interval for span metrics flushing
+    ## format is duration string (15s, 1m, etc)
+    ## default is 60s
+    # interval: '60s'
+
+    ## set additional dimensions for span metrics
+    ## format is a list of strings
+    # additionalDimensions: ['some.attribute']
+
+    ## uncomment the next line to disable histogram metrics collection (while still recording non-histogram span metrics)
+    # histogramDisabled: true
+
+    ## set explicit histogram buckets for span metrics
+    ## format is duration string (1us, 2ms, 3s, 4m, 5h, 6d, etc)
+    # explicitHistogramBuckets: ['2ms', '4ms', '6ms', '8ms', '10ms', '50ms', '100ms', '200ms', '400ms', '800ms', '1s', '1400ms', '2s', '5s', '10s', '15s']
+
+    ## set if process level dimensions will be included in span metrics
+    ## by default, process level metrics are not included
+    ## when set to true - timeseries will be created for each process in a container
+    ## when unset or set to false - timeseries will aggregate all processes into a single value per series
+    # includedProcessInDimensions: true
+
+    ## set resource attributes to exclude from the span metrics
+    # excludedResourceAttributes: ['process.runtime.name', 'process.runtime.version']
+
+
+# Enable automatic Go library offsets updates.
+# See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
+# cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
+# Custom Offsets support is only available in Odigos pro tier.
+goAutoOffsetsCron: ''
+# mode for automatic Go offsets updates. Options include direct (pull from cloud server), image (pull from local image) and off (disabled).
+# Custom Offsets support is only available in Odigos pro tier.
+goAutoOffsetsMode: 'off'

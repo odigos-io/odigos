@@ -41,6 +41,18 @@ export const CREATE_INSTRUMENTATION_RULE = gql`
       headersCollection {
         headerKeys
       }
+      customInstrumentations {
+        golang{
+          packageName
+          functionName
+          receiverName
+          receiverMethodName
+        }
+        java {
+          methodName
+          className
+        }
+      }
     }
   }
 `;
@@ -85,6 +97,18 @@ export const UPDATE_INSTRUMENTATION_RULE = gql`
       }
       headersCollection {
         headerKeys
+      }
+      customInstrumentations {
+        golang{
+          packageName
+          functionName
+          receiverName
+          receiverMethodName
+        }
+        java {
+          methodName
+          className
+        }
       }
     }
   }

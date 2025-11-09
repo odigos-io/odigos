@@ -16,9 +16,6 @@ import (
 )
 
 const (
-	// label key used to associate the instrumentation instance with the owner pod
-	ownerPodNameLabel = "ownerPodName"
-
 	// maxInstrumentationInstancesPerPod is the maximum number of instrumentation instances that can be created per pod
 	// this is required to bound the number of instrumentation instances that can be created.
 	maxInstrumentationInstancesPerPod = 16
@@ -53,6 +50,13 @@ func WithAttributes(identifying []odigosv1.Attribute, nonIdentifying []odigosv1.
 	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
 		s.IdentifyingAttributes = identifying
 		s.NonIdentifyingAttributes = nonIdentifying
+		return s
+	})
+}
+
+func WithComponents(components []odigosv1.InstrumentationLibraryStatus) InstrumentationInstanceOption {
+	return updateInstrumentationInstanceStatusOpt(func(s odigosv1.InstrumentationInstanceStatus) odigosv1.InstrumentationInstanceStatus {
+		s.Components = components
 		return s
 	})
 }
@@ -100,7 +104,7 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 				Namespace: owner.GetNamespace(),
 				Labels: map[string]string{
 					consts.InstrumentedAppNameLabel: instrumentedAppName,
-					ownerPodNameLabel:               owner.GetName(),
+					odigosv1.OwnerPodNameLabel:      owner.GetName(),
 				},
 			},
 			Spec: odigosv1.InstrumentationInstanceSpec{
@@ -151,7 +155,7 @@ func instrumentationInstancesCountReachedLimit(ctx context.Context, owner client
 	instances := &odigosv1.InstrumentationInstanceList{}
 	err := kubeClient.List(ctx, instances,
 		client.InNamespace(owner.GetNamespace()),
-		client.MatchingLabels{ownerPodNameLabel: owner.GetName()},
+		client.MatchingLabels{odigosv1.OwnerPodNameLabel: owner.GetName()},
 	)
 	if err != nil {
 		return true

@@ -7,7 +7,6 @@ import (
 	"github.com/odigos-io/odigos/profiles/instrumentation"
 	"github.com/odigos-io/odigos/profiles/pipeline"
 	"github.com/odigos-io/odigos/profiles/profile"
-	"github.com/odigos-io/odigos/profiles/sizing"
 )
 
 var AllProfiles = []profile.Profile{
@@ -23,6 +22,8 @@ var AllProfiles = []profile.Profile{
 	attributes.DbPayloadCollectionProfile,
 	attributes.QueryOperationDetector,
 	attributes.SemconvUpgraderProfile,
+	attributes.SemconvDynamoProfile,
+	attributes.SemconvRedisProfile,
 	attributes.ReduceSpanNameCardinalityProfile,
 
 	instrumentation.AllowConcurrentAgents,
@@ -31,13 +32,10 @@ var AllProfiles = []profile.Profile{
 	instrumentation.LegacyDotNetProfile,
 	instrumentation.MountMethodK8sHostPathProfile,
 	instrumentation.MountMethodK8sVirtualDevice,
-	instrumentation.LoaderFallbackToPodManifestEnvVarInjection,
+	instrumentation.PodManifestEnvVarInjection,
+	instrumentation.DisableGinProfile,
 
 	pipeline.SmallBatchesProfile,
-
-	sizing.SizeSProfile,
-	sizing.SizeMProfile,
-	sizing.SizeLProfile,
 }
 
 var ProfilesByName = map[common.ProfileName]profile.Profile{}

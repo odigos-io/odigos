@@ -2,18 +2,16 @@ package actions
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"slices"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+
 	semconv1_21 "go.opentelemetry.io/otel/semconv/v1.21.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	"k8s.io/apimachinery/pkg/api/meta"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// DEPRECATED: Use odigosv1.Action instead
 type K8sAttributesResolverReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
@@ -54,18 +53,6 @@ pod_association:
 */
 
 var (
-	workloadUIDAttributes = []string{
-		string(semconv.K8SDeploymentUIDKey),
-		string(semconv.K8SDaemonSetUIDKey),
-		string(semconv.K8SStatefulSetUIDKey),
-	}
-
-	workloadNameAttributes = []string{
-		string(semconv.K8SDeploymentNameKey),
-		string(semconv.K8SDaemonSetNameKey),
-		string(semconv.K8SStatefulSetNameKey),
-	}
-
 	containerAttributes = []string{
 		string(semconv.K8SContainerNameKey),
 		string(semconv.ContainerIDKey),
@@ -123,54 +110,175 @@ type k8sAttributesConfig struct {
 func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling K8sAttributes action")
+	logger.V(0).Info("WARNING: K8sAttributes action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
-	actions := actionv1.K8sAttributesResolverList{}
-	err := r.List(ctx, &actions, client.InNamespace(req.Namespace))
+	// Get the specific K8sAttributesResolver that triggered this reconcile
+	action := &actionv1.K8sAttributesResolver{}
+	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	processor, err := r.convertToUnifiedProcessor(&actions, req.Namespace)
+	// Migrate to odigosv1.Action
+	migratedActionName := odigosv1.ActionMigratedLegacyPrefix + action.Name
+	odigosAction := &odigosv1.Action{}
+	err = r.Get(ctx, client.ObjectKey{Name: migratedActionName, Namespace: action.Namespace}, odigosAction)
 	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		logger.V(0).Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
+		// Action doesn't exist, create new one
+		odigosAction = r.createMigratedAction(action, migratedActionName)
+		err = r.Create(ctx, odigosAction)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		action.OwnerReferences = append(action.OwnerReferences, metav1.OwnerReference{
+			APIVersion: "odigos.io/v1alpha1",
+			Kind:       "Action",
+			Name:       odigosAction.Name,
+			UID:        odigosAction.UID,
+		})
+		err = r.Update(ctx, action)
 		return ctrl.Result{}, err
 	}
 
-	err = r.Patch(ctx, processor, client.Apply, client.FieldOwner("odigos-k8sattributesresolver"), client.ForceOwnership)
-	reportErr := r.reportActionsStatuses(ctx, &actions, err)
-	return ctrl.Result{}, errors.Join(err, reportErr)
+	logger.V(0).Info("Migrated Action already exists, skipping update")
+	return ctrl.Result{}, nil
 }
 
-func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(actions *actionv1.K8sAttributesResolverList, ns string) (*odigosv1alpha1.Processor, error) {
-	processor := odigosv1alpha1.Processor{
+func (r *K8sAttributesResolverReconciler) createMigratedAction(action *actionv1.K8sAttributesResolver, migratedActionName string) *odigosv1.Action {
+	config := actionv1.K8sAttributesConfig{
+		CollectContainerAttributes: action.Spec.CollectContainerAttributes,
+		CollectClusterUID:          action.Spec.CollectClusterUID,
+		LabelsAttributes:           action.Spec.LabelsAttributes,
+		AnnotationsAttributes:      action.Spec.AnnotationsAttributes,
+	}
+
+	odigosAction := &odigosv1.Action{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
-			Kind:       "Processor",
+			Kind:       "Action",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "odigos-k8sattributes",
-			Namespace: ns,
+			Name:      migratedActionName,
+			Namespace: action.Namespace,
 		},
-		Spec: odigosv1alpha1.ProcessorSpec{
-			Type:          "k8sattributes",
-			ProcessorName: "Unified Kubernetes Attributes",
-			CollectorRoles: []odigosv1alpha1.CollectorsGroupRole{
-				odigosv1alpha1.CollectorsGroupRoleNodeCollector,
-			},
-			OrderHint: 0,
-			Disabled:  false,
+		Spec: odigosv1.ActionSpec{
+			ActionName:    action.Spec.ActionName,
+			Notes:         action.Spec.Notes,
+			Disabled:      action.Spec.Disabled,
+			Signals:       action.Spec.Signals,
+			K8sAttributes: &config,
 		},
 	}
 
-	// first, initialize the config with our configuration fields which are not configurable by the user
-	config := k8sAttributesConfig{
+	return odigosAction
+}
+
+// k8sAttributeConfig combines multiple k8sattributes configurations into a single unified processor config
+func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace string) (*k8sAttributesConfig, map[common.ObservabilitySignal]struct{}, []metav1.OwnerReference, error) {
+	// Get all actions in the namespace
+	actionList := &odigosv1.ActionList{}
+	err := k8sclient.List(ctx, actionList, client.InNamespace(namespace))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	var (
+		metadataAttributes   []string
+		labelAttributes      = make(map[string]k8sTagAttribute)
+		annotationAttributes = make(map[string]k8sTagAttribute)
+		signals              = map[common.ObservabilitySignal]struct{}{}
+		ownerReferences      = []metav1.OwnerReference{}
+		collectContainer     = false
+		collectClusterUID    = false
+	)
+
+	for i := range actionList.Items {
+		ownerReferences = append(ownerReferences, metav1.OwnerReference{
+			APIVersion: actionList.Items[i].APIVersion,
+			Kind:       actionList.Items[i].Kind,
+			Name:       actionList.Items[i].Name,
+			UID:        actionList.Items[i].UID,
+		})
+	}
+
+	// Collect all k8sattributes configurations
+	for _, currentAction := range actionList.Items {
+		if currentAction.Spec.K8sAttributes == nil || currentAction.Spec.Disabled {
+			continue
+		}
+
+		config := currentAction.Spec.K8sAttributes
+
+		// create a union of all the actions' configuration to one processor
+		collectContainer = collectContainer || config.CollectContainerAttributes
+		collectClusterUID = collectClusterUID || config.CollectClusterUID
+
+		// Add label attributes, newer configs override older ones with same Tag
+		for _, label := range config.LabelsAttributes {
+			from := actionv1.PodAttributeSource
+			if label.From != nil {
+				from = actionv1.K8sAttributeSource(*label.From)
+			}
+			labelAttributes[label.LabelKey] = k8sTagAttribute{
+				Tag:  label.AttributeKey,
+				Key:  label.LabelKey,
+				From: string(from),
+			}
+		}
+
+		// Add annotation attributes, newer configs override older ones with same Tag
+		for _, annotation := range config.AnnotationsAttributes {
+			from := actionv1.PodAttributeSource
+			if annotation.From != nil {
+				from = actionv1.K8sAttributeSource(*annotation.From)
+			}
+			annotationAttributes[annotation.AnnotationKey] = k8sTagAttribute{
+				Tag:  annotation.AttributeKey,
+				Key:  annotation.AnnotationKey,
+				From: string(from),
+			}
+		}
+
+		for signalIndex := range currentAction.Spec.Signals {
+			signals[currentAction.Spec.Signals[signalIndex]] = struct{}{}
+		}
+
+	}
+
+	if collectContainer {
+		metadataAttributes = append(metadataAttributes, containerAttributes...)
+	}
+
+	if collectClusterUID {
+		metadataAttributes = append(metadataAttributes, string(semconv.K8SClusterUIDKey))
+	}
+
+	// Convert maps back to slices
+	var labelAttrs []k8sTagAttribute
+	for _, attr := range labelAttributes {
+		labelAttrs = append(labelAttrs, attr)
+	}
+
+	var annotationAttrs []k8sTagAttribute
+	for _, attr := range annotationAttributes {
+		annotationAttrs = append(annotationAttrs, attr)
+	}
+
+	return &k8sAttributesConfig{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
-		// restrict the collector to query pods running on the same node only - reducing resource requirements.
 		Filter: k8sAttributesFilter{
 			NodeFromEnvVar: k8sconsts.NodeNameEnvVar,
 		},
-		// each trace/metric/log will be associated with the pod it originated from
-		// based on the pod name and namespace resource attributes
+		Extract: k8sAttributeExtract{
+			MetadataAttributes:   metadataAttributes,
+			LabelAttributes:      labelAttrs,
+			AnnotationAttributes: annotationAttrs,
+		},
 		PodAssociation: k8sAttributesPodsAssociation{
 			{
 				Sources: []k8sAttributesPodsAssociationSource{
@@ -185,135 +293,5 @@ func (r *K8sAttributesResolverReconciler) convertToUnifiedProcessor(actions *act
 				},
 			},
 		},
-	}
-
-	// annotation key -> attribute key
-	annotation := map[string]string{}
-	// label key -> attribute key
-	labels := map[string]string{}
-	// observability signals
-	signals := map[common.ObservabilitySignal]struct{}{}
-	collectWorkloadUID := false
-	collectContainerAttributes := false
-	collectClusterUID := false
-	collectWorkloadNames := false
-	collectReplicaSetAttributes := false
-
-	// create a union of all the actions' configuration to one processor
-	for actionIndex := range actions.Items {
-		currentAction := &actions.Items[actionIndex]
-
-		if currentAction.Spec.Disabled {
-			continue
-		}
-
-		collectContainerAttributes = (collectContainerAttributes || currentAction.Spec.CollectContainerAttributes)
-		collectWorkloadUID = (collectWorkloadUID || currentAction.Spec.CollectWorkloadUID)
-		collectReplicaSetAttributes = (collectReplicaSetAttributes || currentAction.Spec.CollectReplicaSetAttributes)
-		collectClusterUID = (collectClusterUID || currentAction.Spec.CollectClusterUID)
-		// traces should already contain workload name (if they originated from odigos)
-		// logs collected from filelog receiver will lack this info thus needs to be added
-		collectWorkloadNames = (collectWorkloadNames || slices.Contains(currentAction.Spec.Signals, common.LogsObservabilitySignal))
-
-		for labelIndex := range currentAction.Spec.LabelsAttributes {
-			labels[currentAction.Spec.LabelsAttributes[labelIndex].LabelKey] = currentAction.Spec.LabelsAttributes[labelIndex].AttributeKey
-		}
-		for annotationIndex := range currentAction.Spec.AnnotationsAttributes {
-			annotation[currentAction.Spec.AnnotationsAttributes[annotationIndex].AnnotationKey] = currentAction.Spec.AnnotationsAttributes[annotationIndex].AttributeKey
-		}
-		for signalIndex := range currentAction.Spec.Signals {
-			signals[currentAction.Spec.Signals[signalIndex]] = struct{}{}
-		}
-
-		processor.ObjectMeta.OwnerReferences = append(processor.ObjectMeta.OwnerReferences, metav1.OwnerReference{
-			APIVersion: currentAction.APIVersion,
-			Kind:       currentAction.Kind,
-			Name:       currentAction.Name,
-			UID:        currentAction.UID,
-		})
-	}
-
-	if collectWorkloadUID {
-		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, workloadUIDAttributes...)
-		if collectReplicaSetAttributes {
-			config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, string(semconv.K8SReplicaSetUIDKey))
-		}
-	}
-	if collectWorkloadNames {
-		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, workloadNameAttributes...)
-	}
-	if collectReplicaSetAttributes {
-		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, string(semconv.K8SReplicaSetNameKey))
-	}
-	if collectContainerAttributes {
-		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, containerAttributes...)
-	}
-	if collectClusterUID {
-		config.Extract.MetadataAttributes = append(config.Extract.MetadataAttributes, string(semconv.K8SClusterUIDKey))
-	}
-
-	for key, value := range labels {
-		// The naming by the collector processor is:
-		//	- tag == resource attribute key
-		//	- key == label key
-		config.Extract.LabelAttributes = append(config.Extract.LabelAttributes, k8sTagAttribute{
-			Tag:  value,
-			Key:  key,
-			From: "pod",
-		})
-	}
-
-	for key, value := range annotation {
-		// The naming by the collector processor is:
-		//	- tag == resource attribute key
-		//	- key == annotation key
-		config.Extract.AnnotationAttributes = append(config.Extract.AnnotationAttributes, k8sTagAttribute{
-			Tag:  value,
-			Key:  key,
-			From: "pod",
-		})
-	}
-
-	configJson, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	processor.Spec.ProcessorConfig = runtime.RawExtension{Raw: configJson}
-	processor.Spec.Signals = []common.ObservabilitySignal{}
-	for signal := range signals {
-		processor.Spec.Signals = append(processor.Spec.Signals, signal)
-	}
-
-	return &processor, nil
-}
-
-func (r *K8sAttributesResolverReconciler) reportActionsStatuses(ctx context.Context, actions *actionv1.K8sAttributesResolverList, processorErr error) error {
-	var updateErr error
-	status := metav1.ConditionTrue
-	message := "The action successfully transformed to a unified processor"
-	reason := "ProcessorCreated"
-
-	if processorErr != nil {
-		status = metav1.ConditionFalse
-		message = fmt.Sprintf("Failed to transform the action to a unified processor: %s", processorErr.Error())
-		reason = "ProcessorCreationFailed"
-	}
-
-	for actionIndex := range actions.Items {
-		action := &actions.Items[actionIndex]
-		changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
-			Type:    "ActionTransformedToProcessorType",
-			Status:  status,
-			Reason:  reason,
-			Message: message,
-		})
-
-		if changed {
-			err := r.Status().Update(ctx, action)
-			updateErr = errors.Join(updateErr, err)
-		}
-	}
-
-	return updateErr
+	}, signals, ownerReferences, nil
 }

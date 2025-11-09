@@ -55,7 +55,77 @@ func NewSchedulerLeaderElectionRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewSchedulerRole(ns string) *rbacv1.Role {
+func NewSchedulerRole(ns string, openshiftEnabled bool) *rbacv1.Role {
+	rules := []rbacv1.PolicyRule{
+		{ // Needed to react and reconcile odigos-configuration changes to effective config
+			APIGroups: []string{""},
+			Resources: []string{"configmaps"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{ // Needed to apply effective config after reconciling (defaulting and profile applying) and react to it
+			APIGroups:     []string{""},
+			Resources:     []string{"configmaps"},
+			ResourceNames: []string{consts.OdigosEffectiveConfigName, k8sconsts.OdigosDeploymentConfigMapName, k8sconsts.GoOffsetsConfigMap},
+			Verbs:         []string{"patch", "create", "update"},
+		},
+		{ // Needed because the scheduler is managing the collectorsgroups
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"collectorsgroups"},
+			Verbs:     []string{"get", "list", "create", "patch", "update", "watch", "delete"},
+		},
+		{ // Needed to read the status of the gateway collector, to wake the data collector
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"collectorsgroups/status"},
+			Verbs:     []string{"get"},
+		},
+		{ // apply profiles
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"processors", "instrumentationrules", "actions"},
+			Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
+		},
+		{ // read odigos pro token
+			APIGroups: []string{""},
+			Resources: []string{"secrets"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+		{ // manage go offsets CronJob
+			APIGroups:     []string{"batch"},
+			Resources:     []string{"cronjobs"},
+			ResourceNames: []string{k8sconsts.OffsetCronJobName},
+			Verbs:         []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+		},
+		{ // restart odiglet daemonset after updating go offsets
+			APIGroups:     []string{"apps"},
+			Resources:     []string{"daemonsets"},
+			ResourceNames: []string{k8sconsts.OdigletDaemonSetName},
+			Verbs:         []string{"patch"},
+		},
+		{
+			APIGroups:     []string{"apps"},
+			Resources:     []string{"deployments"},
+			ResourceNames: []string{k8sconsts.SchedulerDeploymentName},
+			Verbs:         []string{"get", "list", "watch"},
+		},
+		{ // for calculating collectors group config based on the active destinations
+			APIGroups: []string{"odigos.io"},
+			Resources: []string{"destinations"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
+	}
+
+	// This is needed for OpenShift to update the finalizers of the deployments
+	// Used when setting the OwnerReference of the Collector Configmap to the autoscaler deployment
+	// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
+	// update finalizers on the scheduler deployment so that they can block deletion.
+	// seehttps://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+	if openshiftEnabled {
+		rules = append(rules, rbacv1.PolicyRule{
+			APIGroups: []string{"apps"},
+			Resources: []string{"deployments/finalizers"},
+			Verbs:     []string{"update"},
+		})
+	}
+
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Role",
@@ -65,39 +135,7 @@ func NewSchedulerRole(ns string) *rbacv1.Role {
 			Name:      k8sconsts.SchedulerRoleName,
 			Namespace: ns,
 		},
-		Rules: []rbacv1.PolicyRule{
-			{ // Needed to react and reconcile odigos-config changes to effective config
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{ // Needed to apply effective config after reconciling (defaulting and profile applying) and react to it
-				APIGroups:     []string{""},
-				Resources:     []string{"configmaps"},
-				ResourceNames: []string{consts.OdigosEffectiveConfigName, k8sconsts.OdigosDeploymentConfigMapName},
-				Verbs:         []string{"patch", "create", "update"},
-			},
-			{ // Needed because the scheduler is managing the collectorsgroups
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups"},
-				Verbs:     []string{"get", "list", "create", "patch", "update", "watch", "delete"},
-			},
-			{ // Needed to read the status of the gateway collector, to wake the data collector
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups/status"},
-				Verbs:     []string{"get"},
-			},
-			{ // apply profiles
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"processors", "instrumentationrules"},
-				Verbs:     []string{"get", "list", "watch", "patch", "delete", "create"},
-			},
-			{ // read odigos pro token
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
+		Rules: rules,
 	}
 }
 
@@ -132,14 +170,26 @@ func NewSchedulerClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
 			Resources: []string{"instrumentationconfigs"},
 			Verbs:     []string{"get", "list", "watch"},
 		},
+		{ // manage go offsets CronJob
+			APIGroups: []string{"batch"},
+			Resources: []string{"cronjobs"},
+			Verbs:     []string{"list", "watch"},
+		},
+		{ // Needed to get Odigos namespace for update offsets cronjob
+			APIGroups: []string{""},
+			Resources: []string{"configmaps"},
+			Verbs:     []string{"list"},
+		},
 	}
 
 	if openshiftEnabled {
-		rules = append(rules, rbacv1.PolicyRule{
-			APIGroups: []string{""},
-			Resources: []string{"configmaps/finalizers"},
-			Verbs:     []string{"update"},
-		})
+		rules = append(rules,
+			rbacv1.PolicyRule{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps/finalizers"},
+				Verbs:     []string{"update"},
+			},
+		)
 	}
 
 	return &rbacv1.ClusterRole{
@@ -221,7 +271,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 							},
 							Args: []string{
 								"--health-probe-bind-address=:8081",
-								"--metrics-bind-address=127.0.0.1:8080",
+								"--metrics-bind-address=0.0.0.0:8080",
 								"--leader-elect",
 							},
 							Env: []corev1.EnvVar{
@@ -290,7 +340,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 									},
 								},
 								InitialDelaySeconds: 15,
-								TimeoutSeconds:      0,
+								TimeoutSeconds:      5,
 								PeriodSeconds:       20,
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
@@ -306,7 +356,7 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 									},
 								},
 								InitialDelaySeconds: 15,
-								TimeoutSeconds:      0,
+								TimeoutSeconds:      5,
 								PeriodSeconds:       20,
 								SuccessThreshold:    0,
 								FailureThreshold:    0,
@@ -323,6 +373,35 @@ func NewSchedulerDeployment(ns string, version string, imagePrefix string, image
 			},
 			Strategy:        appsv1.DeploymentStrategy{},
 			MinReadySeconds: 0,
+		},
+	}
+}
+
+func NewSchedulerService(ns string) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "odigos-scheduler",
+			Namespace: ns,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app.kubernetes.io/name": k8sconsts.SchedulerAppLabelValue,
+			},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
+					Protocol:   corev1.ProtocolTCP,
+				},
+			},
 		},
 	}
 }
@@ -345,11 +424,12 @@ func (a *schedulerResourceManager) InstallFromScratch(ctx context.Context) error
 	resources := []kube.Object{
 		NewSchedulerServiceAccount(a.ns),
 		NewSchedulerLeaderElectionRoleBinding(a.ns),
-		NewSchedulerRole(a.ns),
+		NewSchedulerRole(a.ns, a.config.OpenshiftEnabled),
 		NewSchedulerRoleBinding(a.ns),
 		NewSchedulerClusterRole(a.config.OpenshiftEnabled),
 		NewSchedulerClusterRoleBinding(a.ns),
 		NewSchedulerDeployment(a.ns, a.odigosVersion, a.config.ImagePrefix, a.managerOpts.ImageReferences.SchedulerImage, a.config.NodeSelector),
+		NewSchedulerService(a.ns),
 	}
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

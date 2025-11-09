@@ -9,15 +9,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
+	"github.com/odigos-io/odigos/cli/cmd/resources/centralodigos"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -35,7 +38,11 @@ var (
 	updateRemoteFlag bool
 	proNamespaceFlag string
 	useDefault       bool
+	downloadFile     string
+	fromFile         string
 )
+
+var centralVersionRegex = regexp.MustCompile(`^v\d+\.\d+\.\d+(?:-(?:pre|rc)\d+)?$`)
 
 var proCmd = &cobra.Command{
 	Use:   "pro",
@@ -71,7 +78,7 @@ var proCmd = &cobra.Command{
 			fmt.Println("\u001B[32mSUCCESS:\u001B[0m Token updated successfully")
 		}
 	},
-	Example: `  
+	Example: `
 # Renew the on-premises token for Odigos,
 odigos pro --onprem-token <token>
 
@@ -134,6 +141,12 @@ odigos pro update-offsets
 
 # Revert to using the default offsets data shipped with Odigos
 odigos pro update-offsets --default
+
+# Download the offsets file to a specific location without updating the cluster
+odigos pro update-offsets --download-file /path/to/save/offsets.json
+
+# Use a local offsets file instead of downloading it
+odigos pro update-offsets --from-file /path/to/local/offsets.json
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
@@ -160,6 +173,17 @@ odigos pro update-offsets --default
 			os.Exit(1)
 		}
 
+		// If download file is specified, just save the file and exit
+		if downloadFile != "" {
+			err = os.WriteFile(downloadFile, data, 0644)
+			if err != nil {
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to write offsets file: %s", err))
+				os.Exit(1)
+			}
+			fmt.Printf("Successfully downloaded offsets to %s\n", downloadFile)
+			return
+		}
+
 		cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 		if err != nil {
 			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
@@ -170,11 +194,17 @@ odigos pro update-offsets --default
 			cm.Data = make(map[string]string)
 		}
 
-		escaped, err := json.Marshal(string(data))
-		if err != nil {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to encode json string: %s", err))
-			os.Exit(1)
+		var escaped []byte
+		if len(data) == 0 {
+			escaped = []byte{}
+		} else {
+			escaped, err = json.Marshal(string(data))
+			if err != nil {
+				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to encode json string: %s", err))
+				os.Exit(1)
+			}
 		}
+
 		cm.Data[k8sconsts.GoOffsetsFileName] = string(escaped)
 		_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 		if err != nil {
@@ -197,6 +227,15 @@ func getLatestOffsets(revert bool) ([]byte, error) {
 		return []byte{}, nil
 	}
 
+	// If fromFile is specified, read from local file
+	if fromFile != "" {
+		data, err := os.ReadFile(fromFile)
+		if err != nil {
+			return nil, fmt.Errorf("cannot read offsets file: %s", err)
+		}
+		return data, nil
+	}
+
 	resp, err := http.Get(consts.GoOffsetsPublicURL)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get latest offsets: %s", err)
@@ -216,23 +255,88 @@ func getLatestOffsets(revert bool) ([]byte, error) {
 
 var centralCmd = &cobra.Command{
 	Use:   "central",
-	Short: "Manage Odigos Central (Enterprise tier)",
-	Long:  "Manage Odigos Central backend and UI components used in enterprise deployments.",
+	Short: "Manage Odigos Tower (Enterprise tier)",
+	Long:  "Manage Odigos Tower backend and UI components used in enterprise deployments.",
 }
+
+var (
+	centralAdminUser            string
+	centralAdminPassword        string
+	centralAuthStorageClassName string
+)
 
 var centralInstallCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install Odigos Central backend and UI components",
+	Short: "Install Odigos Tower backend and UI components",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
-		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken); err != nil {
-			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos central:")
+		var storageClassNamePtr *string
+		if cmd.Flags().Changed("central-storage-class-name") {
+			storageClassNamePtr = &centralAuthStorageClassName
+		}
+		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken, storageClassNamePtr); err != nil {
+			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos Tower:")
 			fmt.Println(err)
 			os.Exit(1)
 		}
+	},
+}
+
+var centralUninstallCmd = &cobra.Command{
+	Use:   "uninstall",
+	Short: "Uninstall Odigos Tower backend and UI components",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+
+		if !cmd.Flag("yes").Changed {
+			fmt.Printf("About to uninstall Odigos Tower from namespace %s\n", ns)
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting uninstall")
+				return
+			}
+		}
+
+		fmt.Println("Starting Odigos Tower uninstallation...")
+
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Deployments",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteDeploymentsByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Services",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServicesByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Roles",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRolesByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central RoleBindings",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRoleBindingsByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ServiceAccounts",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServiceAccountsByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Secrets",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteSecretsByLabel)
+
+		createKubeResourceWithLogging(ctx, "Deleting Odigos Central token secret",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteCentralTokenSecretAdapter)
+
+		hasCentralLabel, err := kube.NamespaceHasLabel(ctx, client, ns, k8sconsts.OdigosSystemLabelCentralKey)
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to check if namespace %s has Odigos Central label: %s\n", ns, err)
+			os.Exit(1)
+		}
+		if hasCentralLabel {
+			createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+				client, ns, k8sconsts.OdigosSystemLabelCentralKey, uninstallNamespace)
+			waitForNamespaceDeletion(ctx, client, ns)
+		}
+
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower uninstalled.\n")
 	},
 }
 
@@ -254,7 +358,7 @@ var activateCmd = &cobra.Command{
 
 		fmt.Println("Starting activation of Enterprise tier from Community...")
 
-		odigosConfig, err := resources.GetCurrentConfig(ctx, client, ns)
+		odigosConfiguration, err := resources.GetCurrentConfig(ctx, client, ns)
 		if err != nil {
 			fmt.Printf("Error reading odigos configuration: %v\n", err)
 			os.Exit(1)
@@ -263,7 +367,7 @@ var activateCmd = &cobra.Command{
 		// Since Karpenter uses a different labeling system that has no separation between OSS and enterprise,
 		// we want to avoid potential user apps from crashing in case they are scheduled on a node where the
 		// enterprise files are not yet found in the /var/odigos mount.
-		if odigosConfig.KarpenterEnabled != nil && *odigosConfig.KarpenterEnabled {
+		if odigosConfiguration.KarpenterEnabled != nil && *odigosConfiguration.KarpenterEnabled {
 			fmt.Println("\033[31mERROR\033[0m Activation is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
 			os.Exit(1)
 		}
@@ -285,7 +389,7 @@ var activateCmd = &cobra.Command{
 
 		onPremToken := cmd.Flag("onprem-token").Value.String()
 		resourceManagers := resources.CreateResourceManagers(
-			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfig, odigosVersion,
+			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfiguration, odigosVersion,
 			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
 
 		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")
@@ -295,6 +399,50 @@ var activateCmd = &cobra.Command{
 		}
 
 		fmt.Println("Activation completed successfully. Odigos is upgraded to enterprise tier")
+	},
+}
+
+var centralUpgradeCmd = &cobra.Command{
+	Use:   "upgrade",
+	Short: "Upgrade Odigos Tower UI in the central namespace",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		ns, err := cmd.Flags().GetString("namespace")
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
+			os.Exit(1)
+		}
+
+		if !cmd.Flag("yes").Changed {
+			fmt.Printf("About to upgrade Odigos Tower UI in namespace %s to version %s\n", ns, versionFlag)
+			confirmed, err := confirm.Ask("Are you sure?")
+			if err != nil || !confirmed {
+				fmt.Println("Aborting upgrade")
+				return
+			}
+		}
+
+		if !centralVersionRegex.MatchString(versionFlag) {
+			fmt.Printf("\033[31mERROR\033[0m Invalid --version value %q. Expected formats: vX.Y.Z, vX.Y.Z-preN, or vX.Y.Z-rcN\n", versionFlag)
+			os.Exit(1)
+		}
+
+		managerOpts := resourcemanager.ManagerOpts{
+			ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
+			SystemObjectLabelKey: k8sconsts.OdigosSystemLabelCentralKey,
+		}
+
+		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
+		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts)
+		if err := resources.ApplyResourceManagers(ctx, client, []resourcemanager.ResourceManager{uiManager, backendManager}, "Upgrading"); err != nil {
+			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Tower UI/Backend:")
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower UI and Backend upgraded to %s.\n", versionFlag)
 	},
 }
 
@@ -315,17 +463,17 @@ func createOdigosCentralSecret(ctx context.Context, client *kube.Client, ns, tok
 	return nil
 }
 
-func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns string, onPremToken string) error {
+func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns string, onPremToken string, storageClassNamePtr *string) error {
 
 	_, err := client.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralBackendName, metav1.GetOptions{})
 	if err == nil {
-		fmt.Printf("\n\u001B[33mINFO:\u001B[0m Odigos Central is already installed in namespace %s\n", ns)
+		fmt.Printf("\n\u001B[33mINFO:\u001B[0m Odigos Tower is already installed in namespace %s\n", ns)
 		return nil
 	} else if !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to check existing central backend: %w", err)
 	}
 
-	fmt.Println("Installing Odigos central backend and UI ...")
+	fmt.Println("Installing Odigos Tower backend and UI ...")
 
 	managerOpts := resourcemanager.ManagerOpts{
 		ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
@@ -336,25 +484,37 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	if err := createOdigosCentralSecret(ctx, client, ns, onPremToken); err != nil {
 		return err
 	}
-	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag)
+	config := resources.CentralManagersConfig{
+		Auth: centralodigos.AuthConfig{
+			AdminUsername:    centralAdminUser,
+			AdminPassword:    centralAdminPassword,
+			StorageClassName: storageClassNamePtr,
+		},
+	}
+	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
 	if err := resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating"); err != nil {
-		return fmt.Errorf("failed to install Odigos central: %w", err)
+		return fmt.Errorf("failed to install Odigos Tower: %w", err)
 	}
 
-	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos central installed.\n")
+	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower installed.\n")
 	return nil
+}
+
+func deleteCentralTokenSecretAdapter(ctx context.Context, client *kube.Client, ns string, _ string) error {
+	return kube.DeleteCentralTokenSecret(ctx, client, ns)
 }
 
 var portForwardCentralCmd = &cobra.Command{
 	Use:   "ui",
-	Short: "Port-forward Odigos Central UI and Backend to localhost",
-	Long:  "Port-forward the Central UI (port 3000) and Central Backend (port 8081) to localhost to enable local access to Odigos UI.",
+	Short: "Port-forward Odigos Tower UI and Backend to localhost",
+	Long:  "Port-forward the Tower UI (port 3000) and Tower Backend (port 8081) to enable local access to Odigos UI. Use --address to bind to specific interfaces.",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(cmd.Context())
 		defer cancel()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
 		var wg sync.WaitGroup
+		localAddress := cmd.Flag("address").Value.String()
 
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -364,18 +524,19 @@ var portForwardCentralCmd = &cobra.Command{
 			fmt.Printf("\033[31mERROR\033[0m Cannot find backend pod: %v\n", err)
 			os.Exit(1)
 		}
-		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend")
-		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUILabelAppValue)
+		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend", localAddress)
+
+		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUIAppName)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
 			cancel()
 			wg.Wait()
 			os.Exit(1)
 		}
+		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI", localAddress)
 
-		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI")
-
-		fmt.Printf("Odigos Central UI is available at: http://localhost:%s\n", k8sconsts.CentralUIPort)
+		fmt.Printf("Odigos Tower UI is available at: http://%s:%s\n", localAddress, k8sconsts.CentralUIPort)
+		fmt.Printf("Odigos Tower Backend is available at: http://%s:%s\n", localAddress, k8sconsts.CentralBackendPort)
 		fmt.Printf("Press Ctrl+C to stop\n")
 
 		<-sigCh
@@ -385,12 +546,19 @@ var portForwardCentralCmd = &cobra.Command{
 	},
 }
 
-func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string) {
+func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string, localAddress string) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := kube.PortForwardWithContext(ctx, pod, client, port, "localhost"); err != nil {
+		fw, err := kube.PortForwardWithContext(ctx, pod, client, port, port, localAddress)
+		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+			return
+		}
+		err = fw.ForwardPorts()
+		if err != nil {
+			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+			return
 		}
 	}()
 }
@@ -425,6 +593,9 @@ func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
 		[]byte(patch),
 		metav1.PatchOptions{},
 	)
+	if apierrors.IsNotFound(err) {
+		return fmt.Errorf("odiglet daemonset not found in namespace %s", ns)
+	}
 	return err
 }
 
@@ -437,14 +608,35 @@ func init() {
 
 	proCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
+	offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
+	offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
-	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
+
+	// register and configure central uninstall command
+	centralCmd.AddCommand(centralUninstallCmd)
+	centralUninstallCmd.Flags().Bool("yes", false, "Confirm the uninstall without prompting")
+	centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower uninstallation")
+
+	// register and configure central upgrade command
+	centralCmd.AddCommand(centralUpgradeCmd)
+	centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
+	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower upgrade")
+	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
+	centralUpgradeCmd.MarkFlagRequired("version")
+
+	// Central configuration flags
+	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
+	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password")
+	centralInstallCmd.Flags().StringVar(&centralAuthStorageClassName, "central-storage-class-name", "", "StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)")
+	centralInstallCmd.MarkFlagRequired("central-admin-password")
 	centralCmd.AddCommand(portForwardCentralCmd)
+	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 	// migrate subcommand
 	proCmd.AddCommand(activateCmd)
 	activateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")

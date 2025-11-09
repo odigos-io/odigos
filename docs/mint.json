@@ -26,7 +26,7 @@
     {
       "name": "Demo",
       "icon": "circle-play",
-      "url": "https://www.youtube.com/watch?v=nynyV7FC4VI"
+      "url": "https://odigos.io/?demo"
     },
     {
       "name": "Blog",
@@ -111,7 +111,8 @@
           "icon": "golang",
           "pages": [
             "instrumentations/golang/ebpf",
-            "instrumentations/golang/enrichment"
+            "instrumentations/golang/enrichment",
+            "instrumentations/golang/go-hooks"
           ]
         },
         {
@@ -141,19 +142,27 @@
           ]
         },
         {
-          "group": ".NET",
-          "icon": "code",
-          "pages": [
-            "instrumentations/dotnet/native",
-            "instrumentations/dotnet/enrichment"
-          ]
-        },
-        {
           "group": "PHP",
           "icon": "php",
           "pages": [
             "instrumentations/php/native",
             "instrumentations/php/enrichment"
+          ]
+        },
+        {
+          "group": "Ruby",
+          "icon": "code",
+          "pages": [
+            "instrumentations/ruby/native",
+            "instrumentations/ruby/enrichment"
+          ]
+        },
+        {
+          "group": ".NET",
+          "icon": "code",
+          "pages": [
+            "instrumentations/dotnet/native",
+            "instrumentations/dotnet/enrichment"
           ]
         },
         {
@@ -170,6 +179,7 @@
       "pages": [
         "pipeline/overview",
         "pipeline/configuration",
+        "pipeline/datastreams",
         {
           "group": "Sources",
           "icon": "database",
@@ -188,7 +198,8 @@
             "pipeline/rules/introduction",
             "pipeline/rules/codeattributes",
             "pipeline/rules/headerscollection",
-            "pipeline/rules/payloadcollection"
+            "pipeline/rules/payloadcollection",
+            "pipeline/rules/custominstrumentation"
           ]
         },
         {
@@ -239,6 +250,7 @@
             "backends/awsxray",
             "backends/axiom",
             "backends/azureblob",
+            "backends/azuremonitor",
             "backends/betterstack",
             "backends/bonree",
             "backends/causely",
@@ -254,6 +266,7 @@
             "backends/elasticsearch",
             "backends/gigapipe",
             "backends/googlecloudmonitoring",
+            "backends/googlecloudotlp",
             "backends/googlecloudstorage",
             "backends/grafanacloudloki",
             "backends/grafanacloudprometheus",
@@ -308,6 +321,13 @@
         "usage-reports",
         "benchmarks",
         "permissions"
+      ]
+    },
+    {
+      "group": "Feature Guidelines",
+      "pages": [
+        "features/oidc",
+        "features/central"
       ]
     },
     {

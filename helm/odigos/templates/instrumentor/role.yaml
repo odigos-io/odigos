@@ -49,6 +49,14 @@ rules:
       - list
       - watch
   - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationrules/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
       - ''
     resources:
       - secrets
@@ -73,3 +81,13 @@ rules:
       - webhook-cert
     verbs:
       - delete
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+    resourceNames:
+      - odiglet
+    verbs:
+      - get
+      - list
+      - watch

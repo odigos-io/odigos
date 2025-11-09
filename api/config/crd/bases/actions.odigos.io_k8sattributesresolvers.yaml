@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.19.0
   labels:
     odigos.io/system-object: "true"
   name: k8sattributesresolvers.actions.odigos.io
@@ -19,8 +19,9 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: K8sAttributesResolver allows adding an action to collect k8s
-          attributes.
+        description: |-
+          K8sAttributesResolver allows adding an action to collect k8s attributes.
+          DEPRECATED: Use odigosv1.Action instead
         properties:
           apiVersion:
             description: |-
@@ -59,6 +60,12 @@ spec:
                         The attribute key to be used for the resource attribute created from the label.
                         e.g. "kubectl.kubernetes.restartedAte"
                       type: string
+                    from:
+                      default: pod
+                      description: |-
+                        The source of the annotation.
+                        e.g. "pod" or "namespace"
+                      type: string
                   required:
                   - annotationKey
                   - attributeKey
@@ -82,6 +89,7 @@ spec:
                   k8s.replicaset.name
                   if CollectWorkloadUID is set, also collect:
                   k8s.replicaset.uid
+                  DEPRECATED: ReplicaSet attributes are now collected by default during instrumentation.
                 type: boolean
               collectWorkloadUID:
                 description: |-
@@ -89,6 +97,7 @@ spec:
                   k8s.deployment.uid
                   k8s.daemonset.uid
                   k8s.statefulset.uid
+                  DEPRECATED: Workload UID attributes are now collected by default during instrumentation.
                 type: boolean
               disabled:
                 type: boolean
@@ -102,6 +111,15 @@ spec:
                       description: |-
                         The attribute key to be used for the resource attribute created from the label.
                         e.g. "app.kubernetes.name"
+                      type: string
+                    from:
+                      default: pod
+                      description: |-
+                        The source of the label.
+                        e.g. "pod" or "namespace"
+                      enum:
+                      - pod
+                      - namespace
                       type: string
                     labelKey:
                       description: |-

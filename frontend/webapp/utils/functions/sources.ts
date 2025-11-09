@@ -10,14 +10,14 @@ export const addConditionToSources = ({ namespace, name, kind, conditions }: Sou
   if (sources[foundIdx].conditions) {
     return {
       ...sources[foundIdx],
-      conditions: sources[foundIdx].conditions.concat(conditions),
-    };
-  } else {
-    return {
-      ...sources[foundIdx],
-      conditions,
+      conditions: (sources[foundIdx].conditions ?? []).concat(conditions),
     };
   }
+
+  return {
+    ...sources[foundIdx],
+    conditions,
+  };
 };
 
 export const prepareSourcePayloads = (
@@ -29,26 +29,24 @@ export const prepareSourcePayloads = (
   addEntities: (entityType: EntityTypes, entities: Source[]) => void,
 ) => {
   let isEmpty = true;
-  const payloads: SourceInstrumentInput[] = [];
+  const payload: SourceInstrumentInput = { sources: [] };
 
   for (const [ns, items] of Object.entries(selectAppsList)) {
     if (items.length) {
       isEmpty = false;
 
-      const mappedItems = items.map(({ name, kind, selected, currentStreamName }) => ({
+      const mappedItems = items.map(({ namespace, name, kind, selected, currentStreamName }) => ({
+        namespace,
         name,
         kind,
         // this is to map selected=undefined to selected=false
         selected: selected === undefined ? false : selected,
 
-        // currentStreamName comes from the UI Kit, if it's missing we use selectedStreamName is a fallback,
+        // currentStreamName comes from the UI Kit, if it's missing we use selectedStreamName as a fallback,
         // we could rely on only the selectedStreamName, but if we want to override the selected then we need to use the currentStreamName
         // (for example - if we want to have a single page to manage all groups, then we need to override the selected)
-
-        // TODO: uncomment when Data Streams are ready to use
-        currentStreamName: '', // currentStreamName || selectedStreamName,
+        currentStreamName: currentStreamName || selectedStreamName,
       }));
-
       const toDeleteFromStore: WorkloadId[] = [];
       const toUpdateInStore: Source[] = [];
 
@@ -82,23 +80,31 @@ export const prepareSourcePayloads = (
       removeEntities(EntityTypes.Source, toDeleteFromStore);
       addEntities(EntityTypes.Source, toUpdateInStore);
 
-      payloads.push({ namespace: ns, sources: mappedItems });
+      payload.sources.push(...mappedItems);
     }
   }
 
-  return { payloads, isEmpty };
+  return { payload, isEmpty };
 };
 
-export const prepareNamespacePayloads = (futureSelectAppsList: NamespaceSelectionFormData) => {
+export const prepareNamespacePayloads = (futureSelectAppsList: NamespaceSelectionFormData, selectedStreamName: string): { payload: NamespaceInstrumentInput; isEmpty: boolean } => {
   let isEmpty = true;
-  const payloads: NamespaceInstrumentInput[] = [];
+  const payload: NamespaceInstrumentInput = { namespaces: [] };
 
-  for (const [ns, futureSelected] of Object.entries(futureSelectAppsList)) {
-    if (typeof futureSelected === 'boolean') {
+  for (const [ns, { selected, currentStreamName }] of Object.entries(futureSelectAppsList)) {
+    if (typeof selected === 'boolean') {
       isEmpty = false;
-      payloads.push({ name: ns, futureSelected });
+      payload.namespaces.push({
+        namespace: ns,
+        selected: selected,
+
+        // currentStreamName comes from the UI Kit, if it's missing we use selectedStreamName as a fallback,
+        // we could rely on only the selectedStreamName, but if we want to override the selected then we need to use the currentStreamName
+        // (for example - if we want to have a single page to manage all groups, then we need to override the selected)
+        currentStreamName: currentStreamName || selectedStreamName,
+      });
     }
   }
 
-  return { payloads, isEmpty };
+  return { payload, isEmpty };
 };

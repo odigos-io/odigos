@@ -15,19 +15,18 @@ spec:
         - script:
             timeout: 4m
             content: |
-              ../../../cli/odigos install --namespace odigos-test --version e2e-test
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
               ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
-
-    # currently the default env injection method is pod-manifest
 
     - name: Assert config set successfully to default
       try:
         - script:
             timeout: 30s
-            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v pod-manifest
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v loader-fallback-to-pod-manifest
 
     - name: Verify Node Odiglet label has been added
       try:
@@ -75,39 +74,44 @@ spec:
       try:
         - assert:
             timeout: 3m
-            file: 01-assert-env-vars.yaml
+            file: assert-env-vars-loader-fallback-pod-manifest.yaml
 
-    - name: Set Env injection method to loader-fallback-to-pod-manifest
+    - name: Set Env injection method to pod-manifest
       try:
         - script:
             timeout: 30s
             content: |
-              ../../../cli/odigos config set agent-env-vars-injection-method loader-fallback-to-pod-manifest
+              ../../../cli/odigos upgrade --ns odigos-test --set instrumentor.agentEnvVarsInjectionMethod=pod-manifest
 
     - name: Assert config set successfully
       try:
         - script:
             timeout: 30s
-            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v loader-fallback-to-pod-manifest
+            content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v pod-manifest
 
     - name: Rollout instrumented apps
       try:
         - script:
             timeout: 1m
-            content: kubectl rollout restart deployment
+            content: |
+              # we might get an error like "failed to create patch for python-alpine: if restart has already been triggered within the past second, please wait before attempting to trigger another"
+              sleep 2
+              for i in 1 2 3; do
+                kubectl rollout restart deployment && break || sleep 2
+              done || exit 1 # Exit with error if all attempts fail
 
     - name: 02 - Assert Environment Variables
       try:
         - assert:
             timeout: 1m
-            file: 02-assert-env-vars.yaml
+            file: assert-env-vars-pod-manifest.yaml
 
     - name: Set Env injection method to loader
       try:
         - script:
             timeout: 30s
             content: |
-              ../../../cli/odigos config set agent-env-vars-injection-method loader
+              ../../../cli/odigos upgrade --ns odigos-test --set instrumentor.agentEnvVarsInjectionMethod=loader
 
     - name: Assert config set successfully
       try:
@@ -119,10 +123,11 @@ spec:
       try:
         - script:
             timeout: 1m
-            content: kubectl rollout restart deployment
+            content: |
+              kubectl rollout restart deployment
 
     - name: 03 - Assert Environment Variables
       try:
         - assert:
             timeout: 1m
-            file: 03-assert-env-vars.yaml
+            file: assert-env-vars-loader.yaml

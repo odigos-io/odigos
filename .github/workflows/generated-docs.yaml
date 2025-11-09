@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Generate CRD API docs
         run: |
           go work init && go work use -r .
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Generate CLI docs
         run: |
           make cli-docs
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Helm
         uses: azure/setup-helm@v4
       - name: Generate RBAC docs
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -77,7 +77,8 @@ jobs:
           python sync-dest-doc.py
       - name: Check for changes in Destinations docs
         run: |
-          if [[ -n $(git status --porcelain) ]]; then
+          # Exclude mint.json from the git status check (the script applies a formatting change, which is not relevant to the actual docs generation)
+          if [[ -n $(git status --porcelain -- . ':!docs/mint.json') ]]; then
             git diff
             echo "Destinations docs need to be updated. Please run 'cd docs && python sync-dest-doc.py', then commit the changes."
             exit 1
@@ -87,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

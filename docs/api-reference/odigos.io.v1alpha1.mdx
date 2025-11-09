@@ -508,6 +508,28 @@ auto_generated: true
    <p>PiiMasking is the config for the PiiMasking Action.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>k8sAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.K8sAttributesConfig</code>
+</td>
+<td>
+   <p>K8sAttributes is the config for the K8sAttributes Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>samplers</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.SamplersConfig</code>
+</td>
+<td>
+   <p>Samplers is the config for the Samplers Action.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -545,6 +567,51 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 **Appears in:**
 
 - [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+
+
+## `AgentLogsConfig` <a id="odigos-io-v1alpha1-AgentLogsConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;logs&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.</p>
+
+
+
+## `AgentMetricsConfig` <a id="odigos-io-v1alpha1-AgentMetricsConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;metrics&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.</p>
+
+
+
+## `AgentTracesConfig` <a id="odigos-io-v1alpha1-AgentTracesConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;traces&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.</p>
+
+
+
+## `AgentsTelemetrySettings` <a id="odigos-io-v1alpha1-AgentsTelemetrySettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
 
 
 
@@ -681,6 +748,103 @@ This entity is refered to a rule in Odigos terminology for head-sampling.</p>
    <p>The fraction of spans to sample, in the range [0, 1].
 If the fraction is 0, no spans are sampled.
 If the fraction is 1, all spans are sampled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroupMetricsCollectionSettings` <a id="odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceSpanMetricsConfiguration"><code>common.MetricsSourceSpanMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means span to metrics is enabled,
+and the node collector should set it up in the pipeline.
+span to metrics is the ability to calculate metrics like http requests/errors/duration etc
+from the individual spans recorded for relevant operation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hostMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceHostMetricsConfiguration"><code>common.MetricsSourceHostMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means host metrics is enabled,
+and the opentelemetry collector &quot;hostmetrics&quot; receiver should be included in the pipeline.
+host metrics are metrics that are collected from the host node,
+such as cpu, memory, disk, network, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kubeletStats</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceKubeletStatsConfiguration"><code>common.MetricsSourceKubeletStatsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means kubelet stats is enabled,
+and the opentelemetry collector &quot;kubeletstats&quot; receiver should be included in the pipeline.
+kubelet stats are metrics that are collected from the kubelet point of view,
+such as cpu, memory, disk, network, per pod, node and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceGraph</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ServiceGraphSettings"><code>ServiceGraphSettings</code></a>
+</td>
+<td>
+   <p>if not nil for cluster collector, it means service graph is enabled,
+and metrics for the &quot;connectivity&quot; between services should be calculated
+to be exported to metrics destinations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>odigosOwnMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-OdigosOwnMetricsSettings"><code>OdigosOwnMetricsSettings</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means that some metric destinations are
+intresseted in collecting metrics about: odigos, the collected data, and the pipeline itself.
+this allows for users to monitor and operate odigos within their existing system,
+create dashboards, alerting, and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentsTelemetry</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentsTelemetrySettings"><code>AgentsTelemetrySettings</code></a>
+</td>
+<td>
+   <p>this part controls the metrics which are received from agents in the otlp receiver.
+it is generally enabled when we want to record metrics, and listed here for completeness.
+any &quot;otlp receiver&quot; specific settings can go here</p>
 </td>
 </tr>
 </tbody>
@@ -902,6 +1066,83 @@ these settings are used to protect the collectors instances from:</p>
 </ul>
 </td>
 </tr>
+<tr>
+<td>
+<code>serviceGraphDisabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
+It is enabled by default and can be disabled by setting the enabled flag to false.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableDataCompression</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Deprecated - use OtlpExporterConfiguration instead.
+EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+It is disabled by default and can be enabled by setting the enabled flag to true.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otlpExporterConfiguration</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#OtlpExporterConfiguration"><code>common.OtlpExporterConfiguration</code></a>
+</td>
+<td>
+   <p>OtlpExporterConfiguration is the configuration for the OTLP exporter.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>clusterMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+It is disabled by default and can be enabled by setting the enabled flag to true.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpsProxyAddress</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+when unset or empty, no proxy will be used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>metrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings"><code>CollectorsGroupMetricsCollectionSettings</code></a>
+</td>
+<td>
+   <p>configuration for metrics handling in this collectors group
+if metric collection is disabled, this will be nil
+the content is populated only if relevant to this collectors group
+it's being calculated based on active destinations and their settings,
+and global settings provided in the odigos configuration or instrumentation rules.
+it allows for the collector group reconciler to be simplified,
+and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -1042,6 +1283,54 @@ if the name is empty, this container should not be instrumented.</p>
 Keys are parameter names (like &quot;libc&quot;) and values are the value to use for that parameter (glibc / musl)</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>envInjectionMethod</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#EnvInjectionDecision"><code>common.EnvInjectionDecision</code></a>
+</td>
+<td>
+   <p>What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+Can be either &quot;loader&quot; or &quot;pod-manifest&quot;.
+The injection should still check the actual values in the container manifest before injecting.
+Nil means that this container should not have env injection (agent should not be injected, or distro does not specify &quot;loader&quot; injection envs).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>traces</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentTracesConfig"><code>AgentTracesConfig</code></a>
+</td>
+<td>
+   <p>Each enabled signal must be set with a non-nil value (even if the config content is empty).
+nil means that the signal is disabled and should not be instrumented/collected by the agent.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>metrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentMetricsConfig"><code>AgentMetricsConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>logs</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentLogsConfig"><code>AgentLogsConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
 </tbody>
 </table>
 
@@ -1081,6 +1370,90 @@ Keys are parameter names (like &quot;libc&quot;) and values are the value to use
 If set for a container, the automatic detection will not be used for this container,
 and the distro to use will be calculated based on this value.</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `DestinationMetricsSettings` <a id="odigos-io-v1alpha1-DestinationMetricsSettings"></a>
+    
+
+**Appears in:**
+
+- [DestinationSpec](#odigos-io-v1alpha1-DestinationSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>following settings enables/disables specific metric sources
+true - collect and send this metric source
+false - do not collect and send this metric source
+nil - use the default setting (from destination manifest, or cluster global setting)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hostMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>kubeletStatsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>serviceGraphEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>odigosOwnMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>agentsTelemetryEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>
@@ -1153,6 +1526,29 @@ and the distro to use will be calculated based on this value.</p>
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>metricsSettings</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-DestinationMetricsSettings"><code>DestinationMetricsSettings</code></a>
+</td>
+<td>
+   <p>MetricsSettings defines the metrics settings for this destination.
+ignored if destination does not support metrics or metrics are not enabled in signals</p>
+</td>
 </tr>
 <tr>
 <td>
@@ -1363,6 +1759,19 @@ this is updated only when the overrides are changed, and not when some other cha
 e.g. when the distro for container changes, or it's compatibility version,
 or something else that requires rollout, the hash change will indicate that.
 if the hash is empty, it means that no agent should be enabled in any pod container.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentsMetaHashChangedTime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>The last time at which the agents meta hash value was changed.
+Pods created before this time may not be in alignment with the AgentsMetaHash.
+e.g. can lack the odigos label, or have a different value.</p>
 </td>
 </tr>
 <tr>
@@ -1970,6 +2379,28 @@ If empty, no instrumentation libraries will be used.</p>
    <p>Allows to configure the collection of http headers for different types of payloads.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>Configure the tracing configuration for the library.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>customInstrumentations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+</td>
+<td>
+   <p>Add custom instrumentation probes</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -1999,6 +2430,15 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tr>
 </tbody>
 </table>
+
+## `OdigosOwnMetricsSettings` <a id="odigos-io-v1alpha1-OdigosOwnMetricsSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+
 
 ## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
     
@@ -2269,7 +2709,13 @@ nil means we were unable to determine the secure-execution mode.</p>
 <code>string</code>
 </td>
 <td>
-   <p>Stores the error message from the CRI runtime if returned to prevent instrumenting the container if an error exists.</p>
+   <p>CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+Thus, this field is set only when there is:</p>
+<ul>
+<li>Actual CRI check failed</li>
+<li>The observed environment variables might come from container runtime</li>
+</ul>
 </td>
 </tr>
 <tr>
@@ -2377,8 +2823,39 @@ In the Future we might add another level of configuration base on the parent spa
    <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>default configuration for library tracing.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>customInstrumentations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+</td>
+<td>
+   <p>list of the custom instrumentation probes the SDK should use.</p>
+</td>
+</tr>
 </tbody>
 </table>
+
+## `ServiceGraphSettings` <a id="odigos-io-v1alpha1-ServiceGraphSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+
 
 ## `SourceSelector` <a id="odigos-io-v1alpha1-SourceSelector"></a>
     
@@ -2408,15 +2885,15 @@ This means the destination will receive data from all sources in &quot;default&q
 </tr>
 <tr>
 <td>
-<code>groups</code>
+<code>dataStreams</code>
 </td>
 <td>
 <code>[]string</code>
 </td>
 <td>
-   <p>Workloads (sources) are assigned to groups via labels (odigos.io/group-backend: true), allowing a more flexible selection mechanism.
+   <p>Workloads (sources) are assigned to Datastreams via labels (odigos.io/data-stream: true), allowing a more flexible selection mechanism.
 Example:
-groups: [&quot;backend&quot;, &quot;monitoring&quot;]
+dataStreams: [&quot;backend&quot;, &quot;monitoring&quot;]
 This means the destination will receive data only from sources labeled with &quot;backend&quot; or &quot;monitoring&quot;.</p>
 </td>
 </tr>

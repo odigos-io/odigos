@@ -9,9 +9,45 @@ on:
       tag:
         description: 'image tag'
         required: true
+      force_run_on_zero_patch:
+        description: 'Run even when tag is <MAJOR>.<MINOR>.0'
+        required: false
+        default: "false"
 
 jobs:
+  # Skip tags that are exactly v<MAJOR>.<MINOR>.0
+  # unless force_run_on_zero_patch is "true".
+  # This prevents publishing modules when a promote-rc-to-stable tag is created,
+  # but allows overriding manually by setting force_run_on_zero_patch to "true"
+  # when dispatching the workflow.
+  decide:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.decide.outputs.skip }}
+      tag:  ${{ steps.decide.outputs.tag }}
+    steps:
+      - id: decide
+        env:
+          # Prefer manual input for dispatch; otherwise use the pushed tag
+          TAG:   ${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+          # If workflow_dispatch, this can be set to "true" to override skipping
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force_run_on_zero_patch || 'false' }}
+        run: |
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          if [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+\.0$ ]]; then
+            if [[ "$FORCE" == "true" ]]; then
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
   verify-offsets:
+    needs: decide
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,9 +66,13 @@ jobs:
 
           count=$(echo "$pr_links" | wc -w)
           if [ "$count" -gt 0 ]; then
+            # Format PR links for display
+            pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
+
             # Write outputs to GITHUB_OUTPUT instead of using ::set-output
             echo "status=failed" >> $GITHUB_OUTPUT
             echo "links=$pr_links" >> $GITHUB_OUTPUT
+            echo "links_formatted=$pr_links_formatted" >> $GITHUB_OUTPUT
             echo "❌ Error: Open PRs with label \"offsets\" found!" >&2
             exit 1
           else
@@ -40,32 +80,16 @@ jobs:
             echo "✅ No open PRs with label \"offsets\"."
           fi
 
-      - name: Notify Slack on Success
-        if: ${{ steps.verify.outputs.status == 'success' }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{
-            "description": "✅ No open offset PRs in `${{ matrix.repo }}`",
-            "tag": "verify-offsets-success"
-          }' $SLACK_WEBHOOK_URL
-
-      - name: Notify Slack on Failure
-        if: ${{ failure() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          PR_LINKS: ${{ steps.verify.outputs.links }}
-        run: |
-          pr_links_formatted=$(echo "$PR_LINKS" | jq -r '.[]' | awk '{print "- " $0}' | tr '\n' '\n')
-          curl -X POST -H 'Content-type: application/json' --data "{
-            \"description\": \"❌ ERROR: Open offset PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
-            \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
-            \"tag\": \"verify-offsets-failure\"
-          }" $SLACK_WEBHOOK_URL
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "No open offset PRs in `${{ matrix.repo }}`"
+          failure-description: "ERROR: Open offset PRs found in `${{ matrix.repo }}`\n\n${{ steps.verify.outputs.links_formatted }}"
 
   verify-dependencies-sync:
+    if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: verify-offsets
     runs-on: ubuntu-latest
     strategy:
@@ -85,9 +109,13 @@ jobs:
 
           count=$(echo "$pr_links" | wc -w)
           if [ "$count" -gt 0 ]; then
+            # Format PR links for display
+            pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
+
             # Write outputs to GITHUB_OUTPUT instead of using ::set-output
             echo "status=failed" >> $GITHUB_OUTPUT
             echo "links=$pr_links" >> $GITHUB_OUTPUT
+            echo "pr_links_formatted=$pr_links_formatted" >> $GITHUB_OUTPUT
             echo "❌ Error: Open PRs with label \"dependencies-syncer-bot\" found!" >&2
             exit 1
           else
@@ -95,33 +123,60 @@ jobs:
             echo "✅ No open PRs with label \"dependencies-syncer-bot\"."
           fi
 
-      - name: Notify Slack on Success
-        if: ${{ steps.verify.outputs.status == 'success' }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{
-            "description": "✅ No open dependencies-syncer-bot PRs in `${{ matrix.repo }}`",
-            "tag": "verify-dependencies-sync-success"
-          }' $SLACK_WEBHOOK_URL
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "No open dependencies-syncer-bot PRs in `${{ matrix.repo }}`"
+          failure-description: "ERROR: Open dependencies-syncer-bot PRs found in `${{ matrix.repo }}`\n\n${{ steps.verify.outputs.pr_links_formatted }}"
 
-      - name: Notify Slack on Failure
-        if: ${{ failure() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          PR_LINKS: ${{ steps.verify.outputs.links }}
+  verify-release-blockers:
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    needs: verify-dependencies-sync
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ['odigos', 'odigos-enterprise']
+    steps:
+      - name: Verify no open release-blocker PRs
+        id: verify
         run: |
-          pr_links_formatted=$(echo "$PR_LINKS" | jq -r '.[]' | awk '{print "- " $0}' | tr '\n' '\n')
-          curl -X POST -H 'Content-type: application/json' --data "{
-            \"description\": \"❌ ERROR: Open depenencies-syncer-bot PRs found in \`${{ matrix.repo }}\`\n\n$pr_links_formatted\",
-            \"link\": \"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}\",
-            \"tag\": \"verify-dependencies-sync-failure\"
-          }" $SLACK_WEBHOOK_URL
+          # Fetch open PRs and filter by "release-blocker" label
+          result=$(curl -s -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+
+          pr_links=$(echo "$result" \
+            | jq -r '[.[] | select(.labels | any(.name == "release-blocker")) | .html_url] | join(" ")')
+
+          count=$(echo "$pr_links" | wc -w)
+          if [ "$count" -gt 0 ]; then
+            # Format PR links for display
+            pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
+
+            # Write outputs to GITHUB_OUTPUT instead of using ::set-output
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "links=$pr_links" >> $GITHUB_OUTPUT
+            echo "pr_links_formatted=$pr_links_formatted" >> $GITHUB_OUTPUT
+            echo "❌ Error: Open PRs with label \"release-blocker\" found!" >&2
+            exit 1
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ No open PRs with label \"release-blocker\"."
+          fi
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "No open release-blocker PRs in `${{ matrix.repo }}`"
+          failure-description: "ERROR: Open release-blocker PRs found in `${{ matrix.repo }}`\n\n${{ steps.verify.outputs.pr_links_formatted }}"
 
   print-tag:
-    needs: verify-dependencies-sync
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag
@@ -129,43 +184,40 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Detected new git tag. initializing a release", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "detected new git tag ${{ steps.extract_tag.outputs.tag }}, starting a release"
+          failure-description: "error during detection of new git tag ${{ steps.extract_tag.outputs.tag }}"
+          tag: ${{ steps.extract_tag.outputs.tag }}
 
   tag-modules:
-    needs: verify-dependencies-sync
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Fetch all history for all tags and branches
+          token: ${{ secrets.RELEASE_BOT_TOKEN }}
 
       - name: Extract Tag
         id: extract_tag
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
-      - name: Notify Modules Tagging
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Tagging odigos modules so they can be consumed as libraries", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack Start
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "start tagging odigos modules so they can be consumed as libraries"
+          failure-description: "error during tagging of odigos modules"
+          tag: ${{ steps.extract_tag.outputs.tag }}
 
-      - name: tag modules
-        run: |
-          git tag api/${{ steps.extract_tag.outputs.tag }}
-          git tag common/${{ steps.extract_tag.outputs.tag }}
-          git tag instrumentation/${{ steps.extract_tag.outputs.tag }}
-          git tag k8sutils/${{ steps.extract_tag.outputs.tag }}
-          git tag odiglet/${{ steps.extract_tag.outputs.tag }}
-          git tag opampserver/${{ steps.extract_tag.outputs.tag }}
-          git tag procdiscovery/${{ steps.extract_tag.outputs.tag }}
-          git tag profiles/${{ steps.extract_tag.outputs.tag }}
-          git tag distros/${{ steps.extract_tag.outputs.tag }}
-          git tag instrumentor/${{ steps.extract_tag.outputs.tag }}
-          git push origin --tags
+      - name: Tag Modules
+        uses: ./.github/actions/tag-modules
+        with:
+          tag: ${{ steps.extract_tag.outputs.tag }}
 
       - name: Trigger Release PR in Odigos Enterprise
         run: |
@@ -175,30 +227,26 @@ jobs:
           https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
             -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.extract_tag.outputs.tag }}"}}'
 
-      - name: Notify Slack End
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos go modules tagged successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
-
-      - name: Notify Slack on Failure
-        if: ${{ failure() || cancelled() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: Odigos go modules release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack Success
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Odigos go modules tagged successfully"
+          failure-description: "ERROR: Odigos go modules tagging failed"
+          tag: ${{ steps.extract_tag.outputs.tag }}
 
   publish-images:
-    needs: verify-dependencies-sync
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    needs: verify-release-blockers
     permissions:
       contents: 'read'
       id-token: 'write'
+      packages: 'write'
     strategy:
       matrix:
         dockerfile: ['Dockerfile', 'Dockerfile.rhel']
-        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
         include:
           - service: autoscaler
             runner: ubuntu-latest
@@ -228,20 +276,26 @@ jobs:
             runner: ubuntu-latest
             summary: 'Odigos Operator'
             description: 'The Odigos Operator installs and manages Odigos in a cluster'
+          - service: agents
+            runner: ubuntu-latest
+            summary: 'Odigos Agents'
+            description: 'The Odigos Agents used to copy Odigos agent relevant files into the user workloads.'
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Extract Tag
         id: extract_tag
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
-      - name: Notify Modules Tagging
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Start building docker image for component ${{ matrix.service }}", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack Start
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "start publishing docker image for component ${{ matrix.service }} and dockerfile ${{ matrix.dockerfile }}"
+          failure-description: "error during building or publishing of docker image for component ${{ matrix.service }} and dockerfile ${{ matrix.dockerfile }}"
+          tag: ${{ steps.extract_tag.outputs.tag }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -251,7 +305,7 @@ jobs:
 
       - id: gcp-auth
         name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           token_format: 'access_token'
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
@@ -271,6 +325,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and Push Docker Image for ${{ matrix.service }}
         uses: docker/build-push-action@v6
         env:
@@ -281,6 +342,7 @@ jobs:
           tags: |
             us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
             keyval/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
+            ghcr.io/odigos-io/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
             ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
@@ -295,30 +357,21 @@ jobs:
                 matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
                 matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
                 matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
+                matrix.service == 'agents' && format('agents/{0}', matrix.dockerfile) ||
                 matrix.dockerfile }}
-          context: >-
-            ${{
-              (matrix.service == 'collector' && 'collector') ||
-              '.'
-            }}
 
-      - name: Notify Slack End
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos component ${{ matrix.service }} released successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
-
-      - name: Notify Slack on Failure
-        if: ${{ failure() || cancelled() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: odigos component ${{ matrix.service }} release failed", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Odigos component ${{ matrix.service }} with dockerfile ${{ matrix.dockerfile }} released successfully"
+          failure-description: "ERROR: Odigos component ${{ matrix.service }} with dockerfile ${{ matrix.dockerfile }} release failed"
+          tag: ${{ steps.extract_tag.outputs.tag }}
 
   publish-collector-linux-packages:
-    needs: verify-dependencies-sync
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    needs: verify-release-blockers
     runs-on: ubuntu-latest
     steps:
       - name: Extract Tag
@@ -326,13 +379,16 @@ jobs:
         run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Start releasing odigos collector as linux packages", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "start releasing odigos collector as linux packages"
+          failure-description: "error during releasing of odigos collector as linux packages"
+          tag: ${{ steps.extract_tag.outputs.tag }}
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ steps.extract_tag.outputs.tag }}
@@ -344,9 +400,9 @@ jobs:
           sudo apt-get install -y fury-cli
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: "1.25"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
@@ -359,17 +415,11 @@ jobs:
           FURY_ACCOUNT: ${{ secrets.FURY_ACCOUNT }}
           FURY_API_TOKEN: ${{ secrets.FURY_API_TOKEN }}
 
-      - name: Notify Slack End
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"description":"Odigos collector linux packages released successfully", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
-
-      - name: Notify Slack on Failure
-        if: ${{ failure() || cancelled() }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"link":"https://github.com/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}", "description":"ERROR: failed to publish odigos collector linux packages", "tag":"${{ steps.extract_tag.outputs.tag }}"}' ${{ env.SLACK_WEBHOOK_URL }}
+      - name: Notify Slack Success
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Odigos collector linux packages released successfully"
+          failure-description: "ERROR: Odigos collector linux packages release failed"
+          tag: ${{ steps.extract_tag.outputs.tag }}

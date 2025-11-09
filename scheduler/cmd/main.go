@@ -19,7 +19,9 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
 	"os"
+	"time"
 
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
@@ -32,11 +34,17 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/destinations"
+	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/dynamic"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -47,7 +55,7 @@ import (
 	"github.com/odigos-io/odigos/scheduler/clusterinfo"
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
 	"github.com/odigos-io/odigos/scheduler/controllers/nodecollectorsgroup"
-	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfig"
+	"github.com/odigos-io/odigos/scheduler/controllers/odigosconfiguration"
 	"github.com/odigos-io/odigos/scheduler/controllers/odigospro"
 	//+kubebuilder:scaffold:imports
 )
@@ -87,7 +95,14 @@ func main() {
 	tier := env.GetOdigosTierFromEnv()
 	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 
+	err := destinations.Load()
+	if err != nil {
+		log.Fatalf("Error loading destinations data: %s", err)
+	}
+
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
+
+	schedulerDeploymentNameSelector := fields.OneTermEqualSelector("metadata.name", k8sconsts.SchedulerDeploymentName)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -100,6 +115,12 @@ func main() {
 				&corev1.ConfigMap{}: {
 					Field: nsSelector,
 				},
+				&corev1.Secret{}: {
+					Field: nsSelector,
+				},
+				&appsv1.Deployment{}: {
+					Field: fields.AndSelectors(nsSelector, schedulerDeploymentNameSelector),
+				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
 				},
@@ -109,7 +130,10 @@ func main() {
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
 				},
-				&corev1.Secret{}: {
+				&odigosv1.Action{}: {
+					Field: nsSelector,
+				},
+				&odigosv1.Destination{}: {
 					Field: nsSelector,
 				},
 			},
@@ -117,6 +141,34 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "ce024640.odigos.io",
+		/*
+			Leader Election Parameters:
+
+			LeaseDuration (30s):
+			- Maximum time a pod can remain the leader after its last successful renewal.
+			- If the leader pod dies, failover can take up to the LeaseDuration from the last renewal.
+			  The actual failover time depends on how recently the leader renewed the lease.
+			- Controls when the lease is fully expired and failover can occur.
+
+			RenewDeadline (20s):
+			- The maximum time the leader pod has to successfully renew its lease before it is
+			  considered unhealthy. Relevant only while the leader is alive and renewing.
+			- Controls how long the current leader will keep retrying to refresh the lease.
+
+			RetryPeriod (5s):
+			- How often non-leader pods check and attempt to acquire leadership when the lease is available.
+			- Lower value means faster failover but adds more load on the Kubernetes API server.
+
+			Relationship:
+			- RetryPeriod < RenewDeadline < LeaseDuration
+			- This ensures proper failover timing and system stability.
+
+			Setting the leader election params to 30s/20s/5s should provide a good balance between stability and quick failover.
+		*/
+		LeaseDuration:                 durationPointer(30 * time.Second),
+		RenewDeadline:                 durationPointer(20 * time.Second),
+		RetryPeriod:                   durationPointer(5 * time.Second),
+		LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -150,12 +202,12 @@ func main() {
 		setupLog.Error(err, "unable to create controllers for node collectors group")
 		os.Exit(1)
 	}
-	err = odigosconfig.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
+	err = odigosconfiguration.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
 	if err != nil {
-		setupLog.Error(err, "unable to create controllers for odigos config")
+		setupLog.Error(err, "unable to create controllers for odigos configuration")
 		os.Exit(1)
 	}
-	err = odigospro.SetupWithManager(mgr)
+	err = odigospro.SetupWithManager(mgr, odigosVersion)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller for odigos pro")
 		os.Exit(1)
@@ -170,9 +222,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	// remove the legacy configmap if it exists
+	mgr.Add(&configmaps.ConfigMapDeleteMigration{Client: mgr.GetClient(), Logger: setupLog, ConfigMap: types.NamespacedName{
+		Namespace: env.GetCurrentNamespace(),
+		Name:      consts.OdigosLegacyConfigName,
+	}})
+
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func durationPointer(d time.Duration) *time.Duration {
+	return &d
 }

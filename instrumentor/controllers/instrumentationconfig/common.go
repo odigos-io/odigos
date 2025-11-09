@@ -1,7 +1,6 @@
 package instrumentationconfig
 
 import (
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
@@ -10,31 +9,28 @@ import (
 )
 
 func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error {
-
-	workloadName, workloadKind, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name)
+	workload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
 	if err != nil {
 		return err
 	}
-	workload := k8sconsts.PodWorkload{
-		Name:      workloadName,
-		Namespace: ic.Namespace,
-		Kind:      workloadKind,
-	}
 
-	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Status.RuntimeDetailsByContainer))
+	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Spec.Containers))
+	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
 
-	// create an empty sdk config for each detected programming language
-	for _, container := range ic.Status.RuntimeDetailsByContainer {
-		containerLanguage := container.Language
-		if containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
+	for _, runtimeDetails := range runtimeDetailsByContainer {
+		if runtimeDetails == nil {
+			continue
+		}
+		containerLanguage := runtimeDetails.Language
+		if containerLanguage == "" || containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
 			continue
 		}
 		sdkConfigs = createDefaultSdkConfig(sdkConfigs, containerLanguage)
 	}
-
 	// iterate over all the payload collection rules, and update the instrumentation config accordingly
 	for i := range rules.Items {
 		rule := &rules.Items[i]
+		// skip disabled rules
 		if rule.Spec.Disabled {
 			continue
 		}
@@ -43,9 +39,10 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 		if !participating {
 			continue
 		}
-
+		// merge the rule into all the sdk configs
 		for i := range sdkConfigs {
-			if rule.Spec.InstrumentationLibraries == nil { // nil means a rule in SDK level, that applies unless overridden by library level rule
+			// If we've recieved nil for the instrumentation libraries, then we apply the given rules as global rules to the SDK.
+			if rule.Spec.InstrumentationLibraries == nil {
 				if rule.Spec.PayloadCollection != nil {
 					sdkConfigs[i].DefaultPayloadCollection.HttpRequest = mergeHttpPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.HttpRequest, rule.Spec.PayloadCollection.HttpRequest)
 					sdkConfigs[i].DefaultPayloadCollection.HttpResponse = mergeHttpPayloadCollectionRules(sdkConfigs[i].DefaultPayloadCollection.HttpResponse, rule.Spec.PayloadCollection.HttpResponse)
@@ -57,6 +54,12 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 				}
 				if rule.Spec.HeadersCollection != nil {
 					sdkConfigs[i].DefaultHeadersCollection = mergeHttpHeadersCollectionrules(sdkConfigs[i].DefaultHeadersCollection, rule.Spec.HeadersCollection)
+				}
+				if rule.Spec.TraceConfig != nil {
+					sdkConfigs[i].DefaultTraceConfig = mergeDefaultTracingConfig(sdkConfigs[i].DefaultTraceConfig, rule.Spec.TraceConfig)
+				}
+				if rule.Spec.CustomInstrumentations != nil {
+					sdkConfigs[i].CustomInstrumentations = mergeCustomInstrumentations(sdkConfigs[i].CustomInstrumentations, rule.Spec.CustomInstrumentations)
 				}
 			} else {
 				for _, library := range *rule.Spec.InstrumentationLibraries {
@@ -77,6 +80,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 					if rule.Spec.HeadersCollection != nil {
 						libraryConfig.HeadersCollection = mergeHttpHeadersCollectionrules(libraryConfig.HeadersCollection, rule.Spec.HeadersCollection)
 					}
+					if rule.Spec.TraceConfig != nil {
+						libraryConfig.TraceConfig = mergeTracingConfig(libraryConfig.TraceConfig, rule.Spec.TraceConfig)
+					}
 				}
 			}
 		}
@@ -85,6 +91,65 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	ic.Spec.SdkConfigs = sdkConfigs
 
 	return nil
+}
+
+func mergeDefaultTracingConfig(defaultConfig *instrumentationrules.TraceConfig, rule *instrumentationrules.TraceConfig) *instrumentationrules.TraceConfig {
+	if defaultConfig == nil {
+		return rule
+	}
+	if rule == nil {
+		return defaultConfig
+	}
+
+	mergedRules := &instrumentationrules.TraceConfig{}
+
+	// Only set Disabled if we have actual values to work with
+	if defaultConfig.Disabled != nil && rule.Disabled != nil {
+		// Both values are set, use OR logic: tracing is disabled if either config disables it
+		mergedRules.Disabled = boolPtr(*defaultConfig.Disabled || *rule.Disabled)
+	} else if defaultConfig.Disabled != nil {
+		// Only default config has a value, use it
+		mergedRules.Disabled = defaultConfig.Disabled
+	} else if rule.Disabled != nil {
+		// Only rule has a value, use it
+		mergedRules.Disabled = rule.Disabled
+	}
+	// If both are nil, mergedRules.Disabled remains nil
+	return mergedRules
+}
+
+func mergeTracingConfig(sdkConfig *odigosv1alpha1.InstrumentationLibraryConfigTraces, rule *instrumentationrules.TraceConfig) *odigosv1alpha1.InstrumentationLibraryConfigTraces {
+	// The SDK config uses "Enabled" field to enable/disable tracing.
+	// The rule uses "Disabled" field to disable tracing, since the semantics of "Disabled" allows for default nil/false
+	// which is clearer for the user facing object.
+
+	if sdkConfig == nil {
+		if rule.Disabled != nil {
+			return &odigosv1alpha1.InstrumentationLibraryConfigTraces{
+				Enabled: boolPtr(!*rule.Disabled),
+			}
+		}
+		// Both sdkConfig and rule.Disabled are nil, return nil config
+		return &odigosv1alpha1.InstrumentationLibraryConfigTraces{}
+	} else if rule == nil {
+		return sdkConfig
+	}
+
+	mergedRules := odigosv1alpha1.InstrumentationLibraryConfigTraces{}
+
+	// Only set Enabled if we have actual values to work with
+	if sdkConfig.Enabled != nil && rule.Disabled != nil {
+		// Both values are set, use AND logic: tracing is enabled only if SDK config enables it AND rule doesn't disable it
+		mergedRules.Enabled = boolPtr(*sdkConfig.Enabled && !*rule.Disabled)
+	} else if sdkConfig.Enabled != nil {
+		// Only SDK config has a value, use it
+		mergedRules.Enabled = sdkConfig.Enabled
+	} else if rule.Disabled != nil {
+		// Only rule has a value, use it
+		mergedRules.Enabled = boolPtr(!*rule.Disabled)
+	}
+	// If both are nil, mergedRules.Enabled remains nil
+	return &mergedRules
 }
 
 // returns a pointer to the instrumentation library config, creating it if it does not exist
@@ -124,6 +189,30 @@ func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLang
 		Language:                 containerLanguage,
 		DefaultPayloadCollection: &instrumentationrules.PayloadCollection{},
 	})
+}
+
+func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentations, rule2 *instrumentationrules.CustomInstrumentations) *instrumentationrules.CustomInstrumentations {
+	if rule1 == nil {
+		return rule2
+	} else if rule2 == nil {
+		return rule1
+	}
+
+	mergedRules := &instrumentationrules.CustomInstrumentations{}
+
+	// Merge Golang custom probes
+	mergedGolangProbes := make([]instrumentationrules.GolangCustomProbe, 0, len(rule1.Golang)+len(rule2.Golang))
+	mergedGolangProbes = append(mergedGolangProbes, rule1.Golang...)
+	mergedGolangProbes = append(mergedGolangProbes, rule2.Golang...)
+	mergedRules.Golang = mergedGolangProbes
+
+	// Merge Java custom probes
+	mergedJavaProbes := make([]instrumentationrules.JavaCustomProbe, 0, len(rule1.Java)+len(rule2.Java))
+	mergedJavaProbes = append(mergedJavaProbes, rule1.Java...)
+	mergedJavaProbes = append(mergedJavaProbes, rule2.Java...)
+	mergedRules.Java = mergedJavaProbes
+
+	return mergedRules
 }
 
 func mergeHttpHeadersCollectionrules(rule1 *instrumentationrules.HttpHeadersCollection, rule2 *instrumentationrules.HttpHeadersCollection) *instrumentationrules.HttpHeadersCollection {

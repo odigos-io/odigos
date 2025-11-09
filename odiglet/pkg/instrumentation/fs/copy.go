@@ -15,28 +15,23 @@ import (
 
 const (
 	// we don't want to overload the CPU so we limit to small number of goroutines
-	maxWorkers = 4
+	workersPerCPU = 4
 
 	// 32 KB buffer for I/O operations
 	bufferSize = 32 * 1024
 )
 
-// getNumberOfWorkers returns the number of workers to use for copying files.
-// It returns the minimum of maxWorkers and the number of CPUs divided by 4.
+// getNumberOfWorkers determines the number of concurrent workers to use for copying files.
+// It is based on GOMAXPROCS, which reflects the effective CPU limit set for the init container.
+// The returned value is calculated as GOMAXPROCS * workersPerCPU, where workersPerCPU is a heuristic multiplier representing the desired concurrency level per CPU unit.
 func getNumberOfWorkers() int {
-	return min(maxWorkers, max(1, runtime.NumCPU()/4))
+	return max(1, runtime.GOMAXPROCS(0)*workersPerCPU)
 }
 
-func copyDirectories(srcDir string, destDir string, filesToKeep map[string]struct{}) error {
+func copyDirectories(srcDir string, destDir string) error {
 	start := time.Now()
 
-	hostContainEbpfDir := HostContainsEbpfDir(destDir)
-
-	// If the host directory NOT contains ebpf directories we copy all files
-	CopyCFiles := !hostContainEbpfDir
-	log.Logger.V(0).Info("Copying instrumentation files to host", "srcDir", srcDir, "destDir", destDir, "CopyCFiles", CopyCFiles)
-
-	files, err := getFiles(srcDir, CopyCFiles, filesToKeep)
+	files, err := getFiles(srcDir)
 	if err != nil {
 		return err
 	}
@@ -70,6 +65,38 @@ func copyDirectories(srcDir string, destDir string, filesToKeep map[string]struc
 	return nil
 }
 
+func createDotnetDeprecatedDirectories(destDir string) error {
+
+	var err error
+
+	arch := getArch()
+	dotnetSoFile := "OpenTelemetry.AutoInstrumentation.Native.so"
+	glibcDir := filepath.Join(destDir, "linux-glibc")
+	muslDir := filepath.Join(destDir, "linux-musl")
+	glibcDirWithArch := filepath.Join(destDir, "linux-glibc-"+arch)
+	muslDirWithArch := filepath.Join(destDir, "linux-musl-"+arch)
+
+	err = os.MkdirAll(glibcDirWithArch, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(muslDirWithArch, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	err = os.Symlink(filepath.Join(glibcDir, dotnetSoFile), filepath.Join(glibcDirWithArch, dotnetSoFile))
+	if err != nil {
+		return err
+	}
+	err = os.Symlink(filepath.Join(muslDir, dotnetSoFile), filepath.Join(muslDirWithArch, dotnetSoFile))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -84,20 +111,13 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 	}
 }
 
-func getFiles(dir string, CopyCFiles bool, filesToKeep map[string]struct{}) ([]string, error) {
+func getFiles(dir string) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
-			if !CopyCFiles {
-				if _, found := filesToKeep[strings.Replace(path, "/instrumentations/", "/var/odigos/", 1)]; found {
-					log.Logger.V(0).Info("Skipping copying file", "file", path)
-					return nil
-				}
-			}
-
 			files = append(files, path)
 		}
 		return nil
@@ -145,16 +165,24 @@ func copyFile(src, dst string, buf []byte) error {
 }
 
 func HostContainsEbpfDir(dir string) bool {
-	found := false
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || found {
-			return err
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() && strings.Contains(entry.Name(), "ebpf") {
+			return true
 		}
-		if info.IsDir() && strings.Contains(info.Name(), "ebpf") {
-			found = true
-			return filepath.SkipDir
-		}
-		return nil
-	})
-	return found
+	}
+
+	return false
+}
+
+func getArch() string {
+	if runtime.GOARCH == "arm64" {
+		return "arm64"
+	}
+
+	return "x64"
 }

@@ -5,6 +5,31 @@ on:
     - cron: '0 0 * * *' # Nightly run at midnight
   workflow_call:
   workflow_dispatch:
+    inputs:
+      provider:
+        description: 'Cloud provider to test against (e.g. eks, aks, gke, all)'
+        required: true
+        type: choice
+        options:
+          - all
+          - aks
+          - eks
+      test_scenario:
+        description: 'Test suite to run'
+        required: true
+        type: choice
+        options:
+          - all
+          - helm-chart
+          - source
+      platform:
+        description: 'CPU architecture'
+        required: true
+        type: choice
+        options:
+          - all
+          - amd
+          - arm
 
 permissions:
   id-token: write
@@ -15,11 +40,11 @@ jobs:
     uses: ./.github/workflows/build-dev-images.yml
 
   chaos-tests:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     needs: build-images
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run Chaos Tests
         uses: ./.github/actions/chaos-tests
@@ -35,24 +60,26 @@ jobs:
 
 
   cross-cloud-tests:
-    runs-on: warp-ubuntu-latest-x64-8x-spot
+    runs-on: depot-ubuntu-24.04-8
     needs: build-images
-
     strategy:
       fail-fast: false
       matrix:
-        provider: [aks, eks]
-        test_scenario: [source, helm-chart]
+        provider: ${{ fromJSON(github.event_name == 'schedule' && '["aks","eks"]' || github.event.inputs.provider == 'all' && '["aks","eks"]' || format('["{0}"]', github.event.inputs.provider)) }}
+        test_scenario: ${{ fromJSON(github.event_name == 'schedule' && '["source","helm-chart"]' || github.event.inputs.test_scenario == 'all' && '["source","helm-chart"]' || format('["{0}"]', github.event.inputs.test_scenario)) }}
+        platform: ${{ fromJSON(github.event_name == 'schedule' && '["amd","arm"]' || github.event.inputs.platform == 'all' && '["amd","arm"]' || format('["{0}"]', github.event.inputs.platform)) }}
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run Cross-Cloud Tests
+        if: ${{ !(matrix.provider == 'aks' && matrix.platform == 'arm') }}
         uses: ./.github/actions/cross-cloud-tests
         with:
           provider: ${{ matrix.provider }}
           test_scenario: ${{ matrix.test_scenario }}
+          platform: ${{ matrix.platform }}
         env:
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_SHA: ${{ github.sha }}
@@ -62,10 +89,11 @@ jobs:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Report Test Outcome
-        if: always()
+        if: always() && !(matrix.provider == 'aks' && matrix.platform == 'arm')
         uses: ./.github/actions/nightly/report
         with:
           status: ${{ job.status }}
           suite_name: cross-cloud-tests
-          suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}'
+          suite_parameters: '{"provider": "${{ matrix.provider }}", "test_scenario": "${{ matrix.test_scenario }}"}, "platform": "${{ matrix.platform }}"}'
           slack_webhook_url: ${{ secrets.CLOUD_PROVIDERS_TESTS_WEBHOOK_URL }}
+

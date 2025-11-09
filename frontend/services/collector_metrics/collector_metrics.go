@@ -13,6 +13,9 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services/common"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/config/configgrpc"
+	"go.opentelemetry.io/collector/config/confignet"
+	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
@@ -66,16 +69,19 @@ func (tm *trafficMetrics) String() string {
 }
 
 type OdigosMetricsConsumer struct {
-	sources      sourcesMetrics
-	destinations destinationsMetrics
-	deletedChan  chan notification
+	sources                 sourcesMetrics
+	clusterCollectorMetrics clusterCollectorMetrics
+	deletedChan             chan notification
 }
 
 var (
-	K8SNamespaceNameKey   = string(semconv.K8SNamespaceNameKey)
-	K8SDeploymentNameKey  = string(semconv.K8SDeploymentNameKey)
-	K8SStatefulSetNameKey = string(semconv.K8SStatefulSetNameKey)
-	K8SDaemonSetNameKey   = string(semconv.K8SDaemonSetNameKey)
+	K8SNamespaceNameKey         = string(semconv.K8SNamespaceNameKey)
+	K8SDeploymentNameKey        = string(semconv.K8SDeploymentNameKey)
+	K8SStatefulSetNameKey       = string(semconv.K8SStatefulSetNameKey)
+	K8SDaemonSetNameKey         = string(semconv.K8SDaemonSetNameKey)
+	K8SCronJobNameKey           = string(semconv.K8SCronJobNameKey)
+	K8SJobNameKey               = string(semconv.K8SJobNameKey)
+	OdigosWorkloadKindAttribute = consts.OdigosWorkloadKindAttribute
 )
 
 func (c *OdigosMetricsConsumer) Capabilities() consumer.Capabilities {
@@ -110,9 +116,9 @@ func (c *OdigosMetricsConsumer) runNotificationsLoop(ctx context.Context) {
 			case nodeCollector:
 				c.sources.removeNodeCollector(n.object)
 			case clusterCollector:
-				c.destinations.removeClusterCollector(n.object)
+				c.clusterCollectorMetrics.removeClusterCollector(n.object)
 			case destination:
-				c.destinations.removeDestination(n.object)
+				c.clusterCollectorMetrics.removeDestination(n.object)
 			case source:
 				switch n.eventType {
 				case watch.Deleted:
@@ -145,13 +151,13 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 		return err
 	}
 
-	if strings.HasPrefix(senderPod, k8sconsts.OdigosNodeCollectorDaemonSetName) {
+	if strings.HasPrefix(senderPod, k8sconsts.OdigletDaemonSetName) {
 		c.sources.handleNodeCollectorMetrics(senderPod, md)
 		return nil
 	}
 
 	if strings.HasPrefix(senderPod, k8sconsts.OdigosClusterCollectorDeploymentName) {
-		c.destinations.handleClusterCollectorMetrics(senderPod, md)
+		c.clusterCollectorMetrics.handleClusterCollectorMetrics(senderPod, md)
 		return nil
 	}
 
@@ -160,9 +166,9 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 
 func NewOdigosMetrics() *OdigosMetricsConsumer {
 	return &OdigosMetricsConsumer{
-		sources:      newSourcesMetrics(),
-		destinations: newDestinationsMetrics(),
-		deletedChan:  make(chan notification),
+		sources:                 newSourcesMetrics(),
+		clusterCollectorMetrics: newClusterCollectorMetrics(),
+		deletedChan:             make(chan notification),
 	}
 }
 
@@ -196,14 +202,23 @@ func (c *OdigosMetricsConsumer) Run(ctx context.Context, odigosNS string) {
 		panic("failed to cast default config to otlpreceiver.Config")
 	}
 
-	cfg.GRPC.NetAddr.Endpoint = fmt.Sprintf("0.0.0.0:%d", consts.OTLPPort)
+	// Modify the gRPC listener address
+	cfg.GRPC = configoptional.Some(configgrpc.ServerConfig{
+		NetAddr: confignet.AddrConfig{
+			Endpoint:  "0.0.0.0:4317",
+			Transport: confignet.TransportTypeTCP,
+		},
+	})
 
 	r, err := f.CreateMetrics(ctx, receivertest.NewNopSettings(f.Type()), cfg, c)
 	if err != nil {
 		panic("failed to create receiver")
 	}
 
-	r.Start(ctx, componenttest.NewNopHost())
+	if err := r.Start(ctx, componenttest.NewNopHost()); err != nil {
+		log.Printf("failed to start OTLP receiver: %v", err)
+	}
+
 	defer r.Shutdown(ctx)
 
 	log.Println("OTLP receiver is running")
@@ -216,7 +231,7 @@ func (c *OdigosMetricsConsumer) GetSingleSourceMetrics(sID common.SourceID) (tra
 }
 
 func (c *OdigosMetricsConsumer) GetSingleDestinationMetrics(dID string) (trafficMetrics, bool) {
-	return c.destinations.metricsByID(dID)
+	return c.clusterCollectorMetrics.metricsByID(dID)
 }
 
 func (c *OdigosMetricsConsumer) GetSourcesMetrics() map[common.SourceID]trafficMetrics {
@@ -224,5 +239,9 @@ func (c *OdigosMetricsConsumer) GetSourcesMetrics() map[common.SourceID]trafficM
 }
 
 func (c *OdigosMetricsConsumer) GetDestinationsMetrics() map[string]trafficMetrics {
-	return c.destinations.metrics()
+	return c.clusterCollectorMetrics.destinationsMetrics()
+}
+
+func (c *OdigosMetricsConsumer) GetServiceGraphEdges() map[string]map[string]ServiceGraphEdge {
+	return c.clusterCollectorMetrics.serviceGraphEdges()
 }

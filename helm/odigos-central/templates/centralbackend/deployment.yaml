@@ -18,16 +18,25 @@ spec:
       labels:
         app: central-backend
     spec:
+      serviceAccountName: central-backend
       containers:
         - name: central-backend
           {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-central-backend" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-backend" "Tag" $imageTag) }}
           env:
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: odigos-central
                   key: ODIGOS_ONPREM_TOKEN
+            - name: KEYCLOAK_HOST
+              value: "http://keycloak:8080"
+            - name: USE_K8S_SECRETS
+              value: "true"
+            - name: KEYCLOAK_SECRET_NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: KEYCLOAK_SECRET_NAME
+              value: "keycloak-admin-credentials"
           resources:
             requests:
               cpu: {{ .Values.centralBackend.resources.requests.cpu }}

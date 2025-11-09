@@ -25,3 +25,7 @@ const (
 	AutoScalerWebhookServiceName          = "odigos-autoscaler"
 	AutoScalerWebhookFieldOwner           = AutoScalerDeploymentName
 )
+
+const (
+	K8sAttributesFromDefaultValue = "pod"
+)

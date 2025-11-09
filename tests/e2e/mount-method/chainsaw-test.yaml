@@ -1,0 +1,196 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: mount-method
+spec:
+  description: This e2e test runs a multi-apps scenario with mount method instrumentation
+  skipDelete: true
+  steps:
+    - name: '[1 - Setup] Install - Simple Demo Apps'
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
+    - name: '[1 - Setup] Prepare destination'
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: '[1 - Setup] Install Odigos'
+      try:
+        - script:
+            timeout: 4m
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set instrumentor.mountMethod=k8s-init-container
+              else
+                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-init-container
+              fi
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed-no-device-plugin.yaml
+
+    - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-installed.yaml
+
+
+    - name: '[1 - Setup] Assert config set successfully'
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k mountMethod -v k8s-init-container
+
+    - name: '[1 - Setup] Wait for odiglet to be rolled out'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              sleep 5
+              kubectl rollout status daemonset/odiglet -n odigos-test --timeout=5m
+
+    ## After setting mount method, device-plugin container removed from odiglet pod spec
+    ## so we need to wait for odiglet to be ready
+    - name: '[1 - Setup] Odiglet ready'
+      try:
+        - assert:
+            file: odiglet-ready.yaml
+
+    - name: '[1 - Setup] Verify Node Odiglet label has been added'
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: '[1 - Setup]Assert Trace DB is up'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: '[1 - Setup] Add Destination'
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: '[2 - Workload Instrumentation] Instrument default ns workloads'
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: '[2 - Workload Instrumentation] Ruby Detected, Rollout Restart'
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/ruby-partial-runtime-detected.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl rollout restart deployment geolocation
+              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=60s
+
+    - name: '[2 - Workload Instrumentation] Assert Runtime Detected'
+      try:
+        - assert:
+            timeout: 2m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
+
+    - name: '[2 - Workload Instrumentation] Odigos pipeline ready'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+
+    - name: '[2 - Workload Instrumentation] Simple-demo instrumented after destination added'
+      try:
+        - assert:
+            file: simple-demo-instrumented.yaml
+        - script:
+            timeout: 2m
+            content: ../../common/wait_for_rollout.sh
+
+    - name: '[2 - Workload Instrumentation] Generate Traffic'
+      try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: '[2 - Workload Instrumentation] Wait For Trace'
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
+
+    - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: "[2 - Workload Instrumentation] Verify Trace - Resource Attributes"
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: '[2 - Workload Instrumentation] Verify Trace - Span Attributes'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: 'Uninstall Odigos'
+      try:
+        - script:
+            timeout: 2m
+            content: ../../../cli/odigos uninstall --ns odigos-test
+        - script:
+            timeout: 1m
+            content: |
+              for i in $(seq 1 10); do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 5 seconds..."
+                sleep 5
+              done
+
+              echo "Failed to verify Odigos uninstallation after 12 attempts"
+              exit 1

@@ -17,10 +17,13 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -32,9 +35,10 @@ type Instrumentor struct {
 	certReady          chan struct{}
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
+	waspMutator        func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
-func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrumentor, error) {
+func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator func(*corev1.Pod, common.OdigosConfiguration) error) (*Instrumentor, error) {
 	err := feature.Setup()
 	if err != nil {
 		return nil, err
@@ -90,8 +94,13 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		return nil, fmt.Errorf("unable to add cert rotator: %w", err)
 	}
 
+	k8sVersion, err := utils.ClusterVersion()
+	if err != nil {
+		return nil, err
+	}
+
 	// wire up the controllers and webhooks
-	err = controllers.SetupWithManager(mgr, dp)
+	err = controllers.SetupWithManager(mgr, dp, k8sVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +132,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider) (*Instrument
 		certReady:          rotatorSetupFinished,
 		dp:                 dp,
 		webhooksRegistered: webhooksRegistered,
+		waspMutator:        waspMutator,
 	}, nil
 }
 
@@ -170,7 +180,10 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 			return nil
 		}
 		i.logger.V(0).Info("Cert rotator is ready")
-		err := controllers.RegisterWebhooks(i.mgr, i.dp)
+		err := controllers.RegisterWebhooks(i.mgr, controllers.WebhookConfig{
+			DistrosProvider: i.dp,
+			WaspMutator:     i.waspMutator,
+		})
 		if err != nil {
 			return err
 		}

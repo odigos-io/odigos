@@ -10,6 +10,24 @@ terraform {
 
 data "aws_availability_zones" "available" {}
 
+locals {
+  # Map the architecture to the correct EKS AMI type
+  ami_type_map = {
+    amd = "AL2_x86_64"
+    arm = "AL2_ARM_64"
+  }
+
+  # Sensible defaults for each arch (may be overridden by var.node_spec)
+  default_instance_map = {
+    amd = "m6a.xlarge"
+    arm = "m6g.xlarge"
+  }
+
+  # Resolve final values
+  resolved_ami_type      = local.ami_type_map[var.platform]
+  resolved_instance_type = coalesce(var.node_spec, local.default_instance_map[var.platform])
+}
+
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.19.0"
@@ -50,13 +68,13 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
 
   eks_managed_node_group_defaults = {
-    ami_type = "AL2_x86_64" # Amazon Linux 2 (x86-64)
+    ami_type = local.resolved_ami_type
   }
 
   eks_managed_node_groups = {
     one = {
       name           = "node-group-1"
-      instance_types = [var.node_spec]
+      instance_types = [local.resolved_instance_type]
 
       min_size     = var.node_count
       max_size     = var.node_count
@@ -64,6 +82,7 @@ module "eks" {
     }
   }
 }
+
 
 # VPC Endpoint for EKS API communication
 resource "aws_vpc_endpoint" "eks_api" {

@@ -23,6 +23,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type DestinationMetricsSettings struct {
+	// following settings enables/disables specific metric sources
+	// true - collect and send this metric source
+	// false - do not collect and send this metric source
+	// nil - use the default setting (from destination manifest, or cluster global setting)
+	CollectSpanMetrics      *bool `json:"spanMetricsEnabled,omitempty"`
+	CollectHostMetrics      *bool `json:"hostMetricsEnabled,omitempty"`
+	CollectKubeletStats     *bool `json:"kubeletStatsEnabled,omitempty"`
+	CollectServiceGraph     *bool `json:"serviceGraphEnabled,omitempty"`
+	CollectOdigosOwnMetrics *bool `json:"odigosOwnMetricsEnabled,omitempty"`
+	CollectAgentsTelemetry  *bool `json:"agentsTelemetryEnabled,omitempty"`
+}
+
 // DestinationSpec defines the desired state of Destination
 type DestinationSpec struct {
 	Type            common.DestinationType       `json:"type"`
@@ -30,6 +43,12 @@ type DestinationSpec struct {
 	Data            map[string]string            `json:"data"`
 	SecretRef       *v1.LocalObjectReference     `json:"secretRef,omitempty"`
 	Signals         []common.ObservabilitySignal `json:"signals"`
+	Disabled        *bool                        `json:"disabled,omitempty"`
+
+	// MetricsSettings defines the metrics settings for this destination.
+	// ignored if destination does not support metrics or metrics are not enabled in signals
+	// +optional
+	MetricsSettings *DestinationMetricsSettings `json:"metricsSettings,omitempty"`
 
 	// SourceSelector defines which sources can send data to this destination.
 	// If not specified, defaults to "all".
@@ -84,4 +103,30 @@ func (dest Destination) GetConfig() map[string]string {
 }
 func (dest Destination) GetSignals() []common.ObservabilitySignal {
 	return dest.Spec.Signals
+}
+
+func (dest Destination) GetSecretRef() *v1.LocalObjectReference {
+	return dest.Spec.SecretRef
+}
+
+type SourceSelector struct {
+	// If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.
+	// Example:
+	// namespaces: ["default", "production"]
+	// This means the destination will receive data from all sources in "default" and "production" namespaces.
+	// +optional
+	Namespaces []string `json:"namespaces,omitempty"`
+	// Workloads (sources) are assigned to Datastreams via labels (odigos.io/data-stream: true), allowing a more flexible selection mechanism.
+	// Example:
+	// dataStreams: ["backend", "monitoring"]
+	// This means the destination will receive data only from sources labeled with "backend" or "monitoring".
+	// +optional
+	DataStreams []string `json:"dataStreams,omitempty"`
+
+	// Selection Semantics:
+	// If both `Namespaces` and `dataStreams` are specified, the selection follows an **OR** logic:
+	// - A source is included **if** it belongs to **at least one** of the specified namespaces OR dataStreams.
+	// - If `Namespaces` is empty but `dataStreams` is specified, only sources in those dataStreams are included.
+	// - If `dataStreams` is empty but `Namespaces` is specified, all sources in those namespaces are included.
+	// - If SourceSelector is nil, the destination receives data from all sources.
 }

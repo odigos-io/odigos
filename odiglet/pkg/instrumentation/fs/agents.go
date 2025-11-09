@@ -1,16 +1,19 @@
 package fs
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
@@ -21,14 +24,12 @@ const (
 	chrootDir      = "/host"
 	semanagePath   = "/sbin/semanage"
 	restoreconPath = "/sbin/restorecon"
+	keeplistPath   = "/tmp/keeplist"
 )
 
 func CopyAgentsDirectoryToHost() error {
-	// remove the current content of /var/odigos
-	// as we want a fresh copy of instrumentation agents with no files leftover from previous odigos versions.
-	// we cannot remove /var/odigos itself: "unlinkat /var/odigos: device or resource busy"
-	// so we will just remove it's content
 
+	startTime := time.Now()
 	// We kept the following list of files to avoid removing instrumentations that are already loaded in the process memory
 	filesToKeep := map[string]struct{}{
 		"/var/odigos/nodejs-ebpf/build/Release/dtrace-injector-native.node":                            {},
@@ -37,25 +38,58 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/nodejs-ebpf/build/Release/.deps/Release/obj.target/dtrace-injector-native.node.d": {},
 		"/var/odigos/java-ebpf/tracing_probes.so":                                                      {},
 		"/var/odigos/java-ext-ebpf/end_span_usdt.so":                                                   {},
+		"/var/odigos/java-ext-ebpf/javaagent.jar":                                                      {},
+		"/var/odigos/java-ext-ebpf/otel_agent_extension.jar":                                           {},
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
+		"/var/odigos/loader/loader.so":                                                                 {},
+	}
+	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
+	if err != nil {
+		return fmt.Errorf("failed to inspect destination: %w", err)
 	}
 
-	updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
-	if err != nil {
-		log.Logger.Error(err, "Error getting changed files")
+	if empty {
+		// if empty, we can just copy the directory to the host
+		log.Logger.Info("Odigos agents directory is empty, copying agents directory to host")
+		err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory)
+		if err != nil {
+			log.Logger.Error(err, "Error copying instrumentation directory to host")
+			return err
+		}
+	} else {
+		log.Logger.Info("Odigos agents directory is not empty, syncing files with rsync")
+		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
+
+		if err != nil {
+			log.Logger.Error(err, "Error getting changed files")
+		}
+
+		if err := writeKeeplist(keeplistPath, updatedFilesToKeepMap); err != nil {
+			log.Logger.Error(err, "failed to write keeplist")
+			return err
+		}
+
+		if err := runSingleRsyncSync(containerDir, k8sconsts.OdigosAgentsDirectory, keeplistPath); err != nil {
+			log.Logger.Error(err, "rsync failed")
+			return err
+		}
 	}
 
-	err = removeFilesInDir(k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
+	// temporary workaround for dotnet.
+	// dotnet used to have directories containing the arch suffix (linux-glibc-arm64).
+	// this works will with virtual device that knows the arch it is running on.
+	// however, the webhook cannot know in advance which arch the pod is going to run on.
+	// thus, the directory names are renamed so they do not contain the arch suffix (linux-glibc)
+	// which can be used by the webhook.
+	// The following link is a temporary support for the deprecated dotnet virtual devices.
+	// TODO: remove this once we delete the virtual devices.
+	err = createDotnetDeprecatedDirectories(path.Join(k8sconsts.OdigosAgentsDirectory, "dotnet"))
 	if err != nil {
-		log.Logger.Error(err, "Error removing instrumentation directory from host")
+		log.Logger.Error(err, "Error creating dotnet deprecated directories")
 		return err
 	}
 
-	err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory, updatedFilesToKeepMap)
-	if err != nil {
-		log.Logger.Error(err, "Error copying instrumentation directory to host")
-		return err
-	}
+	log.Logger.Info("Odigos agents directory copied to host", "elapsed", time.Since(startTime))
 
 	return nil
 }
@@ -67,6 +101,18 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 	for hostPath := range filesToKeepMap {
 		// Convert host path to container path
 		containerPath := strings.Replace(hostPath, hostDir, containerDir, 1)
+
+		// Find and preserve existing hash version files for this base file
+		existingHashVersionFiles, err := findExistingHashVersionFiles(hostPath)
+		if err != nil {
+			log.Logger.Error(err, "Error finding existing hash version files", "basePath", hostPath)
+		} else {
+			// Add all existing hash version files to the keep map
+			for _, hashVersionFile := range existingHashVersionFiles {
+				updatedFilesToKeepMap[hashVersionFile] = struct{}{}
+				log.Logger.V(0).Info("Preserving existing hash version file", "file", hashVersionFile)
+			}
+		}
 
 		// If either file doesn't exist, mark as changed and remove from filesToKeepMap
 		_, hostErr := os.Stat(hostPath)
@@ -105,6 +151,50 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 	}
 
 	return updatedFilesToKeepMap, nil
+}
+
+// findExistingHashVersionFiles searches for existing files with _hash_version pattern
+// for the given base file path. For example, if basePath is "/var/odigos/python-ebpf/pythonUSDT.abi3.so",
+// it will search for files like "/var/odigos/python-ebpf/pythonUSDT.abi3_hash_version-*.so"
+func findExistingHashVersionFiles(basePath string) ([]string, error) {
+	// Extract directory and base filename
+	dir := filepath.Dir(basePath)
+	ext := filepath.Ext(basePath)
+	baseNameWithoutExt := strings.TrimSuffix(filepath.Base(basePath), ext)
+
+	// Create the pattern to search for: basefilename_hash_version-*
+	pattern := baseNameWithoutExt + "_hash_version-*" + ext
+
+	// Read directory contents
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Directory doesn't exist, return empty slice
+			return []string{}, nil
+		}
+		return nil, fmt.Errorf("failed to read directory %s: %w", dir, err)
+	}
+
+	var matchingFiles []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		// Check if filename matches our pattern
+		matched, err := filepath.Match(pattern, entry.Name())
+		if err != nil {
+			log.Logger.Error(err, "Error matching pattern", "pattern", pattern, "filename", entry.Name())
+			continue
+		}
+
+		if matched {
+			fullPath := filepath.Join(dir, entry.Name())
+			matchingFiles = append(matchingFiles, fullPath)
+		}
+	}
+
+	return matchingFiles, nil
 }
 
 // Helper function to rename a file using the first 12 characters of its hash
@@ -205,5 +295,84 @@ func ApplyOpenShiftSELinuxSettings() error {
 	} else {
 		log.Logger.Info("Unable to find semanage path, possibly not on RHEL host")
 	}
+	return nil
+}
+
+func isDirEmptyOrNotExist(dir string) (bool, error) {
+	info, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		return true, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !info.IsDir() {
+		return false, fmt.Errorf("not a directory: %s", dir)
+	}
+	f, err := os.Open(dir)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
+}
+
+// writeKeeplist creates an exclude file for rsync with relative paths.
+// rsync --exclude-from expects patterns relative to the source directory, not absolute paths.
+// Since we're syncing to /var/odigos, we need to convert absolute paths like:
+//
+//	/var/odigos/python-ebpf/pythonUSDT.abi3_hash_version-e3b0c44298fc.so
+//
+// to relative patterns like:
+//
+//	python-ebpf/pythonUSDT.abi3_hash_version-e3b0c44298fc.so
+//
+// This ensures the --delete flag won't remove files we want to keep.
+func writeKeeplist(file string, keeps map[string]struct{}) error {
+	f, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+	for hostPath := range keeps {
+		// Convert absolute path to relative path for rsync exclude pattern
+		relativePath := strings.TrimPrefix(hostPath, k8sconsts.OdigosAgentsDirectory+"/")
+		fmt.Fprintln(w, relativePath)
+	}
+	return w.Flush()
+}
+
+// runSingleRsyncSync performs a single-threaded rsync from srcDir to dstDir using the given exclude file.
+// This is used when the destination already contains files and we want to sync changes while keeping versioned files.
+func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
+	// rsync flags:
+	// -a: archive mode (preserves permissions, symlinks, modification times, etc.)
+	// -v: verbose output (shows which files were copied)
+	// --delete: removes files in dstDir that are not in srcDir (clean sync)
+	// --whole-file: disables delta-transfer algorithm (lower CPU, better for local copying)
+	// --inplace: update files in-place without temp files (avoids disk pressure)
+	// --exclude-from: skip deleting or overwriting files listed in keeplist.txt
+	args := []string{
+		"-av", "--delete", "--whole-file", "--inplace",
+		fmt.Sprintf("--exclude-from=%s", excludeFile),
+		srcDir + "/", dstDir + "/",
+	}
+
+	cmd := exec.Command("rsync", args...)
+	var _, stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Logger.Error(err, "rsync failed", "stderr", stderr.String())
+		return err
+	}
+
+	log.Logger.V(0).Info("rsync completed")
 	return nil
 }
