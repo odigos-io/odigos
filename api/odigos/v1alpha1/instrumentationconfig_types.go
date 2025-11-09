@@ -259,9 +259,32 @@ func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v
 	return nil
 }
 
+// random id generator is the default, and most common.
+// it creates span ids and trace ids using random bytes.
+// It has no configuration.
+type IdGeneratorRandomConfig struct{}
+
+// trace id includes timestamp, source id byte, and random number bytes.
+// this id generator can be leveraged by databases to do efficient indexing.
+type IdGeneratorTimedWallConfig struct {
+	// sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
+	// if timedWall is specified, the sourceId is required.
+	SourceId uint8 `json:"sourceId"`
+}
+
+// id generator configuration for the traces
+type IdGeneratorConfig struct {
+	Random    *IdGeneratorRandomConfig    `json:"random,omitempty"`
+	TimedWall *IdGeneratorTimedWallConfig `json:"timedWall,omitempty"`
+}
+
 // all "traces" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
-type AgentTracesConfig struct{}
+type AgentTracesConfig struct {
+	// id generator configuration for the traces.
+	// if not specified, the default random id generator will be used.
+	IdGenerator *IdGeneratorConfig `json:"idGenerator,omitempty"`
+}
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
