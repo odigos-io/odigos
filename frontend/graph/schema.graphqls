@@ -9,6 +9,7 @@ enum K8sResourceKind {
   StatefulSet
   CronJob
   ConfigMap
+  Pod
   DeploymentConfig
 }
 
@@ -972,6 +973,13 @@ type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
   odigosConfig: OdigosConfiguration
+
+  # return the raw YAML manifest for a k8s resource
+  k8sManifest(
+    namespace: String!
+    kind: K8sResourceKind!
+    name: String!
+  ): String!
 
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!

@@ -754,6 +754,7 @@ type ComplexityRoot struct {
 		GetOverviewMetrics                func(childComplexity int) int
 		GetServiceMap                     func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
+		K8sManifest                       func(childComplexity int, namespace string, kind model.K8sResourceKind, name string) int
 		OdigletDaemonSetInfo              func(childComplexity int) int
 		OdigletPods                       func(childComplexity int) int
 		OdigosConfig                      func(childComplexity int) int
@@ -939,6 +940,7 @@ type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
 	Config(ctx context.Context) (*model.GetConfigResponse, error)
 	OdigosConfig(ctx context.Context) (*model.OdigosConfiguration, error)
+	K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error)
 	DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error)
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
@@ -4177,6 +4179,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.InstrumentationInstanceComponents(childComplexity, args["namespace"].(string), args["kind"].(string), args["name"].(string)), true
 
+	case "Query.k8sManifest":
+		if e.complexity.Query.K8sManifest == nil {
+			break
+		}
+
+		args, err := ec.field_Query_k8sManifest_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.K8sManifest(childComplexity, args["namespace"].(string), args["kind"].(model.K8sResourceKind), args["name"].(string)), true
+
 	case "Query.odigletDaemonSetInfo":
 		if e.complexity.Query.OdigletDaemonSetInfo == nil {
 			break
@@ -5686,6 +5700,80 @@ func (ec *executionContext) field_Query_instrumentationInstanceComponents_argsKi
 }
 
 func (ec *executionContext) field_Query_instrumentationInstanceComponents_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_k8sManifest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_k8sManifest_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Query_k8sManifest_argsKind(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["kind"] = arg1
+	arg2, err := ec.field_Query_k8sManifest_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_k8sManifest_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_k8sManifest_argsKind(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.K8sResourceKind, error) {
+	if _, ok := rawArgs["kind"]; !ok {
+		var zeroVal model.K8sResourceKind
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+	if tmp, ok := rawArgs["kind"]; ok {
+		return ec.unmarshalNK8sResourceKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, tmp)
+	}
+
+	var zeroVal model.K8sResourceKind
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_k8sManifest_argsName(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
@@ -26529,6 +26617,61 @@ func (ec *executionContext) fieldContext_Query_odigosConfig(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_k8sManifest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_k8sManifest(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().K8sManifest(rctx, fc.Args["namespace"].(string), fc.Args["kind"].(model.K8sResourceKind), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_k8sManifest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_k8sManifest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_destinationCategories(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_destinationCategories(ctx, field)
 	if err != nil {
@@ -39588,6 +39731,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_odigosConfig(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "k8sManifest":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_k8sManifest(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
