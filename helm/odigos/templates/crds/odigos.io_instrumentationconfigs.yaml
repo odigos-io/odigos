@@ -140,6 +140,32 @@ spec:
                       description: |-
                         Each enabled signal must be set with a non-nil value (even if the config content is empty).
                         nil means that the signal is disabled and should not be instrumented/collected by the agent.
+                      properties:
+                        idGenerator:
+                          description: |-
+                            id generator configuration for the traces.
+                            if not specified, the default random id generator will be used.
+                          properties:
+                            random:
+                              description: |-
+                                random id generator is the default, and most common.
+                                it creates span ids and trace ids using random bytes.
+                                It has no configuration.
+                              type: object
+                            timedWall:
+                              description: |-
+                                trace id includes timestamp, source id byte, and random number bytes.
+                                this id generator can be leveraged by databases to do efficient indexing.
+                              properties:
+                                sourceId:
+                                  description: |-
+                                    sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
+                                    if timedWall is specified, the sourceId is required.
+                                  type: integer
+                              required:
+                              - sourceId
+                              type: object
+                          type: object
                       type: object
                   required:
                   - agentEnabled
