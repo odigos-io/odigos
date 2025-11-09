@@ -28,6 +28,7 @@ type SourceSpecApplyConfiguration struct {
 	DisableInstrumentation *bool                                 `json:"disableInstrumentation,omitempty"`
 	OtelServiceName        *string                               `json:"otelServiceName,omitempty"`
 	ContainerOverrides     []ContainerOverrideApplyConfiguration `json:"containerOverrides,omitempty"`
+	UseRegex               *bool                                 `json:"useRegex,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
@@ -70,5 +71,13 @@ func (b *SourceSpecApplyConfiguration) WithContainerOverrides(values ...*Contain
 		}
 		b.ContainerOverrides = append(b.ContainerOverrides, *values[i])
 	}
+	return b
+}
+
+// WithUseRegex sets the UseRegex field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UseRegex field is set to the value of the last call.
+func (b *SourceSpecApplyConfiguration) WithUseRegex(value bool) *SourceSpecApplyConfiguration {
+	b.UseRegex = &value
 	return b
 }

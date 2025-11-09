@@ -165,6 +165,13 @@ spec:
                   If not set, the workload name will be used.
                   It is not valid for namespace sources.
                 type: string
+              useRegex:
+                description: |-
+                  UseRegex indicates that the workload name should be matched using regex.
+                  When true, spec.workload.name is treated as a regular expression pattern.
+                  This allows matching multiple workloads with a single Source CRD.
+                  Not valid for namespace sources.
+                type: boolean
               workload:
                 description: |-
                   Workload represents the workload or namespace to be instrumented.
