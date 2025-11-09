@@ -169,16 +169,15 @@ func NewMockSource(workloadObject client.Object, disabled bool) *odigosv1.Source
 func NewMockRegexSource(workloadObject client.Object, pattern string, disabled bool) *odigosv1.Source {
 	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
 	namespace := workloadObject.GetNamespace()
-	if gvk.Kind == string(k8sconsts.WorkloadKindNamespace) && len(namespace) == 0 {
-		namespace = workloadObject.GetName()
-	}
 	patternHash := sha256.Sum256([]byte(pattern))
+	// For regex sources, the label should be a hash of the pattern (as set by the webhook defaulter)
+	workloadNameLabel := "regex-" + hex.EncodeToString(patternHash[:])[:16]
 	return &odigosv1.Source{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "regex-" + hex.EncodeToString(patternHash[:])[:16],
 			Namespace: namespace,
 			Labels: map[string]string{
-				k8sconsts.WorkloadNameLabel:      workloadObject.GetName(),
+				k8sconsts.WorkloadNameLabel:      workloadNameLabel,
 				k8sconsts.WorkloadNamespaceLabel: namespace,
 				k8sconsts.WorkloadKindLabel:      gvk.Kind,
 			},
