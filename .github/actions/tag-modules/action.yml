@@ -21,5 +21,6 @@ runs:
         git tag procdiscovery/${{ inputs.tag }}
         git tag profiles/${{ inputs.tag }}
         git tag distros/${{ inputs.tag }}
+        git tag destinations/${{ inputs.tag }}
         git tag instrumentor/${{ inputs.tag }}
         git push origin --tags
