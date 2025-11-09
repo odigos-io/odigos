@@ -301,5 +301,12 @@ type OdigosConfiguration struct {
 	WaspEnabled                       *bool                       `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
 	MetricsSources                    *MetricsSourceConfiguration `json:"metricsSources,omitempty" yaml:"metricsSources"`
 
+	// traceIdSuffix when set, instruct odigos to use the "timedwall" id generator
+	// for generating trace ids.
+	// the below value should be a single byte hex value (for example "A3").
+	// this value is injected into each trace id as the 8th byte
+	// to identify the source of the generated trace.
+	TraceIdSuffix string `json:"traceIdSuffix,omitempty" yaml:"traceIdSuffix"`
+
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }
