@@ -126,7 +126,7 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 			Kind:       "MetricValueList",
 			Items: []MetricValue{
 				{
-					MetricName: "odigos_gateway_rejections_rate",
+					MetricName: "odigos_gateway_rejections",
 					Timestamp:  now,
 					Value:      fmt.Sprintf("%.2f", metricVal),
 					DescribedObject: map[string]string{
@@ -153,7 +153,7 @@ func DiscoveryHandler(w http.ResponseWriter, r *http.Request) {
 		"groupVersion": "custom.metrics.k8s.io/v1beta1",
 		"resources": []map[string]interface{}{
 			{
-				"name":         "pods/odigos_gateway_rejections",
+				"name":         "deployments.apps/odigos_gateway_rejections",
 				"singularName": "",
 				"namespaced":   true,
 				"kind":         "MetricValueList",
@@ -161,7 +161,6 @@ func DiscoveryHandler(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
 }
@@ -234,8 +233,11 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 	discoveryPath := "/apis/custom.metrics.k8s.io/v1beta1"
 	webhookServer.Register(discoveryPath, http.HandlerFunc(DiscoveryHandler))
 
-	metricPath := fmt.Sprintf("/apis/custom.metrics.k8s.io/v1beta1/namespaces/%s/pods/*/odigos_gateway_rejections", namespace)
-	webhookServer.Register(metricPath, MetricHandler(ctx, mgr.GetClient(), namespace))
+	deploymentMetricPath := fmt.Sprintf(
+		"/apis/custom.metrics.k8s.io/v1beta1/namespaces/%s/deployments.apps/odigos-gateway/odigos_gateway_rejections",
+		namespace,
+	)
+	webhookServer.Register(deploymentMetricPath, MetricHandler(ctx, mgr.GetClient(), namespace))
 
 	ctrl.Log.Info("Custom Metrics API registered successfully")
 	return nil
