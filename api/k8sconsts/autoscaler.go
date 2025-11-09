@@ -13,7 +13,7 @@ const (
 	AutoscalerCAName                      = AutoScalerDeploymentName
 	AutoScalerServiceName                 = "auto-scaler"
 	AutoScalerContainerName               = "manager"
-	AutoscalerActionValidatingWebhookName = "odigos-action-validating-webhook-configuration"
+	AutoscalerActionValidatingWebhookName = "action-validating-webhook-configuration"
 
 	// The webhooks certificate secret was renamed mainly to migrate away from
 	// having the secret as a helm hook.

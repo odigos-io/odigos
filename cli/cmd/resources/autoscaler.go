@@ -518,17 +518,16 @@ func NewActionValidatingWebhookConfiguration(ns string) *admissionregistrationv1
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.AutoscalerActionValidatingWebhookName,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "odigos-action-validating-webhook",
+				"app.kubernetes.io/name":       "action-validating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.AutoscalerActionValidatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "autoscaler",
 				"app.kubernetes.io/part-of":    "odigos",
-				"odigos.io/system-object":      "true",
 			},
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{
-				Name: "odigos-action-validating-webhook.odigos.io",
+				Name: "action-validating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.AutoScalerWebhookServiceName,
