@@ -2,7 +2,6 @@ package sourceinstrumentation_test
 
 import (
 	"context"
-	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
@@ -79,7 +78,6 @@ var _ = Describe("Source controller", func() {
 
 		When("Sources are instrumented", func() {
 			It("Creates an InstrumentationConfig for the instrumented workload", func() {
-				fmt.Println("======================= Working Instrumentation Config", workingInstrumentationConfig.GetName())
 				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, workingInstrumentationConfig)
 			})
 

@@ -19,7 +19,6 @@ package v1alpha1
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -148,7 +147,6 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 			if source.Spec.UseRegex {
 				// Compile and match regex pattern
 				pattern := source.Spec.Workload.Name
-				fmt.Println("======================= Regex Pattern", pattern, pw.Name)
 				matched, err := regexp.MatchString(pattern, pw.Name)
 				if err != nil {
 					// Invalid regex pattern, skip this source
