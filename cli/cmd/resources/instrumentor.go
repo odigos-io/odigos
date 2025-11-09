@@ -335,7 +335,7 @@ func NewSourceValidatingWebhookConfiguration(ns string) *admissionregistrationv1
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{
-				Name: "source-validating-webhook.odigos.io",
+				Name: "odigos-source-validating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.InstrumentorServiceName,
@@ -389,7 +389,7 @@ func NewSourceMutatingWebhookConfiguration(ns string) *admissionregistrationv1.M
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
-				Name: "source-mutating-webhook.odigos.io",
+				Name: "odigos-source-mutating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.InstrumentorServiceName,
@@ -445,7 +445,7 @@ func NewPodMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Muta
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
-				Name: "pod-mutating-webhook.odigos.io",
+				Name: "odigos-pod-mutating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.InstrumentorServiceName,

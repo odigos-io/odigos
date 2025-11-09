@@ -528,7 +528,7 @@ func NewActionValidatingWebhookConfiguration(ns string) *admissionregistrationv1
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{
-				Name: "action-validating-webhook.odigos.io",
+				Name: "odigos-action-validating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.AutoScalerWebhookServiceName,
