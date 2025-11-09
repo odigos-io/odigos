@@ -16,9 +16,9 @@ const (
 	InstrumentorClusterRoleBindingName      = InstrumentorDeploymentName
 	InstrumentorCAName                      = InstrumentorDeploymentName
 	InstrumentorWebhookFieldOwner           = InstrumentorDeploymentName
-	InstrumentorMutatingWebhookName         = "mutating-webhook-configuration"
-	InstrumentorSourceMutatingWebhookName   = "source-mutating-webhook-configuration"
-	InstrumentorSourceValidatingWebhookName = "source-validating-webhook-configuration"
+	InstrumentorMutatingWebhookName         = "odigos-pod-mutating-webhook-configuration"
+	InstrumentorSourceMutatingWebhookName   = "odigos-source-mutating-webhook-configuration"
+	InstrumentorSourceValidatingWebhookName = "odigos-source-validating-webhook-configuration"
 	InstrumentorContainerName               = "manager"
 
 	InstrumentorWebhookSecretName = "instrumentor-webhooks-cert"

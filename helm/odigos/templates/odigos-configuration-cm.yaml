@@ -183,3 +183,6 @@ data:
     metricsSources:
       {{- toYaml .Values.metricsSources | nindent 6 }}
     {{- end }}
+    {{- if .Values.odiglet.traceIdSuffix }}
+    traceIdSuffix: {{ .Values.odiglet.traceIdSuffix }}
+    {{- end }}
