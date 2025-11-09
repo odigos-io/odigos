@@ -1200,6 +1200,11 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 	return sources, nil
 }
 
+// K8sManifest is the resolver for the k8sManifest field.
+func (r *queryResolver) K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error) {
+	return services.K8sManifest(ctx, namespace, kind, name)
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 

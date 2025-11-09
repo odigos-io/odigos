@@ -68,10 +68,30 @@ type CollectorDaemonSetInfo {
   rolloutInProgress: Boolean!
 }
 
+# =====================
+# Gateway Pods List API
+# =====================
+
+type PodInfo {
+  name: String!
+  ready: String!
+  status: String!
+  restarts: Int!
+  nodeName: String!
+  age: String!
+  image: String!
+}
+
 extend type Query {
   # Gateway (Deployment)
   gatewayDeploymentInfo: GatewayDeploymentInfo!
 
   # Odiglet (DaemonSet)
   odigletDaemonSetInfo: CollectorDaemonSetInfo!
+
+  # Gateway Pods
+  gatewayPods: [PodInfo!]!
+
+  # Odiglet Pods
+  odigletPods: [PodInfo!]!
 }
