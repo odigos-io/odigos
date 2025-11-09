@@ -76,9 +76,13 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 				continue
 			}
 
-			value := scrapeGatewayMetric(pod.Status.PodIP)
-
-			if value < 0 {
+			value, err := scrapeGatewayMetric(pod.Status.PodIP)
+			if err != nil {
+				log.V(1).Info("Failed to scrape gateway pod metrics",
+					"pod", pod.Name,
+					"podIP", pod.Status.PodIP,
+					"error", err,
+				)
 				continue // skip unreachable pods
 			}
 
@@ -115,9 +119,9 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 
 		// Only log if there are actually rejections
 		if rejectingPods > 0 {
-			log.Info("Gateway pods rejecting requests",
-				"rejectingPods", rejectingPods,
-				"totalPods", totalPods,
+			log.Info("Observed gateway pods that rejecting data",
+				"totalGatewayPodsRejectingData", rejectingPods,
+				"totalGatewayPods", totalPods,
 			)
 		}
 
@@ -170,7 +174,7 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 	ctx := context.Background()
 
 	namespace := env.GetCurrentNamespace()
-	// 1️⃣ Load CA from Secret created by the rotator
+	// Load CA from Secret created by the rotator
 	secret := &corev1.Secret{}
 	if err := mgr.GetClient().Get(ctx, client.ObjectKey{
 		Namespace: namespace,
@@ -184,35 +188,35 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 		return fmt.Errorf("ca.crt not found in secret %s", secret.Name)
 	}
 
-	// 2️⃣ Create or update APIService for custom.metrics.k8s.io
-	port := int32(9443)
-	apiSvc := &apiregv1.APIService{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "v1beta1.custom.metrics.k8s.io",
-		},
-		Spec: apiregv1.APIServiceSpec{
-			Service: &apiregv1.ServiceReference{
-				Name:      "odigos-autoscaler",
-				Namespace: namespace,
-				Port:      &port,
-			},
-			Group:                 "custom.metrics.k8s.io",
-			Version:               "v1beta1",
-			InsecureSkipTLSVerify: false,
-			CABundle:              caData,
-			GroupPriorityMinimum:  100,
-			VersionPriority:       100,
-		},
-	}
-
+	// Create or update APIService for custom.metrics.k8s.io
+	apiSvcName := "v1beta1.custom.metrics.k8s.io"
 	existing := &apiregv1.APIService{}
-	err := mgr.GetClient().Get(ctx, client.ObjectKey{Name: apiSvc.Name}, existing)
+	err := mgr.GetClient().Get(ctx, client.ObjectKey{Name: apiSvcName}, existing)
 	if client.IgnoreNotFound(err) != nil {
 		return err
 	}
 
 	if err != nil {
-		// Not found -> create
+		// NotFound error -> create the APIService
+		port := int32(9443)
+		apiSvc := &apiregv1.APIService{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: apiSvcName,
+			},
+			Spec: apiregv1.APIServiceSpec{
+				Service: &apiregv1.ServiceReference{
+					Name:      "odigos-autoscaler",
+					Namespace: namespace,
+					Port:      &port,
+				},
+				Group:                 "custom.metrics.k8s.io",
+				Version:               "v1beta1",
+				InsecureSkipTLSVerify: false,
+				CABundle:              caData,
+				GroupPriorityMinimum:  100,
+				VersionPriority:       100,
+			},
+		}
 		if err := mgr.GetClient().Create(ctx, apiSvc); err != nil {
 			return fmt.Errorf("failed to create APIService: %w", err)
 		}
@@ -227,7 +231,7 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 		}
 	}
 
-	// 3️⃣ Register HTTP handlers on the webhook server
+	// Register HTTP handlers on the webhook server
 	webhookServer := mgr.GetWebhookServer()
 
 	discoveryPath := "/apis/custom.metrics.k8s.io/v1beta1"
@@ -243,7 +247,7 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 	return nil
 }
 
-func scrapeGatewayMetric(podIP string) float64 {
+func scrapeGatewayMetric(podIP string) (float64, error) {
 	url := fmt.Sprintf("http://%s:%d/metrics", podIP, k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault)
 
 	client := &http.Client{
@@ -252,30 +256,30 @@ func scrapeGatewayMetric(podIP string) float64 {
 
 	resp, err := client.Get(url)
 	if err != nil {
-		return -1 // unreachable e.g pod is not running
+		return 0, fmt.Errorf("failed to reach pod: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return -1
+		return 0, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return -1
+		return 0, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	parser := expfmt.TextParser{}
 	metricFamilies, err := parser.TextToMetricFamilies(bytes.NewReader(body))
 	if err != nil {
-		return -1
+		return 0, fmt.Errorf("failed to parse metrics: %w", err)
 	}
 
 	mf, ok := metricFamilies[gatewayRejectionMetricName]
 	if !ok {
 		// metric not found → treat as 0 rejections
 		// This can happen if the gateway is not running or the metric is not available yet.
-		return 0
+		return 0, nil
 	}
 
 	var total float64
@@ -285,7 +289,7 @@ func scrapeGatewayMetric(podIP string) float64 {
 		}
 	}
 
-	return total
+	return total, nil
 }
 
 // isPodOOMKilled checks if the pod is in CrashLoopBackOff due to OOM or currently OOMKilled
