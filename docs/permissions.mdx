@@ -49,7 +49,7 @@ Below are the ClusterRoles used by Odigos components.
 | odigos.io | sources | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | odigos.io | sources/finalizers | \* | update |
 | admissionregistration.k8s.io | mutatingwebhookconfigurations | \* | get<br />list<br />watch |
-| admissionregistration.k8s.io | mutatingwebhookconfigurations | odigos-source-mutating-webhook-configuration<br />odigos-mutating-webhook-configuration | update |
+| admissionregistration.k8s.io | mutatingwebhookconfigurations | odigos-source-mutating-webhook-configuration<br />odigos-pod-mutating-webhook-configuration | update |
 | admissionregistration.k8s.io | validatingwebhookconfigurations | \* | get<br />list<br />watch |
 | admissionregistration.k8s.io | validatingwebhookconfigurations | odigos-source-validating-webhook-configuration | update |
 

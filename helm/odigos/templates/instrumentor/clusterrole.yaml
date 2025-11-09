@@ -146,7 +146,7 @@ rules:
       - mutatingwebhookconfigurations
     resourceNames:
       - odigos-source-mutating-webhook-configuration
-      - odigos-mutating-webhook-configuration
+      - odigos-pod-mutating-webhook-configuration
     verbs:
       - update
   - apiGroups:

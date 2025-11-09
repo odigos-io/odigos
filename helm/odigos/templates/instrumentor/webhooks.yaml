@@ -1,10 +1,10 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: odigos-mutating-webhook-configuration
+  name: odigos-pod-mutating-webhook-configuration
   labels:
     app.kubernetes.io/name: odigos-pod-mutating-webhook
-    app.kubernetes.io/instance: odigos-mutating-webhook-configuration
+    app.kubernetes.io/instance: odigos-pod-mutating-webhook-configuration
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: instrumentor
     app.kubernetes.io/part-of: odigos
