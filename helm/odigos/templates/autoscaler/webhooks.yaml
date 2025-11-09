@@ -1,16 +1,16 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: action-validating-webhook-configuration
+  name: odigos-action-validating-webhook-configuration
   labels:
-    app.kubernetes.io/name: action-validating-webhook
-    app.kubernetes.io/instance: action-validating-webhook-configuration
+    app.kubernetes.io/name: odigos-action-validating-webhook
+    app.kubernetes.io/instance: odigos-action-validating-webhook-configuration
     app.kubernetes.io/component: webhook
     app.kubernetes.io/created-by: autoscaler
     app.kubernetes.io/part-of: odigos
     odigos.io/system-object: "true"
 webhooks:
-  - name: action-validating-webhook.odigos.io
+  - name: odigos-action-validating-webhook.odigos.io
     clientConfig:
       service:
         name: odigos-autoscaler
