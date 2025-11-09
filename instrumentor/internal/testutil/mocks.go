@@ -1,6 +1,8 @@
 package testutil
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -159,6 +161,37 @@ func NewMockSource(workloadObject client.Object, disabled bool) *odigosv1.Source
 				Kind:      k8sconsts.WorkloadKind(gvk.Kind),
 			},
 			DisableInstrumentation: disabled,
+		},
+	}
+}
+
+// NewMockRegexSource returns a single source for a deployment, based on a regex pattern
+func NewMockRegexSource(workloadObject client.Object, pattern string, disabled bool) *odigosv1.Source {
+	gvk, _ := apiutil.GVKForObject(workloadObject, scheme.Scheme)
+	namespace := workloadObject.GetNamespace()
+	if gvk.Kind == string(k8sconsts.WorkloadKindNamespace) && len(namespace) == 0 {
+		namespace = workloadObject.GetName()
+	}
+	patternHash := sha256.Sum256([]byte(pattern))
+	return &odigosv1.Source{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "regex-" + hex.EncodeToString(patternHash[:])[:16],
+			Namespace: namespace,
+			Labels: map[string]string{
+				k8sconsts.WorkloadNameLabel:      workloadObject.GetName(),
+				k8sconsts.WorkloadNamespaceLabel: namespace,
+				k8sconsts.WorkloadKindLabel:      gvk.Kind,
+			},
+			Finalizers: []string{k8sconsts.DeleteInstrumentationConfigFinalizer},
+		},
+		Spec: odigosv1.SourceSpec{
+			Workload: k8sconsts.PodWorkload{
+				Name:      pattern,
+				Namespace: namespace,
+				Kind:      k8sconsts.WorkloadKindDeployment,
+			},
+			DisableInstrumentation: disabled,
+			UseRegex:               true,
 		},
 	}
 }
