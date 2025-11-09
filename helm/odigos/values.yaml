@@ -350,7 +350,8 @@ odiglet:
       # required for mmap of perf buffers
       - IPC_LOCK
   # traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
-  # traceIdSuffix: AA
+  # supported only in odigos pro (not available in community tier)
+  # traceIdSuffix: 'AA'
   dataCollection:
     # capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.
     capabilities:

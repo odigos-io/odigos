@@ -20,7 +20,7 @@ package v1alpha1
 // IdGeneratorTimedWallConfigApplyConfiguration represents a declarative configuration of the IdGeneratorTimedWallConfig type for use
 // with apply.
 type IdGeneratorTimedWallConfigApplyConfiguration struct {
-	SourceId *string `json:"sourceId,omitempty"`
+	SourceId *byte `json:"sourceId,omitempty"`
 }
 
 // IdGeneratorTimedWallConfigApplyConfiguration constructs a declarative configuration of the IdGeneratorTimedWallConfig type for use with
@@ -32,7 +32,7 @@ func IdGeneratorTimedWallConfig() *IdGeneratorTimedWallConfigApplyConfiguration 
 // WithSourceId sets the SourceId field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SourceId field is set to the value of the last call.
-func (b *IdGeneratorTimedWallConfigApplyConfiguration) WithSourceId(value string) *IdGeneratorTimedWallConfigApplyConfiguration {
+func (b *IdGeneratorTimedWallConfigApplyConfiguration) WithSourceId(value byte) *IdGeneratorTimedWallConfigApplyConfiguration {
 	b.SourceId = &value
 	return b
 }

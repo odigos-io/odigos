@@ -269,7 +269,7 @@ type IdGeneratorRandomConfig struct{}
 type IdGeneratorTimedWallConfig struct {
 	// sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
 	// if timedWall is specified, the sourceId is required.
-	SourceId string `json:"sourceId"`
+	SourceId uint8 `json:"sourceId"`
 }
 
 // id generator configuration for the traces

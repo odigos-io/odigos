@@ -161,7 +161,7 @@ spec:
                                   description: |-
                                     sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
                                     if timedWall is specified, the sourceId is required.
-                                  type: string
+                                  type: integer
                               required:
                               - sourceId
                               type: object
