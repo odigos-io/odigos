@@ -5,6 +5,12 @@ exporters:
       enabled: false
     tls:
       insecure: true
+  otlp/out-cluster-collector-logs:
+    balancer_name: round_robin
+    compression: none
+    endpoint: dns:///odigos-gateway.odigos-system:4317
+    tls:
+      insecure: true
   otlp/out-cluster-collector-metrics:
     balancer_name: round_robin
     compression: none
