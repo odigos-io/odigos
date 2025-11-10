@@ -301,20 +301,20 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 					{
 						Type: autoscalingv2.ResourceMetricSourceType,
 						Resource: &autoscalingv2.ResourceMetricSource{
-							Name: "cpu",
+							Name: "memory",
 							Target: autoscalingv2.MetricTarget{
 								Type:         autoscalingv2.AverageValueMetricType,
-								AverageValue: &cpuQuantity,
+								AverageValue: &memQuantity,
 							},
 						},
 					},
 					{
 						Type: autoscalingv2.ResourceMetricSourceType,
 						Resource: &autoscalingv2.ResourceMetricSource{
-							Name: "memory",
+							Name: "cpu",
 							Target: autoscalingv2.MetricTarget{
 								Type:         autoscalingv2.AverageValueMetricType,
-								AverageValue: &memQuantity,
+								AverageValue: &cpuQuantity,
 							},
 						},
 					},
