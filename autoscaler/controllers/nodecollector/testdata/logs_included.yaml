@@ -14,20 +14,12 @@ exporters:
       enabled: false
     tls:
       insecure: true
-  otlp/out-cluster-collector-logs:
-    balancer_name: round_robin
+  otlp/out-cluster-collector:
     compression: none
     endpoint: dns:///odigos-gateway.odigos-system:4317
     tls:
       insecure: true
-  otlp/out-cluster-collector-metrics:
-    balancer_name: round_robin
-    compression: none
-    endpoint: dns:///odigos-gateway.odigos-system:4317
-    tls:
-      insecure: true
-  otlp/out-cluster-collector-traces:
-    balancer_name: round_robin
+  otlp/out-cluster-collector-trace:
     compression: none
     endpoint: dns:///odigos-gateway.odigos-system:4317
     tls:
@@ -145,7 +137,7 @@ service:
   pipelines:
     logs:
       exporters:
-      - otlp/out-cluster-collector-logs
+      - otlp/out-cluster-collector
       processors:
       - memory_limiter
       - resource/node-name
@@ -156,7 +148,7 @@ service:
       - filelog
     metrics:
       exporters:
-      - otlp/out-cluster-collector-metrics
+      - otlp/out-cluster-collector
       processors:
       - batch
       - memory_limiter
