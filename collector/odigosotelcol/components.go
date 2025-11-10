@@ -105,7 +105,6 @@ import (
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
 	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
-	odigossourcesfilterprocessor "github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor"
 )
 
 func components() (otelcol.Factories, error) {
@@ -279,7 +278,6 @@ func components() (otelcol.Factories, error) {
 		transformprocessor.NewFactory(),
 		remotetapprocessor.NewFactory(),
 		odigostrafficmetrics.NewFactory(),
-		odigossourcesfilterprocessor.NewFactory(),
 		odigosurltemplateprocessor.NewFactory(),
 	)
 	if err != nil {
@@ -311,7 +309,6 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules[transformprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.130.0"
 	factories.ProcessorModules[remotetapprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.130.0"
 	factories.ProcessorModules[odigostrafficmetrics.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.130.0"
-	factories.ProcessorModules[odigossourcesfilterprocessor.NewFactory().Type()] = "github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor v0.130.0"
 	factories.ProcessorModules[odigosurltemplateprocessor.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0"
 
 	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](
