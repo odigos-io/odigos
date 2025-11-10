@@ -50,8 +50,9 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 		"histogram": histogramConfig,
 		// Taking into account changes in the semantic conventions, to support a range of instrumentation libraries
 		"dimensions": dimensions,
+		// This feature is intentionally turned off to prevent excessive series generation, which can lead to memory issues during data collection.
 		"exemplars": config.GenericMap{
-			"enabled": true,
+			"enabled": false,
 		},
 		"dimensions_cache_size":           1000,
 		"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",

@@ -37,6 +37,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ActionSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ActionStatus"):
 		return &odigosv1alpha1.ActionStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AgentTracesConfig"):
+		return &odigosv1alpha1.AgentTracesConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Attribute"):
 		return &odigosv1alpha1.AttributeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AttributeCondition"):
@@ -69,6 +71,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
 		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("IdGeneratorConfig"):
+		return &odigosv1alpha1.IdGeneratorConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("IdGeneratorTimedWallConfig"):
+		return &odigosv1alpha1.IdGeneratorTimedWallConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfig"):
 		return &odigosv1alpha1.InstrumentationConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("InstrumentationConfigSpec"):

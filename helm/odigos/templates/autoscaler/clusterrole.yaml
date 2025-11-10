@@ -44,7 +44,7 @@ rules:
     resources:
       - validatingwebhookconfigurations
     resourceNames:
-      - action-validating-webhook-configuration
+      - odigos-action-validating-webhook-configuration
     verbs:
       - update
   - apiGroups:
