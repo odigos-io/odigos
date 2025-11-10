@@ -409,7 +409,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean -p $(nproc)
+          args: release --clean
           workdir: collector
         env:
           FURY_ACCOUNT: ${{ secrets.FURY_ACCOUNT }}
