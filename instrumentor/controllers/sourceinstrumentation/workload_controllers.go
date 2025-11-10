@@ -66,3 +66,17 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	return syncWorkload(ctx, r.Client, r.Scheme, pw)
 }
+
+type DeploymentConfigReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
+}
+
+func (r *DeploymentConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	pw := k8sconsts.PodWorkload{
+		Namespace: req.Namespace,
+		Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+		Name:      req.Name,
+	}
+	return syncWorkload(ctx, r.Client, r.Scheme, pw)
+}
