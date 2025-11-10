@@ -27,9 +27,10 @@ const (
 )
 
 var (
-	defaultMinReplicas         = intPtr(1)
-	defaultMaxReplicas         = int32(10)
-	stabilizationWindowSeconds = intPtr(300) // cooldown period for scaling down
+	defaultMinReplicas                  = intPtr(1)
+	defaultMaxReplicas                  = int32(10)
+	ScaleDownStabilizationWindowSeconds = intPtr(900) // 15 minutes cooldown period for scaling down
+	ScaleUpStabilizationWindowSeconds   = intPtr(0)   // no cooldown period for scaling up
 )
 
 // syncHPA dynamically creates or updates the HorizontalPodAutoscaler (HPA)
@@ -156,7 +157,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				Behavior: &autoscalingv2beta2.HorizontalPodAutoscalerBehavior{
 					// Fast scale-up
 					ScaleUp: &autoscalingv2beta2.HPAScalingRules{
-						StabilizationWindowSeconds: pointer.Int32(0),
+						StabilizationWindowSeconds: ScaleUpStabilizationWindowSeconds,
 						SelectPolicy:               &maxPolicy,
 						Policies: []autoscalingv2beta2.HPAScalingPolicy{
 							{
@@ -168,7 +169,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 					},
 					// Slow scale-down (prevent oscillations)
 					ScaleDown: &autoscalingv2beta2.HPAScalingRules{
-						StabilizationWindowSeconds: pointer.Int32(900), // 15 min
+						StabilizationWindowSeconds: ScaleDownStabilizationWindowSeconds, // 15 min
 						SelectPolicy:               &minPolicy,
 						Policies: []autoscalingv2beta2.HPAScalingPolicy{
 							{
@@ -252,7 +253,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				MaxReplicas: maxReplicas,
 				Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
 					ScaleUp: &autoscalingv2.HPAScalingRules{
-						StabilizationWindowSeconds: pointer.Int32(0),
+						StabilizationWindowSeconds: ScaleUpStabilizationWindowSeconds,
 						SelectPolicy:               &maxPolicy,
 						Policies: []autoscalingv2.HPAScalingPolicy{
 							{
@@ -263,7 +264,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 						},
 					},
 					ScaleDown: &autoscalingv2.HPAScalingRules{
-						StabilizationWindowSeconds: pointer.Int32(900),
+						StabilizationWindowSeconds: ScaleDownStabilizationWindowSeconds,
 						SelectPolicy:               &minPolicy,
 						Policies: []autoscalingv2.HPAScalingPolicy{
 							// remove 1 pod or 25% of the pods every 60s whichever is smaller
