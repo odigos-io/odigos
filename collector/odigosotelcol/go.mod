@@ -757,4 +757,6 @@ replace github.com/odigos-io/odigos/common => ../../common
 
 replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
 
+replace github.com/go-viper/mapstructure/v2 => github.com/go-viper/mapstructure/v2 v2.4.0
+
 exclude github.com/knadh/koanf v1.5.0
