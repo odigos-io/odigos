@@ -81,13 +81,13 @@ type SourceSpec struct {
 	// +optional
 	ContainerOverrides []ContainerOverride `json:"containerOverrides,omitempty"`
 
-	// UseRegex indicates that the workload name should be matched using regex.
+	// MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
 	// When true, spec.workload.name is treated as a regular expression pattern.
 	// This allows matching multiple workloads with a single Source CRD.
 	// Not valid for namespace sources.
 	// +kubebuilder:validation:Optional
 	// +optional
-	UseRegex bool `json:"useRegex,omitempty"`
+	MatchWorkloadNameAsRegex bool `json:"matchWorkloadNameAsRegex,omitempty"`
 }
 
 type SourceStatus struct {
@@ -144,7 +144,7 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 		// Filter sources: exact match or regex match
 		var matchingSources []Source
 		for _, source := range sourceList.Items {
-			if source.Spec.UseRegex {
+			if source.Spec.MatchWorkloadNameAsRegex {
 				// Compile and match regex pattern
 				pattern := source.Spec.Workload.Name
 				matched, err := regexp.MatchString(pattern, pw.Name)

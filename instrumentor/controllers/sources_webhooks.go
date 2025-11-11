@@ -59,7 +59,7 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 
 	// Set the workload name label - use hash for regex patterns since Kubernetes labels
 	// cannot contain regex special characters like *
-	if source.Spec.UseRegex {
+	if source.Spec.MatchWorkloadNameAsRegex {
 		// For regex sources, use a hash of the pattern as the label value
 		hash := sha256.Sum256([]byte(source.Spec.Workload.Name))
 		source.Labels[k8sconsts.WorkloadNameLabel] = "regex-" + hex.EncodeToString(hash[:])[:16]
@@ -164,11 +164,11 @@ func (s *SourcesValidator) ValidateUpdate(ctx context.Context, oldObj, newObj ru
 			"Source workload-name label is immutable",
 		))
 	}
-	if new.Spec.UseRegex != old.Spec.UseRegex {
+	if new.Spec.MatchWorkloadNameAsRegex != old.Spec.MatchWorkloadNameAsRegex {
 		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("spec").Child("useRegex"),
-			new.Spec.UseRegex,
-			"Source useRegex is immutable",
+			field.NewPath("spec").Child("MatchWorkloadNameAsRegex"),
+			new.Spec.MatchWorkloadNameAsRegex,
+			"Source MatchWorkloadNameAsRegex is immutable",
 		))
 	}
 	if new.Labels[k8sconsts.WorkloadNamespaceLabel] != old.Labels[k8sconsts.WorkloadNamespaceLabel] {
@@ -216,10 +216,10 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	// When UseRegex is true, the label should be a hash of the regex pattern
+	// When MatchWorkloadNameAsRegex is true, the label should be a hash of the regex pattern
 	// (since Kubernetes labels cannot contain regex special characters like *)
-	// When UseRegex is false, the label should match the exact workload name
-	if !source.Spec.UseRegex {
+	// When MatchWorkloadNameAsRegex is false, the label should match the exact workload name
+	if !source.Spec.MatchWorkloadNameAsRegex {
 		if source.Labels[k8sconsts.WorkloadNameLabel] != source.Spec.Workload.Name {
 			allErrs = append(allErrs, field.Invalid(
 				field.NewPath("metadata").Child("labels"),
@@ -317,12 +317,12 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	// UseRegex is not valid for namespace sources
-	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace && source.Spec.UseRegex {
+	// MatchWorkloadNameAsRegex is not valid for namespace sources
+	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace && source.Spec.MatchWorkloadNameAsRegex {
 		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("spec").Child("useRegex"),
-			source.Spec.UseRegex,
-			"UseRegex is not valid for Namespace sources, only valid for Workload Sources",
+			field.NewPath("spec").Child("MatchWorkloadNameAsRegex"),
+			source.Spec.MatchWorkloadNameAsRegex,
+			"MatchWorkloadNameAsRegex is not valid for Namespace sources, only valid for Workload Sources",
 		))
 	}
 
@@ -352,17 +352,17 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 			}
 
 			// For non-regex sources, check exact match
-			if !source.Spec.UseRegex && !dupe.Spec.UseRegex {
+			if !source.Spec.MatchWorkloadNameAsRegex && !dupe.Spec.MatchWorkloadNameAsRegex {
 				if source.Spec.Workload.Name == dupe.Spec.Workload.Name {
 					duplicates = append(duplicates, dupe.GetName())
 				}
-			} else if source.Spec.UseRegex && !dupe.Spec.UseRegex {
+			} else if source.Spec.MatchWorkloadNameAsRegex && !dupe.Spec.MatchWorkloadNameAsRegex {
 				// Current source uses regex, check if it matches the other source's workload name
 				matched, err := regexp.MatchString(source.Spec.Workload.Name, dupe.Spec.Workload.Name)
 				if err == nil && matched {
 					duplicates = append(duplicates, dupe.GetName())
 				}
-			} else if !source.Spec.UseRegex && dupe.Spec.UseRegex {
+			} else if !source.Spec.MatchWorkloadNameAsRegex && dupe.Spec.MatchWorkloadNameAsRegex {
 				// Other source uses regex, check if it matches current source's workload name
 				matched, err := regexp.MatchString(dupe.Spec.Workload.Name, source.Spec.Workload.Name)
 				if err == nil && matched {

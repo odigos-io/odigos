@@ -24,11 +24,11 @@ import (
 // SourceSpecApplyConfiguration represents a declarative configuration of the SourceSpec type for use
 // with apply.
 type SourceSpecApplyConfiguration struct {
-	Workload               *k8sconsts.PodWorkload                `json:"workload,omitempty"`
-	DisableInstrumentation *bool                                 `json:"disableInstrumentation,omitempty"`
-	OtelServiceName        *string                               `json:"otelServiceName,omitempty"`
-	ContainerOverrides     []ContainerOverrideApplyConfiguration `json:"containerOverrides,omitempty"`
-	UseRegex               *bool                                 `json:"useRegex,omitempty"`
+	Workload                 *k8sconsts.PodWorkload                `json:"workload,omitempty"`
+	DisableInstrumentation   *bool                                 `json:"disableInstrumentation,omitempty"`
+	OtelServiceName          *string                               `json:"otelServiceName,omitempty"`
+	ContainerOverrides       []ContainerOverrideApplyConfiguration `json:"containerOverrides,omitempty"`
+	MatchWorkloadNameAsRegex *bool                                 `json:"matchWorkloadNameAsRegex,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
@@ -74,10 +74,10 @@ func (b *SourceSpecApplyConfiguration) WithContainerOverrides(values ...*Contain
 	return b
 }
 
-// WithUseRegex sets the UseRegex field in the declarative configuration to the given value
+// WithMatchWorkloadNameAsRegex sets the MatchWorkloadNameAsRegex field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the UseRegex field is set to the value of the last call.
-func (b *SourceSpecApplyConfiguration) WithUseRegex(value bool) *SourceSpecApplyConfiguration {
-	b.UseRegex = &value
+// If called multiple times, the MatchWorkloadNameAsRegex field is set to the value of the last call.
+func (b *SourceSpecApplyConfiguration) WithMatchWorkloadNameAsRegex(value bool) *SourceSpecApplyConfiguration {
+	b.MatchWorkloadNameAsRegex = &value
 	return b
 }
