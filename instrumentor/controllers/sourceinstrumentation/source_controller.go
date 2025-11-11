@@ -33,7 +33,7 @@ func (r *SourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	var result ctrl.Result
 	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace {
 		result, err = syncNamespaceWorkloads(ctx, r.Client, r.Scheme, source.Spec.Workload.Namespace)
-	} else if source.Spec.UseRegex {
+	} else if source.Spec.MatchWorkloadNameAsRegex {
 		// For regex sources, sync all matching workloads
 		result, err = syncRegexSourceWorkloads(ctx, r.Client, r.Scheme, source)
 	} else {
