@@ -566,6 +566,11 @@ metricsSources:
     ## set resource attributes to exclude from the span metrics
     # excludedResourceAttributes: ['process.runtime.name', 'process.runtime.version']
 
+    ## Advanced configuration - avoid using unless you know what you are doing.
+    ## This list controls which resource attributes are included in the metric stream identity.
+    ## These attributes are used to determines how span metrics are grouped.
+    # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
+
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
