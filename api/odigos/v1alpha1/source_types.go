@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"context"
 	"errors"
+	"regexp"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -79,6 +80,14 @@ type SourceSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	ContainerOverrides []ContainerOverride `json:"containerOverrides,omitempty"`
+
+	// MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
+	// When true, spec.workload.name is treated as a regular expression pattern.
+	// This allows matching multiple workloads with a single Source CRD.
+	// Not valid for namespace sources.
+	// +kubebuilder:validation:Optional
+	// +optional
+	MatchWorkloadNameAsRegex bool `json:"matchWorkloadNameAsRegex,omitempty"`
 }
 
 type SourceStatus struct {
@@ -120,8 +129,10 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 
 	if pw.Kind != k8sconsts.WorkloadKindNamespace {
 		sourceList := SourceList{}
+
+		// First, list all sources with matching namespace and kind
+		// We need to check both exact matches and regex matches
 		selector := labels.SelectorFromSet(labels.Set{
-			k8sconsts.WorkloadNameLabel:      pw.Name,
 			k8sconsts.WorkloadNamespaceLabel: namespace,
 			k8sconsts.WorkloadKindLabel:      string(pw.Kind),
 		})
@@ -129,11 +140,34 @@ func GetSources(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodW
 		if err != nil {
 			return nil, err
 		}
-		if len(sourceList.Items) > 1 {
+
+		// Filter sources: exact match or regex match
+		var matchingSources []Source
+		for _, source := range sourceList.Items {
+			if source.Spec.MatchWorkloadNameAsRegex {
+				// Compile and match regex pattern
+				pattern := source.Spec.Workload.Name
+				matched, err := regexp.MatchString(pattern, pw.Name)
+				if err != nil {
+					// Invalid regex pattern, skip this source
+					continue
+				}
+				if matched {
+					matchingSources = append(matchingSources, source)
+				}
+			} else {
+				// Exact match
+				if source.Spec.Workload.Name == pw.Name {
+					matchingSources = append(matchingSources, source)
+				}
+			}
+		}
+
+		if len(matchingSources) > 1 {
 			return nil, ErrorTooManySources
 		}
-		if len(sourceList.Items) == 1 {
-			workloadSources.Workload = &sourceList.Items[0]
+		if len(matchingSources) == 1 {
+			workloadSources.Workload = &matchingSources[0]
 		}
 	}
 
