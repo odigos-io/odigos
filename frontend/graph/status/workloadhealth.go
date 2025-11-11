@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -286,5 +287,75 @@ func CalculateCronJobHealthStatus(cronJobStatus batchv1.CronJobStatus) *model.De
 		ReasonEnum: &reasonStr,
 		Status:     model.DesiredStateProgressPending,
 		Message:    "CronJob is waiting for next scheduled run",
+	}
+}
+
+func CalculateDeploymentConfigHealthStatus(dcStatus openshiftappsv1.DeploymentConfigStatus) *model.DesiredConditionStatus {
+
+	// Check for available condition
+	for _, condition := range dcStatus.Conditions {
+		switch condition.Type {
+		case openshiftappsv1.DeploymentAvailable:
+			if condition.Status == corev1.ConditionFalse {
+				reasonStr := string(WorkloadHealthStatusReasonNoAvailableReplicas)
+				return &model.DesiredConditionStatus{
+					Name:       WorkloadHealthStatus,
+					ReasonEnum: &reasonStr,
+					Status:     model.DesiredStateProgressFailure,
+					Message:    "DeploymentConfig does not have at least the minimum number of available replicas required",
+				}
+			}
+
+		case openshiftappsv1.DeploymentProgressing:
+			if condition.Status != corev1.ConditionTrue {
+				reasonStr := string(WorkloadHealthStatusReasonProgressingError)
+				return &model.DesiredConditionStatus{
+					Name:       WorkloadHealthStatus,
+					ReasonEnum: &reasonStr,
+					Status:     model.DesiredStateProgressFailure,
+					Message:    "DeploymentConfig progressing is unhealthy",
+				}
+			}
+
+		case openshiftappsv1.DeploymentReplicaFailure:
+			reasonStr := string(WorkloadHealthStatusReasonReplicaFailure)
+			return &model.DesiredConditionStatus{
+				Name:       WorkloadHealthStatus,
+				ReasonEnum: &reasonStr,
+				Status:     model.DesiredStateProgressFailure,
+				Message:    "DeploymentConfig has pods which failed to be created or deleted",
+			}
+		}
+	}
+
+	// check if all the replicas are ok, or if there are some errors / progress in replicas count
+	if dcStatus.UnavailableReplicas > 0 {
+		reasonStr := string(WorkloadHealthStatusReasonNoAvailableReplicas)
+		return &model.DesiredConditionStatus{
+			Name:       WorkloadHealthStatus,
+			ReasonEnum: &reasonStr,
+			Status:     model.DesiredStateProgressWaiting,
+			Message:    fmt.Sprintf("DeploymentConfig has %d/%d unavailable replicas", dcStatus.UnavailableReplicas, dcStatus.Replicas),
+		}
+	}
+
+	if dcStatus.Replicas != dcStatus.UpdatedReplicas ||
+		dcStatus.Replicas != dcStatus.ReadyReplicas ||
+		dcStatus.Replicas != dcStatus.AvailableReplicas {
+		reasonStr := string(WorkloadHealthStatusReasonProgressing)
+		return &model.DesiredConditionStatus{
+			Name:       WorkloadHealthStatus,
+			ReasonEnum: &reasonStr,
+			Status:     model.DesiredStateProgressWaiting,
+			Message:    "not all deploymentconfig replicas are available and ready",
+		}
+	}
+
+	reasonStr := string(WorkloadHealthStatusReasonHealthy)
+	return &model.DesiredConditionStatus{
+		Name:       WorkloadHealthStatus,
+		ReasonEnum: &reasonStr,
+		Status:     model.DesiredStateProgressSuccess,
+		Message:    "All deploymentconfig replicas are available and ready",
 	}
 }
