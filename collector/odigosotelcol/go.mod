@@ -8,7 +8,6 @@ require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.130.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.130.0
-	github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.130.0
@@ -745,8 +744,6 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporte
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter => ../exporters/mockdestinationexporter
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
-
-replace github.com/odigos-io/odigos/processor/odigossourcesfilterprocessor => ../processors/odigossourcesfilterprocessor
 
 replace github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
 
