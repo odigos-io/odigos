@@ -207,7 +207,7 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
 	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
 
-	// By default, Odigos does not include process labels meaning
+	// By default, Odigos does not include process labels - meaning
 	// metrics will be aggregated by container as the lowest level.
 	// This means that multiple processes running in the same container
 	// will be aggregated into the same time series.
@@ -222,6 +222,15 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// you can list all "process.*" attributes here to exclude them from being added to span metrics.
 	// any other resource attribute can be set, either for sanitation or to reduce dimenssions for generate metrics.
 	ExcludedResourceAttributes []string `json:"excludedResourceAttributes,omitempty"`
+
+	// Advanced configuration - avoid using unless you know what you are doing.
+	// this list is used to specify how to generate metrics resource attributes based on incomming spans.
+	// by default, all the resource attributes which aren't removed with `includedProcessInDimensions`,
+	// or `excludedResourceAttributes` are directly copied to the metrics resource attributes.
+	// When the `resourceMetricsKeyAttributes` is set (not empty),
+	// only the resource attributes in this list are taken into account to generate uniquness of the metrics resource,
+	// while all other resource attributes not in this list are copied from the first span to create the metrics resource.
+	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

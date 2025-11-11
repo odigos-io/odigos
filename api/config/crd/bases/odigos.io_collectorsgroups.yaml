@@ -185,7 +185,7 @@ spec:
                         type: boolean
                       includedProcessInDimensions:
                         description: |-
-                          By default, Odigos does not include process labels meaning
+                          By default, Odigos does not include process labels - meaning
                           metrics will be aggregated by container as the lowest level.
                           This means that multiple processes running in the same container
                           will be aggregated into the same time series.
@@ -205,6 +205,18 @@ spec:
                           format: duration string (15s, 1m, etc).
                           default is 5m (five minutes).
                         type: string
+                      resourceMetricsKeyAttributes:
+                        description: |-
+                          Advanced configuration - avoid using unless you know what you are doing.
+                          this list is used to specify how to generate metrics resource attributes based on incomming spans.
+                          by default, all the resource attributes which aren't removed with `includedProcessInDimensions`,
+                          or `excludedResourceAttributes` are directly copied to the metrics resource attributes.
+                          When the `resourceMetricsKeyAttributes` is set (not empty),
+                          only the resource attributes in this list are taken into account to generate uniquness of the metrics resource,
+                          while all other resource attributes not in this list are copied from the first span to create the metrics resource.
+                        items:
+                          type: string
+                        type: array
                     type: object
                 type: object
               otlpExporterConfiguration:

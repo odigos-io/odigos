@@ -567,6 +567,15 @@ metricsSources:
     ## set resource attributes to exclude from the span metrics
     # excludedResourceAttributes: ['process.runtime.name', 'process.runtime.version']
 
+    ## Advanced configuration - avoid using unless you know what you are doing.
+    ## this list is used to specify how to generate metrics resource attributes based on incomming spans.
+    ## by default, all the resource attributes which aren't removed with `includedProcessInDimensions`,
+    ## or `excludedResourceAttributes` are directly copied to the metrics resource attributes.
+    ## When the `resourceMetricsKeyAttributes` is set (not empty),
+    ## only the resource attributes in this list are taken into account to generate uniquness of the metrics resource,
+    ## while all other resource attributes not in this list are copied from the first span to create the metrics resource.
+    # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
+
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
