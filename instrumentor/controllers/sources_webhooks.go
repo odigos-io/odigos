@@ -18,8 +18,6 @@ package controllers
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"regexp"
 	"strings"
@@ -224,17 +222,6 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 			))
 		}
 	} else {
-		// For regex sources, validate that the label is a hash of the pattern
-		// (the defaulter will set this automatically, but we validate it here)
-		expectedHash := sha256.Sum256([]byte(source.Spec.Workload.Name))
-		expectedLabel := "regex-" + hex.EncodeToString(expectedHash[:])[:16]
-		if source.Labels[k8sconsts.WorkloadNameLabel] != expectedLabel {
-			allErrs = append(allErrs, field.Invalid(
-				field.NewPath("metadata").Child("labels"),
-				source.Labels[k8sconsts.WorkloadNameLabel],
-				fmt.Sprintf("%s must be a hash of the regex pattern (expected: %s)", k8sconsts.WorkloadNameLabel, expectedLabel),
-			))
-		}
 		// Validate that the regex pattern is valid
 		_, err := regexp.Compile(source.Spec.Workload.Name)
 		if err != nil {
