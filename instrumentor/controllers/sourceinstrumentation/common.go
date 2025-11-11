@@ -144,14 +144,7 @@ func syncRegexSourceWorkloads(
 	workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 	err = k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
 	if err != nil {
-		// Ignore "no matches for kind" and "forbidden" errors for DeploymentConfig
-		if kind == k8sconsts.WorkloadKindDeploymentConfig && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
-			return ctrl.Result{}, nil
-		}
-		if !meta.IsNoMatchError(err) {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
 	// Filter workloads by regex pattern

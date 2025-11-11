@@ -59,11 +59,7 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 
 	// Set the workload name label - use hash for regex patterns since Kubernetes labels
 	// cannot contain regex special characters like *
-	if source.Spec.MatchWorkloadNameAsRegex {
-		// For regex sources, use a hash of the pattern as the label value
-		hash := sha256.Sum256([]byte(source.Spec.Workload.Name))
-		source.Labels[k8sconsts.WorkloadNameLabel] = "regex-" + hex.EncodeToString(hash[:])[:16]
-	} else {
+	if !source.Spec.MatchWorkloadNameAsRegex {
 		// For non-regex sources, use the exact workload name
 		if _, ok := source.Labels[k8sconsts.WorkloadNameLabel]; !ok {
 			source.Labels[k8sconsts.WorkloadNameLabel] = source.Spec.Workload.Name
