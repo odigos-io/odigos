@@ -20,6 +20,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -133,7 +134,7 @@ func syncRegexSourceWorkloads(
 	regex, err := regexp.Compile(pattern)
 	if err != nil {
 		// Invalid regex pattern, return error
-		return ctrl.Result{}, err
+		return ctrl.Result{}, reconcile.TerminalError(err)
 	}
 
 	workloadsToSync := make([]k8sconsts.PodWorkload, 0)
