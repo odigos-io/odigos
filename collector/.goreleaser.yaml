@@ -1,21 +1,33 @@
+version: 2
+project_name: odigos-otelcol
+
+before:
+  hooks:
+    - go mod tidy -C odigosotelcol
+
 builds:
-  - env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-    goarch:
-      - amd64
-      - arm64
-    binary: odigos-otelcol
+  - id: odigos-otelcol-linux
+    env: [CGO_ENABLED=0]
     dir: odigosotelcol
+    main: .
+    binary: odigos-otelcol
+    goos: [linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
     ldflags:
-      - -s
-      - -w
-    flags:
-      - -trimpath
+      - -s -w -checklinkname=0
+
 nfpms:
   - id: packages # this id is used in the publisher section to specify which artifacts to publish
     package_name: odigos-otelcol
+    vendor: Odigos Inc.
+    maintainer: Odigos Inc.
+    homepage: https://odigos.io
+    description: Instant distributed tracing without code changes using eBPF
+    formats:
+      - deb
+      - rpm
+    file_name_template: "{{ .ConventionalFileName }}"
     contents:
       - src: distribution/odigos-otelcol/odigos-otelcol.service
         dst: /lib/systemd/system/odigos-otelcol.service
@@ -29,14 +41,7 @@ nfpms:
       preinstall: distribution/odigos-otelcol/preinstall.sh
       postinstall: distribution/odigos-otelcol/postinstall.sh
       preremove: distribution/odigos-otelcol/preremove.sh
-    vendor: Keyval Inc.
-    homepage: https://odigos.io
-    formats:
-      - deb
-      - rpm
-    description: Instant distributed tracing without code changes using eBPF
-    file_name_template: "{{ .ConventionalFileName }}"
-    maintainer: Keyval Inc.
+
 publishers:
   - name: fury deb publisher
     ids: # publish only the artifacts created in the nfpms section. e.g. ignore the tar.gz archive
@@ -48,7 +53,7 @@ publishers:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
