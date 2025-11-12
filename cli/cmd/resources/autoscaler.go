@@ -131,6 +131,11 @@ func NewAutoscalerRole(ns string, openshiftEnabled bool) *rbacv1.Role {
 			Resources: []string{"actions/status"},
 			Verbs:     []string{"get", "patch", "update"},
 		},
+		{ // Needed to watch and manage the pods of the gateway-collector
+			APIGroups: []string{""},
+			Resources: []string{"pods"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
 	}
 
 	// This is needed for OpenShift to update the finalizers of the deployments
@@ -234,6 +239,11 @@ func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRo
 					"list",
 					"watch",
 				},
+			},
+			{
+				APIGroups: []string{"apiregistration.k8s.io"},
+				Resources: []string{"apiservices"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch"},
 			},
 		}, finalizersUpdate...),
 	}

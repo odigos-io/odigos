@@ -9,11 +9,13 @@ import (
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
+	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,6 +36,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(apiactions.AddToScheme(scheme))
+	utilruntime.Must(apiregv1.AddToScheme(scheme))
 }
 
 type KubeManagerOptions struct {
@@ -93,6 +96,10 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 					Field: nsSelector,
 				},
 				&corev1.Service{}: {
+					Label: clusterCollectorLabelSelector,
+					Field: nsSelector,
+				},
+				&corev1.Pod{}: {
 					Label: clusterCollectorLabelSelector,
 					Field: nsSelector,
 				},
@@ -172,6 +179,10 @@ func SetupWithManager(mgr manager.Manager, imagePullSecrets []string, odigosVers
 
 	if err = actions.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to create controller for actions: %w", err)
+	}
+
+	if err = metricshandler.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create controller for metrics handler: %w", err)
 	}
 
 	return nil
