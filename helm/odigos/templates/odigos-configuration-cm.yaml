@@ -133,6 +133,21 @@ data:
     {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     checkDeviceHealthBeforeInjection: {{ .Values.instrumentor.checkDeviceHealthBeforeInjection }}
     {{- end }}
+    {{- if .Values.instrumentor.initContainerResources }}
+    initContainerResources:
+      {{- if .Values.instrumentor.initContainerResources.requests.cpu }}
+      requestCPUm: {{ .Values.instrumentor.initContainerResources.requests.cpu | toString | replace "m" "" | int }}
+      {{- end }}
+      {{- if .Values.instrumentor.initContainerResources.limits.cpu }}
+      limitCPUm: {{ .Values.instrumentor.initContainerResources.limits.cpu | toString | replace "m" "" | int }}
+      {{- end }}
+      {{- if .Values.instrumentor.initContainerResources.requests.memory }}
+      requestMemoryMiB: {{ .Values.instrumentor.initContainerResources.requests.memory | toString | replace "Mi" "" | int }}
+      {{- end }}
+      {{- if .Values.instrumentor.initContainerResources.limits.memory }}
+      limitMemoryMiB: {{ .Values.instrumentor.initContainerResources.limits.memory | toString | replace "Mi" "" | int }}
+      {{- end }}
+    {{- end }}
     {{- if .Values.ResourceSizePreset }}
     resourceSizePreset: {{ .Values.ResourceSizePreset }}
     {{- end }}
