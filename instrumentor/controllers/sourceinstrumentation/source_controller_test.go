@@ -18,6 +18,8 @@ var _ = Describe("Source controller", func() {
 	var deployment *appsv1.Deployment
 	var source *odigosv1.Source
 	var instrumentationConfig *odigosv1.InstrumentationConfig
+	var workingInstrumentationConfig *odigosv1.InstrumentationConfig
+	var failingInstrumentationConfig *odigosv1.InstrumentationConfig
 
 	Describe("Workload Instrumentation", func() {
 		BeforeEach(func() {
@@ -51,6 +53,50 @@ var _ = Describe("Source controller", func() {
 				source.Spec.DisableInstrumentation = true
 				Expect(k8sClient.Update(ctx, source)).Should(Succeed())
 				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, instrumentationConfig)
+			})
+
+		})
+	})
+
+	Describe("Workload Regex Instrumentation", func() {
+		BeforeEach(func() {
+			namespace = testutil.NewMockNamespace()
+			Expect(k8sClient.Create(ctx, namespace)).Should(Succeed())
+
+			workingDeployment := testutil.NewMockTestDeployment(namespace, "working-deployment")
+			Expect(k8sClient.Create(ctx, workingDeployment)).Should(Succeed())
+
+			failingDeployment := testutil.NewMockTestDeployment(namespace, "failing-deployment")
+			Expect(k8sClient.Create(ctx, failingDeployment)).Should(Succeed())
+
+			source = testutil.NewMockRegexSource(workingDeployment, "^working-.*", false)
+			Expect(k8sClient.Create(ctx, source)).Should(Succeed())
+
+			workingInstrumentationConfig = testutil.NewMockInstrumentationConfig(workingDeployment)
+			failingInstrumentationConfig = testutil.NewMockInstrumentationConfig(failingDeployment)
+		})
+
+		When("Sources are instrumented", func() {
+			It("Creates an InstrumentationConfig for the instrumented workload", func() {
+				testutil.AssertInstrumentationConfigCreated(ctx, k8sClient, workingInstrumentationConfig)
+			})
+
+			It("Does not create an InstrumentationConfig for the uninstrumented workload", func() {
+				testutil.AssertInstrumentationConfigNotCreated(ctx, k8sClient, failingInstrumentationConfig)
+			})
+
+		})
+
+		When("Sources are uninstrumented", func() {
+			It("Deletes the InstrumentationConfig for the uninstrumented workload", func() {
+				Expect(k8sClient.Delete(ctx, source)).Should(Succeed())
+				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, workingInstrumentationConfig)
+			})
+
+			It("Deletes the InstrumentationConfig when a Workload Source is updated to disableInstrumentation=true", func() {
+				source.Spec.DisableInstrumentation = true
+				Expect(k8sClient.Update(ctx, source)).Should(Succeed())
+				testutil.AssertInstrumentationConfigDeleted(ctx, k8sClient, workingInstrumentationConfig)
 			})
 
 		})
