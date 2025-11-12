@@ -19,7 +19,7 @@ odigos-enterprise-{{- .Component -}}
 {{- end -}}
 
 {{- define "odigos.secretExists" -}}
-  {{- $sec   := lookup "v1" "Secret" .Release.Namespace "odigos-pro" -}}
+  {{- $sec   := lookup "v1" "Secret" .Release.Namespace "odigos-central" -}}
   {{- $token := default "" .Values.onPremToken -}}
   {{- $externalSecret := .Values.externalOnpremTokenSecret | default false -}}
   {{- if or $sec (ne $token "") $externalSecret -}}
