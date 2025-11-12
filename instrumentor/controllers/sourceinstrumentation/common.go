@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"regexp"
 
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
@@ -19,6 +20,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -104,6 +106,103 @@ func syncNamespaceWorkloads(
 		}
 	}
 
+	for _, pw := range workloadsToSync {
+		res, err := syncWorkload(ctx, k8sClient, runtimeScheme, pw)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		if !res.IsZero() {
+			collectiveRes = res
+		}
+	}
+
+	return collectiveRes, errs
+}
+
+// syncRegexSourceWorkloads syncs all workloads that match the regex pattern in the source
+func syncRegexSourceWorkloads(
+	ctx context.Context,
+	k8sClient client.Client,
+	runtimeScheme *runtime.Scheme,
+	source *odigosv1.Source) (ctrl.Result, error) {
+
+	pattern := source.Spec.Workload.Name
+	namespace := source.Spec.Workload.Namespace
+	kind := source.Spec.Workload.Kind
+
+	// Compile the regex pattern
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		// Invalid regex pattern, return error
+		return ctrl.Result{}, reconcile.TerminalError(err)
+	}
+
+	workloadsToSync := make([]k8sconsts.PodWorkload, 0)
+	collectiveRes := ctrl.Result{}
+	var errs error
+
+	// List all workloads of the specified kind in the namespace
+	workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
+	err = k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Filter workloads by regex pattern
+	switch obj := workloadObjects.(type) {
+	case *v1.DeploymentList:
+		for _, dep := range obj.Items {
+			if regex.MatchString(dep.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      dep.GetName(),
+					Namespace: dep.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDeployment,
+				})
+			}
+		}
+	case *v1.DaemonSetList:
+		for _, ds := range obj.Items {
+			if regex.MatchString(ds.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      ds.GetName(),
+					Namespace: ds.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDaemonSet,
+				})
+			}
+		}
+	case *v1.StatefulSetList:
+		for _, ss := range obj.Items {
+			if regex.MatchString(ss.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      ss.GetName(),
+					Namespace: ss.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindStatefulSet,
+				})
+			}
+		}
+	case *batchv1.CronJobList:
+		for _, job := range obj.Items {
+			if regex.MatchString(job.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      job.GetName(),
+					Namespace: job.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindCronJob,
+				})
+			}
+		}
+	case *openshiftappsv1.DeploymentConfigList:
+		for _, dc := range obj.Items {
+			if regex.MatchString(dc.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      dc.GetName(),
+					Namespace: dc.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+				})
+			}
+		}
+	}
+
+	// Sync each matching workload
 	for _, pw := range workloadsToSync {
 		res, err := syncWorkload(ctx, k8sClient, runtimeScheme, pw)
 		if err != nil {

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -54,8 +55,13 @@ func (s *SourcesDefaulter) Default(ctx context.Context, obj runtime.Object) erro
 		source.Labels = make(map[string]string)
 	}
 
-	if _, ok := source.Labels[k8sconsts.WorkloadNameLabel]; !ok {
-		source.Labels[k8sconsts.WorkloadNameLabel] = source.Spec.Workload.Name
+	// Set the workload name label - use hash for regex patterns since Kubernetes labels
+	// cannot contain regex special characters like *
+	if !source.Spec.MatchWorkloadNameAsRegex {
+		// For non-regex sources, use the exact workload name
+		if _, ok := source.Labels[k8sconsts.WorkloadNameLabel]; !ok {
+			source.Labels[k8sconsts.WorkloadNameLabel] = source.Spec.Workload.Name
+		}
 	}
 	if _, ok := source.Labels[k8sconsts.WorkloadNamespaceLabel]; !ok {
 		source.Labels[k8sconsts.WorkloadNamespaceLabel] = source.Spec.Workload.Namespace
@@ -152,6 +158,13 @@ func (s *SourcesValidator) ValidateUpdate(ctx context.Context, oldObj, newObj ru
 			"Source workload-name label is immutable",
 		))
 	}
+	if new.Spec.MatchWorkloadNameAsRegex != old.Spec.MatchWorkloadNameAsRegex {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("spec").Child("MatchWorkloadNameAsRegex"),
+			new.Spec.MatchWorkloadNameAsRegex,
+			"Source MatchWorkloadNameAsRegex is immutable",
+		))
+	}
 	if new.Labels[k8sconsts.WorkloadNamespaceLabel] != old.Labels[k8sconsts.WorkloadNamespaceLabel] {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("metadata").Child("labels"),
@@ -197,12 +210,27 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
-	if source.Labels[k8sconsts.WorkloadNameLabel] != source.Spec.Workload.Name {
-		allErrs = append(allErrs, field.Invalid(
-			field.NewPath("metadata").Child("labels"),
-			source.Labels[k8sconsts.WorkloadNameLabel],
-			fmt.Sprintf("%s must match spec.workload.name", k8sconsts.WorkloadNameLabel),
-		))
+	// When MatchWorkloadNameAsRegex is true, the label should be a hash of the regex pattern
+	// (since Kubernetes labels cannot contain regex special characters like *)
+	// When MatchWorkloadNameAsRegex is false, the label should match the exact workload name
+	if !source.Spec.MatchWorkloadNameAsRegex {
+		if source.Labels[k8sconsts.WorkloadNameLabel] != source.Spec.Workload.Name {
+			allErrs = append(allErrs, field.Invalid(
+				field.NewPath("metadata").Child("labels"),
+				source.Labels[k8sconsts.WorkloadNameLabel],
+				fmt.Sprintf("%s must match spec.workload.name", k8sconsts.WorkloadNameLabel),
+			))
+		}
+	} else {
+		// Validate that the regex pattern is valid
+		_, err := regexp.Compile(source.Spec.Workload.Name)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(
+				field.NewPath("spec").Child("workload").Child("name"),
+				source.Spec.Workload.Name,
+				fmt.Sprintf("invalid regex pattern: %s", err.Error()),
+			))
+		}
 	}
 
 	if source.Labels[k8sconsts.WorkloadNamespaceLabel] != source.Spec.Workload.Namespace {
@@ -272,13 +300,23 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		))
 	}
 
+	// MatchWorkloadNameAsRegex is not valid for namespace sources
+	if source.Spec.Workload.Kind == k8sconsts.WorkloadKindNamespace && source.Spec.MatchWorkloadNameAsRegex {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("spec").Child("MatchWorkloadNameAsRegex"),
+			source.Spec.MatchWorkloadNameAsRegex,
+			"MatchWorkloadNameAsRegex is not valid for Namespace sources, only valid for Workload Sources",
+		))
+	}
+
 	return allErrs
 }
 
 func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source *v1alpha1.Source) error {
 	sourceList := &v1alpha1.SourceList{}
+	// For regex sources, we can't use exact label matching for uniqueness validation
+	// Instead, we list all sources with matching namespace and kind, then check for conflicts
 	selector := labels.SelectorFromSet(labels.Set{
-		k8sconsts.WorkloadNameLabel:      source.Labels[k8sconsts.WorkloadNameLabel],
 		k8sconsts.WorkloadNamespaceLabel: source.Labels[k8sconsts.WorkloadNamespaceLabel],
 		k8sconsts.WorkloadKindLabel:      source.Labels[k8sconsts.WorkloadKindLabel],
 	})
@@ -288,12 +326,33 @@ func (s *SourcesValidator) validateSourceUniqueness(ctx context.Context, source 
 	}
 	if len(sourceList.Items) > 0 {
 		duplicates := []string{}
-		// In theory, there should only ever be at most 1 duplicate. But loop through all to be thorough
+		// Check for duplicates: exact match on workload name (when not using regex)
+		// or overlapping regex patterns
 		for _, dupe := range sourceList.Items {
 			// during an update, this source will show up as existing already
-			if dupe.GetName() != source.GetName() {
-				duplicates = append(duplicates, dupe.GetName())
+			if dupe.GetName() == source.GetName() {
+				continue
 			}
+
+			// For non-regex sources, check exact match
+			if !source.Spec.MatchWorkloadNameAsRegex && !dupe.Spec.MatchWorkloadNameAsRegex {
+				if source.Spec.Workload.Name == dupe.Spec.Workload.Name {
+					duplicates = append(duplicates, dupe.GetName())
+				}
+			} else if source.Spec.MatchWorkloadNameAsRegex && !dupe.Spec.MatchWorkloadNameAsRegex {
+				// Current source uses regex, check if it matches the other source's workload name
+				matched, err := regexp.MatchString(source.Spec.Workload.Name, dupe.Spec.Workload.Name)
+				if err == nil && matched {
+					duplicates = append(duplicates, dupe.GetName())
+				}
+			} else if !source.Spec.MatchWorkloadNameAsRegex && dupe.Spec.MatchWorkloadNameAsRegex {
+				// Other source uses regex, check if it matches current source's workload name
+				matched, err := regexp.MatchString(dupe.Spec.Workload.Name, source.Spec.Workload.Name)
+				if err == nil && matched {
+					duplicates = append(duplicates, dupe.GetName())
+				}
+			}
+			// If both use regex, we allow them (they might match different sets of workloads)
 		}
 		if len(duplicates) > 0 {
 			return fmt.Errorf("duplicate source(s) exist for workload: %s", strings.Join(duplicates, ","))

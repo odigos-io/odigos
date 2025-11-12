@@ -556,12 +556,25 @@ func (gss *ServerConfig) getGrpcServerOptions(
 
 	opts = append(opts, grpc.StatsHandler(otelgrpc.NewServerHandler(otelOpts...)), grpc.ChainUnaryInterceptor(uInterceptors...), grpc.ChainStreamInterceptor(sInterceptors...))
 
+	// Add a counter to track the number of times the memory limiter is reached.
+	// We use this to trigger the HPA of the gateway collector by aggregating the metrics
+	// from all the gateway collector pods.
+	meter := settings.MeterProvider.Meter("github.com/odigos-io/odigos/collector/config/configgrpc")
+	memoryLimiterRejectionsCounter, err := meter.Int64Counter("odigos_gateway_memory_limiter_rejections")
+	if err != nil {
+		return nil, err
+	}
+
 	opts = append(opts, grpc.InTapHandle(func(ctx context.Context, info *tap.Info) (context.Context, error) {
 		if rtml.IsMemLimitReached() {
+			// if rejected by the memory limiter, increment the counter
+			memoryLimiterRejectionsCounter.Add(ctx, 1)
+
+			// Data collection
 			if gss.DropOnOverload {
 				settings.Logger.Info("OTLP gRPC receiver detected memory limit reached, dropping a batch")
 				return ctx, errMemoryLimitReachedDataDropped
-			} else {
+			} else { // gateway collector
 				return ctx, errMemoryLimitReached
 			}
 		}

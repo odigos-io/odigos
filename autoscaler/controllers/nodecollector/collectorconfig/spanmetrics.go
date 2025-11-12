@@ -46,7 +46,7 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 		}
 	}
 
-	return config.GenericMap{
+	cfg := config.GenericMap{
 		"histogram": histogramConfig,
 		// Taking into account changes in the semantic conventions, to support a range of instrumentation libraries
 		"dimensions": dimensions,
@@ -54,11 +54,9 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 		"exemplars": config.GenericMap{
 			"enabled": false,
 		},
-		"dimensions_cache_size":           1000,
-		"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
-		"metrics_flush_interval":          spanMetricsConfig.Interval,
-		"metrics_expiration":              spanMetricsConfig.MetricsExpiration,
-		"resource_metrics_key_attributes": []string{"service.name", "telemetry.sdk.language", "telemetry.sdk.name"},
+		"aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+		"metrics_flush_interval":  spanMetricsConfig.Interval,
+		"metrics_expiration":      spanMetricsConfig.MetricsExpiration,
 		"events": config.GenericMap{
 			"enabled": true,
 			"dimensions": []config.GenericMap{
@@ -71,6 +69,12 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 			},
 		},
 	}
+
+	if len(spanMetricsConfig.ResourceMetricsKeyAttributes) > 0 {
+		cfg["resource_metrics_key_attributes"] = spanMetricsConfig.ResourceMetricsKeyAttributes
+	}
+
+	return cfg
 }
 
 func getSpanMetricsConnectors(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) config.GenericMap {
