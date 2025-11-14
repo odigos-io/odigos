@@ -46,8 +46,8 @@ var configCmd = &cobra.Command{
 	- "%s": Sets the UI mode (default/readonly).
 	- "%s": Controls the number of items to fetch per paginated-batch in the UI.
 	- "%s": Sets the public URL of a remotely, self-hosted UI.
-	- "%s": Sets the URL of the Odigos Tower Backend.
-	- "%s": Sets the name of this cluster, for Odigos Tower.
+	- "%s": Sets the URL of the Odigos Central Backend.
+	- "%s": Sets the name of this cluster, for Odigos Central.
 	- "%s": List of namespaces to be ignored.
 	- "%s": List of containers to be ignored.
 	- "%s": Determines how Odigos agent files are mounted into the pod's container filesystem. Options include k8s-host-path (direct hostPath mount) and k8s-virtual-device (virtual device-based injection).
