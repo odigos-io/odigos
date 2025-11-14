@@ -204,7 +204,7 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manife
 				logsPipelineName: {
 					Receivers:  []string{filelogReceiverName},
 					Processors: pipelineProcessors,
-					Exporters:  []string{clusterCollectorExporterName},
+					Exporters:  []string{clusterCollectorLogsExporterName},
 				},
 			},
 		},

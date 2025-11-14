@@ -17,14 +17,16 @@ const (
 )
 
 const (
-	healthCheckExtensionName          = "health_check"
-	pprofExtensionName                = "pprof"
-	batchProcessorName                = "batch"
-	memoryLimiterProcessorName        = "memory_limiter"
-	nodeNameProcessorName             = "resource/node-name"
-	clusterCollectorExporterName      = "otlp/out-cluster-collector"
-	clusterCollectorTraceExporterName = "otlp/out-cluster-collector-trace"
-	resourceDetectionProcessorName    = "resourcedetection"
+	healthCheckExtensionName            = "health_check"
+	pprofExtensionName                  = "pprof"
+	batchProcessorName                  = "batch"
+	memoryLimiterProcessorName          = "memory_limiter"
+	balancerName                        = "round_robin"
+	nodeNameProcessorName               = "resource/node-name"
+	clusterCollectorTracesExporterName  = "otlp/out-cluster-collector-traces"
+	clusterCollectorMetricsExporterName = "otlp/out-cluster-collector-metrics"
+	clusterCollectorLogsExporterName    = "otlp/out-cluster-collector-logs"
+	resourceDetectionProcessorName      = "resourcedetection"
 )
 
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
@@ -67,14 +69,11 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 		compression = "gzip"
 	}
 
-	// Build the trace exporter configuration
-	traceExporterConfig := config.GenericMap{
-		"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorDeploymentName, odigosNamespace),
-		"tls": config.GenericMap{
-			"insecure": true,
-		},
-		"compression": compression,
-	}
+	// Build the common exporter configuration (used by metrics and logs)
+	commonExporterConfig := buildBaseExporterConfig(odigosNamespace, compression)
+
+	// Build the trace exporter configuration with the same base config
+	traceExporterConfig := buildBaseExporterConfig(odigosNamespace, compression)
 
 	if otlpExporterConfiguration != nil && otlpExporterConfiguration.Timeout != "" {
 		traceExporterConfig["timeout"] = otlpExporterConfiguration.Timeout
@@ -107,14 +106,9 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 	}
 
 	return config.GenericMap{
-		clusterCollectorExporterName: config.GenericMap{
-			"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorDeploymentName, odigosNamespace),
-			"tls": config.GenericMap{
-				"insecure": true,
-			},
-			"compression": compression,
-		},
-		clusterCollectorTraceExporterName: traceExporterConfig,
+		clusterCollectorTracesExporterName:  traceExporterConfig,
+		clusterCollectorMetricsExporterName: commonExporterConfig,
+		clusterCollectorLogsExporterName:    commonExporterConfig,
 	}
 }
 
@@ -168,5 +162,17 @@ func CommonConfig(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.Co
 		Processors: commonProcessors(nodeCG, runningOnGKE),
 		Extensions: commonExtensions,
 		Service:    commonService,
+	}
+}
+
+// buildBaseExporterConfig creates a new base exporter configuration
+func buildBaseExporterConfig(odigosNamespace string, compression string) config.GenericMap {
+	return config.GenericMap{
+		"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorDeploymentName, odigosNamespace),
+		"tls": config.GenericMap{
+			"insecure": true,
+		},
+		"compression":   compression,
+		"balancer_name": balancerName,
 	}
 }
