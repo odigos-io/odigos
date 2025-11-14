@@ -26,6 +26,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -483,6 +484,41 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 			},
 		},
 	}
+
+	// Set resource limits and requests
+	// Always apply resource limits to ensure proper resource management
+	initContainer.Resources = corev1.ResourceRequirements{
+		Limits:   make(corev1.ResourceList),
+		Requests: make(corev1.ResourceList),
+	}
+
+	// Set CPU limits and requests
+	cpuRequest := 100 // default: 100m
+	cpuLimit := 200  // default: 200m
+	if config.InitContainerResources != nil {
+		if config.InitContainerResources.RequestCPUm > 0 {
+			cpuRequest = config.InitContainerResources.RequestCPUm
+		}
+		if config.InitContainerResources.LimitCPUm > 0 {
+			cpuLimit = config.InitContainerResources.LimitCPUm
+		}
+	}
+	initContainer.Resources.Requests["cpu"] = resource.MustParse(fmt.Sprintf("%dm", cpuRequest))
+	initContainer.Resources.Limits["cpu"] = resource.MustParse(fmt.Sprintf("%dm", cpuLimit))
+
+	// Set memory limits and requests
+	memoryRequest := 100 // default: 100Mi
+	memoryLimit := 200  // default: 200Mi
+	if config.InitContainerResources != nil {
+		if config.InitContainerResources.RequestMemoryMiB > 0 {
+			memoryRequest = config.InitContainerResources.RequestMemoryMiB
+		}
+		if config.InitContainerResources.LimitMemoryMiB > 0 {
+			memoryLimit = config.InitContainerResources.LimitMemoryMiB
+		}
+	}
+	initContainer.Resources.Requests["memory"] = resource.MustParse(fmt.Sprintf("%dMi", memoryRequest))
+	initContainer.Resources.Limits["memory"] = resource.MustParse(fmt.Sprintf("%dMi", memoryLimit))
 
 	// Check if the init container already exists, this is done for safety and should never happen.
 	for _, existing := range pod.Spec.InitContainers {

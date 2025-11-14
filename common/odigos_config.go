@@ -253,6 +253,30 @@ type MetricsSourceKubeletStatsConfiguration struct {
 	Interval string `json:"interval,omitempty"`
 }
 
+// InitContainerResources defines resource limits and requests for the init container
+// that is injected into user pods when using the k8s-init-container mount method.
+type InitContainerResources struct {
+	// RequestCPUm is the CPU request for the init container.
+	// it will be embedded in the init container as a resource request of the form "cpu: <value>m"
+	// default value is 100m
+	RequestCPUm int `json:"requestCPUm,omitempty" yaml:"requestCPUm,omitempty"`
+
+	// LimitCPUm is the CPU limit for the init container.
+	// it will be embedded in the init container as a resource limit of the form "cpu: <value>m"
+	// default value is 200m
+	LimitCPUm int `json:"limitCPUm,omitempty" yaml:"limitCPUm,omitempty"`
+
+	// RequestMemoryMiB is the memory request for the init container.
+	// it will be embedded in the init container as a resource request of the form "memory: <value>Mi"
+	// default value is 100Mi
+	RequestMemoryMiB int `json:"requestMemoryMiB,omitempty" yaml:"requestMemoryMiB,omitempty"`
+
+	// LimitMemoryMiB is the memory limit for the init container.
+	// it will be embedded in the init container as a resource limit of the form "memory: <value>Mi"
+	// default value is 200Mi
+	LimitMemoryMiB int `json:"limitMemoryMiB,omitempty" yaml:"limitMemoryMiB,omitempty"`
+}
+
 // +kubebuilder:object:generate=true
 type MetricsSourceConfiguration struct {
 
@@ -305,6 +329,7 @@ type OdigosConfiguration struct {
 	ResourceSizePreset                string                      `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
 	WaspEnabled                       *bool                       `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
 	MetricsSources                    *MetricsSourceConfiguration `json:"metricsSources,omitempty" yaml:"metricsSources"`
+	InitContainerResources            *InitContainerResources     `json:"initContainerResources,omitempty" yaml:"initContainerResources"`
 
 	// traceIdSuffix when set, instruct odigos to use the "timedwall" id generator
 	// for generating trace ids.
