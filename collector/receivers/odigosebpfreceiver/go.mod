@@ -65,3 +65,5 @@ require (
 )
 
 replace github.com/odigos-io/odigos/common => ../../../common
+
+replace github.com/go-viper/mapstructure/v2 => github.com/go-viper/mapstructure/v2 v2.4.0
