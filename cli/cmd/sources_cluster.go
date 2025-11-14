@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -188,7 +189,7 @@ func instrumentCluster(ctx context.Context, client *kube.Client, excludeNamespac
 
 	for _, ns := range nsList.Items {
 		fmt.Printf("Instrumenting namespace: %s\n", ns.Name)
-		_, excluded := excludeNamespaces[ns.Name]
+		excluded := isNamespaceExcluded(ns.Name, excludeNamespaces)
 		_, system := systemNs[ns.Name]
 		if excluded || system {
 			fmt.Printf("  - Skipping namespace due to exclusion file or system namespace\n")
@@ -372,6 +373,33 @@ func readLinesFromFile(filename string) (map[string]struct{}, error) {
 		return nil, err
 	}
 	return lines, nil
+}
+
+// isNamespaceExcluded checks if a namespace matches any of the exclusion patterns.
+// It supports both exact string matches and regex patterns.
+func isNamespaceExcluded(namespace string, excludePatterns map[string]struct{}) bool {
+	if excludePatterns == nil {
+		return false
+	}
+
+	// First check for exact match
+	if _, exists := excludePatterns[namespace]; exists {
+		return true
+	}
+
+	// Then check if any pattern is a regex that matches
+	for pattern := range excludePatterns {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			// If it's not a valid regex, skip it (already checked for exact match above)
+			continue
+		}
+		if re.MatchString(namespace) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func runPreflightChecks(ctx context.Context, cmd *cobra.Command, client *kube.Client, remote bool) {
