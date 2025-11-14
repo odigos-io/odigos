@@ -56,7 +56,7 @@ type Reporter[processDetails ProcessDetails] interface {
 
 	// OnLoad is called after an instrumentation is loaded successfully or failed to load.
 	// The error parameter will be nil if the instrumentation was loaded successfully.
-	OnLoad(ctx context.Context, pid int, err error, pg processDetails) error
+	OnLoad(ctx context.Context, pid int, err error, pg processDetails, status Status) error
 
 	// OnRun is called after the instrumentation stops running.
 	// An error may report a fatal error during the instrumentation run, or a closing error
