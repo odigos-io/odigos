@@ -3,8 +3,7 @@ name: build
 on:
   merge_group:
   pull_request:
-    branches:
-      - main
+    branches: [ main, 'releases/**' ]
 
 jobs:
   build-and-test-autoscaler:
