@@ -61,6 +61,10 @@ data:
       {{- with .Values.collectorGateway.httpsProxyAddress }}
       httpsProxyAddress: {{ . }}
       {{- end }}
+      {{- if .Values.collectorGateway.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.collectorGateway.nodeSelector | nindent 8 }}
+      {{- end }}
     {{- end }}
     {{- if .Values.collectorNode }}
     {{- $nodeLimiter := include "collector.node.memoryLimiter" . | fromYaml }}
