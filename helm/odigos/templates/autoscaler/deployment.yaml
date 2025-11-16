@@ -19,7 +19,12 @@ spec:
       labels:
         app.kubernetes.io/name: odigos-autoscaler
     spec:
-      {{- if .Values.nodeSelector }}
+      {{- if .Values.autoscaler.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.autoscaler.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
@@ -96,9 +101,6 @@ spec:
       terminationGracePeriodSeconds: 10
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.autoscaler }}
-  {{- if .nodeSelector }}
-      nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
-  {{- end }}
   {{- if .tolerations }}
       tolerations: {{ toYaml .tolerations | nindent 8 }}
   {{- end }}
