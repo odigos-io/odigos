@@ -12,6 +12,7 @@ var (
 	spanMetricsConnectorName                         = "spanmetrics"
 	spanMetricsTracesInConnectorName                 = "forward/trace/spanmetrics"
 	spanMetricsPipelineName                          = "traces/spanmetrics"
+	spanMetricsExportingPipelineName                 = "metrics/spanmetrics-exporting"
 	spanMetricsResourceRemoveDimensionsProcessorName = "resource/spanmetrics/remove-dimensions"
 )
 
@@ -138,6 +139,10 @@ func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfi
 	// when set, the caller also needs to:
 	// - add the returned exporters to the trace pipeline
 	// - add the returned recivers to the metrics pipeline
+	//
+	// NOTICE: temporarily bypass the normal metrics pipeline,
+	// as it might add more metric resource attributes that user of span metrics do not want,
+	// use the exporter directly instead.
 	additionalTraceExporters := []string{spanMetricsTracesInConnectorName}
 	additionalMetricsRecivers := []string{spanMetricsConnectorName}
 	configDomain := config.Config{
@@ -149,6 +154,14 @@ func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfi
 					Receivers:  []string{spanMetricsTracesInConnectorName},
 					Processors: processorNames,
 					Exporters:  []string{spanMetricsConnectorName},
+				},
+				// following pipeline is temporary bypass of the normal metrics pipeline.
+				// should be removed once metrics resource attributes are controlled better.
+				spanMetricsExportingPipelineName: {
+					Receivers: []string{spanMetricsConnectorName},
+					// notice - skip batch and memory limiter here. metrics should have low size footprint anyway
+					// and are already allocated at this point.
+					Exporters: []string{clusterCollectorMetricsExporterName},
 				},
 			},
 		},
