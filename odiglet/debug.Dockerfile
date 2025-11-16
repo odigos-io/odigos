@@ -110,8 +110,8 @@ RUN chmod 644 /instrumentations/java/javaagent.jar
 COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.5 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.5 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentations/nodejs-community /instrumentations/nodejs-community
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet

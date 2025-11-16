@@ -207,7 +207,7 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
 	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
 
-	// By default, Odigos does not include process labels meaning
+	// By default, Odigos does not include process labels - meaning
 	// metrics will be aggregated by container as the lowest level.
 	// This means that multiple processes running in the same container
 	// will be aggregated into the same time series.
@@ -222,6 +222,11 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// you can list all "process.*" attributes here to exclude them from being added to span metrics.
 	// any other resource attribute can be set, either for sanitation or to reduce dimenssions for generate metrics.
 	ExcludedResourceAttributes []string `json:"excludedResourceAttributes,omitempty"`
+
+	// Advanced configuration - avoid using unless you know what you are doing.
+	// This list controls which resource attributes are included in the metric stream identity.
+	// These attributes are used to determines how span metrics are grouped.
+	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -300,6 +305,13 @@ type OdigosConfiguration struct {
 	ResourceSizePreset                string                      `json:"resourceSizePreset,omitempty" yaml:"resourceSizePreset"`
 	WaspEnabled                       *bool                       `json:"waspEnabled,omitempty" yaml:"waspEnabled"`
 	MetricsSources                    *MetricsSourceConfiguration `json:"metricsSources,omitempty" yaml:"metricsSources"`
+
+	// traceIdSuffix when set, instruct odigos to use the "timedwall" id generator
+	// for generating trace ids.
+	// the below value should be a single byte hex value (for example "A3").
+	// this value is injected into each trace id as the 8th byte
+	// to identify the source of the generated trace.
+	TraceIdSuffix string `json:"traceIdSuffix,omitempty" yaml:"traceIdSuffix"`
 
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 }

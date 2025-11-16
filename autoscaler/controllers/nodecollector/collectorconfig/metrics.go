@@ -96,7 +96,7 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 				odigosMetricsPipelineName: {
 					Receivers:  pipelineReceiverNames,
 					Processors: metricsPipelineProcessors,
-					Exporters:  []string{clusterCollectorExporterName},
+					Exporters:  []string{clusterCollectorMetricsExporterName},
 				},
 			},
 		},

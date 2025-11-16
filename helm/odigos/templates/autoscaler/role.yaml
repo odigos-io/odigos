@@ -7,6 +7,14 @@ metadata:
     odigos.io/system-object: "true"
 rules:
   - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - ''
     resources:
       - configmaps

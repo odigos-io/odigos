@@ -203,6 +203,16 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"actions"},
 				Verbs:     []string{"get", "list"},
 			},
+			{ // Needed for reading collectors related resources
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed for reading HPA status of the gateway-collector
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get"},
+			},
 		}
 	} else {
 		rules = []rbacv1.PolicyRule{
@@ -235,6 +245,16 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"actions"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
+			},
+			{ // Needed for reading ReplicaSets owned by workloads
+				APIGroups: []string{"apps"},
+				Resources: []string{"replicasets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{ // Needed for reading HPA status in the namespace
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get"},
 			},
 		}
 	}

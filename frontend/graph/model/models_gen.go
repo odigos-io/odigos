@@ -145,6 +145,15 @@ type CodeAttributesInput struct {
 	Stacktrace *bool `json:"stacktrace,omitempty"`
 }
 
+type CollectorDaemonSetInfo struct {
+	Status            WorkloadRolloutStatus `json:"status"`
+	Nodes             *NodesSummary         `json:"nodes"`
+	Resources         *Resources            `json:"resources,omitempty"`
+	ImageVersion      *string               `json:"imageVersion,omitempty"`
+	LastRolloutAt     *string               `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress bool                  `json:"rolloutInProgress"`
+}
+
 type CollectorGateway struct {
 	RequestMemoryMiB           *int `json:"requestMemoryMiB,omitempty"`
 	LimitMemoryMiB             *int `json:"limitMemoryMiB,omitempty"`
@@ -358,6 +367,15 @@ type FieldInput struct {
 	Value string `json:"value"`
 }
 
+type GatewayDeploymentInfo struct {
+	Status            WorkloadRolloutStatus        `json:"status"`
+	Hpa               *HorizontalPodAutoscalerInfo `json:"hpa,omitempty"`
+	Resources         *Resources                   `json:"resources,omitempty"`
+	ImageVersion      *string                      `json:"imageVersion,omitempty"`
+	LastRolloutAt     *string                      `json:"lastRolloutAt,omitempty"`
+	RolloutInProgress bool                         `json:"rolloutInProgress"`
+}
+
 type GetConfigResponse struct {
 	Readonly           bool               `json:"readonly"`
 	Tier               Tier               `json:"tier"`
@@ -389,6 +407,14 @@ type HeadersCollection struct {
 
 type HeadersCollectionInput struct {
 	HeaderKeys []*string `json:"headerKeys,omitempty"`
+}
+
+type HorizontalPodAutoscalerInfo struct {
+	Min        *int         `json:"min,omitempty"`
+	Max        *int         `json:"max,omitempty"`
+	Current    *int         `json:"current,omitempty"`
+	Desired    *int         `json:"desired,omitempty"`
+	Conditions []*Condition `json:"conditions,omitempty"`
 }
 
 type HTTPPayloadCollection struct {
@@ -739,6 +765,11 @@ type NodeCollectorAnalyze struct {
 	AvailableNodes *EntityProperty `json:"availableNodes,omitempty"`
 }
 
+type NodesSummary struct {
+	Desired int `json:"desired"`
+	Ready   int `json:"ready"`
+}
+
 type NonIdentifyingAttribute struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -908,6 +939,16 @@ type PodWorkloadInput struct {
 }
 
 type Query struct {
+}
+
+type ResourceAmounts struct {
+	CPU    *string `json:"cpu,omitempty"`
+	Memory *string `json:"memory,omitempty"`
+}
+
+type Resources struct {
+	Requests *ResourceAmounts `json:"requests,omitempty"`
+	Limits   *ResourceAmounts `json:"limits,omitempty"`
 }
 
 type RolloutConfiguration struct {
@@ -1473,6 +1514,7 @@ const (
 	K8sResourceKindDaemonSet        K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet      K8sResourceKind = "StatefulSet"
 	K8sResourceKindCronJob          K8sResourceKind = "CronJob"
+	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
 	K8sResourceKindDeploymentConfig K8sResourceKind = "DeploymentConfig"
 )
 
@@ -1481,12 +1523,13 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
 	K8sResourceKindCronJob,
+	K8sResourceKindConfigMap,
 	K8sResourceKindDeploymentConfig,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindDeploymentConfig:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindDeploymentConfig:
 		return true
 	}
 	return false
@@ -1510,6 +1553,47 @@ func (e *K8sResourceKind) UnmarshalGQL(v any) error {
 }
 
 func (e K8sResourceKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ManifestFormat string
+
+const (
+	ManifestFormatYaml ManifestFormat = "YAML"
+	ManifestFormatJSON ManifestFormat = "JSON"
+)
+
+var AllManifestFormat = []ManifestFormat{
+	ManifestFormatYaml,
+	ManifestFormatJSON,
+}
+
+func (e ManifestFormat) IsValid() bool {
+	switch e {
+	case ManifestFormatYaml, ManifestFormatJSON:
+		return true
+	}
+	return false
+}
+
+func (e ManifestFormat) String() string {
+	return string(e)
+}
+
+func (e *ManifestFormat) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ManifestFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ManifestFormat", str)
+	}
+	return nil
+}
+
+func (e ManifestFormat) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1798,5 +1882,62 @@ func (e *Tier) UnmarshalGQL(v any) error {
 }
 
 func (e Tier) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Rollout/availability status of a workload.
+//
+// - Healthy: All desired replicas are updated, available, and ready.
+// - Updating: Workload is progressing towards desired state (e.g., updating pods).
+// - Degraded: Progressing but with availability issues (e.g., not enough available replicas).
+// - Failed: Progress deadline exceeded or an unrecoverable error occurred.
+// - Down: No available replicas.
+// - Unknown: Status cannot be determined from current signals.
+type WorkloadRolloutStatus string
+
+const (
+	WorkloadRolloutStatusHealthy  WorkloadRolloutStatus = "Healthy"
+	WorkloadRolloutStatusUpdating WorkloadRolloutStatus = "Updating"
+	WorkloadRolloutStatusDegraded WorkloadRolloutStatus = "Degraded"
+	WorkloadRolloutStatusFailed   WorkloadRolloutStatus = "Failed"
+	WorkloadRolloutStatusDown     WorkloadRolloutStatus = "Down"
+	WorkloadRolloutStatusUnknown  WorkloadRolloutStatus = "Unknown"
+)
+
+var AllWorkloadRolloutStatus = []WorkloadRolloutStatus{
+	WorkloadRolloutStatusHealthy,
+	WorkloadRolloutStatusUpdating,
+	WorkloadRolloutStatusDegraded,
+	WorkloadRolloutStatusFailed,
+	WorkloadRolloutStatusDown,
+	WorkloadRolloutStatusUnknown,
+}
+
+func (e WorkloadRolloutStatus) IsValid() bool {
+	switch e {
+	case WorkloadRolloutStatusHealthy, WorkloadRolloutStatusUpdating, WorkloadRolloutStatusDegraded, WorkloadRolloutStatusFailed, WorkloadRolloutStatusDown, WorkloadRolloutStatusUnknown:
+		return true
+	}
+	return false
+}
+
+func (e WorkloadRolloutStatus) String() string {
+	return string(e)
+}
+
+func (e *WorkloadRolloutStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WorkloadRolloutStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WorkloadRolloutStatus", str)
+	}
+	return nil
+}
+
+func (e WorkloadRolloutStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
