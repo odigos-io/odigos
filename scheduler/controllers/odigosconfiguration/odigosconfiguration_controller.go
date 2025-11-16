@@ -301,7 +301,7 @@ func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, o
 	}
 }
 
-func getInitContainerResources(config *common.OdigosConfiguration) *common.InitContainerResources {
+func getInitContainerResources(config *common.OdigosConfiguration) *common.AgentsInitContainerResources {
 	logger := log.FromContext(context.Background())
 	// Set CPU limits and requests
 	cpuRequestDefaultValue := 300 // default: 300m
@@ -309,12 +309,12 @@ func getInitContainerResources(config *common.OdigosConfiguration) *common.InitC
 	cpuRequest := cpuRequestDefaultValue
 	cpuLimit := cpuLimitDefaultValue
 
-	if config.InitContainerResources != nil {
-		if config.InitContainerResources.RequestCPUm > 0 {
-			cpuRequest = config.InitContainerResources.RequestCPUm
+	if config.AgentsInitContainerResources != nil {
+		if config.AgentsInitContainerResources.RequestCPUm > 0 {
+			cpuRequest = config.AgentsInitContainerResources.RequestCPUm
 		}
-		if config.InitContainerResources.LimitCPUm > 0 {
-			cpuLimit = config.InitContainerResources.LimitCPUm
+		if config.AgentsInitContainerResources.LimitCPUm > 0 {
+			cpuLimit = config.AgentsInitContainerResources.LimitCPUm
 		}
 	}
 	// validate the CPU request value or default to the default value if it is not valid
@@ -335,12 +335,12 @@ func getInitContainerResources(config *common.OdigosConfiguration) *common.InitC
 	memoryLimitDefaultValue := 300   // default: 300Mi
 	memoryRequest := memoryRequestDefaultValue
 	memoryLimit := memoryLimitDefaultValue
-	if config.InitContainerResources != nil {
-		if config.InitContainerResources.RequestMemoryMiB > 0 {
-			memoryRequest = config.InitContainerResources.RequestMemoryMiB
+	if config.AgentsInitContainerResources != nil {
+		if config.AgentsInitContainerResources.RequestMemoryMiB > 0 {
+			memoryRequest = config.AgentsInitContainerResources.RequestMemoryMiB
 		}
-		if config.InitContainerResources.LimitMemoryMiB > 0 {
-			memoryLimit = config.InitContainerResources.LimitMemoryMiB
+		if config.AgentsInitContainerResources.LimitMemoryMiB > 0 {
+			memoryLimit = config.AgentsInitContainerResources.LimitMemoryMiB
 		}
 	}
 
@@ -359,7 +359,7 @@ func getInitContainerResources(config *common.OdigosConfiguration) *common.InitC
 		memoryLimit = memoryLimitDefaultValue
 	}
 
-	return &common.InitContainerResources{
+	return &common.AgentsInitContainerResources{
 		RequestCPUm:      cpuRequest,
 		LimitCPUm:        cpuLimit,
 		RequestMemoryMiB: memoryRequest,
@@ -381,7 +381,7 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	case common.K8sVirtualDeviceMountMethod:
 		return
 	case common.K8sInitContainerMountMethod:
-		odigosConfiguration.InitContainerResources = getInitContainerResources(odigosConfiguration)
+		odigosConfiguration.AgentsInitContainerResources = getInitContainerResources(odigosConfiguration)
 		return
 	default:
 		// any illegal value will be defaulted to host-path

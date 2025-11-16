@@ -469,7 +469,7 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	// Each 'cp -r <src> <dst>' copies agent directories from the image's /instrumentations/
 	// into the shared /var/odigos volume (an EmptyDir). This allows sidecar injection of
 	// required binaries without writing to the host filesystem.
-	initContainer := corev1.Container{
+	agentInitContainer := corev1.Container{
 		Name:  k8sconsts.OdigosInitContainerName,
 		Image: imageName,
 		Command: []string{
@@ -487,11 +487,11 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 
 	// Set resource limits and requests for the instrumentation init container
 	// We can always trust the values from the effective config, because it is validated and defaulted if not ok in the scheduler.
-	cpuRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", config.InitContainerResources.RequestCPUm))
-	memoryRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", config.InitContainerResources.RequestMemoryMiB))
-	cpuLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", config.InitContainerResources.LimitCPUm))
-	memoryLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", config.InitContainerResources.LimitMemoryMiB))
-	initContainer.Resources = corev1.ResourceRequirements{
+	cpuRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", config.AgentsInitContainerResources.RequestCPUm))
+	memoryRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", config.AgentsInitContainerResources.RequestMemoryMiB))
+	cpuLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", config.AgentsInitContainerResources.LimitCPUm))
+	memoryLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", config.AgentsInitContainerResources.LimitMemoryMiB))
+	agentInitContainer.Resources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			"cpu":    cpuRequestQuantity,
 			"memory": memoryRequestQuantity,
@@ -507,7 +507,7 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 			return
 		}
 	}
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, initContainer)
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
 }
 
 func getInitContainerImage(config common.OdigosConfiguration) string {

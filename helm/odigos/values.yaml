@@ -289,7 +289,7 @@ instrumentor:
   # Resource configuration for the init container that is injected into user pods
   # when using the k8s-init-container mount method.
   # The init container is responsible for copying the instrumentation agents to the shared volume.
-  initContainerResources:
+  agentsInitContainerResources:
     requests:
       cpu: 300m
       memory: 300Mi
