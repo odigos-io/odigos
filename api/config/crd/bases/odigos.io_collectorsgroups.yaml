@@ -215,6 +215,15 @@ spec:
                         type: array
                     type: object
                 type: object
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Node selector for the collectors group deployment.
+                  Use this to force the gateway to run only on nodes with specific labels.
+                  This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+                  If no matching nodes exist, the pod will remain Pending.
+                type: object
               otlpExporterConfiguration:
                 description: OtlpExporterConfiguration is the configuration for the
                   OTLP exporter from node collector to cluster gateway collector.
