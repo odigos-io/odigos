@@ -75,7 +75,7 @@ jobs:
 
   kubernetes-test:
     needs: [ build-odigos-images, build-cli ]
-    runs-on: depot-ubuntu-24.04-8
+    runs-on: depot-ubuntu-22.04-8
     strategy:
       fail-fast: false
       matrix:
