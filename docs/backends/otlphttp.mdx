@@ -83,13 +83,13 @@ To configure basic authentication, use the optional config options `Basic Auth U
   - This field is optional and defaults to `none`
 - **OTLP_HTTP_HEADERS** `{ key: string; value: string; }[]` : Headers. Headers is the option to set custom HTTP headers for OTLP HTTP destination. If specified, please provide each header in the format: key:value. Multiple headers can be added. Keys must be non-empty strings and follow standard HTTP header conventions. Values must be non-empty strings and may include alphanumerics, whitespace, and standard punctuation.
   - This field is optional
-- **OTLP_HTTP_TRACES_ENDPOINT** `string` : OTLP http traces Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/traces will be used.
+- **OTLP_HTTP_TRACES_ENDPOINT** `string` : OTLP http traces Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/traces` will be used.
   - This field is optional
   - Example: `http://host:port/v1/traces`
-- **OTLP_HTTP_METRICS_ENDPOINT** `string` : OTLP http metrics Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/metrics will be used.
+- **OTLP_HTTP_METRICS_ENDPOINT** `string` : OTLP http metrics Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/metrics` will be used.
   - This field is optional
   - Example: `http://host:port/v1/metrics`
-- **OTLP_HTTP_LOGS_ENDPOINT** `string` : OTLP http logs Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/logs will be used.
+- **OTLP_HTTP_LOGS_ENDPOINT** `string` : OTLP http logs Endpoint. The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/logs` will be used.
   - This field is optional
   - Example: `http://host:port/v1/logs`
 - **OTLP_HTTP_TLS_ENABLED** `boolean` : Enable TLS. Secure connection

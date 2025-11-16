@@ -177,6 +177,12 @@ type CollectorsGroupSpec struct {
 	// it allows for the collector group reconciler to be simplified,
 	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
 	Metrics *CollectorsGroupMetricsCollectionSettings `json:"metrics,omitempty"`
+
+	// Node selector for the collectors group deployment.
+	// Use this to force the gateway to run only on nodes with specific labels.
+	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+	// If no matching nodes exist, the pod will remain Pending.
+	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector
