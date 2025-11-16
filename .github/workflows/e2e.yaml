@@ -79,7 +79,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kube-version: [ "1.32", "1.23", "1.20.15" ]
+        kube-version: [ "1.32", "1.23", "1.20.15", "1.19" ]
         test-scenario:
           - "ui"
           - "helm-chart"
@@ -101,6 +101,8 @@ jobs:
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
+          - kube-version: "1.19"
+            kind-image: "kindest/node:v1.19.0@sha256:3b0289b2d1bab2cb9108645a006939d2f447a10ad2bb21919c332d06b548bbc6"
 
     steps:
       - name: Checkout
