@@ -599,4 +599,4 @@ ownTelemetry:
   # configuration for the promethues instance that is shipped with odigos for own telemetry
   odigosPrometheus:
     # set to true to disable the odigos prometheus instance
-    disabled: false
+    disabled: true
