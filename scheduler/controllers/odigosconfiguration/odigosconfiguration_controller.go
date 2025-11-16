@@ -302,12 +302,16 @@ func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, o
 }
 
 func getInitContainerResources(config *common.OdigosConfiguration) *common.AgentsInitContainerResources {
+	const (
+		defaultAgentsInitContainerRequestCPUm      = 300
+		defaultAgentsInitContainerLimitCPUm        = 300
+		defaultAgentsInitContainerRequestMemoryMiB = 300
+		defaultAgentsInitContainerLimitMemoryMiB   = 300
+	)
 	logger := log.FromContext(context.Background())
-	// Set CPU limits and requests
-	cpuRequestDefaultValue := 300 // default: 300m
-	cpuLimitDefaultValue := 300   // default: 300m
-	cpuRequest := cpuRequestDefaultValue
-	cpuLimit := cpuLimitDefaultValue
+
+	cpuRequest := defaultAgentsInitContainerRequestCPUm
+	cpuLimit := defaultAgentsInitContainerLimitCPUm
 
 	if config.AgentsInitContainerResources != nil {
 		if config.AgentsInitContainerResources.RequestCPUm > 0 {
@@ -321,20 +325,17 @@ func getInitContainerResources(config *common.OdigosConfiguration) *common.Agent
 	_, err := resource.ParseQuantity(fmt.Sprintf("%dm", cpuRequest))
 	if err != nil {
 		logger.Error(err, "failed to parse CPU request for init container", "cpuRequest", cpuRequest)
-		cpuRequest = cpuRequestDefaultValue
+		cpuRequest = defaultAgentsInitContainerRequestCPUm
 	}
 	// validate the CPU limit value or default to the default value if it is not valid
 	_, err = resource.ParseQuantity(fmt.Sprintf("%dm", cpuLimit))
 	if err != nil {
 		logger.Error(err, "failed to parse CPU limit for init container", "cpuLimit", cpuLimit)
-		cpuLimit = cpuLimitDefaultValue
+		cpuLimit = defaultAgentsInitContainerLimitCPUm
 	}
 
-	// Set memory limits and requests
-	memoryRequestDefaultValue := 300 // default: 300Mi
-	memoryLimitDefaultValue := 300   // default: 300Mi
-	memoryRequest := memoryRequestDefaultValue
-	memoryLimit := memoryLimitDefaultValue
+	memoryRequest := defaultAgentsInitContainerRequestMemoryMiB
+	memoryLimit := defaultAgentsInitContainerLimitMemoryMiB
 	if config.AgentsInitContainerResources != nil {
 		if config.AgentsInitContainerResources.RequestMemoryMiB > 0 {
 			memoryRequest = config.AgentsInitContainerResources.RequestMemoryMiB
@@ -349,14 +350,14 @@ func getInitContainerResources(config *common.OdigosConfiguration) *common.Agent
 	// Fallback to default value if the value is not valid
 	if err != nil {
 		logger.Error(err, "failed to parse memory request for init container", "memoryRequest", memoryRequest)
-		memoryRequest = memoryRequestDefaultValue
+		memoryRequest = defaultAgentsInitContainerRequestMemoryMiB
 	}
 	// validate the memory limit value or default to the default value if it is not valid
 	_, err = resource.ParseQuantity(fmt.Sprintf("%dMi", memoryLimit))
 	// Fallback to default value if the value is not valid
 	if err != nil {
 		logger.Error(err, "failed to parse memory limit for init container", "memoryLimit", memoryLimit)
-		memoryLimit = memoryLimitDefaultValue
+		memoryLimit = defaultAgentsInitContainerLimitMemoryMiB
 	}
 
 	return &common.AgentsInitContainerResources{
