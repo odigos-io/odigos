@@ -140,11 +140,9 @@ collectorGateway:
 
 
   # Node selector for the cluster gateway collector deployment.
-  # Use this to force the gateway to run only on nodes with specific labels.
-  # This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
-  # If no matching nodes exist, the pod will remain Pending.
-  nodeSelector:
-    kubernetes.io/os: linux
+  # Uncomment to override the global nodeSelector for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
 
 # Settings for Odigos data-collection (node) Collectors
 collectorNode:
