@@ -19,7 +19,7 @@ var (
 	binaries = []string{
 		"/libjvm.so", // Ensures "libjvm.so" appears within a path (because of the "/" prefix)
 	}
-	versionRegex = regexp.MustCompile(`\d+\.\d+\.\d+\+\d+`)
+	versionRegex = regexp.MustCompile(`\d+\.\d+\.\d+(?:\.\d+)?\+\d+`)
 )
 
 func (j *JavaInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {

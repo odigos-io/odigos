@@ -12,6 +12,7 @@ var (
 	spanMetricsConnectorName                         = "spanmetrics"
 	spanMetricsTracesInConnectorName                 = "forward/trace/spanmetrics"
 	spanMetricsPipelineName                          = "traces/spanmetrics"
+	spanMetricsExportingPipelineName                 = "metrics/spanmetrics-exporting"
 	spanMetricsResourceRemoveDimensionsProcessorName = "resource/spanmetrics/remove-dimensions"
 )
 
@@ -46,18 +47,17 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 		}
 	}
 
-	return config.GenericMap{
+	cfg := config.GenericMap{
 		"histogram": histogramConfig,
 		// Taking into account changes in the semantic conventions, to support a range of instrumentation libraries
 		"dimensions": dimensions,
+		// This feature is intentionally turned off to prevent excessive series generation, which can lead to memory issues during data collection.
 		"exemplars": config.GenericMap{
-			"enabled": true,
+			"enabled": false,
 		},
-		"dimensions_cache_size":           1000,
-		"aggregation_temporality":         "AGGREGATION_TEMPORALITY_CUMULATIVE",
-		"metrics_flush_interval":          spanMetricsConfig.Interval,
-		"metrics_expiration":              spanMetricsConfig.MetricsExpiration,
-		"resource_metrics_key_attributes": []string{"service.name", "telemetry.sdk.language", "telemetry.sdk.name"},
+		"aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE",
+		"metrics_flush_interval":  spanMetricsConfig.Interval,
+		"metrics_expiration":      spanMetricsConfig.MetricsExpiration,
 		"events": config.GenericMap{
 			"enabled": true,
 			"dimensions": []config.GenericMap{
@@ -70,6 +70,12 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 			},
 		},
 	}
+
+	if len(spanMetricsConfig.ResourceMetricsKeyAttributes) > 0 {
+		cfg["resource_metrics_key_attributes"] = spanMetricsConfig.ResourceMetricsKeyAttributes
+	}
+
+	return cfg
 }
 
 func getSpanMetricsConnectors(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) config.GenericMap {
@@ -138,6 +144,10 @@ func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfi
 	// when set, the caller also needs to:
 	// - add the returned exporters to the trace pipeline
 	// - add the returned recivers to the metrics pipeline
+	//
+	// NOTICE: temporarily bypass the normal metrics pipeline,
+	// as it might add more metric resource attributes that user of span metrics do not want,
+	// use the exporter directly instead.
 	additionalTraceExporters := []string{spanMetricsTracesInConnectorName}
 	additionalMetricsRecivers := []string{spanMetricsConnectorName}
 	configDomain := config.Config{
@@ -149,6 +159,14 @@ func GetSpanMetricsConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfi
 					Receivers:  []string{spanMetricsTracesInConnectorName},
 					Processors: processorNames,
 					Exporters:  []string{spanMetricsConnectorName},
+				},
+				// following pipeline is temporary bypass of the normal metrics pipeline.
+				// should be removed once metrics resource attributes are controlled better.
+				spanMetricsExportingPipelineName: {
+					Receivers: []string{spanMetricsConnectorName},
+					// notice - skip batch and memory limiter here. metrics should have low size footprint anyway
+					// and are already allocated at this point.
+					Exporters: []string{clusterCollectorMetricsExporterName},
 				},
 			},
 		},
