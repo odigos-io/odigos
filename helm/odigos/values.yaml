@@ -140,7 +140,7 @@ collectorGateway:
 
 
   # Node selector for the cluster gateway collector deployment.
-  # Uncomment to override the global nodeSelector for this component
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
   #   kubernetes.io/os: linux
 
@@ -215,7 +215,7 @@ collectorNode:
 
 
 autoscaler:
-  # Uncomment to override the global nodeSelector for this component
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
   #   kubernetes.io/os: linux
   tolerations: []
@@ -229,7 +229,7 @@ autoscaler:
       memory: 512Mi
 
 scheduler:
-  # Uncomment to override the global nodeSelector for this component
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
   #   kubernetes.io/os: linux
   tolerations: []
@@ -243,7 +243,7 @@ scheduler:
       memory: 512Mi
 
 ui:
-  # Uncomment to override the global nodeSelector for this component
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
   #   kubernetes.io/os: linux
   tolerations: []
@@ -305,7 +305,7 @@ instrumentor:
     limits:
       cpu: 300m
       memory: 300Mi
-  # Uncomment to override the global nodeSelector for this component
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
   #   kubernetes.io/os: linux
   tolerations: []
@@ -382,7 +382,7 @@ odiglet:
       - BPF
       - PERFMON
       - IPC_LOCK
-  # Uncomment to override the global nodeSelector (values.NodeSelector) for this component
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
   #   kubernetes.io/os: linux
   tolerations:
@@ -457,7 +457,7 @@ centralProxy:
       cpu: 500m
       memory: 256Mi
 
-  # Uncomment to override the global nodeSelector for this component
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
   #   kubernetes.io/os: linux
   tolerations: []
