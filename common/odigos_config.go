@@ -135,6 +135,12 @@ type CollectorGatewayConfiguration struct {
 
 	// for destinations that uses https for exporting data, this value can be used to set the value for the https proxy.
 	HttpsProxyAddress *string `json:"httpsProxyAddress,omitempty"`
+
+	// Node selector for the cluster gateway collector deployment.
+	// Use this to force the gateway to run only on nodes with specific labels.
+	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+	// If no matching nodes exist, the pod will remain Pending.
+	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`
