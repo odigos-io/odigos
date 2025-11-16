@@ -13,6 +13,7 @@ import (
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -227,6 +228,8 @@ func rolloutRestartWorkload(ctx context.Context, workload client.Object, c clien
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *appsv1.DaemonSet:
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
+	case *openshiftappsv1.DeploymentConfig:
+		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	default:
 		return errors.New("unknown kind")
 	}
@@ -286,6 +289,12 @@ func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.O
 		ns, selector = o.Namespace, o.Spec.Selector
 	case *appsv1.DaemonSet:
 		ns, selector = o.Namespace, o.Spec.Selector
+	case *openshiftappsv1.DeploymentConfig:
+		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
+		ns = o.Namespace
+		selector = &metav1.LabelSelector{
+			MatchLabels: o.Spec.Selector,
+		}
 	default:
 		return 0, fmt.Errorf("crashLoopBackOffDuration: unsupported workload kind %T", obj)
 	}
@@ -355,6 +364,12 @@ func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Ob
 		ns, selector = o.Namespace, o.Spec.Selector
 	case *appsv1.DaemonSet:
 		ns, selector = o.Namespace, o.Spec.Selector
+	case *openshiftappsv1.DeploymentConfig:
+		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
+		ns = o.Namespace
+		selector = &metav1.LabelSelector{
+			MatchLabels: o.Spec.Selector,
+		}
 	default:
 		return false, fmt.Errorf("workloadHasOdigosAgents: unsupported workload kind %T", obj)
 	}
