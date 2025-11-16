@@ -258,22 +258,22 @@ type MetricsSourceKubeletStatsConfiguration struct {
 type InitContainerResources struct {
 	// RequestCPUm is the CPU request for the init container.
 	// it will be embedded in the init container as a resource request of the form "cpu: <value>m"
-	// default value is 100m
+	// default value is 300m
 	RequestCPUm int `json:"requestCPUm,omitempty" yaml:"requestCPUm,omitempty"`
 
 	// LimitCPUm is the CPU limit for the init container.
 	// it will be embedded in the init container as a resource limit of the form "cpu: <value>m"
-	// default value is 200m
+	// default value is 300m
 	LimitCPUm int `json:"limitCPUm,omitempty" yaml:"limitCPUm,omitempty"`
 
 	// RequestMemoryMiB is the memory request for the init container.
 	// it will be embedded in the init container as a resource request of the form "memory: <value>Mi"
-	// default value is 100Mi
+	// default value is 300Mi
 	RequestMemoryMiB int `json:"requestMemoryMiB,omitempty" yaml:"requestMemoryMiB,omitempty"`
 
 	// LimitMemoryMiB is the memory limit for the init container.
 	// it will be embedded in the init container as a resource limit of the form "memory: <value>Mi"
-	// default value is 200Mi
+	// default value is 300Mi
 	LimitMemoryMiB int `json:"limitMemoryMiB,omitempty" yaml:"limitMemoryMiB,omitempty"`
 }
 
