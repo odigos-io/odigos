@@ -592,3 +592,11 @@ goAutoOffsetsCron: ''
 # mode for automatic Go offsets updates. Options include direct (pull from cloud server), image (pull from local image) and off (disabled).
 # Custom Offsets support is only available in Odigos pro tier.
 goAutoOffsetsMode: 'off'
+
+# experimental configuration for own telemetry of odigos on itself
+ownTelemetry:
+
+  # configuration for the promethues instance that is shipped with odigos for own telemetry
+  odigosPrometheus:
+    # set to true to disable the odigos prometheus instance
+    disabled: false
