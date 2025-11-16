@@ -26,6 +26,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -468,7 +469,7 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	// Each 'cp -r <src> <dst>' copies agent directories from the image's /instrumentations/
 	// into the shared /var/odigos volume (an EmptyDir). This allows sidecar injection of
 	// required binaries without writing to the host filesystem.
-	initContainer := corev1.Container{
+	agentInitContainer := corev1.Container{
 		Name:  k8sconsts.OdigosInitContainerName,
 		Image: imageName,
 		Command: []string{
@@ -484,13 +485,29 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 		},
 	}
 
+	// Set resource limits and requests for the instrumentation init container
+	// We can always trust the values from the effective config, because it is validated and defaulted if not ok in the scheduler.
+	cpuRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", config.AgentsInitContainerResources.RequestCPUm))
+	memoryRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", config.AgentsInitContainerResources.RequestMemoryMiB))
+	cpuLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", config.AgentsInitContainerResources.LimitCPUm))
+	memoryLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", config.AgentsInitContainerResources.LimitMemoryMiB))
+	agentInitContainer.Resources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			"cpu":    cpuRequestQuantity,
+			"memory": memoryRequestQuantity,
+		},
+		Limits: corev1.ResourceList{
+			"cpu":    cpuLimitQuantity,
+			"memory": memoryLimitQuantity,
+		},
+	}
 	// Check if the init container already exists, this is done for safety and should never happen.
 	for _, existing := range pod.Spec.InitContainers {
 		if existing.Name == k8sconsts.OdigosInitContainerName {
 			return
 		}
 	}
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, initContainer)
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
 }
 
 func getInitContainerImage(config common.OdigosConfiguration) string {
