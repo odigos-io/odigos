@@ -604,7 +604,25 @@ The presence of this struct (as opposed to nil) means that metrics collection is
 <p>all &quot;traces&quot; related configuration for an agent running on any process in a specific container.
 The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.</p>
 
-
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>idGenerator</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-IdGeneratorConfig"><code>IdGeneratorConfig</code></a>
+</td>
+<td>
+   <p>id generator configuration for the traces.
+if not specified, the default random id generator will be used.</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `AgentsTelemetrySettings` <a id="odigos-io-v1alpha1-AgentsTelemetrySettings"></a>
     
@@ -1099,7 +1117,7 @@ It is disabled by default and can be enabled by setting the enabled flag to true
 <a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#OtlpExporterConfiguration"><code>common.OtlpExporterConfiguration</code></a>
 </td>
 <td>
-   <p>OtlpExporterConfiguration is the configuration for the OTLP exporter.</p>
+   <p>OtlpExporterConfiguration is the configuration for the OTLP exporter from node collector to cluster gateway collector.</p>
 </td>
 </tr>
 <tr>
@@ -1669,6 +1687,88 @@ The first attribute rule that evaluates to true is used to determine the samplin
 it may be empty - in this case the default value will be 1 - all spans are sampled.
 it should be a float value in the range [0, 1] - the fraction of spans to sample.
 a value of 0 means no spans are sampled if none of the rules evaluate to true.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `IdGeneratorConfig` <a id="odigos-io-v1alpha1-IdGeneratorConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+
+<p>id generator configuration for the traces</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>random</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-IdGeneratorRandomConfig"><code>IdGeneratorRandomConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>timedWall</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-IdGeneratorTimedWallConfig"><code>IdGeneratorTimedWallConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `IdGeneratorRandomConfig` <a id="odigos-io-v1alpha1-IdGeneratorRandomConfig"></a>
+    
+
+**Appears in:**
+
+- [IdGeneratorConfig](#odigos-io-v1alpha1-IdGeneratorConfig)
+
+<p>random id generator is the default, and most common.
+it creates span ids and trace ids using random bytes.
+It has no configuration.</p>
+
+
+
+## `IdGeneratorTimedWallConfig` <a id="odigos-io-v1alpha1-IdGeneratorTimedWallConfig"></a>
+    
+
+**Appears in:**
+
+- [IdGeneratorConfig](#odigos-io-v1alpha1-IdGeneratorConfig)
+
+<p>trace id includes timestamp, source id byte, and random number bytes.
+this id generator can be leveraged by databases to do efficient indexing.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sourceId</code> <B>[Required]</B>
+</td>
+<td>
+<code>byte</code>
+</td>
+<td>
+   <p>sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
+if timedWall is specified, the sourceId is required.</p>
 </td>
 </tr>
 </tbody>

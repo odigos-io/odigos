@@ -102,7 +102,7 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 	}
 
 	var podsWaitGroup sync.WaitGroup
-	for _, service := range servicesProfilingMetadata {
+	for serviceName, service := range servicesProfilingMetadata {
 		selector := service.Selector
 		podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
 			LabelSelector: selector.String(),
@@ -111,13 +111,13 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 			return err
 		}
 		for _, pod := range podsToProfile.Items {
-			klog.V(2).InfoS("Fetching profile for Pod", "podName", pod.Name)
+			klog.V(2).InfoS("Fetching profile for Pod", "podName", pod.Name, "service", serviceName)
 			podsWaitGroup.Add(1)
 
-			go func(pod v1.Pod, pprofPort int32) {
+			go func(pod v1.Pod, pprofPort int32, svcName string) {
 				defer podsWaitGroup.Done()
 
-				directoryName := fmt.Sprintf("%s-%s", pod.Name, pod.Spec.NodeName)
+				directoryName := fmt.Sprintf("%s-%s-%s", pod.Name, pod.Spec.NodeName, svcName)
 				nodeFilePath := filepath.Join(profileDir, directoryName)
 				err := os.MkdirAll(nodeFilePath, os.ModePerm)
 				if err != nil {
@@ -161,7 +161,7 @@ func FetchOdigosProfiles(ctx context.Context, client *kube.Client, profileDir st
 				}
 
 				profileWaitGroup.Wait()
-			}(pod, service.Port)
+			}(pod, service.Port, serviceName)
 		}
 	}
 	podsWaitGroup.Wait()

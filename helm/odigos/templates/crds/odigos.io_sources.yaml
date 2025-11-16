@@ -159,6 +159,13 @@ spec:
               disableInstrumentation:
                 description: DisableInstrumentation excludes this workload from auto-instrumentation.
                 type: boolean
+              matchWorkloadNameAsRegex:
+                description: |-
+                  MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
+                  When true, spec.workload.name is treated as a regular expression pattern.
+                  This allows matching multiple workloads with a single Source CRD.
+                  Not valid for namespace sources.
+                type: boolean
               otelServiceName:
                 description: |-
                   OtelServiceName determines the "service.name" resource attribute which will be reported by the instrumentations of this source.
