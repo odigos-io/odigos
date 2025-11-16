@@ -38,6 +38,7 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
+	// If we're not setting the nodeSelector for the gateway, use the nodeSelector from the odiglet daemonset
 	odigletDaemonset := &appsv1.DaemonSet{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: k8sconsts.OdigletDaemonSetName}, odigletDaemonset); err != nil {
 		return nil, err
@@ -57,7 +58,8 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
 	configDataHash := commonconfig.Sha256Hash(secretsVersionHash)
-	desiredDeployment, err := getDesiredDeployment(ctx, c, enabledDests, configDataHash, gateway, scheme, imagePullSecrets, odigosVersion, odigletNodeSelector, autoScalerTopologySpreadConstraints)
+	desiredDeployment, err := getDesiredDeployment(ctx, c, enabledDests, configDataHash, gateway,
+		scheme, imagePullSecrets, odigosVersion, autoScalerTopologySpreadConstraints, odigletNodeSelector)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -101,9 +103,12 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *odigosv1.DestinationList, configDataHash string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, nodeSelector map[string]string, topologySpreadConstraints []corev1.TopologySpreadConstraint) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, topologySpreadConstraints []corev1.TopologySpreadConstraint, odigletNodeSelector map[string]string) (*appsv1.Deployment, error) {
+
+	// if the nodeSelector is not set, use the nodeSelector from the odiglet daemonset
+	nodeSelector := gateway.Spec.NodeSelector
 	if nodeSelector == nil {
-		nodeSelector = make(map[string]string)
+		nodeSelector = &odigletNodeSelector
 	}
 
 	// request + limits for memory and cpu
@@ -153,7 +158,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector:       nodeSelector,
+					NodeSelector:       *nodeSelector,
 					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: boolPtr(true),
