@@ -29,7 +29,12 @@ spec:
               app.kubernetes.io/name: odigos-instrumentor
         {{- end }}
       {{- end }}
-      {{- if .Values.nodeSelector }}
+      {{- if .Values.instrumentor.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.instrumentor.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
@@ -126,9 +131,6 @@ spec:
       terminationGracePeriodSeconds: 10
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.instrumentor }}
-  {{- if .nodeSelector }}
-      nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
-  {{- end }}
   {{- if .tolerations }}
       tolerations: {{ toYaml .tolerations | nindent 8 }}
   {{- end }}
