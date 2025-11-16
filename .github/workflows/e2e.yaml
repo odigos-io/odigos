@@ -102,7 +102,7 @@ jobs:
           - kube-version: "1.32"
             kind-image: "kindest/node:v1.32.0@sha256:2458b423d635d7b01637cac2d6de7e1c1dca1148a2ba2e90975e214ca849e7cb"
           - kube-version: "1.19"
-            kind-image: "kindest/node:v1.19.0@sha256:3b0289b2d1bab2cb9108645a006939d2f447a10ad2bb21919c332d06b548bbc6"
+            kind-image: "kindest/node:v1.19.4@sha256:796d09e217d93bed01ecf8502633e48fd806fe42f9d02fdd468b81cd4e3bd40b"
 
     steps:
       - name: Checkout
