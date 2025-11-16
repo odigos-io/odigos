@@ -291,11 +291,11 @@ instrumentor:
   # The init container is responsible for copying the instrumentation agents to the shared volume.
   initContainerResources:
     requests:
-      cpu: 100m
-      memory: 100Mi
+      cpu: 300m
+      memory: 300Mi
     limits:
-      cpu: 200m
-      memory: 200Mi
+      cpu: 300m
+      memory: 300Mi
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
