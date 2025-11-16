@@ -441,6 +441,67 @@ func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containe
 	return nil
 }
 
+func getInitContainerResources(config common.OdigosConfiguration) corev1.ResourceRequirements {
+	logger := log.FromContext(context.Background())
+	// Set CPU limits and requests
+	cpuRequestDefaultValue := 300 // default: 300m
+	cpuLimitDefaultValue := 300   // default: 300m
+	cpuRequest := cpuRequestDefaultValue
+	cpuLimit := cpuLimitDefaultValue
+	if config.InitContainerResources != nil {
+		if config.InitContainerResources.RequestCPUm > 0 {
+			cpuRequest = config.InitContainerResources.RequestCPUm
+		}
+		if config.InitContainerResources.LimitCPUm > 0 {
+			cpuLimit = config.InitContainerResources.LimitCPUm
+		}
+	}
+	cpuRequestQuantity, err := resource.ParseQuantity(fmt.Sprintf("%dm", cpuRequest))
+	// Fallback to default value if the value is not valid
+	if err != nil {
+		logger.Error(err, "failed to parse CPU request for init container", "cpuRequest", cpuRequest)
+		cpuRequestQuantity = *resource.NewMilliQuantity(int64(cpuRequestDefaultValue), resource.DecimalSI)
+	}
+	cpuLimitQuantity, err := resource.ParseQuantity(fmt.Sprintf("%dm", cpuLimit))
+	// Fallback to default value if the value is not valid
+	if err != nil {
+		logger.Error(err, "failed to parse CPU limit for init container", "cpuLimit", cpuLimit)
+		cpuLimitQuantity = *resource.NewMilliQuantity(int64(cpuLimitDefaultValue), resource.DecimalSI)
+	}
+
+	// Set memory limits and requests
+	memoryRequestDefaultValue := 300 // default: 300Mi
+	memoryLimitDefaultValue := 300   // default: 300Mi
+	memoryRequest := memoryRequestDefaultValue
+	memoryLimit := memoryLimitDefaultValue
+	if config.InitContainerResources != nil {
+		if config.InitContainerResources.RequestMemoryMiB > 0 {
+			memoryRequest = config.InitContainerResources.RequestMemoryMiB
+		}
+		if config.InitContainerResources.LimitMemoryMiB > 0 {
+			memoryLimit = config.InitContainerResources.LimitMemoryMiB
+		}
+	}
+
+	memoryRequestQuantity, err := resource.ParseQuantity(fmt.Sprintf("%dMi", memoryRequest))
+	// Fallback to default value if the value is not valid
+	if err != nil {
+		logger.Error(err, "failed to parse memory request for init container", "memoryRequest", memoryRequest)
+		memoryRequestQuantity = *resource.NewScaledQuantity(int64(memoryRequestDefaultValue), resource.Mega)
+	}
+	memoryLimitQuantity, err := resource.ParseQuantity(fmt.Sprintf("%dMi", memoryLimit))
+	// Fallback to default value if the value is not valid
+	if err != nil {
+		logger.Error(err, "failed to parse memory limit for init container", "memoryLimit", memoryLimit)
+		memoryLimitQuantity = *resource.NewScaledQuantity(int64(memoryLimitDefaultValue), resource.Mega)
+	}
+
+	return corev1.ResourceRequirements{
+		Limits:   corev1.ResourceList{"cpu": cpuLimitQuantity, "memory": memoryLimitQuantity},
+		Requests: corev1.ResourceList{"cpu": cpuRequestQuantity, "memory": memoryRequestQuantity},
+	}
+}
+
 func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration) {
 	const (
 		instrumentationsPath = "/instrumentations"
@@ -487,38 +548,8 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 
 	// Set resource limits and requests
 	// Always apply resource limits to ensure proper resource management
-	initContainer.Resources = corev1.ResourceRequirements{
-		Limits:   make(corev1.ResourceList),
-		Requests: make(corev1.ResourceList),
-	}
-
-	// Set CPU limits and requests
-	cpuRequest := 100 // default: 100m
-	cpuLimit := 200  // default: 200m
-	if config.InitContainerResources != nil {
-		if config.InitContainerResources.RequestCPUm > 0 {
-			cpuRequest = config.InitContainerResources.RequestCPUm
-		}
-		if config.InitContainerResources.LimitCPUm > 0 {
-			cpuLimit = config.InitContainerResources.LimitCPUm
-		}
-	}
-	initContainer.Resources.Requests["cpu"] = resource.MustParse(fmt.Sprintf("%dm", cpuRequest))
-	initContainer.Resources.Limits["cpu"] = resource.MustParse(fmt.Sprintf("%dm", cpuLimit))
-
-	// Set memory limits and requests
-	memoryRequest := 100 // default: 100Mi
-	memoryLimit := 200  // default: 200Mi
-	if config.InitContainerResources != nil {
-		if config.InitContainerResources.RequestMemoryMiB > 0 {
-			memoryRequest = config.InitContainerResources.RequestMemoryMiB
-		}
-		if config.InitContainerResources.LimitMemoryMiB > 0 {
-			memoryLimit = config.InitContainerResources.LimitMemoryMiB
-		}
-	}
-	initContainer.Resources.Requests["memory"] = resource.MustParse(fmt.Sprintf("%dMi", memoryRequest))
-	initContainer.Resources.Limits["memory"] = resource.MustParse(fmt.Sprintf("%dMi", memoryLimit))
+	// Fallback to default values if the config is not set or the values are not valid
+	initContainer.Resources = getInitContainerResources(config)
 
 	// Check if the init container already exists, this is done for safety and should never happen.
 	for _, existing := range pod.Spec.InitContainers {
