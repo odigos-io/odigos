@@ -120,7 +120,7 @@ jobs:
         uses: helm/kind-action@v1.12.0
         with:
           node_image: ${{ matrix.kind-image }}
-          version: "v0.25.0"
+          version: "v0.17.0"
           cluster_name: kind
           config: tests/common/apply/kind-config.yaml
 
