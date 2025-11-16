@@ -261,6 +261,11 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		}
 	}
 
+	ownTelemetryEnabled := true
+	if odigosConfiguration.OdigosPromethuesDisabled != nil && *odigosConfiguration.OdigosPromethuesDisabled {
+		ownTelemetryEnabled = false
+	}
+
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -277,6 +282,7 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			ResourcesSettings:         getResourceSettings(odigosConfiguration),
 			OtlpExporterConfiguration: otlpExporterConfiguration,
 			Metrics:                   metricsConfig, // not nil if any destination has metrics enabled
+			OwnTelemetryEnabled:       ownTelemetryEnabled,
 		},
 	}
 }

@@ -235,6 +235,11 @@ spec:
                   timeout:
                     type: string
                 type: object
+              ownTelemetryEnabled:
+                description: |-
+                  wether to setup and collect own telemetry in the collector.
+                  currently, it is used to send odigos own metrics to the odigos prometheus (internal metrics store).
+                type: boolean
               resourcesSettings:
                 description: |-
                   Resources [memory/cpu] settings for the collectors group.

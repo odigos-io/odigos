@@ -1,0 +1,17 @@
+{{- if not .Values.ownTelemetry.odigosPrometheus.disabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-prometheus
+  labels:
+    app.kubernetes.io/name: odigos-prometheus
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 9090
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: odigos-prometheus
+{{- end }}

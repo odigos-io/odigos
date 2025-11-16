@@ -215,7 +215,7 @@ func calculateConfigMapData(
 	// common config domains - always set and active
 	activeConfigDomains := []config.Config{
 		collectorconfig.CommonConfig(nodeCG, onGKE),
-		collectorconfig.OwnMetricsConfig(ownMetricsPort),
+		collectorconfig.OwnMetricsConfig(ownMetricsPort, nodeCG.Spec.OwnTelemetryEnabled),
 		processorsResults.ProcessorsConfig,
 	}
 

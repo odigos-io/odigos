@@ -1,0 +1,21 @@
+{{- if not .Values.ownTelemetry.odigosPrometheus.disabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odigos-prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 1m
+      evaluation_interval: 1m
+
+    # No rules, no alertmanagers, no scrapes
+    rule_files: []
+    scrape_configs: []
+
+    otlp:
+      promote_resource_attributes:
+        - service.name
+        - service.instance.id
+        - k8s.pod.name
+{{- end }}
