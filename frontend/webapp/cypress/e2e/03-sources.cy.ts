@@ -10,7 +10,7 @@ const sourceCrdName = CRD_NAMES.SOURCE;
 const configCrdName = CRD_NAMES.INSTRUMENTATION_CONFIG;
 const totalEntities = SELECTED_ENTITIES.NAMESPACE_SOURCES.length;
 const indexForUpdatedSource = 0;
-const nameForUpdatedSource = SELECTED_ENTITIES.NAMESPACE_SOURCES[indexForUpdatedSource];
+const nameForUpdatedSource = SELECTED_ENTITIES.NAMESPACE_SOURCES[indexForUpdatedSource].name;
 
 describe('Sources CRUD', () => {
   beforeEach(() => {
@@ -34,8 +34,8 @@ describe('Sources CRUD', () => {
 
       // Wait for the namespace sources to load
       cy.wait(500).then(() => {
-        SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName) => {
-          cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(sourceName)).should('exist');
+        SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach(({ name }) => {
+          cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(name)).should('exist');
         });
 
         cy.contains('button', BUTTONS.DONE).click();
@@ -60,10 +60,10 @@ describe('Sources CRUD', () => {
   // Note: we update only 1 source, because Cypress keeps flaking when updating all of them.
   it(`Should update the name of ${1} sources via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      SELECTED_ENTITIES.NAMESPACE_SOURCES.slice(indexForUpdatedSource, indexForUpdatedSource + 1).forEach((sourceName, idx) => {
+      SELECTED_ENTITIES.NAMESPACE_SOURCES.slice(indexForUpdatedSource, indexForUpdatedSource + 1).forEach(({ name, kind }) => {
         updateEntity(
           {
-            nodeId: DATA_IDS.SOURCE_NODE(idx),
+            nodeId: DATA_IDS.SOURCE_NODE({ namespace, name, kind }),
             fieldKey: DATA_IDS.SOURCE_TITLE,
             fieldValue: TEXTS.UPDATED_NAME,
           },
