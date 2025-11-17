@@ -96,7 +96,7 @@ describe('Sources CRUD', () => {
 
   it(`Should uninstrument ${totalEntities} sources via API, and notify with SSE`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
-      cy.get(DATA_IDS.SOURCE_NODE_HEADER).find(DATA_IDS.CHECKBOX).click();
+      cy.get(DATA_IDS.ADD_SOURCE).parent().parent().find(DATA_IDS.CHECKBOX).click();
       cy.get(DATA_IDS.MULTI_SOURCE_CONTROL).contains(totalEntities).should('exist');
       cy.get(DATA_IDS.MULTI_SOURCE_CONTROL).find('button').contains(BUTTONS.UNINSTRUMENT).click();
       cy.get(DATA_IDS.MODAL).contains(TEXTS.SOURCE_WARN_MODAL_TITLE(totalEntities)).should('exist');
