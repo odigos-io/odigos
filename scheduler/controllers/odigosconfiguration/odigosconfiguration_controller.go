@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/profiles/manifests"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -25,6 +26,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -299,6 +301,73 @@ func modifyConfigWithEffectiveProfiles(effectiveProfiles []common.ProfileName, o
 	}
 }
 
+func getInitContainerResources(config *common.OdigosConfiguration) *common.AgentsInitContainerResources {
+	const (
+		defaultAgentsInitContainerRequestCPUm      = 300
+		defaultAgentsInitContainerLimitCPUm        = 300
+		defaultAgentsInitContainerRequestMemoryMiB = 300
+		defaultAgentsInitContainerLimitMemoryMiB   = 300
+	)
+	logger := log.FromContext(context.Background())
+
+	cpuRequest := defaultAgentsInitContainerRequestCPUm
+	cpuLimit := defaultAgentsInitContainerLimitCPUm
+
+	if config.AgentsInitContainerResources != nil {
+		if config.AgentsInitContainerResources.RequestCPUm > 0 {
+			cpuRequest = config.AgentsInitContainerResources.RequestCPUm
+		}
+		if config.AgentsInitContainerResources.LimitCPUm > 0 {
+			cpuLimit = config.AgentsInitContainerResources.LimitCPUm
+		}
+	}
+	// validate the CPU request value or default to the default value if it is not valid
+	_, err := resource.ParseQuantity(fmt.Sprintf("%dm", cpuRequest))
+	if err != nil {
+		logger.Error(err, "failed to parse CPU request for init container", "cpuRequest", cpuRequest)
+		cpuRequest = defaultAgentsInitContainerRequestCPUm
+	}
+	// validate the CPU limit value or default to the default value if it is not valid
+	_, err = resource.ParseQuantity(fmt.Sprintf("%dm", cpuLimit))
+	if err != nil {
+		logger.Error(err, "failed to parse CPU limit for init container", "cpuLimit", cpuLimit)
+		cpuLimit = defaultAgentsInitContainerLimitCPUm
+	}
+
+	memoryRequest := defaultAgentsInitContainerRequestMemoryMiB
+	memoryLimit := defaultAgentsInitContainerLimitMemoryMiB
+	if config.AgentsInitContainerResources != nil {
+		if config.AgentsInitContainerResources.RequestMemoryMiB > 0 {
+			memoryRequest = config.AgentsInitContainerResources.RequestMemoryMiB
+		}
+		if config.AgentsInitContainerResources.LimitMemoryMiB > 0 {
+			memoryLimit = config.AgentsInitContainerResources.LimitMemoryMiB
+		}
+	}
+
+	// validate the memory request value or default to the default value if it is not valid
+	_, err = resource.ParseQuantity(fmt.Sprintf("%dMi", memoryRequest))
+	// Fallback to default value if the value is not valid
+	if err != nil {
+		logger.Error(err, "failed to parse memory request for init container", "memoryRequest", memoryRequest)
+		memoryRequest = defaultAgentsInitContainerRequestMemoryMiB
+	}
+	// validate the memory limit value or default to the default value if it is not valid
+	_, err = resource.ParseQuantity(fmt.Sprintf("%dMi", memoryLimit))
+	// Fallback to default value if the value is not valid
+	if err != nil {
+		logger.Error(err, "failed to parse memory limit for init container", "memoryLimit", memoryLimit)
+		memoryLimit = defaultAgentsInitContainerLimitMemoryMiB
+	}
+
+	return &common.AgentsInitContainerResources{
+		RequestCPUm:      cpuRequest,
+		LimitCPUm:        cpuLimit,
+		RequestMemoryMiB: memoryRequest,
+		LimitMemoryMiB:   memoryLimit,
+	}
+}
+
 func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	defaultMountMethod := common.K8sVirtualDeviceMountMethod
 
@@ -313,6 +382,7 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	case common.K8sVirtualDeviceMountMethod:
 		return
 	case common.K8sInitContainerMountMethod:
+		odigosConfiguration.AgentsInitContainerResources = getInitContainerResources(odigosConfiguration)
 		return
 	default:
 		// any illegal value will be defaulted to host-path
