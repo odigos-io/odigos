@@ -115,7 +115,7 @@ export const DATA_IDS = {
   MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
   SOURCE_NODE_HEADER: '[data-id=Source-header]',
   SOURCE_NODE: (id: { namespace: string; name: string; kind: string }) => `[data-id=${id.namespace}-${id.name}-${id.kind}]`,
-  DESTINATION_NODE: (id: string) => `[data-id=${id}]`,
+  DESTINATION_NODE: (id: string) => `[data-id="${id}"]`,
   // ACTION_NODE: (id: string) => `[data-id=${id}]`,
   // INSTRUMENTATION_RULE_NODE: (id: string) => `[data-id=${id}]`,
 
