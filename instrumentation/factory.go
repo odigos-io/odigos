@@ -49,6 +49,7 @@ type Instrumentation interface {
 	// for the instrumentation to be ready to run.
 	// For eBPF, this will load the probes into the kernel
 	// In case of a failure, an error will be returned and all the resources will be cleaned up.
+	// Returns the overall status of the instrumentation, or an error if the instrumentation failed to load.
 	Load(ctx context.Context) (Status, error)
 
 	// Run will start reading events from the probes and export them.
@@ -71,13 +72,5 @@ type Status struct {
 	Status string
 
 	// Libraries is a map of library names to their status.
-	Libraries map[string]LibraryStatus
-}
-
-type LibraryStatus struct {
-	// Healthy indicates if the library was successfully loaded.
-	Healthy bool
-
-	// Message is the message of the library, if applicable.
-	Message string
+	Libraries map[string]error
 }

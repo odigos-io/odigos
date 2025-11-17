@@ -122,14 +122,17 @@ func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, k
 	healthy := bool(health)
 	components := make([]odigosv1.InstrumentationLibraryStatus, 0, len(status.Libraries))
 	for name, libraryStatus := range status.Libraries {
-		libraryHealthy := bool(libraryStatus.Healthy)
-		components = append(components, odigosv1.InstrumentationLibraryStatus{
+		libraryHealthy := libraryStatus == nil
+		libStatus := odigosv1.InstrumentationLibraryStatus{
 			Name:           name,
 			Type:           odigosv1.InstrumentationLibraryTypeInstrumentation,
 			LastStatusTime: metav1.Now(),
 			Healthy:        &libraryHealthy,
-			Message:        libraryStatus.Message,
-		})
+		}
+		if libraryStatus != nil {
+			libStatus.Message = libraryStatus.Error()
+		}
+		components = append(components, libStatus)
 	}
 	return instance.UpdateInstrumentationInstanceStatus(ctx, ke.pod, ke.containerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
 		instance.WithHealthy(&healthy, string(reason), &msg),
