@@ -18,7 +18,7 @@ export const CRD_NAMES = {
 export const NAMESPACES = {
   DEFAULT: 'default',
   ODIGOS_SYSTEM: 'odigos-system',
-  ODIGOS_TEST: 'odigos-system',
+  ODIGOS_TEST: 'odigos-test',
 };
 
 export const SELECTED_ENTITIES = {
