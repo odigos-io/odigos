@@ -5,4 +5,4 @@ type: application
 version: '0.0.0'
 appVersion: 'v0.0.0'
 icon: https://d2q89wckrml3k4.cloudfront.net/logo.png
-kubeVersion: '>= 1.20.15-0'
+kubeVersion: '>= 1.19.0-0'

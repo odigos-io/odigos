@@ -34,7 +34,7 @@ jobs:
             dockerfile_path: frontend
           - service: operator
             dockerfile_path: operator
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
@@ -53,7 +53,7 @@ jobs:
           build-args: ${{ matrix.build-args }}
 
   build-cli:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - uses: actions/checkout@v5
       - name: Set up Go
