@@ -148,7 +148,7 @@ spec:
   - email: mike@odigos.io
     name: Mike Dame
   maturity: alpha
-  minKubeVersion: 1.20.15
+  minKubeVersion: 1.19.0
   provider:
     name: Odigos
     url: https://odigos.io
