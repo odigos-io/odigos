@@ -185,7 +185,7 @@ spec:
                         type: boolean
                       includedProcessInDimensions:
                         description: |-
-                          By default, Odigos does not include process labels meaning
+                          By default, Odigos does not include process labels - meaning
                           metrics will be aggregated by container as the lowest level.
                           This means that multiple processes running in the same container
                           will be aggregated into the same time series.
@@ -205,7 +205,24 @@ spec:
                           format: duration string (15s, 1m, etc).
                           default is 5m (five minutes).
                         type: string
+                      resourceMetricsKeyAttributes:
+                        description: |-
+                          Advanced configuration - avoid using unless you know what you are doing.
+                          This list controls which resource attributes are included in the metric stream identity.
+                          These attributes are used to determines how span metrics are grouped.
+                        items:
+                          type: string
+                        type: array
                     type: object
+                type: object
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Node selector for the collectors group deployment.
+                  Use this to force the gateway to run only on nodes with specific labels.
+                  This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+                  If no matching nodes exist, the pod will remain Pending.
                 type: object
               otlpExporterConfiguration:
                 description: OtlpExporterConfiguration is the configuration for the

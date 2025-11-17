@@ -138,6 +138,12 @@ collectorGateway:
   # when unset or empty, no proxy will be used.
   # httpsProxyAddress: ''
 
+
+  # Node selector for the cluster gateway collector deployment.
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
 # Settings for Odigos data-collection (node) Collectors
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
@@ -209,8 +215,9 @@ collectorNode:
 
 
 autoscaler:
-  nodeSelector:
-    kubernetes.io/os: linux
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
   tolerations: []
   affinity: {}
   resources:
@@ -222,8 +229,9 @@ autoscaler:
       memory: 512Mi
 
 scheduler:
-  nodeSelector:
-    kubernetes.io/os: linux
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
   tolerations: []
   affinity: {}
   resources:
@@ -235,8 +243,9 @@ scheduler:
       memory: 512Mi
 
 ui:
-  nodeSelector:
-    kubernetes.io/os: linux
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
   tolerations: []
   affinity: {}
   resources:
@@ -286,8 +295,19 @@ instrumentor:
   # this is to avoid adding a device (as resource request on a container)
   # where an odiglet might not be able to provide the device on the node and fail k8s scheduling for instrumented pods on all nodes.
   checkDeviceHealthBeforeInjection: false
-  nodeSelector:
-    kubernetes.io/os: linux
+  # Resource configuration for the init container that is injected into user pods
+  # when using the k8s-init-container mount method.
+  # The init container is responsible for copying the instrumentation agents to the shared volume.
+  agentsInitContainerResources:
+    requests:
+      cpu: 300m
+      memory: 300Mi
+    limits:
+      cpu: 300m
+      memory: 300Mi
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
   tolerations: []
   affinity: {}
   resources:
@@ -362,8 +382,9 @@ odiglet:
       - BPF
       - PERFMON
       - IPC_LOCK
-  nodeSelector:
-    kubernetes.io/os: linux
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
   tolerations:
     ## This toleration with 'Exists' operator and no key/effect specified
     ## will match ALL taints, allowing pods to be scheduled on any node
@@ -436,8 +457,9 @@ centralProxy:
       cpu: 500m
       memory: 256Mi
 
-  nodeSelector:
-    kubernetes.io/os: linux
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
   tolerations: []
   affinity: {}
 
@@ -449,7 +471,18 @@ telemetry:
   enabled: true
 
 openshift:
+  # Controls whether to use OpenShift-specific settings and images.
   enabled: false
+
+  # Controls whether to use UBI9 (Universal Base Image 9) based image tags (-ubi9 suffix).
+  # By default, this is unset and will inherit the value of openshift.enabled.
+  # Set to false to explicitly disable UBI9 images even when openshift.enabled is true.
+  # Set to true to explicitly enable UBI9 images (requires openshift.enabled to also be true).
+  # Note that ubi9ImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry
+  # (registry.connect.redhat.com) which is used when openshift.enabled is true.
+  # Setting this to false is useful if you are hosting images in your own registry (with imagePrefix set) but
+  # still deploying on OpenShift, which requires other settings that are applied by openshift.enabled for OpenShift compatibility.
+  #ubi9ImageTags: false
 
 gke:
   enabled: false
@@ -457,9 +490,11 @@ gke:
 # List of profile names (array). Example (YAML): profiles: [size_l] | (CLI): --set profiles={size_l}
 profiles: []
 
-# Optional NodeSelector to apply to all Odigos components
+# Global NodeSelector to apply to all Odigos components by default.
+# Individual components can override this by uncommenting their specific nodeSelector configuration.
 # Note: Odigos will only be able to instrument workloads on the same nodes.
-nodeSelector: {}
+nodeSelector:
+  kubernetes.io/os: linux
 
 # Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file
 # to add the odigos-agent startupTaints configuration.
@@ -566,6 +601,11 @@ metricsSources:
 
     ## set resource attributes to exclude from the span metrics
     # excludedResourceAttributes: ['process.runtime.name', 'process.runtime.version']
+
+    ## Advanced configuration - avoid using unless you know what you are doing.
+    ## This list controls which resource attributes are included in the metric stream identity.
+    ## These attributes are used to determines how span metrics are grouped.
+    # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
 
 
 # Enable automatic Go library offsets updates.
