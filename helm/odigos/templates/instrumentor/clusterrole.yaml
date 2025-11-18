@@ -76,6 +76,17 @@ rules:
       - daemonsets/finalizers
     verbs:
       - update
+  - apiGroups:
+      - apps.openshift.io
+    resources:
+      - deploymentconfigs
+      - deploymentconfigs/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
 {{- end }}
   - apiGroups:
       - operator.odigos.io
@@ -134,8 +145,8 @@ rules:
     resources:
       - mutatingwebhookconfigurations
     resourceNames:
-      - source-mutating-webhook-configuration
-      - mutating-webhook-configuration
+      - odigos-source-mutating-webhook-configuration
+      - odigos-pod-mutating-webhook-configuration
     verbs:
       - update
   - apiGroups:
@@ -151,6 +162,6 @@ rules:
     resources:
       - validatingwebhookconfigurations
     resourceNames:
-      - source-validating-webhook-configuration
+      - odigos-source-validating-webhook-configuration
     verbs:
       - update

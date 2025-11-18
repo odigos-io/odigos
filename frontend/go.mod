@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/99designs/gqlgen v0.17.70
 	github.com/coreos/go-oidc/v3 v3.14.1
+	github.com/distribution/reference v0.6.0
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.1
 	github.com/glebarez/sqlite v1.11.0
@@ -13,6 +14,7 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/destinations v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44
 	github.com/stretchr/testify v1.11.1
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.36.0
@@ -48,6 +50,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.opentelemetry.io/collector/config/configmiddleware v0.130.0 // indirect
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.130.0 // indirect

@@ -56,11 +56,11 @@ func BuildSignalRoutingMap(dataStreams []pipelinegen.DataStreams) SignalRoutingM
 }
 
 // normalizeKind ensures kind comparisons are case-insensitive and aligned with OTel semantic keys
-// e.g: Deployment -> deployment, StatefulSet -> statefulset, DaemonSet -> daemonset
+// e.g: Deployment -> deployment, StatefulSet -> statefulset, DaemonSet -> daemonset, DeploymentConfig -> deploymentconfig
 func NormalizeKind(kind string) string {
 	normalized := strings.ToLower(kind)
 	switch normalized {
-	case "deployment", "statefulset", "daemonset", "cronjob":
+	case "deployment", "statefulset", "daemonset", "cronjob", "deploymentconfig":
 		return normalized
 	default:
 		return kind

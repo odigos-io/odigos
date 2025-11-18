@@ -33,6 +33,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
+	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	"github.com/go-logr/zapr"
 	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
@@ -58,6 +59,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	controllerconfig "github.com/odigos-io/odigos/autoscaler/controllers/controller_config"
+	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
 
 	//+kubebuilder:scaffold:imports
@@ -78,6 +80,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(apiactions.AddToScheme(scheme))
+	utilruntime.Must(apiregv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -254,10 +257,22 @@ func main() {
 			return nil
 		}
 		setupLog.V(0).Info("Cert rotator is ready")
+
+		// Register admission webhooks
 		err := controllers.RegisterWebhooks(mgr)
 		if err != nil {
 			return err
 		}
+
+		// Register Custom Metrics API
+		// We use this to trigger the HPA of the gateway collector by aggregating the metrics
+		// from all the gateway collector pods.
+		if err := metricshandler.RegisterCustomMetricsAPI(mgr); err != nil {
+			setupLog.Error(err, "failed to register custom metrics API")
+		} else {
+			setupLog.Info("Custom Metrics API registered successfully")
+		}
+
 		webhooksRegistered.Store(true)
 		setupLog.V(0).Info("Webhooks registered")
 		return nil

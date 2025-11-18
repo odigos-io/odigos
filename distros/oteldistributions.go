@@ -16,6 +16,7 @@ import (
 
 type Defaulter interface {
 	GetDefaultDistroNames() map[common.ProgrammingLanguage]string
+	GetDefaultVmDistroNames() map[common.ProgrammingLanguage]string
 }
 
 type communityDefaulter struct{}
@@ -53,6 +54,10 @@ func (c *communityDefaulter) GetDefaultDistroNames() map[common.ProgrammingLangu
 		common.PhpProgrammingLanguage:        "php-community",
 		common.RubyProgrammingLanguage:       "ruby-community",
 	}
+}
+
+func (c *communityDefaulter) GetDefaultVmDistroNames() map[common.ProgrammingLanguage]string {
+	return c.GetDefaultDistroNames()
 }
 
 type Getter struct {

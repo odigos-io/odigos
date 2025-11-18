@@ -145,10 +145,10 @@ func NewInstrumentorRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRole {
-	finalizersUpdate := []rbacv1.PolicyRule{}
-	if ownerPermissionEnforcement {
-		finalizersUpdate = append(finalizersUpdate, rbacv1.PolicyRule{
+func NewInstrumentorClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
+	openshiftRules := []rbacv1.PolicyRule{}
+	if openshiftEnabled {
+		openshiftRules = append(openshiftRules, rbacv1.PolicyRule{
 			// Required for OwnerReferencesPermissionEnforcement (on by default in OpenShift)
 			// When we create an InstrumentationConfig, we set the OwnerReference to the related workload.
 			// Controller-runtime sets BlockDeletion: true. So with this Admission Plugin we need permission to
@@ -157,6 +157,11 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 			APIGroups: []string{"apps"},
 			Resources: []string{"statefulsets/finalizers", "daemonsets/finalizers", "deployments/finalizers"},
 			Verbs:     []string{"update"},
+		}, rbacv1.PolicyRule{
+			// OpenShift DeploymentConfigs support
+			APIGroups: []string{"apps.openshift.io"},
+			Resources: []string{"deploymentconfigs", "deploymentconfigs/finalizers"},
+			Verbs:     []string{"get", "list", "watch", "update", "patch"},
 		})
 	}
 
@@ -251,7 +256,7 @@ func NewInstrumentorClusterRole(ownerPermissionEnforcement bool) *rbacv1.Cluster
 				ResourceNames: []string{k8sconsts.InstrumentorSourceValidatingWebhookName},
 				Verbs:         []string{"update"},
 			},
-		}, finalizersUpdate...),
+		}, openshiftRules...),
 	}
 }
 
@@ -321,7 +326,7 @@ func NewSourceValidatingWebhookConfiguration(ns string) *admissionregistrationv1
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.InstrumentorSourceValidatingWebhookName,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "source-validating-webhook",
+				"app.kubernetes.io/name":       "odigos-source-validating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.InstrumentorSourceValidatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
@@ -330,7 +335,7 @@ func NewSourceValidatingWebhookConfiguration(ns string) *admissionregistrationv1
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{
-				Name: "source-validating-webhook.odigos.io",
+				Name: "odigos-source-validating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.InstrumentorServiceName,
@@ -375,7 +380,7 @@ func NewSourceMutatingWebhookConfiguration(ns string) *admissionregistrationv1.M
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.InstrumentorSourceMutatingWebhookName,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "source-mutating-webhook",
+				"app.kubernetes.io/name":       "odigos-source-mutating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.InstrumentorSourceMutatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
@@ -384,7 +389,7 @@ func NewSourceMutatingWebhookConfiguration(ns string) *admissionregistrationv1.M
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
-				Name: "source-mutating-webhook.odigos.io",
+				Name: "odigos-source-mutating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.InstrumentorServiceName,
@@ -430,16 +435,17 @@ func NewPodMutatingWebhookConfiguration(ns string) *admissionregistrationv1.Muta
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.InstrumentorMutatingWebhookName,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "pod-mutating-webhook",
+				"app.kubernetes.io/name":       "odigos-pod-mutating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.InstrumentorMutatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "instrumentor",
 				"app.kubernetes.io/part-of":    "odigos",
+				"odigos.io/system-object":      "true",
 			},
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
-				Name: "pod-mutating-webhook.odigos.io",
+				Name: "odigos-pod-mutating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.InstrumentorServiceName,

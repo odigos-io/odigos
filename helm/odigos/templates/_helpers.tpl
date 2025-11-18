@@ -13,7 +13,11 @@
 {{- end -}}
 
 {{- define "utils.imageName" -}}
-{{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-ubi9" "" $.Values.openshift.enabled) .Tag }}
+{{- $ubi9 := $.Values.openshift.enabled }}
+{{- if hasKey $.Values.openshift "ubi9ImageTags" }}
+  {{- $ubi9 = $.Values.openshift.ubi9ImageTags }}
+{{- end }}
+{{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-ubi9" "" (and $.Values.openshift.enabled $ubi9)) .Tag }}
 {{- end -}}
 {{/*
 Returns "true" if any userInstrumentationEnvs.language is enabled or has env vars
@@ -32,7 +36,8 @@ Returns "true" if any userInstrumentationEnvs.language is enabled or has env var
 {{- define "odigos.secretExists" -}}
   {{- $sec   := lookup "v1" "Secret" .Release.Namespace "odigos-pro" -}}
   {{- $token := default "" .Values.onPremToken -}}
-  {{- if or $sec (ne $token "") -}}
+  {{- $externalSecret := .Values.externalOnpremTokenSecret | default false -}}
+  {{- if or $sec (ne $token "") $externalSecret -}}
 true
   {{- end -}}
 {{- end -}}

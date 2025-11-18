@@ -8,6 +8,8 @@ enum K8sResourceKind {
   DaemonSet
   StatefulSet
   CronJob
+  ConfigMap
+  DeploymentConfig
 }
 
 enum ConditionStatus {

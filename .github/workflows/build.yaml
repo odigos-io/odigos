@@ -3,8 +3,7 @@ name: build
 on:
   merge_group:
   pull_request:
-    branches:
-      - main
+    branches: [ main, 'releases/**' ]
 
 jobs:
   build-and-test-autoscaler:
@@ -103,7 +102,7 @@ jobs:
     strategy:
       matrix:
         dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx

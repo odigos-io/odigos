@@ -131,6 +131,11 @@ func NewAutoscalerRole(ns string, openshiftEnabled bool) *rbacv1.Role {
 			Resources: []string{"actions/status"},
 			Verbs:     []string{"get", "patch", "update"},
 		},
+		{ // Needed to watch and manage the pods of the gateway-collector
+			APIGroups: []string{""},
+			Resources: []string{"pods"},
+			Verbs:     []string{"get", "list", "watch"},
+		},
 	}
 
 	// This is needed for OpenShift to update the finalizers of the deployments
@@ -234,6 +239,11 @@ func NewAutoscalerClusterRole(ownerPermissionEnforcement bool) *rbacv1.ClusterRo
 					"list",
 					"watch",
 				},
+			},
+			{
+				APIGroups: []string{"apiregistration.k8s.io"},
+				Resources: []string{"apiservices"},
+				Verbs:     []string{"get", "list", "watch", "create", "update", "patch"},
 			},
 		}, finalizersUpdate...),
 	}
@@ -518,16 +528,17 @@ func NewActionValidatingWebhookConfiguration(ns string) *admissionregistrationv1
 		ObjectMeta: metav1.ObjectMeta{
 			Name: k8sconsts.AutoscalerActionValidatingWebhookName,
 			Labels: map[string]string{
-				"app.kubernetes.io/name":       "action-validating-webhook",
+				"app.kubernetes.io/name":       "odigos-action-validating-webhook",
 				"app.kubernetes.io/instance":   k8sconsts.AutoscalerActionValidatingWebhookName,
 				"app.kubernetes.io/component":  "webhook",
 				"app.kubernetes.io/created-by": "autoscaler",
 				"app.kubernetes.io/part-of":    "odigos",
+				"odigos.io/system-object":      "true",
 			},
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{
-				Name: "action-validating-webhook.odigos.io",
+				Name: "odigos-action-validating-webhook.odigos.io",
 				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					Service: &admissionregistrationv1.ServiceReference{
 						Name:      k8sconsts.AutoScalerWebhookServiceName,

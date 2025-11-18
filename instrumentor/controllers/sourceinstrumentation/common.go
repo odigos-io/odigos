@@ -6,7 +6,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"regexp"
 
+	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,9 +20,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -41,11 +43,22 @@ func syncNamespaceWorkloads(
 		k8sconsts.WorkloadKindDeployment,
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindCronJob,
+		k8sconsts.WorkloadKindDeploymentConfig,
 	} {
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
 		if err != nil {
-			errs = errors.Join(errs, err)
+			// Ignore "no matches for kind" and "forbidden" errors for DeploymentConfig
+			// This happens on non-OpenShift clusters where:
+			// - The DeploymentConfig resource doesn't exist (NoMatchError)
+			// - RBAC permissions aren't granted (Forbidden)
+			if kind == k8sconsts.WorkloadKindDeploymentConfig && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
+				continue
+			}
+			// For other errors or other workload kinds, collect the error
+			if !meta.IsNoMatchError(err) {
+				errs = errors.Join(errs, err)
+			}
 			continue
 		}
 
@@ -82,9 +95,114 @@ func syncNamespaceWorkloads(
 					Kind:      k8sconsts.WorkloadKindCronJob,
 				})
 			}
+		case *openshiftappsv1.DeploymentConfigList:
+			for _, dc := range obj.Items {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      dc.GetName(),
+					Namespace: dc.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+				})
+			}
 		}
 	}
 
+	for _, pw := range workloadsToSync {
+		res, err := syncWorkload(ctx, k8sClient, runtimeScheme, pw)
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		if !res.IsZero() {
+			collectiveRes = res
+		}
+	}
+
+	return collectiveRes, errs
+}
+
+// syncRegexSourceWorkloads syncs all workloads that match the regex pattern in the source
+func syncRegexSourceWorkloads(
+	ctx context.Context,
+	k8sClient client.Client,
+	runtimeScheme *runtime.Scheme,
+	source *odigosv1.Source) (ctrl.Result, error) {
+
+	pattern := source.Spec.Workload.Name
+	namespace := source.Spec.Workload.Namespace
+	kind := source.Spec.Workload.Kind
+
+	// Compile the regex pattern
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		// Invalid regex pattern, return error
+		return ctrl.Result{}, reconcile.TerminalError(err)
+	}
+
+	workloadsToSync := make([]k8sconsts.PodWorkload, 0)
+	collectiveRes := ctrl.Result{}
+	var errs error
+
+	// List all workloads of the specified kind in the namespace
+	workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
+	err = k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Filter workloads by regex pattern
+	switch obj := workloadObjects.(type) {
+	case *v1.DeploymentList:
+		for _, dep := range obj.Items {
+			if regex.MatchString(dep.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      dep.GetName(),
+					Namespace: dep.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDeployment,
+				})
+			}
+		}
+	case *v1.DaemonSetList:
+		for _, ds := range obj.Items {
+			if regex.MatchString(ds.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      ds.GetName(),
+					Namespace: ds.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDaemonSet,
+				})
+			}
+		}
+	case *v1.StatefulSetList:
+		for _, ss := range obj.Items {
+			if regex.MatchString(ss.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      ss.GetName(),
+					Namespace: ss.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindStatefulSet,
+				})
+			}
+		}
+	case *batchv1.CronJobList:
+		for _, job := range obj.Items {
+			if regex.MatchString(job.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      job.GetName(),
+					Namespace: job.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindCronJob,
+				})
+			}
+		}
+	case *openshiftappsv1.DeploymentConfigList:
+		for _, dc := range obj.Items {
+			if regex.MatchString(dc.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      dc.GetName(),
+					Namespace: dc.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+				})
+			}
+		}
+	}
+
+	// Sync each matching workload
 	for _, pw := range workloadsToSync {
 		res, err := syncWorkload(ctx, k8sClient, runtimeScheme, pw)
 		if err != nil {
@@ -160,7 +278,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	desiredServiceName := calculateDesiredServiceName(pw, sources)
 
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
-	ic := &v1alpha1.InstrumentationConfig{}
+	ic := &odigosv1.InstrumentationConfig{}
 	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: pw.Namespace}, ic)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -204,9 +322,9 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string) (*v1alpha1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string) (*odigosv1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
-	instConfig := v1alpha1.InstrumentationConfig{
+	instConfig := odigosv1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
 			Kind:       "InstrumentationConfig",
@@ -240,7 +358,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	logger := log.FromContext(ctx)
 	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 
-	err := kubeClient.Delete(ctx, &v1alpha1.InstrumentationConfig{
+	err := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: pw.Namespace,
 			Name:      instrumentationConfigName,
@@ -255,7 +373,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 	return nil
 }
 
-func updateContainerOverride(ic *v1alpha1.InstrumentationConfig, desiredContainers []odigosv1.ContainerOverride, desiredContainersHashString string) (updated bool) {
+func updateContainerOverride(ic *odigosv1.InstrumentationConfig, desiredContainers []odigosv1.ContainerOverride, desiredContainersHashString string) (updated bool) {
 	if ic.Spec.ContainerOverridesHash != desiredContainersHashString {
 		ic.Spec.ContainersOverrides = desiredContainers
 		ic.Spec.ContainerOverridesHash = desiredContainersHashString
@@ -300,7 +418,7 @@ func calculateDesiredServiceName(pw k8sconsts.PodWorkload, sources *odigosv1.Wor
 	return sources.Workload.Spec.OtelServiceName
 }
 
-func updateServiceName(ic *v1alpha1.InstrumentationConfig, desiredServiceName string) (updated bool) {
+func updateServiceName(ic *odigosv1.InstrumentationConfig, desiredServiceName string) (updated bool) {
 	if desiredServiceName != ic.Spec.ServiceName {
 		ic.Spec.ServiceName = desiredServiceName
 		return true
