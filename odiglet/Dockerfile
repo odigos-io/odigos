@@ -40,8 +40,8 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
 WORKDIR /php-agents
 ARG TARGETARCH
-ARG PHP_AGENT_VERSION="v0.1.21"
-ARG PHP_VERSIONS="8.0 8.1 8.2 8.3 8.4"
+ARG PHP_AGENT_VERSION="v0.2.0"
+ARG PHP_VERSIONS="8.1 8.2 8.3 8.4"
 ENV PHP_VERSIONS=${PHP_VERSIONS}
 # Clone agents repo (contains pre-compiled binaries, and pre-installed dependencies for each PHP version)
 RUN git clone https://github.com/odigos-io/opentelemetry-php \
