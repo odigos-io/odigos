@@ -131,7 +131,6 @@ COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentatio
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # PHP
-COPY --from=php-agents /php-agents/opentelemetry-php/8.0 /instrumentations/php/8.0
 COPY --from=php-agents /php-agents/opentelemetry-php/8.1 /instrumentations/php/8.1
 COPY --from=php-agents /php-agents/opentelemetry-php/8.2 /instrumentations/php/8.2
 COPY --from=php-agents /php-agents/opentelemetry-php/8.3 /instrumentations/php/8.3
