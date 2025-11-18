@@ -120,19 +120,19 @@ func (r *k8sReporter) OnExit(ctx context.Context, pid int, e K8sProcessDetails) 
 func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, ke K8sProcessDetails, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string, status instrumentation.Status) error {
 	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(ke.pw.Name, ke.pw.Kind)
 	healthy := bool(health)
-	components := make([]odigosv1.InstrumentationLibraryStatus, 0, len(status.Libraries))
-	for name, libraryStatus := range status.Libraries {
-		libraryHealthy := libraryStatus == nil
-		libStatus := odigosv1.InstrumentationLibraryStatus{
+	components := make([]odigosv1.InstrumentationLibraryStatus, 0, len(status.Components))
+	for name, componentErr := range status.Components {
+		componentHealthy := componentErr == nil
+		componentStatus := odigosv1.InstrumentationLibraryStatus{
 			Name:           name,
 			Type:           odigosv1.InstrumentationLibraryTypeInstrumentation,
 			LastStatusTime: metav1.Now(),
-			Healthy:        &libraryHealthy,
+			Healthy:        &componentHealthy,
 		}
-		if libraryStatus != nil {
-			libStatus.Message = libraryStatus.Error()
+		if componentErr != nil {
+			componentStatus.Message = componentErr.Error()
 		}
-		components = append(components, libStatus)
+		components = append(components, componentStatus)
 	}
 	return instance.UpdateInstrumentationInstanceStatus(ctx, ke.pod, ke.containerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
 		instance.WithHealthy(&healthy, string(reason), &msg),
