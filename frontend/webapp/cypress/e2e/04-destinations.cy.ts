@@ -8,6 +8,7 @@ import { awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, upda
 const namespace = NAMESPACES.ODIGOS_TEST;
 const crdName = CRD_NAMES.DESTINATION;
 const totalEntities = 1;
+const destinationIds: string[] = [];
 
 describe('Destinations CRUD', () => {
   beforeEach(() => {
@@ -35,14 +36,18 @@ describe('Destinations CRUD', () => {
   });
 
   it(`Should have ${totalEntities} ${crdName} CRDs in the cluster`, () => {
-    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities });
+    getCrdIds({ namespace, crdName, expectedError: '', expectedLength: totalEntities }, (crdIds) => {
+      crdIds.forEach((crdId) => {
+        destinationIds.push(crdId);
+      });
+    });
   });
 
   it(`Should update ${totalEntities} destinations via API, and notify locally`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       updateEntity(
         {
-          nodeId: DATA_IDS.DESTINATION_NODE(0),
+          nodeId: DATA_IDS.DESTINATION_NODE(destinationIds[0]),
           nodeContains: SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME,
           fieldKey: DATA_IDS.TITLE,
           fieldValue: TEXTS.UPDATED_NAME,
@@ -69,7 +74,7 @@ describe('Destinations CRUD', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       deleteEntity(
         {
-          nodeId: DATA_IDS.DESTINATION_NODE(0),
+          nodeId: DATA_IDS.DESTINATION_NODE(destinationIds[0]),
           nodeContains: SELECTED_ENTITIES.DESTINATION.DISPLAY_NAME,
           warnModalTitle: TEXTS.DESTINATION_WARN_MODAL_TITLE,
           warnModalNote: TEXTS.DESTINATION_WARN_MODAL_NOTE,

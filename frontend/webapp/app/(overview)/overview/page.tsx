@@ -12,7 +12,7 @@ export default function Page() {
 
   return (
     <>
-      <DataFlow heightToRemove={HEADER_HEIGHT + MENU_BAR_HEIGHT} metrics={metrics} />
+      <DataFlow height={`calc(100vh - ${HEADER_HEIGHT + MENU_BAR_HEIGHT + 100}px)`} metrics={metrics} />
       <MultiSourceControl totalSourceCount={sources.length} uninstrumentSources={(payload) => persistSources(payload, {})} restartWorkloads={restartWorkloads} />
     </>
   );
