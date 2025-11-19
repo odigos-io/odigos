@@ -51,7 +51,7 @@ func CustomUninstallLogger(format string, v ...interface{}) {
 		fmt.Println("🗑️  Cleanup job for Odigos instrumentation resources created, it might take a few minutes to complete...")
 	case strings.Contains(msg, `Starting delete for "cleanup-job" Job`):
 		fmt.Println("🗑️  Finish deleting odigos instrumentation resources...")
-		fmt.Println("🗑️  Staring to delete Odigos components...")
+		fmt.Println("🗑️  Starting to delete Odigos components...")
 	}
 }
 
