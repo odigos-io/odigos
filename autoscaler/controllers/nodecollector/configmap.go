@@ -139,6 +139,11 @@ func noopConfigMap() (string, error) {
 					Exporters:  []string{"nop"},
 				},
 			},
+			Telemetry: config.Telemetry{
+				Metrics: config.GenericMap{
+					"level": "none",
+				},
+			},
 		},
 	}
 
@@ -228,9 +233,13 @@ func calculateConfigMapData(
 		// span metrics
 		additionalMetricsRecivers := []string{}
 		if metricsConfigSettings.SpanMetrics != nil {
-			spanMetricsConfig, additionalSpanMetricsTraceExporters, additionalSpanMetricsMetricsReceivers := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
+			spanMetricsConfig, additionalSpanMetricsTraceExporters, _ := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
 			additionalTraceExporters = append(additionalTraceExporters, additionalSpanMetricsTraceExporters...)
-			additionalMetricsRecivers = append(additionalMetricsRecivers, additionalSpanMetricsMetricsReceivers...)
+			// NOTICE: temporarily bypass the normal metrics pipeline.
+			// this is to allow span metrics to be reported without any additional metric resource attributes.
+			// once finer control is implemented as to what resource attributes are included in the metrics pipeline,
+			// we can send span metrics back into the normal metrics pipeline.
+			// additionalMetricsRecivers = append(additionalMetricsRecivers, additionalSpanMetricsMetricsReceivers...)
 			activeConfigDomains = append(activeConfigDomains, spanMetricsConfig)
 		}
 

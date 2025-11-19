@@ -13,7 +13,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
@@ -25,9 +24,7 @@ import (
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
-	"github.com/odigos-io/odigos/k8sutils/pkg/restart"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	yaml "gopkg.in/yaml.v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -401,68 +398,6 @@ func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bo
 	ns := env.GetCurrentNamespace()
 	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, ns, token)
 	return err == nil, nil
-}
-
-// UpdateOdigosConfig is the resolver for the updateOdigosConfig field.
-func (r *mutationResolver) UpdateOdigosConfig(ctx context.Context, odigosConfig model.OdigosConfigurationInput) (bool, error) {
-	ns := env.GetCurrentNamespace()
-	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
-	if err != nil {
-		return false, fmt.Errorf("failed to get odigos configuration: %v", err)
-	}
-
-	var prevCfg common.OdigosConfiguration
-	if cm.Data != nil && cm.Data[consts.OdigosConfigurationFileName] != "" {
-		if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &prevCfg); err != nil {
-			prevCfg = common.OdigosConfiguration{}
-		}
-	}
-
-	cfg, err := convertOdigosConfigToK8s(&odigosConfig)
-	if err != nil {
-		return false, fmt.Errorf("failed to convert odigos configuration: %v", err)
-	}
-
-	if cfg.Oidc != nil && cfg.Oidc.ClientSecret != "" {
-		// ensure the oidc secret exists and is updated
-		err = services.EnsureOidcSecret(ctx, cfg.Oidc.ClientSecret)
-		if err != nil {
-			return false, fmt.Errorf("failed to ensure oidc secret: %v", err)
-		}
-		// update the odigos configmap with the secret ref
-		cfg.Oidc.ClientSecret = fmt.Sprintf("secretRef:%s", consts.OidcSecretName)
-	}
-
-	yamlBytes, err := yaml.Marshal(cfg)
-	if err != nil {
-		return false, fmt.Errorf("failed to marshal odigos configuration: %v", err)
-	}
-
-	if cm.Data == nil {
-		cm.Data = make(map[string]string)
-	}
-	cm.Data[consts.OdigosConfigurationFileName] = string(yamlBytes)
-
-	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
-	if err != nil {
-		return false, fmt.Errorf("failed to update odigos configuration: %v", err)
-	}
-
-	// restart central-proxy when central-backend-url or cluster-name changed and both are set in on-prem tier
-	// determine tier
-	depCM, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-	if err == nil {
-		tier := depCM.Data[k8sconsts.OdigosDeploymentConfigMapTierKey]
-		if tier == string(common.OnPremOdigosTier) {
-			changed := prevCfg.CentralBackendURL != cfg.CentralBackendURL || prevCfg.ClusterName != cfg.ClusterName
-			bothSet := cfg.CentralBackendURL != "" && cfg.ClusterName != ""
-			if changed && bothSet {
-				_ = restart.RestartDeployment(ctx, kube.DefaultClient.Interface, env.GetCurrentNamespace(), k8sconsts.CentralProxyDeploymentName)
-			}
-		}
-	}
-
-	return true, nil
 }
 
 // UninstrumentCluster is the resolver for the uninstrumentCluster field.
@@ -1005,34 +940,6 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 	config := services.GetConfig(ctx)
 
 	return &config, nil
-}
-
-// OdigosConfig is the resolver for the odigosConfig field.
-func (r *queryResolver) OdigosConfig(ctx context.Context) (*model.OdigosConfiguration, error) {
-	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get odigos configuration: %v", err)
-	}
-
-	cfg := common.OdigosConfiguration{}
-	err = yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal odigos configuration: %v", err)
-	}
-
-	odigosConfig, err := convertOdigosConfigToGql(&cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert odigos configuration: %v", err)
-	}
-	if odigosConfig.Oidc != nil {
-		oidcSecret, err := services.GetOidcSecret(ctx)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to get oidc secret: %v", err)
-		}
-		odigosConfig.Oidc.ClientSecret = &oidcSecret
-	}
-
-	return odigosConfig, nil
 }
 
 // DestinationCategories is the resolver for the destinationCategories field.
