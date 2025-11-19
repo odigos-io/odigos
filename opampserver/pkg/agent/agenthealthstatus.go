@@ -12,7 +12,6 @@ const (
 	HealthStatusNoConnectionToOpAMPServer AgentHealthStatus = "NoConnectionToOpAMPServer"
 )
 
-// write for me a func that get string and return the relevant AgentHealthStatus
 func GetAgentHealthStatus(status string) AgentHealthStatus {
 	switch status {
 	case string(HealthStatusHealthy):
