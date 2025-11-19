@@ -39,13 +39,19 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 		NewCentralBackendServiceAccount(m.ns),
 		NewCentralBackendRole(m.ns),
 		NewCentralBackendRoleBinding(m.ns),
-		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion),
+		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets),
 		NewCentralBackendService(m.ns),
 		NewCentralBackendHPA(m.ns, m.client),
 	}, m.managerOpts)
 }
 
-func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string) *appsv1.Deployment {
+func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, imagePullSecrets []string) *appsv1.Deployment {
+	var pullRefs []corev1.LocalObjectReference
+	for _, n := range imagePullSecrets {
+		if n != "" {
+			pullRefs = append(pullRefs, corev1.LocalObjectReference{Name: n})
+		}
+	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -66,6 +72,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string) *ap
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: k8sconsts.CentralBackendServiceAccountName,
+					ImagePullSecrets:   pullRefs,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.CentralBackendAppName,
