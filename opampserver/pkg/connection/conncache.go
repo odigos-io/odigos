@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
+	"github.com/odigos-io/odigos/opampserver/pkg/agent"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig/configsections"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
 	"google.golang.org/protobuf/proto"
@@ -79,7 +80,7 @@ func (c *ConnectionsCache) RemoveConnection(instanceUid string) {
 	delete(c.liveConnections, instanceUid)
 }
 
-func (c *ConnectionsCache) RecordMessageTime(instanceUid string) {
+func (c *ConnectionsCache) RecordMessageTime(instanceUid string, agentHealthStatus agent.AgentHealthStatus) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
@@ -87,6 +88,13 @@ func (c *ConnectionsCache) RecordMessageTime(instanceUid string) {
 	if !ok {
 		return
 	}
+
+	// if the connection is not in the no connection to opamp server status, update the status
+	// this is to avoid rare cases where there is a race condition between differenet messages sent by the agent
+	if conn.Status != agent.HealthStatusNoConnectionToOpAMPServer {
+		conn.Status = agentHealthStatus
+	}
+
 	conn.LastMessageTime = time.Now()
 	c.liveConnections[instanceUid] = conn
 }
