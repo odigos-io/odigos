@@ -849,6 +849,9 @@ type NonIdentifyingAttribute {
 
 type InstrumentationInstanceComponent {
   name: String!
+  type: String
+  healthy: Boolean
+  lastStatusTime: String
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 

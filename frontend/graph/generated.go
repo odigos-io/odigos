@@ -335,8 +335,11 @@ type ComplexityRoot struct {
 	}
 
 	InstrumentationInstanceComponent struct {
+		Healthy                  func(childComplexity int) int
+		LastStatusTime           func(childComplexity int) int
 		Name                     func(childComplexity int) int
 		NonIdentifyingAttributes func(childComplexity int) int
+		Type                     func(childComplexity int) int
 	}
 
 	InstrumentationLibraryGlobalId struct {
@@ -2097,6 +2100,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationInstanceAnalyze.Message(childComplexity), true
 
+	case "InstrumentationInstanceComponent.healthy":
+		if e.complexity.InstrumentationInstanceComponent.Healthy == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.Healthy(childComplexity), true
+
+	case "InstrumentationInstanceComponent.lastStatusTime":
+		if e.complexity.InstrumentationInstanceComponent.LastStatusTime == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.LastStatusTime(childComplexity), true
+
 	case "InstrumentationInstanceComponent.name":
 		if e.complexity.InstrumentationInstanceComponent.Name == nil {
 			break
@@ -2110,6 +2127,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationInstanceComponent.NonIdentifyingAttributes(childComplexity), true
+
+	case "InstrumentationInstanceComponent.type":
+		if e.complexity.InstrumentationInstanceComponent.Type == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.Type(childComplexity), true
 
 	case "InstrumentationLibraryGlobalId.language":
 		if e.complexity.InstrumentationLibraryGlobalId.Language == nil {
@@ -13339,6 +13363,129 @@ func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_name(_
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationInstanceComponent_type(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationInstanceComponent_healthy(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_healthy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Healthy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_healthy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationInstanceComponent_lastStatusTime(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_lastStatusTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStatusTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_lastStatusTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx, field)
 	if err != nil {
@@ -24246,6 +24393,12 @@ func (ec *executionContext) fieldContext_Query_instrumentationInstanceComponents
 			switch field.Name {
 			case "name":
 				return ec.fieldContext_InstrumentationInstanceComponent_name(ctx, field)
+			case "type":
+				return ec.fieldContext_InstrumentationInstanceComponent_type(ctx, field)
+			case "healthy":
+				return ec.fieldContext_InstrumentationInstanceComponent_healthy(ctx, field)
+			case "lastStatusTime":
+				return ec.fieldContext_InstrumentationInstanceComponent_lastStatusTime(ctx, field)
 			case "nonIdentifyingAttributes":
 				return ec.fieldContext_InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx, field)
 			}
@@ -33076,6 +33229,12 @@ func (ec *executionContext) _InstrumentationInstanceComponent(ctx context.Contex
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "type":
+			out.Values[i] = ec._InstrumentationInstanceComponent_type(ctx, field, obj)
+		case "healthy":
+			out.Values[i] = ec._InstrumentationInstanceComponent_healthy(ctx, field, obj)
+		case "lastStatusTime":
+			out.Values[i] = ec._InstrumentationInstanceComponent_lastStatusTime(ctx, field, obj)
 		case "nonIdentifyingAttributes":
 			out.Values[i] = ec._InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

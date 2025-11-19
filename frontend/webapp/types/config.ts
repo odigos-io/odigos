@@ -1,4 +1,4 @@
-import { InstallationMethod, OdigosConfig, Tier } from '@odigos/ui-kit/types';
+import { InstallationMethod, Tier } from '@odigos/ui-kit/types';
 
 export enum InstallationStatus {
   New = 'NEW',
