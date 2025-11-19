@@ -11,6 +11,7 @@ import (
 	"github.com/go-logr/logr"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
+	"github.com/odigos-io/odigos/opampserver/pkg/agent"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/sdkconfig"
 	"github.com/odigos-io/odigos/opampserver/protobufs"
@@ -121,7 +122,12 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 			connectionCache.RemoveConnection(instanceUid)
 		} else {
 			// keep record in memory of last message time, to detect stale connections
-			connectionCache.RecordMessageTime(instanceUid)
+			// Check if agentToServer.Health is nil; if so, use HealthStatusUnknown
+			healthStatus := agent.HealthStatusUnknown
+			if agentToServer.Health != nil {
+				healthStatus = agent.GetAgentHealthStatus(agentToServer.Health.Status)
+			}
+			connectionCache.RecordMessageTime(instanceUid, healthStatus)
 		}
 
 		serverToAgent.InstanceUid = agentToServer.InstanceUid
@@ -222,6 +228,12 @@ func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan Instr
 				logger.Error(err, "Failed to update instrumentation instance")
 			}
 		case DeleteInstance:
+			// Do not delete the instrumentation instance if the connection failed;
+			// Instead, retain it in an unhealthy state so the UI can display relevant information.
+			if task.connectionInfo.Status == agent.HealthStatusNoConnectionToOpAMPServer {
+				logger.Info("Skipping deletion of instrumentation instance on connection failure to opamp server", "connectionInfo", task.connectionInfo)
+				continue
+			}
 			err := instrumentation_instance.DeleteInstrumentationInstance(ctx, task.connectionInfo.Pod, task.connectionInfo.ContainerName,
 				handlers.kubeclient, int(task.connectionInfo.Pid))
 			if err != nil {
