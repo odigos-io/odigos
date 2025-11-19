@@ -374,8 +374,8 @@ func (m *manager[ProcessDetails, ConfigGroup]) tryInstrument(ctx context.Context
 		return initErr
 	}
 
-	loadErr := inst.Load(ctx)
-	reporterErr = m.handler.Reporter.OnLoad(ctx, e.PID, loadErr, pd)
+	status, loadErr := inst.Load(ctx)
+	reporterErr = m.handler.Reporter.OnLoad(ctx, e.PID, loadErr, pd, status)
 	if reporterErr != nil {
 		m.logger.Error(reporterErr, "failed to report instrumentation load", "loaded", loadErr == nil, "pid", e.PID, "process group details", pd)
 	}

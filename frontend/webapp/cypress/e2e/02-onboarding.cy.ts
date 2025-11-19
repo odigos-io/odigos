@@ -11,8 +11,8 @@ describe('Onboarding', () => {
         cy.get(DATA_IDS.SELECT_NAMESPACE).contains(SELECTED_ENTITIES.NAMESPACE).should('exist').click();
         // Wait for the sources to load
         cy.wait('@gql').then(() => {
-          SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach((sourceName) => {
-            cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(sourceName)).contains(sourceName).should('exist');
+          SELECTED_ENTITIES.NAMESPACE_SOURCES.forEach(({ name }) => {
+            cy.get(DATA_IDS.SELECT_NAMESPACE).get(DATA_IDS.SELECT_SOURCE(name)).contains(name).should('exist');
           });
         });
       });
