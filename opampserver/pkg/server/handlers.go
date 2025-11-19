@@ -128,7 +128,8 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 	// If the remote config changed, send the new config to the agent on the response
 	if request.RemoteConfigStatus == nil {
 		// this is to support older agents which do not send remote config status
-		c.logger.Info("missing remote config status in agent to server message", "workload", connectionInfo.Workload)
+		c.logger.Info("missing remote config status in agent to server message, sending full remote config", "workload", connectionInfo.Workload)
+		response.RemoteConfig = connectionInfo.AgentRemoteConfig
 	} else {
 		if !bytes.Equal(request.RemoteConfigStatus.LastRemoteConfigHash, connectionInfo.AgentRemoteConfig.ConfigHash) {
 			c.logger.Info("Remote config changed, sending new config to agent", "workload", connectionInfo.Workload)
