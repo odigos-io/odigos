@@ -20,7 +20,6 @@ var KratosProfile = profile.Profile{
 		"query-operation-detector",
 		// "small-batches", - issue is fixed in receiver. can now handle 85MB
 		"allow_concurrent_agents",
-		"mount-method-k8s-host-path",
 		"reduce-span-name-cardinality",
 		"disable-gin",
 		"semconvdynamo",
