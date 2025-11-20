@@ -29,12 +29,18 @@ func (m *centralUIResourceManager) Name() string { return k8sconsts.CentralUIApp
 
 func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error {
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
-		NewCentralUIDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralUIImage, m.odigosVersion),
+		NewCentralUIDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralUIImage, m.odigosVersion, m.managerOpts.ImagePullSecrets),
 		NewCentralUIService(m.ns),
 	}, m.managerOpts)
 }
 
-func NewCentralUIDeployment(ns, imagePrefix, imageName, version string) *appsv1.Deployment {
+func NewCentralUIDeployment(ns, imagePrefix, imageName, version string, imagePullSecrets []string) *appsv1.Deployment {
+	var pullRefs []corev1.LocalObjectReference
+	for _, n := range imagePullSecrets {
+		if n != "" {
+			pullRefs = append(pullRefs, corev1.LocalObjectReference{Name: n})
+		}
+	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -58,6 +64,7 @@ func NewCentralUIDeployment(ns, imagePrefix, imageName, version string) *appsv1.
 					},
 				},
 				Spec: corev1.PodSpec{
+					ImagePullSecrets: pullRefs,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.CentralUI,
