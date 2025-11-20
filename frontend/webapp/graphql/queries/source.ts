@@ -88,6 +88,9 @@ export const GET_SOURCE_LIBRARIES = gql`
   query GetSourceLibraries($namespace: String!, $kind: String!, $name: String!) {
     instrumentationInstanceComponents(namespace: $namespace, kind: $kind, name: $name) {
       name
+      type
+      healthy
+      lastStatusTime
       nonIdentifyingAttributes {
         key
         value
