@@ -403,6 +403,9 @@ type InstrumentationInstanceAnalyze struct {
 
 type InstrumentationInstanceComponent struct {
 	Name                     string                     `json:"name"`
+	Type                     *string                    `json:"type,omitempty"`
+	Healthy                  *bool                      `json:"healthy,omitempty"`
+	LastStatusTime           *string                    `json:"lastStatusTime,omitempty"`
 	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
 
