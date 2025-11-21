@@ -538,3 +538,13 @@ func (ic *InstrumentationConfig) RuntimeDetailsByContainer() map[string]*Runtime
 
 	return detailsByContainer
 }
+
+func (ic *InstrumentationConfig) GetOverridesForContainer(containerName string) *ContainerOverride {
+	// list of containers is short (usually one, but can realistically be as much as 5) so linear search is fine.
+	for i := range ic.Spec.ContainersOverrides {
+		if ic.Spec.ContainersOverrides[i].ContainerName == containerName {
+			return &ic.Spec.ContainersOverrides[i]
+		}
+	}
+	return nil
+}
