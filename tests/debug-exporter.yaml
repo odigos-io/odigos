@@ -11,7 +11,7 @@ spec:
   destinationName: debug
   signals:
   # comment the ones you don't want to 
-  # - TRACES
+  - TRACES
   - METRICS
-  # - LOGS
+  - LOGS
   type: debug
