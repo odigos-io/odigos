@@ -251,19 +251,27 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
 		// search if there is an override in the source for this container.
 		// list is expected to be short (1-5 containers, so linear search is fine)
-		var runtimeInfoOverride *odigosv1.RuntimeDetailsByContainer
+		var containerOverride *odigosv1.ContainerOverride
 		if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
-			for _, containerOverride := range sources.Workload.Spec.ContainerOverrides {
-				if containerOverride.ContainerName == container.Name {
-					runtimeInfoOverride = containerOverride.RuntimeInfo
+			for _, workloadContainerOverride := range sources.Workload.Spec.ContainerOverrides {
+				if workloadContainerOverride.ContainerName == container.Name {
+					containerOverride = &workloadContainerOverride
 					break
 				}
 			}
 		}
-		containers = append(containers, odigosv1.ContainerOverride{
-			ContainerName: container.Name,
-			RuntimeInfo:   runtimeInfoOverride,
-		})
+
+		if containerOverride != nil {
+			containers = append(containers, *containerOverride)
+		} else {
+			// always create a container override for the container, even if it's empty.
+			// this is so UI is aware of it even if runtime detection did not run or failed.
+			// TODO: revisit this process in the future
+			// e.g. resolve container name in gql resolver instead of persisting to instrumentation config resource.
+			containers = append(containers, odigosv1.ContainerOverride{
+				ContainerName: container.Name,
+			})
+		}
 	}
 	// calculate the hash for the containers overrides
 	// convert to json string

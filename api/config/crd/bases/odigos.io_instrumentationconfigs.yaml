@@ -182,6 +182,12 @@ spec:
                     containerName:
                       description: The name of the container to override.
                       type: string
+                    otelDistroName:
+                      description: |-
+                        select one specific otel distro to use for this container.
+                        the selected distro must match the programming language and any constraints of the distro.
+                        if the programmin language is incorrect, the runtime info can be overridden to match
+                      type: string
                     runtimeInfo:
                       description: |-
                         RuntimeInfo to use for agent enabling.
