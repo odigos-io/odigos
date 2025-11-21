@@ -5,9 +5,8 @@ import (
 )
 
 const (
-	gcpProjectIdKey        = "GCP_PROJECT_ID"
-	gcpBillingProjectIdKey = "GCP_BILLING_PROJECT"
-	gcpTimeoutKey          = "GCP_TIMEOUT"
+	gcpProjectIdKey = "GCP_PROJECT_ID"
+	gcpTimeoutKey   = "GCP_TIMEOUT"
 )
 
 type GoogleCloud struct{}
@@ -23,9 +22,6 @@ func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 		exporterConfig := GenericMap{}
 		if projectId, exists := dest.GetConfig()[gcpProjectIdKey]; exists {
 			exporterConfig["project"] = projectId
-		}
-		if billingProjectId, exists := dest.GetConfig()[gcpBillingProjectIdKey]; exists {
-			exporterConfig["destination_project_quota"] = billingProjectId
 		}
 		if timeout, exists := dest.GetConfig()[gcpTimeoutKey]; exists {
 			exporterConfig["timeout"] = timeout
@@ -53,9 +49,6 @@ func (g *GoogleCloud) ModifyConfig(dest ExporterConfigurer, currentConfig *Confi
 
 		if projectId, exists := dest.GetConfig()[gcpProjectIdKey]; exists {
 			exporterConfig["project"] = projectId
-		}
-		if billingProjectId, exists := dest.GetConfig()[gcpBillingProjectIdKey]; exists {
-			exporterConfig["destination_project_quota"] = billingProjectId
 		}
 
 		currentConfig.Exporters[exporterName] = exporterConfig

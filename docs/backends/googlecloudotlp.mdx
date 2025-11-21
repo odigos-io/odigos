@@ -73,9 +73,6 @@ Currently, only one Google Cloud destination can be configured with Application 
 - **GCP_PROJECT_ID** `string` : Project ID. The project ID for the Google Cloud Monitoring API to send data to. This defaults to the Application Credentials project ID (which is automatically detected when running on GCP). Setting this can override the Application Credentials project ID. Required if running Odigos outside of Google Cloud.
   - This field is optional
   - Example: `project-id`
-- **GCP_BILLING_PROJECT** `string` : Billing Project. The billing project ID for the Google Cloud Monitoring API. Allows you to specify a different project ID for billing and quota consumption. By default, this is the same as the project ID.
-  - This field is optional
-  - Example: `billing-project-id`
 - **GCP_APPLICATION_CREDENTIALS** `string` : Application Credentials. The JSON GCP Application Credentials file for the GCP project. Either a Workload Identity Federation config file or Service Account Key. Required if running Odigos outside of Google Cloud.
   - This field is optional
   - Example: `Credentials config... (optional)`
