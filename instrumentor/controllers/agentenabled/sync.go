@@ -462,16 +462,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	// check for deprecated "ignored" language
-	// TODO: remove this in odigos v1.1
-	if runtimeDetails.Language == common.IgnoredProgrammingLanguage {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
-		}
-	}
-
 	distro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {
 		return *err
