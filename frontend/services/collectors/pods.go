@@ -34,18 +34,18 @@ func podToInfo(pod *corev1.Pod) *model.PodInfo {
 	status := deriveStatus(pod)
 	restarts := sumRestarts(pod.Status.ContainerStatuses)
 	node := pod.Spec.NodeName
-	age := strings.ToLower(pod.CreationTimestamp.Time.Format(time.RFC3339))
+	creationTimestamp := strings.ToLower(pod.CreationTimestamp.Time.Format(time.RFC3339))
 
 	containerName := containers.GetCollectorContainerName(pod)
 	imageVersion := extractImageVersionForContainer(pod.Spec.Containers, containerName)
 	return &model.PodInfo{
-		Name:     pod.Name,
-		Ready:    ready,
-		Status:   status,
-		Restarts: restarts,
-		NodeName: node,
-		Age:      age,
-		Image:    imageVersion,
+		Name:              pod.Name,
+		Ready:             ready,
+		Status:            status,
+		RestartsCount:     restarts,
+		NodeName:          node,
+		CreationTimestamp: creationTimestamp,
+		Image:             imageVersion,
 	}
 }
 
@@ -63,20 +63,19 @@ func formatReady(statuses []corev1.ContainerStatus) string {
 	return fmt.Sprintf("%d/%d", ready, total)
 }
 
-func deriveStatus(pod *corev1.Pod) string {
-
+func deriveStatus(pod *corev1.Pod) *string {
 	for _, cs := range pod.Status.ContainerStatuses {
 		if cs.State.Waiting != nil && cs.State.Waiting.Reason != "" {
-			return cs.State.Waiting.Reason
+			reason := cs.State.Waiting.Reason
+			return &reason
 		}
 		if cs.State.Terminated != nil && cs.State.Terminated.Reason != "" {
-			return cs.State.Terminated.Reason
+			reason := cs.State.Terminated.Reason
+			return &reason
 		}
 	}
-	if string(pod.Status.Phase) != "" {
-		return string(pod.Status.Phase)
-	}
-	return "Unknown"
+
+	return nil
 }
 
 func sumRestarts(statuses []corev1.ContainerStatus) int {

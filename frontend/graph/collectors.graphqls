@@ -75,10 +75,10 @@ type CollectorDaemonSetInfo {
 type PodInfo {
   name: String!
   ready: String!
-  status: String!
-  restarts: Int!
+  status: String
+  restartsCount: Int!
   nodeName: String!
-  age: String!
+  creationTimestamp: String!
   image: String!
 }
 

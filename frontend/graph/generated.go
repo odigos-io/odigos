@@ -676,13 +676,13 @@ type ComplexityRoot struct {
 	}
 
 	PodInfo struct {
-		Age      func(childComplexity int) int
-		Image    func(childComplexity int) int
-		Name     func(childComplexity int) int
-		NodeName func(childComplexity int) int
-		Ready    func(childComplexity int) int
-		Restarts func(childComplexity int) int
-		Status   func(childComplexity int) int
+		CreationTimestamp func(childComplexity int) int
+		Image             func(childComplexity int) int
+		Name              func(childComplexity int) int
+		NodeName          func(childComplexity int) int
+		Ready             func(childComplexity int) int
+		RestartsCount     func(childComplexity int) int
+		Status            func(childComplexity int) int
 	}
 
 	PodWorkload struct {
@@ -3685,12 +3685,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PodContainerAnalyze.Started(childComplexity), true
 
-	case "PodInfo.age":
-		if e.complexity.PodInfo.Age == nil {
+	case "PodInfo.creationTimestamp":
+		if e.complexity.PodInfo.CreationTimestamp == nil {
 			break
 		}
 
-		return e.complexity.PodInfo.Age(childComplexity), true
+		return e.complexity.PodInfo.CreationTimestamp(childComplexity), true
 
 	case "PodInfo.image":
 		if e.complexity.PodInfo.Image == nil {
@@ -3720,12 +3720,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PodInfo.Ready(childComplexity), true
 
-	case "PodInfo.restarts":
-		if e.complexity.PodInfo.Restarts == nil {
+	case "PodInfo.restartsCount":
+		if e.complexity.PodInfo.RestartsCount == nil {
 			break
 		}
 
-		return e.complexity.PodInfo.Restarts(childComplexity), true
+		return e.complexity.PodInfo.RestartsCount(childComplexity), true
 
 	case "PodInfo.status":
 		if e.complexity.PodInfo.Status == nil {
@@ -23990,14 +23990,11 @@ func (ec *executionContext) _PodInfo_status(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PodInfo_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -24013,8 +24010,8 @@ func (ec *executionContext) fieldContext_PodInfo_status(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _PodInfo_restarts(ctx context.Context, field graphql.CollectedField, obj *model.PodInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PodInfo_restarts(ctx, field)
+func (ec *executionContext) _PodInfo_restartsCount(ctx context.Context, field graphql.CollectedField, obj *model.PodInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodInfo_restartsCount(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -24027,7 +24024,7 @@ func (ec *executionContext) _PodInfo_restarts(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Restarts, nil
+		return obj.RestartsCount, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24044,7 +24041,7 @@ func (ec *executionContext) _PodInfo_restarts(ctx context.Context, field graphql
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PodInfo_restarts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PodInfo_restartsCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PodInfo",
 		Field:      field,
@@ -24101,8 +24098,8 @@ func (ec *executionContext) fieldContext_PodInfo_nodeName(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _PodInfo_age(ctx context.Context, field graphql.CollectedField, obj *model.PodInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PodInfo_age(ctx, field)
+func (ec *executionContext) _PodInfo_creationTimestamp(ctx context.Context, field graphql.CollectedField, obj *model.PodInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodInfo_creationTimestamp(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -24115,7 +24112,7 @@ func (ec *executionContext) _PodInfo_age(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Age, nil
+		return obj.CreationTimestamp, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24132,7 +24129,7 @@ func (ec *executionContext) _PodInfo_age(ctx context.Context, field graphql.Coll
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PodInfo_age(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PodInfo_creationTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PodInfo",
 		Field:      field,
@@ -25195,12 +25192,12 @@ func (ec *executionContext) fieldContext_Query_gatewayPods(_ context.Context, fi
 				return ec.fieldContext_PodInfo_ready(ctx, field)
 			case "status":
 				return ec.fieldContext_PodInfo_status(ctx, field)
-			case "restarts":
-				return ec.fieldContext_PodInfo_restarts(ctx, field)
+			case "restartsCount":
+				return ec.fieldContext_PodInfo_restartsCount(ctx, field)
 			case "nodeName":
 				return ec.fieldContext_PodInfo_nodeName(ctx, field)
-			case "age":
-				return ec.fieldContext_PodInfo_age(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_PodInfo_creationTimestamp(ctx, field)
 			case "image":
 				return ec.fieldContext_PodInfo_image(ctx, field)
 			}
@@ -25255,12 +25252,12 @@ func (ec *executionContext) fieldContext_Query_odigletPods(_ context.Context, fi
 				return ec.fieldContext_PodInfo_ready(ctx, field)
 			case "status":
 				return ec.fieldContext_PodInfo_status(ctx, field)
-			case "restarts":
-				return ec.fieldContext_PodInfo_restarts(ctx, field)
+			case "restartsCount":
+				return ec.fieldContext_PodInfo_restartsCount(ctx, field)
 			case "nodeName":
 				return ec.fieldContext_PodInfo_nodeName(ctx, field)
-			case "age":
-				return ec.fieldContext_PodInfo_age(ctx, field)
+			case "creationTimestamp":
+				return ec.fieldContext_PodInfo_creationTimestamp(ctx, field)
 			case "image":
 				return ec.fieldContext_PodInfo_image(ctx, field)
 			}
@@ -36730,11 +36727,8 @@ func (ec *executionContext) _PodInfo(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "status":
 			out.Values[i] = ec._PodInfo_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "restarts":
-			out.Values[i] = ec._PodInfo_restarts(ctx, field, obj)
+		case "restartsCount":
+			out.Values[i] = ec._PodInfo_restartsCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -36743,8 +36737,8 @@ func (ec *executionContext) _PodInfo(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "age":
-			out.Values[i] = ec._PodInfo_age(ctx, field, obj)
+		case "creationTimestamp":
+			out.Values[i] = ec._PodInfo_creationTimestamp(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

@@ -822,13 +822,13 @@ type PodContainerAnalyze struct {
 }
 
 type PodInfo struct {
-	Name     string `json:"name"`
-	Ready    string `json:"ready"`
-	Status   string `json:"status"`
-	Restarts int    `json:"restarts"`
-	NodeName string `json:"nodeName"`
-	Age      string `json:"age"`
-	Image    string `json:"image"`
+	Name              string  `json:"name"`
+	Ready             string  `json:"ready"`
+	Status            *string `json:"status,omitempty"`
+	RestartsCount     int     `json:"restartsCount"`
+	NodeName          string  `json:"nodeName"`
+	CreationTimestamp string  `json:"creationTimestamp"`
+	Image             string  `json:"image"`
 }
 
 type PodWorkload struct {
