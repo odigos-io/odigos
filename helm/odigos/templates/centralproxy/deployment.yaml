@@ -97,13 +97,13 @@ spec:
         - name: tls-ca
           secret:
             secretName: {{ .Values.centralProxy.tls.caSecretName }}
-            defaultMode: 0400
+            defaultMode: 420
         {{- end }}
         {{- if .Values.centralProxy.tls.clientCertSecretName }}
         - name: tls-client-cert
           secret:
             secretName: {{ .Values.centralProxy.tls.clientCertSecretName }}
-            defaultMode: 0400
+            defaultMode: 420
         {{- end }}
       {{- end }}
 

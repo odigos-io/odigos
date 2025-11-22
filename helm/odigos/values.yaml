@@ -462,20 +462,13 @@ centralProxy:
 
   # TLS Configuration
   tls:
-    # Skip TLS certificate verification (for testing with self-signed certificates)
-    # When set to true, the CENTRAL_SKIP_TLS_VERIFY environment variable will be set
+    # Skip TLS certificate verification (for testing/self-signed certificates)
     skipVerify: false
     
-    # Name of the Kubernetes secret containing the CA certificate for internal/private CAs
-    # The secret should contain a key 'ca.crt' with the CA certificate
-    # When provided, the TLS_CA_FILE environment variable will be set to point to the mounted certificate
-    # Example: kubectl create secret generic my-ca-cert --from-file=ca.crt=/path/to/ca-certificate.pem
+    # Secret name containing CA certificate (key: 'ca.crt')
     caSecretName: ''
     
-    # Name of the Kubernetes secret containing the client certificate and key for mTLS authentication
-    # The secret should contain keys 'tls.crt' and 'tls.key' with the client certificate and private key
-    # When provided, the TLS_CERT_FILE and TLS_KEY_FILE environment variables will be set
-    # Example: kubectl create secret tls my-client-cert --cert=/path/to/client.crt --key=/path/to/client.key
+    # Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')
     clientCertSecretName: ''
 
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
