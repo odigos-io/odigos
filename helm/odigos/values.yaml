@@ -457,6 +457,17 @@ centralProxy:
       cpu: 500m
       memory: 256Mi
 
+  # TLS Configuration
+  tls:
+    # Skip TLS certificate verification (for testing/self-signed certificates)
+    skipVerify: false
+    
+    # Secret name containing CA certificate (key: 'ca.crt')
+    caSecretName: ''
+    
+    # Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')
+    clientCertSecretName: ''
+
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
   #   kubernetes.io/os: linux
