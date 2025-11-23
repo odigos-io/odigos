@@ -40,7 +40,7 @@ jobs:
         run: |
           curl -OL https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.14.1/preflight-linux-amd64
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: preflight-binary
           path: preflight-linux-amd64
