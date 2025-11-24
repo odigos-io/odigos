@@ -151,6 +151,7 @@ jobs:
                 --base $RELEASE_BRANCH \
                 --head $PR_BRANCH \
                 --title "$PR_TITLE" \
+                --label "prerelease" \
                 --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
             else
               echo "PR for branch $PR_BRANCH already exists"
@@ -171,6 +172,7 @@ jobs:
               --base $RELEASE_BRANCH \
               --head $PR_BRANCH \
               --title "$PR_TITLE" \
+              --label "prerelease" \
               --body "This is an automated PR for the release candidate ${{ steps.rc_version.outputs.rc_version }}"
           fi
 
