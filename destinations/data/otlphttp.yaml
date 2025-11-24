@@ -137,7 +137,7 @@ spec:
         type: text
         required: false
         placeholder: 'http://host:port/v1/traces'
-        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/traces will be used.
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/traces` will be used.
 
     - name: OTLP_HTTP_METRICS_ENDPOINT
       displayName: OTLP http metrics Endpoint
@@ -146,7 +146,7 @@ spec:
         type: text
         required: false
         placeholder: 'http://host:port/v1/metrics'
-        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/metrics will be used.
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/metrics` will be used.
 
     - name: OTLP_HTTP_LOGS_ENDPOINT
       displayName: OTLP http logs Endpoint
@@ -155,7 +155,7 @@ spec:
         type: text
         required: false
         placeholder: 'http://host:port/v1/logs'
-        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing http://host:port/v1/logs will be used.
+        tooltip: The format is `host:port`, host is required, port is optional and defaults to the default OTLP HTTP port `4318`, if missing `http://host:port/v1/logs` will be used.
 
     - name: OTLP_HTTP_TLS_ENABLED
       displayName: Enable TLS

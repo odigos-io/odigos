@@ -455,11 +455,12 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.123":
-  version "0.0.123"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.123.tgz#fd277bd79dfa101cba51908a6870e078d42ed56a"
-  integrity sha512-lBrzhCIrO0R3B0TqqARqKEaERF5mIH5H15u1qdH2JuGfykPfjD0AvsLpgCyz3fmsEVH84qFy9GTcS48jyF8jNA==
+"@odigos/ui-kit@^0.0.127":
+  version "0.0.127"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.127.tgz#cd8eef73990994e2bea3c7ed5bee462b82669beb"
+  integrity sha512-whd2IF0SH7jk0ZKfCF5+6kCUYqugpN3DpgUgTid6lGek13VhJ8kec+QZvCbwQn1UWEURBiQvvrVS4EMvlbGm1Q==
   dependencies:
+    "@tanstack/react-virtual" "^3.13.12"
     "@xyflow/react" "^12.9.3"
     javascript-time-ago "^2.5.12"
     lottie-react "^2.4.1"
@@ -491,6 +492,18 @@
   integrity sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==
   dependencies:
     tslib "^2.8.0"
+
+"@tanstack/react-virtual@^3.13.12":
+  version "3.13.12"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-virtual/-/react-virtual-3.13.12.tgz#d372dc2783739cc04ec1a728ca8203937687a819"
+  integrity sha512-Gd13QdxPSukP8ZrkbgS2RwoZseTTbQPLnQEn7HY/rqtM+8Zt95f7xKC7N0EsKs7aoz0WzZ+fditZux+F8EzYxA==
+  dependencies:
+    "@tanstack/virtual-core" "3.13.12"
+
+"@tanstack/virtual-core@3.13.12":
+  version "3.13.12"
+  resolved "https://registry.yarnpkg.com/@tanstack/virtual-core/-/virtual-core-3.13.12.tgz#1dff176df9cc8f93c78c5e46bcea11079b397578"
+  integrity sha512-1YBOJfRHV4sXUmWsFSf5rQor4Ss82G8dQWLRbnk3GA4jeP8hQt1hxXh0tmflpC0dz3VgEv/1+qwPyLeWkQuPFA==
 
 "@tybys/wasm-util@^0.10.0":
   version "0.10.1"

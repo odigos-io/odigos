@@ -145,30 +145,6 @@ type ComplexityRoot struct {
 		Status            func(childComplexity int) int
 	}
 
-	CollectorGateway struct {
-		GoMemLimitMiB              func(childComplexity int) int
-		LimitCPUm                  func(childComplexity int) int
-		LimitMemoryMiB             func(childComplexity int) int
-		MaxReplicas                func(childComplexity int) int
-		MemoryLimiterLimitMiB      func(childComplexity int) int
-		MemoryLimiterSpikeLimitMiB func(childComplexity int) int
-		MinReplicas                func(childComplexity int) int
-		RequestCPUm                func(childComplexity int) int
-		RequestMemoryMiB           func(childComplexity int) int
-	}
-
-	CollectorNode struct {
-		CollectorOwnMetricsPort    func(childComplexity int) int
-		GoMemLimitMiB              func(childComplexity int) int
-		K8sNodeLogsDirectory       func(childComplexity int) int
-		LimitCPUm                  func(childComplexity int) int
-		LimitMemoryMiB             func(childComplexity int) int
-		MemoryLimiterLimitMiB      func(childComplexity int) int
-		MemoryLimiterSpikeLimitMiB func(childComplexity int) int
-		RequestCPUm                func(childComplexity int) int
-		RequestMemoryMiB           func(childComplexity int) int
-	}
-
 	ComputePlatform struct {
 		APITokens            func(childComplexity int) int
 		Actions              func(childComplexity int) int
@@ -359,8 +335,11 @@ type ComplexityRoot struct {
 	}
 
 	InstrumentationInstanceComponent struct {
+		Healthy                  func(childComplexity int) int
+		LastStatusTime           func(childComplexity int) int
 		Name                     func(childComplexity int) int
 		NonIdentifyingAttributes func(childComplexity int) int
+		Type                     func(childComplexity int) int
 	}
 
 	InstrumentationLibraryGlobalId struct {
@@ -614,7 +593,6 @@ type ComplexityRoot struct {
 		UpdateDestination            func(childComplexity int, id string, destination model.DestinationInput) int
 		UpdateInstrumentationRule    func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
 		UpdateK8sActualSource        func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
-		UpdateOdigosConfig           func(childComplexity int, odigosConfig model.OdigosConfigurationInput) int
 	}
 
 	NodeCollectorAnalyze struct {
@@ -660,36 +638,6 @@ type ComplexityRoot struct {
 		NumberOfSources      func(childComplexity int) int
 		OdigosVersion        func(childComplexity int) int
 		Tier                 func(childComplexity int) int
-	}
-
-	OdigosConfiguration struct {
-		AgentEnvVarsInjectionMethod      func(childComplexity int) int
-		AllowConcurrentAgents            func(childComplexity int) int
-		CentralBackendURL                func(childComplexity int) int
-		ClusterName                      func(childComplexity int) int
-		CollectorGateway                 func(childComplexity int) int
-		CollectorNode                    func(childComplexity int) int
-		CustomContainerRuntimeSocketPath func(childComplexity int) int
-		IgnoredContainers                func(childComplexity int) int
-		IgnoredNamespaces                func(childComplexity int) int
-		ImagePrefix                      func(childComplexity int) int
-		KarpenterEnabled                 func(childComplexity int) int
-		MountMethod                      func(childComplexity int) int
-		NodeSelector                     func(childComplexity int) int
-		OdigletHealthProbeBindPort       func(childComplexity int) int
-		Oidc                             func(childComplexity int) int
-		Profiles                         func(childComplexity int) int
-		RollbackDisabled                 func(childComplexity int) int
-		RollbackGraceTime                func(childComplexity int) int
-		RollbackStabilityWindow          func(childComplexity int) int
-		Rollout                          func(childComplexity int) int
-		UIPaginationLimit                func(childComplexity int) int
-	}
-
-	OidcConfiguration struct {
-		ClientID     func(childComplexity int) int
-		ClientSecret func(childComplexity int) int
-		TenantURL    func(childComplexity int) int
 	}
 
 	OtelAgentsAnalyze struct {
@@ -744,7 +692,6 @@ type ComplexityRoot struct {
 		GetServiceMap                     func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
 		OdigletDaemonSetInfo              func(childComplexity int) int
-		OdigosConfig                      func(childComplexity int) int
 		PotentialDestinations             func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
 		Workloads                         func(childComplexity int, filter *model.WorkloadFilter) int
@@ -758,10 +705,6 @@ type ComplexityRoot struct {
 	Resources struct {
 		Limits   func(childComplexity int) int
 		Requests func(childComplexity int) int
-	}
-
-	RolloutConfiguration struct {
-		AutomaticRolloutDisabled func(childComplexity int) int
 	}
 
 	RuntimeInfoAnalyze struct {
@@ -902,7 +845,6 @@ type K8sWorkloadTelemetryMetricsResolver interface {
 }
 type MutationResolver interface {
 	UpdateAPIToken(ctx context.Context, token string) (bool, error)
-	UpdateOdigosConfig(ctx context.Context, odigosConfig model.OdigosConfigurationInput) (bool, error)
 	UninstrumentCluster(ctx context.Context) (bool, error)
 	PauseOdigos(ctx context.Context) (bool, error)
 	PersistK8sNamespaces(ctx context.Context, namespaces []*model.PersistNamespaceItemInput) (bool, error)
@@ -926,7 +868,6 @@ type MutationResolver interface {
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
 	Config(ctx context.Context) (*model.GetConfigResponse, error)
-	OdigosConfig(ctx context.Context) (*model.OdigosConfiguration, error)
 	DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error)
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
@@ -1392,132 +1333,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CollectorDaemonSetInfo.Status(childComplexity), true
-
-	case "CollectorGateway.goMemLimitMiB":
-		if e.complexity.CollectorGateway.GoMemLimitMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.GoMemLimitMiB(childComplexity), true
-
-	case "CollectorGateway.limitCPUm":
-		if e.complexity.CollectorGateway.LimitCPUm == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.LimitCPUm(childComplexity), true
-
-	case "CollectorGateway.limitMemoryMiB":
-		if e.complexity.CollectorGateway.LimitMemoryMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.LimitMemoryMiB(childComplexity), true
-
-	case "CollectorGateway.maxReplicas":
-		if e.complexity.CollectorGateway.MaxReplicas == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.MaxReplicas(childComplexity), true
-
-	case "CollectorGateway.memoryLimiterLimitMiB":
-		if e.complexity.CollectorGateway.MemoryLimiterLimitMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.MemoryLimiterLimitMiB(childComplexity), true
-
-	case "CollectorGateway.memoryLimiterSpikeLimitMiB":
-		if e.complexity.CollectorGateway.MemoryLimiterSpikeLimitMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.MemoryLimiterSpikeLimitMiB(childComplexity), true
-
-	case "CollectorGateway.minReplicas":
-		if e.complexity.CollectorGateway.MinReplicas == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.MinReplicas(childComplexity), true
-
-	case "CollectorGateway.requestCPUm":
-		if e.complexity.CollectorGateway.RequestCPUm == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.RequestCPUm(childComplexity), true
-
-	case "CollectorGateway.requestMemoryMiB":
-		if e.complexity.CollectorGateway.RequestMemoryMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorGateway.RequestMemoryMiB(childComplexity), true
-
-	case "CollectorNode.collectorOwnMetricsPort":
-		if e.complexity.CollectorNode.CollectorOwnMetricsPort == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.CollectorOwnMetricsPort(childComplexity), true
-
-	case "CollectorNode.goMemLimitMiB":
-		if e.complexity.CollectorNode.GoMemLimitMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.GoMemLimitMiB(childComplexity), true
-
-	case "CollectorNode.k8sNodeLogsDirectory":
-		if e.complexity.CollectorNode.K8sNodeLogsDirectory == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.K8sNodeLogsDirectory(childComplexity), true
-
-	case "CollectorNode.limitCPUm":
-		if e.complexity.CollectorNode.LimitCPUm == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.LimitCPUm(childComplexity), true
-
-	case "CollectorNode.limitMemoryMiB":
-		if e.complexity.CollectorNode.LimitMemoryMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.LimitMemoryMiB(childComplexity), true
-
-	case "CollectorNode.memoryLimiterLimitMiB":
-		if e.complexity.CollectorNode.MemoryLimiterLimitMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.MemoryLimiterLimitMiB(childComplexity), true
-
-	case "CollectorNode.memoryLimiterSpikeLimitMiB":
-		if e.complexity.CollectorNode.MemoryLimiterSpikeLimitMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.MemoryLimiterSpikeLimitMiB(childComplexity), true
-
-	case "CollectorNode.requestCPUm":
-		if e.complexity.CollectorNode.RequestCPUm == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.RequestCPUm(childComplexity), true
-
-	case "CollectorNode.requestMemoryMiB":
-		if e.complexity.CollectorNode.RequestMemoryMiB == nil {
-			break
-		}
-
-		return e.complexity.CollectorNode.RequestMemoryMiB(childComplexity), true
 
 	case "ComputePlatform.apiTokens":
 		if e.complexity.ComputePlatform.APITokens == nil {
@@ -2285,6 +2100,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InstrumentationInstanceAnalyze.Message(childComplexity), true
 
+	case "InstrumentationInstanceComponent.healthy":
+		if e.complexity.InstrumentationInstanceComponent.Healthy == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.Healthy(childComplexity), true
+
+	case "InstrumentationInstanceComponent.lastStatusTime":
+		if e.complexity.InstrumentationInstanceComponent.LastStatusTime == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.LastStatusTime(childComplexity), true
+
 	case "InstrumentationInstanceComponent.name":
 		if e.complexity.InstrumentationInstanceComponent.Name == nil {
 			break
@@ -2298,6 +2127,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationInstanceComponent.NonIdentifyingAttributes(childComplexity), true
+
+	case "InstrumentationInstanceComponent.type":
+		if e.complexity.InstrumentationInstanceComponent.Type == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.Type(childComplexity), true
 
 	case "InstrumentationLibraryGlobalId.language":
 		if e.complexity.InstrumentationLibraryGlobalId.Language == nil {
@@ -3504,18 +3340,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateK8sActualSource(childComplexity, args["sourceId"].(model.K8sSourceID), args["patchSourceRequest"].(model.PatchSourceRequestInput)), true
 
-	case "Mutation.updateOdigosConfig":
-		if e.complexity.Mutation.UpdateOdigosConfig == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_updateOdigosConfig_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UpdateOdigosConfig(childComplexity, args["odigosConfig"].(model.OdigosConfigurationInput)), true
-
 	case "NodeCollectorAnalyze.availableNodes":
 		if e.complexity.NodeCollectorAnalyze.AvailableNodes == nil {
 			break
@@ -3704,174 +3528,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OdigosAnalyze.Tier(childComplexity), true
-
-	case "OdigosConfiguration.agentEnvVarsInjectionMethod":
-		if e.complexity.OdigosConfiguration.AgentEnvVarsInjectionMethod == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.AgentEnvVarsInjectionMethod(childComplexity), true
-
-	case "OdigosConfiguration.allowConcurrentAgents":
-		if e.complexity.OdigosConfiguration.AllowConcurrentAgents == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.AllowConcurrentAgents(childComplexity), true
-
-	case "OdigosConfiguration.centralBackendURL":
-		if e.complexity.OdigosConfiguration.CentralBackendURL == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.CentralBackendURL(childComplexity), true
-
-	case "OdigosConfiguration.clusterName":
-		if e.complexity.OdigosConfiguration.ClusterName == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.ClusterName(childComplexity), true
-
-	case "OdigosConfiguration.collectorGateway":
-		if e.complexity.OdigosConfiguration.CollectorGateway == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.CollectorGateway(childComplexity), true
-
-	case "OdigosConfiguration.collectorNode":
-		if e.complexity.OdigosConfiguration.CollectorNode == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.CollectorNode(childComplexity), true
-
-	case "OdigosConfiguration.customContainerRuntimeSocketPath":
-		if e.complexity.OdigosConfiguration.CustomContainerRuntimeSocketPath == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.CustomContainerRuntimeSocketPath(childComplexity), true
-
-	case "OdigosConfiguration.ignoredContainers":
-		if e.complexity.OdigosConfiguration.IgnoredContainers == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.IgnoredContainers(childComplexity), true
-
-	case "OdigosConfiguration.ignoredNamespaces":
-		if e.complexity.OdigosConfiguration.IgnoredNamespaces == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.IgnoredNamespaces(childComplexity), true
-
-	case "OdigosConfiguration.imagePrefix":
-		if e.complexity.OdigosConfiguration.ImagePrefix == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.ImagePrefix(childComplexity), true
-
-	case "OdigosConfiguration.karpenterEnabled":
-		if e.complexity.OdigosConfiguration.KarpenterEnabled == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.KarpenterEnabled(childComplexity), true
-
-	case "OdigosConfiguration.mountMethod":
-		if e.complexity.OdigosConfiguration.MountMethod == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.MountMethod(childComplexity), true
-
-	case "OdigosConfiguration.nodeSelector":
-		if e.complexity.OdigosConfiguration.NodeSelector == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.NodeSelector(childComplexity), true
-
-	case "OdigosConfiguration.odigletHealthProbeBindPort":
-		if e.complexity.OdigosConfiguration.OdigletHealthProbeBindPort == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.OdigletHealthProbeBindPort(childComplexity), true
-
-	case "OdigosConfiguration.oidc":
-		if e.complexity.OdigosConfiguration.Oidc == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.Oidc(childComplexity), true
-
-	case "OdigosConfiguration.profiles":
-		if e.complexity.OdigosConfiguration.Profiles == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.Profiles(childComplexity), true
-
-	case "OdigosConfiguration.rollbackDisabled":
-		if e.complexity.OdigosConfiguration.RollbackDisabled == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.RollbackDisabled(childComplexity), true
-
-	case "OdigosConfiguration.rollbackGraceTime":
-		if e.complexity.OdigosConfiguration.RollbackGraceTime == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.RollbackGraceTime(childComplexity), true
-
-	case "OdigosConfiguration.rollbackStabilityWindow":
-		if e.complexity.OdigosConfiguration.RollbackStabilityWindow == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.RollbackStabilityWindow(childComplexity), true
-
-	case "OdigosConfiguration.rollout":
-		if e.complexity.OdigosConfiguration.Rollout == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.Rollout(childComplexity), true
-
-	case "OdigosConfiguration.uiPaginationLimit":
-		if e.complexity.OdigosConfiguration.UIPaginationLimit == nil {
-			break
-		}
-
-		return e.complexity.OdigosConfiguration.UIPaginationLimit(childComplexity), true
-
-	case "OidcConfiguration.clientId":
-		if e.complexity.OidcConfiguration.ClientID == nil {
-			break
-		}
-
-		return e.complexity.OidcConfiguration.ClientID(childComplexity), true
-
-	case "OidcConfiguration.clientSecret":
-		if e.complexity.OidcConfiguration.ClientSecret == nil {
-			break
-		}
-
-		return e.complexity.OidcConfiguration.ClientSecret(childComplexity), true
-
-	case "OidcConfiguration.tenantUrl":
-		if e.complexity.OidcConfiguration.TenantURL == nil {
-			break
-		}
-
-		return e.complexity.OidcConfiguration.TenantURL(childComplexity), true
 
 	case "OtelAgentsAnalyze.containers":
 		if e.complexity.OtelAgentsAnalyze.Containers == nil {
@@ -4114,13 +3770,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.OdigletDaemonSetInfo(childComplexity), true
 
-	case "Query.odigosConfig":
-		if e.complexity.Query.OdigosConfig == nil {
-			break
-		}
-
-		return e.complexity.Query.OdigosConfig(childComplexity), true
-
 	case "Query.potentialDestinations":
 		if e.complexity.Query.PotentialDestinations == nil {
 			break
@@ -4174,13 +3823,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Resources.Requests(childComplexity), true
-
-	case "RolloutConfiguration.automaticRolloutDisabled":
-		if e.complexity.RolloutConfiguration.AutomaticRolloutDisabled == nil {
-			break
-		}
-
-		return e.complexity.RolloutConfiguration.AutomaticRolloutDisabled(childComplexity), true
 
 	case "RuntimeInfoAnalyze.containers":
 		if e.complexity.RuntimeInfoAnalyze.Containers == nil {
@@ -4574,8 +4216,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBooleanConditionInput,
 		ec.unmarshalInputClusterAttributeInput,
 		ec.unmarshalInputCodeAttributesInput,
-		ec.unmarshalInputCollectorGatewayInput,
-		ec.unmarshalInputCollectorNodeInput,
 		ec.unmarshalInputCustomInstrumentationsInput,
 		ec.unmarshalInputDataStreamInput,
 		ec.unmarshalInputDbQueryPayloadCollectionInput,
@@ -4598,14 +4238,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputK8sSourceId,
 		ec.unmarshalInputMessagingPayloadCollectionInput,
 		ec.unmarshalInputNumberConditionInput,
-		ec.unmarshalInputOdigosConfigurationInput,
-		ec.unmarshalInputOidcConfigurationInput,
 		ec.unmarshalInputPatchSourceRequestInput,
 		ec.unmarshalInputPayloadCollectionInput,
 		ec.unmarshalInputPersistNamespaceItemInput,
 		ec.unmarshalInputPersistNamespaceSourceInput,
 		ec.unmarshalInputPodWorkloadInput,
-		ec.unmarshalInputRolloutConfigurationInput,
 		ec.unmarshalInputServiceNameFilterInput,
 		ec.unmarshalInputSpanAttributeFilterInput,
 		ec.unmarshalInputStringConditionInput,
@@ -5419,34 +5056,6 @@ func (ec *executionContext) field_Mutation_updateK8sActualSource_argsPatchSource
 	}
 
 	var zeroVal model.PatchSourceRequestInput
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_updateOdigosConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Mutation_updateOdigosConfig_argsOdigosConfig(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["odigosConfig"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_Mutation_updateOdigosConfig_argsOdigosConfig(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (model.OdigosConfigurationInput, error) {
-	if _, ok := rawArgs["odigosConfig"]; !ok {
-		var zeroVal model.OdigosConfigurationInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("odigosConfig"))
-	if tmp, ok := rawArgs["odigosConfig"]; ok {
-		return ec.unmarshalNOdigosConfigurationInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosConfigurationInput(ctx, tmp)
-	}
-
-	var zeroVal model.OdigosConfigurationInput
 	return zeroVal, nil
 }
 
@@ -8626,744 +8235,6 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_rolloutInProgres
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_requestMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_requestMemoryMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RequestMemoryMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_requestMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_limitMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_limitMemoryMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LimitMemoryMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_limitMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_requestCPUm(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_requestCPUm(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RequestCPUm, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_requestCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_limitCPUm(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_limitCPUm(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LimitCPUm, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_limitCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_memoryLimiterLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_memoryLimiterLimitMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MemoryLimiterLimitMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_memoryLimiterLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_memoryLimiterSpikeLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_memoryLimiterSpikeLimitMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MemoryLimiterSpikeLimitMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_memoryLimiterSpikeLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_goMemLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_goMemLimitMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.GoMemLimitMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_goMemLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_minReplicas(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_minReplicas(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MinReplicas, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_minReplicas(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorGateway_maxReplicas(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGateway) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorGateway_maxReplicas(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MaxReplicas, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorGateway_maxReplicas(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorGateway",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_collectorOwnMetricsPort(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_collectorOwnMetricsPort(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CollectorOwnMetricsPort, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_collectorOwnMetricsPort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_requestMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_requestMemoryMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RequestMemoryMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_requestMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_limitMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_limitMemoryMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LimitMemoryMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_limitMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_requestCPUm(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_requestCPUm(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RequestCPUm, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_requestCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_limitCPUm(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_limitCPUm(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LimitCPUm, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_limitCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_memoryLimiterLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_memoryLimiterLimitMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MemoryLimiterLimitMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_memoryLimiterLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_memoryLimiterSpikeLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_memoryLimiterSpikeLimitMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MemoryLimiterSpikeLimitMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_memoryLimiterSpikeLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_goMemLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_goMemLimitMiB(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.GoMemLimitMiB, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_goMemLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CollectorNode_k8sNodeLogsDirectory(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CollectorNode_k8sNodeLogsDirectory(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.K8sNodeLogsDirectory, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CollectorNode_k8sNodeLogsDirectory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CollectorNode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -14480,6 +13351,129 @@ func (ec *executionContext) _InstrumentationInstanceComponent_name(ctx context.C
 }
 
 func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationInstanceComponent_type(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationInstanceComponent_healthy(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_healthy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Healthy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_healthy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InstrumentationInstanceComponent_lastStatusTime(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_lastStatusTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStatusTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_lastStatusTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InstrumentationInstanceComponent",
 		Field:      field,
@@ -21161,61 +20155,6 @@ func (ec *executionContext) fieldContext_Mutation_updateApiToken(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_updateOdigosConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_updateOdigosConfig(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateOdigosConfig(rctx, fc.Args["odigosConfig"].(model.OdigosConfigurationInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_updateOdigosConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_updateOdigosConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_uninstrumentCluster(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_uninstrumentCluster(ctx, field)
 	if err != nil {
@@ -23731,1042 +22670,6 @@ func (ec *executionContext) fieldContext_OdigosAnalyze_hasErrors(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _OdigosConfiguration_karpenterEnabled(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_karpenterEnabled(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.KarpenterEnabled, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_karpenterEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_allowConcurrentAgents(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_allowConcurrentAgents(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AllowConcurrentAgents, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_allowConcurrentAgents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_uiPaginationLimit(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_uiPaginationLimit(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UIPaginationLimit, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_uiPaginationLimit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_centralBackendURL(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_centralBackendURL(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CentralBackendURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_centralBackendURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_oidc(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_oidc(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Oidc, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.OidcConfiguration)
-	fc.Result = res
-	return ec.marshalOOidcConfiguration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOidcConfiguration(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_oidc(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "tenantUrl":
-				return ec.fieldContext_OidcConfiguration_tenantUrl(ctx, field)
-			case "clientId":
-				return ec.fieldContext_OidcConfiguration_clientId(ctx, field)
-			case "clientSecret":
-				return ec.fieldContext_OidcConfiguration_clientSecret(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type OidcConfiguration", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_clusterName(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_clusterName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClusterName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_clusterName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_imagePrefix(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_imagePrefix(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ImagePrefix, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_imagePrefix(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_ignoredNamespaces(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_ignoredNamespaces(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IgnoredNamespaces, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*string)
-	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_ignoredNamespaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_ignoredContainers(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_ignoredContainers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IgnoredContainers, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*string)
-	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_ignoredContainers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_profiles(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_profiles(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Profiles, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*string)
-	fc.Result = res
-	return ec.marshalOString2ᚕᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_profiles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_mountMethod(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_mountMethod(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MountMethod, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_mountMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_agentEnvVarsInjectionMethod(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_agentEnvVarsInjectionMethod(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AgentEnvVarsInjectionMethod, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_agentEnvVarsInjectionMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_customContainerRuntimeSocketPath(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_customContainerRuntimeSocketPath(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CustomContainerRuntimeSocketPath, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_customContainerRuntimeSocketPath(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_odigletHealthProbeBindPort(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_odigletHealthProbeBindPort(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OdigletHealthProbeBindPort, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_odigletHealthProbeBindPort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_rollbackDisabled(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_rollbackDisabled(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RollbackDisabled, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_rollbackDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_rollbackGraceTime(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_rollbackGraceTime(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RollbackGraceTime, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_rollbackGraceTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_rollbackStabilityWindow(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_rollbackStabilityWindow(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.RollbackStabilityWindow, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_rollbackStabilityWindow(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_rollout(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_rollout(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Rollout, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.RolloutConfiguration)
-	fc.Result = res
-	return ec.marshalORolloutConfiguration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRolloutConfiguration(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_rollout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "automaticRolloutDisabled":
-				return ec.fieldContext_RolloutConfiguration_automaticRolloutDisabled(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type RolloutConfiguration", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_collectorNode(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_collectorNode(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CollectorNode, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.CollectorNode)
-	fc.Result = res
-	return ec.marshalOCollectorNode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorNode(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_collectorNode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "collectorOwnMetricsPort":
-				return ec.fieldContext_CollectorNode_collectorOwnMetricsPort(ctx, field)
-			case "requestMemoryMiB":
-				return ec.fieldContext_CollectorNode_requestMemoryMiB(ctx, field)
-			case "limitMemoryMiB":
-				return ec.fieldContext_CollectorNode_limitMemoryMiB(ctx, field)
-			case "requestCPUm":
-				return ec.fieldContext_CollectorNode_requestCPUm(ctx, field)
-			case "limitCPUm":
-				return ec.fieldContext_CollectorNode_limitCPUm(ctx, field)
-			case "memoryLimiterLimitMiB":
-				return ec.fieldContext_CollectorNode_memoryLimiterLimitMiB(ctx, field)
-			case "memoryLimiterSpikeLimitMiB":
-				return ec.fieldContext_CollectorNode_memoryLimiterSpikeLimitMiB(ctx, field)
-			case "goMemLimitMiB":
-				return ec.fieldContext_CollectorNode_goMemLimitMiB(ctx, field)
-			case "k8sNodeLogsDirectory":
-				return ec.fieldContext_CollectorNode_k8sNodeLogsDirectory(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type CollectorNode", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_collectorGateway(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_collectorGateway(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CollectorGateway, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.CollectorGateway)
-	fc.Result = res
-	return ec.marshalOCollectorGateway2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorGateway(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_collectorGateway(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "requestMemoryMiB":
-				return ec.fieldContext_CollectorGateway_requestMemoryMiB(ctx, field)
-			case "limitMemoryMiB":
-				return ec.fieldContext_CollectorGateway_limitMemoryMiB(ctx, field)
-			case "requestCPUm":
-				return ec.fieldContext_CollectorGateway_requestCPUm(ctx, field)
-			case "limitCPUm":
-				return ec.fieldContext_CollectorGateway_limitCPUm(ctx, field)
-			case "memoryLimiterLimitMiB":
-				return ec.fieldContext_CollectorGateway_memoryLimiterLimitMiB(ctx, field)
-			case "memoryLimiterSpikeLimitMiB":
-				return ec.fieldContext_CollectorGateway_memoryLimiterSpikeLimitMiB(ctx, field)
-			case "goMemLimitMiB":
-				return ec.fieldContext_CollectorGateway_goMemLimitMiB(ctx, field)
-			case "minReplicas":
-				return ec.fieldContext_CollectorGateway_minReplicas(ctx, field)
-			case "maxReplicas":
-				return ec.fieldContext_CollectorGateway_maxReplicas(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type CollectorGateway", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OdigosConfiguration_nodeSelector(ctx context.Context, field graphql.CollectedField, obj *model.OdigosConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OdigosConfiguration_nodeSelector(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NodeSelector, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OdigosConfiguration_nodeSelector(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OdigosConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OidcConfiguration_tenantUrl(ctx context.Context, field graphql.CollectedField, obj *model.OidcConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OidcConfiguration_tenantUrl(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TenantURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OidcConfiguration_tenantUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OidcConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OidcConfiguration_clientId(ctx context.Context, field graphql.CollectedField, obj *model.OidcConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OidcConfiguration_clientId(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClientID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OidcConfiguration_clientId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OidcConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OidcConfiguration_clientSecret(ctx context.Context, field graphql.CollectedField, obj *model.OidcConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OidcConfiguration_clientSecret(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClientSecret, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OidcConfiguration_clientSecret(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OidcConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _OtelAgentsAnalyze_created(ctx context.Context, field graphql.CollectedField, obj *model.OtelAgentsAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OtelAgentsAnalyze_created(ctx, field)
 	if err != nil {
@@ -26059,91 +23962,6 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_odigosConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_odigosConfig(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OdigosConfig(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.OdigosConfiguration)
-	fc.Result = res
-	return ec.marshalOOdigosConfiguration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosConfiguration(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_odigosConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "karpenterEnabled":
-				return ec.fieldContext_OdigosConfiguration_karpenterEnabled(ctx, field)
-			case "allowConcurrentAgents":
-				return ec.fieldContext_OdigosConfiguration_allowConcurrentAgents(ctx, field)
-			case "uiPaginationLimit":
-				return ec.fieldContext_OdigosConfiguration_uiPaginationLimit(ctx, field)
-			case "centralBackendURL":
-				return ec.fieldContext_OdigosConfiguration_centralBackendURL(ctx, field)
-			case "oidc":
-				return ec.fieldContext_OdigosConfiguration_oidc(ctx, field)
-			case "clusterName":
-				return ec.fieldContext_OdigosConfiguration_clusterName(ctx, field)
-			case "imagePrefix":
-				return ec.fieldContext_OdigosConfiguration_imagePrefix(ctx, field)
-			case "ignoredNamespaces":
-				return ec.fieldContext_OdigosConfiguration_ignoredNamespaces(ctx, field)
-			case "ignoredContainers":
-				return ec.fieldContext_OdigosConfiguration_ignoredContainers(ctx, field)
-			case "profiles":
-				return ec.fieldContext_OdigosConfiguration_profiles(ctx, field)
-			case "mountMethod":
-				return ec.fieldContext_OdigosConfiguration_mountMethod(ctx, field)
-			case "agentEnvVarsInjectionMethod":
-				return ec.fieldContext_OdigosConfiguration_agentEnvVarsInjectionMethod(ctx, field)
-			case "customContainerRuntimeSocketPath":
-				return ec.fieldContext_OdigosConfiguration_customContainerRuntimeSocketPath(ctx, field)
-			case "odigletHealthProbeBindPort":
-				return ec.fieldContext_OdigosConfiguration_odigletHealthProbeBindPort(ctx, field)
-			case "rollbackDisabled":
-				return ec.fieldContext_OdigosConfiguration_rollbackDisabled(ctx, field)
-			case "rollbackGraceTime":
-				return ec.fieldContext_OdigosConfiguration_rollbackGraceTime(ctx, field)
-			case "rollbackStabilityWindow":
-				return ec.fieldContext_OdigosConfiguration_rollbackStabilityWindow(ctx, field)
-			case "rollout":
-				return ec.fieldContext_OdigosConfiguration_rollout(ctx, field)
-			case "collectorNode":
-				return ec.fieldContext_OdigosConfiguration_collectorNode(ctx, field)
-			case "collectorGateway":
-				return ec.fieldContext_OdigosConfiguration_collectorGateway(ctx, field)
-			case "nodeSelector":
-				return ec.fieldContext_OdigosConfiguration_nodeSelector(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type OdigosConfiguration", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_destinationCategories(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_destinationCategories(ctx, field)
 	if err != nil {
@@ -26575,6 +24393,12 @@ func (ec *executionContext) fieldContext_Query_instrumentationInstanceComponents
 			switch field.Name {
 			case "name":
 				return ec.fieldContext_InstrumentationInstanceComponent_name(ctx, field)
+			case "type":
+				return ec.fieldContext_InstrumentationInstanceComponent_type(ctx, field)
+			case "healthy":
+				return ec.fieldContext_InstrumentationInstanceComponent_healthy(ctx, field)
+			case "lastStatusTime":
+				return ec.fieldContext_InstrumentationInstanceComponent_lastStatusTime(ctx, field)
 			case "nonIdentifyingAttributes":
 				return ec.fieldContext_InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx, field)
 			}
@@ -27100,47 +24924,6 @@ func (ec *executionContext) fieldContext_Resources_limits(_ context.Context, fie
 				return ec.fieldContext_ResourceAmounts_memory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ResourceAmounts", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RolloutConfiguration_automaticRolloutDisabled(ctx context.Context, field graphql.CollectedField, obj *model.RolloutConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RolloutConfiguration_automaticRolloutDisabled(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AutomaticRolloutDisabled, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RolloutConfiguration_automaticRolloutDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RolloutConfiguration",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -31966,172 +29749,6 @@ func (ec *executionContext) unmarshalInputCodeAttributesInput(ctx context.Contex
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCollectorGatewayInput(ctx context.Context, obj any) (model.CollectorGatewayInput, error) {
-	var it model.CollectorGatewayInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"requestMemoryMiB", "limitMemoryMiB", "requestCPUm", "limitCPUm", "memoryLimiterLimitMiB", "memoryLimiterSpikeLimitMiB", "goMemLimitMiB", "minReplicas", "maxReplicas"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "requestMemoryMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestMemoryMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RequestMemoryMiB = data
-		case "limitMemoryMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limitMemoryMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LimitMemoryMiB = data
-		case "requestCPUm":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestCPUm"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RequestCPUm = data
-		case "limitCPUm":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limitCPUm"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LimitCPUm = data
-		case "memoryLimiterLimitMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("memoryLimiterLimitMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MemoryLimiterLimitMiB = data
-		case "memoryLimiterSpikeLimitMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("memoryLimiterSpikeLimitMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MemoryLimiterSpikeLimitMiB = data
-		case "goMemLimitMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("goMemLimitMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.GoMemLimitMiB = data
-		case "minReplicas":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("minReplicas"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MinReplicas = data
-		case "maxReplicas":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxReplicas"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MaxReplicas = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputCollectorNodeInput(ctx context.Context, obj any) (model.CollectorNodeInput, error) {
-	var it model.CollectorNodeInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"collectorOwnMetricsPort", "requestMemoryMiB", "limitMemoryMiB", "requestCPUm", "limitCPUm", "memoryLimiterLimitMiB", "memoryLimiterSpikeLimitMiB", "goMemLimitMiB", "k8sNodeLogsDirectory"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "collectorOwnMetricsPort":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("collectorOwnMetricsPort"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CollectorOwnMetricsPort = data
-		case "requestMemoryMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestMemoryMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RequestMemoryMiB = data
-		case "limitMemoryMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limitMemoryMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LimitMemoryMiB = data
-		case "requestCPUm":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("requestCPUm"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RequestCPUm = data
-		case "limitCPUm":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limitCPUm"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.LimitCPUm = data
-		case "memoryLimiterLimitMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("memoryLimiterLimitMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MemoryLimiterLimitMiB = data
-		case "memoryLimiterSpikeLimitMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("memoryLimiterSpikeLimitMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MemoryLimiterSpikeLimitMiB = data
-		case "goMemLimitMiB":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("goMemLimitMiB"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.GoMemLimitMiB = data
-		case "k8sNodeLogsDirectory":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("k8sNodeLogsDirectory"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.K8sNodeLogsDirectory = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputCustomInstrumentationsInput(ctx context.Context, obj any) (model.CustomInstrumentationsInput, error) {
 	var it model.CustomInstrumentationsInput
 	asMap := map[string]any{}
@@ -33006,214 +30623,6 @@ func (ec *executionContext) unmarshalInputNumberConditionInput(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputOdigosConfigurationInput(ctx context.Context, obj any) (model.OdigosConfigurationInput, error) {
-	var it model.OdigosConfigurationInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"karpenterEnabled", "allowConcurrentAgents", "uiPaginationLimit", "centralBackendURL", "oidc", "clusterName", "imagePrefix", "ignoredNamespaces", "ignoredContainers", "profiles", "mountMethod", "agentEnvVarsInjectionMethod", "customContainerRuntimeSocketPath", "odigletHealthProbeBindPort", "rollbackDisabled", "rollbackGraceTime", "rollbackStabilityWindow", "rollout", "collectorNode", "collectorGateway", "nodeSelector"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "karpenterEnabled":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("karpenterEnabled"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.KarpenterEnabled = data
-		case "allowConcurrentAgents":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("allowConcurrentAgents"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AllowConcurrentAgents = data
-		case "uiPaginationLimit":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uiPaginationLimit"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.UIPaginationLimit = data
-		case "centralBackendURL":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("centralBackendURL"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CentralBackendURL = data
-		case "oidc":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("oidc"))
-			data, err := ec.unmarshalOOidcConfigurationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOidcConfigurationInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Oidc = data
-		case "clusterName":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clusterName"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClusterName = data
-		case "imagePrefix":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imagePrefix"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ImagePrefix = data
-		case "ignoredNamespaces":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ignoredNamespaces"))
-			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IgnoredNamespaces = data
-		case "ignoredContainers":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ignoredContainers"))
-			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IgnoredContainers = data
-		case "profiles":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profiles"))
-			data, err := ec.unmarshalOString2ᚕᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Profiles = data
-		case "mountMethod":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mountMethod"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MountMethod = data
-		case "agentEnvVarsInjectionMethod":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentEnvVarsInjectionMethod"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AgentEnvVarsInjectionMethod = data
-		case "customContainerRuntimeSocketPath":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("customContainerRuntimeSocketPath"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CustomContainerRuntimeSocketPath = data
-		case "odigletHealthProbeBindPort":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("odigletHealthProbeBindPort"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.OdigletHealthProbeBindPort = data
-		case "rollbackDisabled":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rollbackDisabled"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RollbackDisabled = data
-		case "rollbackGraceTime":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rollbackGraceTime"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RollbackGraceTime = data
-		case "rollbackStabilityWindow":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rollbackStabilityWindow"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.RollbackStabilityWindow = data
-		case "rollout":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rollout"))
-			data, err := ec.unmarshalORolloutConfigurationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRolloutConfigurationInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Rollout = data
-		case "collectorNode":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("collectorNode"))
-			data, err := ec.unmarshalOCollectorNodeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorNodeInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CollectorNode = data
-		case "collectorGateway":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("collectorGateway"))
-			data, err := ec.unmarshalOCollectorGatewayInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorGatewayInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CollectorGateway = data
-		case "nodeSelector":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeSelector"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.NodeSelector = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputOidcConfigurationInput(ctx context.Context, obj any) (model.OidcConfigurationInput, error) {
-	var it model.OidcConfigurationInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"tenantUrl", "clientId", "clientSecret"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "tenantUrl":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tenantUrl"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.TenantURL = data
-		case "clientId":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clientId"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClientID = data
-		case "clientSecret":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clientSecret"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClientSecret = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Context, obj any) (model.PatchSourceRequestInput, error) {
 	var it model.PatchSourceRequestInput
 	asMap := map[string]any{}
@@ -33448,33 +30857,6 @@ func (ec *executionContext) unmarshalInputPodWorkloadInput(ctx context.Context, 
 				return it, err
 			}
 			it.Name = data
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputRolloutConfigurationInput(ctx context.Context, obj any) (model.RolloutConfigurationInput, error) {
-	var it model.RolloutConfigurationInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"automaticRolloutDisabled"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "automaticRolloutDisabled":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("automaticRolloutDisabled"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.AutomaticRolloutDisabled = data
 		}
 	}
 
@@ -34170,110 +31552,6 @@ func (ec *executionContext) _CollectorDaemonSetInfo(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var collectorGatewayImplementors = []string{"CollectorGateway"}
-
-func (ec *executionContext) _CollectorGateway(ctx context.Context, sel ast.SelectionSet, obj *model.CollectorGateway) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, collectorGatewayImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("CollectorGateway")
-		case "requestMemoryMiB":
-			out.Values[i] = ec._CollectorGateway_requestMemoryMiB(ctx, field, obj)
-		case "limitMemoryMiB":
-			out.Values[i] = ec._CollectorGateway_limitMemoryMiB(ctx, field, obj)
-		case "requestCPUm":
-			out.Values[i] = ec._CollectorGateway_requestCPUm(ctx, field, obj)
-		case "limitCPUm":
-			out.Values[i] = ec._CollectorGateway_limitCPUm(ctx, field, obj)
-		case "memoryLimiterLimitMiB":
-			out.Values[i] = ec._CollectorGateway_memoryLimiterLimitMiB(ctx, field, obj)
-		case "memoryLimiterSpikeLimitMiB":
-			out.Values[i] = ec._CollectorGateway_memoryLimiterSpikeLimitMiB(ctx, field, obj)
-		case "goMemLimitMiB":
-			out.Values[i] = ec._CollectorGateway_goMemLimitMiB(ctx, field, obj)
-		case "minReplicas":
-			out.Values[i] = ec._CollectorGateway_minReplicas(ctx, field, obj)
-		case "maxReplicas":
-			out.Values[i] = ec._CollectorGateway_maxReplicas(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var collectorNodeImplementors = []string{"CollectorNode"}
-
-func (ec *executionContext) _CollectorNode(ctx context.Context, sel ast.SelectionSet, obj *model.CollectorNode) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, collectorNodeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("CollectorNode")
-		case "collectorOwnMetricsPort":
-			out.Values[i] = ec._CollectorNode_collectorOwnMetricsPort(ctx, field, obj)
-		case "requestMemoryMiB":
-			out.Values[i] = ec._CollectorNode_requestMemoryMiB(ctx, field, obj)
-		case "limitMemoryMiB":
-			out.Values[i] = ec._CollectorNode_limitMemoryMiB(ctx, field, obj)
-		case "requestCPUm":
-			out.Values[i] = ec._CollectorNode_requestCPUm(ctx, field, obj)
-		case "limitCPUm":
-			out.Values[i] = ec._CollectorNode_limitCPUm(ctx, field, obj)
-		case "memoryLimiterLimitMiB":
-			out.Values[i] = ec._CollectorNode_memoryLimiterLimitMiB(ctx, field, obj)
-		case "memoryLimiterSpikeLimitMiB":
-			out.Values[i] = ec._CollectorNode_memoryLimiterSpikeLimitMiB(ctx, field, obj)
-		case "goMemLimitMiB":
-			out.Values[i] = ec._CollectorNode_goMemLimitMiB(ctx, field, obj)
-		case "k8sNodeLogsDirectory":
-			out.Values[i] = ec._CollectorNode_k8sNodeLogsDirectory(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -35951,6 +33229,12 @@ func (ec *executionContext) _InstrumentationInstanceComponent(ctx context.Contex
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "type":
+			out.Values[i] = ec._InstrumentationInstanceComponent_type(ctx, field, obj)
+		case "healthy":
+			out.Values[i] = ec._InstrumentationInstanceComponent_healthy(ctx, field, obj)
+		case "lastStatusTime":
+			out.Values[i] = ec._InstrumentationInstanceComponent_lastStatusTime(ctx, field, obj)
 		case "nonIdentifyingAttributes":
 			out.Values[i] = ec._InstrumentationInstanceComponent_nonIdentifyingAttributes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -38055,13 +35339,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "updateOdigosConfig":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_updateOdigosConfig(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "uninstrumentCluster":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_uninstrumentCluster(ctx, field)
@@ -38536,122 +35813,6 @@ func (ec *executionContext) _OdigosAnalyze(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var odigosConfigurationImplementors = []string{"OdigosConfiguration"}
-
-func (ec *executionContext) _OdigosConfiguration(ctx context.Context, sel ast.SelectionSet, obj *model.OdigosConfiguration) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, odigosConfigurationImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("OdigosConfiguration")
-		case "karpenterEnabled":
-			out.Values[i] = ec._OdigosConfiguration_karpenterEnabled(ctx, field, obj)
-		case "allowConcurrentAgents":
-			out.Values[i] = ec._OdigosConfiguration_allowConcurrentAgents(ctx, field, obj)
-		case "uiPaginationLimit":
-			out.Values[i] = ec._OdigosConfiguration_uiPaginationLimit(ctx, field, obj)
-		case "centralBackendURL":
-			out.Values[i] = ec._OdigosConfiguration_centralBackendURL(ctx, field, obj)
-		case "oidc":
-			out.Values[i] = ec._OdigosConfiguration_oidc(ctx, field, obj)
-		case "clusterName":
-			out.Values[i] = ec._OdigosConfiguration_clusterName(ctx, field, obj)
-		case "imagePrefix":
-			out.Values[i] = ec._OdigosConfiguration_imagePrefix(ctx, field, obj)
-		case "ignoredNamespaces":
-			out.Values[i] = ec._OdigosConfiguration_ignoredNamespaces(ctx, field, obj)
-		case "ignoredContainers":
-			out.Values[i] = ec._OdigosConfiguration_ignoredContainers(ctx, field, obj)
-		case "profiles":
-			out.Values[i] = ec._OdigosConfiguration_profiles(ctx, field, obj)
-		case "mountMethod":
-			out.Values[i] = ec._OdigosConfiguration_mountMethod(ctx, field, obj)
-		case "agentEnvVarsInjectionMethod":
-			out.Values[i] = ec._OdigosConfiguration_agentEnvVarsInjectionMethod(ctx, field, obj)
-		case "customContainerRuntimeSocketPath":
-			out.Values[i] = ec._OdigosConfiguration_customContainerRuntimeSocketPath(ctx, field, obj)
-		case "odigletHealthProbeBindPort":
-			out.Values[i] = ec._OdigosConfiguration_odigletHealthProbeBindPort(ctx, field, obj)
-		case "rollbackDisabled":
-			out.Values[i] = ec._OdigosConfiguration_rollbackDisabled(ctx, field, obj)
-		case "rollbackGraceTime":
-			out.Values[i] = ec._OdigosConfiguration_rollbackGraceTime(ctx, field, obj)
-		case "rollbackStabilityWindow":
-			out.Values[i] = ec._OdigosConfiguration_rollbackStabilityWindow(ctx, field, obj)
-		case "rollout":
-			out.Values[i] = ec._OdigosConfiguration_rollout(ctx, field, obj)
-		case "collectorNode":
-			out.Values[i] = ec._OdigosConfiguration_collectorNode(ctx, field, obj)
-		case "collectorGateway":
-			out.Values[i] = ec._OdigosConfiguration_collectorGateway(ctx, field, obj)
-		case "nodeSelector":
-			out.Values[i] = ec._OdigosConfiguration_nodeSelector(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var oidcConfigurationImplementors = []string{"OidcConfiguration"}
-
-func (ec *executionContext) _OidcConfiguration(ctx context.Context, sel ast.SelectionSet, obj *model.OidcConfiguration) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, oidcConfigurationImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("OidcConfiguration")
-		case "tenantUrl":
-			out.Values[i] = ec._OidcConfiguration_tenantUrl(ctx, field, obj)
-		case "clientId":
-			out.Values[i] = ec._OidcConfiguration_clientId(ctx, field, obj)
-		case "clientSecret":
-			out.Values[i] = ec._OidcConfiguration_clientSecret(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var otelAgentsAnalyzeImplementors = []string{"OtelAgentsAnalyze"}
 
 func (ec *executionContext) _OtelAgentsAnalyze(ctx context.Context, sel ast.SelectionSet, obj *model.OtelAgentsAnalyze) graphql.Marshaler {
@@ -39004,25 +36165,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "odigosConfig":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_odigosConfig(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "destinationCategories":
 			field := field
 
@@ -39346,42 +36488,6 @@ func (ec *executionContext) _Resources(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Resources_requests(ctx, field, obj)
 		case "limits":
 			out.Values[i] = ec._Resources_limits(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var rolloutConfigurationImplementors = []string{"RolloutConfiguration"}
-
-func (ec *executionContext) _RolloutConfiguration(ctx context.Context, sel ast.SelectionSet, obj *model.RolloutConfiguration) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, rolloutConfigurationImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("RolloutConfiguration")
-		case "automaticRolloutDisabled":
-			out.Values[i] = ec._RolloutConfiguration_automaticRolloutDisabled(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -42400,11 +39506,6 @@ func (ec *executionContext) marshalNOdigosAnalyze2ᚖgithubᚗcomᚋodigosᚑio�
 	return ec._OdigosAnalyze(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNOdigosConfigurationInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosConfigurationInput(ctx context.Context, v any) (model.OdigosConfigurationInput, error) {
-	res, err := ec.unmarshalInputOdigosConfigurationInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalNOtelAgentsAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOtelAgentsAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.OtelAgentsAnalyze) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -43526,36 +40627,6 @@ func (ec *executionContext) unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodig
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOCollectorGateway2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorGateway(ctx context.Context, sel ast.SelectionSet, v *model.CollectorGateway) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._CollectorGateway(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOCollectorGatewayInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorGatewayInput(ctx context.Context, v any) (*model.CollectorGatewayInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputCollectorGatewayInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOCollectorNode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorNode(ctx context.Context, sel ast.SelectionSet, v *model.CollectorNode) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._CollectorNode(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOCollectorNodeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorNodeInput(ctx context.Context, v any) (*model.CollectorNodeInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputCollectorNodeInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx context.Context, sel ast.SelectionSet, v *model.ComputePlatform) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -44613,28 +41684,6 @@ func (ec *executionContext) unmarshalONumberConditionInput2ᚖgithubᚗcomᚋodi
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOOdigosConfiguration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosConfiguration(ctx context.Context, sel ast.SelectionSet, v *model.OdigosConfiguration) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._OdigosConfiguration(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOOidcConfiguration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOidcConfiguration(ctx context.Context, sel ast.SelectionSet, v *model.OidcConfiguration) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._OidcConfiguration(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOOidcConfigurationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOidcConfigurationInput(ctx context.Context, v any) (*model.OidcConfigurationInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputOidcConfigurationInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalOPayloadCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPayloadCollection(ctx context.Context, sel ast.SelectionSet, v *model.PayloadCollection) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -44808,21 +41857,6 @@ func (ec *executionContext) marshalOResources2ᚖgithubᚗcomᚋodigosᚑioᚋod
 		return graphql.Null
 	}
 	return ec._Resources(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalORolloutConfiguration2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRolloutConfiguration(ctx context.Context, sel ast.SelectionSet, v *model.RolloutConfiguration) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._RolloutConfiguration(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalORolloutConfigurationInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRolloutConfigurationInput(ctx context.Context, v any) (*model.RolloutConfigurationInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputRolloutConfigurationInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOServiceNameFilter2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐServiceNameFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceNameFilter) graphql.Marshaler {

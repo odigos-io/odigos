@@ -128,10 +128,6 @@ func TestUpdateInstrumentationConfigForWorkload_IgnoreUnknownLanguage(t *testing
 					ContainerName: "test-container-2",
 					Language:      common.UnknownProgrammingLanguage,
 				},
-				{
-					ContainerName: "test-container-3",
-					Language:      common.IgnoredProgrammingLanguage,
-				},
 			},
 		},
 	}

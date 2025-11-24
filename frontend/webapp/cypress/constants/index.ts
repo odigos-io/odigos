@@ -23,7 +23,43 @@ export const NAMESPACES = {
 
 export const SELECTED_ENTITIES = {
   NAMESPACE: NAMESPACES.DEFAULT,
-  NAMESPACE_SOURCES: ['coupon', 'currency', 'frontend', 'geolocation', 'inventory', 'membership', 'pricing'],
+  NAMESPACE_SOURCES: [
+    {
+      namespace: NAMESPACES.DEFAULT,
+      name: 'coupon',
+      kind: 'Deployment',
+    },
+    {
+      namespace: NAMESPACES.DEFAULT,
+      name: 'currency',
+      kind: 'Deployment',
+    },
+    {
+      namespace: NAMESPACES.DEFAULT,
+      name: 'frontend',
+      kind: 'Deployment',
+    },
+    {
+      namespace: NAMESPACES.DEFAULT,
+      name: 'geolocation',
+      kind: 'Deployment',
+    },
+    {
+      namespace: NAMESPACES.DEFAULT,
+      name: 'inventory',
+      kind: 'Deployment',
+    },
+    {
+      namespace: NAMESPACES.DEFAULT,
+      name: 'membership',
+      kind: 'Deployment',
+    },
+    {
+      namespace: NAMESPACES.DEFAULT,
+      name: 'pricing',
+      kind: 'Deployment',
+    },
+  ],
   DESTINATION: {
     TYPE: 'jaeger',
     DISPLAY_NAME: 'Jaeger',
@@ -78,10 +114,8 @@ export const DATA_IDS = {
 
   MULTI_SOURCE_CONTROL: '[data-id=multi-source-control]',
   SOURCE_NODE_HEADER: '[data-id=Source-header]',
-  SOURCE_NODE: (index: number) => `[data-id=Source-${index}]`,
-  DESTINATION_NODE: (index: number) => `[data-id=Destination-${index}]`,
-  ACTION_NODE: (index: number) => `[data-id=Action-${index}]`,
-  INSTRUMENTATION_RULE_NODE: (index: number) => `[data-id=InstrumentationRule-${index}]`,
+  SOURCE_NODE: (id: { namespace: string; name: string; kind: string }) => `[data-id=${id.namespace}-${id.name}-${id.kind}]`,
+  DESTINATION_NODE: (id: string) => `[data-id="${id}"]`,
 
   TITLE: '[data-id=title]',
   SOURCE_TITLE: '[data-id=sourceName]',

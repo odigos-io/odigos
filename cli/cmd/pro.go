@@ -255,8 +255,8 @@ func getLatestOffsets(revert bool) ([]byte, error) {
 
 var centralCmd = &cobra.Command{
 	Use:   "central",
-	Short: "Manage Odigos Tower (Enterprise tier)",
-	Long:  "Manage Odigos Tower backend and UI components used in enterprise deployments.",
+	Short: "Manage Odigos Central (Enterprise tier)",
+	Long:  "Manage Odigos Central backend and UI components used in enterprise deployments.",
 }
 
 var (
@@ -267,7 +267,7 @@ var (
 
 var centralInstallCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install Odigos Tower backend and UI components",
+	Short: "Install Odigos Central backend and UI components",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -278,7 +278,7 @@ var centralInstallCmd = &cobra.Command{
 			storageClassNamePtr = &centralAuthStorageClassName
 		}
 		if err := installCentralBackendAndUI(ctx, client, proNamespaceFlag, onPremToken, storageClassNamePtr); err != nil {
-			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos Tower:")
+			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos Central:")
 			fmt.Println(err)
 			os.Exit(1)
 		}
@@ -287,7 +287,7 @@ var centralInstallCmd = &cobra.Command{
 
 var centralUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
-	Short: "Uninstall Odigos Tower backend and UI components",
+	Short: "Uninstall Odigos Central backend and UI components",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -299,7 +299,7 @@ var centralUninstallCmd = &cobra.Command{
 		}
 
 		if !cmd.Flag("yes").Changed {
-			fmt.Printf("About to uninstall Odigos Tower from namespace %s\n", ns)
+			fmt.Printf("About to uninstall Odigos Central from namespace %s\n", ns)
 			confirmed, err := confirm.Ask("Are you sure?")
 			if err != nil || !confirmed {
 				fmt.Println("Aborting uninstall")
@@ -307,7 +307,7 @@ var centralUninstallCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Println("Starting Odigos Tower uninstallation...")
+		fmt.Println("Starting Odigos Central uninstallation...")
 
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Deployments",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteDeploymentsByLabel)
@@ -336,7 +336,7 @@ var centralUninstallCmd = &cobra.Command{
 			waitForNamespaceDeletion(ctx, client, ns)
 		}
 
-		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower uninstalled.\n")
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Central uninstalled.\n")
 	},
 }
 
@@ -404,7 +404,7 @@ var activateCmd = &cobra.Command{
 
 var centralUpgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "Upgrade Odigos Tower UI in the central namespace",
+	Short: "Upgrade Odigos Central UI in the central namespace",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
@@ -416,7 +416,7 @@ var centralUpgradeCmd = &cobra.Command{
 		}
 
 		if !cmd.Flag("yes").Changed {
-			fmt.Printf("About to upgrade Odigos Tower UI in namespace %s to version %s\n", ns, versionFlag)
+			fmt.Printf("About to upgrade Odigos Central UI in namespace %s to version %s\n", ns, versionFlag)
 			confirmed, err := confirm.Ask("Are you sure?")
 			if err != nil || !confirmed {
 				fmt.Println("Aborting upgrade")
@@ -437,12 +437,12 @@ var centralUpgradeCmd = &cobra.Command{
 		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
 		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts)
 		if err := resources.ApplyResourceManagers(ctx, client, []resourcemanager.ResourceManager{uiManager, backendManager}, "Upgrading"); err != nil {
-			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Tower UI/Backend:")
+			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Central UI/Backend:")
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
-		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower UI and Backend upgraded to %s.\n", versionFlag)
+		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Central UI and Backend upgraded to %s.\n", versionFlag)
 	},
 }
 
@@ -467,13 +467,13 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 
 	_, err := client.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralBackendName, metav1.GetOptions{})
 	if err == nil {
-		fmt.Printf("\n\u001B[33mINFO:\u001B[0m Odigos Tower is already installed in namespace %s\n", ns)
+		fmt.Printf("\n\u001B[33mINFO:\u001B[0m Odigos Central is already installed in namespace %s\n", ns)
 		return nil
 	} else if !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to check existing central backend: %w", err)
 	}
 
-	fmt.Println("Installing Odigos Tower backend and UI ...")
+	fmt.Println("Installing Odigos Central backend and UI ...")
 
 	managerOpts := resourcemanager.ManagerOpts{
 		ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
@@ -493,10 +493,10 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	}
 	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
 	if err := resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating"); err != nil {
-		return fmt.Errorf("failed to install Odigos Tower: %w", err)
+		return fmt.Errorf("failed to install Odigos Central: %w", err)
 	}
 
-	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Tower installed.\n")
+	fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Central installed.\n")
 	return nil
 }
 
@@ -506,8 +506,8 @@ func deleteCentralTokenSecretAdapter(ctx context.Context, client *kube.Client, n
 
 var portForwardCentralCmd = &cobra.Command{
 	Use:   "ui",
-	Short: "Port-forward Odigos Tower UI and Backend to localhost",
-	Long:  "Port-forward the Tower UI (port 3000) and Tower Backend (port 8081) to enable local access to Odigos UI. Use --address to bind to specific interfaces.",
+	Short: "Port-forward Odigos Central UI and Backend to localhost",
+	Long:  "Port-forward the Central UI (port 3000) and Central Backend (port 8081) to enable local access to Odigos UI. Use --address to bind to specific interfaces.",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, cancel := context.WithCancel(cmd.Context())
 		defer cancel()
@@ -535,8 +535,8 @@ var portForwardCentralCmd = &cobra.Command{
 		}
 		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI", localAddress)
 
-		fmt.Printf("Odigos Tower UI is available at: http://%s:%s\n", localAddress, k8sconsts.CentralUIPort)
-		fmt.Printf("Odigos Tower Backend is available at: http://%s:%s\n", localAddress, k8sconsts.CentralBackendPort)
+		fmt.Printf("Odigos Central UI is available at: http://%s:%s\n", localAddress, k8sconsts.CentralUIPort)
+		fmt.Printf("Odigos Central Backend is available at: http://%s:%s\n", localAddress, k8sconsts.CentralBackendPort)
 		fmt.Printf("Press Ctrl+C to stop\n")
 
 		<-sigCh
@@ -616,17 +616,17 @@ func init() {
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
-	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower installation")
+	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 
 	// register and configure central uninstall command
 	centralCmd.AddCommand(centralUninstallCmd)
 	centralUninstallCmd.Flags().Bool("yes", false, "Confirm the uninstall without prompting")
-	centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower uninstallation")
+	centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central uninstallation")
 
 	// register and configure central upgrade command
 	centralCmd.AddCommand(centralUpgradeCmd)
 	centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
-	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Tower upgrade")
+	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central upgrade")
 	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 	centralUpgradeCmd.MarkFlagRequired("version")
 
