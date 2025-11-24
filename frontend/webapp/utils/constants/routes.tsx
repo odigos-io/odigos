@@ -20,7 +20,7 @@ const PORT = typeof window !== 'undefined' ? window.location.port : '';
 
 const IS_INGRESSED_DOMAIN = !!HOSTNAME && HOSTNAME !== 'localhost' && PORT === '';
 
-const BACKEND_HTTP_ORIGIN = typeof window !== 'undefined' ? (IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : window.location.origin) : 'http://localhost:3000';
+const BACKEND_HTTP_ORIGIN = typeof window !== 'undefined' ? (IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : 'http://localhost:8085') : 'http://localhost:3000';
 
 export const API = {
   GRAPHQL: `${BACKEND_HTTP_ORIGIN}/graphql`,

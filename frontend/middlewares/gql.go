@@ -27,7 +27,7 @@ func (o *operationInterceptor) InterceptOperation(ctx context.Context, next grap
 
 	//  Check if the operation is a mutation, then check if the UI is in readonly mode
 	if operationCtx.Operation.Operation == ast.Mutation {
-		if services.IsReadonlyMode(ctx) {
+		if services.IsReadonlyMode(ctx) && !AdminOverrideFromContext(ctx) {
 			return func(ctx context.Context) *graphql.Response {
 				return graphql.ErrorResponse(ctx, "%s", services.ErrorIsReadonly.Error())
 			}
