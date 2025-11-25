@@ -95,3 +95,12 @@ rules:
       - create
       - delete
       {{- end }}
+  # Allow TokenReview creation to validate central-proxy identity for admin override
+  {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  {{- end }}

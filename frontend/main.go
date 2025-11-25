@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -19,6 +21,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
+	authenticationv1 "k8s.io/api/authentication/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/common"
@@ -197,7 +201,26 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		loader := loaders.NewLoaders(logger, k8sCacheClient)
 		baseCtx := c.Request.Context()
 		if c.GetHeader(middlewares.AdminOverrideHeader) == "true" {
-			baseCtx = middlewares.WithAdminOverride(baseCtx)
+			// Require valid ServiceAccount token from central-proxy via TokenReview
+			authHeader := c.GetHeader("Authorization")
+			if strings.HasPrefix(strings.ToLower(authHeader), "bearer ") || strings.HasPrefix(authHeader, "Bearer ") {
+				token := strings.TrimSpace(authHeader[len("Bearer "):])
+				if token != "" {
+					tr := &authenticationv1.TokenReview{
+						Spec: authenticationv1.TokenReviewSpec{
+							Token: token,
+						},
+					}
+					if kube.DefaultClient != nil {
+						if res, err := kube.DefaultClient.AuthenticationV1().TokenReviews().Create(baseCtx, tr, metav1.CreateOptions{}); err == nil && res.Status.Authenticated {
+							expectedUser := fmt.Sprintf("system:serviceaccount:%s:%s", env.GetCurrentNamespace(), "central-proxy")
+							if res.Status.User.Username == expectedUser {
+								baseCtx = middlewares.WithAdminOverride(baseCtx)
+							}
+						}
+					}
+				}
+			}
 		}
 		baseCtx = loaders.WithLoaders(baseCtx, loader)
 		c.Request = c.Request.WithContext(baseCtx)
