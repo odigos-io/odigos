@@ -1,4 +1,4 @@
-TAG ?= $(shell odigos version --cluster)
+TAG ?= $(shell odigos version --cluster 2>/dev/null || odigos version --cli 2>/dev/null)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
@@ -229,10 +229,6 @@ debug-odiglet:
 	kubectl delete pod -n odigos-system -l app.kubernetes.io/name=odiglet
 	kubectl wait --for=condition=ready pod -n odigos-system -l app.kubernetes.io/name=odiglet --timeout=180s
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
-
-,PHONY: e2e-test
-e2e-test:
-	./e2e-test.sh
 
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -v "licenses")
 
