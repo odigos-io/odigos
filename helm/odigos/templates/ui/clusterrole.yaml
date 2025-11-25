@@ -95,12 +95,3 @@ rules:
       - create
       - delete
       {{- end }}
-  # Allow TokenReview creation to validate central-proxy identity for admin override
-  {{- if include "odigos.ui.requiresWritePermissions" . }}
-  - apiGroups:
-      - authentication.k8s.io
-    resources:
-      - tokenreviews
-    verbs:
-      - create
-  {{- end }}
