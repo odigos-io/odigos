@@ -505,7 +505,7 @@ openshift:
 gke:
   enabled: false
 
-# List of profile names (array). Example (YAML): profiles: [size_l] | (CLI): --set profiles={size_l}
+# List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}
 profiles: []
 
 # Global NodeSelector to apply to all Odigos components by default.
