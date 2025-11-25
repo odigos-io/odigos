@@ -12,7 +12,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - patch
       {{- end }}
   - apiGroups:
@@ -24,7 +24,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
       {{- end }}
@@ -35,7 +35,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
       {{- end }}
@@ -47,7 +47,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
       {{- end }}
@@ -90,8 +90,17 @@ rules:
     verbs:
       - get
       - list
-      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - patch
       - create
       - delete
       {{- end }}
+  # Allow TokenReview creation to validate central-proxy identity for admin override
+  {{- if include "odigos.ui.requiresWritePermissions" . }}
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  {{- end }}
