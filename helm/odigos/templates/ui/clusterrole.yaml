@@ -12,7 +12,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - patch
       {{- end }}
   - apiGroups:
@@ -24,7 +24,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
       {{- end }}
@@ -35,7 +35,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
       {{- end }}
@@ -47,7 +47,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
       {{- end }}
@@ -90,7 +90,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
       - patch
       - create
       - delete
