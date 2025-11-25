@@ -59,6 +59,9 @@ var uiFS embed.FS
 // 2. Then run: "yarn install && yarn build"
 // After the build completed, there should be a "frontend/webapp/out/" dir (which is ignored from git), that should resolve the red error.
 
+//go:embed graph/workloads.html
+var workloadsHTML embed.FS
+
 func parseFlags() Flags {
 	defaultKubeConfig := env.GetDefaultKubeConfigPath()
 
@@ -230,6 +233,16 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 
 	r.POST("/source/namespace/:namespace/kind/:kind/name/:name", services.CreateSourceWithAPI)
 	r.DELETE("/source/namespace/:namespace/kind/:kind/name/:name", services.DeleteSourceWithAPI)
+
+	// Workloads static HTML page
+	r.GET("/workloads", func(c *gin.Context) {
+		data, err := workloadsHTML.ReadFile("graph/workloads.html")
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error reading workloads.html: %v", err)
+			return
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+	})
 
 	return r, nil
 }

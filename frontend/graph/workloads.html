@@ -1,0 +1,3318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workloads - Odigos</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #json-output {
+            max-height: 80vh;
+            overflow: auto;
+        }
+        .json-item {
+            margin: 2px 0;
+        }
+        .json-item.expandable {
+            cursor: pointer;
+        }
+        .json-item.expandable:hover {
+            background-color: #f0f0f0;
+        }
+        .json-key {
+            color: #881391;
+            font-weight: 500;
+        }
+        .json-string {
+            color: #0b7500;
+        }
+        .json-number {
+            color: #1c00cf;
+        }
+        .json-boolean {
+            color: #1c00cf;
+        }
+        .json-null {
+            color: #808080;
+        }
+        .emoji-tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .emoji-tooltip {
+            visibility: hidden;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            padding: 8px 12px;
+            border-radius: 4px;
+            position: absolute;
+            z-index: 1000;
+            top: 0;
+            left: 100%;
+            margin-left: 8px;
+            white-space: nowrap;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            max-width: 400px;
+            min-width: 200px;
+            white-space: normal;
+            word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .emoji-tooltip::before {
+            content: "";
+            position: absolute;
+            right: 100%;
+            top: 8px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent #333 transparent transparent;
+        }
+        .emoji-tooltip-wrapper:hover .emoji-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .status-error {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+        .status-failure {
+            color: #c62828;
+            font-weight: 600;
+        }
+        .status-notice {
+            color: #f57c00;
+            font-weight: 600;
+        }
+        .status-pending {
+            color: #1976d2;
+            font-weight: 500;
+        }
+        .status-waiting {
+            color: #0288d1;
+            font-weight: 500;
+        }
+        .status-unsupported {
+            color: #757575;
+            font-weight: 500;
+        }
+        .status-disabled {
+            color: #616161;
+            font-weight: 500;
+        }
+        .status-success {
+            color: #388e3c;
+            font-weight: 600;
+        }
+        .status-irrelevant {
+            color: #9e9e9e;
+            font-weight: 400;
+        }
+        .status-unknown {
+            color: #757575;
+            font-weight: 500;
+        }
+        .toggle {
+            cursor: pointer;
+            user-select: none;
+            display: inline-block;
+            width: 16px;
+            text-align: center;
+            margin-right: 4px;
+        }
+        .toggle::before {
+            content: '▶';
+            display: inline-block;
+            transition: transform 0.2s;
+            font-size: 10px;
+        }
+        .toggle.expanded::before {
+            transform: rotate(90deg);
+        }
+        .children {
+            margin-left: 20px;
+            display: none;
+        }
+        .children.expanded {
+            display: block;
+        }
+        .loading {
+            color: #666;
+        }
+        .error {
+            color: #d32f2f;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .header-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin-right: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .timestamp-duration {
+            margin-left: 8px;
+        }
+        .timestamp-duration.old {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+        .verbosity-select {
+            padding: 8px 12px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .verbosity-label {
+            margin-right: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+        .namespace-select {
+            padding: 8px 12px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .namespace-label {
+            margin-right: 8px;
+            margin-left: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+        .name-select {
+            padding: 8px 12px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .name-label {
+            margin-right: 8px;
+            margin-left: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+        .tabs {
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+        .tab-button {
+            background-color: transparent;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            margin-right: 4px;
+        }
+        .tab-button:hover {
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .tab-button.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+            font-weight: 500;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .k8s-commands {
+            padding: 15px;
+        }
+        .k8s-command-section {
+            margin-bottom: 20px;
+        }
+        .k8s-command-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .k8s-command-block {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .k8s-command-text {
+            flex: 1;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #333;
+        }
+        .k8s-copy-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .k8s-copy-btn:hover {
+            background-color: #0056b3;
+        }
+        .k8s-copy-btn:active {
+            background-color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Workloads</h1>
+        <div class="header-row">
+            <button class="btn" onclick="refreshData()">Refresh</button>
+            <span id="timestamp" class="timestamp"></span>
+        </div>
+        <div class="controls">
+            <label for="verbosity" class="verbosity-label">Verbosity:</label>
+            <select id="verbosity" class="verbosity-select" onchange="refreshData()">
+                <option value="general">General</option>
+                <option value="overview">Overview</option>
+                <option value="healthSummary">Health Summary</option>
+                <option value="verbose" selected>Verbose</option>
+                <option value="pods">Pods</option>
+            </select>
+            <label for="namespace" class="namespace-label">Namespace:</label>
+            <select id="namespace" class="namespace-select" onchange="applyNamespaceFilter()">
+                <option value="">All Namespaces</option>
+            </select>
+            <label for="name" class="name-label">Workload:</label>
+            <select id="name" class="name-select" onchange="applyNameFilter()">
+                <option value="">All Workloads</option>
+            </select>
+            <button class="btn" onclick="expandAll()">Expand All</button>
+            <button class="btn" onclick="collapseAll()">Collapse All</button>
+        </div>
+        <div id="json-output" class="loading">Loading...</div>
+    </div>
+    <script>
+        function getStatusEmoji(statusValue) {
+            if (!statusValue || typeof statusValue !== 'string') {
+                return '';
+            }
+            const statusEmojis = {
+                'error': '⚠️',
+                'failure': '❌',
+                'notice': '📢',
+                'pending': '⏳',
+                'waiting': '⏱️',
+                'unsupported': '🚫',
+                'disabled': '⏸️',
+                'success': '✅',
+                'irrelevant': '➖',
+                'unknown': '❓'
+            };
+            return statusEmojis[statusValue.toLowerCase()] || '';
+        }
+        
+        function renderJSON(data, parent, key = null, emoji = null, emojiTooltip = null) {
+            const item = document.createElement('div');
+            item.className = 'json-item';
+            
+            if (key !== null) {
+                const keySpan = document.createElement('span');
+                keySpan.className = 'json-key';
+                
+                // Add emoji with tooltip if provided
+                if (emoji) {
+                    const tooltipWrapper = document.createElement('span');
+                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                    
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.textContent = emoji + ' ';
+                    emojiSpan.style.cursor = 'help';
+                    tooltipWrapper.appendChild(emojiSpan);
+                    
+                    const tooltipDiv = document.createElement('div');
+                    tooltipDiv.className = 'emoji-tooltip';
+                    tooltipDiv.textContent = emojiTooltip && emojiTooltip.trim() 
+                        ? emojiTooltip 
+                        : 'Test tooltip message - this should appear on hover';
+                    tooltipWrapper.appendChild(tooltipDiv);
+                    
+                    keySpan.appendChild(tooltipWrapper);
+                }
+                
+                keySpan.appendChild(document.createTextNode(key + ': '));
+                item.appendChild(keySpan);
+            }
+            
+            if (data === null) {
+                const nullSpan = document.createElement('span');
+                nullSpan.className = 'json-null';
+                nullSpan.textContent = 'null';
+                item.appendChild(nullSpan);
+                parent.appendChild(item);
+                return;
+            }
+            
+            const type = typeof data;
+            
+            if (type === 'string' || type === 'number' || type === 'boolean') {
+                const valueSpan = document.createElement('span');
+                
+                // Special handling for status fields
+                if (type === 'string' && key === 'status') {
+                    const statusValue = data.toLowerCase();
+                    const statusClasses = {
+                        'error': 'status-error',
+                        'failure': 'status-failure',
+                        'notice': 'status-notice',
+                        'pending': 'status-pending',
+                        'waiting': 'status-waiting',
+                        'unsupported': 'status-unsupported',
+                        'disabled': 'status-disabled',
+                        'success': 'status-success',
+                        'irrelevant': 'status-irrelevant',
+                        'unknown': 'status-unknown'
+                    };
+                    
+                    const emoji = getStatusEmoji(data);
+                    const statusClass = statusClasses[statusValue] || 'json-string';
+                    
+                    valueSpan.className = statusClass;
+                    valueSpan.textContent = emoji + ' "' + data + '"';
+                } else {
+                    valueSpan.className = 'json-' + type;
+                    if (type === 'string') {
+                        valueSpan.textContent = '"' + data + '"';
+                    } else {
+                        valueSpan.textContent = data;
+                    }
+                }
+                
+                item.appendChild(valueSpan);
+                parent.appendChild(item);
+                return;
+            }
+            
+            if (Array.isArray(data)) {
+                const toggle = document.createElement('span');
+                toggle.className = 'toggle';
+                toggle.textContent = '';
+                item.appendChild(toggle);
+                
+                const bracket = document.createElement('span');
+                bracket.textContent = '[' + data.length + ']';
+                item.appendChild(bracket);
+                
+                const children = document.createElement('div');
+                children.className = 'children';
+                
+                data.forEach((val, idx) => {
+                    let itemKey = idx;
+                    // Use containerName for containers array
+                    if (key === 'containers' && val && typeof val === 'object' && val.containerName) {
+                        itemKey = val.containerName;
+                    }
+                    renderJSON(val, children, itemKey);
+                });
+                
+                item.appendChild(children);
+                item.classList.add('expandable');
+                
+                const toggleFunc = (e) => {
+                    if (e) {
+                        e.stopPropagation();
+                    }
+                    toggle.classList.toggle('expanded');
+                    children.classList.toggle('expanded');
+                };
+                
+                toggle.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleFunc();
+                };
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleFunc();
+                };
+                parent.appendChild(item);
+                return;
+            }
+            
+            if (type === 'object') {
+                // Check if this is a status object (has both status and message fields)
+                const isStatusObject = data.status && typeof data.status === 'string' && data.message;
+                let statusEmoji = null;
+                let statusMessage = null;
+                
+                if (isStatusObject) {
+                    statusEmoji = getStatusEmoji(data.status);
+                    statusMessage = typeof data.message === 'string' ? data.message : '';
+                }
+                
+                const toggle = document.createElement('span');
+                toggle.className = 'toggle';
+                toggle.textContent = '';
+                item.appendChild(toggle);
+                
+                // Add emoji for status objects
+                if (statusEmoji && key !== null) {
+                    const tooltipWrapper = document.createElement('span');
+                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                    
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.textContent = statusEmoji + ' ';
+                    emojiSpan.style.cursor = 'help';
+                    tooltipWrapper.appendChild(emojiSpan);
+                    
+                    const tooltipDiv = document.createElement('div');
+                    tooltipDiv.className = 'emoji-tooltip';
+                    tooltipDiv.textContent = statusMessage || '';
+                    tooltipWrapper.appendChild(tooltipDiv);
+                    
+                    item.appendChild(tooltipWrapper);
+                }
+                
+                const children = document.createElement('div');
+                children.className = 'children';
+                
+                Object.keys(data).forEach(k => {
+                    renderJSON(data[k], children, k);
+                });
+                
+                item.appendChild(children);
+                item.classList.add('expandable');
+                
+                const toggleFunc = (e) => {
+                    if (e) {
+                        e.stopPropagation();
+                    }
+                    toggle.classList.toggle('expanded');
+                    children.classList.toggle('expanded');
+                };
+                
+                toggle.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleFunc();
+                };
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleFunc();
+                };
+                parent.appendChild(item);
+                return;
+            }
+        }
+        
+        function expandAll() {
+            const toggles = document.querySelectorAll('.toggle');
+            const children = document.querySelectorAll('.children');
+            toggles.forEach(toggle => toggle.classList.add('expanded'));
+            children.forEach(child => child.classList.add('expanded'));
+        }
+        
+        function collapseAll() {
+            const toggles = document.querySelectorAll('.toggle');
+            const children = document.querySelectorAll('.children');
+            toggles.forEach(toggle => toggle.classList.remove('expanded'));
+            children.forEach(child => child.classList.remove('expanded'));
+        }
+        
+        let lastUpdateTime = null;
+        let durationInterval = null;
+        
+        function formatDuration(seconds) {
+            if (seconds < 60) {
+                return seconds + ' second' + (seconds !== 1 ? 's' : '');
+            }
+            
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            
+            if (minutes < 60) {
+                if (remainingSeconds === 0) {
+                    return minutes + ' minute' + (minutes !== 1 ? 's' : '');
+                }
+                return minutes + ' minute' + (minutes !== 1 ? 's' : '') + ' and ' + 
+                       remainingSeconds + ' second' + (remainingSeconds !== 1 ? 's' : '');
+            }
+            
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            
+            if (remainingMinutes === 0) {
+                return hours + ' hour' + (hours !== 1 ? 's' : '');
+            }
+            return hours + ' hour' + (hours !== 1 ? 's' : '') + ' and ' + 
+                   remainingMinutes + ' minute' + (remainingMinutes !== 1 ? 's' : '');
+        }
+        
+        function updateDuration() {
+            if (!lastUpdateTime) return;
+            
+            const now = new Date();
+            const seconds = Math.floor((now - lastUpdateTime) / 1000);
+            const durationEl = document.getElementById('timestamp-duration');
+            
+            if (durationEl) {
+                const durationText = formatDuration(seconds);
+                durationEl.textContent = '(' + durationText + ' ago)';
+                
+                // Color red if more than 5 minutes
+                if (seconds > 300) {
+                    durationEl.classList.add('old');
+                } else {
+                    durationEl.classList.remove('old');
+                }
+            }
+        }
+        
+        function updateTimestamp() {
+            const timestampEl = document.getElementById('timestamp');
+            const now = new Date();
+            lastUpdateTime = now;
+            timestampEl.innerHTML = 'Last updated: ' + now.toLocaleString() + 
+                ' <span id="timestamp-duration" class="timestamp-duration"></span>';
+            
+            // Clear existing interval
+            if (durationInterval) {
+                clearInterval(durationInterval);
+            }
+            
+            // Update duration immediately and then every second
+            updateDuration();
+            durationInterval = setInterval(updateDuration, 1000);
+        }
+        
+        function refreshData() {
+            const output = document.getElementById('json-output');
+            const verbosity = document.getElementById('verbosity').value;
+            output.classList.add('loading');
+            output.textContent = 'Loading...';
+            
+            const url = '/workload' + (verbosity ? '?verbosity=' + encodeURIComponent(verbosity) : '');
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    loadData(data);
+                    updateTimestamp();
+                })
+                .catch(error => {
+                    output.textContent = 'Error: ' + error.message;
+                    output.classList.add('error');
+                    output.classList.remove('loading');
+                });
+        }
+        
+        let allWorkloadData = [];
+        
+        function populateNamespaceDropdown(data) {
+            const namespaceSelect = document.getElementById('namespace');
+            const selectedNamespace = namespaceSelect.value;
+            
+            // Extract unique namespaces
+            const namespaces = new Set();
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    if (item && item.id && item.id.namespace) {
+                        namespaces.add(item.id.namespace);
+                    }
+                });
+            }
+            
+            // Clear existing options except "All Namespaces"
+            namespaceSelect.innerHTML = '<option value="">All Namespaces</option>';
+            
+            // Add namespace options sorted
+            Array.from(namespaces).sort().forEach(ns => {
+                const option = document.createElement('option');
+                option.value = ns;
+                option.textContent = ns;
+                namespaceSelect.appendChild(option);
+            });
+            
+            // Restore selected namespace if it still exists
+            if (selectedNamespace && namespaces.has(selectedNamespace)) {
+                namespaceSelect.value = selectedNamespace;
+            } else {
+                namespaceSelect.value = '';
+            }
+        }
+        
+        function populateNameDropdown(data, namespaceFilter) {
+            const nameSelect = document.getElementById('name');
+            const selectedName = nameSelect.value;
+            
+            // Clear existing options
+            nameSelect.innerHTML = '<option value="">All Workloads</option>';
+            
+            if (!namespaceFilter) {
+                // If no namespace selected, disable name filter
+                nameSelect.disabled = true;
+                return;
+            }
+            
+            nameSelect.disabled = false;
+            
+            // Extract unique names from the selected namespace
+            const names = new Set();
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    if (item && item.id && item.id.namespace === namespaceFilter && item.id.name) {
+                        names.add(item.id.name);
+                    }
+                });
+            }
+            
+            // Add name options sorted
+            Array.from(names).sort().forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                nameSelect.appendChild(option);
+            });
+            
+            // Restore selected name if it still exists
+            if (selectedName && names.has(selectedName)) {
+                nameSelect.value = selectedName;
+            } else {
+                nameSelect.value = '';
+            }
+        }
+        
+        function applyNamespaceFilter() {
+            const selectedNamespace = document.getElementById('namespace').value;
+            populateNameDropdown(allWorkloadData, selectedNamespace);
+            applyNameFilter();
+        }
+        
+        function applyNameFilter() {
+            const selectedNamespace = document.getElementById('namespace').value;
+            const selectedName = document.getElementById('name').value;
+            displayFilteredData(allWorkloadData, selectedNamespace, selectedName);
+        }
+        
+        function generateK8sCommands(item) {
+            if (!item || !item.id) {
+                return [{ title: 'Error', command: 'No workload information available' }];
+            }
+            
+            const namespace = item.id.namespace || 'default';
+            const kind = item.id.kind || '';
+            const name = item.id.name || '';
+            
+            if (!kind || !name) {
+                return [{ title: 'Error', command: 'Incomplete workload information' }];
+            }
+            
+            const kindLower = kind.toLowerCase();
+            let commands = [];
+            
+            // Describe command
+            commands.push({
+                title: `Describe ${kind}`,
+                command: `kubectl describe ${kindLower} ${name} -n ${namespace}`
+            });
+            
+            // Get YAML
+            commands.push({
+                title: `Get ${kind} YAML`,
+                command: `kubectl get ${kindLower} ${name} -n ${namespace} -o yaml`
+            });
+            
+            return commands;
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Could add a visual feedback here if needed
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+        
+        function switchTab(tabButton, tabContentId) {
+            // Remove active class from all tabs in the same container
+            const container = tabButton.closest('.workload-item');
+            container.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            container.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            tabButton.classList.add('active');
+            document.getElementById(tabContentId).classList.add('active');
+        }
+        
+        function displayFilteredData(data, namespaceFilter = '', nameFilter = '') {
+            const output = document.getElementById('json-output');
+            output.classList.remove('loading');
+            output.innerHTML = '';
+            
+            if (Array.isArray(data)) {
+                let filteredData = data;
+                
+                // Filter by namespace
+                if (namespaceFilter) {
+                    filteredData = filteredData.filter(item => 
+                        item && item.id && item.id.namespace === namespaceFilter
+                    );
+                }
+                
+                // Filter by name
+                if (nameFilter) {
+                    filteredData = filteredData.filter(item => 
+                        item && item.id && item.id.name === nameFilter
+                    );
+                }
+                
+                filteredData.forEach((item, idx) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'workload-item';
+                    wrapper.style.marginBottom = '20px';
+                    wrapper.style.padding = '10px';
+                    wrapper.style.border = '1px solid #ddd';
+                    wrapper.style.borderRadius = '4px';
+                    
+                    let label = 'Item ' + idx;
+                    if (item && item.id && item.id.namespace && item.id.kind && item.id.name) {
+                        label = item.id.namespace + '/' + item.id.kind + '/' + item.id.name;
+                    }
+                    
+                    // Add container instrumentation summary
+                    if (item && item.containers && Array.isArray(item.containers)) {
+                        const totalContainers = item.containers.length;
+                        const instrumentedContainers = item.containers.filter(container => 
+                            container && container.agentEnabled && container.agentEnabled.agentEnabled === true
+                        );
+                        const instrumentedCount = instrumentedContainers.length;
+                        
+                        // Collect distro names from instrumented containers
+                        const distroNames = instrumentedContainers
+                            .map(container => container.agentEnabled && container.agentEnabled.otelDistroName)
+                            .filter(distro => distro && distro.trim())
+                            .filter((distro, index, self) => self.indexOf(distro) === index); // Remove duplicates
+                        
+                        let summary = `(${instrumentedCount}/${totalContainers} containers instrumented`;
+                        if (distroNames.length > 0) {
+                            summary += `: ${distroNames.join(', ')}`;
+                        }
+                        summary += ')';
+                        label += ' ' + summary;
+                    }
+                    
+                    // Add pods instrumentation summary
+                    if (item && item.pods && Array.isArray(item.pods)) {
+                        const totalPods = item.pods.length;
+                        const instrumentedPods = item.pods.filter(pod => 
+                            pod && pod.agentInjected === true
+                        ).length;
+                        label += ` (${instrumentedPods}/${totalPods} pods instrumented)`;
+                    }
+                    
+                    // Get status emoji from workloadOdigosHealthStatus
+                    let statusEmoji = null;
+                    let statusMessage = null;
+                    if (item && item.workloadOdigosHealthStatus && item.workloadOdigosHealthStatus.status) {
+                        statusEmoji = getStatusEmoji(item.workloadOdigosHealthStatus.status);
+                        statusMessage = item.workloadOdigosHealthStatus.message || '';
+                    }
+                    
+                    // Create expandable header
+                    const headerDiv = document.createElement('div');
+                    headerDiv.style.cursor = 'pointer';
+                    headerDiv.style.marginBottom = '5px';
+                    headerDiv.classList.add('expandable');
+                    
+                    const toggle = document.createElement('span');
+                    toggle.className = 'toggle';
+                    toggle.textContent = '';
+                    headerDiv.appendChild(toggle);
+                    
+                    // Add emoji if available
+                    if (statusEmoji) {
+                        const tooltipWrapper = document.createElement('span');
+                        tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                        
+                        const emojiSpan = document.createElement('span');
+                        emojiSpan.textContent = statusEmoji + ' ';
+                        emojiSpan.style.cursor = 'help';
+                        tooltipWrapper.appendChild(emojiSpan);
+                        
+                        const tooltipDiv = document.createElement('div');
+                        tooltipDiv.className = 'emoji-tooltip';
+                        tooltipDiv.textContent = statusMessage || '';
+                        tooltipWrapper.appendChild(tooltipDiv);
+                        
+                        headerDiv.appendChild(tooltipWrapper);
+                    }
+                    
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'json-key';
+                    labelSpan.textContent = label;
+                    headerDiv.appendChild(labelSpan);
+                    
+                    // Create collapsible content div
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'children';
+                    contentDiv.style.display = 'none';
+                    
+                    // Create tabs
+                    const tabsDiv = document.createElement('div');
+                    tabsDiv.className = 'tabs';
+                    
+                    // Overview tab
+                    const overviewTabButton = document.createElement('button');
+                    overviewTabButton.className = 'tab-button active';
+                    overviewTabButton.textContent = 'Overview';
+                    overviewTabButton.onclick = () => switchTab(overviewTabButton, `overview-content-${idx}`);
+                    
+                    // Instrumentation tab
+                    const instrumentationTabButton = document.createElement('button');
+                    instrumentationTabButton.className = 'tab-button';
+                    instrumentationTabButton.textContent = 'Instrumentation';
+                    instrumentationTabButton.onclick = () => switchTab(instrumentationTabButton, `instrumentation-content-${idx}`);
+                    
+                    // Containers tab
+                    const containersTabButton = document.createElement('button');
+                    containersTabButton.className = 'tab-button';
+                    const containersCount = (item && item.containers && Array.isArray(item.containers)) ? item.containers.length : 0;
+                    containersTabButton.textContent = `Containers (${containersCount})`;
+                    containersTabButton.onclick = () => switchTab(containersTabButton, `containers-content-${idx}`);
+                    
+                    // Pods tab
+                    const podsTabButton = document.createElement('button');
+                    podsTabButton.className = 'tab-button';
+                    podsTabButton.style.display = 'inline-flex';
+                    podsTabButton.style.alignItems = 'center';
+                    podsTabButton.style.gap = '4px';
+                    const podsCount = (item && item.pods && Array.isArray(item.pods)) ? item.pods.length : 0;
+                    
+                    // Add podsAgentInjectionStatus emoji (odigos) first
+                    if (item && item.podsAgentInjectionStatus && item.podsAgentInjectionStatus.status) {
+                        const agentStatusEmoji = getStatusEmoji(item.podsAgentInjectionStatus.status);
+                        if (agentStatusEmoji) {
+                            const agentTooltipWrapper = document.createElement('span');
+                            agentTooltipWrapper.className = 'emoji-tooltip-wrapper';
+                            agentTooltipWrapper.style.marginRight = '0';
+                            
+                            const agentEmojiSpan = document.createElement('span');
+                            agentEmojiSpan.textContent = agentStatusEmoji;
+                            agentEmojiSpan.style.cursor = 'help';
+                            agentTooltipWrapper.appendChild(agentEmojiSpan);
+                            
+                            if (item.podsAgentInjectionStatus.message) {
+                                const agentTooltipDiv = document.createElement('div');
+                                agentTooltipDiv.className = 'emoji-tooltip';
+                                agentTooltipDiv.textContent = item.podsAgentInjectionStatus.message;
+                                agentTooltipWrapper.appendChild(agentTooltipDiv);
+                            }
+                            
+                            podsTabButton.appendChild(agentTooltipWrapper);
+                        }
+                    }
+                    
+                    // Add podsHealthStatus emoji (application health) second
+                    if (item && item.podsHealthStatus && item.podsHealthStatus.status) {
+                        const healthStatusEmoji = getStatusEmoji(item.podsHealthStatus.status);
+                        if (healthStatusEmoji) {
+                            const healthTooltipWrapper = document.createElement('span');
+                            healthTooltipWrapper.className = 'emoji-tooltip-wrapper';
+                            healthTooltipWrapper.style.marginRight = '0';
+                            
+                            const healthEmojiSpan = document.createElement('span');
+                            healthEmojiSpan.textContent = healthStatusEmoji;
+                            healthEmojiSpan.style.cursor = 'help';
+                            healthTooltipWrapper.appendChild(healthEmojiSpan);
+                            
+                            if (item.podsHealthStatus.message) {
+                                const healthTooltipDiv = document.createElement('div');
+                                healthTooltipDiv.className = 'emoji-tooltip';
+                                healthTooltipDiv.textContent = item.podsHealthStatus.message;
+                                healthTooltipWrapper.appendChild(healthTooltipDiv);
+                            }
+                            
+                            podsTabButton.appendChild(healthTooltipWrapper);
+                        }
+                    }
+                    
+                    const podsText = document.createElement('span');
+                    podsText.textContent = `Pods (${podsCount})`;
+                    podsTabButton.appendChild(podsText);
+                    
+                    podsTabButton.onclick = () => switchTab(podsTabButton, `pods-content-${idx}`);
+                    
+                    // K8s Commands tab
+                    const k8sTabButton = document.createElement('button');
+                    k8sTabButton.className = 'tab-button';
+                    k8sTabButton.textContent = 'K8s Commands';
+                    k8sTabButton.onclick = () => switchTab(k8sTabButton, `k8s-content-${idx}`);
+                    
+                    // Raw tab
+                    const rawTabButton = document.createElement('button');
+                    rawTabButton.className = 'tab-button';
+                    rawTabButton.textContent = 'Raw';
+                    rawTabButton.onclick = () => switchTab(rawTabButton, `raw-content-${idx}`);
+                    
+                    // Append tabs in order: Overview, Instrumentation, Containers, Pods, K8s Commands, Raw
+                    tabsDiv.appendChild(overviewTabButton);
+                    tabsDiv.appendChild(instrumentationTabButton);
+                    tabsDiv.appendChild(containersTabButton);
+                    tabsDiv.appendChild(podsTabButton);
+                    tabsDiv.appendChild(k8sTabButton);
+                    tabsDiv.appendChild(rawTabButton);
+                    contentDiv.appendChild(tabsDiv);
+                    
+                    // Overview content tab
+                    const overviewContent = document.createElement('div');
+                    overviewContent.id = `overview-content-${idx}`;
+                    overviewContent.className = 'tab-content active';
+                    
+                    // Workload ID section
+                    if (item && item.id) {
+                        const workloadIdSection = document.createElement('div');
+                        workloadIdSection.style.marginBottom = '15px';
+                        workloadIdSection.style.padding = '10px';
+                        workloadIdSection.style.backgroundColor = '#f8f8f8';
+                        workloadIdSection.style.borderRadius = '4px';
+                        
+                        const workloadIdTitle = document.createElement('div');
+                        workloadIdTitle.style.fontSize = '14px';
+                        workloadIdTitle.style.fontWeight = '600';
+                        workloadIdTitle.style.color = '#333';
+                        workloadIdTitle.style.marginBottom = '8px';
+                        workloadIdTitle.textContent = 'Workload ID';
+                        workloadIdSection.appendChild(workloadIdTitle);
+                        
+                        // Namespace
+                        if (item.id.namespace) {
+                            const namespaceDiv = document.createElement('div');
+                            namespaceDiv.style.fontSize = '13px';
+                            namespaceDiv.style.color = '#666';
+                            namespaceDiv.style.marginBottom = '4px';
+                            namespaceDiv.style.display = 'flex';
+                            namespaceDiv.style.alignItems = 'center';
+                            namespaceDiv.style.gap = '6px';
+                            
+                            const namespaceLabel = document.createElement('strong');
+                            namespaceLabel.style.fontWeight = '600';
+                            namespaceLabel.style.color = '#333';
+                            namespaceLabel.textContent = 'namespace:';
+                            namespaceDiv.appendChild(namespaceLabel);
+                            namespaceDiv.appendChild(document.createTextNode(' ' + item.id.namespace));
+                            
+                            const namespaceCopyBtn = document.createElement('button');
+                            namespaceCopyBtn.className = 'k8s-copy-btn';
+                            namespaceCopyBtn.textContent = 'Copy';
+                            namespaceCopyBtn.style.fontSize = '10px';
+                            namespaceCopyBtn.style.padding = '2px 6px';
+                            namespaceCopyBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                copyToClipboard(item.id.namespace);
+                            };
+                            namespaceDiv.appendChild(namespaceCopyBtn);
+                            
+                            workloadIdSection.appendChild(namespaceDiv);
+                        }
+                        
+                        // Kind
+                        if (item.id.kind) {
+                            const kindDiv = document.createElement('div');
+                            kindDiv.style.fontSize = '13px';
+                            kindDiv.style.color = '#666';
+                            kindDiv.style.marginBottom = '4px';
+                            kindDiv.style.display = 'flex';
+                            kindDiv.style.alignItems = 'center';
+                            kindDiv.style.gap = '6px';
+                            
+                            const kindLabel = document.createElement('strong');
+                            kindLabel.style.fontWeight = '600';
+                            kindLabel.style.color = '#333';
+                            kindLabel.textContent = 'kind:';
+                            kindDiv.appendChild(kindLabel);
+                            kindDiv.appendChild(document.createTextNode(' ' + item.id.kind));
+                            
+                            workloadIdSection.appendChild(kindDiv);
+                        }
+                        
+                        // Name
+                        if (item.id.name) {
+                            const nameDiv = document.createElement('div');
+                            nameDiv.style.fontSize = '13px';
+                            nameDiv.style.color = '#666';
+                            nameDiv.style.display = 'flex';
+                            nameDiv.style.alignItems = 'center';
+                            nameDiv.style.gap = '6px';
+                            
+                            const nameLabel = document.createElement('strong');
+                            nameLabel.style.fontWeight = '600';
+                            nameLabel.style.color = '#333';
+                            nameLabel.textContent = 'name:';
+                            nameDiv.appendChild(nameLabel);
+                            nameDiv.appendChild(document.createTextNode(' ' + item.id.name));
+                            
+                            const nameCopyBtn = document.createElement('button');
+                            nameCopyBtn.className = 'k8s-copy-btn';
+                            nameCopyBtn.textContent = 'Copy';
+                            nameCopyBtn.style.fontSize = '10px';
+                            nameCopyBtn.style.padding = '2px 6px';
+                            nameCopyBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                copyToClipboard(item.id.name);
+                            };
+                            nameDiv.appendChild(nameCopyBtn);
+                            
+                            workloadIdSection.appendChild(nameDiv);
+                        }
+                        
+                        overviewContent.appendChild(workloadIdSection);
+                    }
+                    
+                    // Instrumentation section
+                    if (item && item.markedForInstrumentation) {
+                        const instrumentationSection = document.createElement('div');
+                        instrumentationSection.style.marginBottom = '15px';
+                        instrumentationSection.style.padding = '10px';
+                        instrumentationSection.style.backgroundColor = '#f8f8f8';
+                        instrumentationSection.style.borderRadius = '4px';
+                        
+                        const instrumentationTitle = document.createElement('div');
+                        instrumentationTitle.style.fontSize = '14px';
+                        instrumentationTitle.style.fontWeight = '600';
+                        instrumentationTitle.style.color = '#333';
+                        instrumentationTitle.style.marginBottom = '8px';
+                        instrumentationTitle.textContent = 'Instrumentation';
+                        instrumentationSection.appendChild(instrumentationTitle);
+                        
+                        // Marked for instrumentation field
+                        const markedDiv = document.createElement('div');
+                        markedDiv.style.fontSize = '13px';
+                        markedDiv.style.color = '#666';
+                        markedDiv.style.display = 'flex';
+                        markedDiv.style.alignItems = 'center';
+                        markedDiv.style.gap = '3px';
+                        
+                        // Add emoji and text
+                        const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                        const markedEmoji = isMarked ? '✅' : '➖';
+                        markedDiv.appendChild(document.createTextNode(markedEmoji + ' '));
+                        
+                        if (isMarked) {
+                            markedDiv.appendChild(document.createTextNode('marked for instrumentation'));
+                        } else {
+                            const notSpan = document.createElement('strong');
+                            notSpan.style.fontWeight = '600';
+                            notSpan.textContent = 'NOT';
+                            markedDiv.appendChild(notSpan);
+                            markedDiv.appendChild(document.createTextNode('marked for instrumentation'));
+                        }
+                        
+                        instrumentationSection.appendChild(markedDiv);
+                        
+                        // Runtime Info field
+                        if (item && item.runtimeInfo && item.runtimeInfo.completedStatus && item.runtimeInfo.completedStatus.status !== 'Irrelevant') {
+                            const runtimeDiv = document.createElement('div');
+                            runtimeDiv.style.fontSize = '13px';
+                            runtimeDiv.style.color = '#666';
+                            runtimeDiv.style.display = 'flex';
+                            runtimeDiv.style.alignItems = 'center';
+                            runtimeDiv.style.gap = '3px';
+                            
+                            // Add emoji from completedStatus if available
+                            if (item.runtimeInfo.completedStatus && item.runtimeInfo.completedStatus.status) {
+                                const statusEmoji = getStatusEmoji(item.runtimeInfo.completedStatus.status);
+                                if (statusEmoji) {
+                                    const tooltipWrapper = document.createElement('span');
+                                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                    tooltipWrapper.style.marginRight = '0';
+                                    
+                                    const emojiSpan = document.createElement('span');
+                                    emojiSpan.textContent = statusEmoji;
+                                    emojiSpan.style.cursor = 'help';
+                                    tooltipWrapper.appendChild(emojiSpan);
+                                    
+                                    if (item.runtimeInfo.completedStatus.message) {
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = item.runtimeInfo.completedStatus.message;
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                    }
+                                    
+                                    runtimeDiv.appendChild(tooltipWrapper);
+                                    runtimeDiv.appendChild(document.createTextNode(' '));
+                                }
+                            }
+                            
+                            // Add text based on completed property
+                            const isCompleted = item.runtimeInfo.completed === true;
+                            const runtimeText = isCompleted ? 'runtime detection completed' : 'no runtime info available yet';
+                            runtimeDiv.appendChild(document.createTextNode(runtimeText));
+                            
+                            instrumentationSection.appendChild(runtimeDiv);
+                        }
+                        
+                        // Agent injected enabled field
+                        if (item && item.agentEnabled && item.agentEnabled.enabledStatus && item.agentEnabled.enabledStatus.status !== 'Irrelevant') {
+                            const agentEnabledDiv = document.createElement('div');
+                            agentEnabledDiv.style.fontSize = '13px';
+                            agentEnabledDiv.style.color = '#666';
+                            agentEnabledDiv.style.display = 'flex';
+                            agentEnabledDiv.style.alignItems = 'center';
+                            agentEnabledDiv.style.gap = '3px';
+                            
+                            // Add emoji from enabledStatus if available
+                            if (item.agentEnabled.enabledStatus && item.agentEnabled.enabledStatus.status) {
+                                const statusEmoji = getStatusEmoji(item.agentEnabled.enabledStatus.status);
+                                if (statusEmoji) {
+                                    const tooltipWrapper = document.createElement('span');
+                                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                    tooltipWrapper.style.marginRight = '0';
+                                    
+                                    const emojiSpan = document.createElement('span');
+                                    emojiSpan.textContent = statusEmoji;
+                                    emojiSpan.style.cursor = 'help';
+                                    tooltipWrapper.appendChild(emojiSpan);
+                                    
+                                    if (item.agentEnabled.enabledStatus.message) {
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = item.agentEnabled.enabledStatus.message;
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                    }
+                                    
+                                    agentEnabledDiv.appendChild(tooltipWrapper);
+                                    agentEnabledDiv.appendChild(document.createTextNode(' '));
+                                }
+                            }
+                            
+                            // Add text
+                            const agentEnabledText = item.agentEnabled.agentEnabled === true ? 'agent injection enabled' : 'agent injection NOT enabled';
+                            if (item.agentEnabled.agentEnabled !== true) {
+                                const notSpan = document.createElement('strong');
+                                notSpan.style.fontWeight = '600';
+                                notSpan.textContent = 'agent injection NOT';
+                                agentEnabledDiv.appendChild(notSpan);
+                                agentEnabledDiv.appendChild(document.createTextNode(' enabled'));
+                            } else {
+                                agentEnabledDiv.appendChild(document.createTextNode(agentEnabledText));
+                            }
+                            
+                            instrumentationSection.appendChild(agentEnabledDiv);
+                        }
+                        
+                        // Rollout status field
+                        if (item && item.rollout && item.rollout.rolloutStatus && item.rollout.rolloutStatus.status !== 'Irrelevant') {
+                            const rolloutDiv = document.createElement('div');
+                            rolloutDiv.style.fontSize = '13px';
+                            rolloutDiv.style.color = '#666';
+                            rolloutDiv.style.display = 'flex';
+                            rolloutDiv.style.alignItems = 'center';
+                            rolloutDiv.style.gap = '3px';
+                            
+                            // Add emoji from rolloutStatus if available
+                            if (item.rollout.rolloutStatus.status) {
+                                const statusEmoji = getStatusEmoji(item.rollout.rolloutStatus.status);
+                                if (statusEmoji) {
+                                    const tooltipWrapper = document.createElement('span');
+                                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                    tooltipWrapper.style.marginRight = '0';
+                                    
+                                    const emojiSpan = document.createElement('span');
+                                    emojiSpan.textContent = statusEmoji;
+                                    emojiSpan.style.cursor = 'help';
+                                    tooltipWrapper.appendChild(emojiSpan);
+                                    
+                                    if (item.rollout.rolloutStatus.message) {
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = item.rollout.rolloutStatus.message;
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                    }
+                                    
+                                    rolloutDiv.appendChild(tooltipWrapper);
+                                    rolloutDiv.appendChild(document.createTextNode(' '));
+                                }
+                            }
+                            
+                            // Add text
+                            rolloutDiv.appendChild(document.createTextNode('rollout pods to apply instrumentation agent'));
+                            
+                            instrumentationSection.appendChild(rolloutDiv);
+                        }
+                        
+                        // Agent injected to running pods status field
+                        if (item && item.podsAgentInjectionStatus && item.podsAgentInjectionStatus.status && item.podsAgentInjectionStatus.status !== 'Irrelevant') {
+                            const podsAgentDiv = document.createElement('div');
+                            podsAgentDiv.style.fontSize = '13px';
+                            podsAgentDiv.style.color = '#666';
+                            podsAgentDiv.style.display = 'flex';
+                            podsAgentDiv.style.alignItems = 'center';
+                            podsAgentDiv.style.gap = '3px';
+                            
+                            // Add emoji from podsAgentInjectionStatus if available
+                            if (item.podsAgentInjectionStatus.status) {
+                                const statusEmoji = getStatusEmoji(item.podsAgentInjectionStatus.status);
+                                if (statusEmoji) {
+                                    const tooltipWrapper = document.createElement('span');
+                                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                    tooltipWrapper.style.marginRight = '0';
+                                    
+                                    const emojiSpan = document.createElement('span');
+                                    emojiSpan.textContent = statusEmoji;
+                                    emojiSpan.style.cursor = 'help';
+                                    tooltipWrapper.appendChild(emojiSpan);
+                                    
+                                    if (item.podsAgentInjectionStatus.message) {
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = item.podsAgentInjectionStatus.message;
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                    }
+                                    
+                                    podsAgentDiv.appendChild(tooltipWrapper);
+                                    podsAgentDiv.appendChild(document.createTextNode(' '));
+                                }
+                            }
+                            
+                            // Add text
+                            podsAgentDiv.appendChild(document.createTextNode('agent injected to running pods'));
+                            
+                            instrumentationSection.appendChild(podsAgentDiv);
+                        }
+                        
+                        // Processes health status field
+                        if (item && item.processesHealthStatus && item.processesHealthStatus.status && item.processesHealthStatus.status !== 'Irrelevant') {
+                            const processesHealthDiv = document.createElement('div');
+                            processesHealthDiv.style.fontSize = '13px';
+                            processesHealthDiv.style.color = '#666';
+                            processesHealthDiv.style.display = 'flex';
+                            processesHealthDiv.style.alignItems = 'center';
+                            processesHealthDiv.style.gap = '3px';
+                            
+                            // Add emoji from processesHealthStatus if available
+                            if (item.processesHealthStatus.status) {
+                                const statusEmoji = getStatusEmoji(item.processesHealthStatus.status);
+                                if (statusEmoji) {
+                                    const tooltipWrapper = document.createElement('span');
+                                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                    tooltipWrapper.style.marginRight = '0';
+                                    
+                                    const emojiSpan = document.createElement('span');
+                                    emojiSpan.textContent = statusEmoji;
+                                    emojiSpan.style.cursor = 'help';
+                                    tooltipWrapper.appendChild(emojiSpan);
+                                    
+                                    if (item.processesHealthStatus.message) {
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = item.processesHealthStatus.message;
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                    }
+                                    
+                                    processesHealthDiv.appendChild(tooltipWrapper);
+                                    processesHealthDiv.appendChild(document.createTextNode(' '));
+                                }
+                            }
+                            
+                            // Add text
+                            processesHealthDiv.appendChild(document.createTextNode('instrumented processes health'));
+                            
+                            instrumentationSection.appendChild(processesHealthDiv);
+                        }
+                        
+                        overviewContent.appendChild(instrumentationSection);
+                    }
+                    
+                    contentDiv.appendChild(overviewContent);
+                    
+                    // Instrumentation content tab
+                    const instrumentationContent = document.createElement('div');
+                    instrumentationContent.id = `instrumentation-content-${idx}`;
+                    instrumentationContent.className = 'tab-content';
+                    
+                    // Marked for Instrumentation section
+                    if (item && item.markedForInstrumentation) {
+                        const markedSection = document.createElement('div');
+                        markedSection.style.marginBottom = '15px';
+                        markedSection.style.padding = '10px';
+                        markedSection.style.backgroundColor = '#f8f8f8';
+                        markedSection.style.borderRadius = '4px';
+                        
+                        const markedTitle = document.createElement('div');
+                        markedTitle.style.fontSize = '14px';
+                        markedTitle.style.fontWeight = '600';
+                        markedTitle.style.color = '#333';
+                        markedTitle.style.marginBottom = '8px';
+                        markedTitle.textContent = '#1 Marked for Instrumentation';
+                        markedSection.appendChild(markedTitle);
+                        
+                        // Status field (emoji + text)
+                        const statusDiv = document.createElement('div');
+                        statusDiv.style.fontSize = '13px';
+                        statusDiv.style.color = '#666';
+                        statusDiv.style.marginBottom = '8px';
+                        statusDiv.style.display = 'flex';
+                        statusDiv.style.alignItems = 'center';
+                        statusDiv.style.gap = '3px';
+                        
+                        const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                        const markedEmoji = isMarked ? '✅' : '➖';
+                        statusDiv.appendChild(document.createTextNode(markedEmoji + ' '));
+                        
+                        if (isMarked) {
+                            statusDiv.appendChild(document.createTextNode('marked for instrumentation'));
+                        } else {
+                            const notSpan = document.createElement('strong');
+                            notSpan.style.fontWeight = '600';
+                            notSpan.textContent = 'NOT';
+                            statusDiv.appendChild(notSpan);
+                            statusDiv.appendChild(document.createTextNode(' marked for instrumentation'));
+                        }
+                        
+                        markedSection.appendChild(statusDiv);
+                        
+                        // Message field
+                        if (item.markedForInstrumentation.message) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.fontSize = '13px';
+                            messageDiv.style.color = '#666';
+                            messageDiv.style.marginBottom = '8px';
+                            messageDiv.style.display = 'flex';
+                            messageDiv.style.alignItems = 'center';
+                            messageDiv.style.gap = '6px';
+                            
+                            const messageLabel = document.createElement('strong');
+                            messageLabel.style.fontWeight = '600';
+                            messageLabel.style.color = '#333';
+                            messageLabel.textContent = 'message:';
+                            messageDiv.appendChild(messageLabel);
+                            messageDiv.appendChild(document.createTextNode(' ' + item.markedForInstrumentation.message));
+                            
+                            markedSection.appendChild(messageDiv);
+                        }
+                        
+                        // DecisionEnum field
+                        if (item.markedForInstrumentation.decisionEnum) {
+                            const decisionDiv = document.createElement('div');
+                            decisionDiv.style.fontSize = '13px';
+                            decisionDiv.style.color = '#666';
+                            decisionDiv.style.display = 'flex';
+                            decisionDiv.style.alignItems = 'center';
+                            decisionDiv.style.gap = '6px';
+                            
+                            const decisionLabel = document.createElement('strong');
+                            decisionLabel.style.fontWeight = '600';
+                            decisionLabel.style.color = '#333';
+                            decisionLabel.textContent = 'decisionEnum:';
+                            decisionDiv.appendChild(decisionLabel);
+                            decisionDiv.appendChild(document.createTextNode(' ' + item.markedForInstrumentation.decisionEnum));
+                            
+                            markedSection.appendChild(decisionDiv);
+                        }
+                        
+                        instrumentationContent.appendChild(markedSection);
+                    }
+                    
+                    // Runtime Detection section
+                    if (item && item.runtimeInfo) {
+                        const runtimeSection = document.createElement('div');
+                        runtimeSection.style.marginBottom = '15px';
+                        runtimeSection.style.padding = '10px';
+                        runtimeSection.style.backgroundColor = '#f8f8f8';
+                        runtimeSection.style.borderRadius = '4px';
+                        
+                        const runtimeTitle = document.createElement('div');
+                        runtimeTitle.style.fontSize = '14px';
+                        runtimeTitle.style.fontWeight = '600';
+                        runtimeTitle.style.color = '#333';
+                        runtimeTitle.style.marginBottom = '8px';
+                        runtimeTitle.textContent = '#2 Runtime Detection';
+                        runtimeSection.appendChild(runtimeTitle);
+                        
+                        // Status field (emoji + text)
+                        const statusDiv = document.createElement('div');
+                        statusDiv.style.fontSize = '13px';
+                        statusDiv.style.color = '#666';
+                        statusDiv.style.marginBottom = '8px';
+                        statusDiv.style.display = 'flex';
+                        statusDiv.style.alignItems = 'center';
+                        statusDiv.style.gap = '3px';
+                        
+                        // Add emoji from completedStatus if available
+                        if (item.runtimeInfo.completedStatus && item.runtimeInfo.completedStatus.status) {
+                            const statusEmoji = getStatusEmoji(item.runtimeInfo.completedStatus.status);
+                            if (statusEmoji) {
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                tooltipWrapper.style.marginRight = '0';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji;
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                if (item.runtimeInfo.completedStatus.message) {
+                                    const tooltipDiv = document.createElement('div');
+                                    tooltipDiv.className = 'emoji-tooltip';
+                                    tooltipDiv.textContent = item.runtimeInfo.completedStatus.message;
+                                    tooltipWrapper.appendChild(tooltipDiv);
+                                }
+                                
+                                statusDiv.appendChild(tooltipWrapper);
+                                statusDiv.appendChild(document.createTextNode(' '));
+                            }
+                        }
+                        
+                        // Add text based on completed property
+                        const isCompleted = item.runtimeInfo.completed === true;
+                        const runtimeText = isCompleted ? 'runtime detection completed' : 'no runtime info available yet';
+                        statusDiv.appendChild(document.createTextNode(runtimeText));
+                        
+                        runtimeSection.appendChild(statusDiv);
+                        
+                        // Containers summary
+                        if (item.runtimeInfo.containers && Array.isArray(item.runtimeInfo.containers)) {
+                            const totalContainers = item.runtimeInfo.containers.length;
+                            const containersWithLanguage = item.runtimeInfo.containers.filter(container => 
+                                container && container.language && container.language.toLowerCase() !== 'unknown'
+                            ).length;
+                            
+                            const containersDiv = document.createElement('div');
+                            containersDiv.style.fontSize = '13px';
+                            containersDiv.style.color = '#666';
+                            containersDiv.style.marginBottom = '8px';
+                            containersDiv.style.display = 'flex';
+                            containersDiv.style.alignItems = 'center';
+                            containersDiv.style.gap = '6px';
+                            
+                            const resultLabel = document.createElement('strong');
+                            resultLabel.style.fontWeight = '600';
+                            resultLabel.style.color = '#333';
+                            resultLabel.textContent = 'detection result:';
+                            containersDiv.appendChild(resultLabel);
+                            
+                            let containersText = `${containersWithLanguage}/${totalContainers} containers have detected language`;
+                            
+                            // Add detected languages list if available
+                            if (item.runtimeInfo.detectedLanguages && Array.isArray(item.runtimeInfo.detectedLanguages) && item.runtimeInfo.detectedLanguages.length > 0) {
+                                const languagesList = item.runtimeInfo.detectedLanguages.join(', ');
+                                containersText += ` (${languagesList})`;
+                            }
+                            
+                            containersDiv.appendChild(document.createTextNode(' ' + containersText));
+                            runtimeSection.appendChild(containersDiv);
+                        }
+                        
+                        // Message field
+                        if (item.runtimeInfo.completedStatus && item.runtimeInfo.completedStatus.message) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.fontSize = '13px';
+                            messageDiv.style.color = '#666';
+                            messageDiv.style.marginBottom = '8px';
+                            messageDiv.style.display = 'flex';
+                            messageDiv.style.alignItems = 'center';
+                            messageDiv.style.gap = '6px';
+                            
+                            const messageLabel = document.createElement('strong');
+                            messageLabel.style.fontWeight = '600';
+                            messageLabel.style.color = '#333';
+                            messageLabel.textContent = 'message:';
+                            messageDiv.appendChild(messageLabel);
+                            messageDiv.appendChild(document.createTextNode(' ' + item.runtimeInfo.completedStatus.message));
+                            
+                            runtimeSection.appendChild(messageDiv);
+                        }
+                        
+                        // ReasonEnum field
+                        if (item.runtimeInfo.completedStatus && item.runtimeInfo.completedStatus.reasonEnum) {
+                            const reasonDiv = document.createElement('div');
+                            reasonDiv.style.fontSize = '13px';
+                            reasonDiv.style.color = '#666';
+                            reasonDiv.style.display = 'flex';
+                            reasonDiv.style.alignItems = 'center';
+                            reasonDiv.style.gap = '6px';
+                            
+                            const reasonLabel = document.createElement('strong');
+                            reasonLabel.style.fontWeight = '600';
+                            reasonLabel.style.color = '#333';
+                            reasonLabel.textContent = 'reasonEnum:';
+                            reasonDiv.appendChild(reasonLabel);
+                            reasonDiv.appendChild(document.createTextNode(' ' + item.runtimeInfo.completedStatus.reasonEnum));
+                            
+                            runtimeSection.appendChild(reasonDiv);
+                        }
+                        
+                        instrumentationContent.appendChild(runtimeSection);
+                    }
+                    
+                    // Agent Enabled section
+                    if (item && item.agentEnabled) {
+                        const agentEnabledSection = document.createElement('div');
+                        agentEnabledSection.style.marginBottom = '15px';
+                        agentEnabledSection.style.padding = '10px';
+                        agentEnabledSection.style.backgroundColor = '#f8f8f8';
+                        agentEnabledSection.style.borderRadius = '4px';
+                        
+                        const agentEnabledTitle = document.createElement('div');
+                        agentEnabledTitle.style.fontSize = '14px';
+                        agentEnabledTitle.style.fontWeight = '600';
+                        agentEnabledTitle.style.color = '#333';
+                        agentEnabledTitle.style.marginBottom = '8px';
+                        agentEnabledTitle.textContent = '#3 Instrumentation Agent Injection';
+                        agentEnabledSection.appendChild(agentEnabledTitle);
+                        
+                        // Status field (emoji + text)
+                        const statusDiv = document.createElement('div');
+                        statusDiv.style.fontSize = '13px';
+                        statusDiv.style.color = '#666';
+                        statusDiv.style.marginBottom = '8px';
+                        statusDiv.style.display = 'flex';
+                        statusDiv.style.alignItems = 'center';
+                        statusDiv.style.gap = '3px';
+                        
+                        // Add emoji from enabledStatus if available
+                        if (item.agentEnabled.enabledStatus && item.agentEnabled.enabledStatus.status) {
+                            const statusEmoji = getStatusEmoji(item.agentEnabled.enabledStatus.status);
+                            if (statusEmoji) {
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                tooltipWrapper.style.marginRight = '0';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji;
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                if (item.agentEnabled.enabledStatus.message) {
+                                    const tooltipDiv = document.createElement('div');
+                                    tooltipDiv.className = 'emoji-tooltip';
+                                    tooltipDiv.textContent = item.agentEnabled.enabledStatus.message;
+                                    tooltipWrapper.appendChild(tooltipDiv);
+                                }
+                                
+                                statusDiv.appendChild(tooltipWrapper);
+                                statusDiv.appendChild(document.createTextNode(' '));
+                            }
+                        }
+                        
+                        // Add text based on agentEnabled property
+                        const isEnabled = item.agentEnabled.agentEnabled === true;
+                        const enabledText = isEnabled ? 'agent injection enabled' : 'agent injection NOT enabled';
+                        if (isEnabled) {
+                            statusDiv.appendChild(document.createTextNode(enabledText));
+                        } else {
+                            const notSpan = document.createElement('strong');
+                            notSpan.style.fontWeight = '600';
+                            notSpan.textContent = 'agent injection NOT';
+                            statusDiv.appendChild(notSpan);
+                            statusDiv.appendChild(document.createTextNode(' enabled'));
+                        }
+                        
+                        agentEnabledSection.appendChild(statusDiv);
+                        
+                        // Message field
+                        if (item.agentEnabled.enabledStatus && item.agentEnabled.enabledStatus.message) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.fontSize = '13px';
+                            messageDiv.style.color = '#666';
+                            messageDiv.style.marginBottom = '8px';
+                            messageDiv.style.display = 'flex';
+                            messageDiv.style.alignItems = 'center';
+                            messageDiv.style.gap = '6px';
+                            
+                            const messageLabel = document.createElement('strong');
+                            messageLabel.style.fontWeight = '600';
+                            messageLabel.style.color = '#333';
+                            messageLabel.textContent = 'message:';
+                            messageDiv.appendChild(messageLabel);
+                            messageDiv.appendChild(document.createTextNode(' ' + item.agentEnabled.enabledStatus.message));
+                            
+                            agentEnabledSection.appendChild(messageDiv);
+                        }
+                        
+                        // ReasonEnum field
+                        if (item.agentEnabled.enabledStatus && item.agentEnabled.enabledStatus.reasonEnum) {
+                            const reasonDiv = document.createElement('div');
+                            reasonDiv.style.fontSize = '13px';
+                            reasonDiv.style.color = '#666';
+                            reasonDiv.style.display = 'flex';
+                            reasonDiv.style.alignItems = 'center';
+                            reasonDiv.style.gap = '6px';
+                            
+                            const reasonLabel = document.createElement('strong');
+                            reasonLabel.style.fontWeight = '600';
+                            reasonLabel.style.color = '#333';
+                            reasonLabel.textContent = 'reasonEnum:';
+                            reasonDiv.appendChild(reasonLabel);
+                            reasonDiv.appendChild(document.createTextNode(' ' + item.agentEnabled.enabledStatus.reasonEnum));
+                            
+                            agentEnabledSection.appendChild(reasonDiv);
+                        }
+                        
+                        instrumentationContent.appendChild(agentEnabledSection);
+                    }
+                    
+                    // Rollout section
+                    if (item && item.rollout && item.rollout.rolloutStatus) {
+                        const rolloutSection = document.createElement('div');
+                        rolloutSection.style.marginBottom = '15px';
+                        rolloutSection.style.padding = '10px';
+                        rolloutSection.style.backgroundColor = '#f8f8f8';
+                        rolloutSection.style.borderRadius = '4px';
+                        
+                        const rolloutTitle = document.createElement('div');
+                        rolloutTitle.style.fontSize = '14px';
+                        rolloutTitle.style.fontWeight = '600';
+                        rolloutTitle.style.color = '#333';
+                        rolloutTitle.style.marginBottom = '8px';
+                        rolloutTitle.textContent = '#4 Rollout Workload Pods to Apply the Instrumentation Agent';
+                        rolloutSection.appendChild(rolloutTitle);
+                        
+                        // Status field (emoji + text)
+                        const statusDiv = document.createElement('div');
+                        statusDiv.style.fontSize = '13px';
+                        statusDiv.style.color = '#666';
+                        statusDiv.style.marginBottom = '8px';
+                        statusDiv.style.display = 'flex';
+                        statusDiv.style.alignItems = 'center';
+                        statusDiv.style.gap = '3px';
+                        
+                        // Add emoji from rolloutStatus if available
+                        if (item.rollout.rolloutStatus.status) {
+                            const statusEmoji = getStatusEmoji(item.rollout.rolloutStatus.status);
+                            if (statusEmoji) {
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                tooltipWrapper.style.marginRight = '0';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji;
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                if (item.rollout.rolloutStatus.message) {
+                                    const tooltipDiv = document.createElement('div');
+                                    tooltipDiv.className = 'emoji-tooltip';
+                                    tooltipDiv.textContent = item.rollout.rolloutStatus.message;
+                                    tooltipWrapper.appendChild(tooltipDiv);
+                                }
+                                
+                                statusDiv.appendChild(tooltipWrapper);
+                                statusDiv.appendChild(document.createTextNode(' '));
+                            }
+                        }
+                        
+                        // Add text
+                        statusDiv.appendChild(document.createTextNode('rollout pods to apply instrumentation agent'));
+                        
+                        rolloutSection.appendChild(statusDiv);
+                        
+                        // Message field
+                        if (item.rollout.rolloutStatus.message) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.fontSize = '13px';
+                            messageDiv.style.color = '#666';
+                            messageDiv.style.marginBottom = '8px';
+                            messageDiv.style.display = 'flex';
+                            messageDiv.style.alignItems = 'center';
+                            messageDiv.style.gap = '6px';
+                            
+                            const messageLabel = document.createElement('strong');
+                            messageLabel.style.fontWeight = '600';
+                            messageLabel.style.color = '#333';
+                            messageLabel.textContent = 'message:';
+                            messageDiv.appendChild(messageLabel);
+                            messageDiv.appendChild(document.createTextNode(' ' + item.rollout.rolloutStatus.message));
+                            
+                            rolloutSection.appendChild(messageDiv);
+                        }
+                        
+                        // ReasonEnum field
+                        if (item.rollout.rolloutStatus.reasonEnum) {
+                            const reasonDiv = document.createElement('div');
+                            reasonDiv.style.fontSize = '13px';
+                            reasonDiv.style.color = '#666';
+                            reasonDiv.style.display = 'flex';
+                            reasonDiv.style.alignItems = 'center';
+                            reasonDiv.style.gap = '6px';
+                            
+                            const reasonLabel = document.createElement('strong');
+                            reasonLabel.style.fontWeight = '600';
+                            reasonLabel.style.color = '#333';
+                            reasonLabel.textContent = 'reasonEnum:';
+                            reasonDiv.appendChild(reasonLabel);
+                            reasonDiv.appendChild(document.createTextNode(' ' + item.rollout.rolloutStatus.reasonEnum));
+                            
+                            rolloutSection.appendChild(reasonDiv);
+                        }
+                        
+                        instrumentationContent.appendChild(rolloutSection);
+                    }
+                    
+                    // Agent Injected to Running Pods section
+                    if (item && item.podsAgentInjectionStatus && item.podsAgentInjectionStatus.status) {
+                        const podsAgentSection = document.createElement('div');
+                        podsAgentSection.style.marginBottom = '15px';
+                        podsAgentSection.style.padding = '10px';
+                        podsAgentSection.style.backgroundColor = '#f8f8f8';
+                        podsAgentSection.style.borderRadius = '4px';
+                        
+                        const podsAgentTitle = document.createElement('div');
+                        podsAgentTitle.style.fontSize = '14px';
+                        podsAgentTitle.style.fontWeight = '600';
+                        podsAgentTitle.style.color = '#333';
+                        podsAgentTitle.style.marginBottom = '8px';
+                        podsAgentTitle.textContent = '#5 Agent Injected to Running Pods';
+                        podsAgentSection.appendChild(podsAgentTitle);
+                        
+                        // Status field (emoji + text)
+                        const statusDiv = document.createElement('div');
+                        statusDiv.style.fontSize = '13px';
+                        statusDiv.style.color = '#666';
+                        statusDiv.style.marginBottom = '8px';
+                        statusDiv.style.display = 'flex';
+                        statusDiv.style.alignItems = 'center';
+                        statusDiv.style.gap = '3px';
+                        
+                        // Add emoji from podsAgentInjectionStatus if available
+                        if (item.podsAgentInjectionStatus.status) {
+                            const statusEmoji = getStatusEmoji(item.podsAgentInjectionStatus.status);
+                            if (statusEmoji) {
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                tooltipWrapper.style.marginRight = '0';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji;
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                if (item.podsAgentInjectionStatus.message) {
+                                    const tooltipDiv = document.createElement('div');
+                                    tooltipDiv.className = 'emoji-tooltip';
+                                    tooltipDiv.textContent = item.podsAgentInjectionStatus.message;
+                                    tooltipWrapper.appendChild(tooltipDiv);
+                                }
+                                
+                                statusDiv.appendChild(tooltipWrapper);
+                                statusDiv.appendChild(document.createTextNode(' '));
+                            }
+                        }
+                        
+                        // Add text
+                        statusDiv.appendChild(document.createTextNode('agent injected to running pods'));
+                        
+                        podsAgentSection.appendChild(statusDiv);
+                        
+                        // Message field
+                        if (item.podsAgentInjectionStatus.message) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.fontSize = '13px';
+                            messageDiv.style.color = '#666';
+                            messageDiv.style.marginBottom = '8px';
+                            messageDiv.style.display = 'flex';
+                            messageDiv.style.alignItems = 'center';
+                            messageDiv.style.gap = '6px';
+                            
+                            const messageLabel = document.createElement('strong');
+                            messageLabel.style.fontWeight = '600';
+                            messageLabel.style.color = '#333';
+                            messageLabel.textContent = 'message:';
+                            messageDiv.appendChild(messageLabel);
+                            messageDiv.appendChild(document.createTextNode(' ' + item.podsAgentInjectionStatus.message));
+                            
+                            podsAgentSection.appendChild(messageDiv);
+                        }
+                        
+                        // ReasonEnum field
+                        if (item.podsAgentInjectionStatus.reasonEnum) {
+                            const reasonDiv = document.createElement('div');
+                            reasonDiv.style.fontSize = '13px';
+                            reasonDiv.style.color = '#666';
+                            reasonDiv.style.display = 'flex';
+                            reasonDiv.style.alignItems = 'center';
+                            reasonDiv.style.gap = '6px';
+                            
+                            const reasonLabel = document.createElement('strong');
+                            reasonLabel.style.fontWeight = '600';
+                            reasonLabel.style.color = '#333';
+                            reasonLabel.textContent = 'reasonEnum:';
+                            reasonDiv.appendChild(reasonLabel);
+                            reasonDiv.appendChild(document.createTextNode(' ' + item.podsAgentInjectionStatus.reasonEnum));
+                            
+                            podsAgentSection.appendChild(reasonDiv);
+                        }
+                        
+                        instrumentationContent.appendChild(podsAgentSection);
+                    }
+                    
+                    // Processes Health section
+                    if (item && item.processesHealthStatus && item.processesHealthStatus.status) {
+                        const processesHealthSection = document.createElement('div');
+                        processesHealthSection.style.marginBottom = '15px';
+                        processesHealthSection.style.padding = '10px';
+                        processesHealthSection.style.backgroundColor = '#f8f8f8';
+                        processesHealthSection.style.borderRadius = '4px';
+                        
+                        const processesHealthTitle = document.createElement('div');
+                        processesHealthTitle.style.fontSize = '14px';
+                        processesHealthTitle.style.fontWeight = '600';
+                        processesHealthTitle.style.color = '#333';
+                        processesHealthTitle.style.marginBottom = '8px';
+                        processesHealthTitle.textContent = '#6 Instrumented Processes Health';
+                        processesHealthSection.appendChild(processesHealthTitle);
+                        
+                        // Status field (emoji + text)
+                        const statusDiv = document.createElement('div');
+                        statusDiv.style.fontSize = '13px';
+                        statusDiv.style.color = '#666';
+                        statusDiv.style.marginBottom = '8px';
+                        statusDiv.style.display = 'flex';
+                        statusDiv.style.alignItems = 'center';
+                        statusDiv.style.gap = '3px';
+                        
+                        // Add emoji from processesHealthStatus if available
+                        if (item.processesHealthStatus.status) {
+                            const statusEmoji = getStatusEmoji(item.processesHealthStatus.status);
+                            if (statusEmoji) {
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                tooltipWrapper.style.marginRight = '0';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji;
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                if (item.processesHealthStatus.message) {
+                                    const tooltipDiv = document.createElement('div');
+                                    tooltipDiv.className = 'emoji-tooltip';
+                                    tooltipDiv.textContent = item.processesHealthStatus.message;
+                                    tooltipWrapper.appendChild(tooltipDiv);
+                                }
+                                
+                                statusDiv.appendChild(tooltipWrapper);
+                                statusDiv.appendChild(document.createTextNode(' '));
+                            }
+                        }
+                        
+                        // Add text
+                        statusDiv.appendChild(document.createTextNode('instrumented processes health'));
+                        
+                        processesHealthSection.appendChild(statusDiv);
+                        
+                        // Message field
+                        if (item.processesHealthStatus.message) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.fontSize = '13px';
+                            messageDiv.style.color = '#666';
+                            messageDiv.style.marginBottom = '8px';
+                            messageDiv.style.display = 'flex';
+                            messageDiv.style.alignItems = 'center';
+                            messageDiv.style.gap = '6px';
+                            
+                            const messageLabel = document.createElement('strong');
+                            messageLabel.style.fontWeight = '600';
+                            messageLabel.style.color = '#333';
+                            messageLabel.textContent = 'message:';
+                            messageDiv.appendChild(messageLabel);
+                            messageDiv.appendChild(document.createTextNode(' ' + item.processesHealthStatus.message));
+                            
+                            processesHealthSection.appendChild(messageDiv);
+                        }
+                        
+                        // ReasonEnum field
+                        if (item.processesHealthStatus.reasonEnum) {
+                            const reasonDiv = document.createElement('div');
+                            reasonDiv.style.fontSize = '13px';
+                            reasonDiv.style.color = '#666';
+                            reasonDiv.style.display = 'flex';
+                            reasonDiv.style.alignItems = 'center';
+                            reasonDiv.style.gap = '6px';
+                            
+                            const reasonLabel = document.createElement('strong');
+                            reasonLabel.style.fontWeight = '600';
+                            reasonLabel.style.color = '#333';
+                            reasonLabel.textContent = 'reasonEnum:';
+                            reasonDiv.appendChild(reasonLabel);
+                            reasonDiv.appendChild(document.createTextNode(' ' + item.processesHealthStatus.reasonEnum));
+                            
+                            processesHealthSection.appendChild(reasonDiv);
+                        }
+                        
+                        instrumentationContent.appendChild(processesHealthSection);
+                    }
+                    
+                    contentDiv.appendChild(instrumentationContent);
+                    
+                    // K8s commands tab
+                    const k8sContent = document.createElement('div');
+                    k8sContent.id = `k8s-content-${idx}`;
+                    k8sContent.className = 'tab-content';
+                    const k8sCommandsDiv = document.createElement('div');
+                    k8sCommandsDiv.className = 'k8s-commands';
+                    
+                    const commands = generateK8sCommands(item);
+                    commands.forEach(cmd => {
+                        const section = document.createElement('div');
+                        section.className = 'k8s-command-section';
+                        
+                        const title = document.createElement('div');
+                        title.className = 'k8s-command-title';
+                        title.textContent = cmd.title;
+                        section.appendChild(title);
+                        
+                        const commandBlock = document.createElement('div');
+                        commandBlock.className = 'k8s-command-block';
+                        
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'k8s-copy-btn';
+                        copyBtn.textContent = 'Copy';
+                        copyBtn.onclick = () => copyToClipboard(cmd.command);
+                        commandBlock.appendChild(copyBtn);
+                        
+                        const commandText = document.createElement('div');
+                        commandText.className = 'k8s-command-text';
+                        commandText.textContent = cmd.command;
+                        commandBlock.appendChild(commandText);
+                        
+                        section.appendChild(commandBlock);
+                        k8sCommandsDiv.appendChild(section);
+                    });
+                    
+                    k8sContent.appendChild(k8sCommandsDiv);
+                    contentDiv.appendChild(k8sContent);
+                    
+                    // Containers tab
+                    const containersContent = document.createElement('div');
+                    containersContent.id = `containers-content-${idx}`;
+                    containersContent.className = 'tab-content';
+                    
+                    if (item && item.containers && Array.isArray(item.containers) && item.containers.length > 0) {
+                        item.containers.forEach((container, containerIdx) => {
+                            const containerWrapper = document.createElement('div');
+                            containerWrapper.style.marginBottom = '15px';
+                            containerWrapper.style.padding = '10px';
+                            containerWrapper.style.border = '1px solid #e0e0e0';
+                            containerWrapper.style.borderRadius = '4px';
+                            
+                            const containerName = container.containerName || `Container ${containerIdx}`;
+                            const containerHeader = document.createElement('div');
+                            containerHeader.style.fontWeight = '600';
+                            containerHeader.style.fontSize = '16px';
+                            containerHeader.style.marginBottom = '10px';
+                            containerHeader.style.color = '#333';
+                            containerHeader.style.display = 'flex';
+                            containerHeader.style.alignItems = 'center';
+                            containerHeader.style.gap = '8px';
+                            
+                            // Get status emoji from agentEnabledStatus
+                            let statusEmoji = null;
+                            let statusMessage = null;
+                            if (container.agentEnabled && container.agentEnabled.agentEnabledStatus) {
+                                const agentStatus = container.agentEnabled.agentEnabledStatus;
+                                if (agentStatus.status && typeof agentStatus.status === 'string') {
+                                    statusEmoji = getStatusEmoji(agentStatus.status);
+                                    statusMessage = agentStatus.message || '';
+                                }
+                            }
+                            
+                            // Add emoji with tooltip if available
+                            if (statusEmoji) {
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji + ' ';
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                const tooltipDiv = document.createElement('div');
+                                tooltipDiv.className = 'emoji-tooltip';
+                                tooltipDiv.textContent = statusMessage || '';
+                                tooltipWrapper.appendChild(tooltipDiv);
+                                
+                                containerHeader.appendChild(tooltipWrapper);
+                            }
+                            
+                            const nameSpan = document.createElement('span');
+                            let headerText = containerName;
+                            
+                            // Add runtime information
+                            if (container.runtimeInfo) {
+                                const runtimeParts = [];
+                                if (container.runtimeInfo.language) {
+                                    runtimeParts.push(container.runtimeInfo.language);
+                                }
+                                if (container.runtimeInfo.runtimeVersion) {
+                                    runtimeParts.push(container.runtimeInfo.runtimeVersion);
+                                }
+                                if (runtimeParts.length > 0) {
+                                    headerText += ' (' + runtimeParts.join(' ') + ')';
+                                }
+                            }
+                            
+                            nameSpan.textContent = headerText;
+                            containerHeader.appendChild(nameSpan);
+                            
+                            // Add signal emojis (traces, metrics, logs)
+                            if (container.agentEnabled) {
+                                const signals = [
+                                    { name: 'traces', emoji: '👣', label: 'Traces' },
+                                    { name: 'metrics', emoji: '📈', label: 'Metrics' },
+                                    { name: 'logs', emoji: '🪵', label: 'Logs' }
+                                ];
+                                
+                                signals.forEach(signal => {
+                                    const signalData = container.agentEnabled[signal.name];
+                                    if (signalData && signalData !== null && signalData.enabled !== false) {
+                                        const tooltipWrapper = document.createElement('span');
+                                        tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                        
+                                        const emojiSpan = document.createElement('span');
+                                        emojiSpan.textContent = signal.emoji + ' ';
+                                        emojiSpan.style.cursor = 'help';
+                                        tooltipWrapper.appendChild(emojiSpan);
+                                        
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = signal.label + ' enabled';
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                        
+                                        containerHeader.appendChild(tooltipWrapper);
+                                    }
+                                });
+                            }
+                            
+                            containerWrapper.appendChild(containerHeader);
+                            
+                            Object.keys(container).forEach(k => {
+                                renderJSON(container[k], containerWrapper, k);
+                            });
+                            
+                            containersContent.appendChild(containerWrapper);
+                        });
+                    } else {
+                        const noContainers = document.createElement('div');
+                        noContainers.textContent = 'No containers found';
+                        noContainers.style.padding = '15px';
+                        noContainers.style.color = '#666';
+                        containersContent.appendChild(noContainers);
+                    }
+                    
+                    contentDiv.appendChild(containersContent);
+                    
+                    // Pods tab
+                    const podsContent = document.createElement('div');
+                    podsContent.id = `pods-content-${idx}`;
+                    podsContent.className = 'tab-content';
+                    
+                    // Pods summary statuses section
+                    const podsSummarySection = document.createElement('div');
+                    podsSummarySection.style.marginBottom = '15px';
+                    podsSummarySection.style.padding = '10px';
+                    podsSummarySection.style.backgroundColor = '#f8f8f8';
+                    podsSummarySection.style.borderRadius = '4px';
+                    
+                    // Odigos status (podsAgentInjectionStatus)
+                    if (item && item.podsAgentInjectionStatus && item.podsAgentInjectionStatus.status) {
+                        const odigosStatusDiv = document.createElement('div');
+                        odigosStatusDiv.style.marginBottom = '8px';
+                        
+                        const odigosFirstLine = document.createElement('div');
+                        odigosFirstLine.style.display = 'flex';
+                        odigosFirstLine.style.alignItems = 'center';
+                        odigosFirstLine.style.gap = '8px';
+                        
+                        const odigosStatusEmoji = getStatusEmoji(item.podsAgentInjectionStatus.status);
+                        if (odigosStatusEmoji) {
+                            const odigosTooltipWrapper = document.createElement('span');
+                            odigosTooltipWrapper.className = 'emoji-tooltip-wrapper';
+                            odigosTooltipWrapper.style.marginRight = '0';
+                            
+                            const odigosEmojiSpan = document.createElement('span');
+                            odigosEmojiSpan.textContent = odigosStatusEmoji + ' ';
+                            odigosEmojiSpan.style.cursor = 'help';
+                            odigosTooltipWrapper.appendChild(odigosEmojiSpan);
+                            
+                            if (item.podsAgentInjectionStatus.message) {
+                                const odigosTooltipDiv = document.createElement('div');
+                                odigosTooltipDiv.className = 'emoji-tooltip';
+                                odigosTooltipDiv.textContent = item.podsAgentInjectionStatus.message;
+                                odigosTooltipWrapper.appendChild(odigosTooltipDiv);
+                            }
+                            
+                            odigosFirstLine.appendChild(odigosTooltipWrapper);
+                        }
+                        
+                        const odigosLabel = document.createElement('span');
+                        odigosLabel.style.fontWeight = '600';
+                        odigosLabel.style.fontSize = '14px';
+                        odigosLabel.style.color = '#333';
+                        odigosLabel.textContent = 'odigos:';
+                        odigosFirstLine.appendChild(odigosLabel);
+                        
+                        if (item.podsAgentInjectionStatus.message) {
+                            const odigosMessage = document.createElement('span');
+                            odigosMessage.style.fontSize = '14px';
+                            odigosMessage.style.color = '#666';
+                            odigosMessage.textContent = ' ' + item.podsAgentInjectionStatus.message;
+                            odigosFirstLine.appendChild(odigosMessage);
+                        }
+                        
+                        odigosStatusDiv.appendChild(odigosFirstLine);
+                        
+                        if (item.podsAgentInjectionStatus.reasonEnum) {
+                            const odigosReason = document.createElement('div');
+                            odigosReason.style.fontSize = '12px';
+                            odigosReason.style.color = '#666';
+                            odigosReason.style.marginLeft = '24px';
+                            odigosReason.style.marginTop = '4px';
+                            const reasonLabel = document.createElement('strong');
+                            reasonLabel.style.fontWeight = '600';
+                            reasonLabel.style.color = '#333';
+                            reasonLabel.textContent = 'reasonEnum:';
+                            odigosReason.appendChild(reasonLabel);
+                            odigosReason.appendChild(document.createTextNode(' ' + item.podsAgentInjectionStatus.reasonEnum));
+                            odigosStatusDiv.appendChild(odigosReason);
+                        }
+                        
+                        podsSummarySection.appendChild(odigosStatusDiv);
+                    }
+                    
+                    // Application health status (podsHealthStatus)
+                    if (item && item.podsHealthStatus && item.podsHealthStatus.status) {
+                        const healthStatusDiv = document.createElement('div');
+                        
+                        const healthFirstLine = document.createElement('div');
+                        healthFirstLine.style.display = 'flex';
+                        healthFirstLine.style.alignItems = 'center';
+                        healthFirstLine.style.gap = '8px';
+                        
+                        const healthStatusEmoji = getStatusEmoji(item.podsHealthStatus.status);
+                        if (healthStatusEmoji) {
+                            const healthTooltipWrapper = document.createElement('span');
+                            healthTooltipWrapper.className = 'emoji-tooltip-wrapper';
+                            healthTooltipWrapper.style.marginRight = '0';
+                            
+                            const healthEmojiSpan = document.createElement('span');
+                            healthEmojiSpan.textContent = healthStatusEmoji + ' ';
+                            healthEmojiSpan.style.cursor = 'help';
+                            healthTooltipWrapper.appendChild(healthEmojiSpan);
+                            
+                            if (item.podsHealthStatus.message) {
+                                const healthTooltipDiv = document.createElement('div');
+                                healthTooltipDiv.className = 'emoji-tooltip';
+                                healthTooltipDiv.textContent = item.podsHealthStatus.message;
+                                healthTooltipWrapper.appendChild(healthTooltipDiv);
+                            }
+                            
+                            healthFirstLine.appendChild(healthTooltipWrapper);
+                        }
+                        
+                        const healthLabel = document.createElement('span');
+                        healthLabel.style.fontWeight = '600';
+                        healthLabel.style.fontSize = '14px';
+                        healthLabel.style.color = '#333';
+                        healthLabel.textContent = 'application:';
+                        healthFirstLine.appendChild(healthLabel);
+                        
+                        if (item.podsHealthStatus.message) {
+                            const healthMessage = document.createElement('span');
+                            healthMessage.style.fontSize = '14px';
+                            healthMessage.style.color = '#666';
+                            healthMessage.textContent = ' ' + item.podsHealthStatus.message;
+                            healthFirstLine.appendChild(healthMessage);
+                        }
+                        
+                        healthStatusDiv.appendChild(healthFirstLine);
+                        
+                        if (item.podsHealthStatus.reasonEnum) {
+                            const healthReason = document.createElement('div');
+                            healthReason.style.fontSize = '12px';
+                            healthReason.style.color = '#666';
+                            healthReason.style.marginLeft = '24px';
+                            healthReason.style.marginTop = '4px';
+                            const reasonLabel = document.createElement('strong');
+                            reasonLabel.style.fontWeight = '600';
+                            reasonLabel.style.color = '#333';
+                            reasonLabel.textContent = 'reasonEnum:';
+                            healthReason.appendChild(reasonLabel);
+                            healthReason.appendChild(document.createTextNode(' ' + item.podsHealthStatus.reasonEnum));
+                            healthStatusDiv.appendChild(healthReason);
+                        }
+                        
+                        podsSummarySection.appendChild(healthStatusDiv);
+                    }
+                    
+                    if (podsSummarySection.children.length > 0) {
+                        podsContent.appendChild(podsSummarySection);
+                    }
+                    
+                    if (item && item.pods && Array.isArray(item.pods) && item.pods.length > 0) {
+                        item.pods.forEach((pod, podIdx) => {
+                            const podWrapper = document.createElement('div');
+                            podWrapper.style.marginBottom = '15px';
+                            podWrapper.style.padding = '10px';
+                            podWrapper.style.border = '1px solid #e0e0e0';
+                            podWrapper.style.borderRadius = '4px';
+                            
+                            const podName = pod.podName || `Pod ${podIdx}`;
+                            
+                            // Create collapsible header
+                            const podHeader = document.createElement('div');
+                            podHeader.style.fontWeight = '600';
+                            podHeader.style.fontSize = '16px';
+                            podHeader.style.marginBottom = '4px';
+                            podHeader.style.color = '#333';
+                            podHeader.style.display = 'flex';
+                            podHeader.style.alignItems = 'center';
+                            podHeader.style.gap = '6px';
+                            podHeader.style.cursor = 'pointer';
+                            podHeader.classList.add('expandable');
+                            
+                            // Toggle arrow
+                            const toggle = document.createElement('span');
+                            toggle.className = 'toggle';
+                            toggle.textContent = '';
+                            podHeader.appendChild(toggle);
+                            
+                            // Get status emoji from agentInjectedStatus (odigos status)
+                            let statusEmoji = null;
+                            let statusMessage = null;
+                            if (pod.agentInjectedStatus && pod.agentInjectedStatus.status) {
+                                statusEmoji = getStatusEmoji(pod.agentInjectedStatus.status);
+                                statusMessage = pod.agentInjectedStatus.message || '';
+                            }
+                            
+                            // Add odigos emoji with tooltip if available
+                            if (statusEmoji) {
+                                const odigosContainer = document.createElement('span');
+                                odigosContainer.style.display = 'flex';
+                                odigosContainer.style.flexDirection = 'column';
+                                odigosContainer.style.alignItems = 'center';
+                                odigosContainer.style.gap = '1px';
+                                
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                tooltipWrapper.style.display = 'inline-block';
+                                tooltipWrapper.style.marginRight = '0';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji;
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                const tooltipDiv = document.createElement('div');
+                                tooltipDiv.className = 'emoji-tooltip';
+                                tooltipDiv.textContent = statusMessage || '';
+                                tooltipWrapper.appendChild(tooltipDiv);
+                                
+                                odigosContainer.appendChild(tooltipWrapper);
+                                
+                                const odigosLabel = document.createElement('span');
+                                odigosLabel.textContent = 'odigos';
+                                odigosLabel.style.fontSize = '9px';
+                                odigosLabel.style.color = '#666';
+                                odigosLabel.style.lineHeight = '1';
+                                odigosContainer.appendChild(odigosLabel);
+                                
+                                podHeader.appendChild(odigosContainer);
+                            }
+                            
+                            // Get application health status emoji from podHealthStatus
+                            let appStatusEmoji = null;
+                            let appStatusMessage = null;
+                            if (pod.podHealthStatus && pod.podHealthStatus.status) {
+                                appStatusEmoji = getStatusEmoji(pod.podHealthStatus.status);
+                                appStatusMessage = pod.podHealthStatus.message || '';
+                            }
+                            
+                            // Add application health emoji with tooltip if available
+                            if (appStatusEmoji) {
+                                const appContainer = document.createElement('span');
+                                appContainer.style.display = 'flex';
+                                appContainer.style.flexDirection = 'column';
+                                appContainer.style.alignItems = 'center';
+                                appContainer.style.gap = '1px';
+                                
+                                const appTooltipWrapper = document.createElement('span');
+                                appTooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                appTooltipWrapper.style.display = 'inline-block';
+                                appTooltipWrapper.style.marginRight = '0';
+                                
+                                const appEmojiSpan = document.createElement('span');
+                                appEmojiSpan.textContent = appStatusEmoji;
+                                appEmojiSpan.style.cursor = 'help';
+                                appTooltipWrapper.appendChild(appEmojiSpan);
+                                
+                                const appTooltipDiv = document.createElement('div');
+                                appTooltipDiv.className = 'emoji-tooltip';
+                                appTooltipDiv.textContent = appStatusMessage || '';
+                                appTooltipWrapper.appendChild(appTooltipDiv);
+                                
+                                appContainer.appendChild(appTooltipWrapper);
+                                
+                                const appLabel = document.createElement('span');
+                                appLabel.textContent = 'application';
+                                appLabel.style.fontSize = '9px';
+                                appLabel.style.color = '#666';
+                                appLabel.style.lineHeight = '1';
+                                appContainer.appendChild(appLabel);
+                                
+                                podHeader.appendChild(appContainer);
+                            }
+                            
+                            const nameSpan = document.createElement('span');
+                            nameSpan.textContent = podName;
+                            podHeader.appendChild(nameSpan);
+                            
+                            const copyBtn = document.createElement('button');
+                            copyBtn.className = 'k8s-copy-btn';
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.style.fontSize = '11px';
+                            copyBtn.style.padding = '4px 8px';
+                            copyBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                copyToClipboard(podName);
+                            };
+                            podHeader.appendChild(copyBtn);
+                            
+                            podWrapper.appendChild(podHeader);
+                            
+                            // Create collapsible content
+                            const podContent = document.createElement('div');
+                            podContent.className = 'children';
+                            podContent.style.display = 'none';
+                            
+                            // Create info section
+                            const infoSection = document.createElement('div');
+                            infoSection.style.marginBottom = '15px';
+                            infoSection.style.padding = '10px';
+                            infoSection.style.backgroundColor = '#f8f8f8';
+                            infoSection.style.borderRadius = '4px';
+                            
+                            // Node name
+                            if (pod.nodeName) {
+                                const nodeDiv = document.createElement('div');
+                                nodeDiv.style.fontSize = '14px';
+                                nodeDiv.style.color = '#666';
+                                nodeDiv.style.marginBottom = '4px';
+                                nodeDiv.style.display = 'flex';
+                                nodeDiv.style.alignItems = 'center';
+                                nodeDiv.style.gap = '8px';
+                                
+                                const nodeLabel = document.createElement('span');
+                                nodeLabel.textContent = `Node Name: ${pod.nodeName}`;
+                                nodeDiv.appendChild(nodeLabel);
+                                
+                                const copyBtn = document.createElement('button');
+                                copyBtn.className = 'k8s-copy-btn';
+                                copyBtn.textContent = 'Copy';
+                                copyBtn.style.fontSize = '11px';
+                                copyBtn.style.padding = '4px 8px';
+                                copyBtn.onclick = () => copyToClipboard(pod.nodeName);
+                                nodeDiv.appendChild(copyBtn);
+                                
+                                infoSection.appendChild(nodeDiv);
+                            }
+                            
+                            // Start time with age
+                            if (pod.startTime) {
+                                const startTimeDiv = document.createElement('div');
+                                startTimeDiv.style.fontSize = '14px';
+                                startTimeDiv.style.color = '#666';
+                                
+                                const startTimeDate = new Date(pod.startTime);
+                                const startTimeSpan = document.createElement('span');
+                                startTimeSpan.textContent = `Started: ${startTimeDate.toLocaleString()}`;
+                                startTimeDiv.appendChild(startTimeSpan);
+                                
+                                const ageSpan = document.createElement('span');
+                                ageSpan.id = `pod-age-${idx}-${podIdx}`;
+                                ageSpan.style.marginLeft = '8px';
+                                ageSpan.style.color = '#666';
+                                
+                                const updatePodAge = () => {
+                                    const now = new Date();
+                                    const seconds = Math.floor((now - startTimeDate) / 1000);
+                                    const ageText = formatDuration(seconds);
+                                    ageSpan.textContent = `(${ageText} ago)`;
+                                };
+                                
+                                updatePodAge();
+                                setInterval(updatePodAge, 1000);
+                                
+                                startTimeDiv.appendChild(ageSpan);
+                                infoSection.appendChild(startTimeDiv);
+                            }
+                            
+                            podContent.appendChild(infoSection);
+                            
+                            // Odigos section
+                            if (pod.agentInjectedStatus) {
+                                const odigosSection = document.createElement('div');
+                                odigosSection.style.marginBottom = '15px';
+                                odigosSection.style.padding = '10px';
+                                odigosSection.style.backgroundColor = '#f8f8f8';
+                                odigosSection.style.borderRadius = '4px';
+                                
+                                const odigosHeader = document.createElement('div');
+                                odigosHeader.style.display = 'flex';
+                                odigosHeader.style.alignItems = 'center';
+                                odigosHeader.style.gap = '8px';
+                                odigosHeader.style.marginBottom = '8px';
+                                
+                                // Add emoji based on status
+                                if (pod.agentInjectedStatus.status) {
+                                    const statusEmoji = getStatusEmoji(pod.agentInjectedStatus.status);
+                                    if (statusEmoji) {
+                                        const tooltipWrapper = document.createElement('span');
+                                        tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                        
+                                        const emojiSpan = document.createElement('span');
+                                        emojiSpan.textContent = statusEmoji + ' ';
+                                        emojiSpan.style.cursor = 'help';
+                                        emojiSpan.style.fontSize = '16px';
+                                        tooltipWrapper.appendChild(emojiSpan);
+                                        
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = pod.agentInjectedStatus.message || '';
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                        
+                                        odigosHeader.appendChild(tooltipWrapper);
+                                    }
+                                }
+                                
+                                const odigosTitle = document.createElement('span');
+                                odigosTitle.style.fontWeight = '600';
+                                odigosTitle.style.fontSize = '14px';
+                                odigosTitle.style.color = '#333';
+                                odigosTitle.textContent = 'odigos';
+                                odigosHeader.appendChild(odigosTitle);
+                                
+                                odigosSection.appendChild(odigosHeader);
+                                
+                                // Agent Injected subsection
+                                const agentInjectedSubsection = document.createElement('div');
+                                agentInjectedSubsection.style.marginTop = '12px';
+                                
+                                const agentInjectedHeader = document.createElement('div');
+                                agentInjectedHeader.style.fontSize = '13px';
+                                agentInjectedHeader.style.fontWeight = '600';
+                                agentInjectedHeader.style.color = '#333';
+                                agentInjectedHeader.style.marginBottom = '6px';
+                                agentInjectedHeader.textContent = 'Agent Injected:';
+                                agentInjectedSubsection.appendChild(agentInjectedHeader);
+                                
+                                // Add agentInjected
+                                const agentInjectedDiv = document.createElement('div');
+                                agentInjectedDiv.style.fontSize = '13px';
+                                agentInjectedDiv.style.color = '#666';
+                                agentInjectedDiv.style.marginTop = '4px';
+                                agentInjectedDiv.style.display = 'flex';
+                                agentInjectedDiv.style.alignItems = 'center';
+                                agentInjectedDiv.style.gap = '6px';
+                                
+                                const agentInjectedLabel = document.createElement('strong');
+                                agentInjectedLabel.style.fontWeight = '600';
+                                agentInjectedLabel.style.color = '#333';
+                                agentInjectedLabel.textContent = 'agentInjected:';
+                                agentInjectedDiv.appendChild(agentInjectedLabel);
+                                agentInjectedDiv.appendChild(document.createTextNode(' ' + (pod.agentInjected === true ? 'true' : 'false')));
+                                agentInjectedSubsection.appendChild(agentInjectedDiv);
+                                
+                                // Add agentInjectedStatus status
+                                if (pod.agentInjectedStatus && pod.agentInjectedStatus.status) {
+                                    const statusDiv = document.createElement('div');
+                                    statusDiv.style.fontSize = '13px';
+                                    statusDiv.style.color = '#666';
+                                    statusDiv.style.marginTop = '4px';
+                                    statusDiv.style.display = 'flex';
+                                    statusDiv.style.alignItems = 'center';
+                                    statusDiv.style.gap = '6px';
+                                    
+                                    const statusLabel = document.createElement('strong');
+                                    statusLabel.style.fontWeight = '600';
+                                    statusLabel.style.color = '#333';
+                                    statusLabel.textContent = 'status:';
+                                    statusDiv.appendChild(statusLabel);
+                                    statusDiv.appendChild(document.createTextNode(' ' + pod.agentInjectedStatus.status));
+                                    agentInjectedSubsection.appendChild(statusDiv);
+                                }
+                                
+                                // Add agentInjectedStatus reasonEnum
+                                if (pod.agentInjectedStatus && pod.agentInjectedStatus.reasonEnum) {
+                                    const reasonDiv = document.createElement('div');
+                                    reasonDiv.style.fontSize = '13px';
+                                    reasonDiv.style.color = '#666';
+                                    reasonDiv.style.marginTop = '4px';
+                                    reasonDiv.style.display = 'flex';
+                                    reasonDiv.style.alignItems = 'center';
+                                    reasonDiv.style.gap = '6px';
+                                    
+                                    const reasonLabel = document.createElement('strong');
+                                    reasonLabel.style.fontWeight = '600';
+                                    reasonLabel.style.color = '#333';
+                                    reasonLabel.textContent = 'reasonEnum:';
+                                    reasonDiv.appendChild(reasonLabel);
+                                    reasonDiv.appendChild(document.createTextNode(' ' + pod.agentInjectedStatus.reasonEnum));
+                                    agentInjectedSubsection.appendChild(reasonDiv);
+                                }
+                                
+                                // Add agentInjectedStatus message
+                                if (pod.agentInjectedStatus && pod.agentInjectedStatus.message) {
+                                    const messageDiv = document.createElement('div');
+                                    messageDiv.style.fontSize = '13px';
+                                    messageDiv.style.color = '#666';
+                                    messageDiv.style.marginTop = '4px';
+                                    messageDiv.textContent = pod.agentInjectedStatus.message;
+                                    agentInjectedSubsection.appendChild(messageDiv);
+                                }
+                                
+                                odigosSection.appendChild(agentInjectedSubsection);
+                                
+                                // Containers subsection
+                                if (pod.containers && Array.isArray(pod.containers) && pod.containers.length > 0) {
+                                    const containersSubsection = document.createElement('div');
+                                    containersSubsection.style.marginTop = '12px';
+                                    
+                                    const containersHeader = document.createElement('div');
+                                    containersHeader.style.fontSize = '13px';
+                                    containersHeader.style.fontWeight = '600';
+                                    containersHeader.style.color = '#333';
+                                    containersHeader.style.marginBottom = '6px';
+                                    containersHeader.textContent = 'Containers:';
+                                    containersSubsection.appendChild(containersHeader);
+                                    
+                                    pod.containers.forEach((container) => {
+                                        if (container.containerName) {
+                                            const containerWrapper = document.createElement('div');
+                                            containerWrapper.style.marginBottom = '8px';
+                                            containerWrapper.style.marginLeft = '12px';
+                                            
+                                            // Container name
+                                            const containerNameDiv = document.createElement('div');
+                                            containerNameDiv.style.fontSize = '13px';
+                                            containerNameDiv.style.fontWeight = '600';
+                                            containerNameDiv.style.color = '#333';
+                                            containerNameDiv.style.marginBottom = '4px';
+                                            
+                                            let containerNameText = container.containerName;
+                                            if (!container.otelDistroName) {
+                                                containerNameText += ' (not instrumented)';
+                                            }
+                                            containerNameDiv.textContent = containerNameText;
+                                            containerWrapper.appendChild(containerNameDiv);
+                                            
+                                            // otelDistroName row
+                                            if (container.otelDistroName) {
+                                                const distroDiv = document.createElement('div');
+                                                distroDiv.style.fontSize = '12px';
+                                                distroDiv.style.color = '#666';
+                                                distroDiv.style.marginLeft = '8px';
+                                                distroDiv.style.marginBottom = '2px';
+                                                distroDiv.style.display = 'flex';
+                                                distroDiv.style.alignItems = 'center';
+                                                distroDiv.style.gap = '6px';
+                                                
+                                                const distroLabel = document.createElement('strong');
+                                                distroLabel.style.fontWeight = '600';
+                                                distroLabel.style.color = '#333';
+                                                distroLabel.textContent = 'otelDistroName:';
+                                                distroDiv.appendChild(distroLabel);
+                                                distroDiv.appendChild(document.createTextNode(' ' + container.otelDistroName));
+                                                
+                                                containerWrapper.appendChild(distroDiv);
+                                            }
+                                            
+                                            // odigosInstrumentationDeviceName row
+                                            if (container.odigosInstrumentationDeviceName) {
+                                                const deviceDiv = document.createElement('div');
+                                                deviceDiv.style.fontSize = '12px';
+                                                deviceDiv.style.color = '#666';
+                                                deviceDiv.style.marginLeft = '8px';
+                                                deviceDiv.style.display = 'flex';
+                                                deviceDiv.style.alignItems = 'center';
+                                                deviceDiv.style.gap = '6px';
+                                                
+                                                const deviceLabel = document.createElement('strong');
+                                                deviceLabel.style.fontWeight = '600';
+                                                deviceLabel.style.color = '#333';
+                                                deviceLabel.textContent = 'odigosInstrumentationDeviceName:';
+                                                deviceDiv.appendChild(deviceLabel);
+                                                deviceDiv.appendChild(document.createTextNode(' ' + container.odigosInstrumentationDeviceName));
+                                                
+                                                containerWrapper.appendChild(deviceDiv);
+                                            }
+                                            
+                                            // Instrumented processes subsection
+                                            if (container.processes && Array.isArray(container.processes) && container.processes.length > 0) {
+                                                const processesSubsection = document.createElement('div');
+                                                processesSubsection.style.marginTop = '8px';
+                                                processesSubsection.style.marginLeft = '8px';
+                                                
+                                                const processesHeader = document.createElement('div');
+                                                processesHeader.style.fontSize = '12px';
+                                                processesHeader.style.fontWeight = '600';
+                                                processesHeader.style.color = '#333';
+                                                processesHeader.style.marginBottom = '4px';
+                                                processesHeader.textContent = `instrumented processes (${container.processes.length}):`;
+                                                processesSubsection.appendChild(processesHeader);
+                                                
+                                                container.processes.forEach((process, processIdx) => {
+                                                    const processWrapper = document.createElement('div');
+                                                    processWrapper.style.marginLeft = '12px';
+                                                    processWrapper.style.marginBottom = '8px';
+                                                    
+                                                    // Process header with emoji
+                                                    const processHeader = document.createElement('div');
+                                                    processHeader.style.fontSize = '11px';
+                                                    processHeader.style.color = '#666';
+                                                    processHeader.style.display = 'flex';
+                                                    processHeader.style.alignItems = 'center';
+                                                    processHeader.style.gap = '4px';
+                                                    
+                                                    // Add emoji based on healthStatus
+                                                    if (process.healthStatus && process.healthStatus.status) {
+                                                        const statusEmoji = getStatusEmoji(process.healthStatus.status);
+                                                        if (statusEmoji) {
+                                                            const tooltipWrapper = document.createElement('span');
+                                                            tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                                            
+                                                            const emojiSpan = document.createElement('span');
+                                                            emojiSpan.textContent = statusEmoji + ' ';
+                                                            emojiSpan.style.cursor = 'help';
+                                                            tooltipWrapper.appendChild(emojiSpan);
+                                                            
+                                                            if (process.healthStatus.message) {
+                                                                const tooltipDiv = document.createElement('div');
+                                                                tooltipDiv.className = 'emoji-tooltip';
+                                                                tooltipDiv.textContent = process.healthStatus.message;
+                                                                tooltipWrapper.appendChild(tooltipDiv);
+                                                            }
+                                                            
+                                                            processHeader.appendChild(tooltipWrapper);
+                                                        }
+                                                    }
+                                                    
+                                                    // Build process identifier from attributes
+                                                    if (process.identifyingAttributes && Array.isArray(process.identifyingAttributes) && process.identifyingAttributes.length > 0) {
+                                                        const validAttrs = process.identifyingAttributes.filter(attr => attr.name && attr.value);
+                                                        if (validAttrs.length > 0) {
+                                                            // Don't add anything to header, attributes will be shown below
+                                                        } else {
+                                                            processHeader.appendChild(document.createTextNode(`Process ${processIdx + 1}`));
+                                                        }
+                                                    } else {
+                                                        processHeader.appendChild(document.createTextNode(`Process ${processIdx + 1}`));
+                                                    }
+                                                    
+                                                    processWrapper.appendChild(processHeader);
+                                                    
+                                                    // Add attributes, each on its own line
+                                                    if (process.identifyingAttributes && Array.isArray(process.identifyingAttributes) && process.identifyingAttributes.length > 0) {
+                                                        const validAttrs = process.identifyingAttributes.filter(attr => attr.name && attr.value);
+                                                        if (validAttrs.length > 0) {
+                                                            validAttrs.forEach((attr) => {
+                                                                const attrDiv = document.createElement('div');
+                                                                attrDiv.style.fontSize = '11px';
+                                                                attrDiv.style.color = '#666';
+                                                                attrDiv.style.marginLeft = '8px';
+                                                                attrDiv.style.display = 'flex';
+                                                                attrDiv.style.alignItems = 'center';
+                                                                attrDiv.style.gap = '4px';
+                                                                
+                                                                const nameSpan = document.createElement('strong');
+                                                                nameSpan.style.fontWeight = '600';
+                                                                nameSpan.textContent = attr.name;
+                                                                attrDiv.appendChild(nameSpan);
+                                                                attrDiv.appendChild(document.createTextNode(': ' + attr.value));
+                                                                
+                                                                processWrapper.appendChild(attrDiv);
+                                                            });
+                                                        }
+                                                    }
+                                                    
+                                                    processesSubsection.appendChild(processWrapper);
+                                                });
+                                                
+                                                containerWrapper.appendChild(processesSubsection);
+                                            }
+                                            
+                                            containersSubsection.appendChild(containerWrapper);
+                                        }
+                                    });
+                                    
+                                    odigosSection.appendChild(containersSubsection);
+                                }
+                                
+                                podContent.appendChild(odigosSection);
+                            }
+                            
+                            // Pod health status section
+                            if (pod.podHealthStatus) {
+                                const healthSection = document.createElement('div');
+                                healthSection.style.marginBottom = '15px';
+                                healthSection.style.padding = '10px';
+                                healthSection.style.backgroundColor = '#f8f8f8';
+                                healthSection.style.borderRadius = '4px';
+                                
+                                const healthHeader = document.createElement('div');
+                                healthHeader.style.display = 'flex';
+                                healthHeader.style.alignItems = 'center';
+                                healthHeader.style.gap = '8px';
+                                healthHeader.style.marginBottom = '8px';
+                                
+                                // Add emoji based on status
+                                if (pod.podHealthStatus.status) {
+                                    const statusEmoji = getStatusEmoji(pod.podHealthStatus.status);
+                                    if (statusEmoji) {
+                                        const tooltipWrapper = document.createElement('span');
+                                        tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                        
+                                        const emojiSpan = document.createElement('span');
+                                        emojiSpan.textContent = statusEmoji + ' ';
+                                        emojiSpan.style.cursor = 'help';
+                                        emojiSpan.style.fontSize = '16px';
+                                        tooltipWrapper.appendChild(emojiSpan);
+                                        
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = pod.podHealthStatus.message || '';
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                        
+                                        healthHeader.appendChild(tooltipWrapper);
+                                    }
+                                }
+                                
+                                const healthTitle = document.createElement('span');
+                                healthTitle.style.fontWeight = '600';
+                                healthTitle.style.fontSize = '14px';
+                                healthTitle.style.color = '#333';
+                                healthTitle.textContent = 'application health';
+                                healthHeader.appendChild(healthTitle);
+                                
+                                healthSection.appendChild(healthHeader);
+                                
+                                // Add message if available
+                                if (pod.podHealthStatus.message) {
+                                    const messageDiv = document.createElement('div');
+                                    messageDiv.style.fontSize = '13px';
+                                    messageDiv.style.color = '#666';
+                                    messageDiv.style.marginTop = '4px';
+                                    messageDiv.textContent = pod.podHealthStatus.message;
+                                    healthSection.appendChild(messageDiv);
+                                }
+                                
+                                // Add container health information
+                                if (pod.containers && Array.isArray(pod.containers) && pod.containers.length > 0) {
+                                    const containersDiv = document.createElement('div');
+                                    containersDiv.style.marginTop = '12px';
+                                    
+                                    pod.containers.forEach((container) => {
+                                        if (container.containerName) {
+                                            const containerDiv = document.createElement('div');
+                                            containerDiv.style.display = 'flex';
+                                            containerDiv.style.alignItems = 'center';
+                                            containerDiv.style.gap = '8px';
+                                            containerDiv.style.marginBottom = '6px';
+                                            containerDiv.style.fontSize = '13px';
+                                            
+                                            // Add emoji based on container healthStatus
+                                            if (container.healthStatus && container.healthStatus.status) {
+                                                const containerEmoji = getStatusEmoji(container.healthStatus.status);
+                                                if (containerEmoji) {
+                                                    const tooltipWrapper = document.createElement('span');
+                                                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                                    
+                                                    const emojiSpan = document.createElement('span');
+                                                    emojiSpan.textContent = containerEmoji + ' ';
+                                                    emojiSpan.style.cursor = 'help';
+                                                    tooltipWrapper.appendChild(emojiSpan);
+                                                    
+                                                    const tooltipDiv = document.createElement('div');
+                                                    tooltipDiv.className = 'emoji-tooltip';
+                                                    tooltipDiv.textContent = container.healthStatus.message || '';
+                                                    tooltipWrapper.appendChild(tooltipDiv);
+                                                    
+                                                    containerDiv.appendChild(tooltipWrapper);
+                                                }
+                                            }
+                                            
+                                            const containerNameSpan = document.createElement('span');
+                                            containerNameSpan.textContent = container.containerName;
+                                            containerNameSpan.style.color = '#333';
+                                            containerDiv.appendChild(containerNameSpan);
+                                            
+                                            containersDiv.appendChild(containerDiv);
+                                            
+                                            // Add container details section
+                                            const detailsDiv = document.createElement('div');
+                                            detailsDiv.style.marginLeft = '24px';
+                                            detailsDiv.style.marginTop = '4px';
+                                            detailsDiv.style.marginBottom = '8px';
+                                            detailsDiv.style.fontSize = '12px';
+                                            detailsDiv.style.color = '#666';
+                                            
+                                            // healthStatus
+                                            if (container.healthStatus) {
+                                                if (container.healthStatus.status) {
+                                                    const healthStatusDiv = document.createElement('div');
+                                                    healthStatusDiv.style.display = 'flex';
+                                                    healthStatusDiv.style.alignItems = 'center';
+                                                    healthStatusDiv.style.gap = '6px';
+                                                    healthStatusDiv.style.marginBottom = '2px';
+                                                    const healthStatusLabel = document.createElement('strong');
+                                                    healthStatusLabel.style.fontWeight = '600';
+                                                    healthStatusLabel.style.color = '#333';
+                                                    healthStatusLabel.textContent = 'healthStatus.status:';
+                                                    healthStatusDiv.appendChild(healthStatusLabel);
+                                                    
+                                                    // Apply status color
+                                                    const statusValue = container.healthStatus.status.toLowerCase();
+                                                    const statusClasses = {
+                                                        'error': 'status-error',
+                                                        'failure': 'status-failure',
+                                                        'notice': 'status-notice',
+                                                        'pending': 'status-pending',
+                                                        'waiting': 'status-waiting',
+                                                        'unsupported': 'status-unsupported',
+                                                        'disabled': 'status-disabled',
+                                                        'success': 'status-success',
+                                                        'irrelevant': 'status-irrelevant',
+                                                        'unknown': 'status-unknown'
+                                                    };
+                                                    const statusClass = statusClasses[statusValue] || '';
+                                                    
+                                                    const statusValueSpan = document.createElement('span');
+                                                    if (statusClass) {
+                                                        statusValueSpan.className = statusClass;
+                                                    }
+                                                    statusValueSpan.textContent = ' ' + container.healthStatus.status;
+                                                    healthStatusDiv.appendChild(statusValueSpan);
+                                                    detailsDiv.appendChild(healthStatusDiv);
+                                                }
+                                                
+                                                if (container.healthStatus.message) {
+                                                    const healthMessageDiv = document.createElement('div');
+                                                    healthMessageDiv.style.fontSize = '12px';
+                                                    healthMessageDiv.style.color = '#666';
+                                                    healthMessageDiv.style.marginBottom = '2px';
+                                                    const healthMessageLabel = document.createElement('strong');
+                                                    healthMessageLabel.style.fontWeight = '600';
+                                                    healthMessageLabel.style.color = '#333';
+                                                    healthMessageLabel.textContent = 'healthStatus.message:';
+                                                    healthMessageDiv.appendChild(healthMessageLabel);
+                                                    healthMessageDiv.appendChild(document.createTextNode(' ' + container.healthStatus.message));
+                                                    detailsDiv.appendChild(healthMessageDiv);
+                                                }
+                                                
+                                                if (container.healthStatus.reasonEnum) {
+                                                    const healthReasonDiv = document.createElement('div');
+                                                    healthReasonDiv.style.display = 'flex';
+                                                    healthReasonDiv.style.alignItems = 'center';
+                                                    healthReasonDiv.style.gap = '6px';
+                                                    healthReasonDiv.style.marginBottom = '2px';
+                                                    const healthReasonLabel = document.createElement('strong');
+                                                    healthReasonLabel.style.fontWeight = '600';
+                                                    healthReasonLabel.style.color = '#333';
+                                                    healthReasonLabel.textContent = 'healthStatus.reasonEnum:';
+                                                    healthReasonDiv.appendChild(healthReasonLabel);
+                                                    healthReasonDiv.appendChild(document.createTextNode(' ' + container.healthStatus.reasonEnum));
+                                                    detailsDiv.appendChild(healthReasonDiv);
+                                                }
+                                            }
+                                            
+                                            // Started
+                                            const startedDiv = document.createElement('div');
+                                            startedDiv.style.display = 'flex';
+                                            startedDiv.style.alignItems = 'center';
+                                            startedDiv.style.gap = '6px';
+                                            startedDiv.style.marginBottom = '2px';
+                                            const startedEmoji = container.started === true ? '✅' : '❌';
+                                            const startedLabel = document.createElement('strong');
+                                            startedLabel.style.fontWeight = '600';
+                                            startedLabel.style.color = '#333';
+                                            startedLabel.textContent = 'started (container is running and passing startup probe if defined):';
+                                            startedDiv.appendChild(document.createTextNode(startedEmoji + ' '));
+                                            startedDiv.appendChild(startedLabel);
+                                            startedDiv.appendChild(document.createTextNode(' ' + (container.started === true ? 'true' : 'false')));
+                                            detailsDiv.appendChild(startedDiv);
+                                            
+                                            // Ready
+                                            const readyDiv = document.createElement('div');
+                                            readyDiv.style.display = 'flex';
+                                            readyDiv.style.alignItems = 'center';
+                                            readyDiv.style.gap = '6px';
+                                            readyDiv.style.marginBottom = '2px';
+                                            const readyEmoji = container.ready === true ? '✅' : '❌';
+                                            const readyLabel = document.createElement('strong');
+                                            readyLabel.style.fontWeight = '600';
+                                            readyLabel.style.color = '#333';
+                                            readyLabel.textContent = 'ready (container is passing readiness probe/health checks):';
+                                            readyDiv.appendChild(document.createTextNode(readyEmoji + ' '));
+                                            readyDiv.appendChild(readyLabel);
+                                            readyDiv.appendChild(document.createTextNode(' ' + (container.ready === true ? 'true' : 'false')));
+                                            detailsDiv.appendChild(readyDiv);
+                                            
+                                            // isCrashLoop
+                                            const crashLoopDiv = document.createElement('div');
+                                            crashLoopDiv.style.display = 'flex';
+                                            crashLoopDiv.style.alignItems = 'center';
+                                            crashLoopDiv.style.gap = '6px';
+                                            crashLoopDiv.style.marginBottom = '2px';
+                                            const crashLoopEmoji = container.isCrashLoop === true ? '⚠️' : '✅';
+                                            const crashLoopLabel = document.createElement('strong');
+                                            crashLoopLabel.style.fontWeight = '600';
+                                            crashLoopLabel.style.color = container.isCrashLoop === true ? '#d32f2f' : '#333';
+                                            crashLoopLabel.textContent = 'isCrashLoop:';
+                                            crashLoopDiv.appendChild(document.createTextNode(crashLoopEmoji + ' '));
+                                            crashLoopDiv.appendChild(crashLoopLabel);
+                                            crashLoopDiv.appendChild(document.createTextNode(' ' + (container.isCrashLoop === true ? 'true' : 'false')));
+                                            if (container.isCrashLoop === true) {
+                                                crashLoopDiv.style.color = '#d32f2f';
+                                                crashLoopDiv.style.fontWeight = '600';
+                                            }
+                                            detailsDiv.appendChild(crashLoopDiv);
+                                            
+                                            // restartCount
+                                            const restartDiv = document.createElement('div');
+                                            restartDiv.style.display = 'flex';
+                                            restartDiv.style.alignItems = 'center';
+                                            restartDiv.style.gap = '6px';
+                                            const restartCount = container.restartCount || 0;
+                                            const restartEmoji = restartCount === 0 ? '✅' : '⚠️';
+                                            const restartLabel = document.createElement('strong');
+                                            restartLabel.style.fontWeight = '600';
+                                            restartLabel.style.color = restartCount > 0 ? '#f57c00' : '#333';
+                                            restartLabel.textContent = 'restartCount:';
+                                            restartDiv.appendChild(document.createTextNode(restartEmoji + ' '));
+                                            restartDiv.appendChild(restartLabel);
+                                            restartDiv.appendChild(document.createTextNode(' ' + restartCount));
+                                            if (restartCount > 0) {
+                                                restartDiv.style.color = '#f57c00';
+                                            }
+                                            detailsDiv.appendChild(restartDiv);
+                                            
+                                            // Waiting state information
+                                            if (container.waitingReasonEnum || container.waitingMessage) {
+                                                // Header line
+                                                const waitingHeaderDiv = document.createElement('div');
+                                                waitingHeaderDiv.style.fontSize = '12px';
+                                                waitingHeaderDiv.style.color = '#666';
+                                                waitingHeaderDiv.style.marginTop = '4px';
+                                                waitingHeaderDiv.textContent = 'container is in waiting state in kubernetes';
+                                                detailsDiv.appendChild(waitingHeaderDiv);
+                                                
+                                                // waitingReasonEnum
+                                                if (container.waitingReasonEnum) {
+                                                    const waitingReasonDiv = document.createElement('div');
+                                                    waitingReasonDiv.style.display = 'flex';
+                                                    waitingReasonDiv.style.alignItems = 'center';
+                                                    waitingReasonDiv.style.gap = '6px';
+                                                    waitingReasonDiv.style.marginTop = '0px';
+                                                    const waitingReasonLabel = document.createElement('strong');
+                                                    waitingReasonLabel.style.fontWeight = '600';
+                                                    waitingReasonLabel.style.color = '#333';
+                                                    waitingReasonLabel.textContent = 'waiting state kubernetes reason (enum):';
+                                                    waitingReasonDiv.appendChild(waitingReasonLabel);
+                                                    waitingReasonDiv.appendChild(document.createTextNode(' ' + container.waitingReasonEnum));
+                                                    detailsDiv.appendChild(waitingReasonDiv);
+                                                }
+                                                
+                                                // waitingMessage
+                                                if (container.waitingMessage) {
+                                                    const waitingMessageDiv = document.createElement('div');
+                                                    waitingMessageDiv.style.display = 'flex';
+                                                    waitingMessageDiv.style.alignItems = 'center';
+                                                    waitingMessageDiv.style.gap = '6px';
+                                                    waitingMessageDiv.style.marginTop = '2px';
+                                                    const waitingMessageLabel = document.createElement('strong');
+                                                    waitingMessageLabel.style.fontWeight = '600';
+                                                    waitingMessageLabel.style.color = '#333';
+                                                    waitingMessageLabel.textContent = 'waiting state kubernetes message (human readable):';
+                                                    waitingMessageDiv.appendChild(waitingMessageLabel);
+                                                    waitingMessageDiv.appendChild(document.createTextNode(' ' + container.waitingMessage));
+                                                    detailsDiv.appendChild(waitingMessageDiv);
+                                                }
+                                            }
+                                            
+                                            // Running state information
+                                            if (container.runningStartedTime) {
+                                                // Header line
+                                                const runningHeaderDiv = document.createElement('div');
+                                                runningHeaderDiv.style.fontSize = '12px';
+                                                runningHeaderDiv.style.color = '#666';
+                                                runningHeaderDiv.style.marginTop = '4px';
+                                                runningHeaderDiv.textContent = 'container is in running state in kubernetes';
+                                                detailsDiv.appendChild(runningHeaderDiv);
+                                                
+                                                // Start time and age
+                                                const runningTimeDiv = document.createElement('div');
+                                                runningTimeDiv.style.display = 'flex';
+                                                runningTimeDiv.style.alignItems = 'center';
+                                                runningTimeDiv.style.gap = '6px';
+                                                runningTimeDiv.style.fontSize = '12px';
+                                                runningTimeDiv.style.color = '#666';
+                                                runningTimeDiv.style.marginTop = '0px';
+                                                
+                                                const runningStartTimeDate = new Date(container.runningStartedTime);
+                                                
+                                                const runningStartTimeLabel = document.createElement('strong');
+                                                runningStartTimeLabel.style.fontWeight = '600';
+                                                runningStartTimeLabel.style.color = '#333';
+                                                runningStartTimeLabel.textContent = 'start time of active container (including restarts):';
+                                                runningTimeDiv.appendChild(runningStartTimeLabel);
+                                                
+                                                const runningStartTimeSpan = document.createElement('span');
+                                                runningStartTimeSpan.textContent = runningStartTimeDate.toLocaleString();
+                                                runningTimeDiv.appendChild(runningStartTimeSpan);
+                                                
+                                                const runningAgeSpan = document.createElement('span');
+                                                runningAgeSpan.id = `container-age-${idx}-${podIdx}-${container.containerName}`;
+                                                runningAgeSpan.style.marginLeft = '8px';
+                                                runningAgeSpan.style.color = '#666';
+                                                
+                                                const updateRunningAge = () => {
+                                                    const now = new Date();
+                                                    const seconds = Math.floor((now - runningStartTimeDate) / 1000);
+                                                    const ageText = formatDuration(seconds);
+                                                    runningAgeSpan.textContent = `(${ageText} ago)`;
+                                                };
+                                                
+                                                updateRunningAge();
+                                                setInterval(updateRunningAge, 1000);
+                                                
+                                                runningTimeDiv.appendChild(runningAgeSpan);
+                                                detailsDiv.appendChild(runningTimeDiv);
+                                            }
+                                            
+                                            containersDiv.appendChild(detailsDiv);
+                                        }
+                                    });
+                                    
+                                    healthSection.appendChild(containersDiv);
+                                }
+                                
+                                podContent.appendChild(healthSection);
+                            }
+                            
+                            // Kubectl commands section
+                            const k8sCommandsSection = document.createElement('div');
+                            k8sCommandsSection.style.marginBottom = '6px';
+                            k8sCommandsSection.style.padding = '6px';
+                            k8sCommandsSection.style.backgroundColor = '#f8f8f8';
+                            k8sCommandsSection.style.borderRadius = '4px';
+                            
+                            const k8sCommandsTitle = document.createElement('div');
+                            k8sCommandsTitle.style.fontSize = '14px';
+                            k8sCommandsTitle.style.fontWeight = '600';
+                            k8sCommandsTitle.style.color = '#333';
+                            k8sCommandsTitle.style.marginBottom = '8px';
+                            k8sCommandsTitle.textContent = 'Kubectl Commands';
+                            k8sCommandsSection.appendChild(k8sCommandsTitle);
+                            
+                            const k8sCommandsDiv = document.createElement('div');
+                            k8sCommandsDiv.className = 'k8s-commands';
+                            
+                            const namespace = item && item.id && item.id.namespace ? item.id.namespace : '';
+                            
+                            // Describe Pod command
+                            const describeSection = document.createElement('div');
+                            describeSection.className = 'k8s-command-section';
+                            describeSection.style.marginBottom = '4px';
+                            
+                            const describeTitle = document.createElement('div');
+                            describeTitle.className = 'k8s-command-title';
+                            describeTitle.style.fontSize = '11px';
+                            describeTitle.style.marginBottom = '2px';
+                            describeTitle.textContent = 'Describe Pod';
+                            describeSection.appendChild(describeTitle);
+                            
+                            const describeBlock = document.createElement('div');
+                            describeBlock.className = 'k8s-command-block';
+                            describeBlock.style.gap = '4px';
+                            
+                            const describeCopyBtn = document.createElement('button');
+                            describeCopyBtn.className = 'k8s-copy-btn';
+                            describeCopyBtn.textContent = 'Copy';
+                            describeCopyBtn.onclick = () => copyToClipboard(`kubectl describe pod ${podName} -n ${namespace}`);
+                            describeBlock.appendChild(describeCopyBtn);
+                            
+                            const describeCommandText = document.createElement('div');
+                            describeCommandText.className = 'k8s-command-text';
+                            describeCommandText.textContent = `kubectl describe pod ${podName} -n ${namespace}`;
+                            describeBlock.appendChild(describeCommandText);
+                            
+                            describeSection.appendChild(describeBlock);
+                            k8sCommandsDiv.appendChild(describeSection);
+                            
+                            // Get Pod YAML command
+                            const yamlSection = document.createElement('div');
+                            yamlSection.className = 'k8s-command-section';
+                            yamlSection.style.marginBottom = '0px';
+                            
+                            const yamlTitle = document.createElement('div');
+                            yamlTitle.className = 'k8s-command-title';
+                            yamlTitle.style.fontSize = '11px';
+                            yamlTitle.style.marginBottom = '2px';
+                            yamlTitle.textContent = 'Get Pod YAML';
+                            yamlSection.appendChild(yamlTitle);
+                            
+                            const yamlBlock = document.createElement('div');
+                            yamlBlock.className = 'k8s-command-block';
+                            yamlBlock.style.gap = '4px';
+                            
+                            const yamlCopyBtn = document.createElement('button');
+                            yamlCopyBtn.className = 'k8s-copy-btn';
+                            yamlCopyBtn.textContent = 'Copy';
+                            yamlCopyBtn.onclick = () => copyToClipboard(`kubectl get pod ${podName} -n ${namespace} -o yaml`);
+                            yamlBlock.appendChild(yamlCopyBtn);
+                            
+                            const yamlCommandText = document.createElement('div');
+                            yamlCommandText.className = 'k8s-command-text';
+                            yamlCommandText.textContent = `kubectl get pod ${podName} -n ${namespace} -o yaml`;
+                            yamlBlock.appendChild(yamlCommandText);
+                            
+                            yamlSection.appendChild(yamlBlock);
+                            k8sCommandsDiv.appendChild(yamlSection);
+                            
+                            k8sCommandsSection.appendChild(k8sCommandsDiv);
+                            podContent.appendChild(k8sCommandsSection);
+                            
+                            // Toggle functionality
+                            const toggleFunc = (e) => {
+                                if (e) {
+                                    e.stopPropagation();
+                                }
+                                toggle.classList.toggle('expanded');
+                                podContent.classList.toggle('expanded');
+                                if (podContent.classList.contains('expanded')) {
+                                    podContent.style.display = 'block';
+                                } else {
+                                    podContent.style.display = 'none';
+                                }
+                            };
+                            
+                            toggle.onclick = (e) => {
+                                e.stopPropagation();
+                                toggleFunc();
+                            };
+                            podHeader.onclick = toggleFunc;
+                            
+                            podWrapper.appendChild(podContent);
+                            podsContent.appendChild(podWrapper);
+                        });
+                    } else {
+                        const noPods = document.createElement('div');
+                        noPods.textContent = 'change verbosity to show pods info';
+                        noPods.style.padding = '15px';
+                        noPods.style.color = '#666';
+                        podsContent.appendChild(noPods);
+                    }
+                    
+                    contentDiv.appendChild(podsContent);
+                    
+                    // Raw content tab
+                    const rawContent = document.createElement('div');
+                    rawContent.id = `raw-content-${idx}`;
+                    rawContent.className = 'tab-content';
+                    // Render object properties directly without extra wrapper
+                    Object.keys(item).forEach(k => {
+                        renderJSON(item[k], rawContent, k);
+                    });
+                    contentDiv.appendChild(rawContent);
+                    
+                    // Toggle functionality
+                    const toggleFunc = (e) => {
+                        if (e) {
+                            e.stopPropagation();
+                        }
+                        toggle.classList.toggle('expanded');
+                        contentDiv.classList.toggle('expanded');
+                        if (contentDiv.classList.contains('expanded')) {
+                            contentDiv.style.display = 'block';
+                        } else {
+                            contentDiv.style.display = 'none';
+                        }
+                    };
+                    
+                    toggle.onclick = (e) => {
+                        e.stopPropagation();
+                        toggleFunc();
+                    };
+                    headerDiv.onclick = toggleFunc;
+                    
+                    wrapper.appendChild(headerDiv);
+                    wrapper.appendChild(contentDiv);
+                    
+                    output.appendChild(wrapper);
+                });
+            } else {
+                renderJSON(data, output);
+            }
+        }
+        
+        function loadData(data) {
+            allWorkloadData = data;
+            const selectedNamespace = document.getElementById('namespace').value;
+            const selectedName = document.getElementById('name').value;
+            populateNamespaceDropdown(data);
+            populateNameDropdown(data, selectedNamespace);
+            displayFilteredData(data, selectedNamespace, selectedName);
+        }
+        
+        // Initial load
+        refreshData();
+    </script>
+</body>
+</html>
+
