@@ -369,6 +369,9 @@ odiglet:
       - DAC_READ_SEARCH
       # required for mmap of perf buffers
       - IPC_LOCK
+      # required only for kernels < 5.11.
+      # used for setting rlimit for BPF maps
+      - SYS_RESOURCE
   # traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
   # supported only in odigos pro (not available in community tier)
   # traceIdSuffix: 'AA'
@@ -456,6 +459,17 @@ centralProxy:
     limits:
       cpu: 500m
       memory: 256Mi
+
+  # TLS Configuration
+  tls:
+    # Skip TLS certificate verification (for testing/self-signed certificates)
+    skipVerify: false
+    
+    # Secret name containing CA certificate (key: 'ca.crt')
+    caSecretName: ''
+    
+    # Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')
+    clientCertSecretName: ''
 
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
