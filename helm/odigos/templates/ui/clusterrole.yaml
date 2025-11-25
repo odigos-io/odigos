@@ -12,7 +12,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
       - patch
       {{- end }}
   - apiGroups:
@@ -24,7 +24,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
       - update
       - patch
       {{- end }}
@@ -35,7 +35,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
       - update
       - patch
       {{- end }}
@@ -47,7 +47,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
       - update
       - patch
       {{- end }}
@@ -90,7 +90,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
       - patch
       - create
       - delete

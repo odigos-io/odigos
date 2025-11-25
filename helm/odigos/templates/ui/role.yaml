@@ -13,7 +13,7 @@ rules:
     verbs:
       - get
       - list
-  {{- if ne .Values.ui.uiMode "readonly" }}
+  {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
       - update
       - patch
   - apiGroups:
@@ -49,7 +49,7 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
       - create
       - patch
       - update
@@ -75,14 +75,14 @@ rules:
     verbs:
       - get
       - list
-      {{- if ne .Values.ui.uiMode "readonly" }}
+      {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
       - create
       - patch
       - update
       - delete
       {{- end }}
   # Permissions for pauseOdigos mutation
-  {{- if ne .Values.ui.uiMode "readonly" }}
+  {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") }}
   - apiGroups:
       - apps
     resources:
