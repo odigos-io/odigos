@@ -195,7 +195,12 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// GraphQL handlers
 	r.POST("/graphql", func(c *gin.Context) {
 		loader := loaders.NewLoaders(logger, k8sCacheClient)
-		c.Request = c.Request.WithContext(loaders.WithLoaders(c.Request.Context(), loader))
+		baseCtx := c.Request.Context()
+		if c.GetHeader(middlewares.AdminOverrideHeader) == "true" {
+			baseCtx = middlewares.WithAdminOverride(baseCtx)
+		}
+		baseCtx = loaders.WithLoaders(baseCtx, loader)
+		c.Request = c.Request.WithContext(baseCtx)
 		graph.GetGQLHandler(c.Request.Context(), gqlExecutableSchema).ServeHTTP(c.Writer, c.Request)
 	})
 	r.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/graphql")))
