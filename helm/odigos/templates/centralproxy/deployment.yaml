@@ -30,10 +30,16 @@ spec:
               app.kubernetes.io/name: central-proxy
         {{- end }}
       {{- end }}
-      {{- if .Values.nodeSelector }}
+      {{- if .Values.centralProxy.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.centralProxy.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: central-proxy
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
@@ -45,6 +51,33 @@ spec:
               value: {{ .Values.clusterName | quote }}
             - name: CENTRAL_BACKEND_URL
               value: {{ .Values.centralProxy.centralBackendURL | quote }}
+            {{- if .Values.centralProxy.tls.skipVerify }}
+            - name: CENTRAL_SKIP_TLS_VERIFY
+              value: "true"
+            {{- end }}
+            {{- if .Values.centralProxy.tls.caSecretName }}
+            - name: TLS_CA_FILE
+              value: "/etc/tls/ca/ca.crt"
+            {{- end }}
+            {{- if .Values.centralProxy.tls.clientCertSecretName }}
+            - name: TLS_CERT_FILE
+              value: "/etc/tls/client/tls.crt"
+            - name: TLS_KEY_FILE
+              value: "/etc/tls/client/tls.key"
+            {{- end }}
+          {{- if or .Values.centralProxy.tls.caSecretName .Values.centralProxy.tls.clientCertSecretName }}
+          volumeMounts:
+            {{- if .Values.centralProxy.tls.caSecretName }}
+            - name: tls-ca
+              mountPath: /etc/tls/ca
+              readOnly: true
+            {{- end }}
+            {{- if .Values.centralProxy.tls.clientCertSecretName }}
+            - name: tls-client-cert
+              mountPath: /etc/tls/client
+              readOnly: true
+            {{- end }}
+          {{- end }}
           resources:
             requests:
               cpu: {{ .Values.centralProxy.resources.requests.cpu }}
@@ -52,15 +85,27 @@ spec:
             limits:
               cpu: {{ .Values.centralProxy.resources.limits.cpu }}
               memory: {{ .Values.centralProxy.resources.limits.memory }}
-      {{- with .Values.centralProxy.nodeSelector }}
-      nodeSelector: {{ toYaml . | nindent 8 }}
-      {{- end }}
       {{- with .Values.centralProxy.tolerations }}
       tolerations: {{ toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.centralProxy.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
       {{- end }}
-  
+      {{- if or .Values.centralProxy.tls.caSecretName .Values.centralProxy.tls.clientCertSecretName }}
+      volumes:
+        {{- if .Values.centralProxy.tls.caSecretName }}
+        - name: tls-ca
+          secret:
+            secretName: {{ .Values.centralProxy.tls.caSecretName }}
+            defaultMode: 420
+        {{- end }}
+        {{- if .Values.centralProxy.tls.clientCertSecretName }}
+        - name: tls-client-cert
+          secret:
+            secretName: {{ .Values.centralProxy.tls.clientCertSecretName }}
+            defaultMode: 420
+        {{- end }}
+      {{- end }}
+
 
 {{- end }}

@@ -181,6 +181,12 @@ type CollectorsGroupSpec struct {
 	// wether to setup and collect own telemetry in the collector.
 	// currently, it is used to send odigos own metrics to the odigos prometheus (internal metrics store).
 	OwnTelemetryEnabled bool `json:"ownTelemetryEnabled,omitempty"`
+
+	// Node selector for the collectors group deployment.
+	// Use this to force the gateway to run only on nodes with specific labels.
+	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+	// If no matching nodes exist, the pod will remain Pending.
+	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

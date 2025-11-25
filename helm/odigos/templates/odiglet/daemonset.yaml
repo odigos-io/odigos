@@ -3,6 +3,7 @@
 {{- $collectLogs := has "logs" $signals -}}
 {{- $collectMetrics := has "metrics" $signals -}}
 {{- $privilegedRequired := or $collectLogs $collectMetrics -}}
+{{- $k8sVersion := include "utils.cleanKubeVersion" . }}
 {{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
 {{ fail "privileged mode is required when collecting logs or metrics, this is currently not supported in unprivileged mode" }}
 {{- end }}
@@ -20,8 +21,7 @@ spec:
       app.kubernetes.io/name: odiglet
   updateStrategy:
     rollingUpdate:
-      {{- $version := include "utils.cleanKubeVersion" . }}
-      {{- if semverCompare ">=1.22.0" $version }}
+      {{- if semverCompare ">=1.22.0" $k8sVersion }}
       maxSurge: 0
       {{- end }}
       maxUnavailable: 50%
@@ -32,9 +32,18 @@ spec:
         app.kubernetes.io/name: odiglet
         odigos.io/collector-role: NODE_COLLECTOR
       annotations:
+        {{- if and (.Values.odiglet.unPrivileged) (semverCompare "<1.30.0" $k8sVersion) }}
+        # Prior to Kubernetes v1.30, AppArmor profile was specified through annotations.
+        container.apparmor.security.beta.kubernetes.io/odiglet: unconfined
+        {{- end }}
         kubectl.kubernetes.io/default-container: odiglet
     spec:
-      {{- if .Values.nodeSelector }}
+      {{- if .Values.odiglet.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.odiglet.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
@@ -123,7 +132,14 @@ spec:
               {{- end }}
               drop:
                 - ALL
+            # for Kubernetes >= 1.30 we can specify AppArmor profile in securityContext
+            {{- if semverCompare ">=1.30.0" $k8sVersion }}
+            {{- with .Values.odiglet.odiglet.appArmorProfile }}
+            appArmorProfile:
+              {{ toYaml . | nindent 14 }}
             {{- end }}
+            {{- end }}
+            {{- end }} # end of securityContext
           livenessProbe:
 {{ toYaml .Values.odiglet.odiglet.livenessProbe | indent 12 }}
           readinessProbe:
@@ -354,8 +370,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 10
 {{- end }}
-      {{- $version := include "utils.cleanKubeVersion" . }}
-      {{- if semverCompare "<1.26.0" $version }}
+      {{- if semverCompare "<1.26.0" $k8sVersion }}
       hostNetwork: true
       {{- end}}
       {{- if not .Values.odiglet.noHostPid }}
@@ -425,9 +440,6 @@ spec:
           emptyDir: {}
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
 {{- with .Values.odiglet }}
-  {{- if .nodeSelector }}
-      nodeSelector: {{ toYaml .nodeSelector | nindent 8 }}
-  {{- end }}
   {{- if .tolerations }}
       tolerations: {{ toYaml .tolerations | nindent 8 }}
   {{- end }}

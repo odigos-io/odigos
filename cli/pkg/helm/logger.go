@@ -40,9 +40,18 @@ func CustomUninstallLogger(format string, v ...interface{}) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	switch {
-	case strings.HasPrefix(msg, "Starting delete"):
+	// Count deletions
+	if strings.HasPrefix(msg, "Starting delete") {
 		deletedCount++
+	}
+
+	// Only print high-level messages, skip individual resource deletions
+	switch {
+	case strings.Contains(msg, "Add/Modify event for cleanup-job: ADDED"):
+		fmt.Println("🗑️  Cleanup job for Odigos instrumentation resources created, it might take a few minutes to complete...")
+	case strings.Contains(msg, `Starting delete for "cleanup-job" Job`):
+		fmt.Println("🗑️  Finish deleting odigos instrumentation resources...")
+		fmt.Println("🗑️  Starting to delete Odigos components...")
 	}
 }
 

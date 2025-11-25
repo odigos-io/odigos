@@ -190,7 +190,7 @@ jobs:
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
           DATE: ${{ steps.vars.outputs.date }}
         run: |
-          ko build --bare --tags latest --tags ${{ env.TAG }}
+          ko build --bare --tags latest --tags ${{ env.TAG }} --platform=linux/amd64,linux/arm64
 
       - name: publish cli UBI9 image to GCR registry
         working-directory: ./cli

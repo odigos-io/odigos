@@ -36,6 +36,7 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	HttpsProxyAddress         *string                                                     `json:"httpsProxyAddress,omitempty"`
 	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
 	OwnTelemetryEnabled       *bool                                                       `json:"ownTelemetryEnabled,omitempty"`
+	NodeSelector              *map[string]string                                          `json:"nodeSelector,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -129,5 +130,13 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithMetrics(value *CollectorsGro
 // If called multiple times, the OwnTelemetryEnabled field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithOwnTelemetryEnabled(value bool) *CollectorsGroupSpecApplyConfiguration {
 	b.OwnTelemetryEnabled = &value
+	return b
+}
+
+// WithNodeSelector sets the NodeSelector field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the NodeSelector field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithNodeSelector(value map[string]string) *CollectorsGroupSpecApplyConfiguration {
+	b.NodeSelector = &value
 	return b
 }

@@ -139,6 +139,11 @@ func noopConfigMap() (string, error) {
 					Exporters:  []string{"nop"},
 				},
 			},
+			Telemetry: config.Telemetry{
+				Metrics: config.GenericMap{
+					"level": "none",
+				},
+			},
 		},
 	}
 
