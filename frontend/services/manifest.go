@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -21,27 +20,36 @@ func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKi
 			return "", err
 		}
 		obj.ObjectMeta.ManagedFields = nil
-		jb, _ := json.Marshal(obj)
-		yb, _ := syaml.JSONToYAML(jb)
+		yb, err := syaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
 		return string(yb), nil
+
 	case model.K8sResourceKindDaemonSet:
 		obj, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
 		obj.ObjectMeta.ManagedFields = nil
-		jb, _ := json.Marshal(obj)
-		yb, _ := syaml.JSONToYAML(jb)
+		yb, err := syaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
 		return string(yb), nil
+
 	case model.K8sResourceKindPod:
 		obj, err := kube.DefaultClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
 		obj.ObjectMeta.ManagedFields = nil
-		jb, _ := json.Marshal(obj)
-		yb, _ := syaml.JSONToYAML(jb)
+		yb, err := syaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
 		return string(yb), nil
+
 	default:
 		return "", fmt.Errorf("unsupported kind: %s", kind)
 	}
