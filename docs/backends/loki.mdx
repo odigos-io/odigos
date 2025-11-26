@@ -64,7 +64,7 @@ You can configure your grafana cloud loki labels in the `Labels` multi-input con
 - **LOKI_PASSWORD** `string` : Basic Auth Password. password for basic authentication
   - This field is optional
   - Example: `<loki-password>`
-- **LOKI_SCOPE_ORG_ID** `string` : Org id used for scoping. Multiple orgs can be chained using `|`
+- **LOKI_SCOPE_ORG_ID** `string` : Org ID used for scoping. Multiple orgs can be chained using `|`, for example `org-1|org-2`
 - **LOKI_LABELS** `string[]` : Labels. use these OpenTelemetry resource attributes as loki labels for each log record
   - This field is required and defaults to `["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]`
 
