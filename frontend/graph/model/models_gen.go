@@ -821,6 +821,16 @@ type PodContainerAnalyze struct {
 	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
+type PodInfo struct {
+	Name              string  `json:"name"`
+	Ready             string  `json:"ready"`
+	Status            *string `json:"status,omitempty"`
+	RestartsCount     int     `json:"restartsCount"`
+	NodeName          string  `json:"nodeName"`
+	CreationTimestamp string  `json:"creationTimestamp"`
+	Image             string  `json:"image"`
+}
+
 type PodWorkload struct {
 	Namespace string          `json:"namespace"`
 	Name      string          `json:"name"`
@@ -1402,6 +1412,7 @@ const (
 	K8sResourceKindStatefulSet      K8sResourceKind = "StatefulSet"
 	K8sResourceKindCronJob          K8sResourceKind = "CronJob"
 	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
+	K8sResourceKindPod              K8sResourceKind = "Pod"
 	K8sResourceKindDeploymentConfig K8sResourceKind = "DeploymentConfig"
 )
 
@@ -1411,12 +1422,13 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindStatefulSet,
 	K8sResourceKindCronJob,
 	K8sResourceKindConfigMap,
+	K8sResourceKindPod,
 	K8sResourceKindDeploymentConfig,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindDeploymentConfig:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindDeploymentConfig:
 		return true
 	}
 	return false
