@@ -9,6 +9,7 @@ enum K8sResourceKind {
   StatefulSet
   CronJob
   ConfigMap
+  Pod
   DeploymentConfig
 }
 
@@ -849,12 +850,22 @@ type NonIdentifyingAttribute {
 
 type InstrumentationInstanceComponent {
   name: String!
+  type: String
+  healthy: Boolean
+  lastStatusTime: String
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
+
+  # return the raw YAML manifest for a k8s resource
+  k8sManifest(
+    namespace: String!
+    kind: K8sResourceKind!
+    name: String!
+  ): String!
 
   destinationCategories: GetDestinationCategories
   potentialDestinations: [DestinationDetails!]!

@@ -20,8 +20,9 @@ package v1alpha1
 // ContainerOverrideApplyConfiguration represents a declarative configuration of the ContainerOverride type for use
 // with apply.
 type ContainerOverrideApplyConfiguration struct {
-	ContainerName *string                                      `json:"containerName,omitempty"`
-	RuntimeInfo   *RuntimeDetailsByContainerApplyConfiguration `json:"runtimeInfo,omitempty"`
+	ContainerName  *string                                      `json:"containerName,omitempty"`
+	RuntimeInfo    *RuntimeDetailsByContainerApplyConfiguration `json:"runtimeInfo,omitempty"`
+	OtelDistroName *string                                      `json:"otelDistroName,omitempty"`
 }
 
 // ContainerOverrideApplyConfiguration constructs a declarative configuration of the ContainerOverride type for use with
@@ -43,5 +44,13 @@ func (b *ContainerOverrideApplyConfiguration) WithContainerName(value string) *C
 // If called multiple times, the RuntimeInfo field is set to the value of the last call.
 func (b *ContainerOverrideApplyConfiguration) WithRuntimeInfo(value *RuntimeDetailsByContainerApplyConfiguration) *ContainerOverrideApplyConfiguration {
 	b.RuntimeInfo = value
+	return b
+}
+
+// WithOtelDistroName sets the OtelDistroName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the OtelDistroName field is set to the value of the last call.
+func (b *ContainerOverrideApplyConfiguration) WithOtelDistroName(value string) *ContainerOverrideApplyConfiguration {
+	b.OtelDistroName = &value
 	return b
 }

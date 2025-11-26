@@ -125,7 +125,7 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
-  prometheus/self-metrics:
+  prometheus/self-metrics-ui:
     config:
       scrape_configs:
       - job_name: otelcol
@@ -168,13 +168,13 @@ service:
       - otlp/in
       - kubeletstats
       - hostmetrics
-    metrics/own-metrics:
+    metrics/own-metrics-ui:
       exporters:
       - otlp/odigos-own-telemetry-ui
       processors:
       - resource/pod-name
       receivers:
-      - prometheus/self-metrics
+      - prometheus/self-metrics-ui
     traces:
       exporters:
       - loadbalancing/traces

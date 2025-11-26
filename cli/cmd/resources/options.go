@@ -24,6 +24,7 @@ type OdigletDaemonSetOptions struct {
 	MountMethod                      *common.MountMethod
 	CustomContainerRuntimeSocketPath string
 	NodeCollectorSizing              common.CollectorNodeConfiguration
+	WaspEnabled                      *bool
 
 	SignalsEnabled map[common.ObservabilitySignal]bool // nil => default all ON
 }
