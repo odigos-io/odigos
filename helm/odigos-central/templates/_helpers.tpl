@@ -26,3 +26,13 @@ odigos-enterprise-{{- .Component -}}
 true
   {{- end -}}
 {{- end -}}
+
+{{/* Render imagePullSecrets in K8s shape from a list of strings */}}
+{{- define "odigos.renderPullSecrets" -}}
+{{- if .Values.imagePullSecrets }}
+imagePullSecrets:
+{{- range .Values.imagePullSecrets }}
+  - name: {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

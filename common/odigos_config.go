@@ -345,4 +345,6 @@ type OdigosConfiguration struct {
 	TraceIdSuffix string `json:"traceIdSuffix,omitempty" yaml:"traceIdSuffix"`
 
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
+
+	OdigosPromethuesDisabled *bool `json:"odigosPromethuesDisabled,omitempty" yaml:"odigosPromethuesDisabled"`
 }
