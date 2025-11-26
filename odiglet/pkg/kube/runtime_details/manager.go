@@ -7,12 +7,11 @@ import (
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClient *criwrapper.CriClient, appendEnvVarNames map[string]struct{}) error {
+func SetupWithManager(mgr ctrl.Manager,  criClient *criwrapper.CriClient, appendEnvVarNames map[string]struct{}) error {
 
 	runtimeDetectionEnvs := map[string]struct{}{
 		// LD_PRELOAD is special, and is always collected.
@@ -31,7 +30,6 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		Complete(&PodsReconciler{
 			Client:               mgr.GetClient(),
 			Scheme:               mgr.GetScheme(),
-			Clientset:            clientset,
 			CriClient:            criClient,
 			RuntimeDetectionEnvs: runtimeDetectionEnvs,
 		})
@@ -47,7 +45,6 @@ func SetupWithManager(mgr ctrl.Manager, clientset *kubernetes.Clientset, criClie
 		Complete(&InstrumentationConfigReconciler{
 			Client:               mgr.GetClient(),
 			Scheme:               mgr.GetScheme(),
-			Clientset:            clientset,
 			CriClient:            criClient,
 			RuntimeDetectionEnvs: runtimeDetectionEnvs,
 		})

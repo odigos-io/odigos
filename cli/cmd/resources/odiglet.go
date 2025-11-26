@@ -361,6 +361,11 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 		rollingUpdate.MaxSurge = &maxSurge
 	}
 
+	dynamicArgs := []string{}
+	if odigletOptions.WaspEnabled != nil && *odigletOptions.WaspEnabled {
+		dynamicArgs = append(dynamicArgs, "--wasp-enabled")
+	}
+
 	// Build the pod volumes (base + conditional for logs/metrics/traces)
 	baseVolumes := []corev1.Volume{
 		{
@@ -567,9 +572,12 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 							Command: []string{
 								"/root/odiglet",
 							},
-							Args: []string{
-								"--health-probe-bind-port=" + strconv.Itoa(odigletOptions.HealthProbeBindPort),
-							},
+							Args: append(
+								[]string{
+									"--health-probe-bind-port=" + strconv.Itoa(odigletOptions.HealthProbeBindPort),
+								},
+								dynamicArgs...,
+							),
 							Image: containers.GetImageName(odigletOptions.ImagePrefix, odigletOptions.OdigletImage, odigletOptions.Version),
 							Env: append([]corev1.EnvVar{
 								{
@@ -1077,6 +1085,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		HealthProbeBindPort:              a.config.OdigletHealthProbeBindPort,
 		MountMethod:                      a.config.MountMethod,
 		NodeCollectorSizing:              nodeCollectorSizing,
+		WaspEnabled:                      a.config.WaspEnabled,
 	}
 
 	// before creating the daemonset, we need to create the service account, cluster role and cluster role binding

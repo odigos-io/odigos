@@ -51,9 +51,6 @@ func (g *GoogleCloudOTLP) ModifyConfig(dest ExporterConfigurer, currentConfig *C
 		if val, exists := config[gcpProjectIdKey]; exists {
 			extensionConfig["project"] = val
 		}
-		if val, exists := config[gcpBillingProjectIdKey]; exists {
-			extensionConfig["quota_project"] = val
-		}
 		currentConfig.Extensions[extensionName] = extensionConfig
 		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, extensionName)
 		pipelineNames = append(pipelineNames, tracesPipelineName)

@@ -22,7 +22,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 			continue
 		}
 		containerLanguage := runtimeDetails.Language
-		if containerLanguage == "" || containerLanguage == common.IgnoredProgrammingLanguage || containerLanguage == common.UnknownProgrammingLanguage {
+		if containerLanguage == "" || containerLanguage == common.UnknownProgrammingLanguage {
 			continue
 		}
 		sdkConfigs = createDefaultSdkConfig(sdkConfigs, containerLanguage)
