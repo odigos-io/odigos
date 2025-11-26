@@ -16,6 +16,8 @@ gha-creds-*.json
 artifacts/
 /preflight*
 .env
+.yalc
+yalc.lock
 
 **.tfstate
 **.tfstate.backup
