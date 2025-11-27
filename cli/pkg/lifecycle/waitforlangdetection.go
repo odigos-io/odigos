@@ -54,7 +54,7 @@ func (w *WaitForLangDetection) checkLanguageDetected(ctx context.Context, obj me
 
 				// Check if at least one valid language was detected
 				for _, sdkConfig := range ic.Spec.SdkConfigs {
-					if sdkConfig.Language != common.UnknownProgrammingLanguage && sdkConfig.Language != common.IgnoredProgrammingLanguage {
+					if sdkConfig.Language != common.UnknownProgrammingLanguage {
 						return true, nil
 					}
 				}
@@ -80,7 +80,7 @@ func (w *WaitForLangDetection) checkLanguageDetected(ctx context.Context, obj me
 			}
 
 			langParsed := common.ProgrammingLanguage(langStr)
-			if langParsed != common.UnknownProgrammingLanguage && langParsed != common.IgnoredProgrammingLanguage {
+			if langParsed != common.UnknownProgrammingLanguage {
 				return true, nil
 			}
 		}

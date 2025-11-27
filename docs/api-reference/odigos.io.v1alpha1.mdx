@@ -1161,6 +1161,20 @@ it allows for the collector group reconciler to be simplified,
 and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>nodeSelector</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>Node selector for the collectors group deployment.
+Use this to force the gateway to run only on nodes with specific labels.
+This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+If no matching nodes exist, the pod will remain Pending.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -1387,6 +1401,19 @@ nil means that the signal is disabled and should not be instrumented/collected b
    <p>RuntimeInfo to use for agent enabling.
 If set for a container, the automatic detection will not be used for this container,
 and the distro to use will be calculated based on this value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistroName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>select one specific otel distro to use for this container.
+the selected distro must match the programming language and any constraints of the distro.
+if the programmin language is incorrect, the runtime info can be overridden to match</p>
 </td>
 </tr>
 </tbody>
@@ -3061,6 +3088,20 @@ Not valid for namespace sources.
 Can be used to set the runtime info in case the automatic detection fails or produce wrong results.
 Containers are identified by their names.
 All containers not listed will retain their default behavior.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>matchWorkloadNameAsRegex</code>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
+When true, spec.workload.name is treated as a regular expression pattern.
+This allows matching multiple workloads with a single Source CRD.
+Not valid for namespace sources.</p>
 </td>
 </tr>
 </tbody>

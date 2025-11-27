@@ -177,7 +177,8 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected, cg, irls)
+		containerOverride := ic.GetOverridesForContainer(containerName)
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected, cg, irls, containerOverride)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -393,7 +394,9 @@ func calculateContainerInstrumentationConfig(containerName string,
 	distroGetter *distros.Getter,
 	crashDetected bool,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
-	irls *[]odigosv1.InstrumentationRule) odigosv1.ContainerAgentConfig {
+	irls *[]odigosv1.InstrumentationRule,
+	containerOverride *odigosv1.ContainerOverride,
+) odigosv1.ContainerAgentConfig {
 
 	tracesEnabled, metricsEnabled, logsEnabled := getEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 
@@ -459,43 +462,11 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	// check for deprecated "ignored" language
-	// TODO: remove this in odigos v1.1
-	if runtimeDetails.Language == common.IgnoredProgrammingLanguage {
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:      containerName,
-			AgentEnabled:       false,
-			AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
-		}
+	distro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
+	if err != nil {
+		return *err
 	}
-
-	// get relevant distroName for the detected language
-	distroName, ok := distroPerLanguage[runtimeDetails.Language]
-	if !ok {
-		var message string
-		if runtimeDetails.Language == common.UnknownProgrammingLanguage {
-			message = "runtime language/platform cannot be detected, no instrumentation agent is available. use the container override to manually specify the programming language."
-		} else {
-			message = fmt.Sprintf("support for %s is coming soon. no instrumentation agent available at the moment", runtimeDetails.Language)
-		}
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:       containerName,
-			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
-			AgentEnabledMessage: message,
-		}
-	}
-
-	distro := distroGetter.GetDistroByName(distroName)
-	if distro == nil { // no expected to happen, here for safety net
-		message := fmt.Sprintf("otel distro %s is not available in this odigos tier", distroName)
-		return odigosv1.ContainerAgentConfig{
-			ContainerName:       containerName,
-			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
-			AgentEnabledMessage: message,
-		}
-	}
+	distroName := distro.Name
 
 	envInjectionDecision, unsupportedDetails := getEnvInjectionDecision(containerName, effectiveConfig, runtimeDetails, distro)
 	if unsupportedDetails != nil {
@@ -706,4 +677,83 @@ func gotReadySignals(cg *odigosv1.CollectorsGroup) (bool, string) {
 	}
 
 	return true, ""
+}
+
+// givin the container relevant resources, resolve the otel distro to use for the container.
+// the function will:
+//  1. check for distro in container override, validate and return it if found.
+//  2. check the default distros for the language and return the distro to use if found.
+//  3. if the distro cannot be resolved for any reason, the function will return an error as
+//     ContainerAgentConfig with the appropriate reason and message for the failure.
+func resolveContainerDistro(
+	containerName string,
+	containerOverride *odigosv1.ContainerOverride,
+	containerLanguage common.ProgrammingLanguage,
+	distroPerLanguage map[common.ProgrammingLanguage]string,
+	distroGetter *distros.Getter,
+) (*distro.OtelDistro, *odigosv1.ContainerAgentConfig) {
+
+	// check if the distro name is specifically overridden.
+	// this can happen for languages that support multiple distros,
+	// and the user want to specify a specific distro for this specific workload, and not the default one.
+	if containerOverride != nil && containerOverride.OtelDistroName != nil {
+
+		overwriteDistroName := *containerOverride.OtelDistroName
+		distro := distroGetter.GetDistroByName(overwriteDistroName)
+		if distro == nil { // not expected to happen, here for safety net
+			message := fmt.Sprintf("requested otel distro %s is not available in this odigos tier", overwriteDistroName)
+			return nil, &odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+				AgentEnabledMessage: message,
+			}
+		}
+
+		// verify the distro matches the language, since it might be overridden by the container override.
+		if distro.Language != containerLanguage {
+			return nil, &odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
+				AgentEnabledMessage: fmt.Sprintf("requested otel distro %s does not support language %s", overwriteDistroName, containerLanguage),
+			}
+		}
+
+		return distro, nil
+
+	} else { // use the default distro for the language
+
+		distroName, ok := distroPerLanguage[containerLanguage]
+		if !ok {
+			if containerLanguage == common.UnknownProgrammingLanguage {
+				return nil, &odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+					AgentEnabledMessage: "runtime language/platform cannot be detected, no instrumentation agent is available. use the container override to manually specify the programming language.",
+				}
+			} else {
+				return nil, &odigosv1.ContainerAgentConfig{
+					ContainerName:       containerName,
+					AgentEnabled:        false,
+					AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+					AgentEnabledMessage: fmt.Sprintf("support for %s is coming soon. no instrumentation agent available at the moment", containerLanguage),
+				}
+			}
+		}
+
+		distro := distroGetter.GetDistroByName(distroName)
+		if distro == nil { // not expected to happen, here for safety net
+			message := fmt.Sprintf("otel distro %s is not available in this odigos tier", distroName)
+			return nil, &odigosv1.ContainerAgentConfig{
+				ContainerName:       containerName,
+				AgentEnabled:        false,
+				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
+				AgentEnabledMessage: message,
+			}
+		}
+
+		return distro, nil
+	}
 }

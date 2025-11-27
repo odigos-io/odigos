@@ -372,6 +372,10 @@ odiglet:
       # required only for kernels < 5.11.
       # used for setting rlimit for BPF maps
       - SYS_RESOURCE
+    # apparmorProfile for the odiglet container when running as unPrivileged.
+    # this will be ignored when running as privileged.
+    appArmorProfile:
+      type: "Unconfined"
   # traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
   # supported only in odigos pro (not available in community tier)
   # traceIdSuffix: 'AA'
@@ -410,6 +414,11 @@ odiglet:
       limits:
         cpu: 100m
         memory: 300Mi
+
+  # noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
+  # for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
+  # for k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.
+  noHostNetwork: false
 
   ## Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
   ## There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
@@ -459,6 +468,17 @@ centralProxy:
     limits:
       cpu: 500m
       memory: 256Mi
+
+  # TLS Configuration
+  tls:
+    # Skip TLS certificate verification (for testing/self-signed certificates)
+    skipVerify: false
+    
+    # Secret name containing CA certificate (key: 'ca.crt')
+    caSecretName: ''
+    
+    # Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')
+    clientCertSecretName: ''
 
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
   # nodeSelector:
@@ -619,3 +639,11 @@ goAutoOffsetsCron: ''
 # mode for automatic Go offsets updates. Options include direct (pull from cloud server), image (pull from local image) and off (disabled).
 # Custom Offsets support is only available in Odigos pro tier.
 goAutoOffsetsMode: 'off'
+
+# experimental configuration for own telemetry of odigos on itself
+ownTelemetry:
+
+  # configuration for the promethues instance that is shipped with odigos for own telemetry
+  odigosPrometheus:
+    # set to true to disable the odigos prometheus instance
+    disabled: true
