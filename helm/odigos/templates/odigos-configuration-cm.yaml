@@ -132,6 +132,11 @@ data:
     ignoredContainers:
       {{- toYaml .Values.ignoredContainers | nindent 6 }}
     {{- end }}
+    {{- if kindIs "bool" .Values.ignoreOdigosNamespace }}
+    ignoreOdigosNamespace: {{ .Values.ignoreOdigosNamespace }}
+    {{- else }}
+    ignoreOdigosNamespace: true
+    {{- end }}
     {{- if .Values.instrumentor.mountMethod }}
       {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container") }}
     mountMethod: {{ .Values.instrumentor.mountMethod }}
