@@ -33,10 +33,10 @@ Currently, Odigos supports Prometheus via the Remote Write API. In order to enab
 
 #### Using Authentication
 
-Odigos supports two authentication methods for Prometheus remote write:
+To enable authentication for Prometheus remote write, check the `Use Authentication` checkbox. Odigos supports two authentication methods:
 
-- **Bearer Token Authentication**: Use the `Bearer Token` field to provide a bearer token for authentication. This method takes precedence if both are provided.
-- **Basic Authentication**: Use the `Basic Auth Username` and `Basic Auth Password` fields if your Prometheus remote write endpoint requires [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
+- **Bearer Token Authentication**: Use the `Bearer Token` field to provide a bearer token for authentication. This method is used if basic auth username is not provided.
+- **Basic Authentication**: Use the `Basic Auth Username` and `Basic Auth Password` fields if your Prometheus remote write endpoint requires [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication). Basic auth takes precedence if username is provided.
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -55,6 +55,9 @@ Odigos supports two authentication methods for Prometheus remote write:
   - This field is required
 - **PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS** `string[]` : Resource Attributes Labels (Deprecated). deprecated. will be removed soon.
   - This field is optional
+- **PROMETHEUS_USE_AUTHENTICATION** `boolean` : Use Authentication. Enable this checkbox if your Prometheus remote write endpoint requires authentication
+  - This field is optional
+  - Default: `false`
 - **PROMETHEUS_BEARER_TOKEN** `string` : Bearer Token. use this bearer token if your prometheus remote write endpoint requires authentication
   - This field is optional
   - Example: `your-bearer-token`
@@ -99,6 +102,7 @@ There are two primary methods for configuring destinations in Odigos:
         PROMETHEUS_REMOTEWRITE_URL: <Remote Write URL>
         # Note: The commented fields below are optional.
         # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels (Deprecated)>
+        # PROMETHEUS_USE_AUTHENTICATION: "true"  # Enable authentication
       destinationName: prometheus
       # Uncomment the 'secretRef' below if you are using the optional Secret.
       # secretRef:
@@ -110,13 +114,13 @@ There are two primary methods for configuring destinations in Odigos:
     ---
 
     # The following Secret is optional. Uncomment the entire block if you need to use it.
-    # You can use either Bearer Token or Basic Auth (Bearer Token takes precedence if both are provided).
+    # You can use either Bearer Token or Basic Auth (Basic Auth takes precedence if both are provided).
     # apiVersion: v1
     # data:
-    #   PROMETHEUS_BEARER_TOKEN: <Base64 Bearer Token>
+    #   PROMETHEUS_BEARER_TOKEN: <Bearer Token>
     #   # OR use basic auth:
-    #   # PROMETHEUS_BASIC_AUTH_USERNAME: <Base64 Username>
-    #   # PROMETHEUS_BASIC_AUTH_PASSWORD: <Base64 Password>
+    #   # PROMETHEUS_BASIC_AUTH_USERNAME: <Username>
+    #   # PROMETHEUS_BASIC_AUTH_PASSWORD: <Password>
     # kind: Secret
     # metadata:
     #   name: prometheus-secret

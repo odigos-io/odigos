@@ -10,6 +10,7 @@ import (
 
 const (
 	promRWurlKey             = "PROMETHEUS_REMOTEWRITE_URL"
+	promUseAuthenticationKey = "PROMETHEUS_USE_AUTHENTICATION"
 	promAuthHeaderKey        = "PROMETHEUS_BEARER_TOKEN"
 	promBasicAuthUsernameKey = "PROMETHEUS_BASIC_AUTH_USERNAME"
 	promBasicAuthPasswordKey = "PROMETHEUS_BASIC_AUTH_PASSWORD"
@@ -45,33 +46,44 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		},
 	}
 
-	// Check for Bearer token or Basic Auth (Bearer token takes precedence)
-	bearerToken, bearerExists := config[promAuthHeaderKey]
+	// Check if authentication is enabled
+	useAuth := config[promUseAuthenticationKey] == "true"
 	username, usernameExists := config[promBasicAuthUsernameKey]
 
-	if bearerExists && bearerToken != "" {
-		// Use Bearer token authentication via headers
-		exporterConfig["headers"] = GenericMap{
-			"Authorization": "Bearer ${PROMETHEUS_BEARER_TOKEN}",
-		}
-	} else if usernameExists && username != "" {
-		// Use Basic Auth via authenticator extension
+	// Only configure auth if explicitly enabled
+	if useAuth {
 		// Ensure Extensions map is initialized
 		if currentConfig.Extensions == nil {
 			currentConfig.Extensions = GenericMap{}
 		}
-		authExtensionName := "basicauth/" + uniqueUri
-		currentConfig.Extensions[authExtensionName] = GenericMap{
-			"client_auth": GenericMap{
-				"username": username,
-				"password": fmt.Sprintf("${%s}", promBasicAuthPasswordKey),
-			},
+
+		if usernameExists && username != "" {
+			// Use Basic Auth via authenticator extension
+			authExtensionName := "basicauth/" + uniqueUri
+			currentConfig.Extensions[authExtensionName] = GenericMap{
+				"client_auth": GenericMap{
+					"username": username,
+					"password": fmt.Sprintf("${%s}", promBasicAuthPasswordKey),
+				},
+			}
+			exporterConfig["auth"] = GenericMap{
+				"authenticator": authExtensionName,
+			}
+			currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
+		} else {
+			// Use Bearer token authentication via authenticator extension
+			// Token may be in config map or in a Secret (injected as env var)
+			authExtensionName := "bearertokenauth/" + uniqueUri
+			currentConfig.Extensions[authExtensionName] = GenericMap{
+				"token": fmt.Sprintf("${%s}", promAuthHeaderKey),
+			}
+			exporterConfig["auth"] = GenericMap{
+				"authenticator": authExtensionName,
+			}
+			currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 		}
-		exporterConfig["auth"] = GenericMap{
-			"authenticator": authExtensionName,
-		}
-		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	}
+	// If authentication is not enabled, no auth extensions are configured
 
 	currentConfig.Exporters[rwExporterName] = exporterConfig
 
