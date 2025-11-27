@@ -150,3 +150,12 @@ type SpanMetricNames struct {
 	SpanMetricsConnector string
 	TracesPipeline       string
 }
+
+func addHeader(exporterConfig GenericMap, headerName string, headerValue string) {
+	headers, ok := exporterConfig["headers"].(map[string]string)
+	if !ok {
+		headers = map[string]string{}
+	}
+	headers[headerName] = headerValue
+	exporterConfig["headers"] = headers
+}
