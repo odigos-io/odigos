@@ -64,3 +64,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.5.0 // indirect
 )
+
+replace github.com/go-viper/mapstructure/v2 => github.com/go-viper/mapstructure/v2 v2.4.0
