@@ -942,6 +942,11 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 	return &config, nil
 }
 
+// K8sManifest is the resolver for the k8sManifest field.
+func (r *queryResolver) K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error) {
+	return services.K8sManifest(ctx, namespace, kind, name)
+}
+
 // DestinationCategories is the resolver for the destinationCategories field.
 func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error) {
 	destTypes := services.GetDestinationCategories()
