@@ -152,8 +152,8 @@ type SpanMetricNames struct {
 }
 
 func addHeader(exporterConfig GenericMap, headerName string, headerValue string) {
-	if (exporterConfig)["headers"] == nil {
-		(exporterConfig)["headers"] = GenericMap{}
+	if exporterConfig["headers"] == nil {
+		exporterConfig["headers"] = GenericMap{}
 	}
-	(exporterConfig)["headers"].(GenericMap)[headerName] = headerValue
+	exporterConfig["headers"].(GenericMap)[headerName] = headerValue
 }
