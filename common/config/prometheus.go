@@ -43,9 +43,6 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		"resource_to_telemetry_conversion": GenericMap{
 			"enabled": true,
 		},
-		"headers": GenericMap{
-			"Authorization": "Bearer ${PROMETHEUS_BEARER_TOKEN}",
-		},
 	}
 
 	// Check for Bearer token or Basic Auth (Bearer token takes precedence)
@@ -54,13 +51,15 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 
 	if bearerExists && bearerToken != "" {
 		// Use Bearer token authentication via headers
-		fmt.Printf("========== Using Bearer token authentication\n", bearerToken)
 		exporterConfig["headers"] = GenericMap{
 			"Authorization": "Bearer ${PROMETHEUS_BEARER_TOKEN}",
 		}
 	} else if usernameExists && username != "" {
 		// Use Basic Auth via authenticator extension
-		fmt.Printf("========== Using Basic Auth authentication\n", username, promBasicAuthPasswordKey)
+		// Ensure Extensions map is initialized
+		if currentConfig.Extensions == nil {
+			currentConfig.Extensions = GenericMap{}
+		}
 		authExtensionName := "basicauth/" + uniqueUri
 		currentConfig.Extensions[authExtensionName] = GenericMap{
 			"client_auth": GenericMap{
