@@ -73,9 +73,7 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 	// In order to support both basic auth and bearer token, we use the Authorization header
 	scopeOrgIdHeader, scopeHeaderExists := destConfig[lokiScopeOrgIdKey]
 	if scopeHeaderExists && scopeOrgIdHeader != "" {
-		exporterConf["headers"] = GenericMap{
-			"X-Scope-OrgID": scopeOrgIdHeader,
-		}
+		addHeader(&exporterConf, "X-Scope-OrgID", scopeOrgIdHeader)
 	}
 
 	lokiExporterName := "otlphttp/" + uniqueUri
