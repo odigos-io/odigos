@@ -18,6 +18,12 @@ imagePrefix:
 # you can add additional namespaces to ignore by adding them to the list
 ignoredNamespaces:
 
+# Whether to automatically ignore the namespace where Odigos is installed.
+# By default (true), the Odigos namespace is automatically added to ignoredNamespaces.
+# Set to false to allow the Odigos namespace to be visible in the UI.
+# Default: true
+ignoreOdigosNamespace: true
+
 # container names to never instrument
 # useful for sidecars which are not interesting to be instrumented
 # set by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init
