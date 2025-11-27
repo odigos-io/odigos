@@ -9,8 +9,10 @@ import (
 )
 
 const (
-	promRWurlKey      = "PROMETHEUS_REMOTEWRITE_URL"
-	promAuthHeaderKey = "PROMETHEUS_BEARER_TOKEN"
+	promRWurlKey             = "PROMETHEUS_REMOTEWRITE_URL"
+	promAuthHeaderKey        = "PROMETHEUS_BEARER_TOKEN"
+	promBasicAuthUsernameKey = "PROMETHEUS_BASIC_AUTH_USERNAME"
+	promBasicAuthPasswordKey = "PROMETHEUS_BASIC_AUTH_PASSWORD"
 )
 
 type Prometheus struct{}
@@ -41,14 +43,35 @@ func (p *Prometheus) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		"resource_to_telemetry_conversion": GenericMap{
 			"enabled": true,
 		},
+		"headers": GenericMap{
+			"Authorization": "Bearer ${PROMETHEUS_BEARER_TOKEN}",
+		},
 	}
 
-	// In order to support both basic auth and bearer token, we use the Authorization header
-	authHeader, authExists := config[promAuthHeaderKey]
-	if authExists && authHeader != "" {
+	// Check for Bearer token or Basic Auth (Bearer token takes precedence)
+	bearerToken, bearerExists := config[promAuthHeaderKey]
+	username, usernameExists := config[promBasicAuthUsernameKey]
+
+	if bearerExists && bearerToken != "" {
+		// Use Bearer token authentication via headers
+		fmt.Printf("========== Using Bearer token authentication\n", bearerToken)
 		exporterConfig["headers"] = GenericMap{
 			"Authorization": "Bearer ${PROMETHEUS_BEARER_TOKEN}",
 		}
+	} else if usernameExists && username != "" {
+		// Use Basic Auth via authenticator extension
+		fmt.Printf("========== Using Basic Auth authentication\n", username, promBasicAuthPasswordKey)
+		authExtensionName := "basicauth/" + uniqueUri
+		currentConfig.Extensions[authExtensionName] = GenericMap{
+			"client_auth": GenericMap{
+				"username": username,
+				"password": fmt.Sprintf("${%s}", promBasicAuthPasswordKey),
+			},
+		}
+		exporterConfig["auth"] = GenericMap{
+			"authenticator": authExtensionName,
+		}
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
 	}
 
 	currentConfig.Exporters[rwExporterName] = exporterConfig
