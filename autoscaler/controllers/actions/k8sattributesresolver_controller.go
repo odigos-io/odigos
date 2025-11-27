@@ -268,6 +268,13 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 		annotationAttrs = append(annotationAttrs, attr)
 	}
 
+	if len(metadataAttributes) == 0 {
+		// when metadata attributes are not set, the collector will take the default
+		// attributes for extract.metadata with k8s.deployment.name which can be very expensive.
+		// using just the pod name should bypass this flaw in the collector.
+		metadataAttributes = append(metadataAttributes, string(semconv.K8SPodNameKey))
+	}
+
 	return &k8sAttributesConfig{
 		AuthType:    "serviceAccount",
 		Passthrough: false,
