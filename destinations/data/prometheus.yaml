@@ -27,6 +27,12 @@ spec:
       componentProps:
         tooltip: 'deprecated. will be removed soon.'
       # initialValue: '["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]'
+    - name: PROMETHEUS_USE_AUTHENTICATION
+      displayName: Use Authentication
+      componentType: checkbox
+      componentProps:
+        required: false
+      initialValue: false
     - name: PROMETHEUS_BEARER_TOKEN
       displayName: Bearer Token
       componentType: input
@@ -36,3 +42,20 @@ spec:
         required: false
         tooltip: 'use this bearer token if your prometheus remote write endpoint requires authentication'
         placeholder: 'your-bearer-token'
+    - name: PROMETHEUS_BASIC_AUTH_USERNAME
+      displayName: Basic Auth Username
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: 'username for basic authentication (if your prometheus remote write endpoint requires basic auth)'
+        placeholder: 'username'
+    - name: PROMETHEUS_BASIC_AUTH_PASSWORD
+      displayName: Basic Auth Password
+      componentType: input
+      secret: true
+      componentProps:
+        type: password
+        required: false
+        tooltip: 'password for basic authentication (if your prometheus remote write endpoint requires basic auth)'
+        placeholder: 'password'
