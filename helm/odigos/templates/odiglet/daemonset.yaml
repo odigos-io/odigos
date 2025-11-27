@@ -373,7 +373,8 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 10
 {{- end }}
-      {{- if semverCompare "<1.26.0" $k8sVersion }}
+      # set hostNetwork only for k8s versions prior to v1.26 unless noHostNetwork is true
+      {{- if and (semverCompare "<1.26.0" $k8sVersion) (not .Values.odiglet.noHostNetwork) }}
       hostNetwork: true
       {{- end}}
       {{- if not .Values.odiglet.noHostPid }}
