@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const numOfPages = 2048
+const numOfPages = 8192
 
 type InstrumentationManagerOptions struct {
 	Factories                  map[string]instrumentation.Factory

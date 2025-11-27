@@ -43,6 +43,9 @@ type ebpfReceiver struct {
 	telemetry *metadata.TelemetryBuilder
 	settings  receiver.Settings
 
+	// Reusable unmarshaler to avoid allocating it on every read
+	protoUnmarshaler ptrace.ProtoUnmarshaler
+
 	wg sync.WaitGroup
 }
 
@@ -233,7 +236,51 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 		reader.Close()
 	}()
 
+	/*
+	 * Batching Strategy
+	 *
+	 * Instead of calling ConsumeTraces() for every single span, we accumulate
+	 * spans into batches. This reduces:
+	 * - Function call overhead (fewer pipeline traversals)
+	 * - Lock contention in downstream processors
+	 * - GC pressure (fewer allocation cycles)
+	 *
+	 * We flush the batch when it reaches maxBatchSize (100 resource spans).
+	 * The batching uses MoveAndAppendTo() which moves data without copying,
+	 * minimizing CPU overhead.
+	 */
+	const maxBatchSize = 500
+
+	batch := ptrace.NewTraces()
+	batchSize := 0
+
+	// Helper function to flush the current batch
+	flushBatch := func() {
+		if batchSize == 0 {
+			return
+		}
+
+		r.logger.Info("flushing batch", zap.Int("batch_size", batchSize), zap.Int("resource_spans_count", batch.ResourceSpans().Len()))
+		err := r.nextTraces.ConsumeTraces(ctx, batch)
+		if err != nil {
+			r.logger.Error("err consuming traces", zap.Error(err))
+		}
+		// Reset batch state
+		batch = ptrace.NewTraces()
+		batchSize = 0
+	}
+
+	// Ensure we flush any remaining spans on exit
+	defer flushBatch()
+
 	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			// Continue to read next span
+		}
+
 		// Check memory pressure before each read attempt
 		for rtml.IsMemLimitReached() {
 			delayDuration := 20 * time.Millisecond
@@ -254,6 +301,7 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 		err := reader.ReadInto(&record)
 		if err != nil {
 			if IsClosedError(err) {
+				flushBatch()
 				return nil
 			}
 			r.logger.Error("error reading from buffer reader", zap.Error(err))
@@ -278,8 +326,7 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 		}
 
 		// Try to unmarshal as current OpenTelemetry format first
-		protoUnmarshaler := ptrace.ProtoUnmarshaler{}
-		td, err := protoUnmarshaler.UnmarshalTraces(record.RawSample[8 : 8+acceptedLength])
+		td, err := r.protoUnmarshaler.UnmarshalTraces(record.RawSample[8 : 8+acceptedLength])
 		if err != nil {
 			// Fall back to legacy format for backward compatibility
 			var span tracepb.ResourceSpans
@@ -291,10 +338,14 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 			td = convertResourceSpansToPdata(&span)
 		}
 
-		err = r.nextTraces.ConsumeTraces(ctx, td)
-		if err != nil {
-			r.logger.Error("err consuming traces", zap.Error(err))
-			continue
+		// Add the trace to the batch by moving its ResourceSpans
+		// MoveAndAppendTo() moves data without copying, minimizing CPU overhead
+		td.ResourceSpans().MoveAndAppendTo(batch.ResourceSpans())
+		batchSize++
+
+		// Flush when batch is full
+		if batchSize >= maxBatchSize {
+			flushBatch()
 		}
 	}
 }
