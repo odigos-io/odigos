@@ -3,6 +3,7 @@ package nodecollector
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +13,9 @@ import (
 )
 
 func SetupWithManager(mgr ctrl.Manager) error {
+
+	odigosNamespace := env.GetCurrentNamespace()
+
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("nodecollector-collectorsgroup").
@@ -25,8 +29,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			)).
 		Complete(&CollectorsGroupReconciler{
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
-				Client: mgr.GetClient(),
-				scheme: mgr.GetScheme(),
+				Client:          mgr.GetClient(),
+				scheme:          mgr.GetScheme(),
+				odigosNamespace: odigosNamespace,
 			},
 		})
 	if err != nil {
@@ -51,8 +56,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 			)).
 		Complete(&AutoscalerDeploymentReconciler{
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
-				Client: mgr.GetClient(),
-				scheme: mgr.GetScheme(),
+				Client:          mgr.GetClient(),
+				scheme:          mgr.GetScheme(),
+				odigosNamespace: odigosNamespace,
 			},
 		})
 	if err != nil {
@@ -68,8 +74,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(&odigospredicate.ExistencePredicate{}).
 		Complete(&InstrumentationConfigReconciler{
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
-				Client: mgr.GetClient(),
-				scheme: mgr.GetScheme(),
+				Client:          mgr.GetClient(),
+				scheme:          mgr.GetScheme(),
+				odigosNamespace: odigosNamespace,
 			},
 		})
 	if err != nil {
@@ -85,8 +92,9 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&ProcessorReconciler{
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
-				Client: mgr.GetClient(),
-				scheme: mgr.GetScheme(),
+				Client:          mgr.GetClient(),
+				scheme:          mgr.GetScheme(),
+				odigosNamespace: odigosNamespace,
 			},
 		})
 	if err != nil {
