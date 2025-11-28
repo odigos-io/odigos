@@ -15,7 +15,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -93,14 +92,9 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context
 		return errors.Join(err, errors.New("failed to set owner reference to node collector config map"))
 	}
 
-	applyBytes, err := yaml.Marshal(nodeCollectorCg)
-	if err != nil {
-		return errors.Join(err, errors.New("failed to marshal node collector config map to yaml"))
-	}
-
-	// make a patch apply to the config map (override it regardless of the existing data so it will always have the latest data)
-	if err := b.Client.Patch(ctx, &nodeCollectorCg, client.RawPatch(types.ApplyYAMLPatchType, applyBytes), client.ForceOwnership, client.FieldOwner("autoscaler")); err != nil {
-		return errors.Join(err, errors.New("failed to patch node collector config map in kubernetes"))
+	// apply the config map (override it regardless of the existing data so it will always have the latest data)
+	if err := b.Client.Patch(ctx, &nodeCollectorCg, client.Apply, client.ForceOwnership, client.FieldOwner("autoscaler")); err != nil {
+		return errors.Join(err, errors.New("failed to apply node collector config map in kubernetes"))
 	}
 	return nil
 }
