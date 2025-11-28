@@ -152,11 +152,16 @@ func init() {
 	}
 }
 
-func CommonConfig(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool, odigosNamespace string) config.Config {
+func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string) config.Config {
 	return config.Config{
 		Receivers:  commonReceivers,
 		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration, odigosNamespace),
-		Processors: commonProcessors(nodeCG, runningOnGKE),
+		Processors: commonProcessors(nodeCG, onGKE),
+	}
+}
+
+func CommonConfig() config.Config {
+	return config.Config{
 		Extensions: commonExtensions,
 		Service:    commonService,
 	}

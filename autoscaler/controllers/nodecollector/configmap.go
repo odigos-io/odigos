@@ -134,7 +134,9 @@ func calculateCollectorConfigDomains(
 	loadBalancingNeeded bool) (map[string]config.Config, string, error) {
 
 	// common config domains - always set and active
-	configDomains := map[string]config.Config{}
+	configDomains := map[string]config.Config{
+		"common": collectorconfig.CommonConfig(),
+	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
 	ownTelemetryEnabled := false
@@ -149,7 +151,15 @@ func calculateCollectorConfigDomains(
 	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.
 	// this logic should be revisited in the future, but kept as is for now (nov 2025)
 	if nodeCG == nil {
-		return configDomains, "", nil
+		mergedConfig, err := config.MergeConfigs(configDomains)
+		if err != nil {
+			return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
+		}
+		mergedConfigYaml, err := yaml.Marshal(mergedConfig)
+		if err != nil {
+			return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
+		}
+		return configDomains, string(mergedConfigYaml), nil
 	}
 
 	// processors from k8s "Processor" custom resource
@@ -160,7 +170,7 @@ func calculateCollectorConfigDomains(
 	}
 	configDomains["processors"] = processorsResults.ProcessorsConfig
 
-	configDomains["common"] = collectorconfig.CommonConfig(nodeCG, onGKE, odigosNamespace)
+	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace)
 
 	// metrics
 	metricsEnabled := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
