@@ -12,7 +12,6 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,14 +25,13 @@ import (
 func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup) error {
 
-	odigosNamespace := env.GetCurrentNamespace()
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
 	if b.autoscalerDeployment == nil {
 		// we only need to get the autoscaler deployment once since it can't change while this code is running
 		// (since we are running in the autoscaler pod)
 		autoscalerDeployment := &appsv1.Deployment{}
-		err := b.Client.Get(ctx, client.ObjectKey{Namespace: odigosNamespace, Name: k8sconsts.AutoScalerDeploymentName}, autoscalerDeployment)
+		err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: k8sconsts.AutoScalerDeploymentName}, autoscalerDeployment)
 		if err != nil {
 			return err
 		}
@@ -45,17 +43,17 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
-	configDomains, err := calculateCollectorConfigDomains(odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
+	configDomains, err := calculateCollectorConfigDomains(b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
 
-	err = b.persistCollectorConfig(ctx, odigosNamespace, configDomains)
+	err = b.persistCollectorConfig(ctx, configDomains)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to persist node collector config"))
 	}
 
-	err = b.persistCollectorConfigDomains(ctx, odigosNamespace, configDomains)
+	err = b.persistCollectorConfigDomains(ctx, configDomains)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to persist node collector config domains"))
 	}
@@ -63,7 +61,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 	return nil
 }
 
-func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context, odigosNamespace string, configDomains map[string]config.Config) error {
+func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context, configDomains map[string]config.Config) error {
 	mergedConfig, err := config.MergeConfigs(configDomains)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to merge collector config domains"))
@@ -81,7 +79,7 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosNodeCollectorConfigMapName,
-			Namespace: odigosNamespace,
+			Namespace: b.odigosNamespace,
 		},
 		Data: map[string]string{
 			k8sconsts.OdigosNodeCollectorConfigMapKey: string(collectorConfigYaml),
@@ -107,7 +105,7 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context
 	return nil
 }
 
-func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.Context, odigosNamespace string, configDomains map[string]config.Config) error {
+func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.Context, configDomains map[string]config.Config) error {
 
 	data := map[string]string{}
 	for domain, config := range configDomains {
@@ -125,7 +123,7 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosNodeCollectorConfigMapConfigDomainsName,
-			Namespace: odigosNamespace,
+			Namespace: b.odigosNamespace,
 		},
 		Data: data,
 	}
@@ -160,7 +158,7 @@ func calculateCollectorConfigDomains(
 
 	// common config domains - always set and active
 	configDomains := map[string]config.Config{
-		"common":      collectorconfig.CommonConfig(nodeCG, onGKE),
+		"common":      collectorconfig.CommonConfig(nodeCG, onGKE, odigosNamespace),
 		"own_metrics": collectorconfig.OwnMetricsConfig(ownMetricsPort, nodeCG.Spec.OwnTelemetryEnabled),
 		"processors":  processorsResults.ProcessorsConfig,
 	}
