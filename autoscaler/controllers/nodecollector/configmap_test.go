@@ -125,7 +125,7 @@ func TestCalculateConfigMapData(t *testing.T) {
 		*NewMockInstrumentationConfigWoOwner(NewMockTestDeployment(ns2)),
 	}
 
-	got, err := calculateConfigMapData(
+	got, err := calculateCollectorConfigDomains(
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
 			Spec: odigosv1.CollectorsGroupSpec{
@@ -189,7 +189,7 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 		*NewMockInstrumentationConfigWoOwner(NewMockTestDeployment(ns2)),
 	}
 
-	got, err := calculateConfigMapData(
+	got, err := calculateCollectorConfigDomains(
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
 			Spec: odigosv1.CollectorsGroupSpec{
