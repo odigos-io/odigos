@@ -42,12 +42,12 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
-	configDomains, err := calculateCollectorConfigDomains(b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
 
-	err = b.persistCollectorConfig(ctx, configDomains)
+	err = b.persistCollectorConfig(ctx, configAsYamlText)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to persist node collector config"))
 	}
@@ -60,16 +60,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 	return nil
 }
 
-func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context, configDomains map[string]config.Config) error {
-	mergedConfig, err := config.MergeConfigs(configDomains)
-	if err != nil {
-		return errors.Join(err, errors.New("failed to merge collector config domains"))
-	}
-
-	collectorConfigYaml, err := yaml.Marshal(mergedConfig)
-	if err != nil {
-		return errors.Join(err, errors.New("failed to marshal collector config to yaml"))
-	}
+func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context, configAsYamlText string) error {
 
 	nodeCollectorCg := v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -81,7 +72,7 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context
 			Namespace: b.odigosNamespace,
 		},
 		Data: map[string]string{
-			k8sconsts.OdigosNodeCollectorConfigMapKey: string(collectorConfigYaml),
+			k8sconsts.OdigosNodeCollectorConfigMapKey: configAsYamlText,
 		},
 	}
 
@@ -140,7 +131,7 @@ func calculateCollectorConfigDomains(
 	clusterCollectorSignals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor,
 	onGKE bool,
-	loadBalancingNeeded bool) (map[string]config.Config, error) {
+	loadBalancingNeeded bool) (map[string]config.Config, string, error) {
 
 	// common config domains - always set and active
 	configDomains := map[string]config.Config{}
@@ -158,14 +149,14 @@ func calculateCollectorConfigDomains(
 	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.
 	// this logic should be revisited in the future, but kept as is for now (nov 2025)
 	if nodeCG == nil {
-		return configDomains, nil
+		return configDomains, "", nil
 	}
 
 	// processors from k8s "Processor" custom resource
 	processorsResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range processorsResults.Errs {
 		log.Log.V(0).Error(err, "failed to convert processor manifest to config", "processor", name)
-		return nil, err
+		return nil, "", err
 	}
 	configDomains["processors"] = processorsResults.ProcessorsConfig
 
@@ -211,7 +202,16 @@ func calculateCollectorConfigDomains(
 		configDomains["logs"] = logsConfig
 	}
 
-	return configDomains, nil
+	mergedConfig, err := config.MergeConfigs(configDomains)
+	if err != nil {
+		return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
+	}
+	mergedConfigYaml, err := yaml.Marshal(mergedConfig)
+	if err != nil {
+		return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
+	}
+
+	return configDomains, string(mergedConfigYaml), nil
 }
 
 func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.ConfigMap, error) {
