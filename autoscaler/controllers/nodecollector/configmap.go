@@ -148,20 +148,34 @@ func calculateCollectorConfigDomains(
 	onGKE bool,
 	loadBalancingNeeded bool) (map[string]config.Config, error) {
 
-	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
+	// common config domains - always set and active
+	configDomains := map[string]config.Config{}
 
+	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
+	ownTelemetryEnabled := false
+	if nodeCG != nil {
+		ownMetricsPort = nodeCG.Spec.CollectorOwnMetricsPort
+		ownTelemetryEnabled = nodeCG.Spec.OwnTelemetryEnabled
+	}
+
+	configDomains["own_metrics"] = collectorconfig.OwnMetricsConfig(ownMetricsPort, ownTelemetryEnabled)
+
+	// all the rest of the config is only evaluated if the node collector group is not nil
+	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.
+	// this logic should be revisited in the future, but kept as is for now (nov 2025)
+	if nodeCG == nil {
+		return configDomains, nil
+	}
+
+	// processors from k8s "Processor" custom resource
 	processorsResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range processorsResults.Errs {
 		log.Log.V(0).Error(err, "failed to convert processor manifest to config", "processor", name)
 		return nil, err
 	}
+	configDomains["processors"] = processorsResults.ProcessorsConfig
 
-	// common config domains - always set and active
-	configDomains := map[string]config.Config{
-		"common":      collectorconfig.CommonConfig(nodeCG, onGKE, odigosNamespace),
-		"own_metrics": collectorconfig.OwnMetricsConfig(ownMetricsPort, nodeCG.Spec.OwnTelemetryEnabled),
-		"processors":  processorsResults.ProcessorsConfig,
-	}
+	configDomains["common"] = collectorconfig.CommonConfig(nodeCG, onGKE, odigosNamespace)
 
 	// metrics
 	metricsEnabled := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)

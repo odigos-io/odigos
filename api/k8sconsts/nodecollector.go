@@ -6,7 +6,7 @@ const (
 	OdigosNodeCollectorCollectorGroupName      = OdigosNodeCollectorDaemonSetName
 	OdigosNodeCollectorOwnTelemetryPortDefault = int32(55682)
 
-	OdigosNodeCollectorConfigMapConfigDomainsName = "odigos-node-collector-configdomains"
+	OdigosNodeCollectorConfigMapConfigDomainsName = "odigos-node-collector-config-domains"
 
 	OdigosNodeCollectorLocalTrafficServiceName = "odigos-data-collection-local-traffic"
 
