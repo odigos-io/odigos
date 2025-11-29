@@ -96,7 +96,7 @@ func agentEnabledContainersToModel(containerAgentConfig *v1alpha1.ContainerAgent
 
 	return &model.K8sWorkloadAgentEnabledContainer{
 		ContainerName:      containerAgentConfig.ContainerName,
-		AgentEnabled:       true,
+		AgentEnabled:       containerAgentConfig.AgentEnabled,
 		AgentEnabledStatus: status.CalculateAgentInjectionEnabledStatusForContainer(containerAgentConfig),
 		OtelDistroName:     emptyStrToNil(containerAgentConfig.OtelDistroName),
 		EnvInjectionMethod: envInjectionMethodStr,

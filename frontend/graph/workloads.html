@@ -1369,6 +1369,155 @@
                         overviewContent.appendChild(instrumentationSection);
                     }
                     
+                    // Containers section
+                    if (item && item.containers && Array.isArray(item.containers) && item.containers.length > 0) {
+                        const containersSection = document.createElement('div');
+                        containersSection.style.marginBottom = '15px';
+                        containersSection.style.padding = '10px';
+                        containersSection.style.backgroundColor = '#f8f8f8';
+                        containersSection.style.borderRadius = '4px';
+                        
+                        const containersTitle = document.createElement('div');
+                        containersTitle.style.fontSize = '14px';
+                        containersTitle.style.fontWeight = '600';
+                        containersTitle.style.color = '#333';
+                        containersTitle.style.marginBottom = '8px';
+                        containersTitle.innerHTML = 'Containers <span style="font-size: 11px; font-weight: 400; color: #888; font-style: italic;">- Runtime detection and instrumentation decisions</span>';
+                        containersSection.appendChild(containersTitle);
+                        
+                        // Add description text
+                        const containersDescription = document.createElement('div');
+                        containersDescription.style.fontSize = '12px';
+                        containersDescription.style.color = '#666';
+                        containersDescription.style.marginBottom = '10px';
+                        containersDescription.style.lineHeight = '1.5';
+                        const workloadKind = (item && item.id && item.id.kind) ? item.id.kind.toLowerCase() : 'workload';
+                        containersDescription.innerHTML = '<strong>These settings apply to future pods</strong> that will be created by this ' + workloadKind + '. ' +
+                            '<span style="font-style: italic;">Note: Existing pods may show different statuses based on their current state.</span>';
+                        containersSection.appendChild(containersDescription);
+                        
+                        item.containers.forEach((container) => {
+                            const containerDiv = document.createElement('div');
+                            containerDiv.style.fontSize = '13px';
+                            containerDiv.style.color = '#666';
+                            containerDiv.style.marginBottom = '6px';
+                            containerDiv.style.display = 'flex';
+                            containerDiv.style.alignItems = 'center';
+                            containerDiv.style.gap = '6px';
+                            
+                            // Get status emoji from agentEnabledStatus
+                            let statusEmoji = null;
+                            let statusMessage = null;
+                            if (container.agentEnabled && container.agentEnabled.agentEnabledStatus) {
+                                const agentStatus = container.agentEnabled.agentEnabledStatus;
+                                if (agentStatus.status && typeof agentStatus.status === 'string') {
+                                    statusEmoji = getStatusEmoji(agentStatus.status);
+                                    statusMessage = agentStatus.message || '';
+                                }
+                            }
+                            
+                            // Add emoji with tooltip if available
+                            if (statusEmoji) {
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                tooltipWrapper.style.marginRight = '0';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji + ' ';
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                const tooltipDiv = document.createElement('div');
+                                tooltipDiv.className = 'emoji-tooltip';
+                                tooltipDiv.textContent = statusMessage || '';
+                                tooltipWrapper.appendChild(tooltipDiv);
+                                
+                                containerDiv.appendChild(tooltipWrapper);
+                            }
+                            
+                            // Container name with runtime information
+                            const containerName = container.containerName || 'Unknown';
+                            let containerText = containerName;
+                            
+                            // Add runtime information - check overrides first, then top-level runtimeInfo
+                            let runtimeInfo = null;
+                            let isOverride = false;
+                            
+                            // Check if there's an override with runtimeInfo for this container
+                            if (container.overrides && container.overrides.runtimeInfo) {
+                                runtimeInfo = container.overrides.runtimeInfo;
+                                isOverride = true;
+                            }
+                            
+                            // If no override found, use top-level runtimeInfo
+                            if (!runtimeInfo && container.runtimeInfo) {
+                                runtimeInfo = container.runtimeInfo;
+                            }
+                            
+                            if (runtimeInfo) {
+                                const runtimeParts = [];
+                                if (runtimeInfo.language) {
+                                    runtimeParts.push(runtimeInfo.language);
+                                }
+                                if (runtimeInfo.runtimeVersion) {
+                                    runtimeParts.push(runtimeInfo.runtimeVersion);
+                                }
+                                if (runtimeParts.length > 0) {
+                                    const suffix = isOverride ? ' - automatic detection overwritten' : ' - automatic detection';
+                                    containerText += ' (' + runtimeParts.join(' ') + suffix + ')';
+                                }
+                            }
+                            
+                            containerDiv.appendChild(document.createTextNode(containerText));
+                            
+                            // Add otelDistroName or "uninstrumented"
+                            const distroSpan = document.createElement('span');
+                            distroSpan.style.marginLeft = '6px';
+                            distroSpan.style.color = '#666';
+                            distroSpan.style.fontSize = '12px';
+                            const otelDistroName = container.agentEnabled && container.agentEnabled.otelDistroName;
+                            if (otelDistroName) {
+                                distroSpan.textContent = '[' + otelDistroName + ']';
+                            } else {
+                                distroSpan.textContent = '[uninstrumented]';
+                            }
+                            containerDiv.appendChild(distroSpan);
+                            
+                            // Add signal emojis (traces, metrics, logs)
+                            if (container.agentEnabled) {
+                                const signals = [
+                                    { name: 'traces', emoji: '👣', label: 'Traces' },
+                                    { name: 'metrics', emoji: '📈', label: 'Metrics' },
+                                    { name: 'logs', emoji: '🪵', label: 'Logs' }
+                                ];
+                                
+                                signals.forEach(signal => {
+                                    const signalData = container.agentEnabled[signal.name];
+                                    if (signalData && signalData !== null && signalData.enabled !== false) {
+                                        const tooltipWrapper = document.createElement('span');
+                                        tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                        
+                                        const emojiSpan = document.createElement('span');
+                                        emojiSpan.textContent = signal.emoji + ' ';
+                                        emojiSpan.style.cursor = 'help';
+                                        tooltipWrapper.appendChild(emojiSpan);
+                                        
+                                        const tooltipDiv = document.createElement('div');
+                                        tooltipDiv.className = 'emoji-tooltip';
+                                        tooltipDiv.textContent = signal.label + ' enabled';
+                                        tooltipWrapper.appendChild(tooltipDiv);
+                                        
+                                        containerDiv.appendChild(tooltipWrapper);
+                                    }
+                                });
+                            }
+                            
+                            containersSection.appendChild(containerDiv);
+                        });
+                        
+                        overviewContent.appendChild(containersSection);
+                    }
+                    
                     contentDiv.appendChild(overviewContent);
                     
                     // Instrumentation content tab
@@ -2034,6 +2183,21 @@
                     containersContent.id = `containers-content-${idx}`;
                     containersContent.className = 'tab-content';
                     
+                    // Add description text
+                    const containersDescription = document.createElement('div');
+                    containersDescription.style.fontSize = '12px';
+                    containersDescription.style.color = '#666';
+                    containersDescription.style.marginBottom = '15px';
+                    containersDescription.style.padding = '10px';
+                    containersDescription.style.backgroundColor = '#f8f8f8';
+                    containersDescription.style.borderRadius = '4px';
+                    containersDescription.style.lineHeight = '1.5';
+                    const workloadKind = (item && item.id && item.id.kind) ? item.id.kind.toLowerCase() : 'workload';
+                    containersDescription.innerHTML = 'Shows runtime detection and instrumentation decisions for each container in this ' + workloadKind + '. ' +
+                        '<strong>These settings apply to future pods</strong> that will be created by this ' + workloadKind + '. ' +
+                        '<span style="font-style: italic;">Note: Existing pods may show different statuses based on their current state.</span>';
+                    containersContent.appendChild(containersDescription);
+                    
                     if (item && item.containers && Array.isArray(item.containers) && item.containers.length > 0) {
                         item.containers.forEach((container, containerIdx) => {
                             const containerWrapper = document.createElement('div');
@@ -2084,22 +2248,50 @@
                             const nameSpan = document.createElement('span');
                             let headerText = containerName;
                             
-                            // Add runtime information
-                            if (container.runtimeInfo) {
+                            // Add runtime information - check overrides first, then top-level runtimeInfo
+                            let runtimeInfo = null;
+                            let isOverride = false;
+                            
+                            // Check if there's an override with runtimeInfo for this container
+                            if (container.overrides && container.overrides.runtimeInfo) {
+                                runtimeInfo = container.overrides.runtimeInfo;
+                                isOverride = true;
+                            }
+                            
+                            // If no override found, use top-level runtimeInfo
+                            if (!runtimeInfo && container.runtimeInfo) {
+                                runtimeInfo = container.runtimeInfo;
+                            }
+                            
+                            if (runtimeInfo) {
                                 const runtimeParts = [];
-                                if (container.runtimeInfo.language) {
-                                    runtimeParts.push(container.runtimeInfo.language);
+                                if (runtimeInfo.language) {
+                                    runtimeParts.push(runtimeInfo.language);
                                 }
-                                if (container.runtimeInfo.runtimeVersion) {
-                                    runtimeParts.push(container.runtimeInfo.runtimeVersion);
+                                if (runtimeInfo.runtimeVersion) {
+                                    runtimeParts.push(runtimeInfo.runtimeVersion);
                                 }
                                 if (runtimeParts.length > 0) {
-                                    headerText += ' (' + runtimeParts.join(' ') + ')';
+                                    const suffix = isOverride ? ' - automatic detection overwritten' : ' - automatic detection';
+                                    headerText += ' (' + runtimeParts.join(' ') + suffix + ')';
                                 }
                             }
                             
                             nameSpan.textContent = headerText;
                             containerHeader.appendChild(nameSpan);
+                            
+                            // Add otelDistroName or "uninstrumented"
+                            const distroSpan = document.createElement('span');
+                            distroSpan.style.marginLeft = '6px';
+                            distroSpan.style.color = '#666';
+                            distroSpan.style.fontSize = '12px';
+                            const otelDistroName = container.agentEnabled && container.agentEnabled.otelDistroName;
+                            if (otelDistroName) {
+                                distroSpan.textContent = '[' + otelDistroName + ']';
+                            } else {
+                                distroSpan.textContent = '[uninstrumented]';
+                            }
+                            containerHeader.appendChild(distroSpan);
                             
                             // Add signal emojis (traces, metrics, logs)
                             if (container.agentEnabled) {
