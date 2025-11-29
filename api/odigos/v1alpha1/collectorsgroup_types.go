@@ -182,6 +182,11 @@ type CollectorsGroupSpec struct {
 	// currently, it is used to send odigos own metrics to the odigos prometheus (internal metrics store).
 	OwnTelemetryEnabled bool `json:"ownTelemetryEnabled,omitempty"`
 
+	// the interval at which odigos will scrape own metrics from itself if own telemetry is enabled.
+	// format: duration string (15s, 1m, etc).
+	// default is 10s.
+	OwnMetricsScrapeInterval string `json:"ownMetricsScrapeInterval,omitempty"`
+
 	// Node selector for the collectors group deployment.
 	// Use this to force the gateway to run only on nodes with specific labels.
 	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.

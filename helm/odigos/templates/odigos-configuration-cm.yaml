@@ -215,6 +215,8 @@ data:
     {{- if .Values.odiglet.traceIdSuffix }}
     traceIdSuffix: {{ .Values.odiglet.traceIdSuffix }}
     {{- end }}
-    {{- if .Values.ownTelemetry.odigosPrometheus.disabled }}
-    odigosPromethuesDisabled: {{ .Values.ownTelemetry.odigosPrometheus.disabled }}
-    {{- end }}
+    odigosMetrics:
+      disabled: {{ .Values.ownTelemetry.metrics.disabled }}
+      {{- if .Values.ownTelemetry.metrics.scrapeInterval }}
+      scrapeInterval: {{ .Values.ownTelemetry.metrics.scrapeInterval }}
+      {{- end }}

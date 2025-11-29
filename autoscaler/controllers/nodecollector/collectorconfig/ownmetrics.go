@@ -2,6 +2,7 @@ package collectorconfig
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
@@ -15,13 +16,13 @@ const (
 	// this processor should be added to any user telemetry pipeline to track the amount of data being exported by each source
 	odigosTrafficMetricsProcessorName = "odigostrafficmetrics"
 
-	podNameProcessorName             = "resource/pod-name"
-	ownMetricsExporterName           = "otlp/odigos-own-telemetry-ui"
-	ownMetricsUiReceiverName         = "prometheus/self-metrics-ui"
-	ownMetricsPrometheusReceiverName = "prometheus/self-metrics-prometheus"
-	ownMetricsUiPipelineName         = "metrics/own-metrics-ui"
-	ownMetricsPrometheusPipelineName = "metrics/own-metrics-prometheus"
-	odigosPrometheusExporterName     = "otlphttp/odigos-prometheus"
+	podNameProcessorName                   = "resource/pod-name"
+	ownMetricsExporterName                 = "otlp/odigos-own-telemetry-ui"
+	ownMetricsUiReceiverName               = "prometheus/self-metrics-ui"
+	odigosOwnTelemetryOtlpHttpReceiverName = "otlp/odigos-own-metrics-in"
+	ownMetricsUiPipelineName               = "metrics/own-metrics-ui"
+	ownMetricsPrometheusPipelineName       = "metrics/own-metrics-prometheus"
+	odigosPrometheusExporterName           = "otlphttp/odigos-prometheus"
 )
 
 var staticOwnMetricsProcessors config.GenericMap
@@ -87,18 +88,13 @@ func receiversConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusEnabled 
 	}
 
 	if odigosPrometheusEnabled {
-		receiversCfg[ownMetricsPrometheusReceiverName] = config.GenericMap{
-			"config": config.GenericMap{
-				"scrape_configs": []config.GenericMap{
-					{
-						"job_name":        "otelcol",
-						"scrape_interval": "10s",
-						"static_configs": []config.GenericMap{
-							{
-								"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownMetricsPort)},
-							},
-						},
-					},
+		receiversCfg[odigosOwnTelemetryOtlpHttpReceiverName] = config.GenericMap{
+			"protocols": config.GenericMap{
+				"grpc": config.GenericMap{
+					"endpoint": "0.0.0.0:44317",
+				},
+				"http": config.GenericMap{
+					"endpoint": "0.0.0.0:44318",
 				},
 			},
 		}
@@ -107,21 +103,49 @@ func receiversConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusEnabled 
 	return receiversCfg
 }
 
-func serviceTelemetryConfigForOwnMetrics(ownMetricsPort int32) config.Telemetry {
-	return config.Telemetry{
-		Metrics: config.GenericMap{
-			"readers": []config.GenericMap{
-				{
-					"pull": config.GenericMap{
-						"exporter": config.GenericMap{
-							"prometheus": config.GenericMap{
-								"host": "0.0.0.0",
-								"port": ownMetricsPort,
-							},
-						},
+func serviceTelemetryConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusEnabled bool, ownMetricsScrapeInterval string) config.Telemetry {
+
+	metricsReaders := []config.GenericMap{
+		{
+			"pull": config.GenericMap{
+				"exporter": config.GenericMap{
+					"prometheus": config.GenericMap{
+						"host": "0.0.0.0",
+						"port": ownMetricsPort,
 					},
 				},
 			},
+		},
+	}
+
+	if odigosPrometheusEnabled {
+		// convert interval as duration string to milliseconds
+		intervalMs := 10000
+		if ownMetricsScrapeInterval != "" {
+			interval, err := time.ParseDuration(ownMetricsScrapeInterval)
+			if err == nil {
+				intervalMs = int(interval.Milliseconds())
+			}
+		}
+		metricsReaders = append(metricsReaders, config.GenericMap{
+			"periodic": config.GenericMap{
+				"interval": intervalMs,
+				"exporter": config.GenericMap{
+					"otlp": config.GenericMap{
+						"endpoint": "http://localhost:44318",
+						"insecure": true,
+						"protocol": "http/protobuf",
+					},
+				},
+			},
+		})
+	}
+
+	podNameFromEnv := "${POD_NAME}"
+	return config.Telemetry{
+		Metrics: config.GenericMap{
+			"level":   "detailed",
+			"readers": metricsReaders,
 		},
 		Resource: map[string]*string{
 			// The collector add "otelcol" as a service name, so we need to remove it
@@ -129,6 +153,7 @@ func serviceTelemetryConfigForOwnMetrics(ownMetricsPort int32) config.Telemetry 
 			string(semconv.ServiceNameKey): nil,
 			// The collector adds its own version as a service version, which is not needed currently.
 			string(semconv.ServiceVersionKey): nil,
+			string(semconv.K8SPodNameKey):     &podNameFromEnv,
 		},
 	}
 }
@@ -169,9 +194,8 @@ func ownMetricsPipelines(odigosPrometheusEnabled bool) map[string]config.Pipelin
 	}
 	if odigosPrometheusEnabled {
 		pipelines[ownMetricsPrometheusPipelineName] = config.Pipeline{
-			Receivers:  []string{ownMetricsPrometheusReceiverName},
-			Processors: []string{podNameProcessorName},
-			Exporters:  []string{odigosPrometheusExporterName},
+			Receivers: []string{odigosOwnTelemetryOtlpHttpReceiverName},
+			Exporters: []string{odigosPrometheusExporterName},
 		}
 	}
 	return pipelines
@@ -181,7 +205,7 @@ func ownMetricsPipelines(odigosPrometheusEnabled bool) map[string]config.Pipelin
 // merge it with other configs to get the full collector config
 // Notice: this config part requires that you add the OdigosTrafficMetricsProcessorName processor
 // to any pipeline for user telemetry to work correctly
-func OwnMetricsConfig(ownMetricsPort int32, odigosPrometheusEnabled bool) config.Config {
+func OwnMetricsConfig(ownMetricsPort int32, odigosPrometheusEnabled bool, ownMetricsScrapeInterval string) config.Config {
 
 	return config.Config{
 		Receivers:  receiversConfigForOwnMetrics(ownMetricsPort, odigosPrometheusEnabled),
@@ -189,7 +213,7 @@ func OwnMetricsConfig(ownMetricsPort int32, odigosPrometheusEnabled bool) config
 		Processors: staticOwnMetricsProcessors,
 		Service: config.Service{
 			Pipelines: ownMetricsPipelines(odigosPrometheusEnabled),
-			Telemetry: serviceTelemetryConfigForOwnMetrics(ownMetricsPort),
+			Telemetry: serviceTelemetryConfigForOwnMetrics(ownMetricsPort, odigosPrometheusEnabled, ownMetricsScrapeInterval),
 		},
 	}
 }
