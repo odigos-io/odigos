@@ -299,7 +299,7 @@ type MetricsSourceConfiguration struct {
 type OdigosOwnMetricsConfiguration struct {
 
 	// if set to true, odigos will not collect metrics about itself.
-	// this will deploy odigos without promethues and pipeline to send own metrics to it.
+	// this will deploy odigos without prometheus and pipeline to send own metrics to it.
 	Disabled *bool `json:"disabled,omitempty"`
 
 	// if own metrics are enabled, this is the interval at which odigos will scrape metrics from itself.
