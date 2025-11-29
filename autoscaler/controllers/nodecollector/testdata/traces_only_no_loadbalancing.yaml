@@ -110,6 +110,7 @@ service:
       - odigosebpf
   telemetry:
     metrics:
+      level: detailed
       readers:
       - pull:
           exporter:
@@ -117,5 +118,6 @@ service:
               host: 0.0.0.0
               port: 4317
     resource:
+      k8s.pod.name: ${POD_NAME}
       service.name: null
       service.version: null
