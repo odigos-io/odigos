@@ -198,6 +198,7 @@ service:
               host: 0.0.0.0
               port: 4317
     resource:
+      k8s.node.name: ${NODE_NAME}
       k8s.pod.name: ${POD_NAME}
       service.name: null
       service.version: null

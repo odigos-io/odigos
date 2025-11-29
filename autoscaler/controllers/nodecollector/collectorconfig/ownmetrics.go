@@ -142,6 +142,7 @@ func serviceTelemetryConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusE
 	}
 
 	podNameFromEnv := "${POD_NAME}"
+	nodeNameFromEnv := "${NODE_NAME}"
 	return config.Telemetry{
 		Metrics: config.GenericMap{
 			"level":   "detailed",
@@ -154,6 +155,7 @@ func serviceTelemetryConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusE
 			// The collector adds its own version as a service version, which is not needed currently.
 			string(semconv.ServiceVersionKey): nil,
 			string(semconv.K8SPodNameKey):     &podNameFromEnv,
+			string(semconv.K8SNodeNameKey):    &nodeNameFromEnv,
 		},
 	}
 }
