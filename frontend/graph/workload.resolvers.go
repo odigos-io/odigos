@@ -312,7 +312,7 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 				if component.Type == "instrumentation" {
 					if _, ok := instrumentations[component.Name]; !ok {
 						isStandardLibrary := false
-						for _, attribute := range component.IdentifyingAttributes {
+						for _, attribute := range component.NonIdentifyingAttributes {
 							if attribute.Key == "is_standard_lib" {
 								isStandardLibrary = attribute.Value == "true"
 								break
@@ -562,7 +562,7 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 		for _, components := range instrumentationInstance.Status.Components {
 			if components.Type == "instrumentation" {
 				var isStandardLibrary *bool
-				for _, attribute := range components.IdentifyingAttributes {
+				for _, attribute := range components.NonIdentifyingAttributes {
 					if attribute.Key == "is_standard_lib" {
 						valBool := attribute.Value == "true"
 						isStandardLibrary = &valBool

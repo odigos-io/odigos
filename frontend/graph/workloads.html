@@ -1536,12 +1536,26 @@
                                     instDiv.style.color = '#666';
                                     instDiv.style.marginLeft = '8px';
                                     instDiv.style.marginBottom = '1px';
+                                    instDiv.style.display = 'flex';
+                                    instDiv.style.alignItems = 'center';
+                                    instDiv.style.gap = '6px';
                                     
-                                    let instText = inst.name;
+                                    const instNameSpan = document.createElement('span');
+                                    instNameSpan.textContent = inst.name;
+                                    instDiv.appendChild(instNameSpan);
+                                    
                                     if (inst.isStandardLibrary === true) {
-                                        instText += ' (standard library)';
+                                        const tagSpan = document.createElement('span');
+                                        tagSpan.textContent = 'standard library';
+                                        tagSpan.style.fontSize = '9px';
+                                        tagSpan.style.color = '#1976d2';
+                                        tagSpan.style.backgroundColor = '#e3f2fd';
+                                        tagSpan.style.padding = '2px 6px';
+                                        tagSpan.style.borderRadius = '3px';
+                                        tagSpan.style.fontWeight = '500';
+                                        instDiv.appendChild(tagSpan);
                                     }
-                                    instDiv.textContent = instText;
+                                    
                                     instrumentationsContainer.appendChild(instDiv);
                                 });
                                 
