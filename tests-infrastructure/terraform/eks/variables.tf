@@ -23,9 +23,9 @@ variable "platform" {
   description = "Target CPU architecture for worker nodes"
   type        = string
   default     = "amd" # allowed: amd | arm
+
   validation {
     condition     = contains(["amd", "arm"], var.platform)
     error_message = "platform must be either \"amd\" or \"arm\"."
   }
 }
-
