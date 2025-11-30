@@ -1,4 +1,4 @@
-{{- if not .Values.ownTelemetry.odigosPrometheus.disabled }}
+{{- if not .Values.ownTelemetry.metrics.disabled }}
 apiVersion: v1
 kind: Service
 metadata:

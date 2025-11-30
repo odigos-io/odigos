@@ -650,6 +650,11 @@ goAutoOffsetsMode: 'off'
 ownTelemetry:
 
   # configuration for the promethues instance that is shipped with odigos for own telemetry
-  odigosPrometheus:
+  metrics:
     # set to true to disable the odigos prometheus instance
     disabled: true
+
+    # set the interval at which odigos will scrape metrics from itself.
+    # format: duration string (15s, 1m, etc).
+    # default is 10s.
+    # scrapeInterval: '10s'
