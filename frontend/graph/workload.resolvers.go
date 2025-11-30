@@ -68,6 +68,19 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	}
 	conditions = append(conditions, aggregateContainerProcessesHealth)
 
+	workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
+		Namespace: obj.ID.Namespace,
+		Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
+		Name:      obj.ID.Name,
+	})
+	var totalDataSent *int
+	if ok {
+		tds := int(workloadMetrics.TotalDataSent())
+		totalDataSent = &tds
+	}
+	telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
+	conditions = append(conditions, telemetryMetrics.TelemetryObservedStatus)
+
 	mostSevereCondition := aggregateConditionsBySeverity(conditions)
 	if mostSevereCondition == nil {
 		mostSevereCondition = &model.DesiredConditionStatus{
@@ -80,35 +93,8 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	// exception, if all is well, we return a special condition to denote it
 	if mostSevereCondition.Status == model.DesiredStateProgressSuccess {
-
-		workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
-			Namespace: obj.ID.Namespace,
-			Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
-			Name:      obj.ID.Name,
-		})
-		var totalDataSent *int
-		if ok {
-			tds := int(workloadMetrics.TotalDataSent())
-			totalDataSent = &tds
-		}
-
-		// consider the telemetry metrics status if relevant.
-		telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
-		expectingTelemetry := telemetryMetrics != nil && telemetryMetrics.IsExpectingTelemetry != nil && *telemetryMetrics.IsExpectingTelemetry
-
-		var reasonStr, message string
-		if expectingTelemetry {
-			if telemetryMetrics.TelemetryObservedStatus.Status == model.DesiredStateProgressSuccess {
-				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
-				message = "source is instrumented, healthy and telemetry has been observed"
-			} else {
-				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
-				message = "source is instrumented and healthy, no telemetry recorded yet"
-			}
-		} else {
-			reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
-			message = "source is healthy, no telemetry is expected"
-		}
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
+		message := "source is instrumented, healthy and telemetry has been observed"
 		return &model.DesiredConditionStatus{
 			Name:       status.WorkloadOdigosHealthStatus,
 			Status:     model.DesiredStateProgressSuccess,
