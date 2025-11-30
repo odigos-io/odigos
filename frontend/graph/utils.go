@@ -170,7 +170,7 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 			}
 			foundReadyInstrumentedContainer = true
 
-			containerId := loaders.ContainerId{
+			containerId := loaders.PodContainerId{
 				Namespace:     pod.PodNamespace,
 				PodName:       pod.PodName,
 				ContainerName: container.ContainerName,

@@ -1397,10 +1397,12 @@
                         containersSection.appendChild(containersDescription);
                         
                         item.containers.forEach((container) => {
+                            const containerWrapper = document.createElement('div');
+                            containerWrapper.style.marginBottom = '6px';
+                            
                             const containerDiv = document.createElement('div');
                             containerDiv.style.fontSize = '13px';
                             containerDiv.style.color = '#666';
-                            containerDiv.style.marginBottom = '6px';
                             containerDiv.style.display = 'flex';
                             containerDiv.style.alignItems = 'center';
                             containerDiv.style.gap = '6px';
@@ -1512,7 +1514,41 @@
                                 });
                             }
                             
-                            containersSection.appendChild(containerDiv);
+                            containerWrapper.appendChild(containerDiv);
+                            
+                            // Add instrumentations list (only if it exists)
+                            if (container.instrumentations && Array.isArray(container.instrumentations) && container.instrumentations.length > 0) {
+                                const instrumentationsContainer = document.createElement('div');
+                                instrumentationsContainer.style.marginLeft = '8px';
+                                instrumentationsContainer.style.marginTop = '6px';
+                                
+                                const instrumentationsLabel = document.createElement('div');
+                                instrumentationsLabel.style.fontSize = '11px';
+                                instrumentationsLabel.style.fontWeight = '600';
+                                instrumentationsLabel.style.color = '#333';
+                                instrumentationsLabel.style.marginBottom = '2px';
+                                instrumentationsLabel.textContent = 'Instrumented libraries:';
+                                instrumentationsContainer.appendChild(instrumentationsLabel);
+                                
+                                container.instrumentations.forEach((inst) => {
+                                    const instDiv = document.createElement('div');
+                                    instDiv.style.fontSize = '10px';
+                                    instDiv.style.color = '#666';
+                                    instDiv.style.marginLeft = '8px';
+                                    instDiv.style.marginBottom = '1px';
+                                    
+                                    let instText = inst.name;
+                                    if (inst.isStandardLibrary === true) {
+                                        instText += ' (standard library)';
+                                    }
+                                    instDiv.textContent = instText;
+                                    instrumentationsContainer.appendChild(instDiv);
+                                });
+                                
+                                containerWrapper.appendChild(instrumentationsContainer);
+                            }
+                            
+                            containersSection.appendChild(containerWrapper);
                         });
                         
                         overviewContent.appendChild(containersSection);
@@ -2971,6 +3007,38 @@
                                                                 processWrapper.appendChild(attrDiv);
                                                             });
                                                         }
+                                                    }
+                                                    
+                                                    // Add instrumentations list
+                                                    if (process.instrumentations && Array.isArray(process.instrumentations) && process.instrumentations.length > 0) {
+                                                        const instrumentationsContainer = document.createElement('div');
+                                                        instrumentationsContainer.style.marginLeft = '8px';
+                                                        instrumentationsContainer.style.marginTop = '4px';
+                                                        
+                                                        const instrumentationsLabel = document.createElement('div');
+                                                        instrumentationsLabel.style.fontSize = '11px';
+                                                        instrumentationsLabel.style.fontWeight = '600';
+                                                        instrumentationsLabel.style.color = '#333';
+                                                        instrumentationsLabel.style.marginBottom = '2px';
+                                                        instrumentationsLabel.textContent = 'instrumentations:';
+                                                        instrumentationsContainer.appendChild(instrumentationsLabel);
+                                                        
+                                                        process.instrumentations.forEach((inst) => {
+                                                            const instDiv = document.createElement('div');
+                                                            instDiv.style.fontSize = '10px';
+                                                            instDiv.style.color = '#666';
+                                                            instDiv.style.marginLeft = '8px';
+                                                            instDiv.style.marginBottom = '1px';
+                                                            
+                                                            let instText = inst.name;
+                                                            if (inst.isStandardLibrary === true) {
+                                                                instText += ' (standard library)';
+                                                            }
+                                                            instDiv.textContent = instText;
+                                                            instrumentationsContainer.appendChild(instDiv);
+                                                        });
+                                                        
+                                                        processWrapper.appendChild(instrumentationsContainer);
                                                     }
                                                     
                                                     processesSubsection.appendChild(processWrapper);
