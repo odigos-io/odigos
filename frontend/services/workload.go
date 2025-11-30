@@ -97,6 +97,10 @@ const generalQuery = `
 						runtimeVersion
 					}
 				}
+				instrumentations {
+					name
+					isStandardLibrary
+				}
 			}
 			telemetryMetrics {
 				totalDataSentBytes
@@ -300,6 +304,10 @@ const verboseQuery = `
 						otherAgentName
 					}
 				}
+				instrumentations {
+					name
+					isStandardLibrary
+				}
 			}
 			pods {
 				podName
@@ -347,6 +355,10 @@ const verboseQuery = `
 						identifyingAttributes {
 							name
 							value
+						}
+						instrumentations {
+							name
+							isStandardLibrary
 						}
 					}
 				}
@@ -493,6 +505,10 @@ const podsQuery = `
 						identifyingAttributes {
 							name
 							value
+						}
+						instrumentations {
+							name
+							isStandardLibrary
 						}
 					}
 				}
