@@ -8,7 +8,6 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
@@ -60,9 +59,7 @@ var commonReceivers config.GenericMap
 var commonExtensions config.GenericMap
 var commonService config.Service
 
-func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfiguration) config.GenericMap {
-
-	odigosNamespace := env.GetCurrentNamespace()
+func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfiguration, odigosNamespace string) config.GenericMap {
 
 	compression := "none"
 	if otlpExporterConfiguration != nil && otlpExporterConfiguration.EnableDataCompression != nil && *otlpExporterConfiguration.EnableDataCompression {
@@ -155,11 +152,16 @@ func init() {
 	}
 }
 
-func CommonConfig(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.Config {
+func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string) config.Config {
 	return config.Config{
 		Receivers:  commonReceivers,
-		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration),
-		Processors: commonProcessors(nodeCG, runningOnGKE),
+		Exporters:  getCommonExporters(nodeCG.Spec.OtlpExporterConfiguration, odigosNamespace),
+		Processors: commonProcessors(nodeCG, onGKE),
+	}
+}
+
+func CommonConfig() config.Config {
+	return config.Config{
 		Extensions: commonExtensions,
 		Service:    commonService,
 	}

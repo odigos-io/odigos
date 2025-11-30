@@ -3,30 +3,26 @@ package nodecollector
 import (
 	"context"
 	"errors"
-	"reflect"
 	"slices"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/yaml"
 )
 
 func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup) error {
-	logger := log.FromContext(ctx)
 
 	processors := commonconf.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleNodeCollector)
 
@@ -34,195 +30,151 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		// we only need to get the autoscaler deployment once since it can't change while this code is running
 		// (since we are running in the autoscaler pod)
 		autoscalerDeployment := &appsv1.Deployment{}
-		err := b.Client.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.AutoScalerDeploymentName}, autoscalerDeployment)
+		err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: k8sconsts.AutoScalerDeploymentName}, autoscalerDeployment)
 		if err != nil {
 			return err
 		}
 		b.autoscalerDeployment = autoscalerDeployment
 	}
 
-	desired, err := b.getDesiredConfigMap(ctx, sources, clusterCollectorGroup, processors, datacollection)
+	tracingLoadBalancingNeeded, err := isTracingLoadBalancingNeeded(ctx, b.Client, clusterCollectorGroup)
 	if err != nil {
-		logger.Error(err, "failed to get desired config map")
-		return err
+		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
-	existing := &v1.ConfigMap{}
-	if err := b.Client.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorConfigMapName}, existing); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.V(0).Info("creating config map")
-			_, err := b.createConfigMap(desired, ctx)
-			if err != nil {
-				logger.Error(err, "failed to create config map")
-				return err
-			}
-			return nil
-		} else {
-			logger.Error(err, "failed to get config map")
-			return err
-		}
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
+	if err != nil {
+		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
 
-	logger.V(0).Info("Patching config map")
-	_, err = b.patchConfigMap(ctx, existing, desired)
+	err = b.persistCollectorConfig(ctx, configAsYamlText)
 	if err != nil {
-		logger.Error(err, "failed to patch config map")
-		return err
+		return errors.Join(err, errors.New("failed to persist node collector config"))
+	}
+
+	err = b.persistCollectorConfigDomains(ctx, configDomains)
+	if err != nil {
+		return errors.Join(err, errors.New("failed to persist node collector config domains"))
 	}
 
 	return nil
 }
 
-func (b *nodeCollectorBaseReconciler) patchConfigMap(ctx context.Context, existing *v1.ConfigMap, desired *v1.ConfigMap) (*v1.ConfigMap, error) {
-	if reflect.DeepEqual(existing.Data, desired.Data) &&
-		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
-		log.FromContext(ctx).V(0).Info("Config maps already match")
-		return existing, nil
-	}
-	updated := existing.DeepCopy()
-	updated.Data = desired.Data
-	updated.ObjectMeta.OwnerReferences = desired.ObjectMeta.OwnerReferences
-	patch := client.MergeFrom(existing)
-	if err := b.Client.Patch(ctx, updated, patch); err != nil {
-		return nil, err
-	}
+func (b *nodeCollectorBaseReconciler) persistCollectorConfig(ctx context.Context, configAsYamlText string) error {
 
-	return updated, nil
-}
-
-func (b *nodeCollectorBaseReconciler) createConfigMap(desired *v1.ConfigMap, ctx context.Context) (*v1.ConfigMap, error) {
-	if err := b.Client.Create(ctx, desired); err != nil {
-		return nil, err
-	}
-
-	return desired, nil
-}
-
-func noopConfigMap() (string, error) {
-	config := config.Config{
-		Extensions: config.GenericMap{
-			"health_check": config.GenericMap{
-				"endpoint": "0.0.0.0:13133",
-			},
+	nodeCollectorCg := v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
 		},
-		Receivers: config.GenericMap{
-			"otlp": config.GenericMap{
-				"protocols": config.GenericMap{
-					"grpc": config.GenericMap{
-						"endpoint": "0.0.0.0:4317",
-					},
-					"http": config.GenericMap{
-						"endpoint": "0.0.0.0:4318",
-					},
-				},
-			},
-		},
-		Exporters: config.GenericMap{
-			"nop": config.GenericMap{},
-		},
-		Service: config.Service{
-			Extensions: []string{"health_check"},
-			Pipelines: map[string]config.Pipeline{
-				"traces": {
-					Receivers:  []string{"otlp"},
-					Processors: []string{},
-					Exporters:  []string{"nop"},
-				},
-				"metrics": {
-					Receivers:  []string{"otlp"},
-					Processors: []string{},
-					Exporters:  []string{"nop"},
-				},
-				"logs": {
-					Receivers:  []string{"otlp"},
-					Processors: []string{},
-					Exporters:  []string{"nop"},
-				},
-			},
-			Telemetry: config.Telemetry{
-				Metrics: config.GenericMap{
-					"level": "none",
-				},
-			},
-		},
-	}
-
-	yamlData, err := yaml.Marshal(config)
-	if err != nil {
-		return "", err
-	}
-
-	return string(yamlData), nil
-}
-
-func (b *nodeCollectorBaseReconciler) getDesiredConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, processors []*odigosv1.Processor,
-	cg *odigosv1.CollectorsGroup) (*v1.ConfigMap, error) {
-	if b.autoscalerDeployment == nil {
-		return nil, errors.New("autoscaler deployment is not set in the reconciler, cannot set owner reference")
-	}
-	var err error
-	var cmData string
-
-	tracingLoadBalancingNeeded, err := isTracingLoadBalancingNeeded(ctx, b.Client, clusterCollectorGroup)
-	if err != nil {
-		return nil, err
-	}
-
-	if cg == nil || len(clusterCollectorGroup.Status.ReceiverSignals) == 0 {
-		// if collectors group is not created yet, or there are no signals to collect, return a no-op configmap
-		// this can happen if no sources are instrumented yet or no destinations are added.
-		cmData, err = noopConfigMap()
-	} else {
-		cmData, err = calculateConfigMapData(cg, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	desired := v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosNodeCollectorConfigMapName,
-			Namespace: env.GetCurrentNamespace(),
+			Namespace: b.odigosNamespace,
 		},
 		Data: map[string]string{
-			k8sconsts.OdigosNodeCollectorConfigMapKey: cmData,
+			k8sconsts.OdigosNodeCollectorConfigMapKey: configAsYamlText,
 		},
 	}
 
 	// set the autoscaler deployment as the owner of the configmap
 	// since it is the one creating it and updating it.
 	// cg might not yet exist and failing to have an owner will lead to un-cleaned resources on uninstall.
-	if err := ctrl.SetControllerReference(b.autoscalerDeployment, &desired, b.scheme); err != nil {
-		return nil, err
+	if err := ctrl.SetControllerReference(b.autoscalerDeployment, &nodeCollectorCg, b.scheme); err != nil {
+		return errors.Join(err, errors.New("failed to set owner reference to node collector config map"))
 	}
 
-	return &desired, nil
+	// apply the config map (override it regardless of the existing data so it will always have the latest data)
+	if err := b.Client.Patch(ctx, &nodeCollectorCg, client.Apply, client.ForceOwnership, client.FieldOwner("autoscaler")); err != nil {
+		return errors.Join(err, errors.New("failed to apply node collector config map in kubernetes"))
+	}
+	return nil
 }
 
-func calculateConfigMapData(
+func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.Context, configDomains map[string]config.Config) error {
+
+	data := map[string]string{}
+	for domain, config := range configDomains {
+		configYaml, err := yaml.Marshal(config)
+		if err != nil {
+			return errors.Join(err, errors.New("failed to marshal collector config domain to yaml"))
+		}
+		data[domain] = string(configYaml)
+	}
+
+	cmDomains := v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosNodeCollectorConfigMapConfigDomainsName,
+			Namespace: b.odigosNamespace,
+		},
+		Data: data,
+	}
+
+	if err := ctrl.SetControllerReference(b.autoscalerDeployment, &cmDomains, b.scheme); err != nil {
+		return errors.Join(err, errors.New("failed to set owner reference to node collector config map domains"))
+	}
+
+	// apply the config map (override it regardless of the existing data so it will always have the latest data)
+	if err := b.Client.Patch(ctx, &cmDomains, client.Apply, client.ForceOwnership, client.FieldOwner("autoscaler")); err != nil {
+		return errors.Join(err, errors.New("failed to apply node collector config map domains in kubernetes"))
+	}
+	return nil
+}
+
+func calculateCollectorConfigDomains(
+	odigosNamespace string,
 	nodeCG *odigosv1.CollectorsGroup,
 	sources *odigosv1.InstrumentationConfigList,
 	clusterCollectorSignals []odigoscommon.ObservabilitySignal,
 	processors []*odigosv1.Processor,
 	onGKE bool,
-	loadBalancingNeeded bool) (string, error) {
+	loadBalancingNeeded bool) (map[string]config.Config, string, error) {
 
-	ownMetricsPort := nodeCG.Spec.CollectorOwnMetricsPort
-	odigosNamespace := env.GetCurrentNamespace()
+	// common config domains - always set and active
+	configDomains := map[string]config.Config{
+		"common": collectorconfig.CommonConfig(),
+	}
 
+	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
+	ownTelemetryEnabled := false
+	ownMetricsScrapeInterval := "10s"
+	if nodeCG != nil {
+		ownMetricsPort = nodeCG.Spec.CollectorOwnMetricsPort
+		ownTelemetryEnabled = nodeCG.Spec.OwnTelemetryEnabled
+		if nodeCG.Spec.OwnMetricsScrapeInterval != "" {
+			ownMetricsScrapeInterval = nodeCG.Spec.OwnMetricsScrapeInterval
+		}
+	}
+
+	configDomains["own_metrics"] = collectorconfig.OwnMetricsConfig(ownMetricsPort, ownTelemetryEnabled, ownMetricsScrapeInterval)
+
+	// all the rest of the config is only evaluated if the node collector group is not nil
+	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.
+	// this logic should be revisited in the future, but kept as is for now (nov 2025)
+	if nodeCG == nil {
+		mergedConfig, err := config.MergeConfigs(configDomains)
+		if err != nil {
+			return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
+		}
+		mergedConfigYaml, err := yaml.Marshal(mergedConfig)
+		if err != nil {
+			return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
+		}
+		return configDomains, string(mergedConfigYaml), nil
+	}
+
+	// processors from k8s "Processor" custom resource
 	processorsResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range processorsResults.Errs {
 		log.Log.V(0).Error(err, "failed to convert processor manifest to config", "processor", name)
-		return "", err
+		return nil, "", err
 	}
+	configDomains["processors"] = processorsResults.ProcessorsConfig
 
-	// common config domains - always set and active
-	activeConfigDomains := []config.Config{
-		collectorconfig.CommonConfig(nodeCG, onGKE),
-		collectorconfig.OwnMetricsConfig(ownMetricsPort, nodeCG.Spec.OwnTelemetryEnabled),
-		processorsResults.ProcessorsConfig,
-	}
+	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace)
 
 	// metrics
 	metricsEnabled := slices.Contains(clusterCollectorSignals, odigoscommon.MetricsObservabilitySignal)
@@ -240,11 +192,11 @@ func calculateConfigMapData(
 			// once finer control is implemented as to what resource attributes are included in the metrics pipeline,
 			// we can send span metrics back into the normal metrics pipeline.
 			// additionalMetricsRecivers = append(additionalMetricsRecivers, additionalSpanMetricsMetricsReceivers...)
-			activeConfigDomains = append(activeConfigDomains, spanMetricsConfig)
+			configDomains["span_metrics"] = spanMetricsConfig
 		}
 
 		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, processorsResults.MetricsProcessors, additionalMetricsRecivers, metricsConfigSettings)
-		activeConfigDomains = append(activeConfigDomains, metricsConfig)
+		configDomains["metrics"] = metricsConfig
 	}
 
 	// traces
@@ -254,28 +206,26 @@ func calculateConfigMapData(
 	// - there are additional trace exporters (e.g. spanmetrics connector)
 	if tracesEnabledInClusterCollector || len(additionalTraceExporters) > 0 {
 		tracesConfig := collectorconfig.TracesConfig(nodeCG, odigosNamespace, processorsResults.TracesProcessors, processorsResults.TracesProcessorsPostSpanMetrics, additionalTraceExporters, tracesEnabledInClusterCollector, loadBalancingNeeded)
-		activeConfigDomains = append(activeConfigDomains, tracesConfig)
+		configDomains["traces"] = tracesConfig
 	}
 
 	// logs
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
 		logsConfig := collectorconfig.LogsConfig(nodeCG, odigosNamespace, processorsResults.LogsProcessors, sources)
-		activeConfigDomains = append(activeConfigDomains, logsConfig)
+		configDomains["logs"] = logsConfig
 	}
 
-	// merge all config domains into one collector config
-	mergedConfig, err := config.MergeConfigs(activeConfigDomains...)
+	mergedConfig, err := config.MergeConfigs(configDomains)
 	if err != nil {
-		return "", err
+		return nil, "", errors.Join(err, errors.New("failed to merge collector config domains"))
 	}
-
-	data, err := yaml.Marshal(mergedConfig)
+	mergedConfigYaml, err := yaml.Marshal(mergedConfig)
 	if err != nil {
-		return "", err
+		return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
 	}
 
-	return string(data), nil
+	return configDomains, string(mergedConfigYaml), nil
 }
 
 func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.ConfigMap, error) {

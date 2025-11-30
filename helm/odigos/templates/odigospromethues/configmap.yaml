@@ -1,4 +1,4 @@
-{{- if not .Values.ownTelemetry.odigosPrometheus.disabled }}
+{{- if not .Values.ownTelemetry.metrics.disabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,11 +11,21 @@ data:
 
     # No rules, no alertmanagers, no scrapes
     rule_files: []
-    scrape_configs: []
+
+    scrape_configs:
+    - job_name: prometheus
+      static_configs:
+      - targets: ['localhost:9090']
+      metric_relabel_configs:
+        # Keep only tsdb (disk usage) metrics, to avoid scraping too much prometheus data.
+        - source_labels: [__name__]
+          regex: '(.*tsdb.*)'
+          action: keep
 
     otlp:
       promote_resource_attributes:
-        - service.name
-        - service.instance.id
-        - k8s.pod.name
+      - service.name
+      - service.instance.id
+      - k8s.pod.name
+      - k8s.node.name
 {{- end }}
