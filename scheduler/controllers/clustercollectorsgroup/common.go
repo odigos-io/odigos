@@ -62,7 +62,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	}
 
 	ownTelemetryEnabled := true
-	if odigosConfiguration.OdigosPromethuesDisabled != nil && *odigosConfiguration.OdigosPromethuesDisabled {
+	if odigosConfiguration.OdigosMetrics.Disabled != nil && *odigosConfiguration.OdigosMetrics.Disabled {
 		ownTelemetryEnabled = false
 	}
 	nodeSelector := odigosConfiguration.CollectorGateway.NodeSelector

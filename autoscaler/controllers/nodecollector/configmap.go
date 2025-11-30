@@ -140,12 +140,16 @@ func calculateCollectorConfigDomains(
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
 	ownTelemetryEnabled := false
+	ownMetricsScrapeInterval := "10s"
 	if nodeCG != nil {
 		ownMetricsPort = nodeCG.Spec.CollectorOwnMetricsPort
 		ownTelemetryEnabled = nodeCG.Spec.OwnTelemetryEnabled
+		if nodeCG.Spec.OwnMetricsScrapeInterval != "" {
+			ownMetricsScrapeInterval = nodeCG.Spec.OwnMetricsScrapeInterval
+		}
 	}
 
-	configDomains["own_metrics"] = collectorconfig.OwnMetricsConfig(ownMetricsPort, ownTelemetryEnabled)
+	configDomains["own_metrics"] = collectorconfig.OwnMetricsConfig(ownMetricsPort, ownTelemetryEnabled, ownMetricsScrapeInterval)
 
 	// all the rest of the config is only evaluated if the node collector group is not nil
 	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.

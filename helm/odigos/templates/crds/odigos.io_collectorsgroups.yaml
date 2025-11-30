@@ -244,6 +244,12 @@ spec:
                   timeout:
                     type: string
                 type: object
+              ownMetricsScrapeInterval:
+                description: |-
+                  the interval at which odigos will scrape own metrics from itself if own telemetry is enabled.
+                  format: duration string (15s, 1m, etc).
+                  default is 10s.
+                type: string
               ownTelemetryEnabled:
                 description: |-
                   wether to setup and collect own telemetry in the collector.

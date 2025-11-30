@@ -262,8 +262,18 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 	}
 
 	ownTelemetryEnabled := true
-	if odigosConfiguration.OdigosPromethuesDisabled != nil && *odigosConfiguration.OdigosPromethuesDisabled {
-		ownTelemetryEnabled = false
+	ownMetricsScrapeInterval := "10s"
+
+	if odigosConfiguration.OdigosMetrics != nil {
+
+		if odigosConfiguration.OdigosMetrics.Disabled != nil && *odigosConfiguration.OdigosMetrics.Disabled {
+			ownTelemetryEnabled = false
+			ownMetricsScrapeInterval = "" // unset if own telemetry is disabled
+		} else {
+			if odigosConfiguration.OdigosMetrics.ScrapeInterval != "" {
+				ownMetricsScrapeInterval = odigosConfiguration.OdigosMetrics.ScrapeInterval
+			}
+		}
 	}
 
 	return &odigosv1.CollectorsGroup{
@@ -283,6 +293,7 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			OtlpExporterConfiguration: otlpExporterConfiguration,
 			Metrics:                   metricsConfig, // not nil if any destination has metrics enabled
 			OwnTelemetryEnabled:       ownTelemetryEnabled,
+			OwnMetricsScrapeInterval:  ownMetricsScrapeInterval,
 		},
 	}
 }
