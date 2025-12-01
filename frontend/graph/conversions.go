@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 func kindToGql(kind string) model.K8sResourceKind {
@@ -98,11 +99,15 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		}
 	}
 
-	// Return the converted K8sActualSource object
+	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instruConfig.Name, instruConfig.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.K8sActualSource{
-		Namespace:         instruConfig.Namespace,
-		Kind:              kindToGql(instruConfig.OwnerReferences[0].Kind),
-		Name:              instruConfig.OwnerReferences[0].Name,
+		Namespace:         pw.Namespace,
+		Kind:              kindToGql(string(pw.Kind)),
+		Name:              pw.Name,
 		Selected:          &selected,
 		DataStreamNames:   dataStreamNames,
 		OtelServiceName:   &instruConfig.Spec.ServiceName,

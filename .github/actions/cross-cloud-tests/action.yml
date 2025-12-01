@@ -190,7 +190,6 @@ runs:
         export TF_VAR_run_id="${GITHUB_RUN_ID}"
         export TF_VAR_resource_group_name="${{ inputs.test_scenario }}-${{ inputs.platform }}-${GITHUB_RUN_ID}"
         tofu -chdir="$TF_DIR" destroy -auto-approve
-      continue-on-error: true
 
     # 18) Extract Tag (optional)
     - name: Extract Tag
