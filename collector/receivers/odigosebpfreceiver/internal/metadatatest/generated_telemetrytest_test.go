@@ -22,10 +22,14 @@ func TestSetupTelemetry(t *testing.T) {
 	defer tb.Shutdown()
 	tb.EbpfLostSamples.Add(context.Background(), 1)
 	tb.EbpfMemoryPressureWaitTimeTotal.Add(context.Background(), 1)
+	tb.EbpfTotalBytesRead.Add(context.Background(), 1)
 	AssertEqualEbpfLostSamples(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 	AssertEqualEbpfMemoryPressureWaitTimeTotal(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
+	AssertEqualEbpfTotalBytesRead(t, testTel,
 		[]metricdata.DataPoint[int64]{{Value: 1}},
 		metricdatatest.IgnoreTimestamp())
 
