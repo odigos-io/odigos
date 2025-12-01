@@ -1,4 +1,4 @@
-{{- if not .Values.ownTelemetry.metrics.disabled }}
+{{- if not .Values.ownTelemetry.metricsStore.disabled }}
 apiVersion: v1
 kind: Service
 metadata:

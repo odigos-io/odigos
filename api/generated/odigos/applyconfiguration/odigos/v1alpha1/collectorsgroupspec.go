@@ -35,8 +35,6 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	ClusterMetricsEnabled     *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
 	HttpsProxyAddress         *string                                                     `json:"httpsProxyAddress,omitempty"`
 	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
-	OwnTelemetryEnabled       *bool                                                       `json:"ownTelemetryEnabled,omitempty"`
-	OwnMetricsScrapeInterval  *string                                                     `json:"ownMetricsScrapeInterval,omitempty"`
 	NodeSelector              *map[string]string                                          `json:"nodeSelector,omitempty"`
 }
 
@@ -123,22 +121,6 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithHttpsProxyAddress(value stri
 // If called multiple times, the Metrics field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithMetrics(value *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) *CollectorsGroupSpecApplyConfiguration {
 	b.Metrics = value
-	return b
-}
-
-// WithOwnTelemetryEnabled sets the OwnTelemetryEnabled field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the OwnTelemetryEnabled field is set to the value of the last call.
-func (b *CollectorsGroupSpecApplyConfiguration) WithOwnTelemetryEnabled(value bool) *CollectorsGroupSpecApplyConfiguration {
-	b.OwnTelemetryEnabled = &value
-	return b
-}
-
-// WithOwnMetricsScrapeInterval sets the OwnMetricsScrapeInterval field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the OwnMetricsScrapeInterval field is set to the value of the last call.
-func (b *CollectorsGroupSpecApplyConfiguration) WithOwnMetricsScrapeInterval(value string) *CollectorsGroupSpecApplyConfiguration {
-	b.OwnMetricsScrapeInterval = &value
 	return b
 }
 

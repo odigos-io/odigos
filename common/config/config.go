@@ -38,8 +38,13 @@ type Config struct {
 	Service    Service    `json:"service,omitempty"`
 }
 
+type MetricsConfig struct {
+	Level   string       `json:"level,omitempty"`
+	Readers []GenericMap `json:"readers,omitempty"`
+}
+
 type Telemetry struct {
-	Metrics  GenericMap         `json:"metrics,omitempty"`
+	Metrics  MetricsConfig      `json:"metrics,omitempty"`
 	Resource map[string]*string `json:"resource,omitempty"`
 }
 
@@ -115,17 +120,35 @@ func mergePipelines(pipelines1 map[string]Pipeline, pipelines2 map[string]Pipeli
 	return mergedPipelines, nil
 }
 
+func mergeMetricsLevel(level1 string, level2 string) (string, error) {
+	if level1 != "" && level2 != "" && level1 != level2 {
+		return "", fmt.Errorf("service telemetry metrics level is allowed to be set only once")
+	}
+	if level1 != "" {
+		return level1, nil
+	} else {
+		return level2, nil
+	}
+}
+
 func mergeTelemetry(telemetry1 Telemetry, telemetry2 Telemetry) (Telemetry, error) {
-	if len(telemetry1.Metrics) > 0 && len(telemetry2.Metrics) == 0 {
-		return telemetry1, nil
-	} else if len(telemetry1.Metrics) == 0 && len(telemetry2.Metrics) > 0 {
-		return telemetry2, nil
+
+	level1 := telemetry1.Metrics.Level
+	level2 := telemetry2.Metrics.Level
+	level, err := mergeMetricsLevel(level1, level2)
+	if err != nil {
+		return Telemetry{}, err
 	}
-	// if both are empty return either one
-	if len(telemetry1.Metrics) == 0 && len(telemetry2.Metrics) == 0 {
-		return telemetry1, nil
+
+	mergedReaders := append(telemetry1.Metrics.Readers, telemetry2.Metrics.Readers...)
+	mergedTelemetry := Telemetry{
+		Metrics: MetricsConfig{
+			Level:   level,
+			Readers: mergedReaders,
+		},
+		Resource: telemetry1.Resource,
 	}
-	return Telemetry{}, fmt.Errorf("service telemetry config is allowed to be set only once")
+	return mergedTelemetry, nil
 }
 
 func mergeGenericMaps(maps ...GenericMap) (GenericMap, error) {
