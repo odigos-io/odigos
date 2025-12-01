@@ -157,9 +157,11 @@ func calculateCollectorConfigDomains(
 	}
 
 	additionalMetricsReceivers := []string{}
-	ownMetricsConfig := nodeCG.Spec.Metrics.OdigosOwnMetrics
-	if ownMetricsConfig != nil {
-		configDomains["own_metrics"], additionalMetricsReceivers = collectorconfig.OwnMetricsConfigPrometheus(ownMetricsConfig)
+	if nodeCG.Spec.Metrics != nil {
+		ownMetricsConfig := nodeCG.Spec.Metrics.OdigosOwnMetrics
+		if ownMetricsConfig != nil {
+			configDomains["own_metrics"], additionalMetricsReceivers = collectorconfig.OwnMetricsConfigPrometheus(ownMetricsConfig)
+		}
 	}
 
 	// processors from k8s "Processor" custom resource

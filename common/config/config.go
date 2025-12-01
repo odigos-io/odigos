@@ -131,6 +131,17 @@ func mergeMetricsLevel(level1 string, level2 string) (string, error) {
 	}
 }
 
+func mergeTelemetryResource(resource1 map[string]*string, resource2 map[string]*string) map[string]*string {
+	mergedResource := map[string]*string{}
+	for k, v := range resource1 {
+		mergedResource[k] = v
+	}
+	for k, v := range resource2 {
+		mergedResource[k] = v
+	}
+	return mergedResource
+}
+
 func mergeTelemetry(telemetry1 Telemetry, telemetry2 Telemetry) (Telemetry, error) {
 
 	level1 := telemetry1.Metrics.Level
@@ -146,7 +157,7 @@ func mergeTelemetry(telemetry1 Telemetry, telemetry2 Telemetry) (Telemetry, erro
 			Level:   level,
 			Readers: mergedReaders,
 		},
-		Resource: telemetry1.Resource,
+		Resource: mergeTelemetryResource(telemetry1.Resource, telemetry2.Resource),
 	}
 	return mergedTelemetry, nil
 }
