@@ -22,12 +22,13 @@ const (
 	odigosOwnTelemetryOtlpHttpReceiverName = "otlp/odigos-own-metrics-in"
 	ownMetricsUiPipelineName               = "metrics/own-metrics-ui"
 	ownMetricsPrometheusPipelineName       = "metrics/own-metrics-prometheus"
-	odigosPrometheusExporterName           = "otlphttp/odigos-prometheus"
+	odigosVictoriametricsExporterName      = "otlphttp/odigos-victoriametrics"
 )
 
 var staticOwnMetricsProcessors config.GenericMap
 var uiOtlpEndpoint string
 var odigosPrometheusOtlpHttpEndpoint string
+var odigosVictoriametricsOtlpHttpEndpoint string
 
 func init() {
 
@@ -58,7 +59,7 @@ func init() {
 	}
 
 	uiOtlpEndpoint = fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort)
-	odigosPrometheusOtlpHttpEndpoint = fmt.Sprintf("http://odigos-prometheus.%s:9090/api/v1/otlp", odigosNamespace)
+	odigosVictoriametricsOtlpHttpEndpoint = fmt.Sprintf("http://odigos-victoriametrics.%s:8428/opentelemetry", odigosNamespace)
 }
 
 func receiversConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusEnabled bool) config.GenericMap {
@@ -173,8 +174,8 @@ func ownMetricsExporters(odigosPrometheusEnabled bool) config.GenericMap {
 		},
 	}
 	if odigosPrometheusEnabled {
-		exporters[odigosPrometheusExporterName] = config.GenericMap{
-			"endpoint": odigosPrometheusOtlpHttpEndpoint,
+		exporters[odigosVictoriametricsExporterName] = config.GenericMap{
+			"endpoint": odigosVictoriametricsOtlpHttpEndpoint,
 			"retry_on_failure": config.GenericMap{
 				"enabled": false,
 			},
@@ -197,7 +198,7 @@ func ownMetricsPipelines(odigosPrometheusEnabled bool) map[string]config.Pipelin
 	if odigosPrometheusEnabled {
 		pipelines[ownMetricsPrometheusPipelineName] = config.Pipeline{
 			Receivers: []string{odigosOwnTelemetryOtlpHttpReceiverName},
-			Exporters: []string{odigosPrometheusExporterName},
+			Exporters: []string{odigosVictoriametricsExporterName},
 		}
 	}
 	return pipelines
