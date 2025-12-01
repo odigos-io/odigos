@@ -132,6 +132,12 @@ func mergeMetricsLevel(level1 string, level2 string) (string, error) {
 }
 
 func mergeTelemetryResource(resource1 map[string]*string, resource2 map[string]*string) map[string]*string {
+	if len(resource1) == 0 { // shortcut for common cases
+		return resource2
+	} else if len(resource2) == 0 {
+		return resource1
+	}
+
 	mergedResource := map[string]*string{}
 	for k, v := range resource1 {
 		mergedResource[k] = v
@@ -142,20 +148,28 @@ func mergeTelemetryResource(resource1 map[string]*string, resource2 map[string]*
 	return mergedResource
 }
 
-func mergeTelemetry(telemetry1 Telemetry, telemetry2 Telemetry) (Telemetry, error) {
+func mergeTelemetryReaders(readers1 []GenericMap, readers2 []GenericMap) []GenericMap {
+	if len(readers1) == 0 {
+		return readers2
+	} else if len(readers2) == 0 {
+		return readers1
+	}
+	mergedReaders := make([]GenericMap, 0, len(readers1)+len(readers2))
+	mergedReaders = append(mergedReaders, readers1...)
+	mergedReaders = append(mergedReaders, readers2...)
+	return mergedReaders
+}
 
-	level1 := telemetry1.Metrics.Level
-	level2 := telemetry2.Metrics.Level
-	level, err := mergeMetricsLevel(level1, level2)
+func mergeTelemetry(telemetry1 Telemetry, telemetry2 Telemetry) (Telemetry, error) {
+	level, err := mergeMetricsLevel(telemetry1.Metrics.Level, telemetry2.Metrics.Level)
 	if err != nil {
 		return Telemetry{}, err
 	}
 
-	mergedReaders := append(telemetry1.Metrics.Readers, telemetry2.Metrics.Readers...)
 	mergedTelemetry := Telemetry{
 		Metrics: MetricsConfig{
 			Level:   level,
-			Readers: mergedReaders,
+			Readers: mergeTelemetryReaders(telemetry1.Metrics.Readers, telemetry2.Metrics.Readers),
 		},
 		Resource: mergeTelemetryResource(telemetry1.Resource, telemetry2.Resource),
 	}
