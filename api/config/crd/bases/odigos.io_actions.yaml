@@ -83,6 +83,22 @@ spec:
                 description: A boolean field allowing to temporarily disable the action,
                   but keep it around for future use
                 type: boolean
+              filters:
+                description: Filters is the config for the Filter Action.
+                properties:
+                  attributes:
+                    additionalProperties:
+                      type: string
+                    description: Attributes is a map of attribute keys and values
+                      to filter on.
+                    type: object
+                  resource_attributes:
+                    additionalProperties:
+                      type: string
+                    description: ResourceAttributes is a map of resource attribute
+                      keys and values to filter on.
+                    type: object
+                type: object
               k8sAttributes:
                 description: K8sAttributes is the config for the K8sAttributes Action.
                 properties:

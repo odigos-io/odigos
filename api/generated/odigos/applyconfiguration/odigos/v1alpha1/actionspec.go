@@ -35,6 +35,7 @@ type ActionSpecApplyConfiguration struct {
 	PiiMasking      *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
 	K8sAttributes   *actionsv1alpha1.K8sAttributesConfig   `json:"k8sAttributes,omitempty"`
 	Samplers        *actionsv1alpha1.SamplersConfig        `json:"samplers,omitempty"`
+	Filters         *actionsv1alpha1.FiltersConfig         `json:"filters,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -122,5 +123,13 @@ func (b *ActionSpecApplyConfiguration) WithK8sAttributes(value actionsv1alpha1.K
 // If called multiple times, the Samplers field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithSamplers(value actionsv1alpha1.SamplersConfig) *ActionSpecApplyConfiguration {
 	b.Samplers = &value
+	return b
+}
+
+// WithFilters sets the Filters field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Filters field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithFilters(value actionsv1alpha1.FiltersConfig) *ActionSpecApplyConfiguration {
+	b.Filters = &value
 	return b
 }
