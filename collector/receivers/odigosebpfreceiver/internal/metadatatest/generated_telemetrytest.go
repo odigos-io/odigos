@@ -52,3 +52,19 @@ func AssertEqualEbpfMemoryPressureWaitTimeTotal(t *testing.T, tt *componenttest.
 	require.NoError(t, err)
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
+
+func AssertEqualEbpfTotalBytesRead(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_ebpf_total_bytes_read",
+		Description: "Total number of bytes read from the eBPF buffer (perf or ring).",
+		Unit:        "bytes",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_ebpf_total_bytes_read")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
