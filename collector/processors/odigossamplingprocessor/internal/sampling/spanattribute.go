@@ -46,6 +46,12 @@ func (s *SpanAttributeRule) Validate() error {
 	if s.ServiceName == "" {
 		return errors.New("service_name cannot be empty")
 	}
+
+	// Validate that service name is a valid regex pattern (plain strings are valid regex that match exactly)
+	if _, err := regexp.Compile(s.ServiceName); err != nil {
+		return fmt.Errorf("invalid service_name regex pattern: %w", err)
+	}
+
 	if s.AttributeKey == "" {
 		return errors.New("attribute_key cannot be empty")
 	}
@@ -127,7 +133,19 @@ func (s *SpanAttributeRule) Evaluate(td ptrace.Traces) (bool, bool, float64) {
 	rs := td.ResourceSpans()
 	for i := 0; i < rs.Len(); i++ {
 		resourceAttrs := rs.At(i).Resource().Attributes()
-		if svcAttr, ok := resourceAttrs.Get("service.name"); !ok || svcAttr.AsString() != s.ServiceName {
+		svcAttr, ok := resourceAttrs.Get("service.name")
+		if !ok {
+			continue
+		}
+
+		// Match service name using regex (plain strings are valid regex that match exactly)
+		serviceName := svcAttr.AsString()
+		re, err := regexp.Compile(s.ServiceName)
+		if err != nil {
+			// Invalid regex, skip this resource
+			continue
+		}
+		if !re.MatchString(serviceName) {
 			continue
 		}
 		scopeSpans := rs.At(i).ScopeSpans()

@@ -50,6 +50,8 @@ type SpanAttributeSamplerSpec struct {
 type SpanAttributeFilter struct {
 	// ServiceName specifies which service this filter applies to. Only spans
 	// originating from the given service will be evaluated against this filter.
+	// Supports both exact string matching and regular expressions (RE2 syntax).
+	// If the value contains regex metacharacters, it will be treated as a regex pattern.
 	// +kubebuilder:validation:Required
 	ServiceName string `json:"service_name"`
 
