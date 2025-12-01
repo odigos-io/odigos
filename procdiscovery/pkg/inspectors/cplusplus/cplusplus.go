@@ -1,8 +1,6 @@
 package cplusplus
 
 import (
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -34,6 +32,6 @@ func (n *CPlusPlusInspector) DeepScan(pcx *process.ProcessContext) (common.Progr
 	return "", false
 }
 
-func (n *CPlusPlusInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
-	return nil
+func (n *CPlusPlusInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+	return ""
 }

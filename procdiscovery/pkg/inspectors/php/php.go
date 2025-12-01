@@ -5,8 +5,6 @@ import (
 	"debug/elf"
 	"regexp"
 
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -32,17 +30,17 @@ func (n *PhpInspector) DeepScan(pcx *process.ProcessContext) (common.Programming
 	return "", false
 }
 
-func (n *PhpInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+func (n *PhpInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
 	if value, exists := pcx.GetDetailedEnvsValue(process.PhpVersionConst); exists {
-		return common.GetVersion(value)
+		return value
 	}
 
 	vers := getVersionFromExecutable(pcx)
 	if vers != "" {
-		return common.GetVersion(vers)
+		return vers
 	}
 
-	return nil
+	return ""
 }
 
 func getVersionFromExecutable(pcx *process.ProcessContext) string {
