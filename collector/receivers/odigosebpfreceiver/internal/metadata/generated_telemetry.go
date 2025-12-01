@@ -74,7 +74,7 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	errs = errors.Join(errs, err)
 	builder.EbpfTotalBytesRead, err = builder.meter.Int64Counter(
 		"otelcol_ebpf_total_bytes_read",
-		metric.WithDescription("Total number of bytes read from the eBPF ring buffer."),
+		metric.WithDescription("Total number of bytes read from the eBPF buffer (perf or ring)."),
 		metric.WithUnit("bytes"),
 	)
 	errs = errors.Join(errs, err)

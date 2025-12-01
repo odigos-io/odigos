@@ -27,7 +27,7 @@ telemetry:
 
     ebpf_total_bytes_read:
       enabled: true
-      description: "Total number of bytes read from the eBPF ring buffer."
+      description: "Total number of bytes read from the eBPF buffer (perf or ring)."
       unit: "bytes"
       sum:
         value_type: int

@@ -24,7 +24,7 @@ Total time spent waiting due to memory pressure. Can be compared with otelcol_pr
 
 ### otelcol_ebpf_total_bytes_read
 
-Total number of bytes read from the eBPF ring buffer.
+Total number of bytes read from the eBPF buffer (perf or ring).
 
 | Unit | Metric Type | Value Type | Monotonic |
 | ---- | ----------- | ---------- | --------- |
