@@ -1,4 +1,4 @@
-package prometheus
+package metrics
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 func NewAPIFromURL(baseURL string) (v1.API, error) {
 	if baseURL == "" {
-		return nil, fmt.Errorf("prometheus base URL is empty")
+		return nil, fmt.Errorf("own-metrics base URL is empty")
 	}
 	client, err := promapi.NewClient(promapi.Config{
 		Address:      baseURL,
@@ -24,3 +24,5 @@ func NewAPIFromURL(baseURL string) (v1.API, error) {
 func DefaultMetricsWindow() string {
 	return "5m"
 }
+
+

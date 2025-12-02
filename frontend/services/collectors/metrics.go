@@ -7,7 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	prommetrics "github.com/odigos-io/odigos/frontend/services/prometheus"
+	metrics "github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
@@ -30,7 +30,7 @@ func GetOdigletPodsWithMetrics(ctx context.Context, api v1.API) ([]*model.PodInf
 	}
 
 	ns := env.GetCurrentNamespace()
-	ratesByPod, err := prommetrics.GetOdigletCollectorMetrics(ctx, api, ns, names, prommetrics.DefaultMetricsWindow())
+	ratesByPod, err := metrics.GetOdigletCollectorMetrics(ctx, api, ns, names, metrics.DefaultMetricsWindow())
 	if err != nil {
 		return pods, nil
 	}

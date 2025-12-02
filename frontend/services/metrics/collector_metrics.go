@@ -1,4 +1,4 @@
-package prometheus
+package metrics
 
 import (
 	"context"
@@ -18,9 +18,11 @@ type PodRates struct {
 	LastScrape         time.Time
 }
 
+// GetOdigletCollectorMetrics queries own-metrics (VictoriaMetrics via Prometheus-compatible API)
+// and aggregates per-pod rates for accepted/dropped metrics and exporter success/failures.
 func GetOdigletCollectorMetrics(ctx context.Context, api v1.API, namespace string, podNames []string, window string) (map[string]PodRates, error) {
 	if api == nil {
-		return nil, fmt.Errorf("prometheus API is nil")
+		return nil, fmt.Errorf("own-metrics API is nil")
 	}
 	if window == "" {
 		window = DefaultMetricsWindow()
@@ -35,11 +37,11 @@ func GetOdigletCollectorMetrics(ctx context.Context, api v1.API, namespace strin
 	podRegex := buildPodRegex(podNames)
 	now := time.Now()
 
-	qAccepted := rateSumByPod("otelcol_receiver_accepted_metric_points_total", namespace, podRegex, window)
-	qRefused := rateSumByPod("otelcol_receiver_refused_metric_points_total", namespace, podRegex, window)
-	qDropped := rateSumByPod("otelcol_receiver_dropped_metric_points_total", namespace, podRegex, window)
-	qExpSent := rateSumByPod("otelcol_exporter_sent_metric_points_total", namespace, podRegex, window)
-	qExpFailed := rateSumByPod("otelcol_exporter_send_failed_metric_points_total", namespace, podRegex, window)
+	qAccepted := rateSumByPod("otelcol_receiver_accepted_spans_total", namespace, podRegex, window)
+	qRefused := rateSumByPod("otelcol_receiver_refused_spans_total", namespace, podRegex, window)
+	qDropped := rateSumByPod("otelcol_receiver_dropped_spans_total", namespace, podRegex, window)
+	qExpSent := rateSumByPod("otelcol_exporter_sent_spans_total", namespace, podRegex, window)
+	qExpFailed := rateSumByPod("otelcol_exporter_send_failed_spans_total", namespace, podRegex, window)
 
 	accepted, tsAcc, err := queryVector(ctx, api, qAccepted, now)
 	if err != nil {

@@ -1,4 +1,4 @@
-package prometheus
+package metrics
 
 import (
 	"context"
@@ -49,19 +49,19 @@ func queryVector(ctx context.Context, api v1.API, query string, ts time.Time) (m
 func regexpEscape(s string) string {
 	replacer := strings.NewReplacer(
 		`\\`, `\\\\`,
-		`.`, `\.`,
-		`+`, `\+`,
-		`*`, `\*`,
-		`?`, `\?`,
-		`|`, `\|`,
-		`{`, `\{`,
-		`}`, `\}`,
-		`(`, `\(`,
-		`)`, `\)`,
-		`^`, `\^`,
-		`$`, `\$`,
-		`[`, `\[`,
-		`]`, `\]`,
+		`.`, `\\.`,
+		`+`, `\\+`,
+		`*`, `\\*`,
+		`?`, `\\?`,
+		`|`, `\\|`,
+		`{`, `\\{`,
+		`}`, `\\}`,
+		`(`, `\\(`,
+		`)`, `\\)`,
+		`^`, `\\^`,
+		`$`, `\\$`,
+		`[`, `\\[`,
+		`]`, `\\]`,
 	)
 	return replacer.Replace(s)
 }
@@ -75,3 +75,5 @@ func maxTime(times ...time.Time) time.Time {
 	}
 	return z
 }
+
+
