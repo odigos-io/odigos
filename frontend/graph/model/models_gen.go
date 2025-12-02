@@ -852,7 +852,7 @@ type PodDetails struct {
 	Namespace    string               `json:"namespace"`
 	Node         *string              `json:"node,omitempty"`
 	Role         *string              `json:"role,omitempty"`
-	Status       *string              `json:"status,omitempty"`
+	Status       *PodPhase            `json:"status,omitempty"`
 	Conditions   []*PodCondition      `json:"conditions"`
 	Containers   []*ContainerOverview `json:"containers"`
 	ManifestYaml string               `json:"manifestYAML"`
@@ -1714,6 +1714,53 @@ func (e *PodConditionType) UnmarshalGQL(v any) error {
 }
 
 func (e PodConditionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PodPhase string
+
+const (
+	PodPhasePending   PodPhase = "Pending"
+	PodPhaseRunning   PodPhase = "Running"
+	PodPhaseSucceeded PodPhase = "Succeeded"
+	PodPhaseFailed    PodPhase = "Failed"
+	PodPhaseUnknown   PodPhase = "Unknown"
+)
+
+var AllPodPhase = []PodPhase{
+	PodPhasePending,
+	PodPhaseRunning,
+	PodPhaseSucceeded,
+	PodPhaseFailed,
+	PodPhaseUnknown,
+}
+
+func (e PodPhase) IsValid() bool {
+	switch e {
+	case PodPhasePending, PodPhaseRunning, PodPhaseSucceeded, PodPhaseFailed, PodPhaseUnknown:
+		return true
+	}
+	return false
+}
+
+func (e PodPhase) String() string {
+	return string(e)
+}
+
+func (e *PodPhase) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PodPhase(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PodPhase", str)
+	}
+	return nil
+}
+
+func (e PodPhase) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

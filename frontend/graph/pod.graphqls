@@ -18,6 +18,14 @@ enum PodConditionType {
   Other
 }
 
+enum PodPhase {
+  Pending
+  Running
+  Succeeded
+  Failed
+  Unknown
+}
+
 type PodCondition {
   type: PodConditionType
   status: K8sConditionStatus
@@ -46,7 +54,8 @@ type PodDetails {
   namespace: String!
   node: String
   role: String
-  status: String
+  # Kubernetes Pod phase from pod.status.phase.
+  status: PodPhase
   conditions: [PodCondition!]!
   containers: [ContainerOverview!]!
   manifestYAML: String!

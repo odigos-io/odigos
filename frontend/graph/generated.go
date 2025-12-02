@@ -25086,9 +25086,9 @@ func (ec *executionContext) _PodDetails_status(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.PodPhase)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOPodPhase2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodPhase(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_PodDetails_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -25098,7 +25098,7 @@ func (ec *executionContext) fieldContext_PodDetails_status(_ context.Context, fi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type PodPhase does not have child fields")
 		},
 	}
 	return fc, nil
@@ -44441,6 +44441,22 @@ func (ec *executionContext) unmarshalOPodConditionType2ᚖgithubᚗcomᚋodigos�
 }
 
 func (ec *executionContext) marshalOPodConditionType2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodConditionType(ctx context.Context, sel ast.SelectionSet, v *model.PodConditionType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOPodPhase2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodPhase(ctx context.Context, v any) (*model.PodPhase, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.PodPhase)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOPodPhase2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPodPhase(ctx context.Context, sel ast.SelectionSet, v *model.PodPhase) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

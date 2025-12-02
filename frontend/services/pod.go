@@ -19,23 +19,18 @@ func GetPodDetails(ctx context.Context, namespace, name string) (*model.PodDetai
 
 	var nodePtr *string
 	if pod.Spec.NodeName != "" {
-		n := pod.Spec.NodeName
-		nodePtr = &n
+		nodePtr = StringPtr(pod.Spec.NodeName)
 	}
 
 	var rolePtr *string
 	if pod.Labels != nil {
 		if role, ok := pod.Labels[k8sconsts.OdigosCollectorRoleLabel]; ok && role != "" {
-			r := role
-			rolePtr = &r
+			rolePtr = StringPtr(role)
 		}
 	}
 
-	var statusPtr *string
-	if string(pod.Status.Phase) != "" {
-		s := string(pod.Status.Phase)
-		statusPtr = &s
-	}
+	var statusPtr *model.PodPhase
+	statusPtr = mapPodPhase(pod.Status.Phase)
 
 	conditions := convertPodConditions(pod.Status.Conditions)
 
@@ -62,21 +57,15 @@ func GetPodDetails(ctx context.Context, namespace, name string) (*model.PodDetai
 func convertPodConditions(k8sConds []corev1.PodCondition) []*model.PodCondition {
 	conds := make([]*model.PodCondition, 0, len(k8sConds))
 	for _, c := range k8sConds {
-		var lttPtr *string
-		if !c.LastTransitionTime.IsZero() {
-			ltt := c.LastTransitionTime.Time.Format(time.RFC3339)
-			lttPtr = &ltt
-		}
+		lttPtr := k8sLastTransitionTimeToGql(c.LastTransitionTime)
 		typeEnum := mapPodConditionType(c.Type)
 		statusEnum := mapK8sConditionStatus(c.Status)
 		var reasonPtr, messagePtr *string
 		if c.Reason != "" {
-			r := c.Reason
-			reasonPtr = &r
+			reasonPtr = StringPtr(c.Reason)
 		}
 		if c.Message != "" {
-			m := c.Message
-			messagePtr = &m
+			messagePtr = StringPtr(c.Message)
 		}
 		conds = append(conds, &model.PodCondition{
 			Type:               typeEnum,
@@ -112,27 +101,24 @@ func buildContainersOverview(pod *corev1.Pod) []*model.ContainerOverview {
 			if cs.State.Running != nil {
 				status = model.ContainerLifecycleStatusRunning
 				if !cs.State.Running.StartedAt.IsZero() {
-					startedAt := cs.State.Running.StartedAt.Time.Format(time.RFC3339)
-					startedAtPtr = &startedAt
+					startedAtPtr = StringPtr(cs.State.Running.StartedAt.Time.Format(time.RFC3339))
 				}
 			} else if cs.State.Waiting != nil {
 				status = model.ContainerLifecycleStatusWaiting
 				if cs.State.Waiting.Reason != "" {
-					reason := cs.State.Waiting.Reason
-					stateReasonPtr = &reason
+					stateReasonPtr = StringPtr(cs.State.Waiting.Reason)
 				}
 			} else if cs.State.Terminated != nil {
 				status = model.ContainerLifecycleStatusTerminated
 				if cs.State.Terminated.Reason != "" {
-					reason := cs.State.Terminated.Reason
-					stateReasonPtr = &reason
+					stateReasonPtr = StringPtr(cs.State.Terminated.Reason)
 				}
 			}
 		}
 
 		containers = append(containers, &model.ContainerOverview{
 			Name:        c.Name,
-			Image:       &c.Image,
+			Image:       StringPtr(c.Image),
 			Status:      status,
 			StateReason: stateReasonPtr,
 			Ready:       ready,
@@ -176,6 +162,28 @@ func mapPodConditionType(t corev1.PodConditionType) *model.PodConditionType {
 		return &v
 	default:
 		v := model.PodConditionTypeOther
+		return &v
+	}
+}
+
+func mapPodPhase(p corev1.PodPhase) *model.PodPhase {
+	switch p {
+	case corev1.PodPending:
+		v := model.PodPhasePending
+		return &v
+	case corev1.PodRunning:
+		v := model.PodPhaseRunning
+		return &v
+	case corev1.PodSucceeded:
+		v := model.PodPhaseSucceeded
+		return &v
+	case corev1.PodFailed:
+		v := model.PodPhaseFailed
+		return &v
+	case corev1.PodUnknown:
+		fallthrough
+	default:
+		v := model.PodPhaseUnknown
 		return &v
 	}
 }
