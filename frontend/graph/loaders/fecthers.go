@@ -660,7 +660,10 @@ func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *Workloa
 	return workloadPods, nil
 }
 
-func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (byContainer map[ContainerId][]*odigosv1.InstrumentationInstance, err error) {
+func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (
+	byPodContainer map[PodContainerId][]*odigosv1.InstrumentationInstance,
+	byWorkloadContainer map[WorkloadContainerId][]*odigosv1.InstrumentationInstance,
+	err error) {
 
 	labelSelector := ""
 	if filters.SingleWorkload != nil {
@@ -684,10 +687,11 @@ func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filt
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	byContainer = make(map[ContainerId][]*odigosv1.InstrumentationInstance, len(ii.Items))
+	byPodContainer = make(map[PodContainerId][]*odigosv1.InstrumentationInstance, len(ii.Items))
+	byWorkloadContainer = make(map[WorkloadContainerId][]*odigosv1.InstrumentationInstance, len(ii.Items))
 	for _, ii := range ii.Items {
 		if _, ok := filters.IgnoredNamespaces[ii.Namespace]; ok {
 			continue
@@ -700,12 +704,28 @@ func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filt
 		}
 
 		// add to the byContainer map
-		containerId := ContainerId{
+		containerId := PodContainerId{
 			Namespace:     ii.Namespace,
 			PodName:       ownerPodLabel,
 			ContainerName: ii.Spec.ContainerName,
 		}
-		byContainer[containerId] = append(byContainer[containerId], &ii)
+		byPodContainer[containerId] = append(byPodContainer[containerId], &ii)
+
+		instrumentedAppLabel, ok := ii.Labels[consts.InstrumentedAppNameLabel]
+		if !ok {
+			continue
+		}
+		instrumentedAppDetails, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(instrumentedAppLabel, ii.Namespace)
+		if err != nil {
+			continue
+		}
+		workloadContainerId := WorkloadContainerId{
+			Namespace:     instrumentedAppDetails.Namespace,
+			Kind:          instrumentedAppDetails.Kind,
+			Name:          instrumentedAppDetails.Name,
+			ContainerName: ii.Spec.ContainerName,
+		}
+		byWorkloadContainer[workloadContainerId] = append(byWorkloadContainer[workloadContainerId], &ii)
 	}
-	return byContainer, nil
+	return byPodContainer, byWorkloadContainer, nil
 }

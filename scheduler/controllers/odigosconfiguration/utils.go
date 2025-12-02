@@ -18,3 +18,13 @@ func mergeIgnoredItemLists(l1 []string, l2 []string) []string {
 
 	return mergedList
 }
+
+func removeItemFromList(list []string, itemToRemove string) []string {
+	result := make([]string, 0, len(list))
+	for _, item := range list {
+		if item != itemToRemove {
+			result = append(result, item)
+		}
+	}
+	return result
+}

@@ -1,17 +1,18 @@
-{{- if not .Values.ownTelemetry.odigosPrometheus.disabled }}
+{{- if not .Values.ownTelemetry.metrics.disabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: odigos-prometheus
+  name: odigos-victoriametrics
   labels:
-    app.kubernetes.io/name: odigos-prometheus
+    app.kubernetes.io/name: odigos-victoriametrics
 spec:
   type: ClusterIP
   ports:
   - name: http
-    port: 9090
+    port: 8428
     targetPort: http
     protocol: TCP
   selector:
-    app.kubernetes.io/name: odigos-prometheus
+    app.kubernetes.io/name: odigos-victoriametrics
+
 {{- end }}

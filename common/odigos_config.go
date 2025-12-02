@@ -296,6 +296,18 @@ type MetricsSourceConfiguration struct {
 	KubeletStats *MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
 }
 
+type OdigosOwnMetricsConfiguration struct {
+
+	// if set to true, odigos will not collect metrics about itself.
+	// this will deploy odigos without prometheus and pipeline to send own metrics to it.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// if own metrics are enabled, this is the interval at which odigos will scrape metrics from itself.
+	// format: duration string (15s, 1m, etc).
+	// default is 10s.
+	ScrapeInterval string `json:"scrapeInterval,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -303,6 +315,7 @@ type OdigosConfiguration struct {
 	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
 	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
 	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
+	IgnoreOdigosNamespace     *bool                          `json:"ignoreOdigosNamespace,omitempty" yaml:"ignoreOdigosNamespace"`
 	Psp                       bool                           `json:"psp,omitempty" yaml:"psp"`
 	ImagePrefix               string                         `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
 	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
@@ -346,5 +359,5 @@ type OdigosConfiguration struct {
 
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 
-	OdigosPromethuesDisabled *bool `json:"odigosPromethuesDisabled,omitempty" yaml:"odigosPromethuesDisabled"`
+	OdigosMetrics *OdigosOwnMetricsConfiguration `json:"odigosMetrics,omitempty" yaml:"odigosMetrics"`
 }

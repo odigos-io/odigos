@@ -30,35 +30,35 @@ type ProcessorConfigurer interface {
 type GenericMap map[string]interface{}
 
 type Config struct {
-	Receivers  GenericMap `json:"receivers"`
-	Exporters  GenericMap `json:"exporters"`
-	Processors GenericMap `json:"processors"`
-	Extensions GenericMap `json:"extensions"`
+	Receivers  GenericMap `json:"receivers,omitempty"`
+	Exporters  GenericMap `json:"exporters,omitempty"`
+	Processors GenericMap `json:"processors,omitempty"`
+	Extensions GenericMap `json:"extensions,omitempty"`
 	Connectors GenericMap `json:"connectors,omitempty"`
-	Service    Service    `json:"service"`
+	Service    Service    `json:"service,omitempty"`
 }
 
 type Telemetry struct {
-	Metrics  GenericMap         `json:"metrics"`
-	Resource map[string]*string `json:"resource"`
+	Metrics  GenericMap         `json:"metrics,omitempty"`
+	Resource map[string]*string `json:"resource,omitempty"`
 }
 
 type Service struct {
-	Extensions []string            `json:"extensions"`
-	Pipelines  map[string]Pipeline `json:"pipelines"`
+	Extensions []string            `json:"extensions,omitempty"`
+	Pipelines  map[string]Pipeline `json:"pipelines,omitempty"`
 	Telemetry  Telemetry           `json:"telemetry,omitempty"`
 }
 
 type Pipeline struct {
-	Receivers  []string `json:"receivers"`
-	Processors []string `json:"processors"`
-	Exporters  []string `json:"exporters"`
+	Receivers  []string `json:"receivers,omitempty"`
+	Processors []string `json:"processors,omitempty"`
+	Exporters  []string `json:"exporters,omitempty"`
 }
 
-func MergeConfigs(configs ...Config) (Config, error) {
+func MergeConfigs(configDomains map[string]Config) (Config, error) {
 	mergedConfig := Config{}
 	var err error
-	for _, config := range configs {
+	for _, config := range configDomains {
 		mergedConfig.Receivers, err = mergeGenericMaps(mergedConfig.Receivers, config.Receivers)
 		if err != nil {
 			return Config{}, err
