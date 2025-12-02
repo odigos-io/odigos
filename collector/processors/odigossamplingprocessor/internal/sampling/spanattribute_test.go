@@ -392,3 +392,137 @@ func TestSpanAttribute_JSONCondition_KeyNotEquals(t *testing.T) {
 	assert.True(t, satisfied)
 	assert.Equal(t, 10.0, ratio)
 }
+
+// ----------- Service Name Regex -----------
+
+// Exact Service Name Match (plain string)
+func TestSpanAttribute_ServiceName_ExactMatch(t *testing.T) {
+	rule := SpanAttributeRule{
+		ServiceName:           "my-service",
+		AttributeKey:          "env",
+		ConditionType:         TypeString,
+		Operation:             "exists",
+		SamplingRatio:         25.0,
+		FallbackSamplingRatio: 5.0,
+	}
+	err := rule.Validate()
+	assert.NoError(t, err)
+
+	trace := buildTrace("my-service", map[string]interface{}{"env": "prod"})
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.True(t, matched)
+	assert.True(t, satisfied)
+	assert.Equal(t, 25.0, ratio)
+}
+
+// Service Name Does Not Match (plain string)
+func TestSpanAttribute_ServiceName_NoMatch(t *testing.T) {
+	rule := SpanAttributeRule{
+		ServiceName:           "my-service",
+		AttributeKey:          "env",
+		ConditionType:         TypeString,
+		Operation:             "exists",
+		SamplingRatio:         25.0,
+		FallbackSamplingRatio: 5.0,
+	}
+	err := rule.Validate()
+	assert.NoError(t, err)
+
+	trace := buildTrace("other-service", map[string]interface{}{"env": "prod"})
+	matched, satisfied, ratio := rule.Evaluate(trace)
+	assert.False(t, matched)
+	assert.False(t, satisfied)
+	assert.Equal(t, 5.0, ratio)
+}
+
+// Service Name Regex with Wildcard
+func TestSpanAttribute_ServiceName_RegexWildcard(t *testing.T) {
+	rule := SpanAttributeRule{
+		ServiceName:           "my-service-.*",
+		AttributeKey:          "env",
+		ConditionType:         TypeString,
+		Operation:             "exists",
+		SamplingRatio:         30.0,
+		FallbackSamplingRatio: 10.0,
+	}
+	err := rule.Validate()
+	assert.NoError(t, err)
+
+	// Should match "my-service-api"
+	trace1 := buildTrace("my-service-api", map[string]interface{}{"env": "prod"})
+	matched1, satisfied1, ratio1 := rule.Evaluate(trace1)
+	assert.True(t, matched1)
+	assert.True(t, satisfied1)
+	assert.Equal(t, 30.0, ratio1)
+
+	// Should match "my-service-worker"
+	trace2 := buildTrace("my-service-worker", map[string]interface{}{"env": "staging"})
+	matched2, satisfied2, ratio2 := rule.Evaluate(trace2)
+	assert.True(t, matched2)
+	assert.True(t, satisfied2)
+	assert.Equal(t, 30.0, ratio2)
+
+	// Should not match "other-service"
+	trace3 := buildTrace("other-service", map[string]interface{}{"env": "prod"})
+	matched3, satisfied3, ratio3 := rule.Evaluate(trace3)
+	assert.False(t, matched3)
+	assert.False(t, satisfied3)
+	assert.Equal(t, 10.0, ratio3)
+}
+
+// Service Name Regex with Alternation
+func TestSpanAttribute_ServiceName_RegexAlternation(t *testing.T) {
+	rule := SpanAttributeRule{
+		ServiceName:           "^(frontend|backend|worker)$",
+		AttributeKey:          "env",
+		ConditionType:         TypeString,
+		Operation:             "exists",
+		SamplingRatio:         40.0,
+		FallbackSamplingRatio: 15.0,
+	}
+	err := rule.Validate()
+	assert.NoError(t, err)
+
+	// Should match "frontend"
+	trace1 := buildTrace("frontend", map[string]interface{}{"env": "prod"})
+	matched1, satisfied1, ratio1 := rule.Evaluate(trace1)
+	assert.True(t, matched1)
+	assert.True(t, satisfied1)
+	assert.Equal(t, 40.0, ratio1)
+
+	// Should match "backend"
+	trace2 := buildTrace("backend", map[string]interface{}{"env": "prod"})
+	matched2, satisfied2, ratio2 := rule.Evaluate(trace2)
+	assert.True(t, matched2)
+	assert.True(t, satisfied2)
+	assert.Equal(t, 40.0, ratio2)
+
+	// Should match "worker"
+	trace3 := buildTrace("worker", map[string]interface{}{"env": "prod"})
+	matched3, satisfied3, ratio3 := rule.Evaluate(trace3)
+	assert.True(t, matched3)
+	assert.True(t, satisfied3)
+	assert.Equal(t, 40.0, ratio3)
+
+	// Should not match "api"
+	trace4 := buildTrace("api", map[string]interface{}{"env": "prod"})
+	matched4, satisfied4, ratio4 := rule.Evaluate(trace4)
+	assert.False(t, matched4)
+	assert.False(t, satisfied4)
+	assert.Equal(t, 15.0, ratio4)
+}
+
+// Service Name Invalid Regex Returns Error on Validate
+func TestSpanAttribute_ServiceName_InvalidRegex(t *testing.T) {
+	rule := SpanAttributeRule{
+		ServiceName:           "[invalid(regex",
+		AttributeKey:          "env",
+		ConditionType:         TypeString,
+		Operation:             "exists",
+		SamplingRatio:         20.0,
+		FallbackSamplingRatio: 5.0,
+	}
+	err := rule.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid service_name regex pattern")
+}
