@@ -49,10 +49,7 @@ func serviceTelemetryConfigForOwnMetrics(ownMetricsConfig *odigosv1.OdigosOwnMet
 					"endpoint": "http://localhost:44318",
 					"insecure": true,
 					"protocol": "http/protobuf",
-					"timeout":  "1s",
-					"retry_on_failure": config.GenericMap{
-						"enabled": false,
-					},
+					"timeout":  1000, // 1 second timeout to send metrics to localhost
 				},
 			},
 		},
