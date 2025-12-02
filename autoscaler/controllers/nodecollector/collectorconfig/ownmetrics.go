@@ -12,7 +12,7 @@ import (
 // internal, not meant to be used outside of this service
 const (
 	odigosOwnTelemetryOtlpReceiverName = "otlp/odigos-own-metrics-in"
-	ownMetricsPrometheusPipelineName   = "metrics/own-metrics-prometheus"
+	ownMetricsStorePipelineName        = "metrics/own-metrics"
 	odigosVictoriametricsExporterName  = "otlphttp/odigos-victoriametrics"
 )
 
@@ -49,6 +49,10 @@ func serviceTelemetryConfigForOwnMetrics(ownMetricsConfig *odigosv1.OdigosOwnMet
 					"endpoint": "http://localhost:44318",
 					"insecure": true,
 					"protocol": "http/protobuf",
+					"timeout":  "1s",
+					"retry_on_failure": config.GenericMap{
+						"enabled": false,
+					},
 				},
 			},
 		},
@@ -86,7 +90,7 @@ func ownMetricsPipelines(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings) ma
 	}
 
 	return map[string]config.Pipeline{
-		odigosVictoriametricsExporterName: config.Pipeline{
+		ownMetricsStorePipelineName: config.Pipeline{
 			Receivers: []string{odigosOwnTelemetryOtlpReceiverName},
 			Exporters: []string{odigosVictoriametricsExporterName},
 		},
