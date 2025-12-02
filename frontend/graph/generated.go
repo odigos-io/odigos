@@ -25014,46 +25014,7 @@ func (ec *executionContext) fieldContext_PodDetails_node(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _PodDetails_role(ctx context.Context, field graphql.CollectedField, obj *model.PodDetails) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PodDetails_role(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Role, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PodDetails_role(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PodDetails",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
+// role field removed from PodDetails
 
 func (ec *executionContext) _PodDetails_status(ctx context.Context, field graphql.CollectedField, obj *model.PodDetails) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodDetails_status(ctx, field)
@@ -26633,8 +26594,6 @@ func (ec *executionContext) fieldContext_Query_pod(ctx context.Context, field gr
 				return ec.fieldContext_PodDetails_namespace(ctx, field)
 			case "node":
 				return ec.fieldContext_PodDetails_node(ctx, field)
-			case "role":
-				return ec.fieldContext_PodDetails_role(ctx, field)
 			case "status":
 				return ec.fieldContext_PodDetails_status(ctx, field)
 			case "containers":
@@ -38270,8 +38229,6 @@ func (ec *executionContext) _PodDetails(ctx context.Context, sel ast.SelectionSe
 			}
 		case "node":
 			out.Values[i] = ec._PodDetails_node(ctx, field, obj)
-		case "role":
-			out.Values[i] = ec._PodDetails_role(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._PodDetails_status(ctx, field, obj)
 		case "containers":

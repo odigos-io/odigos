@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	corev1 "k8s.io/api/core/v1"
@@ -22,13 +21,6 @@ func GetPodDetails(ctx context.Context, namespace, name string) (*model.PodDetai
 		nodePtr = StringPtr(pod.Spec.NodeName)
 	}
 
-	var rolePtr *string
-	if pod.Labels != nil {
-		if role, ok := pod.Labels[k8sconsts.OdigosCollectorRoleLabel]; ok && role != "" {
-			rolePtr = StringPtr(role)
-		}
-	}
-
 	var statusPtr *model.PodPhase
 	statusPtr = mapPodPhase(pod.Status.Phase)
 
@@ -43,7 +35,6 @@ func GetPodDetails(ctx context.Context, namespace, name string) (*model.PodDetai
 		Name:         pod.Name,
 		Namespace:    pod.Namespace,
 		Node:         nodePtr,
-		Role:         rolePtr,
 		Status:       statusPtr,
 		Containers:   containers,
 		ManifestYaml: manifestYAML,

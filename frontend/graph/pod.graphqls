@@ -53,7 +53,6 @@ type PodDetails {
   name: String!
   namespace: String!
   node: String
-  role: String
   # Kubernetes Pod phase from pod.status.phase.
   status: PodPhase
   containers: [ContainerOverview!]!
