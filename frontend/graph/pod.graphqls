@@ -1,0 +1,64 @@
+enum ContainerLifecycleStatus {
+  Running
+  Waiting
+  Terminated
+}
+
+enum K8sConditionStatus {
+  True
+  False
+  Unknown
+}
+
+enum PodConditionType {
+  PodScheduled
+  Initialized
+  ContainersReady
+  Ready
+  Other
+}
+
+enum PodPhase {
+  Pending
+  Running
+  Succeeded
+  Failed
+  Unknown
+}
+
+type PodCondition {
+  type: PodConditionType
+  status: K8sConditionStatus
+  lastTransitionTime: String
+  reason: String
+  message: String
+}
+
+type ContainerOverview {
+  name: String!
+  image: String
+  # Container lifecycle status from Kubernetes ContainerStatus.State
+  # One of: "Running", "Waiting", "Terminated"
+  status: ContainerLifecycleStatus!
+  stateReason: String
+  # Kubernetes readiness flag from ContainerStatus.Ready.
+  # Can be false even when status is "Running" (e.g., failing readiness probe).
+  ready: Boolean!
+  restarts: Int!
+  startedAt: String
+  resources: Resources
+}
+
+type PodDetails {
+  name: String!
+  namespace: String!
+  node: String
+  # Kubernetes Pod phase from pod.status.phase.
+  status: PodPhase
+  containers: [ContainerOverview!]!
+  manifestYAML: String!
+}
+
+extend type Query {
+  pod(namespace: String!, name: String!): PodDetails!
+}
