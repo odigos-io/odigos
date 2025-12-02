@@ -241,6 +241,9 @@ type K8sWorkloadContainer {
 
   # manual overrides for this container info, to set specific values for it or bypass failed detection.
   overrides: K8sWorkloadContainerOverrides
+
+  # this part is a summary of all the instrumentations that were found in any process of this container.
+  instrumentations: [K8sWorkloadPodContainerProcessInstrumentation!]
 }
 
 # describes a single attribute of a process.
@@ -248,6 +251,11 @@ type K8sWorkloadContainer {
 type K8sWorkloadPodContainerProcessAttribute {
     name: String!
     value: String!
+}
+
+type K8sWorkloadPodContainerProcessInstrumentation {
+    name: String!
+    isStandardLibrary: Boolean
 }
 
 # describes a single process instance in a pod container.
@@ -263,6 +271,8 @@ type K8sWorkloadPodContainerProcess {
     # attributes are key value pairs that are reported as part of this process resource attributes in telemetry.
     # it contains just some of the attributes and may not be complete.
     identifyingAttributes: [K8sWorkloadPodContainerProcessAttribute!]!
+
+    instrumentations: [K8sWorkloadPodContainerProcessInstrumentation!]
 }
 
 # describes a single container instance in a pod instance.
