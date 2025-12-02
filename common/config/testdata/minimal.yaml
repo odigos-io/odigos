@@ -30,5 +30,7 @@ service:
   - pprof
   pipelines: {}
   telemetry:
-    metrics: {}
+    metrics:
+      level: ""
+      readers: []
     resource: {}

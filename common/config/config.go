@@ -149,6 +149,9 @@ func mergeTelemetryResource(resource1 map[string]*string, resource2 map[string]*
 }
 
 func mergeTelemetryReaders(readers1 []GenericMap, readers2 []GenericMap) []GenericMap {
+	if len(readers1) == 0 && len(readers2) == 0 {
+		return nil
+	}
 	if len(readers1) == 0 {
 		return readers2
 	} else if len(readers2) == 0 {
