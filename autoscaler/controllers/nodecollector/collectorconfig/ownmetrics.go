@@ -2,10 +2,12 @@ package collectorconfig
 
 import (
 	"fmt"
+	"time"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // internal, not meant to be used outside of this service
@@ -39,9 +41,17 @@ func receiversConfigForOwnMetricsPrometheus() config.GenericMap {
 
 func serviceTelemetryConfigForOwnMetrics(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings) config.Telemetry {
 
+	// convert interval as duration string to milliseconds
+	duration, err := time.ParseDuration(ownMetricsConfig.Interval)
+	if err != nil {
+		log.Log.Error(err, "failed to parse own metrics interval", "interval", ownMetricsConfig.Interval)
+		return config.Telemetry{}
+	}
+	intervalMs := int64(duration.Milliseconds())
+
 	reader := config.GenericMap{
 		"periodic": config.GenericMap{
-			"interval": ownMetricsConfig.Interval,
+			"interval": intervalMs,
 			"exporter": config.GenericMap{
 				"otlp": config.GenericMap{
 					"endpoint": "http://localhost:44318",
