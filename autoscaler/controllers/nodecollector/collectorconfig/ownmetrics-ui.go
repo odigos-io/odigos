@@ -21,14 +21,14 @@ const (
 	ownMetricsUiPipelineName = "metrics/own-metrics-ui"
 )
 
-var staticOwnMetricsProcessors config.GenericMap
+var staticOwnMetricsUiProcessors config.GenericMap
 var uiOtlpEndpoint string
 
 func init() {
 
 	odigosNamespace := env.GetCurrentNamespace()
 
-	staticOwnMetricsProcessors = config.GenericMap{
+	staticOwnMetricsUiProcessors = config.GenericMap{
 		odigosTrafficMetricsProcessorName: config.GenericMap{
 			"res_attributes_keys": []string{
 				string(semconv.ServiceNameKey),
@@ -145,7 +145,7 @@ func OwnMetricsConfigUi(ownMetricsPort int32) config.Config {
 	return config.Config{
 		Receivers:  receiversConfigForOwnMetricsUi(ownMetricsPort),
 		Exporters:  ownMetricsExportersUi(),
-		Processors: staticOwnMetricsProcessors,
+		Processors: staticOwnMetricsUiProcessors,
 		Service: config.Service{
 			Pipelines: ownMetricsPipelinesUi(),
 			Telemetry: serviceTelemetryConfigForOwnMetricsUi(ownMetricsPort),

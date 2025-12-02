@@ -160,7 +160,7 @@ func calculateCollectorConfigDomains(
 	if nodeCG.Spec.Metrics != nil {
 		ownMetricsConfig := nodeCG.Spec.Metrics.OdigosOwnMetrics
 		if ownMetricsConfig != nil {
-			configDomains["own_metrics"], additionalMetricsReceivers = collectorconfig.OwnMetricsConfigPrometheus(ownMetricsConfig)
+			configDomains["own_metrics"], additionalMetricsReceivers = collectorconfig.OwnMetricsConfigPrometheus(ownMetricsConfig, odigosNamespace)
 		}
 	}
 

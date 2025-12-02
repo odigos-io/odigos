@@ -6,7 +6,6 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -14,15 +13,8 @@ import (
 const (
 	odigosOwnTelemetryOtlpReceiverName = "otlp/odigos-own-metrics-in"
 	ownMetricsPrometheusPipelineName   = "metrics/own-metrics-prometheus"
-	odigosPrometheusExporterName       = "otlphttp/odigos-prometheus"
+	odigosVictoriametricsExporterName  = "otlphttp/odigos-victoriametrics"
 )
-
-var odigosPrometheusOtlpHttpEndpoint string
-
-func init() {
-	odigosNamespace := env.GetCurrentNamespace()
-	odigosPrometheusOtlpHttpEndpoint = fmt.Sprintf("http://odigos-prometheus.%s:9090/api/v1/otlp", odigosNamespace)
-}
 
 func receiversConfigForOwnMetricsPrometheus() config.GenericMap {
 	return config.GenericMap{
@@ -69,11 +61,12 @@ func serviceTelemetryConfigForOwnMetrics(ownMetricsConfig *odigosv1.OdigosOwnMet
 	}
 }
 
-func ownMetricsExporters(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings) config.GenericMap {
+func ownMetricsExporters(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string) config.GenericMap {
+	odigosVictoriametricsOtlpHttpEndpoint := fmt.Sprintf("http://odigos-victoriametrics.%s:8428/opentelemetry", odigosNamespace)
 	if ownMetricsConfig.SendToOdigosMetricsStore {
 		return config.GenericMap{
-			odigosPrometheusExporterName: config.GenericMap{
-				"endpoint": odigosPrometheusOtlpHttpEndpoint,
+			odigosVictoriametricsExporterName: config.GenericMap{
+				"endpoint": odigosVictoriametricsOtlpHttpEndpoint,
 				"retry_on_failure": config.GenericMap{
 					"enabled": false,
 				},
@@ -93,14 +86,14 @@ func ownMetricsPipelines(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings) ma
 	}
 
 	return map[string]config.Pipeline{
-		ownMetricsPrometheusPipelineName: config.Pipeline{
+		odigosVictoriametricsExporterName: config.Pipeline{
 			Receivers: []string{odigosOwnTelemetryOtlpReceiverName},
-			Exporters: []string{odigosPrometheusExporterName},
+			Exporters: []string{odigosVictoriametricsExporterName},
 		},
 	}
 }
 
-func OwnMetricsConfigPrometheus(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings) (config.Config, []string) {
+func OwnMetricsConfigPrometheus(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string) (config.Config, []string) {
 
 	var additionalMetricsReceivers []string
 	if ownMetricsConfig.SendToMetricsDestinations {
@@ -109,7 +102,7 @@ func OwnMetricsConfigPrometheus(ownMetricsConfig *odigosv1.OdigosOwnMetricsSetti
 
 	return config.Config{
 		Receivers: receiversConfigForOwnMetricsPrometheus(),
-		Exporters: ownMetricsExporters(ownMetricsConfig),
+		Exporters: ownMetricsExporters(ownMetricsConfig, odigosNamespace),
 		Service: config.Service{
 			Pipelines: ownMetricsPipelines(ownMetricsConfig),
 			Telemetry: serviceTelemetryConfigForOwnMetrics(ownMetricsConfig),
