@@ -32,8 +32,6 @@ func GetPodDetails(ctx context.Context, namespace, name string) (*model.PodDetai
 	var statusPtr *model.PodPhase
 	statusPtr = mapPodPhase(pod.Status.Phase)
 
-	conditions := convertPodConditions(pod.Status.Conditions)
-
 	containers := buildContainersOverview(pod)
 
 	manifestYAML, err := K8sManifest(ctx, namespace, model.K8sResourceKindPod, name)
@@ -47,37 +45,12 @@ func GetPodDetails(ctx context.Context, namespace, name string) (*model.PodDetai
 		Node:         nodePtr,
 		Role:         rolePtr,
 		Status:       statusPtr,
-		Conditions:   conditions,
 		Containers:   containers,
 		ManifestYaml: manifestYAML,
 	}, nil
 }
 
 // TODO: Create a dedicated services conversion file and move all conversion helpers there.
-func convertPodConditions(k8sConds []corev1.PodCondition) []*model.PodCondition {
-	conds := make([]*model.PodCondition, 0, len(k8sConds))
-	for _, c := range k8sConds {
-		lttPtr := k8sLastTransitionTimeToGql(c.LastTransitionTime)
-		typeEnum := mapPodConditionType(c.Type)
-		statusEnum := mapK8sConditionStatus(c.Status)
-		var reasonPtr, messagePtr *string
-		if c.Reason != "" {
-			reasonPtr = StringPtr(c.Reason)
-		}
-		if c.Message != "" {
-			messagePtr = StringPtr(c.Message)
-		}
-		conds = append(conds, &model.PodCondition{
-			Type:               typeEnum,
-			Status:             statusEnum,
-			LastTransitionTime: lttPtr,
-			Reason:             reasonPtr,
-			Message:            messagePtr,
-		})
-	}
-	return conds
-}
-
 func buildContainersOverview(pod *corev1.Pod) []*model.ContainerOverview {
 
 	statusByName := make(map[string]corev1.ContainerStatus, len(pod.Status.ContainerStatuses))
@@ -128,42 +101,6 @@ func buildContainersOverview(pod *corev1.Pod) []*model.ContainerOverview {
 		})
 	}
 	return containers
-}
-
-func mapK8sConditionStatus(s corev1.ConditionStatus) *model.K8sConditionStatus {
-	switch s {
-	case corev1.ConditionTrue:
-		v := model.K8sConditionStatusTrue
-		return &v
-	case corev1.ConditionFalse:
-		v := model.K8sConditionStatusFalse
-		return &v
-	case corev1.ConditionUnknown:
-		v := model.K8sConditionStatusUnknown
-		return &v
-	default:
-		return nil
-	}
-}
-
-func mapPodConditionType(t corev1.PodConditionType) *model.PodConditionType {
-	switch t {
-	case corev1.PodScheduled:
-		v := model.PodConditionTypePodScheduled
-		return &v
-	case corev1.PodInitialized:
-		v := model.PodConditionTypeInitialized
-		return &v
-	case corev1.ContainersReady:
-		v := model.PodConditionTypeContainersReady
-		return &v
-	case corev1.PodReady:
-		v := model.PodConditionTypeReady
-		return &v
-	default:
-		v := model.PodConditionTypeOther
-		return &v
-	}
 }
 
 func mapPodPhase(p corev1.PodPhase) *model.PodPhase {

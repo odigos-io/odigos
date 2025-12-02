@@ -853,7 +853,6 @@ type PodDetails struct {
 	Node         *string              `json:"node,omitempty"`
 	Role         *string              `json:"role,omitempty"`
 	Status       *PodPhase            `json:"status,omitempty"`
-	Conditions   []*PodCondition      `json:"conditions"`
 	Containers   []*ContainerOverview `json:"containers"`
 	ManifestYaml string               `json:"manifestYAML"`
 }

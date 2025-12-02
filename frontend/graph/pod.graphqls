@@ -56,7 +56,6 @@ type PodDetails {
   role: String
   # Kubernetes Pod phase from pod.status.phase.
   status: PodPhase
-  conditions: [PodCondition!]!
   containers: [ContainerOverview!]!
   manifestYAML: String!
 }
