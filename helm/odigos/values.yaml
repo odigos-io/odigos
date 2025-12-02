@@ -415,11 +415,12 @@ odiglet:
   deviceplugin:
     resources:
       requests:
-        cpu: 40m
-        memory: 200Mi
+        cpu: 30m
+        memory: 50Mi
       limits:
-        cpu: 100m
-        memory: 300Mi
+        cpu: 30m
+        memory: 50Mi
+    goMemLimit: 40MiB
 
   # noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
   # for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
