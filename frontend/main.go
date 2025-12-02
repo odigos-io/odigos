@@ -31,9 +31,11 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	"github.com/odigos-io/odigos/frontend/services/db"
+	prommetrics "github.com/odigos-io/odigos/frontend/services/prometheus"
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/version"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
 const (
@@ -61,6 +63,9 @@ var uiFS embed.FS
 
 //go:embed graph/workloads.html
 var workloadsHTML embed.FS
+
+//go:embed graph/odiglet_metrics.html
+var odigletMetricsHTML embed.FS
 
 func parseFlags() Flags {
 	defaultKubeConfig := env.GetDefaultKubeConfigPath()
@@ -147,7 +152,7 @@ func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
 	})
 }
 
-func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client) (*gin.Engine, error) {
+func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client, promAPI v1.API) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -191,6 +196,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		Resolvers: &graph.Resolver{
 			MetricsConsumer: odigosMetrics,
 			Logger:          logger,
+			PromAPI:         promAPI,
 		},
 	})
 	gqlExecutor := executor.New(gqlExecutableSchema)
@@ -244,6 +250,16 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		data, err := workloadsHTML.ReadFile("graph/workloads.html")
 		if err != nil {
 			c.String(http.StatusInternalServerError, "Error reading workloads.html: %v", err)
+			return
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+	})
+
+	// Odiglet collector metrics HTML page
+	r.GET("/odiglet-metrics", func(c *gin.Context) {
+		data, err := odigletMetricsHTML.ReadFile("graph/odiglet_metrics.html")
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error reading odiglet_metrics.html: %v", err)
 			return
 		}
 		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
@@ -311,8 +327,16 @@ func main() {
 		log.Fatalf("Error starting watchers: %s", err)
 	}
 
+	var promAPI v1.API
+	promURL := fmt.Sprintf("http://odigos-prometheus.%s.svc:9090", flags.Namespace)
+	if api, err := prommetrics.NewAPIFromURL(promURL); err != nil {
+		log.Printf("Warning: failed to initialize Prometheus API (url=%s): %v", promURL, err)
+	} else {
+		promAPI = api
+	}
+
 	// Start server
-	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI)
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
