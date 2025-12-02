@@ -600,10 +600,11 @@ type K8sWorkloadConditions struct {
 }
 
 type K8sWorkloadContainer struct {
-	ContainerName string                            `json:"containerName"`
-	RuntimeInfo   *K8sWorkloadRuntimeInfoContainer  `json:"runtimeInfo,omitempty"`
-	AgentEnabled  *K8sWorkloadAgentEnabledContainer `json:"agentEnabled,omitempty"`
-	Overrides     *K8sWorkloadContainerOverrides    `json:"overrides,omitempty"`
+	ContainerName    string                                           `json:"containerName"`
+	RuntimeInfo      *K8sWorkloadRuntimeInfoContainer                 `json:"runtimeInfo,omitempty"`
+	AgentEnabled     *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
+	Overrides        *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
+	Instrumentations []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
 }
 
 type K8sWorkloadContainerOverrides struct {
@@ -650,14 +651,20 @@ type K8sWorkloadPodContainer struct {
 }
 
 type K8sWorkloadPodContainerProcess struct {
-	Healthy               *bool                                      `json:"healthy,omitempty"`
-	HealthStatus          *DesiredConditionStatus                    `json:"healthStatus"`
-	IdentifyingAttributes []*K8sWorkloadPodContainerProcessAttribute `json:"identifyingAttributes"`
+	Healthy               *bool                                            `json:"healthy,omitempty"`
+	HealthStatus          *DesiredConditionStatus                          `json:"healthStatus"`
+	IdentifyingAttributes []*K8sWorkloadPodContainerProcessAttribute       `json:"identifyingAttributes"`
+	Instrumentations      []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
 }
 
 type K8sWorkloadPodContainerProcessAttribute struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
+}
+
+type K8sWorkloadPodContainerProcessInstrumentation struct {
+	Name              string `json:"name"`
+	IsStandardLibrary *bool  `json:"isStandardLibrary,omitempty"`
 }
 
 type K8sWorkloadRollout struct {
