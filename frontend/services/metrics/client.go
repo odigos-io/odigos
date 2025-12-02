@@ -24,5 +24,3 @@ func NewAPIFromURL(baseURL string) (v1.API, error) {
 func DefaultMetricsWindow() string {
 	return "5m"
 }
-
-

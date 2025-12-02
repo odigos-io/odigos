@@ -839,6 +839,7 @@ type PodContainerAnalyze struct {
 
 type PodInfo struct {
 	Name              string               `json:"name"`
+	Namespace         string               `json:"namespace"`
 	Ready             string               `json:"ready"`
 	Status            *string              `json:"status,omitempty"`
 	RestartsCount     int                  `json:"restartsCount"`
