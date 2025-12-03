@@ -66,7 +66,7 @@ func (l *Loaders) GetWorkloadPods(ctx context.Context, sourceId model.K8sWorkloa
 	return l.workloadPods[sourceId], nil
 }
 
-func (l *Loaders) GetInstrumentationInstancesForContainer(ctx context.Context, containerId ContainerId) ([]*v1alpha1.InstrumentationInstance, error) {
+func (l *Loaders) GetInstrumentationInstancesForContainer(ctx context.Context, podContainerId PodContainerId) ([]*v1alpha1.InstrumentationInstance, error) {
 
 	l.instrumentationInstancesMutex.Lock()
 	defer l.instrumentationInstancesMutex.Unlock()
@@ -74,5 +74,16 @@ func (l *Loaders) GetInstrumentationInstancesForContainer(ctx context.Context, c
 	if err := l.loadInstrumentationInstances(ctx); err != nil {
 		return nil, err
 	}
-	return l.instrumentationInstancesByContainer[containerId], nil
+	return l.instrumentationInstancesByPodContainer[podContainerId], nil
+}
+
+func (l *Loaders) GetInstrumentationInstancesForWorkloadContainer(ctx context.Context, workloadContainerId WorkloadContainerId) ([]*v1alpha1.InstrumentationInstance, error) {
+
+	l.instrumentationInstancesMutex.Lock()
+	defer l.instrumentationInstancesMutex.Unlock()
+
+	if err := l.loadInstrumentationInstances(ctx); err != nil {
+		return nil, err
+	}
+	return l.instrumentationInstancesByWorkloadContainer[workloadContainerId], nil
 }

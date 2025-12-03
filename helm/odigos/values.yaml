@@ -18,6 +18,12 @@ imagePrefix:
 # you can add additional namespaces to ignore by adding them to the list
 ignoredNamespaces:
 
+# Whether to automatically ignore the namespace where Odigos is installed.
+# By default (true), the Odigos namespace is automatically added to ignoredNamespaces.
+# Set to false to allow the Odigos namespace to be visible in the UI.
+# Default: true
+ignoreOdigosNamespace: true
+
 # container names to never instrument
 # useful for sidecars which are not interesting to be instrumented
 # set by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init
@@ -372,6 +378,10 @@ odiglet:
       # required only for kernels < 5.11.
       # used for setting rlimit for BPF maps
       - SYS_RESOURCE
+    # apparmorProfile for the odiglet container when running as unPrivileged.
+    # this will be ignored when running as privileged.
+    appArmorProfile:
+      type: "Unconfined"
   # traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.
   # supported only in odigos pro (not available in community tier)
   # traceIdSuffix: 'AA'
@@ -410,6 +420,11 @@ odiglet:
       limits:
         cpu: 100m
         memory: 300Mi
+
+  # noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
+  # for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
+  # for k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.
+  noHostNetwork: false
 
   ## Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.
   ## There is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.
@@ -501,7 +516,7 @@ openshift:
 gke:
   enabled: false
 
-# List of profile names (array). Example (YAML): profiles: [size_l] | (CLI): --set profiles={size_l}
+# List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}
 profiles: []
 
 # Global NodeSelector to apply to all Odigos components by default.
@@ -621,6 +636,14 @@ metricsSources:
     ## These attributes are used to determines how span metrics are grouped.
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
 
+  odigosOwnMetrics:
+    
+    ## set the interval at which odigos will scrape metrics from itself.
+    ## format: duration string (15s, 1m, etc).
+    ## default is 10s.
+    # scrapeInterval: '10s'
+
+
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
@@ -630,3 +653,10 @@ goAutoOffsetsCron: ''
 # mode for automatic Go offsets updates. Options include direct (pull from cloud server), image (pull from local image) and off (disabled).
 # Custom Offsets support is only available in Odigos pro tier.
 goAutoOffsetsMode: 'off'
+
+# experimental configuration for own telemetry of odigos on itself
+ownTelemetry:
+  # configuration for the victoriametrics instance that is shipped with odigos for own telemetry
+  metricsStore:
+    # set to true to disable the odigos victoriametrics own metrics store
+    disabled: true

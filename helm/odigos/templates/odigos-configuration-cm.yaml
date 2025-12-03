@@ -116,7 +116,7 @@ data:
     {{- end }}
     {{- if .Values.profiles }}
       {{- if not (kindIs "slice" .Values.profiles) }}
-        {{- fail "Invalid 'profiles' value: must be a list. Example (YAML): profiles: [size_l]  |  CLI: --set profiles={size_l}" }}
+        {{- fail "Invalid 'profiles' value: must be a list. Example (YAML): profiles: [PROFILE_NAME]  |  CLI: --set profiles={PROFILE_NAME}" }}
       {{- end }}
     profiles:
       {{- toYaml .Values.profiles | nindent 6 }}
@@ -131,6 +131,11 @@ data:
     {{- if .Values.ignoredContainers }}
     ignoredContainers:
       {{- toYaml .Values.ignoredContainers | nindent 6 }}
+    {{- end }}
+    {{- if kindIs "bool" .Values.ignoreOdigosNamespace }}
+    ignoreOdigosNamespace: {{ .Values.ignoreOdigosNamespace }}
+    {{- else }}
+    ignoreOdigosNamespace: true
     {{- end }}
     {{- if .Values.instrumentor.mountMethod }}
       {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container") }}
@@ -201,7 +206,7 @@ data:
     goAutoOffsetsCron: {{ .Values.goAutoOffsetsCron }}
     {{- end }}
     {{- if .Values.goAutoOffsetsMode }}
-    goAutoOffsetsMode: {{ .Values.goAutoOffsetsMode }}
+    goAutoOffsetsMode: {{ quote .Values.goAutoOffsetsMode }}
     {{- end }}
     {{- if .Values.metricsSources }}
     metricsSources:
@@ -210,3 +215,7 @@ data:
     {{- if .Values.odiglet.traceIdSuffix }}
     traceIdSuffix: {{ .Values.odiglet.traceIdSuffix }}
     {{- end }}
+    odigosOwnTelemetryStore:
+      {{- if .Values.ownTelemetry.metricsStore.disabled }}
+      metricsStoreDisabled: {{ .Values.ownTelemetry.metricsStore.disabled }}
+      {{- end }}

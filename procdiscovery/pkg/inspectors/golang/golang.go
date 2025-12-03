@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -50,14 +48,14 @@ func (g *GolangInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	return "", false
 }
 
-func (g *GolangInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+func (g *GolangInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
 	exeFile, err := pcx.GetExeFile()
 	if err != nil {
-		return nil
+		return ""
 	}
 	buildInfo, err := buildinfo.Read(exeFile)
 	if err != nil || buildInfo == nil {
-		return nil
+		return ""
 	}
 	// versionRegex matches "go1.21.3" and captures "1.21.3" in match[1]
 	// match[0] contains the full match including "go" prefix
@@ -66,7 +64,7 @@ func (g *GolangInspector) GetRuntimeVersion(pcx *process.ProcessContext, contain
 	if len(match) < 2 {
 		// It is observed that go1.17.0 and maybe others are failing here.
 		// check the match expected length before accessing it so not to panic
-		return nil
+		return ""
 	}
-	return common.GetVersion(match[1])
+	return match[1]
 }

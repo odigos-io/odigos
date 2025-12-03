@@ -259,6 +259,18 @@ type MetricsSourceKubeletStatsConfiguration struct {
 	Interval string `json:"interval,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+type MetricsSourceOdigosOwnMetricsConfiguration struct {
+
+	// currently, odigos own metrics collection is based on:
+	// - if destination requires it (can be opt-in and out in destination level).
+	// - if odigos metrics store (odigos prometheus) is enabled.
+	// there is no way to enable or disable odigos own metrics globally here.
+
+	// time interval for scraping odigos ownmetrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
 // AgentsInitContainerResources defines resource limits and requests for the init container
 // that is injected into user pods when using the k8s-init-container mount method.
 type AgentsInitContainerResources struct {
@@ -294,6 +306,14 @@ type MetricsSourceConfiguration struct {
 
 	// configuration for kubelet stats.
 	KubeletStats *MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
+
+	// configuration for odigos own metrics which are send to configured destinations.
+	OdigosOwnMetrics *MetricsSourceOdigosOwnMetricsConfiguration `json:"odigosOwnMetrics,omitempty"`
+}
+
+type OdigosOwnTelemetryConfiguration struct {
+	// if set to true, odigos will not deploy victoriametrics as own metrics store and will not send own metrics to it.
+	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
@@ -303,6 +323,7 @@ type OdigosConfiguration struct {
 	OpenshiftEnabled          bool                           `json:"openshiftEnabled,omitempty" yaml:"openshiftEnabled"`
 	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
 	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
+	IgnoreOdigosNamespace     *bool                          `json:"ignoreOdigosNamespace,omitempty" yaml:"ignoreOdigosNamespace"`
 	Psp                       bool                           `json:"psp,omitempty" yaml:"psp"`
 	ImagePrefix               string                         `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
 	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
@@ -345,4 +366,7 @@ type OdigosConfiguration struct {
 	TraceIdSuffix string `json:"traceIdSuffix,omitempty" yaml:"traceIdSuffix"`
 
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
+
+	// configuration for odigos own metrics store in the cluster.
+	OdigosOwnTelemetryStore *OdigosOwnTelemetryConfiguration `json:"odigosOwnTelemetryStore,omitempty" yaml:"odigosOwnTelemetryStore"`
 }

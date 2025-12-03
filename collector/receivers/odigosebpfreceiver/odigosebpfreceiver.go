@@ -233,6 +233,9 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 		reader.Close()
 	}()
 
+	// Create a proto unmarshaler for the current OpenTelemetry format
+	protoUnmarshaler := ptrace.ProtoUnmarshaler{}
+
 	for {
 		// Check memory pressure before each read attempt
 		for rtml.IsMemLimitReached() {
@@ -277,8 +280,9 @@ func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
 			continue
 		}
 
+		r.telemetry.EbpfTotalBytesRead.Add(ctx, int64(len(record.RawSample)))
+
 		// Try to unmarshal as current OpenTelemetry format first
-		protoUnmarshaler := ptrace.ProtoUnmarshaler{}
 		td, err := protoUnmarshaler.UnmarshalTraces(record.RawSample[8 : 8+acceptedLength])
 		if err != nil {
 			// Fall back to legacy format for backward compatibility

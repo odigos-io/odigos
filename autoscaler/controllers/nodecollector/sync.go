@@ -27,6 +27,7 @@ type nodeCollectorBaseReconciler struct {
 	client.Client
 	scheme               *runtime.Scheme
 	autoscalerDeployment *appsv1.Deployment
+	odigosNamespace      string
 }
 
 func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context) (ctrl.Result, error) {
@@ -37,10 +38,8 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 		return ctrl.Result{}, err
 	}
 
-	odigosNs := env.GetCurrentNamespace()
-
 	dataCollectionCollectorGroup := &odigosv1.CollectorsGroup{}
-	err := b.Client.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, dataCollectionCollectorGroup)
+	err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, dataCollectionCollectorGroup)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
@@ -49,7 +48,7 @@ func (b *nodeCollectorBaseReconciler) reconcileNodeCollector(ctx context.Context
 	}
 
 	var clusterCollectorCollectorGroup odigosv1.CollectorsGroup
-	err = b.Client.Get(ctx, client.ObjectKey{Namespace: odigosNs, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &clusterCollectorCollectorGroup)
+	err = b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, &clusterCollectorCollectorGroup)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}

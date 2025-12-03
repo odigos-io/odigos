@@ -28,6 +28,7 @@ type TelemetryBuilder struct {
 	registrations                   []metric.Registration
 	EbpfLostSamples                 metric.Int64Counter
 	EbpfMemoryPressureWaitTimeTotal metric.Int64Counter
+	EbpfTotalBytesRead              metric.Int64Counter
 }
 
 // TelemetryBuilderOption applies changes to default builder.
@@ -69,6 +70,12 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 		"otelcol_ebpf_memory_pressure_wait_time_total",
 		metric.WithDescription("Total time spent waiting due to memory pressure. Can be compared with otelcol_process_uptime_seconds_total to calculate the percentage of time spent in memory pressure: (ebpf_memory_pressure_wait_time_total_milliseconds / (otelcol_process_uptime_seconds_total * 1000)) * 100"),
 		metric.WithUnit("ms"),
+	)
+	errs = errors.Join(errs, err)
+	builder.EbpfTotalBytesRead, err = builder.meter.Int64Counter(
+		"otelcol_ebpf_total_bytes_read",
+		metric.WithDescription("Total number of bytes read from the eBPF buffer (perf or ring)."),
+		metric.WithUnit("bytes"),
 	)
 	errs = errors.Join(errs, err)
 	return &builder, errs

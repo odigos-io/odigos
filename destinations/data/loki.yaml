@@ -22,6 +22,14 @@ spec:
         required: true
         tooltip: If scheme is not provided, it defaults to `http`. If port is not provided, it defaults to `3100`. If path is not provided, it defaults to `/otlp`.
         placeholder: http://<loki-host>:<loki-port>/otlp
+    - name: LOKI_SCOPE_ORG_ID
+      displayName: X-Scope-OrgID
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: 'use this X-Scope-OrgID if you need to scope the data to a specific org. Multiple orgs can be chained using `|`'
+        placeholder: 'org1|org2|org3'
     - name: LOKI_USERNAME
       displayName: Basic Auth Username
       componentType: input
