@@ -19,13 +19,16 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/odiglet/pkg/nodedetails"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
@@ -166,37 +169,75 @@ func (o *Odiglet) Run(ctx context.Context) {
 	}
 }
 
-func OdigletInitPhase(clientset *kubernetes.Clientset) {
+func OdigletInitPhase(config *rest.Config, clientset *kubernetes.Clientset) {
 	odigletInitPhaseStart := time.Now()
+	defer func() {
+		log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
+	}()
+
+	// Initialize logging
 	if err := log.Init(); err != nil {
 		panic(err)
 	}
-	err := fs.CopyAgentsDirectoryToHost()
-	if err != nil {
+
+	// Step 1: Copy instrumentation agents to host
+	if err := copyAgentsToHost(); err != nil {
 		log.Logger.Error(err, "Failed to copy agents directory to host")
 		os.Exit(-1)
 	}
 
-	nn, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
-	if !ok {
-		log.Logger.Error(fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar), "Failed to load env")
-		os.Exit(-1)
-	}
-
-	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
+	// Step 2: Prepare node for Odigos installation (labels, taints)
+	node, err := prepareNode(clientset)
+	if err != nil {
 		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
 		os.Exit(-1)
-	} else {
-		log.Logger.Info("Successfully prepared node for Odigos installation")
 	}
 
-	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
-	// executing selinux commands to make agents readable by pods.
-	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
+	// Step 3: Collect and persist node details (OSS + enterprise features)
+	if err := collectNodeDetails(config, clientset, node); err != nil {
+		log.Logger.Error(err, "Failed to check and persist node features")
+		// Don't exit, this is not critical for the init phase
+	}
+
+	// Step 4: Apply SELinux settings (must be last - uses chroot)
+	if err := applySecuritySettings(); err != nil {
 		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
 		os.Exit(-1)
 	}
 
-	log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
 	os.Exit(0)
+}
+
+// copyAgentsToHost copies instrumentation agents from the odiglet image to the host filesystem.
+func copyAgentsToHost() error {
+	return fs.CopyAgentsDirectoryToHost()
+}
+
+// prepareNode prepares the Kubernetes node for Odigos installation by updating labels and taints.
+// Returns the node object for reuse.
+func prepareNode(clientset *kubernetes.Clientset) (*v1.Node, error) {
+	nodeName, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
+	if !ok {
+		return nil, fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar)
+	}
+
+	node, err := k8snode.PrepareNodeForOdigosInstallation(clientset, nodeName)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Logger.Info("Successfully prepared node for Odigos installation")
+	return node, nil
+}
+
+// collectNodeDetails collects node features and persists them to a NodeDetails CRD.
+// This runs all registered features (OSS + enterprise extensions).
+func collectNodeDetails(config *rest.Config, clientset *kubernetes.Clientset, node *v1.Node) error {
+	return nodedetails.PrepareAndCollect(config, clientset, node)
+}
+
+// applySecuritySettings applies security settings like SELinux contexts.
+// This must be called last as it uses chroot to access host commands.
+func applySecuritySettings() error {
+	return fs.ApplyOpenShiftSELinuxSettings()
 }

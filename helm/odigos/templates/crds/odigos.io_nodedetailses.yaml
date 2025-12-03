@@ -1,0 +1,71 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  labels:
+    odigos.io/system-object: "true"
+  name: nodedetailses.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: NodeDetails
+    listKind: NodeDetailsList
+    plural: nodedetailses
+    singular: nodedetails
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: NodeDetails is the Schema for the nodedetails API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NodeDetailsSpec defines the desired state of NodeDetails
+            properties:
+              cpuCapacity:
+                description: CPUCapacity is the CPU capacity of the node
+                type: integer
+              kernelVersion:
+                description: KernelVersion is the version of the kernel running on
+                  the node
+                type: string
+              memoryCapacity:
+                description: MemoryCapacity is the memory capacity of the node
+                type: integer
+              waspEnabled:
+                description: WaspEnabled indicates whether wasp is enabled on this
+                  node
+                type: boolean
+            required:
+            - cpuCapacity
+            - kernelVersion
+            - memoryCapacity
+            - waspEnabled
+            type: object
+          status:
+            description: NodeDetailsStatus defines the observed state of NodeDetails
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

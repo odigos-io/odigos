@@ -16,6 +16,7 @@ auto_generated: true
 - [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
 - [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
 - [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+- [NodeDetails](#odigos-io-v1alpha1-NodeDetails)
 - [Processor](#odigos-io-v1alpha1-Processor)
 - [Source](#odigos-io-v1alpha1-Source)
   
@@ -302,6 +303,55 @@ auto_generated: true
 </td>
 <td>
 <a href="#odigos-io-v1alpha1-InstrumentationRuleStatus"><code>InstrumentationRuleStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `NodeDetails` <a id="odigos-io-v1alpha1-NodeDetails"></a>
+    
+<p>NodeDetails is the Schema for the nodedetails API</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>NodeDetails</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-NodeDetailsSpec"><code>NodeDetailsSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-NodeDetailsStatus"><code>NodeDetailsStatus</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -2582,6 +2632,78 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tr>
 </tbody>
 </table>
+
+## `NodeDetailsSpec` <a id="odigos-io-v1alpha1-NodeDetailsSpec"></a>
+    
+
+**Appears in:**
+
+- [NodeDetails](#odigos-io-v1alpha1-NodeDetails)
+
+<p>NodeDetailsSpec defines the desired state of NodeDetails</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>waspEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>WaspEnabled indicates whether wasp is enabled on this node</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kernelVersion</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>KernelVersion is the version of the kernel running on the node</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cpuCapacity</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>CPUCapacity is the CPU capacity of the node</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>memoryCapacity</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>MemoryCapacity is the memory capacity of the node</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `NodeDetailsStatus` <a id="odigos-io-v1alpha1-NodeDetailsStatus"></a>
+    
+
+**Appears in:**
+
+- [NodeDetails](#odigos-io-v1alpha1-NodeDetails)
+
+<p>NodeDetailsStatus defines the observed state of NodeDetails</p>
+
+
 
 ## `OdigosOwnMetricsSettings` <a id="odigos-io-v1alpha1-OdigosOwnMetricsSettings"></a>
     
