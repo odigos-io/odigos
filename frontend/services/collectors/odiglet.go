@@ -30,6 +30,12 @@ func GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo
 		result.Resources = rr
 	}
 
+	manifestYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindDaemonSet, name)
+	if err != nil {
+		return nil, err
+	}
+	result.ManifestYaml = manifestYAML
+
 	return result, nil
 }
 

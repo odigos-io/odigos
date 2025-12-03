@@ -1,15 +1,15 @@
 import React, { useMemo, useState, type FC, type RefObject } from 'react';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
+import { InstallationStatus } from '@/types';
 import { safeJsonParse } from '@odigos/ui-kit/functions';
-import { ArrowIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
 import { DEFAULT_DATA_STREAM_NAME } from '@odigos/ui-kit/constants';
 import { Destination, DestinationFormData } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
+import { ArrowLeftIcon, ArrowRightIcon, OdigosLogoText } from '@odigos/ui-kit/icons';
 import { useConfig, useDataStreamsCRUD, useDestinationCRUD, useSourceCRUD } from '@/hooks';
 import { Header, NavigationButtons, NavigationButtonsProps, Text } from '@odigos/ui-kit/components';
 import { type DataStreamSelectionFormRef, ToggleDarkMode, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
-import { InstallationStatus } from '@/types';
 
 interface SetupHeaderProps {
   step: number;
@@ -56,7 +56,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
   const { fetchDataStreams } = useDataStreamsCRUD();
   const { createDestination, updateDestination } = useDestinationCRUD();
   const { setSelectedStreamName, selectedStreamName } = useDataStreamStore();
-  const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setConfiguredSources, setConfiguredFutureApps, resetState } = useSetupStore();
+  const { configuredSources, configuredFutureApps, configuredDestinations, configuredDestinationsUpdateOnly, setConfiguredSources, setConfiguredFutureApps, clearStore } = useSetupStore();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -116,7 +116,7 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
     );
 
     await fetchDataStreams();
-    resetState();
+    clearStore();
     router.push(ROUTES.OVERVIEW);
   };
 
@@ -126,14 +126,14 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
 
     const nextBtn: NavigationButtonsProps['buttons'][0] = {
       label: 'NEXT',
-      icon: ArrowIcon,
+      icon: () => <ArrowRightIcon />,
       variant: 'primary',
       onClick: onNext,
       disabled: isLoading,
     };
     const backBtn: NavigationButtonsProps['buttons'][0] = {
       label: 'BACK',
-      icon: ArrowIcon,
+      icon: () => <ArrowLeftIcon />,
       variant: 'secondary',
       onClick: onBack,
       disabled: isLoading,

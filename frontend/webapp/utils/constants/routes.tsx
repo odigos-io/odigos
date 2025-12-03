@@ -10,6 +10,7 @@ export const ROUTES = {
   ACTIONS: '/actions',
   INSTRUMENTATION_RULES: '/instrumentation-rules',
   SERVICE_MAP: '/service-map',
+  PIPELINE_COLLECTORS: '/pipeline-collectors',
 };
 
 export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';
@@ -19,8 +20,10 @@ const HOSTNAME = typeof window !== 'undefined' ? window.location.hostname : '';
 const PORT = typeof window !== 'undefined' ? window.location.port : '';
 
 const IS_INGRESSED_DOMAIN = !!HOSTNAME && HOSTNAME !== 'localhost' && PORT === '';
+const IS_DEV = process.env.NODE_ENV === 'development';
+const DEFAULT_BACKEND_HTTP_ORIGIN = 'http://localhost:8085';
 
-const BACKEND_HTTP_ORIGIN = typeof window !== 'undefined' ? (IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : window.location.origin) : 'http://localhost:3000';
+const BACKEND_HTTP_ORIGIN = IS_DEV || typeof window === 'undefined' ? DEFAULT_BACKEND_HTTP_ORIGIN : IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : window.location.origin;
 
 export const API = {
   GRAPHQL: `${BACKEND_HTTP_ORIGIN}/graphql`,

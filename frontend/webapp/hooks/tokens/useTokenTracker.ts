@@ -11,7 +11,7 @@ import { DISPLAY_TITLES, TOKEN_ABOUT_TO_EXPIRE } from '@odigos/ui-kit/constants'
 // When a token is about to expire or has expired, a notification is added to the notification store, and the connection status is updated accordingly.
 
 export const useTokenTracker = () => {
-  const timeago = useTimeAgo();
+  const { formatTimeAgo } = useTimeAgo();
   const { tokens } = useTokenCRUD();
   const { setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
@@ -22,7 +22,7 @@ export const useTokenTracker = () => {
         const notif = {
           type: StatusType.Error,
           title: DISPLAY_TITLES.API_TOKEN,
-          message: `The token "${name}" has expired ${timeago.format(expiresAt)}.`,
+          message: `The token "${name}" has expired ${formatTimeAgo(expiresAt)}.`,
         };
 
         addNotification(notif);
@@ -31,7 +31,7 @@ export const useTokenTracker = () => {
         const notif = {
           type: StatusType.Warning,
           title: DISPLAY_TITLES.API_TOKEN,
-          message: `The token "${name}" is about to expire ${timeago.format(expiresAt)}.`,
+          message: `The token "${name}" is about to expire ${formatTimeAgo(expiresAt)}.`,
         };
 
         addNotification(notif);

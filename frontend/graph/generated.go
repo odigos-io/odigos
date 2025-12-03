@@ -139,6 +139,7 @@ type ComplexityRoot struct {
 	CollectorDaemonSetInfo struct {
 		ImageVersion      func(childComplexity int) int
 		LastRolloutAt     func(childComplexity int) int
+		ManifestYaml      func(childComplexity int) int
 		Nodes             func(childComplexity int) int
 		Resources         func(childComplexity int) int
 		RolloutInProgress func(childComplexity int) int
@@ -291,6 +292,7 @@ type ComplexityRoot struct {
 		Hpa               func(childComplexity int) int
 		ImageVersion      func(childComplexity int) int
 		LastRolloutAt     func(childComplexity int) int
+		ManifestYaml      func(childComplexity int) int
 		Resources         func(childComplexity int) int
 		RolloutInProgress func(childComplexity int) int
 		Status            func(childComplexity int) int
@@ -707,7 +709,6 @@ type ComplexityRoot struct {
 		Name         func(childComplexity int) int
 		Namespace    func(childComplexity int) int
 		Node         func(childComplexity int) int
-		Role         func(childComplexity int) int
 		Status       func(childComplexity int) int
 	}
 
@@ -715,6 +716,7 @@ type ComplexityRoot struct {
 		CreationTimestamp func(childComplexity int) int
 		Image             func(childComplexity int) int
 		Name              func(childComplexity int) int
+		Namespace         func(childComplexity int) int
 		NodeName          func(childComplexity int) int
 		Ready             func(childComplexity int) int
 		RestartsCount     func(childComplexity int) int
@@ -1359,6 +1361,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CollectorDaemonSetInfo.LastRolloutAt(childComplexity), true
+
+	case "CollectorDaemonSetInfo.manifestYAML":
+		if e.complexity.CollectorDaemonSetInfo.ManifestYaml == nil {
+			break
+		}
+
+		return e.complexity.CollectorDaemonSetInfo.ManifestYaml(childComplexity), true
 
 	case "CollectorDaemonSetInfo.nodes":
 		if e.complexity.CollectorDaemonSetInfo.Nodes == nil {
@@ -2013,6 +2022,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GatewayDeploymentInfo.LastRolloutAt(childComplexity), true
+
+	case "GatewayDeploymentInfo.manifestYAML":
+		if e.complexity.GatewayDeploymentInfo.ManifestYaml == nil {
+			break
+		}
+
+		return e.complexity.GatewayDeploymentInfo.ManifestYaml(childComplexity), true
 
 	case "GatewayDeploymentInfo.resources":
 		if e.complexity.GatewayDeploymentInfo.Resources == nil {
@@ -3877,13 +3893,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PodDetails.Node(childComplexity), true
 
-	case "PodDetails.role":
-		if e.complexity.PodDetails.Role == nil {
-			break
-		}
-
-		return e.complexity.PodDetails.Role(childComplexity), true
-
 	case "PodDetails.status":
 		if e.complexity.PodDetails.Status == nil {
 			break
@@ -3911,6 +3920,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PodInfo.Name(childComplexity), true
+
+	case "PodInfo.namespace":
+		if e.complexity.PodInfo.Namespace == nil {
+			break
+		}
+
+		return e.complexity.PodInfo.Namespace(childComplexity), true
 
 	case "PodInfo.nodeName":
 		if e.complexity.PodInfo.NodeName == nil {
@@ -8675,6 +8691,50 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_rolloutInProgres
 	return fc, nil
 }
 
+func (ec *executionContext) _CollectorDaemonSetInfo_manifestYAML(ctx context.Context, field graphql.CollectedField, obj *model.CollectorDaemonSetInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorDaemonSetInfo_manifestYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManifestYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ComputePlatform_computePlatformType(ctx context.Context, field graphql.CollectedField, obj *model.ComputePlatform) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ComputePlatform_computePlatformType(ctx, field)
 	if err != nil {
@@ -12987,6 +13047,50 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_rolloutInProgress
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GatewayDeploymentInfo_manifestYAML(ctx context.Context, field graphql.CollectedField, obj *model.GatewayDeploymentInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GatewayDeploymentInfo_manifestYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManifestYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GatewayDeploymentInfo_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GatewayDeploymentInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -25014,8 +25118,6 @@ func (ec *executionContext) fieldContext_PodDetails_node(_ context.Context, fiel
 	return fc, nil
 }
 
-// role field removed from PodDetails
-
 func (ec *executionContext) _PodDetails_status(ctx context.Context, field graphql.CollectedField, obj *model.PodDetails) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodDetails_status(ctx, field)
 	if err != nil {
@@ -25153,6 +25255,50 @@ func (ec *executionContext) _PodDetails_manifestYAML(ctx context.Context, field 
 func (ec *executionContext) fieldContext_PodDetails_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PodDetails",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PodInfo_namespace(ctx context.Context, field graphql.CollectedField, obj *model.PodInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodInfo_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PodInfo_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PodInfo",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -26364,6 +26510,8 @@ func (ec *executionContext) fieldContext_Query_gatewayDeploymentInfo(_ context.C
 				return ec.fieldContext_GatewayDeploymentInfo_lastRolloutAt(ctx, field)
 			case "rolloutInProgress":
 				return ec.fieldContext_GatewayDeploymentInfo_rolloutInProgress(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_GatewayDeploymentInfo_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GatewayDeploymentInfo", field.Name)
 		},
@@ -26422,6 +26570,8 @@ func (ec *executionContext) fieldContext_Query_odigletDaemonSetInfo(_ context.Co
 				return ec.fieldContext_CollectorDaemonSetInfo_lastRolloutAt(ctx, field)
 			case "rolloutInProgress":
 				return ec.fieldContext_CollectorDaemonSetInfo_rolloutInProgress(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_CollectorDaemonSetInfo_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CollectorDaemonSetInfo", field.Name)
 		},
@@ -26468,6 +26618,8 @@ func (ec *executionContext) fieldContext_Query_gatewayPods(_ context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_PodInfo_namespace(ctx, field)
 			case "name":
 				return ec.fieldContext_PodInfo_name(ctx, field)
 			case "ready":
@@ -26528,6 +26680,8 @@ func (ec *executionContext) fieldContext_Query_odigletPods(_ context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "namespace":
+				return ec.fieldContext_PodInfo_namespace(ctx, field)
 			case "name":
 				return ec.fieldContext_PodInfo_name(ctx, field)
 			case "ready":
@@ -33548,6 +33702,11 @@ func (ec *executionContext) _CollectorDaemonSetInfo(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "manifestYAML":
+			out.Values[i] = ec._CollectorDaemonSetInfo_manifestYAML(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -34890,6 +35049,11 @@ func (ec *executionContext) _GatewayDeploymentInfo(ctx context.Context, sel ast.
 			out.Values[i] = ec._GatewayDeploymentInfo_lastRolloutAt(ctx, field, obj)
 		case "rolloutInProgress":
 			out.Values[i] = ec._GatewayDeploymentInfo_rolloutInProgress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "manifestYAML":
+			out.Values[i] = ec._GatewayDeploymentInfo_manifestYAML(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -38275,6 +38439,11 @@ func (ec *executionContext) _PodInfo(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PodInfo")
+		case "namespace":
+			out.Values[i] = ec._PodInfo_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "name":
 			out.Values[i] = ec._PodInfo_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
