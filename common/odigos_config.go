@@ -312,7 +312,7 @@ type MetricsSourceConfiguration struct {
 }
 
 type OdigosOwnTelemetryConfiguration struct {
-	// if set to true, odigos will not deploye prometheus to store own metrics about itself.
+	// if set to true, odigos will not deploy victoriametrics as own metrics store and will not send own metrics to it.
 	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
 }
 

@@ -656,8 +656,7 @@ goAutoOffsetsMode: 'off'
 
 # experimental configuration for own telemetry of odigos on itself
 ownTelemetry:
-
-  # configuration for the promethues instance that is shipped with odigos for own telemetry
+  # configuration for the victoriametrics instance that is shipped with odigos for own telemetry
   metricsStore:
-    # set to true to disable the odigos prometheus instance
+    # set to true to disable the odigos victoriametrics own metrics store
     disabled: true
