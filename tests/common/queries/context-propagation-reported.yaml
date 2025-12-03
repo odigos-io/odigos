@@ -52,9 +52,9 @@ query: |
 
   length(
     [?
-      span.resourceAttributes."telemetry.sdk.language" == 'dotnet' && span.serviceName == 'pricing' && span.kind == 'server'
+      span.resourceAttributes."telemetry.sdk.language" == 'dotnet' && span.serviceName == 'pricing-reported' && span.kind == 'server'
         && 
-      parent.span.serviceName == 'membership' && parent.span.resourceAttributes."telemetry.sdk.language" == 'go'
+      parent.span.serviceName == 'membership-reported' && parent.span.resourceAttributes."telemetry.sdk.language" == 'go'
     ]
   ) > `0`
 

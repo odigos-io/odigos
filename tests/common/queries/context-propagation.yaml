@@ -48,7 +48,7 @@ query: |
         && 
       parent.span.serviceName == 'coupon' && parent.span.resourceAttributes."telemetry.sdk.language" == 'nodejs'
     ]
-  ) > `0`&&
+  ) > `0` &&
 
   length(
     [?
