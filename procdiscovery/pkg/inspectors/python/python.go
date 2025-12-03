@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
@@ -47,12 +45,12 @@ func (p *PythonInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	return "", false
 }
 
-func (p *PythonInspector) GetRuntimeVersion(proc *process.ProcessContext, containerURL string) *version.Version {
+func (p *PythonInspector) GetRuntimeVersion(proc *process.ProcessContext, containerURL string) string {
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
-		return common.GetVersion(value)
+		return value
 	}
 
-	return nil
+	return ""
 }
 
 func (p *PythonInspector) isLibPythonLinked(pcx *process.ProcessContext) bool {

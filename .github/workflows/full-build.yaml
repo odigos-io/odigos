@@ -8,6 +8,8 @@ on:
       - opened
       - synchronize
       - reopened
+  schedule:
+    - cron: '0 0 * * *' # Nightly run at midnight
 
 jobs:
   build-all-services:
