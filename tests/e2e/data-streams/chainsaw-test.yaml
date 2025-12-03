@@ -137,7 +137,7 @@ spec:
             timeout: 1m
             content: |
               while true; do
-                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-1.yaml
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-1.yaml --verbose
                 if [ $? -eq 0 ]; then
                   break
                 fi
@@ -150,7 +150,7 @@ spec:
             timeout: 1m
             content: |
               while true; do
-                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-2.yaml false traces-2 simple-trace-db-2
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-stream-2.yaml false traces-2 simple-trace-db-2 --verbose
                 if [ $? -eq 0 ]; then
                   break
                 fi
