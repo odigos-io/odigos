@@ -42,14 +42,16 @@ spec:
             description: NodeDetailsSpec defines the desired state of NodeDetails
             properties:
               cpuCapacity:
-                description: CPUCapacity is the CPU capacity of the node
+                description: CPUCapacity is the CPU capacity of the node (number of
+                  cores)
                 type: integer
               kernelVersion:
                 description: KernelVersion is the version of the kernel running on
                   the node
                 type: string
               memoryCapacity:
-                description: MemoryCapacity is the memory capacity of the node
+                description: MemoryCapacity is the memory capacity of the node in
+                  MB (megabytes)
                 type: integer
               waspEnabled:
                 description: WaspEnabled indicates whether wasp is enabled on this

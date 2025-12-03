@@ -1213,31 +1213,6 @@ and for visibility into the aggregated settings being used to derive configurati
 </tr>
 <tr>
 <td>
-<code>ownTelemetryEnabled</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <p>wether to setup and collect own telemetry in the collector.
-currently, it is used to send odigos own metrics to the odigos prometheus (internal metrics store).</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ownMetricsScrapeInterval</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>the interval at which odigos will scrape own metrics from itself if own telemetry is enabled.
-format: duration string (15s, 1m, etc).
-default is 10s.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>nodeSelector</code> <B>[Required]</B>
 </td>
 <td>
@@ -2677,7 +2652,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>int</code>
 </td>
 <td>
-   <p>CPUCapacity is the CPU capacity of the node</p>
+   <p>CPUCapacity is the CPU capacity of the node (number of cores)</p>
 </td>
 </tr>
 <tr>
@@ -2688,7 +2663,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>int</code>
 </td>
 <td>
-   <p>MemoryCapacity is the memory capacity of the node</p>
+   <p>MemoryCapacity is the memory capacity of the node in MB (megabytes)</p>
 </td>
 </tr>
 </tbody>
@@ -2712,7 +2687,54 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 - [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
 
+<p>configuration for collecting and exporting odigos own metrics.
+e.g. metrics about odigos components, and not about the user's application.</p>
 
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sendToMetricsDestinations</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if true, odigos will send all the metrics it collects about itself to the metrics pipeline,
+which will make them available to the metrics destinations.
+users can troubleshoot odigos itself by monitoring these metrics in their existing systems,
+and create their own dashboards, alerting, and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sendToOdigosMetricsStore</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if true, odigos will send all the metrics it collects about itself to the odigos metrics store,
+which is available to odigos UI.
+it can help in presenting a consistent view of odigos itself, without relying on user system and integrations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>interval</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>time interval for flusing metrics (format: 15s, 1m etc). defaults: 10s</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
     
