@@ -291,6 +291,9 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          env:
+            - name: PRICING_SERVICE_HOST
+              value: pricing:8080
 ---
 kind: Service
 apiVersion: v1
