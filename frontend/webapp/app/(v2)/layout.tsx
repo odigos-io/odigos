@@ -10,6 +10,7 @@ import { Navbar } from '@odigos/ui-kit/components/v2';
 import { NavIconIds, ToastList } from '@odigos/ui-kit/containers';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { OverviewIcon, PipelineCollectorIcon, ServiceMapIcon } from '@odigos/ui-kit/icons';
+import { useDarkMode } from '@odigos/ui-kit/store';
 
 const serviceMapId = 'service-map';
 const pipelineCollectorsId = 'pipeline-collectors';
@@ -49,7 +50,9 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   // TODO: remove this after migration to v2
   const theme = useTheme();
+  const { darkMode, setDarkMode } = useDarkMode();
   useEffect(() => {
+    if (!darkMode) setDarkMode(true);
     document.body.style.backgroundColor = theme.v2.colors.black['500'];
   }, [theme]);
 
