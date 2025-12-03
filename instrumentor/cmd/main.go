@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
 
 	"github.com/odigos-io/odigos/distros"
 
@@ -41,6 +42,8 @@ import (
 func main() {
 	managerOptions := controllers.KubeManagerOptions{}
 	var telemetryDisabled bool
+	var imagePullSecretsString string
+	var imagePullSecrets []string
 
 	flag.StringVar(&managerOptions.MetricsServerBindAddress, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&managerOptions.HealthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -48,12 +51,18 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
+	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
+		"The image pull secrets to use for the instrumentation init containers")
 
 	opts := ctrlzap.Options{
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	if imagePullSecretsString != "" {
+		imagePullSecrets = strings.Split(imagePullSecretsString, ",")
+	}
 
 	zapLogger := ctrlzap.NewRaw(ctrlzap.UseFlagOptions(&opts))
 	zapLogger = bridge.AttachToZapLogger(zapLogger)
@@ -76,7 +85,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	i, err := instrumentor.New(managerOptions, dp, nil)
+	i, err := instrumentor.New(managerOptions, dp, nil, imagePullSecrets)
 	if err != nil {
 		logger.Error(err, "Failed to initialize instrumentor")
 		os.Exit(1)
