@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -39,9 +38,8 @@ func (f *fakeVersionInspector) DeepScan(pcx *process.ProcessContext) (common.Pro
 	return f.lang, f.deepDetected
 }
 
-func (f *fakeVersionInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
-	v, _ := version.NewVersion(f.versionString)
-	return v
+func (f *fakeVersionInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+	return f.versionString
 }
 
 func TestConflictWithCppPrefersOtherLanguage_QuickScan(t *testing.T) {
@@ -60,7 +58,7 @@ func TestConflictWithCppPrefersOtherLanguage_QuickScan(t *testing.T) {
 	if res.Language != common.GoProgrammingLanguage {
 		t.Fatalf("expected language %s, got %s", common.GoProgrammingLanguage, res.Language)
 	}
-	if res.RuntimeVersion == nil || res.RuntimeVersion.String() != "1.20.0" {
+	if res.RuntimeVersion != "1.20.0" {
 		t.Fatalf("expected runtime version 1.20.0, got %v", res.RuntimeVersion)
 	}
 }
@@ -102,7 +100,7 @@ func TestConflictWithCppPrefersOtherLanguage_DeepScan(t *testing.T) {
 	if res.Language != common.GoProgrammingLanguage {
 		t.Fatalf("expected language %s, got %s", common.GoProgrammingLanguage, res.Language)
 	}
-	if res.RuntimeVersion == nil || res.RuntimeVersion.String() != "1.19.5" {
+	if res.RuntimeVersion != "1.19.5" {
 		t.Fatalf("expected runtime version 1.19.5, got %v", res.RuntimeVersion)
 	}
 }

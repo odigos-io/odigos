@@ -8,9 +8,6 @@ on:
 jobs:
   build-and-test-autoscaler:
     name: build-and-test-autoscaler
-    strategy:
-      matrix:
-        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,7 +21,7 @@ jobs:
           tags: autoscaler:pr-${{ github.event.number }}
           provenance: false
           build-args: SERVICE_NAME=autoscaler
-          file: ${{ matrix.dockerfile }}
+          file: Dockerfile
       - name: run tests
         working-directory: ./autoscaler
         run: |
@@ -32,9 +29,6 @@ jobs:
 
   build-scheduler:
     name: build-scheduler
-    strategy:
-      matrix:
-        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -48,13 +42,10 @@ jobs:
           tags: scheduler:pr-${{ github.event.number }}
           provenance: false
           build-args: SERVICE_NAME=scheduler
-          file: ${{ matrix.dockerfile }}
+          file: Dockerfile
 
   build-agents:
     name: build-agents
-    strategy:
-      matrix:
-        dockerfile: ['agents/Dockerfile', 'agents/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -67,14 +58,11 @@ jobs:
           push: false
           tags: agents:pr-${{ github.event.number }}
           provenance: false
-          file: ${{ matrix.dockerfile }}
+          file: agents/Dockerfile
           build-args: SERVICE_NAME=agents
 
   build-and-test-instrumentor:
     name: build-and-test-instrumentor
-    strategy:
-      matrix:
-        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -91,7 +79,7 @@ jobs:
           tags: instrumentor:pr-${{ github.event.number }}
           provenance: false
           build-args: SERVICE_NAME=instrumentor
-          file: ${{ matrix.dockerfile }}
+          file: Dockerfile
       - name: run tests
         working-directory: ./instrumentor
         run: |
@@ -99,9 +87,6 @@ jobs:
 
   build-and-test-odigos-collector:
     name: build-and-test-odigos-collector
-    strategy:
-      matrix:
-        dockerfile: ['collector/Dockerfile', 'collector/Dockerfile.rhel']
     runs-on: depot-ubuntu-24.04-8
     steps:
       - uses: actions/checkout@v5
@@ -114,7 +99,7 @@ jobs:
           push: false
           tags: odigos-collector:pr-${{ github.event.number }}
           provenance: false
-          file: ${{ matrix.dockerfile }}
+          file: collector/Dockerfile
       - name: run tests
         working-directory: ./collector
         run: |
@@ -122,9 +107,6 @@ jobs:
 
   build-and-test-odiglet:
     name: build-and-test-odiglet
-    strategy:
-      matrix:
-        dockerfile: ['odiglet/Dockerfile', 'odiglet/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -136,7 +118,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
-          file: ${{ matrix.dockerfile }}
+          file: odiglet/Dockerfile
           context: .
           push: false
           tags: odiglet:pr-${{ github.event.number }}
@@ -151,9 +133,6 @@ jobs:
 
   build-frontend:
     name: build-frontend
-    strategy:
-      matrix:
-        dockerfile: ['frontend/Dockerfile', 'frontend/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -163,7 +142,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
-          file: ${{ matrix.dockerfile }}
+          file: frontend/Dockerfile
           context: .
           push: false
           tags: frontend:pr-${{ github.event.number }}
@@ -171,9 +150,6 @@ jobs:
 
   build-operator:
     name: build-operator
-    strategy:
-      matrix:
-        dockerfile: ['operator/Dockerfile', 'operator/Dockerfile.rhel']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -183,7 +159,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
-          file: ${{ matrix.dockerfile }}
+          file: operator/Dockerfile
           context: .
           push: false
           tags: operator:pr-${{ github.event.number }}

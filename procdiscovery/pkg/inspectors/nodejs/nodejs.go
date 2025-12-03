@@ -1,8 +1,6 @@
 package nodejs
 
 import (
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -29,10 +27,10 @@ func (n *NodejsInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 	return "", false
 }
 
-func (n *NodejsInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+func (n *NodejsInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
 	if value, exists := pcx.GetDetailedEnvsValue(process.NodeVersionConst); exists {
-		return common.GetVersion(value)
+		return value
 	}
 
-	return nil
+	return ""
 }

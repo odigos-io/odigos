@@ -20,5 +20,7 @@ service:
       exporters:
       - otlp/odigos-own-telemetry-ui
   telemetry:
-    metrics: {}
+    metrics:
+      level: ""
+      readers: []
     resource: {}

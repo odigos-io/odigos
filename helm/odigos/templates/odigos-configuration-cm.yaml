@@ -206,7 +206,7 @@ data:
     goAutoOffsetsCron: {{ .Values.goAutoOffsetsCron }}
     {{- end }}
     {{- if .Values.goAutoOffsetsMode }}
-    goAutoOffsetsMode: {{ .Values.goAutoOffsetsMode }}
+    goAutoOffsetsMode: {{ quote .Values.goAutoOffsetsMode }}
     {{- end }}
     {{- if .Values.metricsSources }}
     metricsSources:
@@ -215,8 +215,7 @@ data:
     {{- if .Values.odiglet.traceIdSuffix }}
     traceIdSuffix: {{ .Values.odiglet.traceIdSuffix }}
     {{- end }}
-    odigosMetrics:
-      disabled: {{ .Values.ownTelemetry.metrics.disabled }}
-      {{- if .Values.ownTelemetry.metrics.scrapeInterval }}
-      scrapeInterval: {{ .Values.ownTelemetry.metrics.scrapeInterval }}
+    odigosOwnTelemetryStore:
+      {{- if .Values.ownTelemetry.metricsStore.disabled }}
+      metricsStoreDisabled: {{ .Values.ownTelemetry.metricsStore.disabled }}
       {{- end }}

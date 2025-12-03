@@ -636,6 +636,14 @@ metricsSources:
     ## These attributes are used to determines how span metrics are grouped.
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
 
+  odigosOwnMetrics:
+    
+    ## set the interval at which odigos will scrape metrics from itself.
+    ## format: duration string (15s, 1m, etc).
+    ## default is 10s.
+    # scrapeInterval: '10s'
+
+
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
@@ -648,13 +656,7 @@ goAutoOffsetsMode: 'off'
 
 # experimental configuration for own telemetry of odigos on itself
 ownTelemetry:
-
-  # configuration for the promethues instance that is shipped with odigos for own telemetry
-  metrics:
-    # set to true to disable the odigos prometheus instance
+  # configuration for the victoriametrics instance that is shipped with odigos for own telemetry
+  metricsStore:
+    # set to true to disable the odigos victoriametrics own metrics store
     disabled: true
-
-    # set the interval at which odigos will scrape metrics from itself.
-    # format: duration string (15s, 1m, etc).
-    # default is 10s.
-    # scrapeInterval: '10s'

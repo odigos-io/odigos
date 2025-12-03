@@ -50,5 +50,7 @@ service:
       exporters:
       - odigosrouterconnector/logs
   telemetry:
-    metrics: {}
+    metrics:
+      level: ""
+      readers: []
     resource: {}

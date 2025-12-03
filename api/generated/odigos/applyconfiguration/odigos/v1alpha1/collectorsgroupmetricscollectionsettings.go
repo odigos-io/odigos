@@ -29,7 +29,7 @@ type CollectorsGroupMetricsCollectionSettingsApplyConfiguration struct {
 	HostMetrics      *common.MetricsSourceHostMetricsConfiguration  `json:"hostMetrics,omitempty"`
 	KubeletStats     *common.MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
 	ServiceGraph     *odigosv1alpha1.ServiceGraphSettings           `json:"serviceGraph,omitempty"`
-	OdigosOwnMetrics *odigosv1alpha1.OdigosOwnMetricsSettings       `json:"odigosOwnMetrics,omitempty"`
+	OdigosOwnMetrics *OdigosOwnMetricsSettingsApplyConfiguration    `json:"odigosOwnMetrics,omitempty"`
 	AgentsTelemetry  *odigosv1alpha1.AgentsTelemetrySettings        `json:"agentsTelemetry,omitempty"`
 }
 
@@ -74,8 +74,8 @@ func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithService
 // WithOdigosOwnMetrics sets the OdigosOwnMetrics field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the OdigosOwnMetrics field is set to the value of the last call.
-func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithOdigosOwnMetrics(value odigosv1alpha1.OdigosOwnMetricsSettings) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
-	b.OdigosOwnMetrics = &value
+func (b *CollectorsGroupMetricsCollectionSettingsApplyConfiguration) WithOdigosOwnMetrics(value *OdigosOwnMetricsSettingsApplyConfiguration) *CollectorsGroupMetricsCollectionSettingsApplyConfiguration {
+	b.OdigosOwnMetrics = value
 	return b
 }
 

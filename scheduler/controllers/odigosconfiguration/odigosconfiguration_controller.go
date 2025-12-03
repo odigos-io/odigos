@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -27,6 +28,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 )
 
@@ -103,6 +105,11 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	// I want to preserve that user input (specific request or empty), and persist the resolved value in effective config.
 	resolveMountMethod(&odigosConfiguration)
 	resolveEnvInjectionMethod(&odigosConfiguration)
+
+	err = verifyMetricsConfig(&odigosConfiguration)
+	if err != nil {
+		return ctrl.Result{}, reconcile.TerminalError(err)
+	}
 
 	err = r.persistEffectiveConfig(ctx, &odigosConfiguration, odigosConfigMap)
 	if err != nil {
@@ -416,4 +423,40 @@ func resolveEnvInjectionMethod(odigosConfig *common.OdigosConfiguration) {
 	default:
 		odigosConfig.AgentEnvVarsInjectionMethod = &defaultInjectionMethod
 	}
+}
+
+func verifyMetricsConfig(odigosConfiguration *common.OdigosConfiguration) error {
+	if odigosConfiguration.MetricsSources == nil {
+		return nil
+	}
+
+	if odigosConfiguration.MetricsSources.OdigosOwnMetrics != nil {
+		_, err := time.ParseDuration(odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval)
+		if err != nil {
+			return fmt.Errorf("failed to parse odigos own metrics interval: %w", err)
+		}
+	}
+
+	if odigosConfiguration.MetricsSources.KubeletStats != nil {
+		_, err := time.ParseDuration(odigosConfiguration.MetricsSources.KubeletStats.Interval)
+		if err != nil {
+			return fmt.Errorf("failed to parse kubelet stats interval: %w", err)
+		}
+	}
+
+	if odigosConfiguration.MetricsSources.HostMetrics != nil {
+		_, err := time.ParseDuration(odigosConfiguration.MetricsSources.HostMetrics.Interval)
+		if err != nil {
+			return fmt.Errorf("failed to parse host metrics interval: %w", err)
+		}
+	}
+
+	if odigosConfiguration.MetricsSources.SpanMetrics != nil {
+		_, err := time.ParseDuration(odigosConfiguration.MetricsSources.SpanMetrics.Interval)
+		if err != nil {
+			return fmt.Errorf("failed to parse span metrics interval: %w", err)
+		}
+	}
+
+	return nil
 }

@@ -4,92 +4,21 @@ import (
 	"fmt"
 	"time"
 
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/config"
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	semconv "go.opentelemetry.io/otel/semconv/v1.5.0"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // internal, not meant to be used outside of this service
 const (
-
-	// this processor should be added to any user telemetry pipeline to track the amount of data being exported by each source
-	odigosTrafficMetricsProcessorName = "odigostrafficmetrics"
-
-	podNameProcessorName                   = "resource/pod-name"
-	ownMetricsExporterName                 = "otlp/odigos-own-telemetry-ui"
-	ownMetricsUiReceiverName               = "prometheus/self-metrics-ui"
-	odigosOwnTelemetryOtlpHttpReceiverName = "otlp/odigos-own-metrics-in"
-	ownMetricsUiPipelineName               = "metrics/own-metrics-ui"
-	ownMetricsPrometheusPipelineName       = "metrics/own-metrics-prometheus"
-	odigosVictoriametricsExporterName      = "otlphttp/odigos-victoriametrics"
+	odigosOwnTelemetryOtlpReceiverName = "otlp/odigos-own-metrics-in"
+	ownMetricsStorePipelineName        = "metrics/own-metrics"
+	odigosVictoriametricsExporterName  = "otlphttp/odigos-victoriametrics"
 )
 
-var staticOwnMetricsProcessors config.GenericMap
-var uiOtlpEndpoint string
-var odigosPrometheusOtlpHttpEndpoint string
-var odigosVictoriametricsOtlpHttpEndpoint string
-
-func init() {
-
-	odigosNamespace := env.GetCurrentNamespace()
-
-	staticOwnMetricsProcessors = config.GenericMap{
-		odigosTrafficMetricsProcessorName: config.GenericMap{
-			"res_attributes_keys": []string{
-				string(semconv.ServiceNameKey),
-				string(semconv.K8SNamespaceNameKey),
-				string(semconv.K8SDeploymentNameKey),
-				string(semconv.K8SStatefulSetNameKey),
-				string(semconv.K8SDaemonSetNameKey),
-				string(semconv.K8SCronJobNameKey),
-				// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
-				// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.
-				// Since DeploymentConfig uses k8s.deployment.name as the semconv key, we need to add this attribute to the list of attributes to be collected.
-				consts.OdigosWorkloadKindAttribute,
-			},
-		},
-		podNameProcessorName: config.GenericMap{
-			"attributes": []config.GenericMap{{
-				"key":    string(semconv.K8SPodNameKey),
-				"value":  "${POD_NAME}",
-				"action": "upsert",
-			}},
-		},
-	}
-
-	uiOtlpEndpoint = fmt.Sprintf("ui.%s:%d", odigosNamespace, consts.OTLPPort)
-	odigosVictoriametricsOtlpHttpEndpoint = fmt.Sprintf("http://odigos-victoriametrics.%s:8428/opentelemetry", odigosNamespace)
-}
-
-func receiversConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusEnabled bool) config.GenericMap {
-	receiversCfg := config.GenericMap{}
-
-	receiversCfg[ownMetricsUiReceiverName] = config.GenericMap{
-		"config": config.GenericMap{
-			"scrape_configs": []config.GenericMap{
-				{
-					"job_name":        "otelcol",
-					"scrape_interval": "10s",
-					"static_configs": []config.GenericMap{
-						{
-							"targets": []string{fmt.Sprintf("127.0.0.1:%d", ownMetricsPort)},
-						},
-					},
-					"metric_relabel_configs": []config.GenericMap{
-						{
-							"source_labels": []string{"__name__"},
-							"regex":         "(.*odigos.*)",
-							"action":        "keep",
-						},
-					},
-				},
-			},
-		},
-	}
-
-	if odigosPrometheusEnabled {
-		receiversCfg[odigosOwnTelemetryOtlpHttpReceiverName] = config.GenericMap{
+func receiversConfigForOwnMetricsPrometheus() config.GenericMap {
+	return config.GenericMap{
+		odigosOwnTelemetryOtlpReceiverName: config.GenericMap{
 			"protocols": config.GenericMap{
 				"grpc": config.GenericMap{
 					"endpoint": "0.0.0.0:44317",
@@ -98,125 +27,85 @@ func receiversConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusEnabled 
 					"endpoint": "0.0.0.0:44318",
 				},
 			},
-		}
+		},
 	}
-
-	return receiversCfg
 }
 
-func serviceTelemetryConfigForOwnMetrics(ownMetricsPort int32, odigosPrometheusEnabled bool, ownMetricsScrapeInterval string) config.Telemetry {
+func serviceTelemetryConfigForOwnMetrics(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings) config.Telemetry {
 
-	metricsReaders := []config.GenericMap{
-		{
-			"pull": config.GenericMap{
-				"exporter": config.GenericMap{
-					"prometheus": config.GenericMap{
-						"host": "0.0.0.0",
-						"port": ownMetricsPort,
-					},
+	// convert interval as duration string to milliseconds
+	duration, err := time.ParseDuration(ownMetricsConfig.Interval)
+	if err != nil {
+		log.Log.Error(err, "failed to parse own metrics interval", "interval", ownMetricsConfig.Interval)
+		return config.Telemetry{}
+	}
+	intervalMs := int64(duration.Milliseconds())
+
+	reader := config.GenericMap{
+		"periodic": config.GenericMap{
+			"interval": intervalMs,
+			"exporter": config.GenericMap{
+				"otlp": config.GenericMap{
+					"endpoint": "http://localhost:44318",
+					"insecure": true,
+					"protocol": "http/protobuf",
 				},
 			},
 		},
 	}
 
-	if odigosPrometheusEnabled {
-		// convert interval as duration string to milliseconds
-		intervalMs := 10000
-		if ownMetricsScrapeInterval != "" {
-			interval, err := time.ParseDuration(ownMetricsScrapeInterval)
-			if err == nil {
-				intervalMs = int(interval.Milliseconds())
-			}
-		}
-		metricsReaders = append(metricsReaders, config.GenericMap{
-			"periodic": config.GenericMap{
-				"interval": intervalMs,
-				"exporter": config.GenericMap{
-					"otlp": config.GenericMap{
-						"endpoint": "http://localhost:44318",
-						"insecure": true,
-						"protocol": "http/protobuf",
-					},
-				},
-			},
-		})
-	}
-
-	podNameFromEnv := "${POD_NAME}"
-	nodeNameFromEnv := "${NODE_NAME}"
 	return config.Telemetry{
-		Metrics: config.GenericMap{
-			"level":   "detailed",
-			"readers": metricsReaders,
-		},
-		Resource: map[string]*string{
-			// The collector add "otelcol" as a service name, so we need to remove it
-			// to avoid duplication, since we are interested in the instrumented services.
-			string(semconv.ServiceNameKey): nil,
-			// The collector adds its own version as a service version, which is not needed currently.
-			string(semconv.ServiceVersionKey): nil,
-			string(semconv.K8SPodNameKey):     &podNameFromEnv,
-			string(semconv.K8SNodeNameKey):    &nodeNameFromEnv,
+		Metrics: config.MetricsConfig{
+			Readers: []config.GenericMap{reader},
 		},
 	}
 }
 
-func ownMetricsExporters(odigosPrometheusEnabled bool) config.GenericMap {
-	exporters := config.GenericMap{
-		ownMetricsExporterName: config.GenericMap{
-			"endpoint": uiOtlpEndpoint,
-			"retry_on_failure": config.GenericMap{
-				"enabled": false,
-			},
-			"tls": config.GenericMap{
-				"insecure": true,
-			},
-		},
-	}
-	if odigosPrometheusEnabled {
-		exporters[odigosVictoriametricsExporterName] = config.GenericMap{
-			"endpoint": odigosVictoriametricsOtlpHttpEndpoint,
-			"retry_on_failure": config.GenericMap{
-				"enabled": false,
-			},
-			"tls": config.GenericMap{
-				"insecure": true,
+func ownMetricsExporters(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string) config.GenericMap {
+	odigosVictoriametricsOtlpHttpEndpoint := fmt.Sprintf("http://odigos-victoriametrics.%s:8428/opentelemetry", odigosNamespace)
+	if ownMetricsConfig.SendToOdigosMetricsStore {
+		return config.GenericMap{
+			odigosVictoriametricsExporterName: config.GenericMap{
+				"endpoint": odigosVictoriametricsOtlpHttpEndpoint,
+				"retry_on_failure": config.GenericMap{
+					"enabled": false,
+				},
+				"tls": config.GenericMap{
+					"insecure": true,
+				},
 			},
 		}
 	}
-	return exporters
+	return config.GenericMap{}
 }
 
-func ownMetricsPipelines(odigosPrometheusEnabled bool) map[string]config.Pipeline {
-	pipelines := map[string]config.Pipeline{
-		ownMetricsUiPipelineName: {
-			Receivers:  []string{ownMetricsUiReceiverName},
-			Processors: []string{podNameProcessorName},
-			Exporters:  []string{ownMetricsExporterName},
-		},
+func ownMetricsPipelines(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings) map[string]config.Pipeline {
+
+	if !ownMetricsConfig.SendToOdigosMetricsStore {
+		return map[string]config.Pipeline{}
 	}
-	if odigosPrometheusEnabled {
-		pipelines[ownMetricsPrometheusPipelineName] = config.Pipeline{
-			Receivers: []string{odigosOwnTelemetryOtlpHttpReceiverName},
+
+	return map[string]config.Pipeline{
+		ownMetricsStorePipelineName: config.Pipeline{
+			Receivers: []string{odigosOwnTelemetryOtlpReceiverName},
 			Exporters: []string{odigosVictoriametricsExporterName},
-		}
+		},
 	}
-	return pipelines
 }
 
-// returns the collector config part that is needed for the collector own metrics pipeline
-// merge it with other configs to get the full collector config
-// Notice: this config part requires that you add the OdigosTrafficMetricsProcessorName processor
-// to any pipeline for user telemetry to work correctly
-func OwnMetricsConfig(ownMetricsPort int32, odigosPrometheusEnabled bool, ownMetricsScrapeInterval string) config.Config {
+func OwnMetricsConfigPrometheus(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string) (config.Config, []string) {
+
+	var additionalMetricsReceivers []string
+	if ownMetricsConfig.SendToMetricsDestinations {
+		additionalMetricsReceivers = append(additionalMetricsReceivers, odigosOwnTelemetryOtlpReceiverName)
+	}
 
 	return config.Config{
-		Receivers:  receiversConfigForOwnMetrics(ownMetricsPort, odigosPrometheusEnabled),
-		Exporters:  ownMetricsExporters(odigosPrometheusEnabled),
-		Processors: staticOwnMetricsProcessors,
+		Receivers: receiversConfigForOwnMetricsPrometheus(),
+		Exporters: ownMetricsExporters(ownMetricsConfig, odigosNamespace),
 		Service: config.Service{
-			Pipelines: ownMetricsPipelines(odigosPrometheusEnabled),
-			Telemetry: serviceTelemetryConfigForOwnMetrics(ownMetricsPort, odigosPrometheusEnabled, ownMetricsScrapeInterval),
+			Pipelines: ownMetricsPipelines(ownMetricsConfig),
+			Telemetry: serviceTelemetryConfigForOwnMetrics(ownMetricsConfig),
 		},
-	}
+	}, additionalMetricsReceivers
 }
