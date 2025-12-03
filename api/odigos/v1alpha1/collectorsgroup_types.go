@@ -83,8 +83,23 @@ type ServiceGraphSettings struct {
 	// here so we can add service graph settings in the future without breaking backwards compatibility
 }
 
+// configuration for collecting and exporting odigos own metrics.
+// e.g. metrics about odigos components, and not about the user's application.
 type OdigosOwnMetricsSettings struct {
-	// here so we can add odigos own metrics settings in the future without breaking backwards compatibility
+
+	// if true, odigos will send all the metrics it collects about itself to the metrics pipeline,
+	// which will make them available to the metrics destinations.
+	// users can troubleshoot odigos itself by monitoring these metrics in their existing systems,
+	// and create their own dashboards, alerting, and more.
+	SendToMetricsDestinations bool `json:"sendToMetricsDestinations,omitempty"`
+
+	// if true, odigos will send all the metrics it collects about itself to the odigos metrics store,
+	// which is available to odigos UI.
+	// it can help in presenting a consistent view of odigos itself, without relying on user system and integrations.
+	SendToOdigosMetricsStore bool `json:"sendToOdigosMetricsStore,omitempty"`
+
+	// time interval for flusing metrics (format: 15s, 1m etc). defaults: 10s
+	Interval string `json:"interval,omitempty"`
 }
 
 type AgentsTelemetrySettings struct {
@@ -177,15 +192,6 @@ type CollectorsGroupSpec struct {
 	// it allows for the collector group reconciler to be simplified,
 	// and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.
 	Metrics *CollectorsGroupMetricsCollectionSettings `json:"metrics,omitempty"`
-
-	// wether to setup and collect own telemetry in the collector.
-	// currently, it is used to send odigos own metrics to the odigos prometheus (internal metrics store).
-	OwnTelemetryEnabled bool `json:"ownTelemetryEnabled,omitempty"`
-
-	// the interval at which odigos will scrape own metrics from itself if own telemetry is enabled.
-	// format: duration string (15s, 1m, etc).
-	// default is 10s.
-	OwnMetricsScrapeInterval string `json:"ownMetricsScrapeInterval,omitempty"`
 
 	// Node selector for the collectors group deployment.
 	// Use this to force the gateway to run only on nodes with specific labels.

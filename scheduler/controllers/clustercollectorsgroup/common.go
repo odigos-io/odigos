@@ -14,7 +14,7 @@ import (
 )
 
 func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool, clusterMetricsEnabled *bool,
-	httpsProxyAddress *string, nodeSelector *map[string]string, ownTelemetryEnabled bool) *odigosv1.CollectorsGroup {
+	httpsProxyAddress *string, nodeSelector *map[string]string) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -31,7 +31,6 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 			ServiceGraphDisabled:    serviceGraphDisabled,
 			ClusterMetricsEnabled:   clusterMetricsEnabled,
 			HttpsProxyAddress:       httpsProxyAddress,
-			OwnTelemetryEnabled:     ownTelemetryEnabled,
 			NodeSelector:            nodeSelector,
 		},
 	}
@@ -61,10 +60,6 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 		clusterMetricsEnabled = &result
 	}
 
-	ownTelemetryEnabled := true
-	if odigosConfiguration.OdigosMetrics.Disabled != nil && *odigosConfiguration.OdigosMetrics.Disabled {
-		ownTelemetryEnabled = false
-	}
 	nodeSelector := odigosConfiguration.CollectorGateway.NodeSelector
 
 	// cluster collector is always set and never deleted at the moment.
@@ -72,7 +67,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	// and started.
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
-	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress, nodeSelector, ownTelemetryEnabled)
+	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress, nodeSelector)
 	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
 		return err

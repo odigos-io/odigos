@@ -209,7 +209,7 @@ func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroup
 	if metricsSettings.CollectOdigosOwnMetrics != nil && *metricsSettings.CollectOdigosOwnMetrics {
 		metricsConfig.OdigosOwnMetrics = &odigosv1.OdigosOwnMetricsSettings{}
 	}
-	// default agents telemetry collection to "true"
+	// default agents telemetry collection to "false"
 	if metricsSettings.CollectAgentsTelemetry == nil || *metricsSettings.CollectAgentsTelemetry {
 		metricsConfig.AgentsTelemetry = &odigosv1.AgentsTelemetrySettings{}
 	}
@@ -218,6 +218,24 @@ func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroup
 func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDestinations odigosv1.DestinationList) *odigosv1.CollectorsGroup {
 
 	var metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings
+
+	ownMetricsInterval := "10s"
+	if odigosConfiguration.MetricsSources != nil &&
+		odigosConfiguration.MetricsSources.OdigosOwnMetrics != nil &&
+		odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval != "" {
+
+		ownMetricsInterval = odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval
+	}
+
+	ownMetricsLocalStorageEnabled := false
+	if odigosConfiguration.OdigosOwnTelemetryStore == nil ||
+		odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled == nil ||
+		!*odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled {
+
+		ownMetricsLocalStorageEnabled = true
+	}
+
+	ownMetricsSendToMetricsDestinations := false
 	for _, destination := range allDestinations.Items {
 		if destination.Spec.Disabled != nil && *destination.Spec.Disabled {
 			// skip disabled destinations
@@ -234,11 +252,16 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		if !slices.Contains(destination.Spec.Signals, common.MetricsObservabilitySignal) {
 			continue
 		}
+
+		// only collect own metrics to destination if at least one destination is interested in collecting them
+		if destination.Spec.MetricsSettings != nil && destination.Spec.MetricsSettings.CollectOdigosOwnMetrics != nil && *destination.Spec.MetricsSettings.CollectOdigosOwnMetrics {
+			ownMetricsSendToMetricsDestinations = true
+		}
+
 		if metricsConfig == nil {
 			// setting it to non null is an indicator that metrics are enabled
 			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
 		}
-
 		updateMetricsSettingsForDestination(metricsConfig, &odigosConfiguration, destination, destinationTypeManifest)
 	}
 
@@ -261,18 +284,15 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		}
 	}
 
-	ownTelemetryEnabled := true
-	ownMetricsScrapeInterval := "10s"
-
-	if odigosConfiguration.OdigosMetrics != nil {
-
-		if odigosConfiguration.OdigosMetrics.Disabled != nil && *odigosConfiguration.OdigosMetrics.Disabled {
-			ownTelemetryEnabled = false
-			ownMetricsScrapeInterval = "" // unset if own telemetry is disabled
-		} else {
-			if odigosConfiguration.OdigosMetrics.ScrapeInterval != "" {
-				ownMetricsScrapeInterval = odigosConfiguration.OdigosMetrics.ScrapeInterval
-			}
+	// set the own metrics on metrics config if enabled
+	if ownMetricsLocalStorageEnabled || ownMetricsSendToMetricsDestinations {
+		if metricsConfig == nil {
+			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
+		}
+		metricsConfig.OdigosOwnMetrics = &odigosv1.OdigosOwnMetricsSettings{
+			SendToMetricsDestinations: ownMetricsSendToMetricsDestinations,
+			SendToOdigosMetricsStore:  ownMetricsLocalStorageEnabled,
+			Interval:                  ownMetricsInterval,
 		}
 	}
 
@@ -291,9 +311,7 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			K8sNodeLogsDirectory:      k8sNodeLogsDirectory,
 			ResourcesSettings:         getResourceSettings(odigosConfiguration),
 			OtlpExporterConfiguration: otlpExporterConfiguration,
-			Metrics:                   metricsConfig, // not nil if any destination has metrics enabled
-			OwnTelemetryEnabled:       ownTelemetryEnabled,
-			OwnMetricsScrapeInterval:  ownMetricsScrapeInterval,
+			Metrics:                   metricsConfig,
 		},
 	}
 }
