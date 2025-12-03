@@ -1,0 +1,19 @@
+apiVersion: odigos.io/v1alpha1
+kind: NodeDetails
+metadata:
+  name: kind-control-plane
+spec:
+  (cpuCapacity != null): true
+  (kernelVersion != null): true
+  (memoryCapacity != null): true
+  waspEnabled: false
+----
+apiVersion: odigos.io/v1alpha1
+kind: NodeDetails
+metadata:
+  name: kind-worker
+spec:
+  (cpuCapacity != null): true
+  (kernelVersion != null): true
+  (memoryCapacity != null): true
+  waspEnabled: false
