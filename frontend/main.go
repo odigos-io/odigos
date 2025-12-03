@@ -315,7 +315,7 @@ func main() {
 	}
 
 	var promAPI v1.API
-	metricsURL := fmt.Sprintf("http://odigos-victoriametrics.%s.svc:8428", flags.Namespace)
+	metricsURL := fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
 	if api, err := metrics.NewAPIFromURL(metricsURL); err != nil {
 		log.Printf("Warning: failed to initialize VictoriaMetrics API (url=%s): %v", metricsURL, err)
 	} else {

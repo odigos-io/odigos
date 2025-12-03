@@ -30,7 +30,7 @@ func GetOdigletPodsWithMetrics(ctx context.Context, api v1.API) ([]*model.PodInf
 	}
 
 	ns := env.GetCurrentNamespace()
-	ratesByPod, err := metrics.GetOdigletCollectorMetrics(ctx, api, ns, names, metrics.DefaultMetricsWindow())
+	ratesByPod, err := metrics.GetDataCollectorContainerMetrics(ctx, api, ns, names, metrics.DefaultMetricsWindow)
 	if err != nil {
 		return pods, nil
 	}
