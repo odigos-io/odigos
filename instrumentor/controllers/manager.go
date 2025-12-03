@@ -221,5 +221,15 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 		&admission.Webhook{Handler: webhook},
 	)
 
+	// Register webhook for odiglet pods
+	odigletWebhook := &OdigletPodsWebhook{
+		Client:  mgr.GetClient(),
+		Decoder: decoder,
+	}
+	mgr.GetWebhookServer().Register(
+		"/mutate-odiglet-pod",
+		&admission.Webhook{Handler: odigletWebhook},
+	)
+
 	return nil
 }

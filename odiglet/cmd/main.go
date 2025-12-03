@@ -43,7 +43,7 @@ func main() {
 
 	// If started in init mode
 	if len(os.Args) == 2 && os.Args[1] == "init" {
-		odiglet.OdigletInitPhase(clientset)
+		odiglet.OdigletInitPhase(cfg, clientset)
 	}
 
 	if err := log.Init(); err != nil {

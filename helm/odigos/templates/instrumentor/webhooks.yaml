@@ -93,6 +93,45 @@ webhooks:
     timeoutSeconds: 10
     admissionReviewVersions: ["v1"]
 ---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: odigos-odiglet-pod-mutating-webhook-configuration
+  labels:
+    app.kubernetes.io/name: odigos-odiglet-pod-mutating-webhook
+    app.kubernetes.io/instance: odigos-odiglet-pod-mutating-webhook-configuration
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: instrumentor
+    app.kubernetes.io/part-of: odigos
+    odigos.io/system-object: "true"
+webhooks:
+  - name: odigos-odiglet-pod-mutating-webhook.odigos.io
+    clientConfig:
+      service:
+        name: odigos-instrumentor
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-odiglet-pod
+        port: 9443
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+        scope: Namespaced
+    objectSelector:
+      matchLabels:
+        app.kubernetes.io/name: odiglet
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: {{ .Release.Namespace }}
+    failurePolicy: Ignore
+    reinvocationPolicy: Never
+    sideEffects: None
+    timeoutSeconds: 10
+    admissionReviewVersions: ["v1"]
+---
 apiVersion: v1
 kind: Secret
 metadata:

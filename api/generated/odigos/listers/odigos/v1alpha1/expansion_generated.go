@@ -65,6 +65,14 @@ type InstrumentationRuleListerExpansion interface{}
 // InstrumentationRuleNamespaceLister.
 type InstrumentationRuleNamespaceListerExpansion interface{}
 
+// NodeDetailsListerExpansion allows custom methods to be added to
+// NodeDetailsLister.
+type NodeDetailsListerExpansion interface{}
+
+// NodeDetailsNamespaceListerExpansion allows custom methods to be added to
+// NodeDetailsNamespaceLister.
+type NodeDetailsNamespaceListerExpansion interface{}
+
 // ProcessorListerExpansion allows custom methods to be added to
 // ProcessorLister.
 type ProcessorListerExpansion interface{}

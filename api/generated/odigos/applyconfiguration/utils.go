@@ -109,6 +109,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OdigosOwnMetricsSettings"):
 		return &odigosv1alpha1.OdigosOwnMetricsSettingsApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("NodeDetails"):
+		return &odigosv1alpha1.NodeDetailsApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("NodeDetailsSpec"):
+		return &odigosv1alpha1.NodeDetailsSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtherAgent"):
 		return &odigosv1alpha1.OtherAgentApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Processor"):
