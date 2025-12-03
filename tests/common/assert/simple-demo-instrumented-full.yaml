@@ -393,7 +393,7 @@ status:
   runtimeDetailsByContainer:
     - containerName: inventory
       language: python
-      runtimeVersion: 3.11.13
+      runtimeVersion: 3.11.14
 ---
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
