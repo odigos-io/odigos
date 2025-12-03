@@ -2,6 +2,7 @@ package runtime_details
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -26,11 +27,77 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var errNoKnownLanguageDetected = errors.New("no known programming language detected in the container")
+
+// relevantProcessesDetailsInContainer filters the processes in a container to find those relevant:
+// a relevant process is one that matches the selected programming language for the container.
+// The selected programming language is determined based on the known languages detected in the container's processes.
+// If multiple languages are detected, specific rules are applied to select the main language.
+// Some combinations of detected languages result in an error, as they indicate ambiguity in determining the main language.
+func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLanguageDetails, processes []procdiscovery.Details) ([]procdiscovery.Details, common.ProgramLanguageDetails, error) {
+	uniqueLangs := make(map[common.ProgrammingLanguage]struct{})
+	for _, langDetails := range knownLangByPid {
+		uniqueLangs[langDetails.Language] = struct{}{}
+	}
+
+	uniqueLangsSlice := make([]common.ProgrammingLanguage, 0, len(uniqueLangs))
+	for lang := range uniqueLangs {
+		if lang != common.UnknownProgrammingLanguage {
+			uniqueLangsSlice = append(uniqueLangsSlice, lang)
+		}
+	}
+
+	// resolve the language detected for the container
+	// depending on the number of unique languages detected and their types
+	selectedLangDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
+	switch len(uniqueLangsSlice) {
+	case 0:
+		return nil, selectedLangDetails, errNoKnownLanguageDetected
+	case 1:
+		selectedLangDetails.Language = uniqueLangsSlice[0]
+	case 2:
+		switch {
+		// c++ can be a wrapper of script etc.
+		// we want to detect the "later" language to get the real application.
+		// but we also want to detect c++ if it is the only language detected.
+		// hence if c++ is detected with another language, we select the other language.
+		case uniqueLangsSlice[0] == common.CPlusPlusProgrammingLanguage:
+			selectedLangDetails.Language = uniqueLangsSlice[1]
+		case uniqueLangsSlice[1] == common.CPlusPlusProgrammingLanguage:
+			selectedLangDetails.Language = uniqueLangsSlice[0]
+		default:
+			return nil, selectedLangDetails, fmt.Errorf("two different programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
+		}
+	default:
+		return nil, selectedLangDetails, fmt.Errorf("more than two programming languages detected in the same container, cannot determine the main language: %v", uniqueLangsSlice)
+	}
+
+	// construct the list of relevant processes and determine runtime version if possible
+	// relevant processes are those that match the selected programming language
+	relevantProcesses := make([]procdiscovery.Details, 0)
+	uniqueRuntimeVersions := make(map[string]struct{})
+	for _, proc := range processes {
+		if langDetails, exists := knownLangByPid[proc.ProcessID]; exists && langDetails.Language == selectedLangDetails.Language {
+			relevantProcesses = append(relevantProcesses, proc)
+			if langDetails.RuntimeVersion != "" {
+				uniqueRuntimeVersions[langDetails.RuntimeVersion] = struct{}{}
+			}
+		}
+	}
+
+	if len(uniqueRuntimeVersions) == 1 {
+		for version := range uniqueRuntimeVersions {
+			selectedLangDetails.RuntimeVersion = version
+		}
+	}
+
+	return relevantProcesses, selectedLangDetails, nil
+}
+
 func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) ([]odigosv1.RuntimeDetailsByContainer, error) {
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
-
 			processes, err := process.FindAllInContainer(string(pod.UID), container.Name, runtimeDetectionEnvs)
 			if err != nil {
 				log.Logger.Error(err, "failed to find processes in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
@@ -41,40 +108,45 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 				continue
 			}
 
-			programLanguageDetails := common.ProgramLanguageDetails{Language: common.UnknownProgrammingLanguage}
-			var inspectProc *procdiscovery.Details
-			var detectErr error
+			// map of known programming languages detected by pid in this container
+			knownLangsByPid := make(map[int]common.ProgramLanguageDetails)
 
 			for _, proc := range processes {
 				containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
-				programLanguageDetails, detectErr = inspectors.DetectLanguage(proc, containerURL, log.Logger)
-				if detectErr == nil && programLanguageDetails.Language != common.UnknownProgrammingLanguage {
-					inspectProc = &proc
-
-					// c++ can be a wrapper of script etc.
-					// we want to detect the "later" language to get the real application.
-					// but we also want to detect c++ if it is the only language detected.
-					// so we break only if we have a language other than c++.
-					if programLanguageDetails.Language != common.CPlusPlusProgrammingLanguage {
-						break
-					}
+				langDetails, detectErr := inspectors.DetectLanguage(proc, containerURL, log.Logger)
+				if detectErr == nil && langDetails.Language != common.UnknownProgrammingLanguage {
+					knownLangsByPid[proc.ProcessID] = langDetails
 				}
+			}
+
+			// resolve relevant processes and main language for the container
+			relevantProcesses, langDetails, err := relevantProcessesDetailsInContainer(knownLangsByPid, processes)
+			if err != nil {
+				switch {
+				case errors.Is(err, errNoKnownLanguageDetected):
+					log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace, "processes", processes)
+				default:
+					log.Logger.Error(err, "error determining relevant processes and main language", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+				}
+				langDetails.Language = common.UnknownProgrammingLanguage
 			}
 
 			envs := make([]odigosv1.EnvVar, 0)
 			var detectedAgent *odigosv1.OtherAgent
 			var libcType *common.LibCType
 			var secureExecutionMode *bool
+			var inspectProc *procdiscovery.Details
 
-			if inspectProc == nil {
+			if len(relevantProcesses) == 0 || langDetails.Language == common.UnknownProgrammingLanguage {
 				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace, "processes", processes)
-				programLanguageDetails.Language = common.UnknownProgrammingLanguage
+				langDetails.Language = common.UnknownProgrammingLanguage
 			} else {
-				if len(processes) > 1 {
+				if len(relevantProcesses) > 1 {
 					log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				}
 
 				// Convert map to slice for k8s format
+				inspectProc = &relevantProcesses[0]
 				envs = make([]odigosv1.EnvVar, 0, len(inspectProc.Environments.DetailedEnvs))
 
 				for envName, envValue := range inspectProc.Environments.OverwriteEnvs {
@@ -101,7 +173,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 				}
 
 				// Inspecting libc type is expensive and not relevant for all languages
-				if libc.ShouldInspectForLanguage(programLanguageDetails.Language) {
+				if libc.ShouldInspectForLanguage(langDetails.Language) {
 					typeFound, err := libc.InspectType(inspectProc)
 					if err == nil {
 						libcType = typeFound
@@ -113,15 +185,10 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 				secureExecutionMode = inspectProc.SecureExecutionMode
 			}
 
-			var runtimeVersion string
-			if programLanguageDetails.RuntimeVersion != nil {
-				runtimeVersion = programLanguageDetails.RuntimeVersion.String()
-			}
-
 			resultsMap[container.Name] = odigosv1.RuntimeDetailsByContainer{
 				ContainerName:       container.Name,
-				Language:            programLanguageDetails.Language,
-				RuntimeVersion:      runtimeVersion,
+				Language:            langDetails.Language,
+				RuntimeVersion:      langDetails.RuntimeVersion,
 				EnvVars:             envs,
 				OtherAgent:          detectedAgent,
 				LibCType:            libcType,
@@ -130,7 +197,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 
 			if inspectProc != nil {
 				procEnvVars := inspectProc.Environments.OverwriteEnvs
-				updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, programLanguageDetails, &resultsMap, procEnvVars)
+				updateRuntimeDetailsWithContainerRuntimeEnvs(ctx, *criClient, pod, container, langDetails, &resultsMap, procEnvVars)
 			}
 
 		}

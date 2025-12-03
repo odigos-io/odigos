@@ -116,8 +116,9 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 			assert.Equal(t, []string{"prometheus/self-metrics"}, c.Service.Pipelines["metrics/otelcol"].Receivers)
 			assert.Equal(t, []string{"resource/pod-name"}, c.Service.Pipelines["metrics/otelcol"].Processors)
 			assert.Equal(t, []string{"otlp/odigos-own-telemetry-ui"}, c.Service.Pipelines["metrics/otelcol"].Exporters)
-			port := c.Service.Telemetry.Metrics["readers"].([]config.GenericMap)[0]["pull"].(config.GenericMap)["exporter"].(config.GenericMap)["prometheus"].(config.GenericMap)["port"]
-			address := c.Service.Telemetry.Metrics["readers"].([]config.GenericMap)[0]["pull"].(config.GenericMap)["exporter"].(config.GenericMap)["prometheus"].(config.GenericMap)["host"]
+			pullExporter := c.Service.Telemetry.Metrics.Readers[0]["pull"].(config.GenericMap)["exporter"].(config.GenericMap)
+			port := pullExporter["prometheus"].(config.GenericMap)["port"]
+			address := pullExporter["prometheus"].(config.GenericMap)["host"]
 			assert.Equal(t, k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault, port)
 			assert.Equal(t, "0.0.0.0", address)
 			for pipelineName, pipeline := range c.Service.Pipelines {

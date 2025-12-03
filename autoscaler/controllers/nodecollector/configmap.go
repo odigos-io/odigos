@@ -139,17 +139,7 @@ func calculateCollectorConfigDomains(
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
-	ownTelemetryEnabled := false
-	ownMetricsScrapeInterval := "10s"
-	if nodeCG != nil {
-		ownMetricsPort = nodeCG.Spec.CollectorOwnMetricsPort
-		ownTelemetryEnabled = nodeCG.Spec.OwnTelemetryEnabled
-		if nodeCG.Spec.OwnMetricsScrapeInterval != "" {
-			ownMetricsScrapeInterval = nodeCG.Spec.OwnMetricsScrapeInterval
-		}
-	}
-
-	configDomains["own_metrics"] = collectorconfig.OwnMetricsConfig(ownMetricsPort, ownTelemetryEnabled, ownMetricsScrapeInterval)
+	configDomains["own_metrics_ui"] = collectorconfig.OwnMetricsConfigUi(ownMetricsPort)
 
 	// all the rest of the config is only evaluated if the node collector group is not nil
 	// node collector group is nil before any sources are added in odigos or cluster collector is not yet ready.
@@ -164,6 +154,14 @@ func calculateCollectorConfigDomains(
 			return nil, "", errors.Join(err, errors.New("failed to marshal merged config to yaml"))
 		}
 		return configDomains, string(mergedConfigYaml), nil
+	}
+
+	additionalMetricsReceivers := []string{}
+	if nodeCG.Spec.Metrics != nil {
+		ownMetricsConfig := nodeCG.Spec.Metrics.OdigosOwnMetrics
+		if ownMetricsConfig != nil {
+			configDomains["own_metrics"], additionalMetricsReceivers = collectorconfig.OwnMetricsConfigPrometheus(ownMetricsConfig, odigosNamespace)
+		}
 	}
 
 	// processors from k8s "Processor" custom resource
@@ -183,7 +181,6 @@ func calculateCollectorConfigDomains(
 	if metricsEnabled && metricsConfigSettings != nil {
 
 		// span metrics
-		additionalMetricsRecivers := []string{}
 		if metricsConfigSettings.SpanMetrics != nil {
 			spanMetricsConfig, additionalSpanMetricsTraceExporters, _ := collectorconfig.GetSpanMetricsConfig(*metricsConfigSettings.SpanMetrics)
 			additionalTraceExporters = append(additionalTraceExporters, additionalSpanMetricsTraceExporters...)
@@ -191,11 +188,11 @@ func calculateCollectorConfigDomains(
 			// this is to allow span metrics to be reported without any additional metric resource attributes.
 			// once finer control is implemented as to what resource attributes are included in the metrics pipeline,
 			// we can send span metrics back into the normal metrics pipeline.
-			// additionalMetricsRecivers = append(additionalMetricsRecivers, additionalSpanMetricsMetricsReceivers...)
+			// additionalMetricsReceivers = append(additionalMetricsReceivers, additionalSpanMetricsMetricsReceivers...)
 			configDomains["span_metrics"] = spanMetricsConfig
 		}
 
-		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, processorsResults.MetricsProcessors, additionalMetricsRecivers, metricsConfigSettings)
+		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, processorsResults.MetricsProcessors, additionalMetricsReceivers, metricsConfigSettings)
 		configDomains["metrics"] = metricsConfig
 	}
 

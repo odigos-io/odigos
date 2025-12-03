@@ -9,7 +9,7 @@ import (
 
 type ProgramLanguageDetails struct {
 	Language       ProgrammingLanguage
-	RuntimeVersion *version.Version
+	RuntimeVersion string
 }
 
 // +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;cplusplus;mysql;nginx;redis;postgres;unknown;ignored
