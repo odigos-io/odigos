@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { useTokenCRUD } from '.';
 import { useStatusStore } from '@/store';
 import { useTimeAgo } from '@odigos/ui-kit/hooks';
-import { isOverTime } from '@odigos/ui-kit/functions';
 import { StatusType } from '@odigos/ui-kit/types';
+import { isOverTime } from '@odigos/ui-kit/functions';
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { DISPLAY_TITLES, TOKEN_ABOUT_TO_EXPIRE } from '@odigos/ui-kit/constants';
 

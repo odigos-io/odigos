@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "cross-env NODE_ENV=production next build",
-    "build:analyze": "cross-env ANALYZE=true next build",
+    "dev": "next dev --turbopack",
+    "prebuild": "rm -rf out .next",
+    "build": "cross-env NODE_ENV=production next build --turbopack",
     "back:build": "cd .. && go build -o odigos-backend",
     "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
     "cy:run": "cypress run --e2e -q",
@@ -15,9 +15,9 @@
   "dependencies": {
     "@apollo/client": "^3.13.9",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
-    "@odigos/ui-kit": "^0.0.133",
+    "@odigos/ui-kit": "^0.0.134",
     "graphql": "^16.12.0",
-    "next": "15.5.6",
+    "next": "15.5.7",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-error-boundary": "^6.0.0",
@@ -25,16 +25,15 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^15.5.6",
+    "@next/bundle-analyzer": "^16.0.7",
     "@types/node": "24.10.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "autoprefixer": "^10.4.22",
-    "compression-webpack-plugin": "^11.1.0",
     "cross-env": "^10.1.0",
-    "cypress": "^14.5.4",
+    "cypress": "^15.7.1",
     "eslint": "9.39.1",
-    "eslint-config-next": "15.5.6",
+    "eslint-config-next": "16.0.7",
     "postcss": "^8.5.6",
     "typescript": "5.9.3"
   }
