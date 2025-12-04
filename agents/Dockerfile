@@ -110,7 +110,7 @@ COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ru
 
 # loader
 ARG TARGETARCH
-ARG ODIGOS_LOADER_VERSION=v0.0.5
+ARG ODIGOS_LOADER_VERSION=v0.0.6
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 
