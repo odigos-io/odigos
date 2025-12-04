@@ -1,4 +1,4 @@
-{{- if not .Values.features.discoveryMode.enabled }}
+{{- if .Values.features.discoveryMode.enabled }}
 {{- $imageTag := .Values.image.tag | default .Chart.AppVersion -}}
 {{- $signals := .Values.signals | default (list "traces") -}}
 {{- $collectLogs := has "logs" $signals -}}
@@ -123,12 +123,15 @@ spec:
           {{- end }}
           args:
             - --health-probe-bind-port={{ .Values.odiglet.odiglet.livenessProbe.httpGet.port }}
+            - discovery
           {{- if .Values.odiglet.traceIdSuffix }}
             - --trace-id-suffix={{ .Values.odiglet.traceIdSuffix }}
           {{- end }}
-          {{- if .Values.wasp.enabled }}
+
+          {{/* This is the first usecase for the discovery mode, adding it dynamically in the odiglet mutation webhook */}}
+          {{/* {{- if .Values.wasp.enabled }}
             - --wasp-enabled
-          {{- end }}
+          {{- end }} */}}
           command:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
@@ -152,10 +155,6 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }} # end of securityContext
-          livenessProbe:
-{{ toYaml .Values.odiglet.odiglet.livenessProbe | indent 12 }}
-          readinessProbe:
-{{ toYaml .Values.odiglet.odiglet.readinessProbe | indent 12 }}
           resources:
 {{ include "odigos.odiglet.resolvedResources" . | indent 12 }}
           env:
@@ -175,6 +174,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
             - name: OTEL_LOG_LEVEL
               value: info
           {{- if include "odigos.secretExists" . }}

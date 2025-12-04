@@ -75,6 +75,16 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - nodedetailses
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
 ## related to node collector
   - apiGroups:
       - ''

@@ -28,13 +28,14 @@ func DetermineNodeOdigletInstalledLabelByTier() string {
 	}
 }
 
-func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName string) error {
+func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName string) (*v1.Node, error) {
 	ctx := context.Background()
 
 	// Determine Odigos Installed label [OSS/Enterprise]
 	labelKey := DetermineNodeOdigletInstalledLabelByTier()
 
-	return retry.OnError(retry.DefaultBackoff, apierrors.IsConflict, func() error {
+	var preparedNode *v1.Node
+	err := retry.OnError(retry.DefaultBackoff, apierrors.IsConflict, func() error {
 		node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to get node %s: %w", nodeName, err)
@@ -66,7 +67,9 @@ func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName 
 
 		node.Labels[labelKey] = k8sconsts.OdigletInstalledLabelValue
 
-		_, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+		preparedNode, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
 		return err
 	})
+
+	return preparedNode, err
 }

@@ -81,6 +81,10 @@ var CRDsList = []map[string]string{
 		CRDName:  "collectorsgroups",
 		CRDGroup: odigosGroupName,
 	},
+	{
+		CRDName:  "nodedetailses",
+		CRDGroup: odigosGroupName,
+	},
 }
 
 func FetchOdigosCRs(ctx context.Context, kubeClient *kube.Client, crdDir string) error {
