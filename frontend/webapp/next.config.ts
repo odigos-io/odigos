@@ -23,9 +23,7 @@ const nextConfig: NextConfig = {
   // Enable experimental optimizations
   experimental: {
     // Enable tree shaking for better bundle optimization
-    optimizePackageImports: ['@odigos/ui-kit', '@apollo/client', 'graphql', 'zustand', 'styled-components', 'react', 'react-dom'],
-    turbopackFileSystemCacheForDev: true,
-    turbopackFileSystemCacheForBuild: false,
+    optimizePackageImports: ['@odigos/ui-kit', '@apollo/client', '@apollo/experimental-nextjs-app-support', 'graphql', 'react', 'react-dom', 'react-error-boundary', 'styled-components', 'zustand'],
   },
   // Turbopack configuration (empty config silences the warning)
   turbopack: {},
