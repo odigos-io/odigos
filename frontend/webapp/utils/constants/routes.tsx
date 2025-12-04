@@ -10,6 +10,7 @@ export const ROUTES = {
   ACTIONS: '/actions',
   INSTRUMENTATION_RULES: '/instrumentation-rules',
   SERVICE_MAP: '/service-map',
+  PIPELINE_COLLECTORS: '/pipeline-collectors',
 };
 
 export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';

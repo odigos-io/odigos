@@ -8,6 +8,7 @@ export * from './instrumentation-rules';
 export * from './metrics';
 export * from './namespaces';
 export * from './notification';
+export * from './pipeline-collectors';
 export * from './metrics';
 export * from './sources';
 export * from './tokens';

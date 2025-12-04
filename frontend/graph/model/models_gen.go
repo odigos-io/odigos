@@ -152,6 +152,7 @@ type CollectorDaemonSetInfo struct {
 	ImageVersion      *string               `json:"imageVersion,omitempty"`
 	LastRolloutAt     *string               `json:"lastRolloutAt,omitempty"`
 	RolloutInProgress bool                  `json:"rolloutInProgress"`
+	ManifestYaml      string                `json:"manifestYAML"`
 }
 
 type ComputePlatform struct {
@@ -337,6 +338,7 @@ type GatewayDeploymentInfo struct {
 	ImageVersion      *string                      `json:"imageVersion,omitempty"`
 	LastRolloutAt     *string                      `json:"lastRolloutAt,omitempty"`
 	RolloutInProgress bool                         `json:"rolloutInProgress"`
+	ManifestYaml      string                       `json:"manifestYAML"`
 }
 
 type GetConfigResponse struct {
@@ -857,6 +859,7 @@ type PodDetails struct {
 }
 
 type PodInfo struct {
+	Namespace         string  `json:"namespace"`
 	Name              string  `json:"name"`
 	Ready             string  `json:"ready"`
 	Status            *string `json:"status,omitempty"`
