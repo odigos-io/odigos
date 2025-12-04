@@ -15,6 +15,8 @@ require (
 	github.com/odigos-io/odigos/destinations v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44
+	github.com/prometheus/client_golang v1.22.0
+	github.com/prometheus/common v0.65.0
 	github.com/stretchr/testify v1.11.1
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.36.0
@@ -50,6 +52,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.opentelemetry.io/collector/config/configmiddleware v0.130.0 // indirect
 	go.opentelemetry.io/collector/extension/extensionmiddleware v0.130.0 // indirect

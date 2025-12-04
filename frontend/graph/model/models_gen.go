@@ -154,6 +154,15 @@ type CollectorDaemonSetInfo struct {
 	RolloutInProgress bool                  `json:"rolloutInProgress"`
 }
 
+type CollectorPodMetrics struct {
+	MetricsAcceptedRps float64 `json:"metricsAcceptedRps"`
+	MetricsDroppedRps  float64 `json:"metricsDroppedRps"`
+	ExporterSuccessRps float64 `json:"exporterSuccessRps"`
+	ExporterFailedRps  float64 `json:"exporterFailedRps"`
+	Window             string  `json:"window"`
+	LastScrape         *string `json:"lastScrape,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	APITokens            []*APIToken            `json:"apiTokens"`
@@ -857,13 +866,15 @@ type PodDetails struct {
 }
 
 type PodInfo struct {
-	Name              string  `json:"name"`
-	Ready             string  `json:"ready"`
-	Status            *string `json:"status,omitempty"`
-	RestartsCount     int     `json:"restartsCount"`
-	NodeName          string  `json:"nodeName"`
-	CreationTimestamp string  `json:"creationTimestamp"`
-	Image             string  `json:"image"`
+	Name              string               `json:"name"`
+	Namespace         string               `json:"namespace"`
+	Ready             string               `json:"ready"`
+	Status            *string              `json:"status,omitempty"`
+	RestartsCount     int                  `json:"restartsCount"`
+	NodeName          string               `json:"nodeName"`
+	CreationTimestamp string               `json:"creationTimestamp"`
+	Image             string               `json:"image"`
+	CollectorMetrics  *CollectorPodMetrics `json:"collectorMetrics,omitempty"`
 }
 
 type PodWorkload struct {

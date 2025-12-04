@@ -72,8 +72,25 @@ type CollectorDaemonSetInfo {
 # Gateway Pods List API
 # =====================
 
+# 5m-rate view of collector data flow for a single pod
+type CollectorPodMetrics {
+  # Receiver: accepted metric points per second
+  metricsAcceptedRps: Float!
+  # Receiver rejected/dropped metric points per second (refused/dropped)
+  metricsDroppedRps: Float!
+  # Exporter successfully sent metric points per second
+  exporterSuccessRps: Float!
+  # Exporter failed-to-send metric points per second
+  exporterFailedRps: Float!
+  # e.g. "5m"
+  window: String!
+  # Last evaluation timestamp from Prometheus, RFC3339
+  lastScrape: String
+}
+
 type PodInfo {
   name: String!
+  namespace: String!
   # Ready containers in format "X/Y" where X is the number of ready containers and Y is the total number of containers (e.g., "2/2", "1/3")
   ready: String!
   # Container status reason when pod is in waiting or terminated state (e.g., "ImagePullBackOff", "CrashLoopBackOff", "Completed"). Null if all containers are running normally.
@@ -83,6 +100,8 @@ type PodInfo {
   nodeName: String!
   creationTimestamp: String!
   image: String!
+  # Odiglet per-pod collector throughput and error rates over a recent window
+  collectorMetrics: CollectorPodMetrics
 }
 
 extend type Query {

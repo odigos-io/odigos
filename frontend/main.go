@@ -31,9 +31,11 @@ import (
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
 	"github.com/odigos-io/odigos/frontend/services/db"
+	metrics "github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/version"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
 const (
@@ -147,7 +149,7 @@ func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
 	})
 }
 
-func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client) (*gin.Engine, error) {
+func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client, promAPI v1.API) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -191,6 +193,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		Resolvers: &graph.Resolver{
 			MetricsConsumer: odigosMetrics,
 			Logger:          logger,
+			PromAPI:         promAPI,
 		},
 	})
 	gqlExecutor := executor.New(gqlExecutableSchema)
@@ -311,8 +314,16 @@ func main() {
 		log.Fatalf("Error starting watchers: %s", err)
 	}
 
+	var promAPI v1.API
+	metricsURL := fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
+	if api, err := metrics.NewAPIFromURL(metricsURL); err != nil {
+		log.Printf("Warning: failed to initialize VictoriaMetrics API (url=%s): %v", metricsURL, err)
+	} else {
+		promAPI = api
+	}
+
 	// Start server
-	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI)
 	if err != nil {
 		log.Fatalf("Error starting server: %s", err)
 	}
