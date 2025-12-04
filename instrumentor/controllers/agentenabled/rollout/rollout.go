@@ -124,9 +124,9 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
 		if !utils.IsWorkloadRolloutDone(workloadObj) && !rollbackDisabled {
-			timeSinceCrashLoopBackOff, err := crashLoopBackOffDuration(ctx, c, workloadObj)
+			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
-				logger.Error(err, "Failed to check crashLoopBackOff")
+				logger.Error(err, "Failed to check pod backoff status")
 				return false, ctrl.Result{}, err
 			}
 
@@ -136,15 +136,19 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			now := time.Now()
 			timeSinceInstrumentation := now.Sub(ic.Status.InstrumentationTime.Time)
 
-			if timeSinceCrashLoopBackOff > 0 && timeSinceInstrumentation < rollbackStabilityWindow && ic.Spec.AgentInjectionEnabled {
+			if backOffInfo.duration > 0 && timeSinceInstrumentation < rollbackStabilityWindow && ic.Spec.AgentInjectionEnabled {
 				// Allow grace time for worklaod to stabelize before uninstrumenting it
-				if timeSinceCrashLoopBackOff < rollbackGraceTime {
-					return false, ctrl.Result{RequeueAfter: rollbackGraceTime - timeSinceCrashLoopBackOff}, nil
+				if backOffInfo.duration < rollbackGraceTime {
+					return false, ctrl.Result{RequeueAfter: rollbackGraceTime - backOffInfo.duration}, nil
 				}
+
+				// Determine the reason based on which backoff was detected
+				reason := backOffInfo.reason
+				message := backOffInfo.message
 
 				for i := range ic.Spec.Containers {
 					ic.Spec.Containers[i].AgentEnabled = false
-					ic.Spec.Containers[i].AgentEnabledReason = odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff
+					ic.Spec.Containers[i].AgentEnabledReason = reason
 				}
 				ic.Spec.AgentInjectionEnabled = false
 
@@ -165,19 +169,19 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 					Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 					Status:  metav1.ConditionTrue,
 					Reason:  string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully),
-					Message: "pods entered CrashLoopBackOff; instrumentation disabled",
+					Message: message,
 				})
 
 				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 					Type:    odigosv1alpha1.AgentEnabledStatusConditionType,
 					Status:  metav1.ConditionFalse,
-					Reason:  string(odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff),
-					Message: "Pods entered CrashLoopBackOff; instrumentation disabled",
+					Reason:  string(reason),
+					Message: message,
 				})
 				// Status always changes, requeue to test wait for status change with workload
 				return true, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 			}
-			// Requeue to wait for workload to finish or enter CrashLoopBackOff
+			// Requeue to wait for workload to finish or enter backoff state
 			return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 		}
 		return false, ctrl.Result{}, nil
@@ -253,30 +257,50 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 	return cond
 }
 
-// podHasCrashLoop returns true if any (init)-container in the pod is in CrashLoopBackOff.
-func podHasCrashLoop(p *corev1.Pod) bool {
+// podBackOffInfo contains information about pod backoff state
+type podBackOffInfo struct {
+	duration time.Duration
+	reason   odigosv1alpha1.AgentEnabledReason
+	message  string
+}
+
+// podHasBackOff returns true if any (init)-container in the pod is in CrashLoopBackOff or ImagePullBackOff.
+func podHasBackOff(p *corev1.Pod) bool {
 	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
-		if containerutils.IsContainerInCrashLoopBackOff(&cs) {
+		if containerutils.IsContainerInBackOff(&cs) {
 			return true
 		}
 	}
 	return false
 }
 
-// crashLoopBackOffDuration returns how long the supplied workload
-// (Deployment, StatefulSet, or DaemonSet) has been in *CrashLoopBackOff*.
+// getPodBackOffReason returns the backoff reason for a pod, prioritizing CrashLoopBackOff over ImagePullBackOff
+func getPodBackOffReason(p *corev1.Pod) (odigosv1alpha1.AgentEnabledReason, string) {
+	for _, cs := range append(p.Status.InitContainerStatuses, p.Status.ContainerStatuses...) {
+		if containerutils.IsContainerInCrashLoopBackOff(&cs) {
+			return odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff, "pods entered CrashLoopBackOff; instrumentation disabled"
+		}
+		if containerutils.IsContainerInImagePullBackOff(&cs) {
+			return odigosv1alpha1.AgentEnabledReasonImagePullBackOff, "pods entered ImagePullBackOff; instrumentation disabled"
+		}
+	}
+	return "", ""
+}
+
+// podBackOffDuration returns how long the supplied workload
+// (Deployment, StatefulSet, or DaemonSet) has been in CrashLoopBackOff or ImagePullBackOff.
 //
-// It inspects all Pods selected by the workload’s label selector:
+// It inspects all Pods selected by the workload's label selector:
 //
-//   - If at least one Pod is currently in CrashLoopBackOff, it finds the
+//   - If at least one Pod is currently in CrashLoopBackOff or ImagePullBackOff, it finds the
 //     earliest Pod.StartTime among those Pods and returns the elapsed time
-//     since that moment.
+//     since that moment, along with the reason.
 //
-//   - If **no** Pod is in CrashLoopBackOff, it simply returns 0 and no error.
+//   - If **no** Pod is in backoff state, it simply returns 0 duration and no error.
 //
 // A non-nil error is returned only for unexpected situations (e.g. unsupported
 // workload kind, invalid selector, or failed Pod list call).
-func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.Object) (time.Duration, error) {
+func podBackOffDuration(ctx context.Context, c client.Client, obj client.Object) (podBackOffInfo, error) {
 	var (
 		ns       string
 		selector *metav1.LabelSelector
@@ -296,11 +320,11 @@ func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.O
 			MatchLabels: o.Spec.Selector,
 		}
 	default:
-		return 0, fmt.Errorf("crashLoopBackOffDuration: unsupported workload kind %T", obj)
+		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: unsupported workload kind %T", obj)
 	}
 
 	if selector == nil {
-		return 0, fmt.Errorf("crashLoopBackOffDuration: workload has nil selector")
+		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: workload has nil selector")
 	}
 
 	// Create a deep copy of the selector to avoid mutating the original
@@ -311,7 +335,7 @@ func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.O
 	})
 	sel, err := metav1.LabelSelectorAsSelector(selectorCopy)
 	if err != nil {
-		return 0, fmt.Errorf("crashLoopBackOffDuration: invalid selector: %w", err)
+		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: invalid selector: %w", err)
 	}
 
 	// 2. List matching Pods once (single API call for both checks).
@@ -320,15 +344,17 @@ func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.O
 		client.InNamespace(ns),
 		client.MatchingLabelsSelector{Selector: sel},
 	); err != nil {
-		return 0, fmt.Errorf("crashLoopBackOffDuration: failed listing pods: %w", err)
+		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: failed listing pods: %w", err)
 	}
 
-	// 3. Find the earliest-started Pod that is crashing.
+	// 3. Find the earliest-started Pod that is in backoff state.
 	var earliest *time.Time
+	var earliestReason odigosv1alpha1.AgentEnabledReason
+	var earliestMessage string
 	for i := range podList.Items {
 		p := &podList.Items[i]
 
-		if !podHasCrashLoop(p) {
+		if !podHasBackOff(p) {
 			continue
 		}
 		if p.Status.StartTime == nil { // extremely rare
@@ -338,16 +364,21 @@ func crashLoopBackOffDuration(ctx context.Context, c client.Client, obj client.O
 		start := p.Status.StartTime.Time
 		if earliest == nil || start.Before(*earliest) {
 			earliest = &start
+			earliestReason, earliestMessage = getPodBackOffReason(p)
 		}
 	}
 
-	// 4. Return 0 if nothing is in CrashLoopBackOff.
+	// 4. Return zero duration if nothing is in backoff state.
 	if earliest == nil {
-		return 0, nil
+		return podBackOffInfo{}, nil
 	}
 
-	// 5. Otherwise, duration since the workload entered CrashLoopBackOff.
-	return time.Since(*earliest), nil
+	// 5. Otherwise, duration since the workload entered backoff state.
+	return podBackOffInfo{
+		duration: time.Since(*earliest),
+		reason:   earliestReason,
+		message:  earliestMessage,
+	}, nil
 }
 
 // workloadHasOdigosAgents returns true if the workload still has *any* pod present in the instrumented-pod.
