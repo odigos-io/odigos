@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "rm -rf out .next",
     "build": "cross-env NODE_ENV=production next build --turbopack",
     "build:analyze": "cross-env ANALYZE=true next build --turbopack",
     "back:build": "cd .. && go build -o odigos-backend",
