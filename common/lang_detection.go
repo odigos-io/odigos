@@ -9,7 +9,7 @@ import (
 
 type ProgramLanguageDetails struct {
 	Language       ProgrammingLanguage
-	RuntimeVersion *version.Version
+	RuntimeVersion string
 }
 
 // +kubebuilder:validation:Enum=java;python;go;dotnet;javascript;php;ruby;rust;cplusplus;mysql;nginx;redis;postgres;unknown;ignored
@@ -36,8 +36,6 @@ const (
 	PostgresProgrammingLanguage ProgrammingLanguage = "postgres"
 	// Used when the language detection is not successful for all the available inspectors
 	UnknownProgrammingLanguage ProgrammingLanguage = "unknown"
-	// Deprecated: This is no longer supported and will not be set be odiglet
-	IgnoredProgrammingLanguage ProgrammingLanguage = "ignored"
 )
 
 // MapOdigosToSemConv maps odigos programming language to OpenTelemetry semantic conventions

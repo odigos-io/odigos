@@ -101,6 +101,13 @@ true
 {{- end }}
 {{- end }}
 
+{{/* Returns "true" when UI requires write permissions (non-readonly UI or central backend set) */}}
+{{- define "odigos.ui.requiresWritePermissions" -}}
+  {{- if or (ne .Values.ui.uiMode "readonly") (ne .Values.centralProxy.centralBackendURL "") -}}
+true
+  {{- end -}}
+{{- end -}}
+
 {{- define "odigos.odiglet.sizing.resources" -}}
 {{- $s := default "size_m" .Values.ResourceSizePreset -}}
 {{- $sizes := dict

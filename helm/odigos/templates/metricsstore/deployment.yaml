@@ -1,0 +1,52 @@
+{{- if not .Values.ownTelemetry.metricsStore.disabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odigos-victoriametrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-victoriametrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: odigos-victoriametrics
+    spec:
+      containers:
+      - name: vm
+        image: victoriametrics/victoria-metrics:v1.103.0
+        args:
+          - "-httpListenAddr=0.0.0.0:8428"
+          - "-storageDataPath=/vm-data"
+          - "-retentionPeriod=1d"
+
+        ports:
+        - name: http
+          containerPort: 8428
+        volumeMounts:
+        - name: data
+          mountPath: /vm-data
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 2Gi
+      volumes:
+      - name: data
+        emptyDir: {}
+{{- end }}

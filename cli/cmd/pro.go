@@ -35,11 +35,12 @@ import (
 )
 
 var (
-	updateRemoteFlag bool
-	proNamespaceFlag string
-	useDefault       bool
-	downloadFile     string
-	fromFile         string
+	updateRemoteFlag        bool
+	proNamespaceFlag        string
+	useDefault              bool
+	downloadFile            string
+	fromFile                string
+	centralImagePullSecrets []string
 )
 
 var centralVersionRegex = regexp.MustCompile(`^v\d+\.\d+\.\d+(?:-(?:pre|rc)\d+)?$`)
@@ -429,9 +430,15 @@ var centralUpgradeCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		var imagePullSecrets []string
+		if len(centralImagePullSecrets) > 0 {
+			imagePullSecrets = append(imagePullSecrets, centralImagePullSecrets...)
+		}
+
 		managerOpts := resourcemanager.ManagerOpts{
 			ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
 			SystemObjectLabelKey: k8sconsts.OdigosSystemLabelCentralKey,
+			ImagePullSecrets:     imagePullSecrets,
 		}
 
 		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
@@ -475,9 +482,15 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 
 	fmt.Println("Installing Odigos Central backend and UI ...")
 
+	var imagePullSecrets []string
+	if len(centralImagePullSecrets) > 0 {
+		imagePullSecrets = append(imagePullSecrets, centralImagePullSecrets...)
+	}
+
 	managerOpts := resourcemanager.ManagerOpts{
 		ImageReferences:      GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
 		SystemObjectLabelKey: k8sconsts.OdigosSystemLabelCentralKey,
+		ImagePullSecrets:     imagePullSecrets,
 	}
 
 	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelCentralKey, createNamespace)
@@ -617,6 +630,7 @@ func init() {
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
 	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+	centralInstallCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
 
 	// register and configure central uninstall command
 	centralCmd.AddCommand(centralUninstallCmd)
@@ -629,6 +643,7 @@ func init() {
 	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central upgrade")
 	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 	centralUpgradeCmd.MarkFlagRequired("version")
+	centralUpgradeCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")

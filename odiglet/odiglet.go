@@ -12,7 +12,6 @@ import (
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8senv "github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/odigos-io/odigos/k8sutils/pkg/metrics"
 	k8snode "github.com/odigos-io/odigos/k8sutils/pkg/node"
@@ -84,7 +83,6 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 
 	kubeManagerOptions := kube.KubeManagerOptions{
 		Mgr:               mgr,
-		Clientset:         clientset,
 		ConfigUpdates:     configUpdates,
 		CriClient:         &criWrapper,
 		AppendEnvVarNames: appendEnvVarNames,
@@ -137,7 +135,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	})
 
 	// start OpAmp server
-	odigosNs := k8senv.GetCurrentNamespace()
+	odigosNs := env.GetCurrentNamespace()
 	g.Go(func() error {
 		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
 		if err != nil {

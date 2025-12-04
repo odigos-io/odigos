@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	lokiUrlKey      = "LOKI_URL"
-	lokiLabelsKey   = "LOKI_LABELS"
-	lokiUsernameKey = "LOKI_USERNAME"
-	lokiPasswordKey = "LOKI_PASSWORD"
-	lokiApiPath     = "/otlp"
+	lokiUrlKey        = "LOKI_URL"
+	lokiLabelsKey     = "LOKI_LABELS"
+	lokiUsernameKey   = "LOKI_USERNAME"
+	lokiPasswordKey   = "LOKI_PASSWORD"
+	lokiApiPath       = "/otlp"
+	lokiScopeOrgIdKey = "LOKI_SCOPE_ORG_ID"
 )
 
 type Loki struct{}
@@ -67,6 +68,12 @@ func (l *Loki) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]s
 			"authenticator": authExtensionName,
 		}
 		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, authExtensionName)
+	}
+
+	// In order to support both basic auth and bearer token, we use the Authorization header
+	scopeOrgIdHeader, scopeHeaderExists := destConfig[lokiScopeOrgIdKey]
+	if scopeHeaderExists && scopeOrgIdHeader != "" {
+		addHeader(exporterConf, "X-Scope-OrgID", scopeOrgIdHeader)
 	}
 
 	lokiExporterName := "otlphttp/" + uniqueUri

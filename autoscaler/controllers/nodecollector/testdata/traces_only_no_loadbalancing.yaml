@@ -70,7 +70,7 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
-  prometheus/self-metrics:
+  prometheus/self-metrics-ui:
     config:
       scrape_configs:
       - job_name: otelcol
@@ -82,19 +82,19 @@ receivers:
         scrape_interval: 10s
         static_configs:
         - targets:
-          - 127.0.0.1:4317
+          - 127.0.0.1:55682
 service:
   extensions:
   - health_check
   - pprof
   pipelines:
-    metrics/own-metrics:
+    metrics/own-metrics-ui:
       exporters:
       - otlp/odigos-own-telemetry-ui
       processors:
       - resource/pod-name
       receivers:
-      - prometheus/self-metrics
+      - prometheus/self-metrics-ui
     traces:
       exporters:
       - otlp/out-cluster-collector-traces
@@ -110,12 +110,15 @@ service:
       - odigosebpf
   telemetry:
     metrics:
+      level: detailed
       readers:
       - pull:
           exporter:
             prometheus:
               host: 0.0.0.0
-              port: 4317
+              port: 55682
     resource:
+      k8s.node.name: ${NODE_NAME}
+      k8s.pod.name: ${POD_NAME}
       service.name: null
       service.version: null

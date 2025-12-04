@@ -1,4 +1,4 @@
-TAG ?= $(shell odigos version --cluster)
+TAG ?= $(shell odigos version --cluster 2>/dev/null || odigos version --cli 2>/dev/null)
 ODIGOS_CLI_VERSION ?= $(shell odigos version --cli)
 CLUSTER_NAME ?= local-dev-cluster
 CENTRAL_BACKEND_URL ?=
@@ -135,6 +135,7 @@ build-images-rhel:
 push-image/%:
 	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
+	$(if $(filter true,$(GCP_MARKETPLACE)),--annotation="index:com.googleapis.cloudmarketplace.product.service.name=services/odigos.endpoints.odigos-public.cloud.goog",) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
@@ -168,6 +169,10 @@ push-collector:
 .PHONY: push-ui
 push-ui:
 	$(MAKE) push-image/ui DOCKERFILE=frontend/$(DOCKERFILE) SUMMARY="UI for Odigos" DESCRIPTION="UI provides the frontend webapp for managing an Odigos installation." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+
+.PHONY: push-agents
+push-agents:
+	$(MAKE) push-image/agents DOCKERFILE=agents/$(DOCKERFILE) SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-images
 push-images:
@@ -229,10 +234,6 @@ debug-odiglet:
 	kubectl delete pod -n odigos-system -l app.kubernetes.io/name=odiglet
 	kubectl wait --for=condition=ready pod -n odigos-system -l app.kubernetes.io/name=odiglet --timeout=180s
 	kubectl port-forward -n odigos-system daemonset/odiglet 2345:2345
-
-,PHONY: e2e-test
-e2e-test:
-	./e2e-test.sh
 
 ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | sort | grep -v "licenses")
 

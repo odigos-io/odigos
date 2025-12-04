@@ -942,6 +942,11 @@ func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, e
 	return &config, nil
 }
 
+// K8sManifest is the resolver for the k8sManifest field.
+func (r *queryResolver) K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error) {
+	return services.K8sManifest(ctx, namespace, kind, name)
+}
+
 // DestinationCategories is the resolver for the destinationCategories field.
 func (r *queryResolver) DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error) {
 	destTypes := services.GetDestinationCategories()
@@ -1069,19 +1074,39 @@ func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, n
 
 	for _, instance := range instances {
 		for _, component := range instance.Status.Components {
-			nonIdentifyingAttributes := make([]*model.NonIdentifyingAttribute, 0)
-
-			for _, attribute := range component.NonIdentifyingAttributes {
-				nonIdentifyingAttributes = append(nonIdentifyingAttributes, &model.NonIdentifyingAttribute{
-					Key:   attribute.Key,
-					Value: attribute.Value,
-				})
-			}
-
 			if _, ok := seenNames[component.Name]; !ok {
 				seenNames[component.Name] = true
+
+				var typeStr *string
+				if component.Type != "" {
+					t := string(component.Type)
+					typeStr = &t
+				}
+
+				var healthy *bool
+				if component.Healthy != nil {
+					healthy = component.Healthy
+				}
+
+				var lastStatusTime *string
+				if !component.LastStatusTime.IsZero() {
+					t := component.LastStatusTime.Format(time.RFC3339)
+					lastStatusTime = &t
+				}
+
+				nonIdentifyingAttributes := make([]*model.NonIdentifyingAttribute, 0)
+				for _, attribute := range component.NonIdentifyingAttributes {
+					nonIdentifyingAttributes = append(nonIdentifyingAttributes, &model.NonIdentifyingAttribute{
+						Key:   attribute.Key,
+						Value: attribute.Value,
+					})
+				}
+
 				components = append(components, &model.InstrumentationInstanceComponent{
 					Name:                     component.Name,
+					Type:                     typeStr,
+					Healthy:                  healthy,
+					LastStatusTime:           lastStatusTime,
 					NonIdentifyingAttributes: nonIdentifyingAttributes,
 				})
 			}

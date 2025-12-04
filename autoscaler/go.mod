@@ -4,7 +4,6 @@ go 1.25.0
 
 require (
 	cloud.google.com/go/compute/metadata v0.8.0
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/odigos-io/odigos/api v0.0.0
@@ -24,6 +23,7 @@ require (
 	k8s.io/kube-aggregator v0.33.4
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 	sigs.k8s.io/controller-runtime v0.22.1
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -95,7 +95,6 @@ require (
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 replace (

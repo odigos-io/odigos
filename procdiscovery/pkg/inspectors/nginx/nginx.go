@@ -8,8 +8,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
@@ -38,13 +36,13 @@ func (j *NginxInspector) DeepScan(pcx *process.ProcessContext) (common.Programmi
 	return "", false
 }
 
-func (j *NginxInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+func (j *NginxInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
 	nginxVersion, err := GetNginxVersion(containerURL)
 	if err != nil {
-		return nil
+		return ""
 	}
 
-	return common.GetVersion(nginxVersion)
+	return nginxVersion
 }
 
 func GetNginxVersion(containerURL string) (string, error) {

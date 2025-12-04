@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/cplusplus"
@@ -42,7 +41,7 @@ type Inspector interface {
 }
 
 type VersionInspector interface {
-	GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version
+	GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string
 }
 
 var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{

@@ -23,6 +23,8 @@ odigos uninstall
 }
 
 func runHelmUninstall() error {
+	fmt.Printf("🗑️  Starting uninstall of release %q from namespace %q...\n", helm.HelmReleaseName, helm.HelmNamespace)
+
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
 

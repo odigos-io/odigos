@@ -126,6 +126,24 @@ spec:
                       intresseted in collecting metrics about: odigos, the collected data, and the pipeline itself.
                       this allows for users to monitor and operate odigos within their existing system,
                       create dashboards, alerting, and more.
+                    properties:
+                      interval:
+                        description: 'time interval for flusing metrics (format: 15s,
+                          1m etc). defaults: 10s'
+                        type: string
+                      sendToMetricsDestinations:
+                        description: |-
+                          if true, odigos will send all the metrics it collects about itself to the metrics pipeline,
+                          which will make them available to the metrics destinations.
+                          users can troubleshoot odigos itself by monitoring these metrics in their existing systems,
+                          and create their own dashboards, alerting, and more.
+                        type: boolean
+                      sendToOdigosMetricsStore:
+                        description: |-
+                          if true, odigos will send all the metrics it collects about itself to the odigos metrics store,
+                          which is available to odigos UI.
+                          it can help in presenting a consistent view of odigos itself, without relying on user system and integrations.
+                        type: boolean
                     type: object
                   serviceGraph:
                     description: |-

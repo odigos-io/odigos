@@ -1,0 +1,18 @@
+{{- if not .Values.ownTelemetry.metricsStore.disabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: odigos-victoriametrics
+  labels:
+    app.kubernetes.io/name: odigos-victoriametrics
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8428
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: odigos-victoriametrics
+
+{{- end }}

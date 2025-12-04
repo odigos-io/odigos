@@ -102,9 +102,9 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 		Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
 	}
 
-	c.Service.Telemetry.Metrics = config.GenericMap{
-		"level": "detailed",
-		"readers": []config.GenericMap{
+	c.Service.Telemetry.Metrics = config.MetricsConfig{
+		Level: "detailed",
+		Readers: []config.GenericMap{
 			{
 				"pull": config.GenericMap{
 					"exporter": config.GenericMap{

@@ -501,7 +501,7 @@ func NewInstrumentorTLSSecret(ns string) *corev1.Secret {
 	}
 }
 
-func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string, initContainerImage string) *appsv1.Deployment {
+func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool, imagePrefix string, imageName string, tier common.OdigosTier, nodeSelector map[string]string, initContainerImage string, waspEnabled *bool) *appsv1.Deployment {
 	if nodeSelector == nil {
 		nodeSelector = make(map[string]string)
 	}
@@ -513,6 +513,10 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 
 	if !telemetryEnabled {
 		args = append(args, "--telemetry-disabled")
+	}
+
+	if waspEnabled != nil && *waspEnabled {
+		args = append(args, "--wasp-enabled")
 	}
 
 	dynamicEnv := []corev1.EnvVar{}
@@ -753,7 +757,7 @@ func (a *instrumentorResourceManager) InstallFromScratch(ctx context.Context) er
 		NewInstrumentorRoleBinding(a.ns),
 		NewInstrumentorClusterRole(a.config.OpenshiftEnabled),
 		NewInstrumentorClusterRoleBinding(a.ns),
-		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector, a.managerOpts.ImageReferences.InitContainerImage),
+		NewInstrumentorDeployment(a.ns, a.odigosVersion, a.config.TelemetryEnabled, a.config.ImagePrefix, a.managerOpts.ImageReferences.InstrumentorImage, a.tier, a.config.NodeSelector, a.managerOpts.ImageReferences.InitContainerImage, a.config.WaspEnabled),
 		NewInstrumentorService(a.ns),
 	}
 

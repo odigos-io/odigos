@@ -1,10 +1,10 @@
 apiVersion: odigos.io/v1alpha1
 kind: Processor
 metadata:
-  name: category-attributes
+  name: category-attributes-node-collector
 spec:
   type: odigosconditionalattributes
-  processorName: "category attributes v2"
+  processorName: "add category, sub-category and transaction type attributes"
   notes: "Auto generated rule from category-attributes profile. Do not edit."
   processorConfig:
     global_default: "Unknown"
@@ -117,6 +117,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "odigos.io/ebpf/instrumentation-knex":
@@ -166,6 +168,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "odigos.io/ebpf/instrumentation-redis-4":
@@ -173,6 +177,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "odigos.io/ebpf/instrumentation-tedious":
@@ -297,6 +303,8 @@ spec:
             - new_attribute: "odigos.category"
               value: "Database"
             - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
               from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
@@ -304,12 +312,16 @@ spec:
             - new_attribute: "odigos.category"
               value: "Database"
             - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
               from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "go.opentelemetry.io/auto/github.com/redis/go-redis/v9":
             - new_attribute: "odigos.category"
               value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
@@ -347,6 +359,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
 
@@ -399,6 +413,15 @@ spec:
             - new_attribute: "odigos.transaction.type"
               value: "web"
           "opentelemetry.instrumentation.aiohttp_client":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "opentelemetry.instrumentation.aiohttp_server":
             - new_attribute: "odigos.category"
               value: "HTTP"
             - new_attribute: "odigos.sub_category"
@@ -823,6 +846,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "opentelemetry.instrumentation.redis":
@@ -830,6 +855,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "instrumentation.odigos.io/ebpf/sqlalchemy":
@@ -874,7 +901,15 @@ spec:
               from_field: "db.system"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
-
+          "opentelemetry.instrumentation.botocore.dynamodb":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
           # Messaging Queues
           "instrumentation.odigos.io/ebpf/aio_pika":
             - new_attribute: "odigos.category"
@@ -915,7 +950,7 @@ spec:
             - new_attribute: "odigos.category"
               value: "Messaging queues"
             - new_attribute: "odigos.sub_category"
-              from_field: "messaging.system"
+              value: "celery"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "instrumentation.odigos.io/ebpf/confluent_kafka":
@@ -1201,6 +1236,24 @@ spec:
               from_field: "http.request.method"
             - new_attribute: "odigos.transaction.type"
               value: "web"
+          "io.opentelemetry.async-http-client-1.9":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.async-http-client-2.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
 
           # Jetty HTTP Client
           "io.opentelemetry.jetty-httpclient-12.0":
@@ -1213,6 +1266,24 @@ spec:
             - new_attribute: "odigos.transaction.type"
               value: "web"
           "io.opentelemetry.jetty-httpclient-9.2":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.jetty-11.0":
+            - new_attribute: "odigos.category"
+              value: "HTTP"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.method"
+            - new_attribute: "odigos.sub_category"
+              from_field: "http.request.method"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"              
+          "io.opentelemetry.jetty-8.0":
             - new_attribute: "odigos.category"
               value: "HTTP"
             - new_attribute: "odigos.sub_category"
@@ -1354,9 +1425,13 @@ spec:
               value: "web"
           "io.opentelemetry.opensearch-rest-1.0":
             - new_attribute: "odigos.category"
-              value: "REST"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
-              value: "web"
+              value: "non-web"
           # Messaging Queues
           "io.opentelemetry.rocketmq-client-4.8":
             - new_attribute: "odigos.category"
@@ -1804,6 +1879,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "io.opentelemetry.redisson-3.0":
@@ -1811,6 +1888,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "io.opentelemetry.redisson-3.17":
@@ -1818,6 +1897,8 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "io.opentelemetry.vertx-redis-client-4.0":
@@ -1825,34 +1906,36 @@ spec:
               value: "Database"
             - new_attribute: "odigos.sub_category"
               from_field: "db.system"
+            - new_attribute: "odigos.sub_category"
+              from_field: "db.system.name"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "io.opentelemetry.hibernate-hibernate-procedure-call-4.3":
             - new_attribute: "odigos.category"
               value: "Database"
             - new_attribute: "odigos.sub_category"
-              from_field: "db.system"
+              value: "hibernate"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "io.opentelemetry.hibernate-3.3":
             - new_attribute: "odigos.category"
               value: "Database"
             - new_attribute: "odigos.sub_category"
-              from_field: "db.system"
+              value: "hibernate"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "io.opentelemetry.hibernate-4.0":
             - new_attribute: "odigos.category"
               value: "Database"
             - new_attribute: "odigos.sub_category"
-              from_field: "db.system"
+              value: "hibernate"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "io.opentelemetry.hibernate-6.0":
             - new_attribute: "odigos.category"
               value: "Database"
             - new_attribute: "odigos.sub_category"
-              from_field: "db.system"
+              value: "hibernate"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
           "io.opentelemetry.elasticsearch-rest-5.0":
@@ -1897,6 +1980,14 @@ spec:
               from_field: "db.system"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
+          "io.opentelemetry.spring-data-1.8":
+            - new_attribute: "odigos.category"
+              value: "Database"
+            - new_attribute: "odigos.sub_category"
+              value: "spring-data"
+            - new_attribute: "odigos.transaction.type"
+              value: "non-web"
+
           # Logging
           "io.opentelemetry.log4j":
             - new_attribute: "odigos.category"
@@ -1943,7 +2034,20 @@ spec:
               value: "Log"
             - new_attribute: "odigos.transaction.type"
               value: "non-web"
-
+          "io.opentelemetry.aws-sdk-1.11":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              value: "aws-api"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
+          "io.opentelemetry.aws-sdk-2.2":
+            - new_attribute: "odigos.category"
+              value: "RPC Systems"
+            - new_attribute: "odigos.sub_category"
+              value: "aws-api"
+            - new_attribute: "odigos.transaction.type"
+              value: "web"
           # Kubernetes
           "io.opentelemetry.kubernetes-client-7.0":
             - new_attribute: "odigos.category"
@@ -1954,4 +2058,4 @@ spec:
   signals:
     - TRACES
   collectorRoles:
-    - CLUSTER_GATEWAY
+    - NODE_COLLECTOR
