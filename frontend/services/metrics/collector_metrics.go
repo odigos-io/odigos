@@ -10,11 +10,14 @@ import (
 )
 
 const (
-	metricReceiverAcceptedSpansTotal   = "otelcol_receiver_accepted_spans_total"
-	metricReceiverRefusedSpansTotal    = "otelcol_receiver_refused_spans_total"
-	metricReceiverDroppedSpansTotal    = "otelcol_receiver_dropped_spans_total"
-	metricExporterSentSpansTotal       = "otelcol_exporter_sent_spans_total"
-	metricExporterSendFailedSpansTotal = "otelcol_exporter_send_failed_spans_total"
+	// Accepted spans as recorded by odigostrafficmetrics processor
+	metricAcceptedSpans = "otelcol_odigos_accepted_spans"
+	// Receiver drop/refuse counters from collector self-telemetry
+	metricReceiverRefusedSpans = "otelcol_receiver_refused_spans"
+	metricReceiverDroppedSpans = "otelcol_receiver_dropped_spans"
+	// Exporter success/failure counters from collector self-telemetry
+	metricExporterSentSpans       = "otelcol_exporter_sent_spans"
+	metricExporterSendFailedSpans = "otelcol_exporter_send_failed_spans"
 )
 
 type PodRates struct {
@@ -46,11 +49,11 @@ func GetDataCollectorContainerMetrics(ctx context.Context, api v1.API, namespace
 	podRegex := buildPodRegex(podNames)
 	now := time.Now()
 
-	qAccepted := rateSumByPod(metricReceiverAcceptedSpansTotal, namespace, podRegex, window)
-	qRefused := rateSumByPod(metricReceiverRefusedSpansTotal, namespace, podRegex, window)
-	qDropped := rateSumByPod(metricReceiverDroppedSpansTotal, namespace, podRegex, window)
-	qExpSent := rateSumByPod(metricExporterSentSpansTotal, namespace, podRegex, window)
-	qExpFailed := rateSumByPod(metricExporterSendFailedSpansTotal, namespace, podRegex, window)
+	qAccepted := rateSumByPod(metricAcceptedSpans, namespace, podRegex, window)
+	qRefused := rateSumByPod(metricReceiverRefusedSpans, namespace, podRegex, window)
+	qDropped := rateSumByPod(metricReceiverDroppedSpans, namespace, podRegex, window)
+	qExpSent := rateSumByPod(metricExporterSentSpans, namespace, podRegex, window)
+	qExpFailed := rateSumByPod(metricExporterSendFailedSpans, namespace, podRegex, window)
 
 	accepted, tsAcc, err := queryVector(ctx, api, qAccepted, now)
 	if err != nil {

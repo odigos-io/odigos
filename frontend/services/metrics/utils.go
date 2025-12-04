@@ -10,11 +10,16 @@ import (
 	"github.com/prometheus/common/model"
 )
 
-// rateSumByPod builds: sum by (pod) (rate(<metric>{namespace="<ns>",pod=~"<regex>"}[<win>]))
+// rateSumByPod builds a PromQL query that returns per-pod rates over a window.
+// Uses VictoriaMetrics/OTel k8s labels and filters by pod only to be resilient
+// to environments where k8s.namespace.name label is not present on the series.
+// Example:
+//
+//	sum by (k8s.pod.name) (rate(<metric>{k8s.pod.name=~"<regex>"}[<win>]))
 func rateSumByPod(metric, namespace, podRegex, window string) string {
 	return fmt.Sprintf(
-		`sum by (pod) (rate(%s{namespace="%s",pod=~"%s"}[%s]))`,
-		metric, namespace, podRegex, window,
+		`sum by (k8s.pod.name) (rate(%s{k8s.pod.name=~"%s"}[%s]))`,
+		metric, podRegex, window,
 	)
 }
 
@@ -39,7 +44,17 @@ func queryVector(ctx context.Context, api v1.API, query string, ts time.Time) (m
 	}
 	res := make(map[string]float64, len(vec))
 	for _, s := range vec {
-		pod := string(s.Metric["pod"])
+		// Prefer the VM/OTel k8s label; fallback to common alternatives for robustness.
+		pod := string(s.Metric["k8s.pod.name"])
+		if pod == "" {
+			pod = string(s.Metric["k8s_pod_name"])
+		}
+		if pod == "" {
+			pod = string(s.Metric["pod"])
+		}
+		if pod == "" {
+			pod = string(s.Metric["pod_name"])
+		}
 		res[pod] = float64(s.Value)
 	}
 	return res, ts, nil
@@ -75,5 +90,3 @@ func maxTime(times ...time.Time) time.Time {
 	}
 	return z
 }
-
-
