@@ -39,7 +39,6 @@ type PodsWebhook struct {
 	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
 	Decoder          admission.Decoder
 	WaspMutator      func(*corev1.Pod, common.OdigosConfiguration) error
-	ImagePullSecrets []string
 }
 
 var _ admission.Handler = &PodsWebhook{}
@@ -218,7 +217,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		podswebhook.MountPodVolumeToEmptyDir(pod)
 		if len(dirsToCopy) > 0 {
 			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
-			createInitContainer(pod, dirsToCopy, odigosConfiguration, p.ImagePullSecrets)
+			createInitContainer(pod, dirsToCopy, odigosConfiguration, odigosConfiguration.ImagePullSecrets)
 		}
 	}
 
