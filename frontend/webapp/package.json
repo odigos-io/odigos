@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "cross-env NODE_ENV=production next build",
-    "build:analyze": "cross-env ANALYZE=true next build",
+    "dev": "next dev --turbopack",
+    "build": "cross-env NODE_ENV=production next build --turbopack",
+    "build:analyze": "cross-env ANALYZE=true next build --turbopack",
     "back:build": "cd .. && go build -o odigos-backend",
     "back:start": "cd .. && ./odigos-backend --port 8085 --debug --address 0.0.0.0",
     "cy:run": "cypress run --e2e -q",
