@@ -130,13 +130,11 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		shouldCheckBackoff := (!rolloutDone || (rolloutDone && withinStabilityWindow)) && !rollbackDisabled
 
 		if shouldCheckBackoff {
-			logger.Info("Checking for pod backoff", "rolloutDone", rolloutDone, "withinStabilityWindow", withinStabilityWindow, "rollbackDisabled", rollbackDisabled)
 			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check pod backoff status")
 				return false, ctrl.Result{}, err
 			}
-			logger.Info("Pod backoff check result", "duration", backOffInfo.duration, "reason", backOffInfo.reason, "message", backOffInfo.message)
 
 			if ic.Status.InstrumentationTime == nil {
 				return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
@@ -145,14 +143,12 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			timeSinceInstrumentation := now.Sub(ic.Status.InstrumentationTime.Time)
 
 			if backOffInfo.duration > 0 && timeSinceInstrumentation < rollbackStabilityWindow && ic.Spec.AgentInjectionEnabled {
-				logger.Info("Backoff detected, checking grace period", "backoffDuration", backOffInfo.duration, "graceTime", rollbackGraceTime, "timeSinceInstrumentation", timeSinceInstrumentation, "stabilityWindow", rollbackStabilityWindow)
 				// Allow grace time for worklaod to stabelize before uninstrumenting it
 				if backOffInfo.duration < rollbackGraceTime {
-					logger.Info("Backoff detected but within grace period, waiting", "remaining", rollbackGraceTime-backOffInfo.duration)
 					return false, ctrl.Result{RequeueAfter: rollbackGraceTime - backOffInfo.duration}, nil
 				}
 
-				logger.Info("Triggering rollback due to backoff", "reason", backOffInfo.reason)
+				logger.Info("Triggering rollback due to backoff", "reason", backOffInfo.reason, "workload", pw.Name, "namespace", pw.Namespace)
 
 				// Determine the reason based on which backoff was detected
 				reason := backOffInfo.reason
@@ -366,19 +362,7 @@ func podBackOffDuration(ctx context.Context, c client.Client, obj client.Object)
 	var earliestMessage string
 	for i := range podList.Items {
 		p := &podList.Items[i]
-		// Log container statuses for debugging
-		initContainerReasons := make([]string, 0)
-		for _, cs := range p.Status.InitContainerStatuses {
-			if cs.State.Waiting != nil {
-				initContainerReasons = append(initContainerReasons, fmt.Sprintf("%s:%s", cs.Name, cs.State.Waiting.Reason))
-			}
-		}
-		containerReasons := make([]string, 0)
-		for _, cs := range p.Status.ContainerStatuses {
-			if cs.State.Waiting != nil {
-				containerReasons = append(containerReasons, fmt.Sprintf("%s:%s", cs.Name, cs.State.Waiting.Reason))
-			}
-		}
+
 		if !podHasBackOff(p) {
 			continue
 		}
