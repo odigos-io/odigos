@@ -48,7 +48,6 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source
-    odigos.io/data-stream-stream-1: "true"
 spec:
   workload:
     name: pricing
@@ -62,6 +61,7 @@ metadata:
   namespace: default
   labels:
     odigos.io/e2e: source
+    odigos.io/data-stream-stream-1: "true"
 spec:
   workload:
     name: membership

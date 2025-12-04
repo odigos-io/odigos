@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: coupon
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-coupon:v0.1.27
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-coupon:v0.1.33
           imagePullPolicy: IfNotPresent
           env:
             - name: MEMBERSHIP_SERVICE_HOST
@@ -67,7 +67,7 @@ spec:
     spec:
       containers:
         - name: currency
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-currency:v0.1.27
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-currency:v0.1.33
           imagePullPolicy: IfNotPresent
           env:
             - name: GEOLOCATION_SERVICE_HOST
@@ -140,7 +140,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.27
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-frontend:v0.1.33
           imagePullPolicy: IfNotPresent
           env:
             - name: INVENTORY_SERVICE_HOST
@@ -190,13 +190,13 @@ spec:
     spec:
       containers:
         - name: geolocation
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-geolocation:v0.1.27
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-geolocation:v0.1.33
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
             - name: RAILS_ENV
-              value: 'production'
+              value: "production"
             - name: RAILS_MASTER_KEY
               valueFrom:
                 secretKeyRef:
@@ -210,7 +210,7 @@ metadata:
   namespace: default
 type: Opaque
 stringData:
-  master.key: 'df0300c20246e24d331787f6540a72fa'
+  master.key: "df0300c20246e24d331787f6540a72fa"
 ---
 apiVersion: v1
 kind: Service
@@ -247,7 +247,7 @@ spec:
     spec:
       containers:
         - name: inventory
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.27
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-inventory:v0.1.33
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -287,10 +287,13 @@ spec:
     spec:
       containers:
         - name: membership
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.27
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-membership:v0.1.33
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          env:
+            - name: PRICING_SERVICE_HOST
+              value: pricing:8080
 ---
 kind: Service
 apiVersion: v1
@@ -327,7 +330,7 @@ spec:
     spec:
       containers:
         - name: pricing
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-pricing:v0.1.27
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-pricing:v0.1.33
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

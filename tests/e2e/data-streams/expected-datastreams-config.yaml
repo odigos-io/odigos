@@ -12,7 +12,7 @@ datastreams:
         name: inventory
       - namespace: default
         kind: Deployment
-        name: pricing
+        name: membership
     destinations:
       - destinationname: odigos.io.dest.simple-trace-db-stream-1
         configuredsignals:
