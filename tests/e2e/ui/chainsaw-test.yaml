@@ -62,5 +62,5 @@ spec:
             timeout: 10m
             content: |
               cd ../../../frontend/webapp
-              yarn install
+              yarn install --no-cache
               yarn cy:run

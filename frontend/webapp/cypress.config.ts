@@ -20,6 +20,13 @@ const config: Cypress.ConfigOptions = {
       openMode: 0,
     },
     setupNodeEvents(on, config) {
+      on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.family === 'chromium' && browser.name !== 'electron') {
+          launchOptions.args.push('--disable-application-cache');
+          launchOptions.args.push('--disable-background-networking');
+        }
+        return launchOptions;
+      });
       on('task', {
         log: (message) => {
           console.log(message);
