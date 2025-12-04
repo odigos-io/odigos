@@ -3,26 +3,26 @@
 import { useEffect } from 'react';
 import { ROUTES } from '@/utils';
 import { useConfig } from '@/hooks';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { InstallationStatus } from '@/types';
 import { CenterThis, FadeLoader } from '@odigos/ui-kit/components';
 
 export default function App() {
   const router = useRouter();
+  const pathname = usePathname();
   const { config } = useConfig();
 
   useEffect(() => {
-    if (config) {
+    if (pathname === ROUTES.ROOT && config) {
       const { installationStatus, readonly } = config;
 
       if (installationStatus === InstallationStatus.New && !readonly) {
-        // TODO: fix this (always redirecting to the choose sources page in tests...)
-        // router.push(ROUTES.CHOOSE_SOURCES);
+        router.push(ROUTES.CHOOSE_SOURCES);
       } else {
         router.push(ROUTES.OVERVIEW);
       }
     }
-  }, [config]);
+  }, [pathname, config]);
 
   return (
     <CenterThis style={{ height: '100%' }}>
