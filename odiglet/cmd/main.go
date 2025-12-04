@@ -41,9 +41,17 @@ func main() {
 		panic(err)
 	}
 
-	// If started in init mode
-	if len(os.Args) == 2 && os.Args[1] == "init" {
-		odiglet.OdigletInitPhase(cfg, clientset)
+	// Check if started in a special mode
+	// The mode can be passed as any argument, not necessarily the first one
+	for _, arg := range os.Args {
+		switch arg {
+		case "init":
+			odiglet.OdigletInitPhase(clientset)
+			return
+		case "discovery":
+			odiglet.OdigletDiscoveryPhase(cfg, clientset)
+			return
+		}
 	}
 
 	if err := log.Init(); err != nil {

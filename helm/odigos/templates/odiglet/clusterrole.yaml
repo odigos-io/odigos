@@ -84,6 +84,7 @@ rules:
       - get
       - list
       - watch
+      - patch
 ## related to node collector
   - apiGroups:
       - ''

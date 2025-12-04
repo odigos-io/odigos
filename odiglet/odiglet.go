@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -26,7 +28,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -169,7 +171,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	}
 }
 
-func OdigletInitPhase(config *rest.Config, clientset *kubernetes.Clientset) {
+func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	odigletInitPhaseStart := time.Now()
 	defer func() {
 		log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
@@ -187,19 +189,12 @@ func OdigletInitPhase(config *rest.Config, clientset *kubernetes.Clientset) {
 	}
 
 	// Step 2: Prepare node for Odigos installation (labels, taints)
-	node, err := prepareNode(clientset)
-	if err != nil {
+	if err := prepareNode(clientset); err != nil {
 		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
 		os.Exit(-1)
 	}
 
-	// Step 3: Collect and persist node details (OSS + enterprise features)
-	if err := collectNodeDetails(config, clientset, node); err != nil {
-		log.Logger.Error(err, "Failed to check and persist node features")
-		// Don't exit, this is not critical for the init phase
-	}
-
-	// Step 4: Apply SELinux settings (must be last - uses chroot)
+	// Step 3: Apply SELinux settings (must be last - uses chroot)
 	if err := applySecuritySettings(); err != nil {
 		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
 		os.Exit(-1)
@@ -214,30 +209,75 @@ func copyAgentsToHost() error {
 }
 
 // prepareNode prepares the Kubernetes node for Odigos installation by updating labels and taints.
-// Returns the node object for reuse.
-func prepareNode(clientset *kubernetes.Clientset) (*v1.Node, error) {
+func prepareNode(clientset *kubernetes.Clientset) error {
 	nodeName, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
 	if !ok {
-		return nil, fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar)
+		return fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar)
 	}
 
-	node, err := k8snode.PrepareNodeForOdigosInstallation(clientset, nodeName)
+	_, err := k8snode.PrepareNodeForOdigosInstallation(clientset, nodeName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	log.Logger.Info("Successfully prepared node for Odigos installation")
-	return node, nil
-}
-
-// collectNodeDetails collects node features and persists them to a NodeDetails CRD.
-// This runs all registered features (OSS + enterprise extensions).
-func collectNodeDetails(config *rest.Config, clientset *kubernetes.Clientset, node *v1.Node) error {
-	return nodedetails.PrepareAndCollect(config, clientset, node)
+	return nil
 }
 
 // applySecuritySettings applies security settings like SELinux contexts.
 // This must be called last as it uses chroot to access host commands.
 func applySecuritySettings() error {
 	return fs.ApplyOpenShiftSELinuxSettings()
+}
+
+// OdigletDiscoveryPhase runs the node discovery phase to collect and persist node details.
+// This is run as a separate container/mode to collect node characteristics and capabilities.
+// It checks all registered features (OSS + enterprise extensions) and creates a NodeDetails CRD.
+func OdigletDiscoveryPhase(config *rest.Config, clientset *kubernetes.Clientset) {
+	discoveryPhaseStart := time.Now()
+	defer func() {
+		log.Logger.V(0).Info("Odiglet discovery phase finished", "duration", time.Since(discoveryPhaseStart))
+	}()
+
+	// Initialize logging
+	if err := log.Init(); err != nil {
+		panic(err)
+	}
+
+	log.Logger.V(0).Info("Starting odiglet discovery phase")
+
+	// Get node name from environment
+	nodeName, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
+	if !ok {
+		log.Logger.Error(fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar), "Failed to load env")
+		os.Exit(-1)
+	}
+
+	// Get node object from Kubernetes
+	ctx := context.Background()
+	node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
+	if err != nil {
+		log.Logger.Error(err, "Failed to get node", "node", nodeName)
+		os.Exit(-1)
+	}
+
+	// Collect and persist node details (OSS + enterprise features)
+	if err := nodedetails.PrepareAndCollect(config, clientset, node); err != nil {
+		log.Logger.Error(err, "Failed to check and persist node features")
+		os.Exit(-1)
+	}
+
+	log.Logger.V(0).Info("Successfully collected and persisted node details", "node", nodeName)
+
+	// Keep the process running to allow for future restarts via signal
+	// We wait for SIGTERM/SIGINT to exit gracefully
+	log.Logger.V(0).Info("Discovery phase completed, waiting for signal...")
+
+	// Create a context that is canceled on termination signals
+	// We handle SIGINT, SIGTERM, and SIGQUIT to ensure graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	defer stop()
+
+	<-ctx.Done()
+	log.Logger.V(0).Info("Received termination signal, exiting discovery phase")
 }

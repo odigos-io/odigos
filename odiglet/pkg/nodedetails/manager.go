@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/applyconfiguration/odigos/v1alpha1"
 	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -39,34 +39,29 @@ func CollectAndPersist(ctx context.Context, odigosClient odigosclientset.Interfa
 		}
 	}
 
-	// Create NodeDetails with owner reference to the odiglet pod
-	// When the Odiglet pod is deleted (e.g., during daemonset update or node drain),
-	// the NodeDetails will be automatically deleted.
-	blockOwnerDeletion := true
-	nodeDetails := &v1alpha1.NodeDetails{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      nodeName,
-			Namespace: namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion:         "v1",
-					Kind:               "Pod",
-					Name:               podName,
-					UID:                types.UID(podUID),
-					BlockOwnerDeletion: &blockOwnerDeletion,
-				},
-			},
-		},
-		Spec: *spec,
-	}
+	// Create NodeDetails with owner reference to the Node
+	// We use Server-Side Apply so we don't need to define the full object structure here
+	// The apply configuration below handles it all
 
 	nodeDetailsClient := odigosClient.OdigosV1alpha1().NodeDetailses(namespace)
-	if _, err := nodeDetailsClient.Create(ctx, nodeDetails, metav1.CreateOptions{}); err != nil {
-		if apierrors.IsAlreadyExists(err) {
-			log.Logger.V(0).Info("NodeDetails already exists", "node", nodeName)
-			return nil
-		}
-		return fmt.Errorf("failed to create NodeDetails: %w", err)
+
+	// Use Server-Side Apply to Create or Update
+	applyConfig := odigosv1alpha1.NodeDetails(nodeName, namespace).
+		WithKind("NodeDetails").
+		WithAPIVersion("odigos.io/v1alpha1").
+		WithOwnerReferences(applymetav1.OwnerReference().
+			WithAPIVersion("v1").
+			WithKind("Node").
+			WithName(nodeName).
+			WithUID(node.UID)).
+		WithSpec(odigosv1alpha1.NodeDetailsSpec().
+			WithWaspEnabled(spec.WaspEnabled).
+			WithKernelVersion(spec.KernelVersion).
+			WithCPUCapacity(spec.CPUCapacity).
+			WithMemoryCapacity(spec.MemoryCapacity))
+
+	if _, err := nodeDetailsClient.Apply(ctx, applyConfig, metav1.ApplyOptions{FieldManager: "odiglet"}); err != nil {
+		return fmt.Errorf("failed to apply NodeDetails: %w", err)
 	}
 
 	log.Logger.V(0).Info("Successfully created NodeDetails",

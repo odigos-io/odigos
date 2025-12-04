@@ -4,6 +4,12 @@ signals:
   - metrics
   - logs
 
+# Feature flags for advanced capabilities
+features:
+  # Discovery mode collects node characteristics and capabilities
+  discoveryMode:
+    enabled: false
+
 image:
   tag: ''
 imagePullSecrets: []
@@ -479,10 +485,10 @@ centralProxy:
   tls:
     # Skip TLS certificate verification (for testing/self-signed certificates)
     skipVerify: false
-    
+
     # Secret name containing CA certificate (key: 'ca.crt')
     caSecretName: ''
-    
+
     # Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')
     clientCertSecretName: ''
 
@@ -637,7 +643,7 @@ metricsSources:
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
 
   odigosOwnMetrics:
-    
+
     ## set the interval at which odigos will scrape metrics from itself.
     ## format: duration string (15s, 1m, etc).
     ## default is 10s.
