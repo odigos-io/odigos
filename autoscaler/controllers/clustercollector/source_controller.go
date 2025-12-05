@@ -12,7 +12,6 @@ import (
 type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
-	ImagePullSecrets []string
 	OdigosVersion    string
 }
 
@@ -21,5 +20,5 @@ type InstrumentationConfigReconciler struct {
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling InstrumentationConfig")
-	return reconcileClusterCollector(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
+	return reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion)
 }

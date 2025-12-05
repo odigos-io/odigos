@@ -12,12 +12,11 @@ import (
 type CollectorsGroupReconciler struct {
 	client.Client
 	Scheme           *runtime.Scheme
-	ImagePullSecrets []string
 	OdigosVersion    string
 }
 
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.V(0).Info("Reconciling CollectorsGroup")
-	return reconcileClusterCollector(ctx, r.Client, r.Scheme, r.ImagePullSecrets, r.OdigosVersion)
+	return reconcileClusterCollector(ctx, r.Client, r.Scheme, r.OdigosVersion)
 }
