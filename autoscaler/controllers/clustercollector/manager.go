@@ -2,6 +2,7 @@ package clustercollector
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,7 +11,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion string) error {
+// CommonOdigosConfiguration is a global variable that stores the effective Odigos configuration.
+// It is reconciled on updates to the config so we don't need to make an API call every time.
+var CommonOdigosConfiguration = &common.OdigosConfiguration{}
+
+func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 
 	err := builder.
 		ControllerManagedBy(mgr).
@@ -22,10 +27,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// thus, we need to monitor any change to the spec which is what the generation field is for.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&CollectorsGroupReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -39,10 +43,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// filter out events on resource status and metadata changes.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&DestinationReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -59,10 +62,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 			predicate.LabelChangedPredicate{},
 		)).
 		Complete(&InstrumentationConfigReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -76,10 +78,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// filter out events on resource status and metadata changes.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&ProcessorReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -94,10 +95,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// when the secret was just created (via auto-scaler restart or initial deployment), the cluster collector will be reconciled by other controllers.
 		WithEventFilter(predicate.And(&odigospredicate.OnlyUpdatesPredicate{}, &predicate.ResourceVersionChangedPredicate{})).
 		Complete(&SecretReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -110,6 +110,20 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		WithEventFilter(&odigospredicate.ClusterCollectorDeploymentPredicate).
 		Complete(&ClusterCollectorDeploymentReconciler{
 			Client: mgr.GetClient(),
+		})
+	if err != nil {
+		return err
+	}
+
+	// Odigos config controller reconciles the common Odigos configuration so we don't need to make an API call every time.
+	// It is stored in a global variable, right now used for image pull secrets.
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&corev1.ConfigMap{}).
+		Named("clustercollector-odigosconfiguration").
+		WithEventFilter(&odigospredicate.OdigosEffectiveConfigMapPredicate).
+		Complete(&odigosConfigurationController{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
 		return err
