@@ -168,9 +168,29 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
 	distroPerLanguage := calculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
-	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff we'd like to stop
+	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
 	// instrumentating it and to disable future instrumentation of this service
-	crashDetected := ic.Status.RollbackOccurred
+	rollbackOccurred := ic.Status.RollbackOccurred
+	// Get existing backoff reason from status conditions if available
+	var existingBackoffReason odigosv1.AgentEnabledReason
+	for _, condition := range ic.Status.Conditions {
+		if condition.Type == odigosv1.AgentEnabledStatusConditionType {
+			reason := odigosv1.AgentEnabledReason(condition.Reason)
+			if reason == odigosv1.AgentEnabledReasonCrashLoopBackOff || reason == odigosv1.AgentEnabledReasonImagePullBackOff {
+				existingBackoffReason = reason
+				break
+			}
+		}
+	}
+	// If not found in conditions, check existing container configs
+	if existingBackoffReason == "" {
+		for _, container := range ic.Spec.Containers {
+			if container.AgentEnabledReason == odigosv1.AgentEnabledReasonCrashLoopBackOff || container.AgentEnabledReason == odigosv1.AgentEnabledReasonImagePullBackOff {
+				existingBackoffReason = container.AgentEnabledReason
+				break
+			}
+		}
+	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
 
@@ -178,7 +198,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected, cg, irls, containerOverride)
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -203,7 +223,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	if len(instrumentedContainerNames) > 0 {
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
-		ic.Spec.AgentInjectionEnabled = !crashDetected
+		ic.Spec.AgentInjectionEnabled = !rollbackOccurred
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
@@ -392,7 +412,8 @@ func calculateContainerInstrumentationConfig(containerName string,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
-	crashDetected bool,
+	rollbackOccurred bool,
+	existingBackoffReason odigosv1.AgentEnabledReason,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 	irls *[]odigosv1.InstrumentationRule,
 	containerOverride *odigosv1.ContainerOverride,
@@ -522,12 +543,13 @@ func calculateContainerInstrumentationConfig(containerName string,
 		return *err
 	}
 
-	if crashDetected {
+	if rollbackOccurred {
+		message := fmt.Sprintf("Pods entered %s; instrumentation disabled", existingBackoffReason)
 		return odigosv1.ContainerAgentConfig{
 			ContainerName:       containerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
-			AgentEnabledMessage: "Pods entered CrashLoopBackOff; instrumentation disabled",
+			AgentEnabledReason:  existingBackoffReason,
+			AgentEnabledMessage: message,
 			OtelDistroName:      distroName,
 			DistroParams:        distroParameters,
 		}
