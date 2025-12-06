@@ -391,6 +391,75 @@
         .status-line-clear-btn:active {
             background-color: #e5e7eb;
         }
+        .overview-section {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #374151;
+        }
+        .overview-section h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 8px 0;
+        }
+        .overview-section .overview-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .overview-section .overview-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .overview-section .overview-stat-label {
+            font-weight: 500;
+            color: #6b7280;
+        }
+        .overview-section .overview-stat-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        .overview-filter-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            margin-left: 8px;
+        }
+        .overview-filter-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .overview-toggle {
+            width: 10px;
+            height: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            color: #6b7280;
+            font-size: 8px;
+        }
+        .overview-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        .overview-content.expanded {
+            display: block;
+        }
+        .overview-content:not(.expanded) {
+            display: none;
+        }
         .btn {
             background-color: #2563eb;
             color: white;
@@ -477,7 +546,7 @@
             border-color: #2563eb;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
-        .verbosity-label, .namespace-label, .name-label, .workload-label, .language-label {
+        .verbosity-label, .namespace-label, .name-label, .workload-label, .language-label, .health-status-label {
             font-size: 12px;
             font-weight: 600;
             color: #374151;
@@ -517,7 +586,7 @@
             color: #6b7280;
             margin-left: 3px;
         }
-        .namespace-filter-header, .workload-filter-header, .language-filter-header {
+        .namespace-filter-header, .workload-filter-header, .language-filter-header, .health-status-filter-header, .condition-filter-main-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -525,13 +594,39 @@
             user-select: none;
             margin-bottom: 4px;
         }
-        .namespace-filter-header-left, .workload-filter-header-left, .language-filter-header-left {
+        .namespace-filter-header-left, .workload-filter-header-left, .language-filter-header-left, .health-status-filter-header-left, .condition-filter-main-header-left {
             display: flex;
             align-items: center;
             gap: 4px;
             flex: 1;
         }
-        .namespace-show-all-btn, .workload-show-all-btn, .language-show-all-btn {
+        .condition-filter-main-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .condition-filter-main-toggle {
+            width: 10px;
+            height: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            color: #6b7280;
+            font-size: 8px;
+        }
+        .condition-filter-main-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        .condition-filters-container {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .condition-filters-container.expanded {
+            display: flex;
+        }
+        .namespace-show-all-btn, .workload-show-all-btn, .language-show-all-btn, .health-status-show-all-btn {
             background-color: transparent;
             border: 1px solid #d1d5db;
             color: #6b7280;
@@ -543,15 +638,15 @@
             white-space: nowrap;
             margin-left: 8px;
         }
-        .namespace-show-all-btn:hover, .workload-show-all-btn:hover, .language-show-all-btn:hover {
+        .namespace-show-all-btn:hover, .workload-show-all-btn:hover, .language-show-all-btn:hover, .health-status-show-all-btn:hover {
             background-color: #f3f4f6;
             border-color: #9ca3af;
             color: #374151;
         }
-        .namespace-show-all-btn:active, .workload-show-all-btn:active, .language-show-all-btn:active {
+        .namespace-show-all-btn:active, .workload-show-all-btn:active, .language-show-all-btn:active, .health-status-show-all-btn:active {
             background-color: #e5e7eb;
         }
-        .namespace-filter-toggle, .workload-filter-toggle, .language-filter-toggle {
+        .namespace-filter-toggle, .workload-filter-toggle, .language-filter-toggle, .health-status-filter-toggle {
             width: 10px;
             height: 10px;
             display: inline-flex;
@@ -561,7 +656,7 @@
             color: #6b7280;
             font-size: 8px;
         }
-        .namespace-filter-toggle.expanded, .workload-filter-toggle.expanded, .language-filter-toggle.expanded {
+        .namespace-filter-toggle.expanded, .workload-filter-toggle.expanded, .language-filter-toggle.expanded, .health-status-filter-toggle.expanded {
             transform: rotate(90deg);
         }
         .namespace-filters-container {
@@ -640,6 +735,17 @@
             padding: 2px 0;
         }
         .language-filters-container.expanded {
+            display: flex;
+        }
+        .health-status-filters-container {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+        .health-status-filters-container.expanded {
             display: flex;
         }
         .language-filter-footer {
@@ -723,14 +829,127 @@
             color: #6b7280;
             margin-left: 3px;
         }
-        .condition-filter-group {
+        .condition-filter-group, .health-status-filter-group {
             margin-bottom: 8px;
             border-bottom: 1px solid #e5e7eb;
             padding-bottom: 8px;
         }
-        .condition-filter-group:last-child {
+        .condition-filter-group:last-child, .health-status-filter-group:last-child {
             border-bottom: none;
             padding-bottom: 0;
+        }
+        .health-status-filter-group {
+            margin-left: 0;
+        }
+        .health-status-filter-subgroup {
+            margin-left: 14px;
+            margin-top: 4px;
+            margin-bottom: 2px;
+        }
+        .health-status-filter-subgroup-header {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 2px;
+        }
+        .health-status-filter-subgroup-toggle {
+            width: 10px;
+            height: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            color: #6b7280;
+            font-size: 8px;
+        }
+        .health-status-filter-subgroup-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        .health-status-filter-subgroup-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+        .health-status-filter-subgroup-content {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            margin-left: 14px;
+            margin-top: 2px;
+        }
+        .health-status-filter-subgroup-content.expanded {
+            display: flex;
+        }
+        .health-status-checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            margin-left: 0;
+        }
+        .health-status-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+        .health-status-checkbox-label {
+            font-size: 12px;
+            color: #374151;
+            cursor: pointer;
+            user-select: none;
+        }
+        .health-status-checkbox-label span[title],
+        .health-status-status-header span[title] {
+            pointer-events: auto;
+            position: relative;
+            z-index: 1;
+        }
+        .health-status-count {
+            font-size: 11px;
+            color: #6b7280;
+            margin-left: 4px;
+        }
+        .health-status-only-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 9px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            margin-left: auto;
+        }
+        .health-status-only-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .health-status-filter-all-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .health-status-filter-all-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .health-status-filter-footer {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 1px;
+            margin-bottom: 2px;
         }
         .condition-filter-header {
             display: flex;
@@ -828,10 +1047,33 @@
             gap: 4px;
             flex: 1;
         }
+        .condition-checkbox-label span[title] {
+            pointer-events: auto;
+            position: relative;
+            z-index: 1;
+        }
         .condition-count {
             font-size: 11px;
             color: #6b7280;
             margin-left: 3px;
+        }
+        .filter-zero-count {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+        .filter-zero-count .condition-checkbox-label,
+        .filter-zero-count .health-status-checkbox-label,
+        .filter-zero-count .language-checkbox-label,
+        .filter-zero-count .namespace-checkbox-label,
+        .filter-zero-count .workload-checkbox-label {
+            color: #9ca3af;
+        }
+        .filter-zero-count .condition-count,
+        .filter-zero-count .health-status-count,
+        .filter-zero-count .language-count,
+        .filter-zero-count .namespace-count {
+            color: #d1d5db;
+            font-weight: 600;
         }
         .condition-only-btn {
             background-color: transparent;
@@ -1038,12 +1280,13 @@
             <div class="sidebar-header">
                 <h2>Filters</h2>
                 <button class="sidebar-header-btn" onclick="clearAllFilters()">Clear All Filters</button>
+                <button class="sidebar-header-btn" onclick="collapseAll()">Collapse All</button>
             </div>
             <div class="controls">
                 <div class="filter-group">
                     <div class="namespace-filter-header" onclick="toggleNamespaceFilters()">
                         <div class="namespace-filter-header-left">
-                            <span class="namespace-filter-toggle expanded" id="namespace-filter-toggle">▶</span>
+                            <span class="namespace-filter-toggle" id="namespace-filter-toggle">▶</span>
                             <span class="namespace-label" id="namespace-label">Namespace</span>
                         </div>
                         <button id="namespace-show-all-btn" class="namespace-show-all-btn" onclick="selectAllNamespaces(event)" style="display: none;">show all</button>
@@ -1051,15 +1294,15 @@
                     <div id="namespace-filter-footer" class="namespace-filter-footer">
                         <!-- Dynamically updated -->
                     </div>
-                    <input type="text" id="namespace-search-box" class="namespace-search-box" placeholder="Search namespaces..." oninput="filterNamespacesBySearch()" style="display: block;">
-                    <div id="namespace-filters-container" class="namespace-filters-container expanded">
+                    <input type="text" id="namespace-search-box" class="namespace-search-box" placeholder="Search namespaces..." oninput="filterNamespacesBySearch()" style="display: none;">
+                    <div id="namespace-filters-container" class="namespace-filters-container">
                         <!-- Dynamically populated -->
                     </div>
                 </div>
                 <div class="filter-group">
                     <div class="workload-filter-header" onclick="toggleWorkloadFilters()">
                         <div class="workload-filter-header-left">
-                            <span class="workload-filter-toggle expanded" id="workload-filter-toggle">▶</span>
+                            <span class="workload-filter-toggle" id="workload-filter-toggle">▶</span>
                             <span class="workload-label" id="workload-label">Workloads</span>
                         </div>
                         <button id="workload-show-all-btn" class="workload-show-all-btn" onclick="selectAllWorkloads(event)" style="display: none;">show all</button>
@@ -1067,15 +1310,15 @@
                     <div id="workload-filter-footer" class="workload-filter-footer">
                         <!-- Dynamically updated -->
                     </div>
-                    <input type="text" id="workload-search-box" class="workload-search-box" placeholder="Search workloads..." oninput="filterWorkloadsBySearch()" style="display: block;">
-                    <div id="workload-filters-container" class="workload-filters-container expanded">
+                    <input type="text" id="workload-search-box" class="workload-search-box" placeholder="Search workloads..." oninput="filterWorkloadsBySearch()" style="display: none;">
+                    <div id="workload-filters-container" class="workload-filters-container">
                         <!-- Dynamically populated -->
                     </div>
                 </div>
                 <div class="filter-group">
                     <div class="language-filter-header" onclick="toggleLanguageFilters()">
                         <div class="language-filter-header-left">
-                            <span class="language-filter-toggle expanded" id="language-filter-toggle">▶</span>
+                            <span class="language-filter-toggle" id="language-filter-toggle">▶</span>
                             <span class="language-label" id="language-label">Programming Language</span>
                         </div>
                         <button id="language-show-all-btn" class="language-show-all-btn" onclick="selectAllLanguages(event)" style="display: none;">show all</button>
@@ -1083,7 +1326,7 @@
                     <div id="language-filter-footer" class="language-filter-footer">
                         <!-- Dynamically updated -->
                     </div>
-                    <div id="language-filters-container" class="language-filters-container expanded">
+                    <div id="language-filters-container" class="language-filters-container">
                         <!-- Dynamically populated -->
                     </div>
                 </div>
@@ -1107,14 +1350,34 @@
                     </div>
                 </div>
                 <div class="filter-group">
-                    <div id="condition-filters-container">
+                    <div class="health-status-filter-header" onclick="toggleHealthStatusFilters()">
+                        <div class="health-status-filter-header-left">
+                            <span class="health-status-filter-toggle" id="health-status-filter-toggle">▶</span>
+                            <span class="health-status-label" id="health-status-label">Odigos Health</span>
+                        </div>
+                        <button id="health-status-show-all-btn" class="health-status-show-all-btn" onclick="selectAllHealthStatuses(event)" style="display: none;">show all</button>
+                    </div>
+                    <div id="health-status-filter-footer" class="health-status-filter-footer">
+                        <!-- Dynamically updated -->
+                    </div>
+                    <div id="health-status-filters-container" class="health-status-filters-container">
+                        <!-- Dynamically populated for health status filters -->
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="condition-filter-main-header" onclick="toggleConditionFilters()">
+                        <div class="condition-filter-main-header-left">
+                            <span class="condition-filter-main-toggle" id="condition-filter-main-toggle">▶</span>
+                            <span class="condition-filter-main-label">Conditions</span>
+                        </div>
+                    </div>
+                    <div id="condition-filters-container" class="condition-filters-container">
                         <!-- Dynamically populated for all conditions -->
                     </div>
                 </div>
                 <div class="filter-group">
                     <button class="btn" onclick="refreshData()">Refresh</button>
                     <button class="btn" onclick="expandAll()">Expand All</button>
-                    <button class="btn" onclick="collapseAll()">Collapse All</button>
                 </div>
             </div>
         </div>
@@ -1123,6 +1386,39 @@
                 <div class="header-left">
                     <h1>Workloads</h1>
                     <div id="status-line" class="status-line"></div>
+                    <div id="overview-section" class="overview-section" style="display: none;">
+                        <div class="overview-header" onclick="toggleOverview()" style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                            <span class="overview-toggle" id="overview-toggle" style="width: 10px; height: 10px; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.2s ease; color: #6b7280; font-size: 8px;">▶</span>
+                            <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #111827;">Cluster Overview</h2>
+                            <span id="overview-header-stats" style="margin-left: auto; font-size: 12px; color: #6b7280; font-weight: 400;"></span>
+                        </div>
+                        <div id="overview-content" class="overview-content">
+                        <div class="overview-stats">
+                            <div class="overview-stat">
+                                <span class="overview-stat-label">Total:</span>
+                                <span class="overview-stat-value" id="overview-total">0 workloads found in cluster in 0 namespaces (excluding ignored namespaces)</span>
+                            </div>
+                            <div class="overview-stat">
+                                <span class="overview-stat-label">Out of these:</span>
+                            </div>
+                            <div class="overview-stat" style="margin-left: 20px;">
+                                <span class="overview-stat-label">•</span>
+                                <span class="overview-stat-value" id="overview-marked">0 is marked to be instrumented by odigos</span>
+                                <button class="overview-filter-btn" id="overview-marked-filter-btn" onclick="filterByMarkedStatus(true)" style="display: none;">filter these</button>
+                            </div>
+                            <div id="overview-health-status" style="display: none;">
+                                <div id="overview-health-status-content" style="margin-left: 40px;">
+                                    <!-- Dynamically populated -->
+                                </div>
+                            </div>
+                            <div class="overview-stat" style="margin-left: 20px;">
+                                <span class="overview-stat-label">•</span>
+                                <span class="overview-stat-value" id="overview-not-marked">0 is not marked to be instrumented by odigos</span>
+                                <button class="overview-filter-btn" id="overview-not-marked-filter-btn" onclick="filterByMarkedStatus(false)" style="display: none;">filter these</button>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="timestamp-container">
                     <span id="timestamp" class="timestamp"></span>
@@ -1152,6 +1448,98 @@
                 'unknown': '❓'
             };
             return statusEmojis[statusValue.toLowerCase()] || '';
+        }
+        
+        function getStatusProperties(statusValue) {
+            if (!statusValue || typeof statusValue !== 'string') {
+                return null;
+            }
+            const statusLower = statusValue.toLowerCase();
+            const properties = {
+                'error': {
+                    desiredState: 'Unknown',
+                    permanence: 'Unknown',
+                    userAction: 'Unknown'
+                },
+                'failure': {
+                    desiredState: 'No',
+                    permanence: 'Permanent',
+                    userAction: 'Yes - investigate or disable'
+                },
+                'notice': {
+                    desiredState: 'No',
+                    permanence: 'Permanent',
+                    userAction: 'Yes - rollout or investigate'
+                },
+                'pending': {
+                    desiredState: 'No',
+                    permanence: 'Transient (long term)',
+                    userAction: 'No'
+                },
+                'waiting': {
+                    desiredState: 'No',
+                    permanence: 'Transient (short term)',
+                    userAction: 'No'
+                },
+                'unsupported': {
+                    desiredState: 'No',
+                    permanence: 'Permanent',
+                    userAction: 'No - informational only'
+                },
+                'disabled': {
+                    desiredState: 'Yes',
+                    permanence: 'Permanent',
+                    userAction: 'No - informational only'
+                },
+                'success': {
+                    desiredState: 'Yes',
+                    permanence: 'Permanent',
+                    userAction: 'No'
+                },
+                'irrelevant': {
+                    desiredState: 'Not applicable',
+                    permanence: 'Not applicable',
+                    userAction: 'Not applicable'
+                },
+                'unknown': {
+                    desiredState: 'Unknown',
+                    permanence: 'Unknown',
+                    userAction: 'Unknown'
+                }
+            };
+            return properties[statusLower] || null;
+        }
+        
+        function getStatusTooltip(statusValue) {
+            if (!statusValue || typeof statusValue !== 'string') {
+                return statusValue || '';
+            }
+            const statusLower = statusValue.toLowerCase();
+            const tooltips = {
+                'error': 'Error - Odigos failed to determine the current or desired state due to an internal error. The actual status is unknown.',
+                'failure': 'Failure - Workload is not in desired state due to a permanent issue. Manual investigation or disabling is required.',
+                'notice': 'Notice - Workload is not in desired state due to a permanent issue. Manual rollout or investigation is required.',
+                'pending': 'Pending - Workload is waiting for a transient long term event to progress with instrumentation. No manual involvement is needed.',
+                'waiting': 'Waiting - Workload is waiting for a transient short term event to progress with instrumentation. No manual involvement is needed.',
+                'unsupported': 'Unsupported - Workload cannot reach desired state due to permanent limitations (e.g., unknown language or no agent available). This is informational only.',
+                'disabled': 'Disabled - Workload is in desired state but instrumentation is disabled by user settings. This is informational only.',
+                'success': 'Success - Workload is in its desired state.',
+                'irrelevant': 'Irrelevant - This condition is not applicable yet in the current context.',
+                'unknown': 'Unknown - Status could not be determined.'
+            };
+            return tooltips[statusLower] || statusValue;
+        }
+        
+        function getStatusPropertiesText(statusValue) {
+            const properties = getStatusProperties(statusValue);
+            if (!properties) {
+                return '';
+            }
+            const parts = [];
+            parts.push(`Desired state: ${properties.desiredState}`);
+            parts.push(`Permanence: ${properties.permanence}`);
+            parts.push(`User action: ${properties.userAction}`);
+            return parts.join(' • ');
         }
         
         function parseCamelCase(text) {
@@ -1396,7 +1784,15 @@
                 languageToggle.classList.add('expanded');
             }
             
-            // Condition filters
+            // Condition filters (main container)
+            const conditionMainContainer = document.getElementById('condition-filters-container');
+            const conditionMainToggle = document.getElementById('condition-filter-main-toggle');
+            if (conditionMainContainer && conditionMainToggle) {
+                conditionMainContainer.classList.add('expanded');
+                conditionMainToggle.classList.add('expanded');
+            }
+            
+            // Individual condition filter groups
             const conditionContainers = document.querySelectorAll('.condition-filter-content');
             const conditionToggles = document.querySelectorAll('.condition-filter-toggle');
             conditionContainers.forEach(container => container.classList.add('expanded'));
@@ -1443,7 +1839,23 @@
                 languageToggle.classList.remove('expanded');
             }
             
-            // Condition filters
+            // Health status filters
+            const healthStatusContainer = document.getElementById('health-status-filters-container');
+            const healthStatusToggle = document.getElementById('health-status-filter-toggle');
+            if (healthStatusContainer && healthStatusToggle) {
+                healthStatusContainer.classList.remove('expanded');
+                healthStatusToggle.classList.remove('expanded');
+            }
+            
+            // Condition filters (main container)
+            const conditionMainContainer = document.getElementById('condition-filters-container');
+            const conditionMainToggle = document.getElementById('condition-filter-main-toggle');
+            if (conditionMainContainer && conditionMainToggle) {
+                conditionMainContainer.classList.remove('expanded');
+                conditionMainToggle.classList.remove('expanded');
+            }
+            
+            // Individual condition filter groups
             const conditionContainers = document.querySelectorAll('.condition-filter-content');
             const conditionToggles = document.querySelectorAll('.condition-filter-toggle');
             conditionContainers.forEach(container => container.classList.remove('expanded'));
@@ -1521,6 +1933,9 @@
             output.classList.add('loading');
             output.textContent = 'Loading...';
             
+            // Save current filter state before refreshing
+            updateUrlParams();
+            
             const url = '/workload?verbosity=verbose';
             fetch(url)
                 .then(response => response.json())
@@ -1546,7 +1961,8 @@
                 languages: params.getAll('language') || [],
                 marked: params.get('marked') || 'true', // default to true
                 notMarked: params.get('notMarked') || 'true', // default to true
-                conditions: params.getAll('condition') || []
+                conditions: params.getAll('condition') || [],
+                healthStatuses: params.getAll('healthStatus') || []
             };
         }
         
@@ -1602,6 +2018,17 @@
                 }
             });
             
+            // Health status filters
+            const healthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            healthStatusCheckboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    const status = checkbox.dataset.status;
+                    const name = checkbox.dataset.name;
+                    const reasonEnum = checkbox.dataset.reasonEnum;
+                    params.append('healthStatus', `${status}|${name}|${reasonEnum}`);
+                }
+            });
+            
             // Update URL without reloading
             const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
             window.history.replaceState({}, '', newUrl);
@@ -1641,6 +2068,11 @@
             }
             if (notMarkedCheckbox) {
                 notMarkedCheckbox.checked = urlParams.notMarked !== 'false';
+            }
+            
+            // Apply health status filters - will be applied after filters are populated
+            if (urlParams.healthStatuses.length > 0) {
+                window.pendingHealthStatusFilters = urlParams.healthStatuses;
             }
             
             // Apply condition filters
@@ -1739,6 +2171,37 @@
             window.pendingLanguageFilters = null;
         }
         
+        function applyPendingHealthStatusFilters() {
+            if (!window.pendingHealthStatusFilters || window.pendingHealthStatusFilters.length === 0) {
+                return;
+            }
+            
+            // First, check all health status checkboxes
+            const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            allHealthStatusCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Then uncheck the ones specified in URL params
+            window.pendingHealthStatusFilters.forEach(healthStatusParam => {
+                const [status, name, reasonEnum] = healthStatusParam.split('|');
+                const checkbox = document.querySelector(
+                    `.health-status-checkbox[data-status="${status}"][data-name="${name}"][data-reason-enum="${reasonEnum}"]`
+                );
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            });
+            
+            // Update counts and apply filters
+            updateHealthStatusCountDisplay();
+            updateHealthStatusHeaderButton();
+            applyHealthStatusFilters();
+            
+            // Clear pending filters
+            window.pendingHealthStatusFilters = null;
+        }
+        
         function applyPendingConditionFilters() {
             if (!window.pendingConditionFilters || window.pendingConditionFilters.length === 0) {
                 return;
@@ -1804,6 +2267,9 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = 'namespace-checkbox-wrapper';
                 wrapper.dataset.namespace = namespace;
+                if (count === 0) {
+                    wrapper.classList.add('filter-zero-count');
+                }
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -1824,13 +2290,14 @@
                 const label = document.createElement('label');
                 label.htmlFor = `filter-namespace-${namespace}`;
                 label.className = 'namespace-checkbox-label';
-                label.textContent = namespace;
                 
                 const countSpan = document.createElement('span');
                 countSpan.id = `count-namespace-${namespace}`;
                 countSpan.className = 'namespace-count';
-                countSpan.textContent = `(${count})`;
+                countSpan.textContent = `(${count}) `;
                 label.appendChild(countSpan);
+                
+                label.appendChild(document.createTextNode(namespace));
                 
                 wrapper.appendChild(label);
                 
@@ -1870,6 +2337,14 @@
             updateNamespaceCountDisplay();
             updateNamespaceHeaderButton();
             updateWorkloadLabel();
+            updateNamespaceHeaderCount();
+        }
+        
+        function updateNamespaceHeaderCount() {
+            const label = document.getElementById('namespace-label');
+            if (!label) return;
+            const count = document.querySelectorAll('.namespace-checkbox').length;
+            label.textContent = `Namespace (${count})`;
         }
         
         function filterNamespacesBySearch() {
@@ -1916,32 +2391,10 @@
         }
         
         function updateNamespaceCounts() {
-            // Count workloads per namespace based on current filters
-            const selectedNamespaces = getSelectedNamespaces();
+            // Count workloads per namespace from entire cluster (always show total, not filtered)
             let dataToCount = allWorkloadData;
             
-            // Apply other filters for counting (workload, marked, conditions)
-            const selectedWorkloads = getSelectedWorkloads();
-            if (selectedWorkloads.length > 0) {
-                const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
-                dataToCount = dataToCount.filter(item => 
-                    item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
-                );
-            }
-            
-            const showMarked = document.getElementById('filter-marked').checked;
-            const showNotMarked = document.getElementById('filter-not-marked').checked;
-            if (!showMarked || !showNotMarked) {
-                dataToCount = dataToCount.filter(item => {
-                    if (!item || !item.markedForInstrumentation) {
-                        return showNotMarked;
-                    }
-                    const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
-                    return isMarked ? showMarked : showNotMarked;
-                });
-            }
-            
-            // Count per namespace
+            // Count per namespace from entire cluster
             const namespaceCounts = new Map();
             dataToCount.forEach(item => {
                 if (item && item.id && item.id.namespace) {
@@ -1950,11 +2403,20 @@
                 }
             });
             
-            // Update counts
-            namespaceCounts.forEach((count, namespace) => {
+            // Update counts and zero-count styling
+            const allNamespaceWrappers = document.querySelectorAll('.namespace-checkbox-wrapper');
+            allNamespaceWrappers.forEach(wrapper => {
+                const namespace = wrapper.dataset.namespace;
+                const count = namespaceCounts.get(namespace) || 0;
                 const countSpan = document.getElementById(`count-namespace-${namespace}`);
                 if (countSpan) {
-                    countSpan.textContent = `(${count})`;
+                    countSpan.textContent = `(${count}) `;
+                }
+                // Update zero-count class
+                if (count === 0) {
+                    wrapper.classList.add('filter-zero-count');
+                } else {
+                    wrapper.classList.remove('filter-zero-count');
                 }
             });
         }
@@ -2009,6 +2471,13 @@
             toggle.classList.toggle('expanded');
         }
         
+        function toggleConditionFilters() {
+            const container = document.getElementById('condition-filters-container');
+            const toggle = document.getElementById('condition-filter-main-toggle');
+            container.classList.toggle('expanded');
+            toggle.classList.toggle('expanded');
+        }
+        
         function updateNamespaceHeaderButton() {
             const showAllBtn = document.getElementById('namespace-show-all-btn');
             if (!showAllBtn) return;
@@ -2043,13 +2512,19 @@
             
             const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
             const selectedNamespaces = getSelectedNamespaces();
+            const count = document.querySelectorAll('.workload-checkbox').length;
             
             // Update label if not all namespaces are selected
             if (selectedNamespaces.length < allNamespaceCheckboxes.length && allNamespaceCheckboxes.length > 0) {
-                workloadLabel.textContent = 'Workloads (in selected namespaces)';
+                workloadLabel.textContent = `Workloads (${count}) (in selected namespaces)`;
             } else {
-                workloadLabel.textContent = 'Workloads';
+                workloadLabel.textContent = `Workloads (${count})`;
             }
+        }
+        
+        function updateWorkloadHeaderCount() {
+            // This is handled by updateWorkloadLabel which already includes the count
+            updateWorkloadLabel();
         }
         
         function selectAllWorkloads(event) {
@@ -2242,6 +2717,7 @@
             updateWorkloadCounts();
             updateWorkloadCountDisplay();
             updateWorkloadHeaderButton();
+            updateWorkloadHeaderCount();
             // Apply search filter after populating
             filterWorkloadsBySearch();
         }
@@ -2402,13 +2878,14 @@
                 const label = document.createElement('label');
                 label.htmlFor = `filter-language-${LANGUAGE_NOT_DETECTED}`;
                 label.className = 'language-checkbox-label';
-                label.textContent = 'language not detected';
                 
                 const countSpan = document.createElement('span');
                 countSpan.id = `count-language-${LANGUAGE_NOT_DETECTED}`;
                 countSpan.className = 'language-count';
-                countSpan.textContent = `(${notDetectedCount})`;
+                countSpan.textContent = `(${notDetectedCount}) `;
                 label.appendChild(countSpan);
+                
+                label.appendChild(document.createTextNode('language not detected'));
                 
                 wrapper.appendChild(label);
                 
@@ -2444,6 +2921,9 @@
             sortedLanguages.forEach(([language, count]) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'language-checkbox-wrapper';
+                if (count === 0) {
+                    wrapper.classList.add('filter-zero-count');
+                }
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -2464,13 +2944,14 @@
                 const label = document.createElement('label');
                 label.htmlFor = `filter-language-${language}`;
                 label.className = 'language-checkbox-label';
-                label.textContent = language;
                 
                 const countSpan = document.createElement('span');
                 countSpan.id = `count-language-${language}`;
                 countSpan.className = 'language-count';
-                countSpan.textContent = `(${count})`;
+                countSpan.textContent = `(${count}) `;
                 label.appendChild(countSpan);
+                
+                label.appendChild(document.createTextNode(language));
                 
                 wrapper.appendChild(label);
                 
@@ -2502,6 +2983,14 @@
             updateLanguageCounts();
             updateLanguageCountDisplay();
             updateLanguageHeaderButton();
+            updateLanguageHeaderCount();
+        }
+        
+        function updateLanguageHeaderCount() {
+            const label = document.getElementById('language-label');
+            if (!label) return;
+            const count = document.querySelectorAll('.language-checkbox').length;
+            label.textContent = `Programming Language (${count})`;
         }
         
         function getSelectedLanguages() {
@@ -2584,11 +3073,16 @@
                 });
                 conditionFilters.forEach((filterData, conditionName) => {
                     if (filterData.checked.length < filterData.all.length) {
+                        // Get the camelCase key for this condition name
+                        const conditionKey = Array.from(document.querySelectorAll('.condition-checkbox[data-condition-name="' + conditionName + '"]'))
+                            .map(cb => cb.dataset.conditionKey)
+                            .find(key => key) || conditionName; // Fallback to conditionName if not found
+                        
                         dataToCount = dataToCount.filter(item => {
-                            if (!item || !item.conditions || !item.conditions[conditionName]) {
+                            if (!item || !item.conditions || !item.conditions[conditionKey]) {
                                 return false;
                             }
-                            const condition = item.conditions[conditionName];
+                            const condition = item.conditions[conditionKey];
                             const reasonEnum = condition && condition.reasonEnum;
                             return reasonEnum && filterData.checked.includes(reasonEnum);
                         });
@@ -2616,7 +3110,7 @@
                 }
             });
             
-            // Update counts
+            // Update counts and zero-count styling
             const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
             allLanguageCheckboxes.forEach(checkbox => {
                 const language = checkbox.dataset.language;
@@ -2628,7 +3122,16 @@
                 }
                 const countSpan = document.getElementById(`count-language-${language}`);
                 if (countSpan) {
-                    countSpan.textContent = `(${count})`;
+                    countSpan.textContent = `(${count}) `;
+                }
+                // Update zero-count class on wrapper
+                const wrapper = checkbox.closest('.language-checkbox-wrapper');
+                if (wrapper) {
+                    if (count === 0) {
+                        wrapper.classList.add('filter-zero-count');
+                    } else {
+                        wrapper.classList.remove('filter-zero-count');
+                    }
                 }
             });
         }
@@ -2636,12 +3139,16 @@
         function applyLanguageFilter() {
             const selectedNamespaces = getSelectedNamespaces();
             const selectedWorkloads = getSelectedWorkloads();
+            populateHealthStatusFilters(allWorkloadData);
+            updateHealthStatusCounts();
             displayFilteredData(allWorkloadData, selectedNamespaces, selectedWorkloads);
         }
         
         function applyWorkloadFilter() {
             const selectedNamespaces = getSelectedNamespaces();
             updateInstrumentationCounts(allWorkloadData);
+            populateConditionFilters(allWorkloadData);
+            populateHealthStatusFilters(allWorkloadData);
             updateConditionCounts(allWorkloadData);
             updateNamespaceCounts();
             updateNamespaceCountDisplay();
@@ -2664,7 +3171,18 @@
                 );
             }
             updateInstrumentationCounts(dataToCount);
-            updateConditionCounts(dataToCount);
+            
+            // Regenerate condition filters based on new namespace selection
+            populateConditionFilters(allWorkloadData);
+            // Update condition counts after regenerating filters
+            updateConditionCounts(allWorkloadData);
+            updateAllConditionFilterCounts();
+            updateConditionHeadersCount();
+            
+            // Regenerate health status filters based on new namespace selection
+            populateHealthStatusFilters(allWorkloadData);
+            updateHealthStatusCounts();
+            
             updateNamespaceCounts();
             updateNamespaceCountDisplay();
             updateLanguageCounts();
@@ -2692,7 +3210,9 @@
                 );
             }
             updateInstrumentationCounts(dataToCount);
-            updateConditionCounts(dataToCount);
+            populateConditionFilters(allWorkloadData);
+            updateConditionCounts(allWorkloadData);
+            updateHealthStatusCounts();
             updateNamespaceCounts();
             updateNamespaceCountDisplay();
             updateWorkloadCounts();
@@ -2707,6 +3227,8 @@
         function applyInstrumentationFilter() {
             const selectedNamespaces = getSelectedNamespaces();
             const selectedWorkloads = getSelectedWorkloads();
+            populateHealthStatusFilters(allWorkloadData);
+            updateHealthStatusCounts();
             updateUrlParams();
             displayFilteredData(allWorkloadData, selectedNamespaces, selectedWorkloads);
         }
@@ -2746,15 +3268,38 @@
                 checkbox.checked = true;
             });
             
+            // Check all health status checkboxes
+            const healthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            healthStatusCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
             // Check all condition checkboxes
             const conditionCheckboxes = document.querySelectorAll('.condition-checkbox');
             conditionCheckboxes.forEach(checkbox => {
                 checkbox.checked = true;
             });
             
+            // Regenerate filter options to reflect cleared filters
+            populateConditionFilters(allWorkloadData);
+            populateHealthStatusFilters(allWorkloadData);
+            
+            // Check all condition checkboxes again after repopulation
+            const conditionCheckboxesAfter = document.querySelectorAll('.condition-checkbox');
+            conditionCheckboxesAfter.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Check all health status checkboxes again after repopulation
+            const healthStatusCheckboxesAfter = document.querySelectorAll('.health-status-checkbox');
+            healthStatusCheckboxesAfter.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
             // Update counts
             updateInstrumentationCounts(allWorkloadData);
             updateConditionCounts(allWorkloadData);
+            updateHealthStatusCounts();
             updateNamespaceCounts();
             updateNamespaceCountDisplay();
             updateWorkloadCounts();
@@ -2765,8 +3310,15 @@
             updateLanguageHeaderButton();
             updateNamespaceHeaderButton();
             updateWorkloadLabel();
+            updateHealthStatusCountDisplay();
+            updateHealthStatusHeaderButton();
             updateAllConditionFilterCounts();
             updateAllConditionFilterAllButtons();
+            // Update header counts
+            updateNamespaceHeaderCount();
+            updateLanguageHeaderCount();
+            updateHealthStatusHeaderCount();
+            updateConditionHeadersCount();
             
             // Update URL to clear all parameters
             window.history.replaceState({}, '', window.location.pathname);
@@ -2814,254 +3366,357 @@
             return statusOrder[statusLower] !== undefined ? statusOrder[statusLower] : 999;
         }
         
-        function populateConditionFilters(data) {
-            const filtersContainer = document.getElementById('condition-filters-container');
+        function populateHealthStatusFilters(data) {
+            const filtersContainer = document.getElementById('health-status-filters-container');
             filtersContainer.innerHTML = '';
             
-            // Extract all unique conditions from all workloads
-            const conditionMap = new Map(); // conditionName -> Map<reasonEnum, {reasonEnum, status, count}>
+            // Get current filters to determine which workloads to use
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            const selectedLanguages = getSelectedLanguages();
             
-            if (Array.isArray(data)) {
-                data.forEach(item => {
-                    if (item && item.conditions) {
-                        // Iterate through all conditions
-                        Object.keys(item.conditions).forEach(conditionName => {
-                            const condition = item.conditions[conditionName];
-                            if (condition && condition.reasonEnum) {
-                                if (!conditionMap.has(conditionName)) {
-                                    conditionMap.set(conditionName, new Map());
-                                }
-                                
-                                const reasonEnumMap = conditionMap.get(conditionName);
-                                const reasonEnum = condition.reasonEnum;
-                                const status = condition.status || 'Unknown';
-                                
-                                if (!reasonEnumMap.has(reasonEnum)) {
-                                    reasonEnumMap.set(reasonEnum, {
-                                        reasonEnum: reasonEnum,
-                                        status: status,
-                                        count: 0
-                                    });
-                                }
-                                reasonEnumMap.get(reasonEnum).count++;
-                                // Update status if we find a different one (prefer non-Unknown)
-                                if (status !== 'Unknown' && reasonEnumMap.get(reasonEnum).status === 'Unknown') {
-                                    reasonEnumMap.get(reasonEnum).status = status;
-                                }
-                            }
-                        });
+            // Filter data based on current filters (same logic as updateHealthStatusCounts)
+            let dataToUse = allWorkloadData;
+            
+            // Get all unique namespaces from the data
+            const allNamespacesInData = new Set();
+            if (Array.isArray(allWorkloadData)) {
+                allWorkloadData.forEach(item => {
+                    if (item && item.id && item.id.namespace) {
+                        allNamespacesInData.add(item.id.namespace);
                     }
                 });
             }
+            const allNamespacesArray = Array.from(allNamespacesInData);
             
-            // Sort conditions by name
-            const sortedConditionNames = Array.from(conditionMap.keys()).sort();
-            
-            // If no conditions found, show a message or return early
-            if (sortedConditionNames.length === 0) {
-                return; // No conditions to display
+            // Apply namespace filter - only if not all namespaces are selected
+            if (selectedNamespaces.length > 0 && selectedNamespaces.length < allNamespacesArray.length) {
+                dataToUse = dataToUse.filter(item => 
+                    item && item.id && selectedNamespaces.includes(item.id.namespace)
+                );
             }
             
-            // Create filter group for each condition
-            sortedConditionNames.forEach(conditionName => {
-                const filterGroup = document.createElement('div');
-                filterGroup.className = 'condition-filter-group';
-                filterGroup.dataset.conditionName = conditionName;
-                
-                // Create collapsible header
-                const header = document.createElement('div');
-                header.className = 'condition-filter-header';
-                
-                const headerLeft = document.createElement('div');
-                headerLeft.className = 'condition-filter-header-left';
-                headerLeft.onclick = () => {
-                    const content = filterGroup.querySelector('.condition-filter-content');
-                    const toggle = filterGroup.querySelector('.condition-filter-toggle');
-                    content.classList.toggle('expanded');
-                    toggle.classList.toggle('expanded');
-                };
-                
-                const toggle = document.createElement('span');
-                toggle.className = 'condition-filter-toggle expanded';
-                toggle.textContent = '▶';
-                headerLeft.appendChild(toggle);
-                
-                const label = document.createElement('span');
-                label.className = 'condition-filter-label';
-                label.textContent = parseCamelCase(conditionName);
-                headerLeft.appendChild(label);
-                
-                header.appendChild(headerLeft);
-                
-                // Add "all" button
-                const allBtn = document.createElement('button');
-                allBtn.className = 'condition-filter-all-btn';
-                allBtn.id = `condition-filter-all-btn-${conditionName}`;
-                allBtn.textContent = 'show all';
-                allBtn.title = 'select all options for this filter';
-                allBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    // Check all checkboxes in this condition group
-                    const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
-                    allCheckboxes.forEach(cb => {
-                        cb.checked = true;
+            // Get all unique workloads from the filtered data
+            const allWorkloadsInData = new Set();
+            dataToUse.forEach(item => {
+                if (item && item.id && item.id.namespace && item.id.name) {
+                    allWorkloadsInData.add(`${item.id.namespace}:${item.id.name}`);
+                }
+            });
+            
+            // Apply workload filter - only if not all workloads are selected
+            if (selectedWorkloads.length > 0 && selectedWorkloads.length < allWorkloadsInData.size) {
+                const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
+                dataToUse = dataToUse.filter(item => 
+                    item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
+                );
+            }
+            
+            // Apply marked for instrumentation filter
+            const showMarked = document.getElementById('filter-marked');
+            const showNotMarked = document.getElementById('filter-not-marked');
+            if (showMarked && showNotMarked) {
+                const markedChecked = showMarked.checked;
+                const notMarkedChecked = showNotMarked.checked;
+                if (!markedChecked || !notMarkedChecked) {
+                    dataToUse = dataToUse.filter(item => {
+                        if (!item || !item.markedForInstrumentation) {
+                            return notMarkedChecked;
+                        }
+                        const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                        return isMarked ? markedChecked : notMarkedChecked;
                     });
-                    updateConditionFilterCount(conditionName);
-                    updateConditionFilterAllButton(conditionName);
-                    updateUrlParams();
-                    applyConditionFilters();
-                };
-                header.appendChild(allBtn);
-                
-                filterGroup.appendChild(header);
-                
-                // Create footer with count (directly under header)
-                const footer = document.createElement('div');
-                footer.className = 'condition-filter-footer';
-                footer.id = `condition-filter-count-${conditionName}`;
-                const reasonEnumMap = conditionMap.get(conditionName);
-                const totalOptions = reasonEnumMap.size;
-                footer.textContent = `no filter`;
-                filterGroup.appendChild(footer);
-                
-                // Create collapsible content
-                const filtersDiv = document.createElement('div');
-                filtersDiv.className = 'condition-filter-content expanded';
-                filtersDiv.id = `condition-filters-${conditionName}`;
-                
-                const sortedReasons = Array.from(reasonEnumMap.values()).sort((a, b) => {
-                    // First sort by status order (from enum.graphqls)
-                    const statusOrderDiff = getStatusOrder(a.status) - getStatusOrder(b.status);
-                    if (statusOrderDiff !== 0) {
-                        return statusOrderDiff;
+                }
+            }
+            
+            // Apply language filter - only if not all languages are selected
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+            if (selectedLanguages && selectedLanguages.length > 0 && selectedLanguages.length < allLanguageCheckboxes.length) {
+                const includeNotDetected = selectedLanguages.includes(LANGUAGE_NOT_DETECTED);
+                dataToUse = dataToUse.filter(item => {
+                    const hasNoDetectedLanguages = !item || !item.runtimeInfo || !item.runtimeInfo.detectedLanguages || 
+                        !Array.isArray(item.runtimeInfo.detectedLanguages) || 
+                        item.runtimeInfo.detectedLanguages.length === 0;
+                    
+                    if (hasNoDetectedLanguages) {
+                        return includeNotDetected;
                     }
-                    // If same status, sort by reasonEnum alphabetically
-                    return a.reasonEnum.localeCompare(b.reasonEnum);
+                    
+                    return item.runtimeInfo.detectedLanguages.some(lang => selectedLanguages.includes(lang));
+                });
+            }
+            
+            // Extract all unique health status combinations from filtered data
+            // Structure: status -> Map<"name|reasonEnum", {name, reasonEnum, count}>
+            const statusMap = new Map();
+            
+            if (Array.isArray(dataToUse)) {
+                dataToUse.forEach(item => {
+                    if (item && item.workloadOdigosHealthStatus) {
+                        const name = item.workloadOdigosHealthStatus.name || '';
+                        const reasonEnum = item.workloadOdigosHealthStatus.reasonEnum || '';
+                        const status = item.workloadOdigosHealthStatus.status || 'Unknown';
+                        
+                        if (name && reasonEnum && status) {
+                            if (!statusMap.has(status)) {
+                                statusMap.set(status, new Map());
+                            }
+                            
+                            const nameReasonMap = statusMap.get(status);
+                            const key = `${name}|${reasonEnum}`;
+                            
+                            if (!nameReasonMap.has(key)) {
+                                nameReasonMap.set(key, {
+                                    name: name,
+                                    reasonEnum: reasonEnum,
+                                    count: 0
+                                });
+                            }
+                            nameReasonMap.get(key).count++;
+                        }
+                    }
+                });
+            }
+            
+            // Status order from enum.graphqls DesiredStateProgress
+            const statusOrder = ['Error', 'Failure', 'Notice', 'Pending', 'Waiting', 'Unsupported', 'Disabled', 'Success', 'Irrelevant', 'Unknown'];
+            
+            // Sort statuses by enum order
+            const sortedStatuses = Array.from(statusMap.keys()).sort((a, b) => {
+                const orderA = statusOrder.indexOf(a);
+                const orderB = statusOrder.indexOf(b);
+                return (orderA === -1 ? 999 : orderA) - (orderB === -1 ? 999 : orderB);
+            });
+            
+            if (sortedStatuses.length === 0) {
+                return;
+            }
+            
+            // Get currently checked health status filters from URL or existing checkboxes
+            const checkedHealthStatuses = new Set();
+            const existingCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            existingCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    checkedHealthStatuses.add(cb.dataset.healthStatusKey);
+                }
+            });
+            
+            // Create status groups (similar to namespace groups in workloads)
+            sortedStatuses.forEach(status => {
+                const statusGroup = document.createElement('div');
+                statusGroup.className = 'health-status-status-group';
+                statusGroup.dataset.status = status;
+                
+                // Create status header (like namespace header in workloads - not collapsible)
+                const statusHeader = document.createElement('div');
+                statusHeader.className = 'health-status-status-header';
+                statusHeader.style.display = 'flex';
+                statusHeader.style.alignItems = 'center';
+                statusHeader.style.gap = '4px';
+                statusHeader.style.fontSize = '11px';
+                statusHeader.style.fontWeight = '600';
+                statusHeader.style.color = '#6b7280';
+                statusHeader.style.marginTop = '4px';
+                statusHeader.style.marginBottom = '2px';
+                const statusEmoji = getStatusEmoji(status);
+                statusHeader.innerHTML = '';
+                if (statusEmoji) {
+                    const tooltipWrapper = document.createElement('span');
+                    tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                    tooltipWrapper.style.marginRight = '0';
+                    
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.textContent = statusEmoji + ' ';
+                    emojiSpan.style.cursor = 'help';
+                    tooltipWrapper.appendChild(emojiSpan);
+                    
+                    const tooltipDiv = document.createElement('div');
+                    tooltipDiv.className = 'emoji-tooltip';
+                    tooltipDiv.textContent = getStatusTooltip(status);
+                    tooltipWrapper.appendChild(tooltipDiv);
+                    
+                    statusHeader.appendChild(tooltipWrapper);
+                }
+                statusHeader.appendChild(document.createTextNode(status));
+                statusGroup.appendChild(statusHeader);
+                
+                // Create content for name+reasonEnum combinations (always visible, not collapsible)
+                const content = document.createElement('div');
+                content.className = 'health-status-status-content';
+                
+                const nameReasonMap = statusMap.get(status);
+                const sortedNameReasons = Array.from(nameReasonMap.entries()).sort((a, b) => {
+                    // Sort by name first, then reasonEnum
+                    const nameCompare = a[1].name.localeCompare(b[1].name);
+                    if (nameCompare !== 0) {
+                        return nameCompare;
+                    }
+                    return a[1].reasonEnum.localeCompare(b[1].reasonEnum);
                 });
                 
-                // Create checkboxes for each reasonEnum
-                sortedReasons.forEach(reasonData => {
+                sortedNameReasons.forEach(([key, data]) => {
                     const wrapper = document.createElement('div');
-                    wrapper.className = 'condition-checkbox-wrapper';
+                    wrapper.className = 'health-status-checkbox-wrapper';
+                    wrapper.style.marginLeft = '14px';
+                    if (data.count === 0) {
+                        wrapper.classList.add('filter-zero-count');
+                    }
                     
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
-                    checkbox.id = `filter-condition-${conditionName}__${reasonData.reasonEnum}`;
-                    checkbox.className = 'condition-checkbox';
-                    checkbox.dataset.conditionName = conditionName;
-                    checkbox.dataset.reasonEnum = reasonData.reasonEnum;
-                    checkbox.checked = true;
+                    checkbox.id = `filter-health-status-${status}-${key}`;
+                    checkbox.className = 'health-status-checkbox';
+                    checkbox.dataset.healthStatusKey = `${status}|${key}`;
+                    checkbox.dataset.status = status;
+                    checkbox.dataset.name = data.name;
+                    checkbox.dataset.reasonEnum = data.reasonEnum;
+                    checkbox.checked = checkedHealthStatuses.has(`${status}|${key}`) || checkedHealthStatuses.size === 0;
                     checkbox.onchange = () => {
-                        updateConditionFilterCount(conditionName);
-                        updateConditionFilterAllButton(conditionName);
+                        updateHealthStatusCounts();
+                        updateHealthStatusCountDisplay();
+                        updateHealthStatusHeaderButton();
                         updateUrlParams();
-                        applyConditionFilters();
+                        applyHealthStatusFilters();
                     };
                     wrapper.appendChild(checkbox);
                     
                     const label = document.createElement('label');
-                    label.htmlFor = `filter-condition-${conditionName}__${reasonData.reasonEnum}`;
-                    label.className = 'condition-checkbox-label';
+                    label.htmlFor = `filter-health-status-${status}-${key}`;
+                    label.className = 'health-status-checkbox-label';
                     
-                    // Add emoji based on status
-                    const statusEmoji = getStatusEmoji(reasonData.status);
-                    if (statusEmoji) {
-                        const emojiSpan = document.createElement('span');
-                        emojiSpan.textContent = statusEmoji + ' ';
-                        label.appendChild(emojiSpan);
-                    }
-                    
-                    // Add reasonEnum text
-                    const textSpan = document.createElement('span');
-                    textSpan.textContent = parseCamelCase(reasonData.reasonEnum);
-                    label.appendChild(textSpan);
-                    
-                    // Add count
                     const countSpan = document.createElement('span');
-                    countSpan.id = `count-condition-${conditionName}__${reasonData.reasonEnum}`;
-                    countSpan.className = 'condition-count';
-                    countSpan.textContent = `(${reasonData.count})`;
+                    countSpan.id = `count-health-status-${status}-${key}`;
+                    countSpan.className = 'health-status-count';
+                    countSpan.textContent = `(${data.count}) `;
                     label.appendChild(countSpan);
+                    
+                    label.appendChild(document.createTextNode(`${parseCamelCase(data.name)}: ${parseCamelCase(data.reasonEnum)}`));
                     
                     wrapper.appendChild(label);
                     
                     // Add "only" button
                     const onlyBtn = document.createElement('button');
-                    onlyBtn.className = 'condition-only-btn';
+                    onlyBtn.className = 'health-status-only-btn';
                     onlyBtn.textContent = 'only';
-                    onlyBtn.title = 'filter to show only this state';
+                    onlyBtn.title = 'filter to show only this health status';
                     onlyBtn.onclick = (e) => {
                         e.stopPropagation();
-                        // Uncheck all checkboxes in this condition group
-                        const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
-                        allCheckboxes.forEach(cb => {
+                        // Uncheck all health status checkboxes
+                        const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+                        allHealthStatusCheckboxes.forEach(cb => {
                             cb.checked = false;
                         });
                         // Check only this checkbox
                         checkbox.checked = true;
-                        updateConditionFilterCount(conditionName);
-                        updateConditionFilterAllButton(conditionName);
+                        updateHealthStatusCounts();
+                        updateHealthStatusCountDisplay();
+                        updateHealthStatusHeaderButton();
                         updateUrlParams();
-                        applyConditionFilters();
+                        applyHealthStatusFilters();
                     };
                     wrapper.appendChild(onlyBtn);
                     
-                    filtersDiv.appendChild(wrapper);
+                    content.appendChild(wrapper);
                 });
                 
-                filterGroup.appendChild(filtersDiv);
-                
-                // Update button visibility after all checkboxes are created
-                updateConditionFilterAllButton(conditionName);
-                
-                filtersContainer.appendChild(filterGroup);
+                statusGroup.appendChild(content);
+                filtersContainer.appendChild(statusGroup);
             });
             
-            // Update counts based on current filters
-            updateConditionCounts(data);
-            updateAllConditionFilterCounts();
-            updateAllConditionFilterAllButtons();
+            // Update counts and buttons
+            updateHealthStatusCounts();
+            updateHealthStatusCountDisplay();
+            updateHealthStatusHeaderButton();
+            updateHealthStatusHeaderCount();
         }
         
-        function updateConditionFilterAllButton(conditionName) {
-            const allBtn = document.getElementById(`condition-filter-all-btn-${conditionName}`);
-            if (!allBtn) return;
+        function updateHealthStatusHeaderCount() {
+            const label = document.getElementById('health-status-label');
+            if (!label) return;
+            const count = document.querySelectorAll('.health-status-checkbox').length;
+            label.textContent = `Odigos Health (${count})`;
+        }
+        
+        function toggleHealthStatusFilters() {
+            const container = document.getElementById('health-status-filters-container');
+            const toggle = document.getElementById('health-status-filter-toggle');
+            container.classList.toggle('expanded');
+            toggle.classList.toggle('expanded');
+        }
+        
+        function selectAllHealthStatuses(event) {
+            event.stopPropagation();
+            const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            allHealthStatusCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateHealthStatusCounts();
+            updateHealthStatusCountDisplay();
+            updateHealthStatusHeaderButton();
+            updateUrlParams();
+            applyHealthStatusFilters();
+        }
+        
+        function updateHealthStatusHeaderButton() {
+            const showAllBtn = document.getElementById('health-status-show-all-btn');
+            if (!showAllBtn) return;
             
-            const checkboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
-            let allChecked = true;
+            const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            const selectedHealthStatuses = getSelectedHealthStatuses();
             
+            // Show button only if not all are selected
+            if (selectedHealthStatuses.length < allHealthStatusCheckboxes.length && allHealthStatusCheckboxes.length > 0) {
+                showAllBtn.style.display = 'inline-block';
+            } else {
+                showAllBtn.style.display = 'none';
+            }
+        }
+        
+        function updateHealthStatusCountDisplay() {
+            const footer = document.getElementById('health-status-filter-footer');
+            if (!footer) return;
+            
+            const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            const selectedHealthStatuses = getSelectedHealthStatuses();
+            const totalHealthStatuses = allHealthStatusCheckboxes.length;
+            
+            // Format health statuses for display
+            const displayItems = selectedHealthStatuses.map(hs => {
+                const statusEmoji = getStatusEmoji(hs.status);
+                return `${statusEmoji} ${hs.status}: ${parseCamelCase(hs.name)}: ${parseCamelCase(hs.reasonEnum)}`;
+            });
+            
+            footer.textContent = formatFilterFooter(displayItems, totalHealthStatuses, 'health statuses');
+        }
+        
+        function getSelectedHealthStatuses() {
+            const selected = [];
+            const checkboxes = document.querySelectorAll('.health-status-checkbox');
             checkboxes.forEach(checkbox => {
-                if (!checkbox.checked) {
-                    allChecked = false;
+                if (checkbox.checked) {
+                    selected.push({
+                        status: checkbox.dataset.status,
+                        name: checkbox.dataset.name,
+                        reasonEnum: checkbox.dataset.reasonEnum
+                    });
                 }
             });
-            
-            // Show button only if some are unchecked
-            allBtn.style.display = allChecked ? 'none' : 'inline-block';
+            return selected;
         }
         
-        function updateAllConditionFilterAllButtons() {
-            const conditionGroups = document.querySelectorAll('.condition-filter-group');
-            conditionGroups.forEach(group => {
-                const conditionName = group.dataset.conditionName;
-                if (conditionName) {
-                    updateConditionFilterAllButton(conditionName);
-                }
-            });
-        }
-        
-        function updateConditionCounts(data) {
+        function updateHealthStatusCounts() {
             // Get current filters
             const selectedNamespaces = getSelectedNamespaces();
             const selectedWorkloads = getSelectedWorkloads();
             const selectedLanguages = getSelectedLanguages();
             
-            let dataToCount = data;
+            let dataToCount = allWorkloadData;
             
             // Get all unique namespaces from the data
             const allNamespacesInData = new Set();
-            if (Array.isArray(data)) {
-                data.forEach(item => {
+            if (Array.isArray(allWorkloadData)) {
+                allWorkloadData.forEach(item => {
                     if (item && item.id && item.id.namespace) {
                         allNamespacesInData.add(item.id.namespace);
                     }
@@ -3123,15 +3778,583 @@
                 });
             }
             
+            // Apply condition filters
+            const conditionFilters = new Map(); // conditionName -> { checked: [], all: [] }
+            document.querySelectorAll('.condition-checkbox').forEach(checkbox => {
+                const conditionName = checkbox.dataset.conditionName;
+                const reasonEnum = checkbox.dataset.reasonEnum;
+                if (conditionName && reasonEnum) {
+                    if (!conditionFilters.has(conditionName)) {
+                        conditionFilters.set(conditionName, { checked: [], all: [] });
+                    }
+                    conditionFilters.get(conditionName).all.push(reasonEnum);
+                    if (checkbox.checked) {
+                        conditionFilters.get(conditionName).checked.push(reasonEnum);
+                    }
+                }
+            });
+            conditionFilters.forEach((filterData, conditionName) => {
+                if (filterData.checked.length < filterData.all.length) {
+                    dataToCount = dataToCount.filter(item => {
+                        if (!item || !item.conditions || !item.conditions[conditionName]) {
+                            return false;
+                        }
+                        const condition = item.conditions[conditionName];
+                        const reasonEnum = condition && condition.reasonEnum;
+                        return reasonEnum && filterData.checked.includes(reasonEnum);
+                    });
+                }
+            });
+            
+            // Count per health status combination
+            const healthStatusCounts = new Map();
+            dataToCount.forEach(item => {
+                if (item && item.workloadOdigosHealthStatus) {
+                    const name = item.workloadOdigosHealthStatus.name || '';
+                    const reasonEnum = item.workloadOdigosHealthStatus.reasonEnum || '';
+                    const status = item.workloadOdigosHealthStatus.status || '';
+                    
+                    if (name && reasonEnum && status) {
+                        const key = `${status}|${name}|${reasonEnum}`;
+                        healthStatusCounts.set(key, (healthStatusCounts.get(key) || 0) + 1);
+                    }
+                }
+            });
+            
+            // Update counts and zero-count styling
+            const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            allHealthStatusCheckboxes.forEach(checkbox => {
+                const key = `${checkbox.dataset.status}|${checkbox.dataset.name}|${checkbox.dataset.reasonEnum}`;
+                const count = healthStatusCounts.get(key) || 0;
+                const countSpan = document.getElementById(`count-health-status-${checkbox.dataset.status}-${key}`);
+                if (countSpan) {
+                    countSpan.textContent = `(${count}) `;
+                }
+                // Update zero-count class on wrapper
+                const wrapper = checkbox.closest('.health-status-checkbox-wrapper');
+                if (wrapper) {
+                    if (count === 0) {
+                        wrapper.classList.add('filter-zero-count');
+                    } else {
+                        wrapper.classList.remove('filter-zero-count');
+                    }
+                }
+            });
+        }
+        
+        
+        function applyHealthStatusFilters() {
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            updateHealthStatusCounts();
+            updateConditionCounts(allWorkloadData);
+            updateHealthStatusCountDisplay();
+            displayFilteredData(allWorkloadData, selectedNamespaces, selectedWorkloads);
+        }
+        
+        function populateConditionFilters(data) {
+            const filtersContainer = document.getElementById('condition-filters-container');
+            filtersContainer.innerHTML = '';
+            
+            // Get current filters to determine which workloads to use
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            const selectedLanguages = getSelectedLanguages();
+            const selectedHealthStatuses = getSelectedHealthStatuses();
+            
+            // Filter data based on current filters (same logic as updateConditionCounts)
+            let dataToUse = allWorkloadData;
+            
+            // Get all unique namespaces from the data
+            const allNamespacesInData = new Set();
+            if (Array.isArray(allWorkloadData)) {
+                allWorkloadData.forEach(item => {
+                    if (item && item.id && item.id.namespace) {
+                        allNamespacesInData.add(item.id.namespace);
+                    }
+                });
+            }
+            const allNamespacesArray = Array.from(allNamespacesInData);
+            
+            // Apply namespace filter - only if not all namespaces are selected
+            if (selectedNamespaces.length > 0 && selectedNamespaces.length < allNamespacesArray.length) {
+                dataToUse = dataToUse.filter(item => 
+                    item && item.id && selectedNamespaces.includes(item.id.namespace)
+                );
+            }
+            
+            // Get all unique workloads from the filtered data
+            const allWorkloadsInData = new Set();
+            dataToUse.forEach(item => {
+                if (item && item.id && item.id.namespace && item.id.name) {
+                    allWorkloadsInData.add(`${item.id.namespace}:${item.id.name}`);
+                }
+            });
+            
+            // Apply workload filter - only if not all workloads are selected
+            if (selectedWorkloads.length > 0 && selectedWorkloads.length < allWorkloadsInData.size) {
+                const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
+                dataToUse = dataToUse.filter(item => 
+                    item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
+                );
+            }
+            
+            // Apply marked for instrumentation filter
+            const showMarked = document.getElementById('filter-marked');
+            const showNotMarked = document.getElementById('filter-not-marked');
+            if (showMarked && showNotMarked && (!showMarked.checked || !showNotMarked.checked)) {
+                dataToUse = dataToUse.filter(item => {
+                    if (!item || !item.markedForInstrumentation) {
+                        return showNotMarked.checked;
+                    }
+                    const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                    return isMarked ? showMarked.checked : showNotMarked.checked;
+                });
+            }
+            
+            // Apply language filter - only if not all languages are selected
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+            if (selectedLanguages && selectedLanguages.length > 0 && selectedLanguages.length < allLanguageCheckboxes.length) {
+                const includeNotDetected = selectedLanguages.includes(LANGUAGE_NOT_DETECTED);
+                dataToUse = dataToUse.filter(item => {
+                    const hasNoDetectedLanguages = !item || !item.runtimeInfo || !item.runtimeInfo.detectedLanguages || 
+                        !Array.isArray(item.runtimeInfo.detectedLanguages) || 
+                        item.runtimeInfo.detectedLanguages.length === 0;
+                    
+                    if (hasNoDetectedLanguages) {
+                        return includeNotDetected;
+                    }
+                    
+                    return item.runtimeInfo.detectedLanguages.some(lang => selectedLanguages.includes(lang));
+                });
+            }
+            
+            // Apply health status filter - only if not all health statuses are selected
+            const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            if (selectedHealthStatuses && selectedHealthStatuses.length > 0 && selectedHealthStatuses.length < allHealthStatusCheckboxes.length) {
+                const healthStatusSet = new Set(selectedHealthStatuses.map(hs => `${hs.status}|${hs.name}|${hs.reasonEnum}`));
+                dataToUse = dataToUse.filter(item => {
+                    if (!item || !item.workloadOdigosHealthStatus) {
+                        return false;
+                    }
+                    const name = item.workloadOdigosHealthStatus.name || '';
+                    const reasonEnum = item.workloadOdigosHealthStatus.reasonEnum || '';
+                    const status = item.workloadOdigosHealthStatus.status || '';
+                    const key = `${status}|${name}|${reasonEnum}`;
+                    return healthStatusSet.has(key);
+                });
+            }
+            
+            // Extract all unique conditions from filtered workloads
+            // Use condition.name (PascalCase) as the key for ordering, but keep mapping to camelCase key for data access
+            const conditionMap = new Map(); // conditionName (from condition.name, PascalCase) -> Map<reasonEnum, {reasonEnum, status, count}>
+            const conditionNameToKeyMap = new Map(); // conditionName (PascalCase) -> conditionKey (camelCase)
+            
+            if (Array.isArray(dataToUse)) {
+                dataToUse.forEach(item => {
+                    if (item && item.conditions) {
+                        // Iterate through all conditions
+                        Object.keys(item.conditions).forEach(conditionKey => {
+                            const condition = item.conditions[conditionKey];
+                            if (condition && condition.name && condition.reasonEnum) {
+                                // Use condition.name (PascalCase) instead of conditionKey (camelCase)
+                                const conditionName = condition.name;
+                                
+                                // Store mapping from PascalCase name to camelCase key
+                                if (!conditionNameToKeyMap.has(conditionName)) {
+                                    conditionNameToKeyMap.set(conditionName, conditionKey);
+                                }
+                                
+                                if (!conditionMap.has(conditionName)) {
+                                    conditionMap.set(conditionName, new Map());
+                                }
+                                
+                                const reasonEnumMap = conditionMap.get(conditionName);
+                                const reasonEnum = condition.reasonEnum;
+                                const status = condition.status || 'Unknown';
+                                
+                                if (!reasonEnumMap.has(reasonEnum)) {
+                                    reasonEnumMap.set(reasonEnum, {
+                                        reasonEnum: reasonEnum,
+                                        status: status,
+                                        count: 0
+                                    });
+                                }
+                                reasonEnumMap.get(reasonEnum).count++;
+                                // Update status if we find a different one (prefer non-Unknown)
+                                if (status !== 'Unknown' && reasonEnumMap.get(reasonEnum).status === 'Unknown') {
+                                    reasonEnumMap.get(reasonEnum).status = status;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Sort conditions by predefined order (using condition.name values)
+            const conditionOrder = [
+                'RuntimeDetection',
+                'AgentEnabled',
+                'WorkloadRollout',
+                'AgentInjected',
+                'ProcessesHealthStatus',
+                'ExpectingTelemetry'
+            ];
+            
+            const sortedConditionNames = Array.from(conditionMap.keys()).sort((a, b) => {
+                const orderA = conditionOrder.indexOf(a);
+                const orderB = conditionOrder.indexOf(b);
+                
+                // If both are in the predefined order, sort by that order
+                if (orderA !== -1 && orderB !== -1) {
+                    return orderA - orderB;
+                }
+                // If only A is in the order, A comes first
+                if (orderA !== -1) {
+                    return -1;
+                }
+                // If only B is in the order, B comes first
+                if (orderB !== -1) {
+                    return 1;
+                }
+                // If neither is in the order, sort alphabetically
+                return a.localeCompare(b);
+            });
+            
+            // If no conditions found, show a message or return early
+            if (sortedConditionNames.length === 0) {
+                return; // No conditions to display
+            }
+            
+            // Create filter group for each condition
+            sortedConditionNames.forEach(conditionName => {
+                const filterGroup = document.createElement('div');
+                filterGroup.className = 'condition-filter-group';
+                filterGroup.dataset.conditionName = conditionName;
+                // Store the camelCase key for data access
+                const conditionKey = conditionNameToKeyMap.get(conditionName);
+                if (conditionKey) {
+                    filterGroup.dataset.conditionKey = conditionKey;
+                }
+                
+                // Create collapsible header
+                const header = document.createElement('div');
+                header.className = 'condition-filter-header';
+                
+                const headerLeft = document.createElement('div');
+                headerLeft.className = 'condition-filter-header-left';
+                headerLeft.onclick = () => {
+                    const content = filterGroup.querySelector('.condition-filter-content');
+                    const toggle = filterGroup.querySelector('.condition-filter-toggle');
+                    content.classList.toggle('expanded');
+                    toggle.classList.toggle('expanded');
+                };
+                
+                const toggle = document.createElement('span');
+                toggle.className = 'condition-filter-toggle';
+                toggle.textContent = '▶';
+                headerLeft.appendChild(toggle);
+                
+                const label = document.createElement('span');
+                label.className = 'condition-filter-label';
+                label.textContent = parseCamelCase(conditionName);
+                headerLeft.appendChild(label);
+                
+                header.appendChild(headerLeft);
+                
+                // Add "all" button
+                const allBtn = document.createElement('button');
+                allBtn.className = 'condition-filter-all-btn';
+                allBtn.id = `condition-filter-all-btn-${conditionName}`;
+                allBtn.textContent = 'show all';
+                allBtn.title = 'select all options for this filter';
+                allBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    // Check all checkboxes in this condition group
+                    const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+                    allCheckboxes.forEach(cb => {
+                        cb.checked = true;
+                    });
+                    updateConditionFilterCount(conditionName);
+                    updateConditionFilterAllButton(conditionName);
+                    updateUrlParams();
+                    applyConditionFilters();
+                };
+                header.appendChild(allBtn);
+                
+                filterGroup.appendChild(header);
+                
+                // Create footer with count (directly under header)
+                const footer = document.createElement('div');
+                footer.className = 'condition-filter-footer';
+                footer.id = `condition-filter-count-${conditionName}`;
+                const reasonEnumMap = conditionMap.get(conditionName);
+                const totalOptions = reasonEnumMap.size;
+                footer.textContent = `no filter`;
+                filterGroup.appendChild(footer);
+                
+                // Create collapsible content
+                const filtersDiv = document.createElement('div');
+                filtersDiv.className = 'condition-filter-content';
+                filtersDiv.id = `condition-filters-${conditionName}`;
+                
+                const sortedReasons = Array.from(reasonEnumMap.values()).sort((a, b) => {
+                    // First sort by status order (from enum.graphqls)
+                    const statusOrderDiff = getStatusOrder(a.status) - getStatusOrder(b.status);
+                    if (statusOrderDiff !== 0) {
+                        return statusOrderDiff;
+                    }
+                    // If same status, sort by reasonEnum alphabetically
+                    return a.reasonEnum.localeCompare(b.reasonEnum);
+                });
+                
+                // Create checkboxes for each reasonEnum
+                sortedReasons.forEach(reasonData => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'condition-checkbox-wrapper';
+                    if (reasonData.count === 0) {
+                        wrapper.classList.add('filter-zero-count');
+                    }
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `filter-condition-${conditionName}__${reasonData.reasonEnum}`;
+                    checkbox.className = 'condition-checkbox';
+                    checkbox.dataset.conditionName = conditionName; // PascalCase for display/ordering
+                    checkbox.dataset.conditionKey = conditionKey; // camelCase for data access
+                    checkbox.dataset.reasonEnum = reasonData.reasonEnum;
+                    checkbox.checked = true;
+                    checkbox.onchange = () => {
+                        updateConditionFilterCount(conditionName);
+                        updateConditionFilterAllButton(conditionName);
+                        updateUrlParams();
+                        applyConditionFilters();
+                    };
+                    wrapper.appendChild(checkbox);
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `filter-condition-${conditionName}__${reasonData.reasonEnum}`;
+                    label.className = 'condition-checkbox-label';
+                    
+                    // Add count at the beginning
+                    const countSpan = document.createElement('span');
+                    countSpan.id = `count-condition-${conditionName}__${reasonData.reasonEnum}`;
+                    countSpan.className = 'condition-count';
+                    countSpan.textContent = `(${reasonData.count}) `;
+                    label.appendChild(countSpan);
+                    
+                    // Add emoji based on status with tooltip
+                    const statusEmoji = getStatusEmoji(reasonData.status);
+                    if (statusEmoji) {
+                        const tooltipWrapper = document.createElement('span');
+                        tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                        tooltipWrapper.style.marginRight = '0';
+                        
+                        const emojiSpan = document.createElement('span');
+                        emojiSpan.textContent = statusEmoji + ' ';
+                        emojiSpan.style.cursor = 'help';
+                        tooltipWrapper.appendChild(emojiSpan);
+                        
+                        const tooltipDiv = document.createElement('div');
+                        tooltipDiv.className = 'emoji-tooltip';
+                        tooltipDiv.textContent = getStatusTooltip(reasonData.status);
+                        tooltipWrapper.appendChild(tooltipDiv);
+                        
+                        label.appendChild(tooltipWrapper);
+                    }
+                    
+                    // Add reasonEnum text
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = parseCamelCase(reasonData.reasonEnum);
+                    label.appendChild(textSpan);
+                    
+                    wrapper.appendChild(label);
+                    
+                    // Add "only" button
+                    const onlyBtn = document.createElement('button');
+                    onlyBtn.className = 'condition-only-btn';
+                    onlyBtn.textContent = 'only';
+                    onlyBtn.title = 'filter to show only this state';
+                    onlyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        // Uncheck all checkboxes in this condition group
+                        const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+                        allCheckboxes.forEach(cb => {
+                            cb.checked = false;
+                        });
+                        // Check only this checkbox
+                        checkbox.checked = true;
+                        updateConditionFilterCount(conditionName);
+                        updateConditionFilterAllButton(conditionName);
+                        updateUrlParams();
+                        applyConditionFilters();
+                    };
+                    wrapper.appendChild(onlyBtn);
+                    
+                    filtersDiv.appendChild(wrapper);
+                });
+                
+                filterGroup.appendChild(filtersDiv);
+                
+                // Update button visibility after all checkboxes are created
+                updateConditionFilterAllButton(conditionName);
+                
+                filtersContainer.appendChild(filterGroup);
+            });
+            
+            // Update counts based on current filters
+            updateConditionCounts(allWorkloadData);
+            updateAllConditionFilterCounts();
+            updateAllConditionFilterAllButtons();
+            updateConditionHeadersCount();
+        }
+        
+        function updateConditionHeadersCount() {
+            // Update count for each condition filter group header
+            const conditionGroups = document.querySelectorAll('.condition-filter-group');
+            conditionGroups.forEach(group => {
+                const conditionName = group.dataset.conditionName;
+                if (conditionName) {
+                    const label = group.querySelector('.condition-filter-label');
+                    if (label) {
+                        const count = group.querySelectorAll('.condition-checkbox').length;
+                        const baseText = parseCamelCase(conditionName);
+                        label.textContent = `${baseText} (${count})`;
+                    }
+                }
+            });
+        }
+        
+        function updateConditionFilterAllButton(conditionName) {
+            const allBtn = document.getElementById(`condition-filter-all-btn-${conditionName}`);
+            if (!allBtn) return;
+            
+            const checkboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+            let allChecked = true;
+            
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    allChecked = false;
+                }
+            });
+            
+            // Show button only if some are unchecked
+            allBtn.style.display = allChecked ? 'none' : 'inline-block';
+        }
+        
+        function updateAllConditionFilterAllButtons() {
+            const conditionGroups = document.querySelectorAll('.condition-filter-group');
+            conditionGroups.forEach(group => {
+                const conditionName = group.dataset.conditionName;
+                if (conditionName) {
+                    updateConditionFilterAllButton(conditionName);
+                }
+            });
+        }
+        
+        function updateConditionCounts(data) {
+            // Get current filters
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            const selectedLanguages = getSelectedLanguages();
+            const selectedHealthStatuses = getSelectedHealthStatuses();
+            
+            let dataToCount = allWorkloadData;
+            
+            // Get all unique namespaces from the data
+            const allNamespacesInData = new Set();
+            if (Array.isArray(allWorkloadData)) {
+                allWorkloadData.forEach(item => {
+                    if (item && item.id && item.id.namespace) {
+                        allNamespacesInData.add(item.id.namespace);
+                    }
+                });
+            }
+            const allNamespacesArray = Array.from(allNamespacesInData);
+            
+            // Apply namespace filter - only if not all namespaces are selected
+            if (selectedNamespaces.length > 0 && selectedNamespaces.length < allNamespacesArray.length) {
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && selectedNamespaces.includes(item.id.namespace)
+                );
+            }
+            
+            // Get all unique workloads from the filtered data
+            const allWorkloadsInData = new Set();
+            dataToCount.forEach(item => {
+                if (item && item.id && item.id.namespace && item.id.name) {
+                    allWorkloadsInData.add(`${item.id.namespace}:${item.id.name}`);
+                }
+            });
+            
+            // Apply workload filter - only if not all workloads are selected
+            if (selectedWorkloads.length > 0 && selectedWorkloads.length < allWorkloadsInData.size) {
+                const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
+                );
+            }
+            
+            // Apply marked for instrumentation filter
+            const showMarked = document.getElementById('filter-marked').checked;
+            const showNotMarked = document.getElementById('filter-not-marked').checked;
+            if (!showMarked || !showNotMarked) {
+                dataToCount = dataToCount.filter(item => {
+                    if (!item || !item.markedForInstrumentation) {
+                        return showNotMarked;
+                    }
+                    const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                    return isMarked ? showMarked : showNotMarked;
+                });
+            }
+            
+            // Apply language filter - only if not all languages are selected
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+            if (selectedLanguages && selectedLanguages.length > 0 && selectedLanguages.length < allLanguageCheckboxes.length) {
+                const includeNotDetected = selectedLanguages.includes(LANGUAGE_NOT_DETECTED);
+                dataToCount = dataToCount.filter(item => {
+                    const hasNoDetectedLanguages = !item || !item.runtimeInfo || !item.runtimeInfo.detectedLanguages || 
+                        !Array.isArray(item.runtimeInfo.detectedLanguages) || 
+                        item.runtimeInfo.detectedLanguages.length === 0;
+                    
+                    if (hasNoDetectedLanguages) {
+                        return includeNotDetected;
+                    }
+                    
+                    return item.runtimeInfo.detectedLanguages.some(lang => selectedLanguages.includes(lang));
+                });
+            }
+            
+            // Apply health status filter - only if not all health statuses are selected
+            const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            if (selectedHealthStatuses && selectedHealthStatuses.length > 0 && selectedHealthStatuses.length < allHealthStatusCheckboxes.length) {
+                const healthStatusSet = new Set(selectedHealthStatuses.map(hs => `${hs.status}|${hs.name}|${hs.reasonEnum}`));
+                dataToCount = dataToCount.filter(item => {
+                    if (!item || !item.workloadOdigosHealthStatus) {
+                        return false; // Exclude items without health status if filtering is active
+                    }
+                    const name = item.workloadOdigosHealthStatus.name || '';
+                    const reasonEnum = item.workloadOdigosHealthStatus.reasonEnum || '';
+                    const status = item.workloadOdigosHealthStatus.status || '';
+                    const key = `${status}|${name}|${reasonEnum}`;
+                    return healthStatusSet.has(key);
+                });
+            }
+            
             // Count each condition's reasonEnum
-            const conditionCounts = new Map(); // conditionName -> Map<reasonEnum, count>
+            // Use condition.name (PascalCase) for matching with filter groups
+            const conditionCounts = new Map(); // conditionName (PascalCase) -> Map<reasonEnum, count>
             
             if (Array.isArray(dataToCount)) {
                 dataToCount.forEach(item => {
                     if (item && item.conditions) {
-                        Object.keys(item.conditions).forEach(conditionName => {
-                            const condition = item.conditions[conditionName];
-                            if (condition && condition.reasonEnum) {
+                        Object.keys(item.conditions).forEach(conditionKey => {
+                            const condition = item.conditions[conditionKey];
+                            if (condition && condition.name && condition.reasonEnum) {
+                                // Use condition.name (PascalCase) for matching with filter groups
+                                const conditionName = condition.name;
                                 if (!conditionCounts.has(conditionName)) {
                                     conditionCounts.set(conditionName, new Map());
                                 }
@@ -3144,12 +4367,39 @@
                 });
             }
             
-            // Update count displays
+            // Update count displays and zero-count styling
             conditionCounts.forEach((reasonEnumMap, conditionName) => {
                 reasonEnumMap.forEach((count, reasonEnum) => {
                     const countEl = document.getElementById(`count-condition-${conditionName}__${reasonEnum}`);
                     if (countEl) {
-                        countEl.textContent = `(${count})`;
+                        countEl.textContent = `(${count}) `;
+                    }
+                    // Update zero-count class on wrapper
+                    const checkbox = document.querySelector(`.condition-checkbox[data-condition-name="${conditionName}"][data-reason-enum="${reasonEnum.replace(/:/g, '\\:')}"]`);
+                    if (!checkbox) {
+                        // Try alternative selector
+                        const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+                        allCheckboxes.forEach(cb => {
+                            if (cb.dataset.reasonEnum === reasonEnum) {
+                                const wrapper = cb.closest('.condition-checkbox-wrapper');
+                                if (wrapper) {
+                                    if (count === 0) {
+                                        wrapper.classList.add('filter-zero-count');
+                                    } else {
+                                        wrapper.classList.remove('filter-zero-count');
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        const wrapper = checkbox.closest('.condition-checkbox-wrapper');
+                        if (wrapper) {
+                            if (count === 0) {
+                                wrapper.classList.add('filter-zero-count');
+                            } else {
+                                wrapper.classList.remove('filter-zero-count');
+                            }
+                        }
                     }
                 });
             });
@@ -3193,6 +4443,30 @@
         function applyConditionFilters() {
             const selectedNamespaces = getSelectedNamespaces();
             const selectedWorkloads = getSelectedWorkloads();
+            
+            // Preserve current checkbox states before regenerating
+            const currentCheckboxStates = new Map();
+            const existingCheckboxes = document.querySelectorAll('.condition-checkbox');
+            existingCheckboxes.forEach(checkbox => {
+                const key = `${checkbox.dataset.conditionName}__${checkbox.dataset.reasonEnum}`;
+                currentCheckboxStates.set(key, checkbox.checked);
+            });
+            
+            populateConditionFilters(allWorkloadData);
+            
+            // Restore checkbox states after regeneration
+            currentCheckboxStates.forEach((checked, key) => {
+                const [conditionName, reasonEnum] = key.split('__');
+                const checkbox = document.querySelector(
+                    `.condition-checkbox[data-condition-name="${conditionName}"][data-reason-enum="${reasonEnum}"]`
+                );
+                if (checkbox) {
+                    checkbox.checked = checked;
+                }
+            });
+            
+            updateConditionCounts(allWorkloadData);
+            updateHealthStatusCounts();
             updateAllConditionFilterCounts();
             displayFilteredData(allWorkloadData, selectedNamespaces, selectedWorkloads);
         }
@@ -3297,6 +4571,28 @@
             }
             if (!showNotMarked) {
                 activeFilters.push('marked for instrumentation');
+            }
+            
+            // Check health status filters
+            const selectedHealthStatuses = getSelectedHealthStatuses();
+            const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+            if (selectedHealthStatuses && selectedHealthStatuses.length > 0 && selectedHealthStatuses.length < allHealthStatusCheckboxes.length) {
+                const statusGroups = new Map(); // status -> [combinations]
+                selectedHealthStatuses.forEach(hs => {
+                    if (!statusGroups.has(hs.status)) {
+                        statusGroups.set(hs.status, []);
+                    }
+                    statusGroups.get(hs.status).push(`${parseCamelCase(hs.name)}: ${parseCamelCase(hs.reasonEnum)}`);
+                });
+                
+                statusGroups.forEach((combinations, status) => {
+                    const statusEmoji = getStatusEmoji(status);
+                    if (combinations.length === 1) {
+                        activeFilters.push(`${statusEmoji} ${status}: ${combinations[0]}`);
+                    } else {
+                        activeFilters.push(`${statusEmoji} ${status}: ${combinations.join(', ')}`);
+                    }
+                });
             }
             
             // Check condition filters - show what's displayed (checked), not what's filtered out
@@ -3421,6 +4717,23 @@
                         
                         // Check if any of the workload's languages match the selected languages
                         return item.runtimeInfo.detectedLanguages.some(lang => selectedLanguages.includes(lang));
+                    });
+                }
+                
+                // Filter by health status
+                const selectedHealthStatuses = getSelectedHealthStatuses();
+                const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+                if (selectedHealthStatuses && selectedHealthStatuses.length > 0 && selectedHealthStatuses.length < allHealthStatusCheckboxes.length) {
+                    const healthStatusSet = new Set(selectedHealthStatuses.map(hs => `${hs.status}|${hs.name}|${hs.reasonEnum}`));
+                    filteredData = filteredData.filter(item => {
+                        if (!item || !item.workloadOdigosHealthStatus) {
+                            return false; // Exclude items without health status if filtering is active
+                        }
+                        const name = item.workloadOdigosHealthStatus.name || '';
+                        const reasonEnum = item.workloadOdigosHealthStatus.reasonEnum || '';
+                        const status = item.workloadOdigosHealthStatus.status || '';
+                        const key = `${status}|${name}|${reasonEnum}`;
+                        return healthStatusSet.has(key);
                     });
                 }
                 
@@ -3774,6 +5087,133 @@
                         }
                         
                         overviewContent.appendChild(workloadIdSection);
+                    }
+                    
+                    // Odigos Health section
+                    if (item && item.workloadOdigosHealthStatus) {
+                        const odigosHealthSection = document.createElement('div');
+                        odigosHealthSection.style.marginBottom = '15px';
+                        odigosHealthSection.style.padding = '10px';
+                        odigosHealthSection.style.backgroundColor = '#f9fafb';
+                        odigosHealthSection.style.border = '1px solid #e5e7eb';
+                        odigosHealthSection.style.borderRadius = '6px';
+                        
+                        const odigosHealthTitle = document.createElement('div');
+                        odigosHealthTitle.style.fontSize = '14px';
+                        odigosHealthTitle.style.fontWeight = '600';
+                        odigosHealthTitle.style.color = '#333';
+                        odigosHealthTitle.style.marginBottom = '8px';
+                        odigosHealthTitle.textContent = 'Odigos Health';
+                        odigosHealthSection.appendChild(odigosHealthTitle);
+                        
+                        const healthStatus = item.workloadOdigosHealthStatus;
+                        
+                        // Message (at the top, without label)
+                        if (healthStatus.message) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.style.fontSize = '13px';
+                            messageDiv.style.color = '#666';
+                            messageDiv.style.marginBottom = '8px';
+                            messageDiv.textContent = healthStatus.message;
+                            odigosHealthSection.appendChild(messageDiv);
+                        }
+                        
+                        // Status
+                        if (healthStatus.status) {
+                            const statusContainer = document.createElement('div');
+                            statusContainer.style.marginBottom = '4px';
+                            
+                            const statusDiv = document.createElement('div');
+                            statusDiv.style.fontSize = '13px';
+                            statusDiv.style.color = '#666';
+                            statusDiv.style.display = 'flex';
+                            statusDiv.style.alignItems = 'center';
+                            statusDiv.style.gap = '6px';
+                            
+                            const statusLabel = document.createElement('strong');
+                            statusLabel.style.fontWeight = '600';
+                            statusLabel.style.color = '#333';
+                            statusLabel.textContent = 'status:';
+                            statusDiv.appendChild(statusLabel);
+                            
+                            const statusEmoji = getStatusEmoji(healthStatus.status);
+                            if (statusEmoji) {
+                                const tooltipWrapper = document.createElement('span');
+                                tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                                tooltipWrapper.style.marginRight = '0';
+                                
+                                const emojiSpan = document.createElement('span');
+                                emojiSpan.textContent = statusEmoji + ' ';
+                                emojiSpan.style.cursor = 'help';
+                                tooltipWrapper.appendChild(emojiSpan);
+                                
+                                const tooltipDiv = document.createElement('div');
+                                tooltipDiv.className = 'emoji-tooltip';
+                                tooltipDiv.textContent = getStatusTooltip(healthStatus.status);
+                                tooltipWrapper.appendChild(tooltipDiv);
+                                
+                                statusDiv.appendChild(tooltipWrapper);
+                            }
+                            statusDiv.appendChild(document.createTextNode(healthStatus.status));
+                            
+                            statusContainer.appendChild(statusDiv);
+                            
+                            // Add status description text below status
+                            const statusDescription = getStatusTooltip(healthStatus.status);
+                            if (statusDescription) {
+                                const descriptionDiv = document.createElement('div');
+                                descriptionDiv.style.fontSize = '11px';
+                                descriptionDiv.style.color = '#9ca3af';
+                                descriptionDiv.style.marginTop = '2px';
+                                descriptionDiv.style.marginLeft = '20px';
+                                descriptionDiv.textContent = statusDescription;
+                                statusContainer.appendChild(descriptionDiv);
+                            }
+                            
+                            odigosHealthSection.appendChild(statusContainer);
+                        }
+                        
+                        // Name (changed to "instrumentation phase")
+                        if (healthStatus.name) {
+                            const nameDiv = document.createElement('div');
+                            nameDiv.style.fontSize = '13px';
+                            nameDiv.style.color = '#666';
+                            nameDiv.style.marginBottom = '4px';
+                            nameDiv.style.display = 'flex';
+                            nameDiv.style.alignItems = 'center';
+                            nameDiv.style.gap = '6px';
+                            
+                            const nameLabel = document.createElement('strong');
+                            nameLabel.style.fontWeight = '600';
+                            nameLabel.style.color = '#333';
+                            nameLabel.textContent = 'instrumentation phase:';
+                            nameDiv.appendChild(nameLabel);
+                            nameDiv.appendChild(document.createTextNode(' ' + parseCamelCase(healthStatus.name)));
+                            
+                            odigosHealthSection.appendChild(nameDiv);
+                        }
+                        
+                        // Reason Enum
+                        if (healthStatus.reasonEnum) {
+                            const reasonDiv = document.createElement('div');
+                            reasonDiv.style.fontSize = '13px';
+                            reasonDiv.style.color = '#666';
+                            reasonDiv.style.marginBottom = '4px';
+                            reasonDiv.style.display = 'flex';
+                            reasonDiv.style.alignItems = 'center';
+                            reasonDiv.style.gap = '6px';
+                            
+                            const reasonLabel = document.createElement('strong');
+                            reasonLabel.style.fontWeight = '600';
+                            reasonLabel.style.color = '#333';
+                            reasonLabel.textContent = 'reason:';
+                            reasonDiv.appendChild(reasonLabel);
+                            reasonDiv.appendChild(document.createTextNode(' ' + parseCamelCase(healthStatus.reasonEnum)));
+                            
+                            odigosHealthSection.appendChild(reasonDiv);
+                        }
+                        
+                        overviewContent.appendChild(odigosHealthSection);
                     }
                     
                     // Instrumentation section
@@ -6244,8 +7684,331 @@
             }
         }
         
+        function updateOverview(data) {
+            const overviewSection = document.getElementById('overview-section');
+            if (!overviewSection) return;
+            
+            if (!Array.isArray(data) || data.length === 0) {
+                overviewSection.style.display = 'none';
+                return;
+            }
+            
+            // Calculate total workloads and unique namespaces
+            const totalWorkloads = data.length;
+            const uniqueNamespaces = new Set();
+            let markedCount = 0;
+            let notMarkedCount = 0;
+            const statusCounts = new Map(); // status -> count
+            
+            data.forEach(item => {
+                if (item && item.id && item.id.namespace) {
+                    uniqueNamespaces.add(item.id.namespace);
+                }
+                if (item && item.markedForInstrumentation && 
+                    item.markedForInstrumentation.markedForInstrumentation === true) {
+                    markedCount++;
+                    // Count status for marked workloads
+                    if (item && item.workloadOdigosHealthStatus && item.workloadOdigosHealthStatus.status) {
+                        const status = item.workloadOdigosHealthStatus.status.toLowerCase();
+                        statusCounts.set(status, (statusCounts.get(status) || 0) + 1);
+                    }
+                } else {
+                    notMarkedCount++;
+                }
+            });
+            
+            const namespaceCount = uniqueNamespaces.size;
+            const namespaceText = namespaceCount === 1 ? 'namespace' : 'namespaces';
+            
+            // Update overview header stats
+            const headerStats = document.getElementById('overview-header-stats');
+            if (headerStats) {
+                headerStats.innerHTML = ''; // Clear previous content
+                
+                const statusOrder = ['error', 'failure', 'notice', 'pending', 'waiting', 'unsupported', 'disabled', 'success', 'irrelevant', 'unknown'];
+                
+                // Add marked count
+                const markedSpan = document.createElement('span');
+                markedSpan.textContent = `${markedCount} marked for instrumentation`;
+                headerStats.appendChild(markedSpan);
+                
+                // Add status counts (sorted by enum order)
+                const sortedStatuses = Array.from(statusCounts.entries()).sort((a, b) => {
+                    const orderA = statusOrder.indexOf(a[0]);
+                    const orderB = statusOrder.indexOf(b[0]);
+                    return (orderA === -1 ? 999 : orderA) - (orderB === -1 ? 999 : orderB);
+                });
+                
+                sortedStatuses.forEach(([status, count], index) => {
+                    // Add separator
+                    if (index === 0 || index > 0) {
+                        const separator = document.createElement('span');
+                        separator.textContent = ' • ';
+                        headerStats.appendChild(separator);
+                    }
+                    
+                    const statusContainer = document.createElement('span');
+                    statusContainer.style.display = 'inline-flex';
+                    statusContainer.style.alignItems = 'center';
+                    statusContainer.style.gap = '2px';
+                    
+                    const emoji = getStatusEmoji(status);
+                    if (emoji) {
+                        // Add emoji with tooltip
+                        const tooltipWrapper = document.createElement('span');
+                        tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                        tooltipWrapper.style.marginRight = '0';
+                        
+                        const emojiSpan = document.createElement('span');
+                        emojiSpan.textContent = emoji + ' ';
+                        emojiSpan.style.cursor = 'help';
+                        tooltipWrapper.appendChild(emojiSpan);
+                        
+                        const tooltipDiv = document.createElement('div');
+                        tooltipDiv.className = 'emoji-tooltip';
+                        tooltipDiv.textContent = getStatusTooltip(status);
+                        tooltipWrapper.appendChild(tooltipDiv);
+                        
+                        statusContainer.appendChild(tooltipWrapper);
+                    }
+                    
+                    // Add count and status text
+                    if (status === 'success') {
+                        statusContainer.appendChild(document.createTextNode(`${count} healthy`));
+                    } else {
+                        const statusDisplay = status.charAt(0).toUpperCase() + status.slice(1);
+                        statusContainer.appendChild(document.createTextNode(`${count} ${statusDisplay.toLowerCase()}`));
+                    }
+                    
+                    headerStats.appendChild(statusContainer);
+                });
+            }
+            
+            // Update overview display
+            document.getElementById('overview-total').textContent = 
+                `${totalWorkloads} workload${totalWorkloads !== 1 ? 's' : ''} found in cluster in ${namespaceCount} ${namespaceText} (excluding ignored namespaces)`;
+            document.getElementById('overview-marked').textContent = 
+                `${markedCount} ${markedCount === 1 ? 'is' : 'are'} marked to be instrumented by odigos`;
+            document.getElementById('overview-not-marked').textContent = 
+                `${notMarkedCount} ${notMarkedCount === 1 ? 'is' : 'are'} not marked to be instrumented by odigos`;
+            
+            // Show filter buttons for marked/not marked
+            const markedFilterBtn = document.getElementById('overview-marked-filter-btn');
+            const notMarkedFilterBtn = document.getElementById('overview-not-marked-filter-btn');
+            if (markedFilterBtn) markedFilterBtn.style.display = markedCount > 0 ? 'inline-block' : 'none';
+            if (notMarkedFilterBtn) notMarkedFilterBtn.style.display = notMarkedCount > 0 ? 'inline-block' : 'none';
+            
+            // Calculate workloadOdigosHealthStatus breakdown for marked workloads
+            const healthStatusSection = document.getElementById('overview-health-status');
+            const healthStatusContent = document.getElementById('overview-health-status-content');
+            if (markedCount > 0 && healthStatusSection && healthStatusContent) {
+                // Map to store unique combinations: key = "name|reasonEnum|status", value = count
+                const healthStatusCounts = new Map();
+                let nullHealthStatusCount = 0;
+                
+                // Status order from enum.graphqls DesiredStateProgress
+                const statusOrder = ['Error', 'Failure', 'Notice', 'Pending', 'Waiting', 'Unsupported', 'Disabled', 'Success', 'Irrelevant', 'Unknown'];
+                
+                // Count workloads by workloadOdigosHealthStatus
+                data.forEach(item => {
+                    if (item && item.markedForInstrumentation && 
+                        item.markedForInstrumentation.markedForInstrumentation === true) {
+                        if (!item.workloadOdigosHealthStatus) {
+                            nullHealthStatusCount++;
+                        } else {
+                            const name = item.workloadOdigosHealthStatus.name || '';
+                            const reasonEnum = item.workloadOdigosHealthStatus.reasonEnum || '';
+                            const status = item.workloadOdigosHealthStatus.status || '';
+                            
+                            if (name && reasonEnum && status) {
+                                const key = `${name}|${reasonEnum}|${status}`;
+                                healthStatusCounts.set(key, {
+                                    name: name,
+                                    reasonEnum: reasonEnum,
+                                    status: status,
+                                    count: (healthStatusCounts.get(key)?.count || 0) + 1
+                                });
+                            } else {
+                                nullHealthStatusCount++;
+                            }
+                        }
+                    }
+                });
+                
+                // Clear previous content
+                healthStatusContent.innerHTML = '';
+                
+                // Convert map to array and sort by status order
+                const healthStatusArray = Array.from(healthStatusCounts.values());
+                healthStatusArray.sort((a, b) => {
+                    const statusA = statusOrder.indexOf(a.status);
+                    const statusB = statusOrder.indexOf(b.status);
+                    if (statusA !== statusB) {
+                        return statusA - statusB;
+                    }
+                    // If same status, sort by name, then reasonEnum
+                    const nameCompare = a.name.localeCompare(b.name);
+                    if (nameCompare !== 0) {
+                        return nameCompare;
+                    }
+                    return a.reasonEnum.localeCompare(b.reasonEnum);
+                });
+                
+                // Show breakdown
+                if (nullHealthStatusCount > 0 || healthStatusArray.length > 0) {
+                    // Show null health status if any
+                    if (nullHealthStatusCount > 0) {
+                        const statDiv = document.createElement('div');
+                        statDiv.className = 'overview-stat';
+                        
+                        const labelSpan = document.createElement('span');
+                        labelSpan.className = 'overview-stat-label';
+                        labelSpan.textContent = '  ';
+                        statDiv.appendChild(labelSpan);
+                        
+                        const valueSpan = document.createElement('span');
+                        valueSpan.className = 'overview-stat-value';
+                        valueSpan.textContent = `${nullHealthStatusCount} ${nullHealthStatusCount === 1 ? 'has' : 'have'} no health status`;
+                        statDiv.appendChild(valueSpan);
+                        
+                        // Note: No filter button for null health status since we can't filter by it
+                        
+                        healthStatusContent.appendChild(statDiv);
+                    }
+                    
+                    // Show each unique combination
+                    healthStatusArray.forEach(entry => {
+                        const statDiv = document.createElement('div');
+                        statDiv.className = 'overview-stat';
+                        
+                        const labelSpan = document.createElement('span');
+                        labelSpan.className = 'overview-stat-label';
+                        labelSpan.textContent = '  ';
+                        statDiv.appendChild(labelSpan);
+                        
+                        const valueSpan = document.createElement('span');
+                        valueSpan.className = 'overview-stat-value';
+                        const nameText = parseCamelCase(entry.name);
+                        const reasonText = parseCamelCase(entry.reasonEnum);
+                        const statusText = entry.status.toLowerCase();
+                        const statusEmoji = getStatusEmoji(entry.status);
+                        
+                        // Add emoji with tooltip if available
+                        if (statusEmoji) {
+                            const tooltipWrapper = document.createElement('span');
+                            tooltipWrapper.className = 'emoji-tooltip-wrapper';
+                            tooltipWrapper.style.marginRight = '0';
+                            
+                            const emojiSpan = document.createElement('span');
+                            emojiSpan.textContent = statusEmoji + ' ';
+                            emojiSpan.style.cursor = 'help';
+                            tooltipWrapper.appendChild(emojiSpan);
+                            
+                            const tooltipDiv = document.createElement('div');
+                            tooltipDiv.className = 'emoji-tooltip';
+                            tooltipDiv.textContent = getStatusTooltip(entry.status);
+                            tooltipWrapper.appendChild(tooltipDiv);
+                            
+                            valueSpan.appendChild(tooltipWrapper);
+                        }
+                        
+                        valueSpan.appendChild(document.createTextNode(`${entry.count} ${entry.count === 1 ? 'is' : 'are'} ${statusText} (${nameText}: ${reasonText})`));
+                        statDiv.appendChild(valueSpan);
+                        
+                        // Add "filter these" button
+                        const filterBtn = document.createElement('button');
+                        filterBtn.className = 'overview-filter-btn';
+                        filterBtn.textContent = 'filter these';
+                        filterBtn.title = 'Filter to show only workloads with this health status';
+                        filterBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            filterByHealthStatus(entry.status, entry.name, entry.reasonEnum);
+                        };
+                        statDiv.appendChild(filterBtn);
+                        
+                        healthStatusContent.appendChild(statDiv);
+                    });
+                    
+                    healthStatusSection.style.display = 'block';
+                } else {
+                    healthStatusSection.style.display = 'none';
+                }
+            } else if (healthStatusSection) {
+                healthStatusSection.style.display = 'none';
+            }
+            
+            overviewSection.style.display = 'block';
+        }
+        
+        function toggleOverview() {
+            const content = document.getElementById('overview-content');
+            const toggle = document.getElementById('overview-toggle');
+            if (content && toggle) {
+                content.classList.toggle('expanded');
+                toggle.classList.toggle('expanded');
+            }
+        }
+        
+        function filterByHealthStatus(status, name, reasonEnum) {
+            // Clear all filters first
+            clearAllFilters();
+            
+            // Wait a bit for filters to clear, then set the specific health status filter
+            setTimeout(() => {
+                // Uncheck all health status checkboxes
+                const allHealthStatusCheckboxes = document.querySelectorAll('.health-status-checkbox');
+                allHealthStatusCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                // Find and check the specific health status checkbox
+                const targetCheckbox = Array.from(allHealthStatusCheckboxes).find(checkbox => {
+                    return checkbox.dataset.status === status &&
+                           checkbox.dataset.name === name &&
+                           checkbox.dataset.reasonEnum === reasonEnum;
+                });
+                
+                if (targetCheckbox) {
+                    targetCheckbox.checked = true;
+                    updateHealthStatusCounts();
+                    updateHealthStatusCountDisplay();
+                    updateHealthStatusHeaderButton();
+                    updateUrlParams();
+                    applyHealthStatusFilters();
+                }
+            }, 50);
+        }
+        
+        function filterByMarkedStatus(isMarked) {
+            // Clear all filters first
+            clearAllFilters();
+            
+            // Wait a bit for filters to clear, then set the specific marked status filter
+            setTimeout(() => {
+                const markedCheckbox = document.getElementById('filter-marked');
+                const notMarkedCheckbox = document.getElementById('filter-not-marked');
+                
+                if (isMarked) {
+                    // Show only marked workloads
+                    if (markedCheckbox) markedCheckbox.checked = true;
+                    if (notMarkedCheckbox) notMarkedCheckbox.checked = false;
+                } else {
+                    // Show only not marked workloads
+                    if (markedCheckbox) markedCheckbox.checked = false;
+                    if (notMarkedCheckbox) notMarkedCheckbox.checked = true;
+                }
+                
+                updateUrlParams();
+                applyInstrumentationFilter();
+            }, 50);
+        }
+        
         function loadData(data) {
             allWorkloadData = data;
+            
+            // Apply URL parameters to restore filters (if any)
+            applyUrlParams();
+            
             const selectedNamespaces = getSelectedNamespaces();
             const selectedWorkloads = getSelectedWorkloads();
             populateNamespaceCheckboxes(data);
@@ -6262,10 +8025,17 @@
             // Apply pending language filters from URL after checkboxes are created
             applyPendingLanguageFilters();
             updateInstrumentationCounts(data);
+            populateHealthStatusFilters(data);
+            // Apply pending health status filters from URL after filters are populated
+            applyPendingHealthStatusFilters();
             populateConditionFilters(data);
-            updateConditionCounts(data);
+            updateConditionCounts(allWorkloadData);
             // Apply pending condition filters from URL after filters are populated
             applyPendingConditionFilters();
+            
+            // Update overview (shows all workloads regardless of filters)
+            updateOverview(data);
+            
             displayFilteredData(data, finalSelectedNamespaces, finalSelectedWorkloads);
         }
         

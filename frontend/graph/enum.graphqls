@@ -20,7 +20,7 @@ enum DesiredStateProgress {
 
     # Is in desried state - no
     # Permanence - permanent
-    # User action iteam - yes (rollout / investigate)
+    # User action items - yes (rollout / investigate)
     # severity - show first, unless there is a failure
     # example - manual rollout to workload required to apply instrumentation
     Notice
