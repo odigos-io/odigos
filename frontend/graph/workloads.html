@@ -5,52 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workloads - Odigos</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
+            padding: 0;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+            color: #1f2937;
+            line-height: 1.6;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
-            background-color: white;
-            padding: 20px;
+            background-color: #ffffff;
+            padding: 32px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            margin-top: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
         }
         h1 {
-            color: #333;
-            margin-bottom: 20px;
+            color: #111827;
+            margin-bottom: 24px;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
         }
         #json-output {
             max-height: 80vh;
             overflow: auto;
+            padding: 8px;
+        }
+        #json-output::-webkit-scrollbar {
+            width: 12px;
+        }
+        #json-output::-webkit-scrollbar-track {
+            background: #f7fafc;
+            border-radius: 6px;
+        }
+        #json-output::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 6px;
+        }
+        #json-output::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
         }
         .json-item {
-            margin: 2px 0;
+            margin: 4px 0;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
         }
         .json-item.expandable {
             cursor: pointer;
         }
         .json-item.expandable:hover {
-            background-color: #f0f0f0;
+            background-color: #f7fafc;
         }
         .json-key {
-            color: #881391;
+            color: #1e40af;
             font-weight: 500;
         }
         .json-string {
-            color: #0b7500;
+            color: #059669;
+            font-weight: 400;
         }
         .json-number {
-            color: #1c00cf;
+            color: #0369a1;
+            font-weight: 500;
         }
         .json-boolean {
-            color: #1c00cf;
+            color: #0369a1;
+            font-weight: 500;
         }
         .json-null {
-            color: #808080;
+            color: #a0aec0;
+            font-style: italic;
         }
         .emoji-tooltip-wrapper {
             position: relative;
@@ -59,11 +93,11 @@
         }
         .emoji-tooltip {
             visibility: hidden;
-            background-color: #333;
-            color: #fff;
+            background-color: #1f2937;
+            color: #f9fafb;
             text-align: left;
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 10px 14px;
+            border-radius: 6px;
             position: absolute;
             z-index: 1000;
             top: 0;
@@ -71,194 +105,271 @@
             margin-left: 8px;
             white-space: nowrap;
             font-size: 12px;
+            font-weight: 400;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.2s ease;
             pointer-events: none;
             max-width: 400px;
             min-width: 200px;
             white-space: normal;
             word-wrap: break-word;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+            line-height: 1.5;
         }
         .emoji-tooltip::before {
             content: "";
             position: absolute;
             right: 100%;
-            top: 8px;
+            top: 10px;
             border-width: 5px;
             border-style: solid;
-            border-color: transparent #333 transparent transparent;
+            border-color: transparent #1f2937 transparent transparent;
         }
         .emoji-tooltip-wrapper:hover .emoji-tooltip {
             visibility: visible;
             opacity: 1;
         }
         .status-error {
-            color: #d32f2f;
+            color: #dc2626;
             font-weight: 600;
+            background-color: #fef2f2;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #fecaca;
         }
         .status-failure {
-            color: #c62828;
+            color: #b91c1c;
             font-weight: 600;
+            background-color: #fef2f2;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #fecaca;
         }
         .status-notice {
-            color: #f57c00;
+            color: #d97706;
             font-weight: 600;
+            background-color: #fffbeb;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #fde68a;
         }
         .status-pending {
-            color: #1976d2;
+            color: #2563eb;
             font-weight: 500;
+            background-color: #eff6ff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #bfdbfe;
         }
         .status-waiting {
-            color: #0288d1;
+            color: #1e40af;
             font-weight: 500;
+            background-color: #eff6ff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #bfdbfe;
         }
         .status-unsupported {
-            color: #757575;
+            color: #6b7280;
             font-weight: 500;
+            background-color: #f9fafb;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
         }
         .status-disabled {
-            color: #616161;
-            font-weight: 500;
+            color: #9ca3af;
+            font-weight: 400;
+            background-color: #f9fafb;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
         }
         .status-success {
-            color: #388e3c;
+            color: #059669;
             font-weight: 600;
+            background-color: #ecfdf5;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #a7f3d0;
         }
         .status-irrelevant {
-            color: #9e9e9e;
+            color: #d1d5db;
             font-weight: 400;
         }
         .status-unknown {
-            color: #757575;
+            color: #9ca3af;
             font-weight: 500;
+            background-color: #f9fafb;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
         }
         .toggle {
             cursor: pointer;
             user-select: none;
             display: inline-block;
-            width: 16px;
+            width: 18px;
+            height: 18px;
             text-align: center;
-            margin-right: 4px;
+            margin-right: 6px;
+            border-radius: 3px;
+            transition: background-color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle:hover {
+            background-color: #f3f4f6;
         }
         .toggle::before {
             content: '▶';
             display: inline-block;
-            transition: transform 0.2s;
-            font-size: 10px;
+            transition: transform 0.2s ease;
+            font-size: 9px;
+            color: #6b7280;
         }
         .toggle.expanded::before {
             transform: rotate(90deg);
         }
         .children {
-            margin-left: 20px;
+            margin-left: 24px;
             display: none;
+            padding-left: 8px;
+            border-left: 1px solid #e5e7eb;
+            margin-top: 6px;
         }
         .children.expanded {
             display: block;
         }
         .loading {
-            color: #666;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 400;
+            padding: 32px;
+            text-align: center;
         }
         .error {
-            color: #d32f2f;
+            color: #dc2626;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 32px;
+            text-align: center;
+            background-color: #fef2f2;
+            border-radius: 6px;
+            border: 1px solid #fecaca;
         }
         .controls {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background-color: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
         }
         .header-row {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
         }
         .btn {
-            background-color: #007bff;
+            background-color: #2563eb;
             color: white;
             border: none;
-            padding: 8px 16px;
-            margin-right: 10px;
-            border-radius: 4px;
+            padding: 10px 20px;
+            margin-right: 8px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .btn:hover {
-            background-color: #0056b3;
+            background-color: #1d4ed8;
+        }
+        .btn:active {
+            background-color: #1e40af;
         }
         .timestamp {
-            color: #666;
-            font-size: 14px;
-            margin-left: 10px;
+            color: #6b7280;
+            font-size: 13px;
+            margin-left: 12px;
+            font-weight: 400;
+            padding: 6px 12px;
+            background-color: #f9fafb;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
         }
         .timestamp-duration {
-            margin-left: 8px;
+            margin-left: 6px;
+            color: #9ca3af;
         }
         .timestamp-duration.old {
-            color: #d32f2f;
+            color: #dc2626;
             font-weight: 600;
-        }
-        .verbosity-select {
-            padding: 8px 12px;
-            margin-right: 10px;
-            border: 1px solid #ddd;
+            background-color: #fef2f2;
+            padding: 2px 6px;
             border-radius: 4px;
+            border: 1px solid #fecaca;
+        }
+        .verbosity-select, .namespace-select, .name-select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
             font-size: 14px;
             cursor: pointer;
+            background: white;
+            color: #374151;
+            font-weight: 400;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            min-width: 180px;
         }
-        .verbosity-label {
+        .verbosity-select:hover, .namespace-select:hover, .name-select:hover {
+            border-color: #9ca3af;
+        }
+        .verbosity-select:focus, .namespace-select:focus, .name-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .verbosity-label, .namespace-label, .name-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
             margin-right: 8px;
-            font-size: 14px;
-            color: #333;
-        }
-        .namespace-select {
-            padding: 8px 12px;
-            margin-right: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .namespace-label {
-            margin-right: 8px;
-            margin-left: 10px;
-            font-size: 14px;
-            color: #333;
-        }
-        .name-select {
-            padding: 8px 12px;
-            margin-right: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .name-label {
-            margin-right: 8px;
-            margin-left: 10px;
-            font-size: 14px;
-            color: #333;
         }
         .tabs {
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 0;
         }
         .tab-button {
             background-color: transparent;
             border: none;
-            padding: 8px 16px;
+            padding: 12px 16px;
             cursor: pointer;
             font-size: 14px;
-            color: #666;
+            font-weight: 500;
+            color: #6b7280;
             border-bottom: 2px solid transparent;
-            margin-right: 4px;
+            transition: color 0.2s ease;
+            position: relative;
+            margin-bottom: -1px;
         }
         .tab-button:hover {
-            color: #333;
-            background-color: #f5f5f5;
+            color: #374151;
         }
         .tab-button.active {
-            color: #007bff;
-            border-bottom-color: #007bff;
-            font-weight: 500;
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            font-weight: 600;
         }
         .tab-content {
             display: none;
@@ -267,7 +378,7 @@
             display: block;
         }
         .k8s-commands {
-            padding: 15px;
+            padding: 20px;
         }
         .k8s-command-section {
             margin-bottom: 20px;
@@ -275,40 +386,110 @@
         .k8s-command-title {
             font-weight: 600;
             font-size: 14px;
-            color: #333;
+            color: #374151;
             margin-bottom: 8px;
         }
         .k8s-command-block {
             display: flex;
             align-items: center;
-            gap: 8px;
-            background-color: #f8f8f8;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
+            gap: 10px;
+            background-color: #f9fafb;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
             font-size: 13px;
+            border: 1px solid #e5e7eb;
+            transition: border-color 0.2s ease;
+        }
+        .k8s-command-block:hover {
+            border-color: #d1d5db;
         }
         .k8s-command-text {
             flex: 1;
             white-space: pre-wrap;
             word-wrap: break-word;
-            color: #333;
+            color: #374151;
+            font-weight: 400;
         }
         .k8s-copy-btn {
-            background-color: #007bff;
+            background-color: #2563eb;
             color: white;
             border: none;
             padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
+            font-weight: 500;
             white-space: nowrap;
+            transition: background-color 0.2s ease;
         }
         .k8s-copy-btn:hover {
-            background-color: #0056b3;
+            background-color: #1d4ed8;
         }
         .k8s-copy-btn:active {
-            background-color: #004085;
+            background-color: #1e40af;
+        }
+        
+        /* Custom scrollbar */
+        #json-output::-webkit-scrollbar {
+            width: 12px;
+        }
+        #json-output::-webkit-scrollbar-track {
+            background: #f7fafc;
+            border-radius: 6px;
+        }
+        #json-output::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 6px;
+        }
+        #json-output::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            .container {
+                padding: 20px;
+                margin-top: 12px;
+                margin-bottom: 12px;
+                border-radius: 6px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .verbosity-select, .namespace-select, .name-select {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            .header-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .timestamp {
+                margin-left: 0;
+            }
+        }
+        
+        /* Subtle animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .workload-item {
+            animation: fadeIn 0.2s ease-out;
         }
     </style>
 </head>
@@ -815,10 +996,21 @@
                 filteredData.forEach((item, idx) => {
                     const wrapper = document.createElement('div');
                     wrapper.className = 'workload-item';
-                    wrapper.style.marginBottom = '20px';
-                    wrapper.style.padding = '10px';
-                    wrapper.style.border = '1px solid #ddd';
-                    wrapper.style.borderRadius = '4px';
+                    wrapper.style.marginBottom = '16px';
+                    wrapper.style.padding = '20px';
+                    wrapper.style.border = '1px solid #e5e7eb';
+                    wrapper.style.borderRadius = '6px';
+                    wrapper.style.backgroundColor = '#ffffff';
+                    wrapper.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                    wrapper.style.transition = 'border-color 0.2s ease, box-shadow 0.2s ease';
+                    wrapper.onmouseenter = () => {
+                        wrapper.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)';
+                        wrapper.style.borderColor = '#d1d5db';
+                    };
+                    wrapper.onmouseleave = () => {
+                        wrapper.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                        wrapper.style.borderColor = '#e5e7eb';
+                    };
                     
                     let label = 'Item ' + idx;
                     if (item && item.id && item.id.namespace && item.id.kind && item.id.name) {
@@ -1019,8 +1211,9 @@
                         const workloadIdSection = document.createElement('div');
                         workloadIdSection.style.marginBottom = '15px';
                         workloadIdSection.style.padding = '10px';
-                        workloadIdSection.style.backgroundColor = '#f8f8f8';
-                        workloadIdSection.style.borderRadius = '4px';
+                        workloadIdSection.style.backgroundColor = '#f9fafb';
+                        workloadIdSection.style.border = '1px solid #e5e7eb';
+                        workloadIdSection.style.borderRadius = '6px';
                         
                         const workloadIdTitle = document.createElement('div');
                         workloadIdTitle.style.fontSize = '14px';
@@ -1119,7 +1312,8 @@
                         const instrumentationSection = document.createElement('div');
                         instrumentationSection.style.marginBottom = '15px';
                         instrumentationSection.style.padding = '10px';
-                        instrumentationSection.style.backgroundColor = '#f8f8f8';
+                        instrumentationSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
+                        instrumentationSection.style.border = '1px solid #e2e8f0';
                         instrumentationSection.style.borderRadius = '4px';
                         
                         const instrumentationTitle = document.createElement('div');
@@ -1374,7 +1568,8 @@
                         const containersSection = document.createElement('div');
                         containersSection.style.marginBottom = '15px';
                         containersSection.style.padding = '10px';
-                        containersSection.style.backgroundColor = '#f8f8f8';
+                        containersSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
+                        containersSection.style.border = '1px solid #e2e8f0';
                         containersSection.style.borderRadius = '4px';
                         
                         const containersTitle = document.createElement('div');
@@ -1580,7 +1775,7 @@
                         const markedSection = document.createElement('div');
                         markedSection.style.marginBottom = '15px';
                         markedSection.style.padding = '10px';
-                        markedSection.style.backgroundColor = '#f8f8f8';
+                        markedSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                         markedSection.style.borderRadius = '4px';
                         
                         const markedTitle = document.createElement('div');
@@ -1663,7 +1858,7 @@
                         const runtimeSection = document.createElement('div');
                         runtimeSection.style.marginBottom = '15px';
                         runtimeSection.style.padding = '10px';
-                        runtimeSection.style.backgroundColor = '#f8f8f8';
+                        runtimeSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                         runtimeSection.style.borderRadius = '4px';
                         
                         const runtimeTitle = document.createElement('div');
@@ -1795,7 +1990,7 @@
                         const agentEnabledSection = document.createElement('div');
                         agentEnabledSection.style.marginBottom = '15px';
                         agentEnabledSection.style.padding = '10px';
-                        agentEnabledSection.style.backgroundColor = '#f8f8f8';
+                        agentEnabledSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                         agentEnabledSection.style.borderRadius = '4px';
                         
                         const agentEnabledTitle = document.createElement('div');
@@ -1902,7 +2097,7 @@
                         const rolloutSection = document.createElement('div');
                         rolloutSection.style.marginBottom = '15px';
                         rolloutSection.style.padding = '10px';
-                        rolloutSection.style.backgroundColor = '#f8f8f8';
+                        rolloutSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                         rolloutSection.style.borderRadius = '4px';
                         
                         const rolloutTitle = document.createElement('div');
@@ -1999,7 +2194,7 @@
                         const podsAgentSection = document.createElement('div');
                         podsAgentSection.style.marginBottom = '15px';
                         podsAgentSection.style.padding = '10px';
-                        podsAgentSection.style.backgroundColor = '#f8f8f8';
+                        podsAgentSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                         podsAgentSection.style.borderRadius = '4px';
                         
                         const podsAgentTitle = document.createElement('div');
@@ -2096,7 +2291,7 @@
                         const processesHealthSection = document.createElement('div');
                         processesHealthSection.style.marginBottom = '15px';
                         processesHealthSection.style.padding = '10px';
-                        processesHealthSection.style.backgroundColor = '#f8f8f8';
+                        processesHealthSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                         processesHealthSection.style.borderRadius = '4px';
                         
                         const processesHealthTitle = document.createElement('div');
@@ -2239,7 +2434,7 @@
                     containersDescription.style.color = '#666';
                     containersDescription.style.marginBottom = '15px';
                     containersDescription.style.padding = '10px';
-                    containersDescription.style.backgroundColor = '#f8f8f8';
+                    containersDescription.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                     containersDescription.style.borderRadius = '4px';
                     containersDescription.style.lineHeight = '1.5';
                     const workloadKind = (item && item.id && item.id.kind) ? item.id.kind.toLowerCase() : 'workload';
@@ -2399,7 +2594,7 @@
                     const podsSummarySection = document.createElement('div');
                     podsSummarySection.style.marginBottom = '15px';
                     podsSummarySection.style.padding = '10px';
-                    podsSummarySection.style.backgroundColor = '#f8f8f8';
+                    podsSummarySection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                     podsSummarySection.style.borderRadius = '4px';
                     
                     // Odigos status (podsAgentInjectionStatus)
@@ -2677,7 +2872,7 @@
                             const infoSection = document.createElement('div');
                             infoSection.style.marginBottom = '15px';
                             infoSection.style.padding = '10px';
-                            infoSection.style.backgroundColor = '#f8f8f8';
+                            infoSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                             infoSection.style.borderRadius = '4px';
                             
                             // Node name
@@ -2742,7 +2937,7 @@
                                 const odigosSection = document.createElement('div');
                                 odigosSection.style.marginBottom = '15px';
                                 odigosSection.style.padding = '10px';
-                                odigosSection.style.backgroundColor = '#f8f8f8';
+                                odigosSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                                 odigosSection.style.borderRadius = '4px';
                                 
                                 const odigosHeader = document.createElement('div');
@@ -3076,7 +3271,7 @@
                                 const healthSection = document.createElement('div');
                                 healthSection.style.marginBottom = '15px';
                                 healthSection.style.padding = '10px';
-                                healthSection.style.backgroundColor = '#f8f8f8';
+                                healthSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                                 healthSection.style.borderRadius = '4px';
                                 
                                 const healthHeader = document.createElement('div');
@@ -3423,7 +3618,7 @@
                             const k8sCommandsSection = document.createElement('div');
                             k8sCommandsSection.style.marginBottom = '6px';
                             k8sCommandsSection.style.padding = '6px';
-                            k8sCommandsSection.style.backgroundColor = '#f8f8f8';
+                            k8sCommandsSection.style.background = 'linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%)';
                             k8sCommandsSection.style.borderRadius = '4px';
                             
                             const k8sCommandsTitle = document.createElement('div');
