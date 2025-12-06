@@ -17,16 +17,38 @@
             color: #1f2937;
             line-height: 1.6;
         }
+        .main-wrapper {
+            display: flex;
+            min-height: 100vh;
+            gap: 0;
+        }
+        .sidebar {
+            width: 420px;
+            height: 100vh;
+            background-color: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            padding: 20px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
         .container {
-            max-width: 1600px;
-            margin: 0 auto;
+            flex: 1;
             background-color: #ffffff;
             padding: 32px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-            margin-top: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #e5e7eb;
+            overflow-y: auto;
+            margin: 0;
+            border-radius: 0;
+            box-shadow: none;
+            border: none;
         }
         h1 {
             color: #111827;
@@ -36,7 +58,7 @@
             letter-spacing: -0.025em;
         }
         #json-output {
-            max-height: 80vh;
+            height: calc(100vh - 120px);
             overflow: auto;
             padding: 8px;
         }
@@ -259,33 +281,125 @@
             border-radius: 6px;
             border: 1px solid #fecaca;
         }
-        .controls {
-            margin-bottom: 24px;
-            padding: 16px;
-            background-color: #f9fafb;
-            border-radius: 6px;
-            border: 1px solid #e5e7eb;
+        .sidebar-header {
+            position: sticky;
+            top: 0;
+            background-color: #ffffff;
+            z-index: 10;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            gap: 12px;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .sidebar h2 {
+            color: #111827;
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            flex: 1;
+        }
+        .sidebar-header-btn {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .sidebar-header-btn:hover {
+            background-color: #e5e7eb;
+            border-color: #9ca3af;
+            color: #111827;
+        }
+        .sidebar-header-btn:active {
+            background-color: #d1d5db;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+        .filter-group:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+        .filter-group-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
         }
         .header-row {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            justify-content: space-between;
             margin-bottom: 20px;
             padding-bottom: 20px;
             border-bottom: 1px solid #e5e7eb;
+            padding: 0 32px;
+            padding-top: 24px;
+            padding-bottom: 20px;
+        }
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .status-line {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 4px;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-line-clear-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .status-line-clear-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .status-line-clear-btn:active {
+            background-color: #e5e7eb;
         }
         .btn {
             background-color: #2563eb;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 6px 12px;
             margin-right: 8px;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
             transition: background-color 0.2s ease;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -296,15 +410,40 @@
         .btn:active {
             background-color: #1e40af;
         }
+        .timestamp-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 12px;
+        }
         .timestamp {
             color: #6b7280;
             font-size: 13px;
-            margin-left: 12px;
             font-weight: 400;
             padding: 6px 12px;
             background-color: #f9fafb;
             border-radius: 4px;
             border: 1px solid #e5e7eb;
+        }
+        .timestamp-refresh-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .timestamp-refresh-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .timestamp-refresh-btn:active {
+            background-color: #e5e7eb;
         }
         .timestamp-duration {
             margin-left: 6px;
@@ -319,16 +458,16 @@
             border: 1px solid #fecaca;
         }
         .verbosity-select, .namespace-select, .name-select {
-            padding: 8px 12px;
+            padding: 6px 10px;
             border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
+            border-radius: 4px;
+            font-size: 12px;
             cursor: pointer;
             background: white;
             color: #374151;
             font-weight: 400;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            min-width: 180px;
+            width: 100%;
         }
         .verbosity-select:hover, .namespace-select:hover, .name-select:hover {
             border-color: #9ca3af;
@@ -336,13 +475,406 @@
         .verbosity-select:focus, .namespace-select:focus, .name-select:focus {
             outline: none;
             border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
-        .verbosity-label, .namespace-label, .name-label {
-            font-size: 14px;
-            font-weight: 500;
+        .verbosity-label, .namespace-label, .name-label, .workload-label, .language-label {
+            font-size: 12px;
+            font-weight: 600;
             color: #374151;
-            margin-right: 8px;
+            margin-bottom: 2px;
+        }
+        .instrumentation-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .instrumentation-filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 2px;
+        }
+        .instrumentation-checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 1px 0;
+        }
+        .instrumentation-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+        .instrumentation-checkbox-label {
+            font-size: 12px;
+            color: #374151;
+            cursor: pointer;
+            user-select: none;
+        }
+        .instrumentation-count {
+            font-size: 11px;
+            color: #6b7280;
+            margin-left: 3px;
+        }
+        .namespace-filter-header, .workload-filter-header, .language-filter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 4px;
+        }
+        .namespace-filter-header-left, .workload-filter-header-left, .language-filter-header-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+        .namespace-show-all-btn, .workload-show-all-btn, .language-show-all-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            margin-left: 8px;
+        }
+        .namespace-show-all-btn:hover, .workload-show-all-btn:hover, .language-show-all-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .namespace-show-all-btn:active, .workload-show-all-btn:active, .language-show-all-btn:active {
+            background-color: #e5e7eb;
+        }
+        .namespace-filter-toggle, .workload-filter-toggle, .language-filter-toggle {
+            width: 10px;
+            height: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            color: #6b7280;
+            font-size: 8px;
+        }
+        .namespace-filter-toggle.expanded, .workload-filter-toggle.expanded, .language-filter-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        .namespace-filters-container {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 2px 0;
+        }
+        .namespace-filters-container.expanded {
+            display: flex;
+        }
+        .workload-search-box, .namespace-search-box {
+            padding: 4px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 4px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .workload-search-box:focus, .namespace-search-box:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+        .workload-filters-container {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 2px 0;
+        }
+        .workload-filters-container.expanded {
+            display: flex;
+        }
+        .workload-checkbox-wrapper.hidden, .namespace-checkbox-wrapper.hidden {
+            display: none;
+        }
+        .workload-checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            margin-left: 0;
+        }
+        .workload-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+        .workload-checkbox-label {
+            font-size: 12px;
+            color: #374151;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+        .workload-count {
+            font-size: 11px;
+            color: #6b7280;
+            margin-left: 3px;
+        }
+        .language-filters-container {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 2px 0;
+        }
+        .language-filters-container.expanded {
+            display: flex;
+        }
+        .language-filter-footer {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 1px;
+            margin-bottom: 2px;
+        }
+        .language-checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            margin-left: 0;
+        }
+        .language-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+        .language-checkbox-label {
+            font-size: 12px;
+            color: #374151;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+        .language-count {
+            font-size: 11px;
+            color: #6b7280;
+            margin-left: 3px;
+        }
+        .language-only-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .language-only-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .language-only-btn:active {
+            background-color: #e5e7eb;
+        }
+        .namespace-checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            margin-left: 0;
+        }
+        .namespace-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+        .namespace-checkbox-label {
+            font-size: 12px;
+            color: #374151;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+        .namespace-count {
+            font-size: 11px;
+            color: #6b7280;
+            margin-left: 3px;
+        }
+        .condition-filter-group {
+            margin-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+        .condition-filter-group:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .condition-filter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+        .condition-filter-header-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            user-select: none;
+            flex: 1;
+        }
+        .condition-filter-toggle {
+            width: 10px;
+            height: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            color: #6b7280;
+            font-size: 8px;
+        }
+        .condition-filter-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        .condition-filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .condition-filter-all-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .condition-filter-all-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .condition-filter-all-btn:active {
+            background-color: #e5e7eb;
+        }
+        .condition-filter-content {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            margin-left: 0;
+        }
+        .condition-filter-content.expanded {
+            display: flex;
+        }
+        .condition-filter-footer {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 1px;
+            margin-bottom: 2px;
+        }
+        .namespace-filter-footer, .workload-filter-footer {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 1px;
+            margin-bottom: 2px;
+        }
+        .condition-checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            margin-left: 0;
+        }
+        .condition-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+        .condition-checkbox-label {
+            font-size: 12px;
+            color: #374151;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+        .condition-count {
+            font-size: 11px;
+            color: #6b7280;
+            margin-left: 3px;
+        }
+        .condition-only-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .condition-only-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .condition-only-btn:active {
+            background-color: #e5e7eb;
+        }
+        .namespace-only-btn, .workload-only-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .namespace-only-btn:hover, .workload-only-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .namespace-only-btn:active, .workload-only-btn:active {
+            background-color: #e5e7eb;
+        }
+        .sidebar .btn {
+            width: 100%;
+            margin-right: 0;
+            margin-bottom: 4px;
         }
         .tabs {
             border-bottom: 1px solid #e5e7eb;
@@ -447,27 +979,31 @@
         }
         
         /* Responsive design */
-        @media (max-width: 768px) {
-            body {
-                padding: 12px;
+        @media (max-width: 1024px) {
+            .main-wrapper {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 50vh;
+                border-right: none;
+                border-bottom: 1px solid #e5e7eb;
+                position: relative;
+            }
+            .header-row {
+                padding: 0 20px;
+                padding-top: 20px;
+                padding-bottom: 16px;
             }
             .container {
                 padding: 20px;
-                margin-top: 12px;
-                margin-bottom: 12px;
-                border-radius: 6px;
             }
-            h1 {
-                font-size: 24px;
+            #json-output {
+                height: calc(100vh - 200px);
             }
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .verbosity-select, .namespace-select, .name-select {
-                width: 100%;
-                margin-bottom: 8px;
-            }
+        }
+        @media (max-width: 768px) {
             .header-row {
                 flex-direction: column;
                 align-items: flex-start;
@@ -475,6 +1011,9 @@
             }
             .timestamp {
                 margin-left: 0;
+            }
+            h1 {
+                font-size: 24px;
             }
         }
         
@@ -494,33 +1033,106 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Workloads</h1>
-        <div class="header-row">
-            <button class="btn" onclick="refreshData()">Refresh</button>
-            <span id="timestamp" class="timestamp"></span>
+    <div class="main-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Filters</h2>
+                <button class="sidebar-header-btn" onclick="clearAllFilters()">Clear All Filters</button>
+            </div>
+            <div class="controls">
+                <div class="filter-group">
+                    <div class="namespace-filter-header" onclick="toggleNamespaceFilters()">
+                        <div class="namespace-filter-header-left">
+                            <span class="namespace-filter-toggle expanded" id="namespace-filter-toggle">▶</span>
+                            <span class="namespace-label" id="namespace-label">Namespace</span>
+                        </div>
+                        <button id="namespace-show-all-btn" class="namespace-show-all-btn" onclick="selectAllNamespaces(event)" style="display: none;">show all</button>
+                    </div>
+                    <div id="namespace-filter-footer" class="namespace-filter-footer">
+                        <!-- Dynamically updated -->
+                    </div>
+                    <input type="text" id="namespace-search-box" class="namespace-search-box" placeholder="Search namespaces..." oninput="filterNamespacesBySearch()" style="display: block;">
+                    <div id="namespace-filters-container" class="namespace-filters-container expanded">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="workload-filter-header" onclick="toggleWorkloadFilters()">
+                        <div class="workload-filter-header-left">
+                            <span class="workload-filter-toggle expanded" id="workload-filter-toggle">▶</span>
+                            <span class="workload-label" id="workload-label">Workloads</span>
+                        </div>
+                        <button id="workload-show-all-btn" class="workload-show-all-btn" onclick="selectAllWorkloads(event)" style="display: none;">show all</button>
+                    </div>
+                    <div id="workload-filter-footer" class="workload-filter-footer">
+                        <!-- Dynamically updated -->
+                    </div>
+                    <input type="text" id="workload-search-box" class="workload-search-box" placeholder="Search workloads..." oninput="filterWorkloadsBySearch()" style="display: block;">
+                    <div id="workload-filters-container" class="workload-filters-container expanded">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div class="language-filter-header" onclick="toggleLanguageFilters()">
+                        <div class="language-filter-header-left">
+                            <span class="language-filter-toggle expanded" id="language-filter-toggle">▶</span>
+                            <span class="language-label" id="language-label">Programming Language</span>
+                        </div>
+                        <button id="language-show-all-btn" class="language-show-all-btn" onclick="selectAllLanguages(event)" style="display: none;">show all</button>
+                    </div>
+                    <div id="language-filter-footer" class="language-filter-footer">
+                        <!-- Dynamically updated -->
+                    </div>
+                    <div id="language-filters-container" class="language-filters-container expanded">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <span class="instrumentation-filter-label">Marked for Instrumentation</span>
+                    <div class="instrumentation-filter">
+                        <div class="instrumentation-checkbox-wrapper">
+                            <input type="checkbox" id="filter-marked" class="instrumentation-checkbox" checked onchange="applyInstrumentationFilter()">
+                            <label for="filter-marked" class="instrumentation-checkbox-label">
+                                Marked
+                                <span id="count-marked" class="instrumentation-count">(0)</span>
+                            </label>
+                        </div>
+                        <div class="instrumentation-checkbox-wrapper">
+                            <input type="checkbox" id="filter-not-marked" class="instrumentation-checkbox" checked onchange="applyInstrumentationFilter()">
+                            <label for="filter-not-marked" class="instrumentation-checkbox-label">
+                                Not Marked
+                                <span id="count-not-marked" class="instrumentation-count">(0)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <div id="condition-filters-container">
+                        <!-- Dynamically populated for all conditions -->
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <button class="btn" onclick="refreshData()">Refresh</button>
+                    <button class="btn" onclick="expandAll()">Expand All</button>
+                    <button class="btn" onclick="collapseAll()">Collapse All</button>
+                </div>
+            </div>
         </div>
-        <div class="controls">
-            <label for="verbosity" class="verbosity-label">Verbosity:</label>
-            <select id="verbosity" class="verbosity-select" onchange="refreshData()">
-                <option value="general">General</option>
-                <option value="overview">Overview</option>
-                <option value="healthSummary">Health Summary</option>
-                <option value="verbose" selected>Verbose</option>
-                <option value="pods">Pods</option>
-            </select>
-            <label for="namespace" class="namespace-label">Namespace:</label>
-            <select id="namespace" class="namespace-select" onchange="applyNamespaceFilter()">
-                <option value="">All Namespaces</option>
-            </select>
-            <label for="name" class="name-label">Workload:</label>
-            <select id="name" class="name-select" onchange="applyNameFilter()">
-                <option value="">All Workloads</option>
-            </select>
-            <button class="btn" onclick="expandAll()">Expand All</button>
-            <button class="btn" onclick="collapseAll()">Collapse All</button>
+        <div class="main-content">
+            <div class="header-row">
+                <div class="header-left">
+                    <h1>Workloads</h1>
+                    <div id="status-line" class="status-line"></div>
+                </div>
+                <div class="timestamp-container">
+                    <span id="timestamp" class="timestamp"></span>
+                    <button class="timestamp-refresh-btn" onclick="refreshData()">Refresh</button>
+                </div>
+            </div>
+            <div class="container">
+                <div id="json-output" class="loading">Loading...</div>
+            </div>
         </div>
-        <div id="json-output" class="loading">Loading...</div>
     </div>
     <script>
         function getStatusEmoji(statusValue) {
@@ -540,6 +1152,17 @@
                 'unknown': '❓'
             };
             return statusEmojis[statusValue.toLowerCase()] || '';
+        }
+        
+        function parseCamelCase(text) {
+            if (!text || typeof text !== 'string') {
+                return text;
+            }
+            // Insert a space before each capital letter that follows a lowercase letter or number
+            // Also handle consecutive capitals followed by lowercase (e.g., "API" -> "API")
+            return text.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+                      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+                      .trim();
         }
         
         function renderJSON(data, parent, key = null, emoji = null, emojiTooltip = null) {
@@ -734,17 +1357,97 @@
         }
         
         function expandAll() {
+            // Expand JSON display
             const toggles = document.querySelectorAll('.toggle');
             const children = document.querySelectorAll('.children');
             toggles.forEach(toggle => toggle.classList.add('expanded'));
             children.forEach(child => child.classList.add('expanded'));
+            
+            // Expand filter sections
+            // Namespace filters
+            const namespaceContainer = document.getElementById('namespace-filters-container');
+            const namespaceToggle = document.getElementById('namespace-filter-toggle');
+            const namespaceSearchBox = document.getElementById('namespace-search-box');
+            if (namespaceContainer && namespaceToggle) {
+                namespaceContainer.classList.add('expanded');
+                namespaceToggle.classList.add('expanded');
+                if (namespaceSearchBox) {
+                    namespaceSearchBox.style.display = 'block';
+                }
+            }
+            
+            // Workload filters
+            const workloadContainer = document.getElementById('workload-filters-container');
+            const workloadToggle = document.getElementById('workload-filter-toggle');
+            const workloadSearchBox = document.getElementById('workload-search-box');
+            if (workloadContainer && workloadToggle) {
+                workloadContainer.classList.add('expanded');
+                workloadToggle.classList.add('expanded');
+                if (workloadSearchBox) {
+                    workloadSearchBox.style.display = 'block';
+                }
+            }
+            
+            // Language filters
+            const languageContainer = document.getElementById('language-filters-container');
+            const languageToggle = document.getElementById('language-filter-toggle');
+            if (languageContainer && languageToggle) {
+                languageContainer.classList.add('expanded');
+                languageToggle.classList.add('expanded');
+            }
+            
+            // Condition filters
+            const conditionContainers = document.querySelectorAll('.condition-filter-content');
+            const conditionToggles = document.querySelectorAll('.condition-filter-toggle');
+            conditionContainers.forEach(container => container.classList.add('expanded'));
+            conditionToggles.forEach(toggle => toggle.classList.add('expanded'));
         }
         
         function collapseAll() {
+            // Collapse JSON display
             const toggles = document.querySelectorAll('.toggle');
             const children = document.querySelectorAll('.children');
             toggles.forEach(toggle => toggle.classList.remove('expanded'));
             children.forEach(child => child.classList.remove('expanded'));
+            
+            // Collapse filter sections
+            // Namespace filters
+            const namespaceContainer = document.getElementById('namespace-filters-container');
+            const namespaceToggle = document.getElementById('namespace-filter-toggle');
+            const namespaceSearchBox = document.getElementById('namespace-search-box');
+            if (namespaceContainer && namespaceToggle) {
+                namespaceContainer.classList.remove('expanded');
+                namespaceToggle.classList.remove('expanded');
+                if (namespaceSearchBox) {
+                    namespaceSearchBox.style.display = 'none';
+                }
+            }
+            
+            // Workload filters
+            const workloadContainer = document.getElementById('workload-filters-container');
+            const workloadToggle = document.getElementById('workload-filter-toggle');
+            const workloadSearchBox = document.getElementById('workload-search-box');
+            if (workloadContainer && workloadToggle) {
+                workloadContainer.classList.remove('expanded');
+                workloadToggle.classList.remove('expanded');
+                if (workloadSearchBox) {
+                    workloadSearchBox.style.display = 'none';
+                }
+            }
+            
+            // Language filters
+            const languageContainer = document.getElementById('language-filters-container');
+            const languageToggle = document.getElementById('language-filter-toggle');
+            if (languageContainer && languageToggle) {
+                languageContainer.classList.remove('expanded');
+                languageToggle.classList.remove('expanded');
+            }
+            
+            // Condition filters
+            const conditionContainers = document.querySelectorAll('.condition-filter-content');
+            const conditionToggles = document.querySelectorAll('.condition-filter-toggle');
+            conditionContainers.forEach(container => container.classList.remove('expanded'));
+            conditionToggles.forEach(toggle => toggle.classList.remove('expanded'));
         }
         
         let lastUpdateTime = null;
@@ -815,11 +1518,10 @@
         
         function refreshData() {
             const output = document.getElementById('json-output');
-            const verbosity = document.getElementById('verbosity').value;
             output.classList.add('loading');
             output.textContent = 'Loading...';
             
-            const url = '/workload' + (verbosity ? '?verbosity=' + encodeURIComponent(verbosity) : '');
+            const url = '/workload?verbosity=verbose';
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
@@ -835,90 +1537,1664 @@
         
         let allWorkloadData = [];
         
-        function populateNamespaceDropdown(data) {
-            const namespaceSelect = document.getElementById('namespace');
-            const selectedNamespace = namespaceSelect.value;
+        // URL parameter handling for filter persistence
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                namespaces: params.getAll('namespace') || [],
+                workloads: params.getAll('workload') || [],
+                languages: params.getAll('language') || [],
+                marked: params.get('marked') || 'true', // default to true
+                notMarked: params.get('notMarked') || 'true', // default to true
+                conditions: params.getAll('condition') || []
+            };
+        }
+        
+        function updateUrlParams() {
+            const params = new URLSearchParams();
             
-            // Extract unique namespaces
-            const namespaces = new Set();
-            if (Array.isArray(data)) {
-                data.forEach(item => {
-                    if (item && item.id && item.id.namespace) {
-                        namespaces.add(item.id.namespace);
-                    }
+            // Namespace filter(s) - only include if not all are selected
+            const selectedNamespaces = getSelectedNamespaces();
+            const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            const allNamespaces = Array.from(allNamespaceCheckboxes).map(cb => cb.dataset.namespace);
+            if (selectedNamespaces.length > 0 && selectedNamespaces.length < allNamespaces.length) {
+                selectedNamespaces.forEach(ns => {
+                    params.append('namespace', ns);
                 });
             }
             
-            // Clear existing options except "All Namespaces"
-            namespaceSelect.innerHTML = '<option value="">All Namespaces</option>';
+            // Workload filter(s) - only include if not all are selected
+            const selectedWorkloads = getSelectedWorkloads();
+            const allWorkloadCheckboxes = document.querySelectorAll('.workload-checkbox');
+            if (selectedWorkloads.length > 0 && selectedWorkloads.length < allWorkloadCheckboxes.length) {
+                selectedWorkloads.forEach(workload => {
+                    params.append('workload', `${workload.namespace}:${workload.name}`);
+                });
+            }
             
-            // Add namespace options sorted
-            Array.from(namespaces).sort().forEach(ns => {
-                const option = document.createElement('option');
-                option.value = ns;
-                option.textContent = ns;
-                namespaceSelect.appendChild(option);
+            // Language filter(s) - only include if not all are selected
+            const selectedLanguages = getSelectedLanguages();
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            const allLanguages = Array.from(allLanguageCheckboxes).map(cb => cb.dataset.language);
+            if (selectedLanguages.length > 0 && selectedLanguages.length < allLanguages.length) {
+                selectedLanguages.forEach(lang => {
+                    params.append('language', lang);
+                });
+            }
+            
+            // Marked for instrumentation filters
+            const markedChecked = document.getElementById('filter-marked').checked;
+            const notMarkedChecked = document.getElementById('filter-not-marked').checked;
+            if (!markedChecked) {
+                params.set('marked', 'false');
+            }
+            if (!notMarkedChecked) {
+                params.set('notMarked', 'false');
+            }
+            
+            // Condition filters
+            const conditionCheckboxes = document.querySelectorAll('.condition-checkbox');
+            conditionCheckboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    const conditionName = checkbox.dataset.conditionName;
+                    const reasonEnum = checkbox.dataset.reasonEnum;
+                    params.append('condition', `${conditionName}:${reasonEnum}`);
+                }
             });
             
-            // Restore selected namespace if it still exists
-            if (selectedNamespace && namespaces.has(selectedNamespace)) {
-                namespaceSelect.value = selectedNamespace;
-            } else {
-                namespaceSelect.value = '';
+            // Update URL without reloading
+            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+        
+        function applyUrlParams() {
+            const urlParams = getUrlParams();
+            
+            // Apply namespace filters - will be applied after checkboxes are created
+            if (urlParams.namespaces.length > 0) {
+                window.pendingNamespaceFilters = urlParams.namespaces;
+            }
+            
+            // Apply workload filters - will be applied after checkboxes are created
+            if (urlParams.workloads.length > 0) {
+                window.pendingWorkloadFilters = urlParams.workloads;
+            }
+            
+            // Apply language filters - will be applied after checkboxes are created
+            if (urlParams.languages.length > 0) {
+                window.pendingLanguageFilters = urlParams.languages;
+            }
+            
+            // Apply name filter (after namespace is set)
+            if (urlParams.name) {
+                const nameSelect = document.getElementById('name');
+                if (nameSelect) {
+                    nameSelect.value = urlParams.name;
+                }
+            }
+            
+            // Apply marked for instrumentation filters
+            const markedCheckbox = document.getElementById('filter-marked');
+            const notMarkedCheckbox = document.getElementById('filter-not-marked');
+            if (markedCheckbox) {
+                markedCheckbox.checked = urlParams.marked !== 'false';
+            }
+            if (notMarkedCheckbox) {
+                notMarkedCheckbox.checked = urlParams.notMarked !== 'false';
+            }
+            
+            // Apply condition filters
+            // This will be called after condition filters are populated
+            if (urlParams.conditions.length > 0) {
+                // Store conditions to apply after filters are created
+                window.pendingConditionFilters = urlParams.conditions;
             }
         }
         
-        function populateNameDropdown(data, namespaceFilter) {
-            const nameSelect = document.getElementById('name');
-            const selectedName = nameSelect.value;
-            
-            // Clear existing options
-            nameSelect.innerHTML = '<option value="">All Workloads</option>';
-            
-            if (!namespaceFilter) {
-                // If no namespace selected, disable name filter
-                nameSelect.disabled = true;
+        function applyPendingNamespaceFilters() {
+            if (!window.pendingNamespaceFilters || window.pendingNamespaceFilters.length === 0) {
                 return;
             }
             
-            nameSelect.disabled = false;
+            // First, uncheck all namespace checkboxes
+            const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            allNamespaceCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
             
-            // Extract unique names from the selected namespace
-            const names = new Set();
+            // Then check the ones specified in URL params
+            window.pendingNamespaceFilters.forEach(namespace => {
+                const checkbox = document.querySelector(`.namespace-checkbox[data-namespace="${namespace}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            // Update and apply filters
+            updateNamespaceCounts();
+            updateNamespaceCountDisplay();
+            updateNamespaceHeaderButton();
+            updateWorkloadLabel();
+            applyNamespaceFilter();
+            
+            // Clear pending filters
+            window.pendingNamespaceFilters = null;
+        }
+        
+        function applyPendingWorkloadFilters() {
+            if (!window.pendingWorkloadFilters || window.pendingWorkloadFilters.length === 0) {
+                return;
+            }
+            
+            // First, uncheck all workload checkboxes
+            const allWorkloadCheckboxes = document.querySelectorAll('.workload-checkbox');
+            allWorkloadCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Then check the ones specified in URL params
+            window.pendingWorkloadFilters.forEach(workloadParam => {
+                const [namespace, name] = workloadParam.split(':');
+                const checkbox = document.querySelector(`.workload-checkbox[data-namespace="${namespace}"][data-workload-name="${name}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            // Update and apply filters
+            updateWorkloadCounts();
+            updateWorkloadCountDisplay();
+            updateWorkloadHeaderButton();
+            applyWorkloadFilter();
+            
+            // Clear pending filters
+            window.pendingWorkloadFilters = null;
+        }
+        
+        function applyPendingLanguageFilters() {
+            if (!window.pendingLanguageFilters) return;
+            
+            const pendingLanguages = window.pendingLanguageFilters;
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            
+            // Uncheck all first
+            allLanguageCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Check only the pending languages
+            allLanguageCheckboxes.forEach(checkbox => {
+                const language = checkbox.dataset.language;
+                if (pendingLanguages.includes(language)) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            // Update and apply filters
+            updateLanguageCounts();
+            updateLanguageCountDisplay();
+            applyLanguageFilter();
+            
+            // Clear pending filters
+            window.pendingLanguageFilters = null;
+        }
+        
+        function applyPendingConditionFilters() {
+            if (!window.pendingConditionFilters || window.pendingConditionFilters.length === 0) {
+                return;
+            }
+            
+            // First, check all condition checkboxes
+            const allConditionCheckboxes = document.querySelectorAll('.condition-checkbox');
+            allConditionCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Then uncheck the ones specified in URL params
+            window.pendingConditionFilters.forEach(conditionParam => {
+                const [conditionName, reasonEnum] = conditionParam.split(':');
+                const checkbox = document.querySelector(
+                    `.condition-checkbox[data-condition-name="${conditionName}"][data-reason-enum="${reasonEnum}"]`
+                );
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            });
+            
+            // Update counts and apply filters
+            updateAllConditionFilterCounts();
+            updateAllConditionFilterAllButtons();
+            applyConditionFilters();
+            
+            // Clear pending filters
+            window.pendingConditionFilters = null;
+        }
+        
+        function populateNamespaceCheckboxes(data) {
+            const filtersContainer = document.getElementById('namespace-filters-container');
+            filtersContainer.innerHTML = '';
+            
+            // Extract unique namespaces with counts
+            const namespaceMap = new Map(); // namespace -> count
             if (Array.isArray(data)) {
                 data.forEach(item => {
-                    if (item && item.id && item.id.namespace === namespaceFilter && item.id.name) {
-                        names.add(item.id.name);
+                    if (item && item.id && item.id.namespace) {
+                        const ns = item.id.namespace;
+                        namespaceMap.set(ns, (namespaceMap.get(ns) || 0) + 1);
                     }
                 });
             }
             
-            // Add name options sorted
-            Array.from(names).sort().forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                nameSelect.appendChild(option);
+            // Get currently checked namespaces
+            const checkedNamespaces = new Set();
+            const existingCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            existingCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    checkedNamespaces.add(cb.dataset.namespace);
+                }
             });
             
-            // Restore selected name if it still exists
-            if (selectedName && names.has(selectedName)) {
-                nameSelect.value = selectedName;
-            } else {
-                nameSelect.value = '';
+            // Sort namespaces alphabetically
+            const sortedNamespaces = Array.from(namespaceMap.entries()).sort((a, b) => 
+                a[0].localeCompare(b[0])
+            );
+            
+            // Create checkboxes for each namespace
+            sortedNamespaces.forEach(([namespace, count]) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'namespace-checkbox-wrapper';
+                wrapper.dataset.namespace = namespace;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `filter-namespace-${namespace}`;
+                checkbox.className = 'namespace-checkbox';
+                checkbox.dataset.namespace = namespace;
+                // Check if this namespace was previously checked, or check all by default
+                checkbox.checked = checkedNamespaces.has(namespace) || checkedNamespaces.size === 0;
+                checkbox.onchange = () => {
+                    updateNamespaceCounts();
+                    updateNamespaceCountDisplay();
+                    updateNamespaceHeaderButton();
+                    updateWorkloadLabel();
+                    applyNamespaceFilter();
+                };
+                wrapper.appendChild(checkbox);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `filter-namespace-${namespace}`;
+                label.className = 'namespace-checkbox-label';
+                label.textContent = namespace;
+                
+                const countSpan = document.createElement('span');
+                countSpan.id = `count-namespace-${namespace}`;
+                countSpan.className = 'namespace-count';
+                countSpan.textContent = `(${count})`;
+                label.appendChild(countSpan);
+                
+                wrapper.appendChild(label);
+                
+                    // Add "only" button
+                    const onlyBtn = document.createElement('button');
+                    onlyBtn.className = 'namespace-only-btn';
+                    onlyBtn.textContent = 'only';
+                    onlyBtn.title = 'filter to show only this namespace';
+                    onlyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        // Uncheck all namespace checkboxes (regardless of search filter)
+                        const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+                        allNamespaceCheckboxes.forEach(cb => {
+                            cb.checked = false;
+                        });
+                        // Check only this checkbox
+                        checkbox.checked = true;
+                        // Clear search box
+                        const searchBox = document.getElementById('namespace-search-box');
+                        if (searchBox) {
+                            searchBox.value = '';
+                            filterNamespacesBySearch();
+                        }
+                        updateNamespaceCounts();
+                        updateNamespaceCountDisplay();
+                        updateNamespaceHeaderButton();
+                        updateWorkloadLabel();
+                        updateUrlParams();
+                        applyNamespaceFilter();
+                    };
+                    wrapper.appendChild(onlyBtn);
+                
+                filtersContainer.appendChild(wrapper);
+            });
+            
+            updateNamespaceCounts();
+            updateNamespaceCountDisplay();
+            updateNamespaceHeaderButton();
+            updateWorkloadLabel();
+        }
+        
+        function filterNamespacesBySearch() {
+            const searchBox = document.getElementById('namespace-search-box');
+            if (!searchBox) return;
+            
+            const searchText = searchBox.value.toLowerCase().trim();
+            const allWrappers = document.querySelectorAll('.namespace-checkbox-wrapper');
+            
+            allWrappers.forEach(wrapper => {
+                const namespace = wrapper.dataset.namespace || '';
+                const searchableText = namespace.toLowerCase();
+                
+                if (searchText === '' || searchableText.includes(searchText)) {
+                    wrapper.classList.remove('hidden');
+                } else {
+                    wrapper.classList.add('hidden');
+                }
+            });
+        }
+        
+        function formatFilterFooter(selectedItems, totalCount, itemType) {
+            if (selectedItems.length === totalCount && totalCount > 0) {
+                return 'no filter';
+            }
+            
+            if (selectedItems.length <= 2 && selectedItems.length > 0) {
+                const itemsText = selectedItems.join(', ');
+                return `${selectedItems.length}/${totalCount} selected: ${itemsText}`;
+            }
+            
+            return `${selectedItems.length}/${totalCount} selected`;
+        }
+        
+        function updateNamespaceCountDisplay() {
+            const footer = document.getElementById('namespace-filter-footer');
+            if (!footer) return;
+            
+            const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            const selectedNamespaces = getSelectedNamespaces();
+            const totalNamespaces = allNamespaceCheckboxes.length;
+            
+            footer.textContent = formatFilterFooter(selectedNamespaces, totalNamespaces, 'namespaces');
+        }
+        
+        function updateNamespaceCounts() {
+            // Count workloads per namespace based on current filters
+            const selectedNamespaces = getSelectedNamespaces();
+            let dataToCount = allWorkloadData;
+            
+            // Apply other filters for counting (workload, marked, conditions)
+            const selectedWorkloads = getSelectedWorkloads();
+            if (selectedWorkloads.length > 0) {
+                const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
+                );
+            }
+            
+            const showMarked = document.getElementById('filter-marked').checked;
+            const showNotMarked = document.getElementById('filter-not-marked').checked;
+            if (!showMarked || !showNotMarked) {
+                dataToCount = dataToCount.filter(item => {
+                    if (!item || !item.markedForInstrumentation) {
+                        return showNotMarked;
+                    }
+                    const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                    return isMarked ? showMarked : showNotMarked;
+                });
+            }
+            
+            // Count per namespace
+            const namespaceCounts = new Map();
+            dataToCount.forEach(item => {
+                if (item && item.id && item.id.namespace) {
+                    const ns = item.id.namespace;
+                    namespaceCounts.set(ns, (namespaceCounts.get(ns) || 0) + 1);
+                }
+            });
+            
+            // Update counts
+            namespaceCounts.forEach((count, namespace) => {
+                const countSpan = document.getElementById(`count-namespace-${namespace}`);
+                if (countSpan) {
+                    countSpan.textContent = `(${count})`;
+                }
+            });
+        }
+        
+        function getSelectedNamespaces() {
+            const selected = [];
+            const checkboxes = document.querySelectorAll('.namespace-checkbox');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selected.push(checkbox.dataset.namespace);
+                }
+            });
+            return selected;
+        }
+        
+        function toggleNamespaceFilters() {
+            const container = document.getElementById('namespace-filters-container');
+            const toggle = document.getElementById('namespace-filter-toggle');
+            const searchBox = document.getElementById('namespace-search-box');
+            container.classList.toggle('expanded');
+            toggle.classList.toggle('expanded');
+            // Show/hide search box based on expanded state
+            if (searchBox) {
+                if (container.classList.contains('expanded')) {
+                    searchBox.style.display = 'block';
+                } else {
+                    searchBox.style.display = 'none';
+                }
             }
         }
         
+        function toggleWorkloadFilters() {
+            const container = document.getElementById('workload-filters-container');
+            const toggle = document.getElementById('workload-filter-toggle');
+            const searchBox = document.getElementById('workload-search-box');
+            container.classList.toggle('expanded');
+            toggle.classList.toggle('expanded');
+            // Show/hide search box based on expanded state
+            if (searchBox) {
+                if (container.classList.contains('expanded')) {
+                    searchBox.style.display = 'block';
+                } else {
+                    searchBox.style.display = 'none';
+                }
+            }
+        }
+        
+        function toggleLanguageFilters() {
+            const container = document.getElementById('language-filters-container');
+            const toggle = document.getElementById('language-filter-toggle');
+            container.classList.toggle('expanded');
+            toggle.classList.toggle('expanded');
+        }
+        
+        function updateNamespaceHeaderButton() {
+            const showAllBtn = document.getElementById('namespace-show-all-btn');
+            if (!showAllBtn) return;
+            
+            const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            const selectedNamespaces = getSelectedNamespaces();
+            
+            // Show button only if not all are selected
+            if (selectedNamespaces.length < allNamespaceCheckboxes.length && allNamespaceCheckboxes.length > 0) {
+                showAllBtn.style.display = 'inline-block';
+            } else {
+                showAllBtn.style.display = 'none';
+            }
+        }
+        
+        function selectAllNamespaces(event) {
+            event.stopPropagation(); // Prevent toggling the filter group
+            const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            allNamespaceCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateNamespaceCounts();
+            updateNamespaceCountDisplay();
+            updateNamespaceHeaderButton();
+            updateWorkloadLabel();
+            applyNamespaceFilter();
+        }
+        
+        function updateWorkloadLabel() {
+            const workloadLabel = document.getElementById('workload-label');
+            if (!workloadLabel) return;
+            
+            const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            const selectedNamespaces = getSelectedNamespaces();
+            
+            // Update label if not all namespaces are selected
+            if (selectedNamespaces.length < allNamespaceCheckboxes.length && allNamespaceCheckboxes.length > 0) {
+                workloadLabel.textContent = 'Workloads (in selected namespaces)';
+            } else {
+                workloadLabel.textContent = 'Workloads';
+            }
+        }
+        
+        function selectAllWorkloads(event) {
+            event.stopPropagation(); // Prevent toggling the filter group
+            const allWorkloadCheckboxes = document.querySelectorAll('.workload-checkbox');
+            allWorkloadCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateWorkloadCounts();
+            updateWorkloadCountDisplay();
+            updateWorkloadHeaderButton();
+            updateUrlParams();
+            applyWorkloadFilter();
+        }
+        
+        function updateWorkloadHeaderButton() {
+            const showAllBtn = document.getElementById('workload-show-all-btn');
+            if (!showAllBtn) return;
+            
+            const allWorkloadCheckboxes = document.querySelectorAll('.workload-checkbox');
+            const selectedWorkloads = getSelectedWorkloads();
+            
+            // Show button only if not all are selected
+            if (selectedWorkloads.length < allWorkloadCheckboxes.length && allWorkloadCheckboxes.length > 0) {
+                showAllBtn.style.display = 'inline-block';
+            } else {
+                showAllBtn.style.display = 'none';
+            }
+        }
+        
+        function selectAllLanguages(event) {
+            event.stopPropagation(); // Prevent toggling the filter group
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            allLanguageCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateLanguageCounts();
+            updateLanguageCountDisplay();
+            updateLanguageHeaderButton();
+            updateUrlParams();
+            applyLanguageFilter();
+        }
+        
+        function updateLanguageHeaderButton() {
+            const showAllBtn = document.getElementById('language-show-all-btn');
+            if (!showAllBtn) return;
+            
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            const selectedLanguages = getSelectedLanguages();
+            
+            // Show button only if not all are selected
+            if (selectedLanguages.length < allLanguageCheckboxes.length && allLanguageCheckboxes.length > 0) {
+                showAllBtn.style.display = 'inline-block';
+            } else {
+                showAllBtn.style.display = 'none';
+            }
+        }
+        
+        function populateWorkloadCheckboxes(data, selectedNamespaces) {
+            const filtersContainer = document.getElementById('workload-filters-container');
+            filtersContainer.innerHTML = '';
+            
+            // Get currently checked workloads
+            const checkedWorkloads = new Set();
+            const existingCheckboxes = document.querySelectorAll('.workload-checkbox');
+            existingCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    const namespace = cb.dataset.namespace;
+                    const name = cb.dataset.workloadName;
+                    if (namespace && name) {
+                        checkedWorkloads.add(`${namespace}:${name}`);
+                    }
+                }
+            });
+            
+            if (!selectedNamespaces || selectedNamespaces.length === 0) {
+                return;
+            }
+            
+            // Group workloads by namespace
+            const namespaceWorkloads = new Map(); // namespace -> Map<name, count>
+            
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    if (item && item.id && selectedNamespaces.includes(item.id.namespace) && item.id.name) {
+                        const ns = item.id.namespace;
+                        const name = item.id.name;
+                        if (!namespaceWorkloads.has(ns)) {
+                            namespaceWorkloads.set(ns, new Map());
+                        }
+                        const workloadMap = namespaceWorkloads.get(ns);
+                        workloadMap.set(name, (workloadMap.get(name) || 0) + 1);
+                    }
+                });
+            }
+            
+            // Sort namespaces and create checkboxes
+            const sortedNamespaces = Array.from(namespaceWorkloads.entries()).sort((a, b) => 
+                a[0].localeCompare(b[0])
+            );
+            
+            sortedNamespaces.forEach(([namespace, workloadMap]) => {
+                // Create namespace group header
+                const namespaceGroup = document.createElement('div');
+                namespaceGroup.className = 'workload-namespace-group';
+                namespaceGroup.dataset.namespace = namespace;
+                
+                const namespaceHeader = document.createElement('div');
+                namespaceHeader.className = 'workload-namespace-header';
+                namespaceHeader.style.display = 'flex';
+                namespaceHeader.style.alignItems = 'center';
+                namespaceHeader.style.gap = '4px';
+                namespaceHeader.style.fontSize = '11px';
+                namespaceHeader.style.fontWeight = '600';
+                namespaceHeader.style.color = '#6b7280';
+                namespaceHeader.style.marginTop = '4px';
+                namespaceHeader.style.marginBottom = '2px';
+                namespaceHeader.textContent = namespace;
+                namespaceGroup.appendChild(namespaceHeader);
+                
+                // Sort workloads within namespace
+                const sortedWorkloads = Array.from(workloadMap.entries()).sort((a, b) => 
+                    a[0].localeCompare(b[0])
+                );
+                
+                sortedWorkloads.forEach(([name, count]) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'workload-checkbox-wrapper';
+                    wrapper.style.marginLeft = '14px';
+                    wrapper.dataset.workloadName = name;
+                    wrapper.dataset.namespace = namespace;
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `filter-workload-${namespace}-${name}`;
+                    checkbox.className = 'workload-checkbox';
+                    checkbox.dataset.namespace = namespace;
+                    checkbox.dataset.workloadName = name;
+                    // Check if this workload was previously checked, or check all by default
+                    checkbox.checked = checkedWorkloads.has(`${namespace}:${name}`) || checkedWorkloads.size === 0;
+                    checkbox.onchange = () => {
+                        updateWorkloadCounts();
+                        updateWorkloadCountDisplay();
+                        updateWorkloadHeaderButton();
+                        applyWorkloadFilter();
+                    };
+                    wrapper.appendChild(checkbox);
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `filter-workload-${namespace}-${name}`;
+                    label.className = 'workload-checkbox-label';
+                    label.textContent = name;
+                    
+                    wrapper.appendChild(label);
+                    
+                    // Add "only" button
+                    const onlyBtn = document.createElement('button');
+                    onlyBtn.className = 'workload-only-btn';
+                    onlyBtn.textContent = 'only';
+                    onlyBtn.title = 'filter to show only this workload';
+                    onlyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        // Uncheck all workload checkboxes (regardless of search filter)
+                        const allWorkloadCheckboxes = document.querySelectorAll('.workload-checkbox');
+                        allWorkloadCheckboxes.forEach(cb => {
+                            cb.checked = false;
+                        });
+                        // Check only this checkbox
+                        checkbox.checked = true;
+                        // Clear search box
+                        const searchBox = document.getElementById('workload-search-box');
+                        if (searchBox) {
+                            searchBox.value = '';
+                            filterWorkloadsBySearch();
+                        }
+                        updateWorkloadCounts();
+                        updateWorkloadCountDisplay();
+                        updateWorkloadHeaderButton();
+                        updateUrlParams();
+                        applyWorkloadFilter();
+                    };
+                    wrapper.appendChild(onlyBtn);
+                    
+                    namespaceGroup.appendChild(wrapper);
+                });
+                
+                filtersContainer.appendChild(namespaceGroup);
+            });
+            
+            updateWorkloadCounts();
+            updateWorkloadCountDisplay();
+            updateWorkloadHeaderButton();
+            // Apply search filter after populating
+            filterWorkloadsBySearch();
+        }
+        
+        function filterWorkloadsBySearch() {
+            const searchBox = document.getElementById('workload-search-box');
+            if (!searchBox) return;
+            
+            const searchText = searchBox.value.toLowerCase().trim();
+            const allWrappers = document.querySelectorAll('.workload-checkbox-wrapper');
+            const namespaceGroups = new Map(); // namespace -> {visible: count, total: count}
+            
+            // Filter workloads and count visible ones per namespace
+            allWrappers.forEach(wrapper => {
+                const workloadName = wrapper.dataset.workloadName || '';
+                const namespace = wrapper.dataset.namespace || '';
+                const searchableText = `${namespace}:${workloadName}`.toLowerCase();
+                
+                if (searchText === '' || searchableText.includes(searchText)) {
+                    wrapper.classList.remove('hidden');
+                    if (!namespaceGroups.has(namespace)) {
+                        namespaceGroups.set(namespace, { visible: 0, total: 0 });
+                    }
+                    namespaceGroups.get(namespace).visible++;
+                } else {
+                    wrapper.classList.add('hidden');
+                }
+                if (!namespaceGroups.has(namespace)) {
+                    namespaceGroups.set(namespace, { visible: 0, total: 0 });
+                }
+                namespaceGroups.get(namespace).total++;
+            });
+            
+            // Hide/show namespace group headers based on visible workloads
+            const allNamespaceGroups = document.querySelectorAll('.workload-namespace-group');
+            allNamespaceGroups.forEach(group => {
+                const namespace = group.dataset.namespace;
+                const counts = namespaceGroups.get(namespace);
+                if (counts && counts.visible === 0) {
+                    group.style.display = 'none';
+                } else {
+                    group.style.display = 'block';
+                }
+            });
+        }
+        
+        function getSelectedWorkloads() {
+            const selected = [];
+            const checkboxes = document.querySelectorAll('.workload-checkbox');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selected.push({
+                        namespace: checkbox.dataset.namespace,
+                        name: checkbox.dataset.workloadName
+                    });
+                }
+            });
+            return selected;
+        }
+        
+        function updateWorkloadCountDisplay() {
+            const footer = document.getElementById('workload-filter-footer');
+            if (!footer) return;
+            
+            const allWorkloadCheckboxes = document.querySelectorAll('.workload-checkbox');
+            const selectedWorkloads = getSelectedWorkloads();
+            const totalWorkloads = allWorkloadCheckboxes.length;
+            
+            // Format workload names for display (namespace:name)
+            const selectedItems = selectedWorkloads.map(w => `${w.namespace}:${w.name}`);
+            
+            footer.textContent = formatFilterFooter(selectedItems, totalWorkloads, 'workloads');
+        }
+        
+        function updateWorkloadCounts() {
+            // Count workloads based on current filters
+            const selectedNamespaces = getSelectedNamespaces();
+            let dataToCount = allWorkloadData;
+            
+            // Apply namespace filter
+            if (selectedNamespaces.length > 0) {
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && selectedNamespaces.includes(item.id.namespace)
+                );
+            }
+            
+            // Apply marked for instrumentation filter
+            const showMarked = document.getElementById('filter-marked').checked;
+            const showNotMarked = document.getElementById('filter-not-marked').checked;
+            if (!showMarked || !showNotMarked) {
+                dataToCount = dataToCount.filter(item => {
+                    if (!item || !item.markedForInstrumentation) {
+                        return showNotMarked;
+                    }
+                    const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                    return isMarked ? showMarked : showNotMarked;
+                });
+            }
+            
+            // Counts are no longer displayed for workloads (always 1)
+        }
+        
+        function populateLanguageCheckboxes(data) {
+            const filtersContainer = document.getElementById('language-filters-container');
+            filtersContainer.innerHTML = '';
+            
+            // Extract all unique languages from workloads
+            const languageMap = new Map(); // language -> count
+            let notDetectedCount = 0;
+            
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    if (item && item.runtimeInfo && item.runtimeInfo.detectedLanguages && 
+                        Array.isArray(item.runtimeInfo.detectedLanguages) &&
+                        item.runtimeInfo.detectedLanguages.length > 0) {
+                        item.runtimeInfo.detectedLanguages.forEach(language => {
+                            if (language) {
+                                languageMap.set(language, (languageMap.get(language) || 0) + 1);
+                            }
+                        });
+                    } else {
+                        // Count workloads without detected languages
+                        notDetectedCount++;
+                    }
+                });
+            }
+            
+            // Get currently checked languages
+            const checkedLanguages = new Set();
+            const existingCheckboxes = document.querySelectorAll('.language-checkbox');
+            existingCheckboxes.forEach(cb => {
+                if (cb.checked) {
+                    checkedLanguages.add(cb.dataset.language);
+                }
+            });
+            
+            // Add "language not detected" option if there are workloads without detected languages
+            if (notDetectedCount > 0) {
+                const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+                const wrapper = document.createElement('div');
+                wrapper.className = 'language-checkbox-wrapper';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `filter-language-${LANGUAGE_NOT_DETECTED}`;
+                checkbox.className = 'language-checkbox';
+                checkbox.dataset.language = LANGUAGE_NOT_DETECTED;
+                checkbox.checked = checkedLanguages.has(LANGUAGE_NOT_DETECTED) || checkedLanguages.size === 0;
+                checkbox.onchange = () => {
+                    updateLanguageCounts();
+                    updateLanguageCountDisplay();
+                    updateLanguageHeaderButton();
+                    updateUrlParams();
+                    applyLanguageFilter();
+                };
+                wrapper.appendChild(checkbox);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `filter-language-${LANGUAGE_NOT_DETECTED}`;
+                label.className = 'language-checkbox-label';
+                label.textContent = 'language not detected';
+                
+                const countSpan = document.createElement('span');
+                countSpan.id = `count-language-${LANGUAGE_NOT_DETECTED}`;
+                countSpan.className = 'language-count';
+                countSpan.textContent = `(${notDetectedCount})`;
+                label.appendChild(countSpan);
+                
+                wrapper.appendChild(label);
+                
+                // Add "only" button
+                const onlyBtn = document.createElement('button');
+                onlyBtn.className = 'language-only-btn';
+                onlyBtn.textContent = 'only';
+                onlyBtn.title = 'filter to show only workloads without detected languages';
+                onlyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+                    allLanguageCheckboxes.forEach(cb => {
+                        cb.checked = false;
+                    });
+                    checkbox.checked = true;
+                    updateLanguageCounts();
+                    updateLanguageCountDisplay();
+                    updateLanguageHeaderButton();
+                    updateUrlParams();
+                    applyLanguageFilter();
+                };
+                wrapper.appendChild(onlyBtn);
+                
+                filtersContainer.appendChild(wrapper);
+            }
+            
+            // Sort languages alphabetically
+            const sortedLanguages = Array.from(languageMap.entries()).sort((a, b) => 
+                a[0].localeCompare(b[0])
+            );
+            
+            // Create checkboxes for each language
+            sortedLanguages.forEach(([language, count]) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'language-checkbox-wrapper';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `filter-language-${language}`;
+                checkbox.className = 'language-checkbox';
+                checkbox.dataset.language = language;
+                // Check if this language was previously checked, or check all by default
+                checkbox.checked = checkedLanguages.has(language) || checkedLanguages.size === 0;
+                    checkbox.onchange = () => {
+                        updateLanguageCounts();
+                        updateLanguageCountDisplay();
+                        updateLanguageHeaderButton();
+                        updateUrlParams();
+                        applyLanguageFilter();
+                    };
+                wrapper.appendChild(checkbox);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `filter-language-${language}`;
+                label.className = 'language-checkbox-label';
+                label.textContent = language;
+                
+                const countSpan = document.createElement('span');
+                countSpan.id = `count-language-${language}`;
+                countSpan.className = 'language-count';
+                countSpan.textContent = `(${count})`;
+                label.appendChild(countSpan);
+                
+                wrapper.appendChild(label);
+                
+                // Add "only" button
+                const onlyBtn = document.createElement('button');
+                onlyBtn.className = 'language-only-btn';
+                onlyBtn.textContent = 'only';
+                onlyBtn.title = 'filter to show only this language';
+                onlyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    // Uncheck all language checkboxes
+                    const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+                    allLanguageCheckboxes.forEach(cb => {
+                        cb.checked = false;
+                    });
+                    // Check only this checkbox
+                    checkbox.checked = true;
+                        updateLanguageCounts();
+                        updateLanguageCountDisplay();
+                        updateLanguageHeaderButton();
+                        updateUrlParams();
+                        applyLanguageFilter();
+                };
+                wrapper.appendChild(onlyBtn);
+                
+                filtersContainer.appendChild(wrapper);
+            });
+            
+            updateLanguageCounts();
+            updateLanguageCountDisplay();
+            updateLanguageHeaderButton();
+        }
+        
+        function getSelectedLanguages() {
+            const selected = [];
+            const checkboxes = document.querySelectorAll('.language-checkbox');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selected.push(checkbox.dataset.language);
+                }
+            });
+            return selected;
+        }
+        
+        function updateLanguageCountDisplay() {
+            const footer = document.getElementById('language-filter-footer');
+            if (!footer) return;
+            
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            const selectedLanguages = getSelectedLanguages();
+            const totalLanguages = allLanguageCheckboxes.length;
+            
+            // Format languages for display (convert special value to readable text)
+            const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+            const displayLanguages = selectedLanguages.map(lang => 
+                lang === LANGUAGE_NOT_DETECTED ? 'language not detected' : lang
+            );
+            
+            footer.textContent = formatFilterFooter(displayLanguages, totalLanguages, 'languages');
+        }
+        
+        function updateLanguageCounts() {
+            // Count workloads per language based on current filters
+            const selectedLanguages = getSelectedLanguages();
+            let dataToCount = allWorkloadData;
+            
+            // Apply other filters for counting (namespace, workload, marked, conditions)
+            const selectedNamespaces = getSelectedNamespaces();
+            if (selectedNamespaces.length > 0) {
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && selectedNamespaces.includes(item.id.namespace)
+                );
+            }
+            
+            const selectedWorkloads = getSelectedWorkloads();
+            if (selectedWorkloads.length > 0) {
+                const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
+                );
+            }
+            
+            const showMarked = document.getElementById('filter-marked').checked;
+            const showNotMarked = document.getElementById('filter-not-marked').checked;
+            if (!showMarked || !showNotMarked) {
+                dataToCount = dataToCount.filter(item => {
+                    if (!item || !item.markedForInstrumentation) {
+                        return showNotMarked;
+                    }
+                    const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                    return isMarked ? showMarked : showNotMarked;
+                });
+            }
+            
+            // Apply condition filters for counting
+            const conditionCheckboxes = document.querySelectorAll('.condition-checkbox');
+            if (conditionCheckboxes.length > 0) {
+                const conditionFilters = new Map();
+                conditionCheckboxes.forEach(checkbox => {
+                    const conditionName = checkbox.dataset.conditionName;
+                    const reasonEnum = checkbox.dataset.reasonEnum;
+                    if (conditionName && reasonEnum) {
+                        if (!conditionFilters.has(conditionName)) {
+                            conditionFilters.set(conditionName, { checked: [], all: [] });
+                        }
+                        conditionFilters.get(conditionName).all.push(reasonEnum);
+                        if (checkbox.checked) {
+                            conditionFilters.get(conditionName).checked.push(reasonEnum);
+                        }
+                    }
+                });
+                conditionFilters.forEach((filterData, conditionName) => {
+                    if (filterData.checked.length < filterData.all.length) {
+                        dataToCount = dataToCount.filter(item => {
+                            if (!item || !item.conditions || !item.conditions[conditionName]) {
+                                return false;
+                            }
+                            const condition = item.conditions[conditionName];
+                            const reasonEnum = condition && condition.reasonEnum;
+                            return reasonEnum && filterData.checked.includes(reasonEnum);
+                        });
+                    }
+                });
+            }
+            
+            // Count per language
+            const languageCounts = new Map();
+            const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+            let notDetectedCount = 0;
+            
+            dataToCount.forEach(item => {
+                if (item && item.runtimeInfo && item.runtimeInfo.detectedLanguages && 
+                    Array.isArray(item.runtimeInfo.detectedLanguages) &&
+                    item.runtimeInfo.detectedLanguages.length > 0) {
+                    item.runtimeInfo.detectedLanguages.forEach(language => {
+                        if (language) {
+                            languageCounts.set(language, (languageCounts.get(language) || 0) + 1);
+                        }
+                    });
+                } else {
+                    // Count workloads without detected languages
+                    notDetectedCount++;
+                }
+            });
+            
+            // Update counts
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            allLanguageCheckboxes.forEach(checkbox => {
+                const language = checkbox.dataset.language;
+                let count = 0;
+                if (language === LANGUAGE_NOT_DETECTED) {
+                    count = notDetectedCount;
+                } else {
+                    count = languageCounts.get(language) || 0;
+                }
+                const countSpan = document.getElementById(`count-language-${language}`);
+                if (countSpan) {
+                    countSpan.textContent = `(${count})`;
+                }
+            });
+        }
+        
+        function applyLanguageFilter() {
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            displayFilteredData(allWorkloadData, selectedNamespaces, selectedWorkloads);
+        }
+        
+        function applyWorkloadFilter() {
+            const selectedNamespaces = getSelectedNamespaces();
+            updateInstrumentationCounts(allWorkloadData);
+            updateConditionCounts(allWorkloadData);
+            updateNamespaceCounts();
+            updateNamespaceCountDisplay();
+            updateWorkloadCounts();
+            updateWorkloadCountDisplay();
+            updateWorkloadHeaderButton();
+            updateUrlParams();
+            applyNameFilter();
+        }
+        
         function applyNamespaceFilter() {
-            const selectedNamespace = document.getElementById('namespace').value;
-            populateNameDropdown(allWorkloadData, selectedNamespace);
+            const selectedNamespaces = getSelectedNamespaces();
+            populateWorkloadCheckboxes(allWorkloadData, selectedNamespaces);
+            
+            // Update counts based on namespace filter
+            let dataToCount = allWorkloadData;
+            if (selectedNamespaces.length > 0) {
+                dataToCount = allWorkloadData.filter(item => 
+                    item && item.id && selectedNamespaces.includes(item.id.namespace)
+                );
+            }
+            updateInstrumentationCounts(dataToCount);
+            updateConditionCounts(dataToCount);
+            updateNamespaceCounts();
+            updateNamespaceCountDisplay();
+            updateLanguageCounts();
+            updateLanguageCountDisplay();
+            
+            updateUrlParams();
             applyNameFilter();
         }
         
         function applyNameFilter() {
-            const selectedNamespace = document.getElementById('namespace').value;
-            const selectedName = document.getElementById('name').value;
-            displayFilteredData(allWorkloadData, selectedNamespace, selectedName);
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            
+            // Update counts based on namespace and workload filters
+            let dataToCount = allWorkloadData;
+            if (selectedNamespaces.length > 0) {
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && selectedNamespaces.includes(item.id.namespace)
+                );
+            }
+            if (selectedWorkloads.length > 0) {
+                const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
+                );
+            }
+            updateInstrumentationCounts(dataToCount);
+            updateConditionCounts(dataToCount);
+            updateNamespaceCounts();
+            updateNamespaceCountDisplay();
+            updateWorkloadCounts();
+            updateWorkloadCountDisplay();
+            updateLanguageCounts();
+            updateLanguageCountDisplay();
+            
+            updateUrlParams();
+            displayFilteredData(allWorkloadData, selectedNamespaces, selectedWorkloads);
+        }
+        
+        function applyInstrumentationFilter() {
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            updateUrlParams();
+            displayFilteredData(allWorkloadData, selectedNamespaces, selectedWorkloads);
+        }
+        
+        function clearAllFilters() {
+            // Check all namespace checkboxes
+            const namespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            namespaceCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Get all selected namespaces after clearing
+            const allNamespaces = getSelectedNamespaces();
+            
+            // Repopulate workload checkboxes with all namespaces
+            populateWorkloadCheckboxes(allWorkloadData, allNamespaces);
+            
+            // Check all workload checkboxes (after repopulation)
+            const workloadCheckboxes = document.querySelectorAll('.workload-checkbox');
+            workloadCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Check both marked for instrumentation checkboxes
+            const markedCheckbox = document.getElementById('filter-marked');
+            const notMarkedCheckbox = document.getElementById('filter-not-marked');
+            if (markedCheckbox) {
+                markedCheckbox.checked = true;
+            }
+            if (notMarkedCheckbox) {
+                notMarkedCheckbox.checked = true;
+            }
+            
+            // Check all language checkboxes
+            const languageCheckboxes = document.querySelectorAll('.language-checkbox');
+            languageCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Check all condition checkboxes
+            const conditionCheckboxes = document.querySelectorAll('.condition-checkbox');
+            conditionCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            // Update counts
+            updateInstrumentationCounts(allWorkloadData);
+            updateConditionCounts(allWorkloadData);
+            updateNamespaceCounts();
+            updateNamespaceCountDisplay();
+            updateWorkloadCounts();
+            updateWorkloadCountDisplay();
+            updateWorkloadHeaderButton();
+            updateLanguageCounts();
+            updateLanguageCountDisplay();
+            updateLanguageHeaderButton();
+            updateNamespaceHeaderButton();
+            updateWorkloadLabel();
+            updateAllConditionFilterCounts();
+            updateAllConditionFilterAllButtons();
+            
+            // Update URL to clear all parameters
+            window.history.replaceState({}, '', window.location.pathname);
+            
+            // Refresh display
+            const allWorkloads = getSelectedWorkloads();
+            displayFilteredData(allWorkloadData, allNamespaces, allWorkloads);
+        }
+        
+        function updateInstrumentationCounts(data) {
+            let markedCount = 0;
+            let notMarkedCount = 0;
+            
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    if (item && item.markedForInstrumentation && 
+                        item.markedForInstrumentation.markedForInstrumentation === true) {
+                        markedCount++;
+                    } else {
+                        notMarkedCount++;
+                    }
+                });
+            }
+            
+            document.getElementById('count-marked').textContent = `(${markedCount})`;
+            document.getElementById('count-not-marked').textContent = `(${notMarkedCount})`;
+        }
+        
+        function getStatusOrder(status) {
+            // Order matches enum.graphqls DesiredStateProgress enum
+            // Handle case-insensitive matching
+            const statusLower = (status || '').toLowerCase();
+            const statusOrder = {
+                'error': 0,
+                'failure': 1,
+                'notice': 2,
+                'pending': 3,
+                'waiting': 4,
+                'unsupported': 5,
+                'disabled': 6,
+                'success': 7,
+                'irrelevant': 8,
+                'unknown': 9
+            };
+            return statusOrder[statusLower] !== undefined ? statusOrder[statusLower] : 999;
+        }
+        
+        function populateConditionFilters(data) {
+            const filtersContainer = document.getElementById('condition-filters-container');
+            filtersContainer.innerHTML = '';
+            
+            // Extract all unique conditions from all workloads
+            const conditionMap = new Map(); // conditionName -> Map<reasonEnum, {reasonEnum, status, count}>
+            
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    if (item && item.conditions) {
+                        // Iterate through all conditions
+                        Object.keys(item.conditions).forEach(conditionName => {
+                            const condition = item.conditions[conditionName];
+                            if (condition && condition.reasonEnum) {
+                                if (!conditionMap.has(conditionName)) {
+                                    conditionMap.set(conditionName, new Map());
+                                }
+                                
+                                const reasonEnumMap = conditionMap.get(conditionName);
+                                const reasonEnum = condition.reasonEnum;
+                                const status = condition.status || 'Unknown';
+                                
+                                if (!reasonEnumMap.has(reasonEnum)) {
+                                    reasonEnumMap.set(reasonEnum, {
+                                        reasonEnum: reasonEnum,
+                                        status: status,
+                                        count: 0
+                                    });
+                                }
+                                reasonEnumMap.get(reasonEnum).count++;
+                                // Update status if we find a different one (prefer non-Unknown)
+                                if (status !== 'Unknown' && reasonEnumMap.get(reasonEnum).status === 'Unknown') {
+                                    reasonEnumMap.get(reasonEnum).status = status;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Sort conditions by name
+            const sortedConditionNames = Array.from(conditionMap.keys()).sort();
+            
+            // If no conditions found, show a message or return early
+            if (sortedConditionNames.length === 0) {
+                return; // No conditions to display
+            }
+            
+            // Create filter group for each condition
+            sortedConditionNames.forEach(conditionName => {
+                const filterGroup = document.createElement('div');
+                filterGroup.className = 'condition-filter-group';
+                filterGroup.dataset.conditionName = conditionName;
+                
+                // Create collapsible header
+                const header = document.createElement('div');
+                header.className = 'condition-filter-header';
+                
+                const headerLeft = document.createElement('div');
+                headerLeft.className = 'condition-filter-header-left';
+                headerLeft.onclick = () => {
+                    const content = filterGroup.querySelector('.condition-filter-content');
+                    const toggle = filterGroup.querySelector('.condition-filter-toggle');
+                    content.classList.toggle('expanded');
+                    toggle.classList.toggle('expanded');
+                };
+                
+                const toggle = document.createElement('span');
+                toggle.className = 'condition-filter-toggle expanded';
+                toggle.textContent = '▶';
+                headerLeft.appendChild(toggle);
+                
+                const label = document.createElement('span');
+                label.className = 'condition-filter-label';
+                label.textContent = parseCamelCase(conditionName);
+                headerLeft.appendChild(label);
+                
+                header.appendChild(headerLeft);
+                
+                // Add "all" button
+                const allBtn = document.createElement('button');
+                allBtn.className = 'condition-filter-all-btn';
+                allBtn.id = `condition-filter-all-btn-${conditionName}`;
+                allBtn.textContent = 'show all';
+                allBtn.title = 'select all options for this filter';
+                allBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    // Check all checkboxes in this condition group
+                    const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+                    allCheckboxes.forEach(cb => {
+                        cb.checked = true;
+                    });
+                    updateConditionFilterCount(conditionName);
+                    updateConditionFilterAllButton(conditionName);
+                    updateUrlParams();
+                    applyConditionFilters();
+                };
+                header.appendChild(allBtn);
+                
+                filterGroup.appendChild(header);
+                
+                // Create footer with count (directly under header)
+                const footer = document.createElement('div');
+                footer.className = 'condition-filter-footer';
+                footer.id = `condition-filter-count-${conditionName}`;
+                const reasonEnumMap = conditionMap.get(conditionName);
+                const totalOptions = reasonEnumMap.size;
+                footer.textContent = `no filter`;
+                filterGroup.appendChild(footer);
+                
+                // Create collapsible content
+                const filtersDiv = document.createElement('div');
+                filtersDiv.className = 'condition-filter-content expanded';
+                filtersDiv.id = `condition-filters-${conditionName}`;
+                
+                const sortedReasons = Array.from(reasonEnumMap.values()).sort((a, b) => {
+                    // First sort by status order (from enum.graphqls)
+                    const statusOrderDiff = getStatusOrder(a.status) - getStatusOrder(b.status);
+                    if (statusOrderDiff !== 0) {
+                        return statusOrderDiff;
+                    }
+                    // If same status, sort by reasonEnum alphabetically
+                    return a.reasonEnum.localeCompare(b.reasonEnum);
+                });
+                
+                // Create checkboxes for each reasonEnum
+                sortedReasons.forEach(reasonData => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'condition-checkbox-wrapper';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `filter-condition-${conditionName}__${reasonData.reasonEnum}`;
+                    checkbox.className = 'condition-checkbox';
+                    checkbox.dataset.conditionName = conditionName;
+                    checkbox.dataset.reasonEnum = reasonData.reasonEnum;
+                    checkbox.checked = true;
+                    checkbox.onchange = () => {
+                        updateConditionFilterCount(conditionName);
+                        updateConditionFilterAllButton(conditionName);
+                        updateUrlParams();
+                        applyConditionFilters();
+                    };
+                    wrapper.appendChild(checkbox);
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `filter-condition-${conditionName}__${reasonData.reasonEnum}`;
+                    label.className = 'condition-checkbox-label';
+                    
+                    // Add emoji based on status
+                    const statusEmoji = getStatusEmoji(reasonData.status);
+                    if (statusEmoji) {
+                        const emojiSpan = document.createElement('span');
+                        emojiSpan.textContent = statusEmoji + ' ';
+                        label.appendChild(emojiSpan);
+                    }
+                    
+                    // Add reasonEnum text
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = parseCamelCase(reasonData.reasonEnum);
+                    label.appendChild(textSpan);
+                    
+                    // Add count
+                    const countSpan = document.createElement('span');
+                    countSpan.id = `count-condition-${conditionName}__${reasonData.reasonEnum}`;
+                    countSpan.className = 'condition-count';
+                    countSpan.textContent = `(${reasonData.count})`;
+                    label.appendChild(countSpan);
+                    
+                    wrapper.appendChild(label);
+                    
+                    // Add "only" button
+                    const onlyBtn = document.createElement('button');
+                    onlyBtn.className = 'condition-only-btn';
+                    onlyBtn.textContent = 'only';
+                    onlyBtn.title = 'filter to show only this state';
+                    onlyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        // Uncheck all checkboxes in this condition group
+                        const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+                        allCheckboxes.forEach(cb => {
+                            cb.checked = false;
+                        });
+                        // Check only this checkbox
+                        checkbox.checked = true;
+                        updateConditionFilterCount(conditionName);
+                        updateConditionFilterAllButton(conditionName);
+                        updateUrlParams();
+                        applyConditionFilters();
+                    };
+                    wrapper.appendChild(onlyBtn);
+                    
+                    filtersDiv.appendChild(wrapper);
+                });
+                
+                filterGroup.appendChild(filtersDiv);
+                
+                // Update button visibility after all checkboxes are created
+                updateConditionFilterAllButton(conditionName);
+                
+                filtersContainer.appendChild(filterGroup);
+            });
+            
+            // Update counts based on current filters
+            updateConditionCounts(data);
+            updateAllConditionFilterCounts();
+            updateAllConditionFilterAllButtons();
+        }
+        
+        function updateConditionFilterAllButton(conditionName) {
+            const allBtn = document.getElementById(`condition-filter-all-btn-${conditionName}`);
+            if (!allBtn) return;
+            
+            const checkboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+            let allChecked = true;
+            
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.checked) {
+                    allChecked = false;
+                }
+            });
+            
+            // Show button only if some are unchecked
+            allBtn.style.display = allChecked ? 'none' : 'inline-block';
+        }
+        
+        function updateAllConditionFilterAllButtons() {
+            const conditionGroups = document.querySelectorAll('.condition-filter-group');
+            conditionGroups.forEach(group => {
+                const conditionName = group.dataset.conditionName;
+                if (conditionName) {
+                    updateConditionFilterAllButton(conditionName);
+                }
+            });
+        }
+        
+        function updateConditionCounts(data) {
+            // Get current filters
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            const selectedLanguages = getSelectedLanguages();
+            
+            let dataToCount = data;
+            
+            // Get all unique namespaces from the data
+            const allNamespacesInData = new Set();
+            if (Array.isArray(data)) {
+                data.forEach(item => {
+                    if (item && item.id && item.id.namespace) {
+                        allNamespacesInData.add(item.id.namespace);
+                    }
+                });
+            }
+            const allNamespacesArray = Array.from(allNamespacesInData);
+            
+            // Apply namespace filter - only if not all namespaces are selected
+            if (selectedNamespaces.length > 0 && selectedNamespaces.length < allNamespacesArray.length) {
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && selectedNamespaces.includes(item.id.namespace)
+                );
+            }
+            
+            // Get all unique workloads from the filtered data
+            const allWorkloadsInData = new Set();
+            dataToCount.forEach(item => {
+                if (item && item.id && item.id.namespace && item.id.name) {
+                    allWorkloadsInData.add(`${item.id.namespace}:${item.id.name}`);
+                }
+            });
+            
+            // Apply workload filter - only if not all workloads are selected
+            if (selectedWorkloads.length > 0 && selectedWorkloads.length < allWorkloadsInData.size) {
+                const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
+                dataToCount = dataToCount.filter(item => 
+                    item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
+                );
+            }
+            
+            // Apply marked for instrumentation filter
+            const showMarked = document.getElementById('filter-marked').checked;
+            const showNotMarked = document.getElementById('filter-not-marked').checked;
+            if (!showMarked || !showNotMarked) {
+                dataToCount = dataToCount.filter(item => {
+                    if (!item || !item.markedForInstrumentation) {
+                        return showNotMarked;
+                    }
+                    const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                    return isMarked ? showMarked : showNotMarked;
+                });
+            }
+            
+            // Apply language filter - only if not all languages are selected
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+            if (selectedLanguages && selectedLanguages.length > 0 && selectedLanguages.length < allLanguageCheckboxes.length) {
+                const includeNotDetected = selectedLanguages.includes(LANGUAGE_NOT_DETECTED);
+                dataToCount = dataToCount.filter(item => {
+                    const hasNoDetectedLanguages = !item || !item.runtimeInfo || !item.runtimeInfo.detectedLanguages || 
+                        !Array.isArray(item.runtimeInfo.detectedLanguages) || 
+                        item.runtimeInfo.detectedLanguages.length === 0;
+                    
+                    if (hasNoDetectedLanguages) {
+                        return includeNotDetected;
+                    }
+                    
+                    return item.runtimeInfo.detectedLanguages.some(lang => selectedLanguages.includes(lang));
+                });
+            }
+            
+            // Count each condition's reasonEnum
+            const conditionCounts = new Map(); // conditionName -> Map<reasonEnum, count>
+            
+            if (Array.isArray(dataToCount)) {
+                dataToCount.forEach(item => {
+                    if (item && item.conditions) {
+                        Object.keys(item.conditions).forEach(conditionName => {
+                            const condition = item.conditions[conditionName];
+                            if (condition && condition.reasonEnum) {
+                                if (!conditionCounts.has(conditionName)) {
+                                    conditionCounts.set(conditionName, new Map());
+                                }
+                                const reasonEnumMap = conditionCounts.get(conditionName);
+                                const reasonEnum = condition.reasonEnum;
+                                reasonEnumMap.set(reasonEnum, (reasonEnumMap.get(reasonEnum) || 0) + 1);
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Update count displays
+            conditionCounts.forEach((reasonEnumMap, conditionName) => {
+                reasonEnumMap.forEach((count, reasonEnum) => {
+                    const countEl = document.getElementById(`count-condition-${conditionName}__${reasonEnum}`);
+                    if (countEl) {
+                        countEl.textContent = `(${count})`;
+                    }
+                });
+            });
+            
+            // Update filter count badges
+            updateAllConditionFilterCounts();
+        }
+        
+        function updateConditionFilterCount(conditionName) {
+            const checkboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+            const selectedItems = [];
+            const totalCount = checkboxes.length;
+            
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const reasonEnum = checkbox.dataset.reasonEnum;
+                    if (reasonEnum) {
+                        selectedItems.push(parseCamelCase(reasonEnum));
+                    }
+                }
+            });
+            
+            const footer = document.getElementById(`condition-filter-count-${conditionName}`);
+            if (footer) {
+                footer.textContent = formatFilterFooter(selectedItems, totalCount, 'options');
+            }
+        }
+        
+        function updateAllConditionFilterCounts() {
+            const conditionGroups = document.querySelectorAll('.condition-filter-group');
+            conditionGroups.forEach(group => {
+                const header = group.querySelector('.condition-filter-header');
+                const label = header ? header.querySelector('.condition-filter-label') : null;
+                if (label) {
+                    const conditionName = label.textContent;
+                    updateConditionFilterCount(conditionName);
+                }
+            });
+        }
+        
+        function applyConditionFilters() {
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            updateAllConditionFilterCounts();
+            displayFilteredData(allWorkloadData, selectedNamespaces, selectedWorkloads);
         }
         
         function generateK8sCommands(item) {
@@ -971,26 +3247,219 @@
             document.getElementById(tabContentId).classList.add('active');
         }
         
-        function displayFilteredData(data, namespaceFilter = '', nameFilter = '') {
+        function updateStatusLine(totalCount, filteredCount, selectedNamespaces, selectedWorkloads) {
+            const statusLine = document.getElementById('status-line');
+            if (!statusLine) return;
+            
+            const activeFilters = [];
+            
+            // Check namespace filter(s)
+            const allNamespaceCheckboxes = document.querySelectorAll('.namespace-checkbox');
+            const allNamespaces = Array.from(allNamespaceCheckboxes).map(cb => cb.dataset.namespace);
+            if (selectedNamespaces && selectedNamespaces.length > 0 && selectedNamespaces.length < allNamespaces.length) {
+                if (selectedNamespaces.length === 1) {
+                    activeFilters.push(`namespace: ${selectedNamespaces[0]}`);
+                } else {
+                    activeFilters.push(`namespaces: ${selectedNamespaces.join(', ')}`);
+                }
+            }
+            
+            // Check workload filter(s)
+            const allWorkloadCheckboxes = document.querySelectorAll('.workload-checkbox');
+            if (selectedWorkloads && selectedWorkloads.length > 0 && selectedWorkloads.length < allWorkloadCheckboxes.length) {
+                if (selectedWorkloads.length === 1) {
+                    activeFilters.push(`workload: ${selectedWorkloads[0].name} (${selectedWorkloads[0].namespace})`);
+                } else {
+                    activeFilters.push(`workloads: ${selectedWorkloads.length} selected`);
+                }
+            }
+            
+            // Check language filter(s)
+            const selectedLanguages = getSelectedLanguages();
+            const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+            const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+            if (selectedLanguages && selectedLanguages.length > 0 && selectedLanguages.length < allLanguageCheckboxes.length) {
+                const displayLanguages = selectedLanguages.map(lang => 
+                    lang === LANGUAGE_NOT_DETECTED ? 'language not detected' : lang
+                );
+                if (selectedLanguages.length === 1) {
+                    activeFilters.push(`language: ${displayLanguages[0]}`);
+                } else {
+                    activeFilters.push(`languages: ${displayLanguages.join(', ')}`);
+                }
+            }
+            
+            // Check marked for instrumentation filters
+            const showMarked = document.getElementById('filter-marked').checked;
+            const showNotMarked = document.getElementById('filter-not-marked').checked;
+            if (!showMarked) {
+                activeFilters.push('not marked for instrumentation');
+            }
+            if (!showNotMarked) {
+                activeFilters.push('marked for instrumentation');
+            }
+            
+            // Check condition filters - show what's displayed (checked), not what's filtered out
+            const conditionCheckboxes = document.querySelectorAll('.condition-checkbox');
+            const conditionFilters = new Map(); // conditionName -> {checked: [], all: []}
+            
+            conditionCheckboxes.forEach(checkbox => {
+                const conditionName = checkbox.dataset.conditionName;
+                const reasonEnum = checkbox.dataset.reasonEnum;
+                
+                if (conditionName && reasonEnum) {
+                    if (!conditionFilters.has(conditionName)) {
+                        conditionFilters.set(conditionName, { checked: [], all: [] });
+                    }
+                    conditionFilters.get(conditionName).all.push(reasonEnum);
+                    if (checkbox.checked) {
+                        conditionFilters.get(conditionName).checked.push(reasonEnum);
+                    }
+                }
+            });
+            
+            conditionFilters.forEach((filterData, conditionName) => {
+                // Only show if not all options are checked (i.e., some filtering is happening)
+                if (filterData.checked.length < filterData.all.length) {
+                    const conditionLabel = parseCamelCase(conditionName);
+                    if (filterData.checked.length === 1) {
+                        activeFilters.push(`"${conditionLabel}" showing only "${parseCamelCase(filterData.checked[0])}"`);
+                    } else {
+                        const checkedLabels = filterData.checked.map(re => parseCamelCase(re));
+                        activeFilters.push(`"${conditionLabel}" showing only: ${checkedLabels.map(l => `"${l}"`).join(', ')}`);
+                    }
+                }
+            });
+            
+            // Build status text
+            let statusText = '';
+            if (activeFilters.length === 0) {
+                statusText = `showing all ${totalCount} kubernetes workloads in the cluster (excluding ignored namespaces)`;
+            } else {
+                statusText = `showing ${filteredCount}/${totalCount} kubernetes workloads due to the following filters: ${activeFilters.join(', ')}`;
+            }
+            
+            // Clear existing content
+            statusLine.innerHTML = '';
+            
+            // Add status text
+            const textSpan = document.createElement('span');
+            textSpan.textContent = statusText;
+            statusLine.appendChild(textSpan);
+            
+            // Add "Clear All Filters" button if filters are active
+            if (activeFilters.length > 0) {
+                const clearBtn = document.createElement('button');
+                clearBtn.className = 'status-line-clear-btn';
+                clearBtn.textContent = 'Clear All Filters';
+                clearBtn.onclick = () => {
+                    clearAllFilters();
+                };
+                statusLine.appendChild(clearBtn);
+            }
+        }
+        
+        function displayFilteredData(data, selectedNamespaces = [], selectedWorkloads = []) {
             const output = document.getElementById('json-output');
             output.classList.remove('loading');
             output.innerHTML = '';
             
+            const totalCount = Array.isArray(data) ? data.length : 0;
+            
             if (Array.isArray(data)) {
                 let filteredData = data;
                 
-                // Filter by namespace
-                if (namespaceFilter) {
+                // Filter by namespace(s)
+                if (selectedNamespaces && selectedNamespaces.length > 0) {
                     filteredData = filteredData.filter(item => 
-                        item && item.id && item.id.namespace === namespaceFilter
+                        item && item.id && selectedNamespaces.includes(item.id.namespace)
                     );
                 }
                 
-                // Filter by name
-                if (nameFilter) {
+                // Filter by workload(s)
+                if (selectedWorkloads && selectedWorkloads.length > 0) {
+                    const workloadSet = new Set(selectedWorkloads.map(w => `${w.namespace}:${w.name}`));
                     filteredData = filteredData.filter(item => 
-                        item && item.id && item.id.name === nameFilter
+                        item && item.id && workloadSet.has(`${item.id.namespace}:${item.id.name}`)
                     );
+                }
+                
+                // Filter by marked for instrumentation
+                const showMarked = document.getElementById('filter-marked').checked;
+                const showNotMarked = document.getElementById('filter-not-marked').checked;
+                
+                if (!showMarked || !showNotMarked) {
+                    filteredData = filteredData.filter(item => {
+                        if (!item || !item.markedForInstrumentation) {
+                            return showNotMarked; // If no markedForInstrumentation property, treat as not marked
+                        }
+                        const isMarked = item.markedForInstrumentation.markedForInstrumentation === true;
+                        if (isMarked) {
+                            return showMarked;
+                        } else {
+                            return showNotMarked;
+                        }
+                    });
+                }
+                
+                // Filter by programming language
+                const selectedLanguages = getSelectedLanguages();
+                const allLanguageCheckboxes = document.querySelectorAll('.language-checkbox');
+                const LANGUAGE_NOT_DETECTED = '__LANGUAGE_NOT_DETECTED__';
+                // Only filter by language if not all languages are selected
+                if (selectedLanguages && selectedLanguages.length > 0 && selectedLanguages.length < allLanguageCheckboxes.length) {
+                    const includeNotDetected = selectedLanguages.includes(LANGUAGE_NOT_DETECTED);
+                    filteredData = filteredData.filter(item => {
+                        // Check if workload has no detected languages
+                        const hasNoDetectedLanguages = !item || !item.runtimeInfo || !item.runtimeInfo.detectedLanguages || 
+                            !Array.isArray(item.runtimeInfo.detectedLanguages) || 
+                            item.runtimeInfo.detectedLanguages.length === 0;
+                        
+                        if (hasNoDetectedLanguages) {
+                            return includeNotDetected; // Include only if "language not detected" is selected
+                        }
+                        
+                        // Check if any of the workload's languages match the selected languages
+                        return item.runtimeInfo.detectedLanguages.some(lang => selectedLanguages.includes(lang));
+                    });
+                }
+                
+                // Filter by condition reasonEnum (generic for all conditions)
+                const conditionCheckboxes = document.querySelectorAll('.condition-checkbox');
+                if (conditionCheckboxes.length > 0) {
+                    // Group checkboxes by condition name
+                    const conditionFilters = new Map(); // conditionName -> {checked: [], all: []}
+                    
+                    conditionCheckboxes.forEach(checkbox => {
+                        const conditionName = checkbox.dataset.conditionName;
+                        const reasonEnum = checkbox.dataset.reasonEnum;
+                        
+                        if (conditionName && reasonEnum) {
+                            if (!conditionFilters.has(conditionName)) {
+                                conditionFilters.set(conditionName, { checked: [], all: [] });
+                            }
+                            
+                            conditionFilters.get(conditionName).all.push(reasonEnum);
+                            if (checkbox.checked) {
+                                conditionFilters.get(conditionName).checked.push(reasonEnum);
+                            }
+                        }
+                    });
+                    
+                    // Apply filters for each condition
+                    conditionFilters.forEach((filterData, conditionName) => {
+                        // Only filter if not all are checked (i.e., some are unchecked)
+                        if (filterData.checked.length < filterData.all.length) {
+                            filteredData = filteredData.filter(item => {
+                                if (!item || !item.conditions || !item.conditions[conditionName]) {
+                                    return false; // If no condition, exclude it
+                                }
+                                const condition = item.conditions[conditionName];
+                                const reasonEnum = condition && condition.reasonEnum;
+                                return reasonEnum && filterData.checked.includes(reasonEnum);
+                            });
+                        }
+                    });
                 }
                 
                 filteredData.forEach((item, idx) => {
@@ -3722,7 +6191,7 @@
                         });
                     } else {
                         const noPods = document.createElement('div');
-                        noPods.textContent = 'change verbosity to show pods info';
+                        noPods.textContent = 'no pods info available';
                         noPods.style.padding = '15px';
                         noPods.style.color = '#666';
                         podsContent.appendChild(noPods);
@@ -3765,18 +6234,48 @@
                     
                     output.appendChild(wrapper);
                 });
+                
+                // Update status line
+                updateStatusLine(totalCount, filteredData.length, selectedNamespaces, selectedWorkloads);
             } else {
                 renderJSON(data, output);
+                // Update status line for non-array data
+                updateStatusLine(totalCount, 0, selectedNamespaces, selectedWorkloads);
             }
         }
         
         function loadData(data) {
             allWorkloadData = data;
-            const selectedNamespace = document.getElementById('namespace').value;
-            const selectedName = document.getElementById('name').value;
-            populateNamespaceDropdown(data);
-            populateNameDropdown(data, selectedNamespace);
-            displayFilteredData(data, selectedNamespace, selectedName);
+            const selectedNamespaces = getSelectedNamespaces();
+            const selectedWorkloads = getSelectedWorkloads();
+            populateNamespaceCheckboxes(data);
+            // Apply pending namespace filters from URL after checkboxes are created
+            applyPendingNamespaceFilters();
+            const finalSelectedNamespaces = getSelectedNamespaces();
+            updateNamespaceHeaderButton();
+            updateWorkloadLabel();
+            populateWorkloadCheckboxes(data, finalSelectedNamespaces);
+            // Apply pending workload filters from URL after checkboxes are created
+            applyPendingWorkloadFilters();
+            const finalSelectedWorkloads = getSelectedWorkloads();
+            populateLanguageCheckboxes(data);
+            // Apply pending language filters from URL after checkboxes are created
+            applyPendingLanguageFilters();
+            updateInstrumentationCounts(data);
+            populateConditionFilters(data);
+            updateConditionCounts(data);
+            // Apply pending condition filters from URL after filters are populated
+            applyPendingConditionFilters();
+            displayFilteredData(data, finalSelectedNamespaces, finalSelectedWorkloads);
+        }
+        
+        // Apply URL parameters on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                applyUrlParams();
+            });
+        } else {
+            applyUrlParams();
         }
         
         // Initial load
