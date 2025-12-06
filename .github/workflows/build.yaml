@@ -58,8 +58,9 @@ jobs:
           push: false
           tags: agents:pr-${{ github.event.number }}
           provenance: false
-          file: agents/Dockerfile
+          file: odiglet/Dockerfile
           build-args: SERVICE_NAME=agents
+          target: agents
 
   build-and-test-instrumentor:
     name: build-and-test-instrumentor

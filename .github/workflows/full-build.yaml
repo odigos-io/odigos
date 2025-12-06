@@ -16,21 +16,20 @@ jobs:
     name: build-all-services
     strategy:
       matrix:
-        service: [autoscaler, scheduler, instrumentor, odigos-collector, odiglet, frontend, operator]
-        dockerfile_variant: [Dockerfile, Dockerfile.rhel]
+        service: [autoscaler, scheduler, instrumentor, odigos-collector, odiglet, agents, frontend, operator]
+        rhel: ['true', 'false']
         include:
           - service: autoscaler
             dockerfile_path: .
-            build-args: SERVICE_NAME=autoscaler
           - service: scheduler
             dockerfile_path: .
-            build-args: SERVICE_NAME=scheduler
           - service: instrumentor
             dockerfile_path: .
-            build-args: SERVICE_NAME=instrumentor
           - service: odigos-collector
             dockerfile_path: collector
           - service: odiglet
+            dockerfile_path: odiglet
+          - service: agents
             dockerfile_path: odiglet
           - service: frontend
             dockerfile_path: frontend
@@ -50,9 +49,15 @@ jobs:
           push: false
           tags: ${{ matrix.service }}:pr-${{ github.event.number }}
           provenance: false
-          file: ${{ matrix.dockerfile_path }}/${{ matrix.dockerfile_variant }}
+          file: ${{ matrix.dockerfile_path }}/Dockerfile
           context: .
-          build-args: ${{ matrix.build-args }}
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+            RHEL=${{ matrix.rhel }}
+          target: >-
+            ${{ matrix.service == 'agents' && matrix.rhel == 'true' && 'agents-rhel' ||
+                matrix.rhel == 'true' && 'rhel' ||
+                '' }}
 
   build-cli:
     runs-on: depot-ubuntu-24.04-8
