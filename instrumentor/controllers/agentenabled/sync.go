@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signalconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -260,47 +259,6 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentCon
 	}
 }
 
-func getEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup, irls *[]odigosv1.InstrumentationRule) (tracesEnabled bool, metricsEnabled bool, logsEnabled bool) {
-	tracesEnabled = false
-	metricsEnabled = false
-	logsEnabled = false
-
-	if nodeCollectorsGroup == nil {
-		// if the node collectors group is not created yet,
-		// it means the collectors are not running thus all signals are disabled.
-		return false, false, false
-	}
-
-	// first set each signal to enabled/disabled based on the node collectors group global signals for collection.
-	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal) {
-		tracesEnabled = true
-	}
-	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal) {
-		metricsEnabled = true
-	}
-	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.LogsObservabilitySignal) {
-		logsEnabled = true
-	}
-
-	// disable specific signals if they are disabled in any of the workload level instrumentation rules.
-	for _, irl := range *irls {
-
-		// these signals are in the workload level,
-		// and library specific rules are not relevant to the current calculation.
-		if irl.Spec.InstrumentationLibraries != nil {
-			continue
-		}
-
-		// if any instrumentation rule has trace config disabled, we should disable traces for this container.
-		// the list is already filtered to only include rules that are relevant to the current workload.
-		if irl.Spec.TraceConfig != nil && irl.Spec.TraceConfig.Disabled != nil && *irl.Spec.TraceConfig.Disabled {
-			tracesEnabled = false
-		}
-	}
-
-	return tracesEnabled, metricsEnabled, logsEnabled
-}
-
 func getEnvVarFromList(envVars []odigosv1.EnvVar, envVarName string) (string, bool) {
 	// here we check for the value of LD_PRELOAD in the EnvVars list,
 	// which returns the env as read from /proc to make sure if there is any value set,
@@ -419,41 +377,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 	containerOverride *odigosv1.ContainerOverride,
 ) odigosv1.ContainerAgentConfig {
 
-	tracesEnabled, metricsEnabled, logsEnabled := getEnabledSignalsForContainer(nodeCollectorsGroup, irls)
-
-	// at this time, we don't populate the signals specific configs, but we will do it soon
-	var tracesConfig *odigosv1.AgentTracesConfig
-	var metricsConfig *odigosv1.AgentMetricsConfig
-	var logsConfig *odigosv1.AgentLogsConfig
-	if tracesEnabled {
-		tracesConfig = &odigosv1.AgentTracesConfig{}
-
-		// for traces, also allow to configure the id generator as "timedwall",
-		// if trace id suffix is provided.
-		if effectiveConfig.TraceIdSuffix != "" {
-			sourceId, err := strconv.ParseUint(effectiveConfig.TraceIdSuffix, 16, 8)
-			if err != nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
-					AgentEnabledMessage: fmt.Sprintf("failed to parse trace id suffix: %s. trace id suffix must be a single byte hex value (for example 'A3')", err),
-				}
-			}
-			tracesConfig.IdGenerator = &odigosv1.IdGeneratorConfig{
-				TimedWall: &odigosv1.IdGeneratorTimedWallConfig{
-					SourceId: uint8(sourceId),
-				},
-			}
-		}
-	}
-	if metricsEnabled {
-		metricsConfig = &odigosv1.AgentMetricsConfig{}
-	}
-	if logsEnabled {
-		logsConfig = &odigosv1.AgentLogsConfig{}
-	}
-
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
 	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
 	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
@@ -488,6 +411,22 @@ func calculateContainerInstrumentationConfig(containerName string,
 		return *err
 	}
 	distroName := distro.Name
+
+	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
+
+	// at this time, we don't populate the signals specific configs, but we will do it soon
+	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName)
+	if err != nil {
+		return *err
+	}
+	metricsConfig, err := signalconfig.CalculateMetricsConfig(metricsEnabled, effectiveConfig, distro, containerName)
+	if err != nil {
+		return *err
+	}
+	logsConfig, err := signalconfig.CalculateLogsConfig(logsEnabled, effectiveConfig, containerName)
+	if err != nil {
+		return *err
+	}
 
 	envInjectionDecision, unsupportedDetails := getEnvInjectionDecision(containerName, effectiveConfig, runtimeDetails, distro)
 	if unsupportedDetails != nil {
