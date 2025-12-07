@@ -119,6 +119,25 @@ type RuntimeAgent struct {
 	WaspSupported bool `yaml:"waspSupported,omitempty"`
 }
 
+type SpanMetrics struct {
+	// if true, the agent supports span metrics.
+	Supported bool `yaml:"supported,omitempty"`
+
+	// if true, it means that span metrics configuration should be injected
+	// to the pods as env variable.
+	InjectAsEnvVar bool `yaml:"injectAsEnvVar,omitempty"`
+}
+
+// configuration for this distro's support for metrics generated from the runtime agent.
+type AgentMetrics struct {
+
+	// configuration for this distro's support for agent span metrics.
+	// these are span metrics that are generated directly in the agent,
+	// unlike span metrics calculated at collectors which miss
+	// head unsampled spans and spans dropped before reaching the collector.
+	SpanMetrics *SpanMetrics `yaml:"spanMetrics,omitempty"`
+}
+
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
 // including instrumentations, SDKs, and other components that are distributed together.
 // Each distribution includes a unique name, and metadata about the ways it is implemented.
@@ -160,4 +179,7 @@ type OtelDistro struct {
 	// Metadata and properties of the runtime agent that is used to enable the distribution.
 	// Can be nil in case no runtime agent is required.
 	RuntimeAgent *RuntimeAgent `yaml:"runtimeAgent,omitempty"`
+
+	// document support for metrics produced directly from the runtime
+	AgentMetrics *AgentMetrics `yaml:"agentMetrics,omitempty"`
 }
