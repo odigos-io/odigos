@@ -346,7 +346,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			}
 			existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_METRICS_CONFIG", string(spanMetricsConfigJson))
 			otlpHttpMetricsEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)") + "/v1/metrics"
-			podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
+			podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
 		}
 	}
 
