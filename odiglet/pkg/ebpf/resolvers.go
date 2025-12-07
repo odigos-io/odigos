@@ -38,11 +38,11 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 	}
 
 	return K8sProcessDetails{
-		pod:           pod,
-		containerName: containerName,
-		distroName:    distroName,
-		pw:            podWorkload,
-		procEvent:     event,
+		Pod:           pod,
+		ContainerName: containerName,
+		DistroName:    distroName,
+		Pw:            podWorkload,
+		ProcEvent:     event,
 	}, nil
 }
 
@@ -81,11 +81,11 @@ func distroNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 type k8sConfigGroupResolver struct{}
 
 func (cr *k8sConfigGroupResolver) Resolve(ctx context.Context, d K8sProcessDetails, dist *distro.OtelDistro) (K8sConfigGroup, error) {
-	if d.pw == nil {
+	if d.Pw == nil {
 		return K8sConfigGroup{}, fmt.Errorf("podWorkload is not provided, cannot resolve config group")
 	}
 	return K8sConfigGroup{
-		Pw:   *d.pw,
+		Pw:   *d.Pw,
 		Lang: dist.Language,
 	}, nil
 }

@@ -2,14 +2,11 @@ package runtime_details
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	corev1 "k8s.io/api/core/v1"
+	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,35 +70,9 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, request
 		return reconcile.Result{}, fmt.Errorf("InstrumentationConfig %s/%s has %d owner references, expected 1", instrumentationConfig.Namespace, instrumentationConfig.Name, len(instrumentationConfig.OwnerReferences))
 	}
 
-	// find pods that are managed by the workload,
-	// filter out pods that are being deleted or not ready,
-	// note that the controller-runtime cache is assumed here to only contain pods in the same node as the odiglet
-	var podList corev1.PodList
-	err = r.List(ctx, &podList, client.InNamespace(instrumentationConfig.Namespace))
+	selectedPods, err := kubecommon.WorkloadPodsOnCurrentNode(r.Client, ctx, &instrumentationConfig)
 	if err != nil {
 		return reconcile.Result{}, err
-	}
-
-	var selectedPods []corev1.Pod
-	for _, pod := range podList.Items {
-		// skip pods that are being deleted or not ready
-		if pod.DeletionTimestamp != nil || !k8scontainer.AllContainersReady(&pod) {
-			continue
-		}
-		podWorkload, err := getPodWorkloadObject(&pod)
-		if errors.Is(err, workload.ErrKindNotSupported) {
-			continue
-		}
-		if podWorkload == nil {
-			// pod is not managed by a workload, no runtime details detection needed
-			continue
-		}
-
-		// get instrumentation config name for the pod
-		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(podWorkload.Name, podWorkload.Kind)
-		if instrumentationConfigName == instrumentationConfig.Name {
-			selectedPods = append(selectedPods, pod)
-		}
 	}
 
 	if len(selectedPods) == 0 {

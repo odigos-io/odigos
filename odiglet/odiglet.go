@@ -31,15 +31,17 @@ import (
 )
 
 type Odiglet struct {
-	clientset     *kubernetes.Clientset
-	mgr           controllerruntime.Manager
-	ebpfManager   commonInstrumentation.Manager
-	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	criClient     *criwrapper.CriClient
+	clientset               *kubernetes.Clientset
+	mgr                     controllerruntime.Manager
+	ebpfManager             commonInstrumentation.Manager
+	configUpdates           chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	instrumentationRequests chan<- commonInstrumentation.InstrumentationRequest[ebpf.K8sProcessDetails]
+	criClient               *criwrapper.CriClient
 }
 
 const (
-	configUpdatesBufferSize = 10
+	configUpdatesBufferSize           = 10
+	instrumentationRequestsBufferSize = 50
 )
 
 // New creates a new Odiglet instance.
@@ -75,17 +77,19 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
-	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates, appendEnvVarNames)
+	instrumentationRequests := make(chan commonInstrumentation.InstrumentationRequest[ebpf.K8sProcessDetails], instrumentationRequestsBufferSize)
+	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates, instrumentationRequests, appendEnvVarNames)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}
 	criWrapper := criwrapper.CriClient{Logger: log.Logger}
 
 	kubeManagerOptions := kube.KubeManagerOptions{
-		Mgr:               mgr,
-		ConfigUpdates:     configUpdates,
-		CriClient:         &criWrapper,
-		AppendEnvVarNames: appendEnvVarNames,
+		Mgr:                     mgr,
+		ConfigUpdates:           configUpdates,
+		InstrumentationRequests: instrumentationRequests,
+		CriClient:               &criWrapper,
+		AppendEnvVarNames:       appendEnvVarNames,
 	}
 
 	err = kube.SetupWithManager(kubeManagerOptions)
@@ -94,11 +98,12 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}
 
 	return &Odiglet{
-		clientset:     clientset,
-		mgr:           mgr,
-		ebpfManager:   ebpfManager,
-		configUpdates: configUpdates,
-		criClient:     &criWrapper,
+		clientset:               clientset,
+		mgr:                     mgr,
+		ebpfManager:             ebpfManager,
+		configUpdates:           configUpdates,
+		instrumentationRequests: instrumentationRequests,
+		criClient:               &criWrapper,
 	}, nil
 }
 
@@ -156,6 +161,9 @@ func (o *Odiglet) Run(ctx context.Context) {
 		// the manager is stopped, it is now safe to close the config updates channel
 		if o.configUpdates != nil {
 			close(o.configUpdates)
+		}
+		if o.instrumentationRequests != nil {
+			close(o.instrumentationRequests)
 		}
 		return err
 	})

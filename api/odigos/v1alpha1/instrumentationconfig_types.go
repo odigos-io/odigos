@@ -121,6 +121,7 @@ const (
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
 	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonNotRequired            WorkloadRolloutReason = "NotRequired"
 	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
 )
 
