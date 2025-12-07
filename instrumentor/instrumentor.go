@@ -143,7 +143,7 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 
 	// Start pprof server
 	g.Go(func() error {
-		err := common.StartPprofServer(groupCtx, i.logger)
+		err := common.StartPprofServer(groupCtx, i.logger, int(k8sconsts.DefaultPprofEndpointPort))
 		if err != nil {
 			i.logger.Error(err, "Failed to start pprof server")
 		} else {
