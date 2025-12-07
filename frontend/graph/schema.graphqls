@@ -856,7 +856,7 @@ type InstrumentationInstanceComponent {
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
-# Remote configuration managed by central-ui
+# Remote configuration managed by central-backend
 # These settings take precedence over Helm values and persist through upgrades
 type RemoteConfig {
   rollout: RemoteConfigRollout

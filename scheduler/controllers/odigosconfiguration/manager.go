@@ -40,7 +40,7 @@ func SetupWithManager(mgr ctrl.Manager, tier common.OdigosTier, odigosVersion st
 		return err
 	}
 
-	// Watch for remote config changes (configuration managed by central-ui)
+	// Watch for remote config changes (configuration managed by central-backend)
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
 		Named("odigosconfiguration-remoteconfig").
