@@ -33,7 +33,7 @@ type ProfilingPodConfig struct {
 // Therefore, the same port cannot be used for multiple services on the same node.
 var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 	"odiglet": {
-		Port: k8sconsts.OdigletPprofEndpointPort,
+		Port: k8sconsts.DefaultPprofEndpointPort,
 		Selector: labels.Set{
 			"app.kubernetes.io/name": k8sconsts.OdigletAppLabelValue}.AsSelector(),
 	},
