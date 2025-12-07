@@ -1,6 +1,9 @@
 package signalconfig
 
 import (
+	"fmt"
+	"time"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -26,7 +29,7 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 		// TODO: these defaults are duplication of the value written to the
 		// collector config in autoscaler.
 		// it would be better to consolidate them going forward.
-		interval := "60s"
+		intervalMs := 60 * 1000 // 60 seconds
 		dimensions := []string{
 			"http.method",
 			"http.request.method",
@@ -36,14 +39,23 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 		}
 		if effectiveConfig.MetricsSources.SpanMetrics != nil {
 			if effectiveConfig.MetricsSources.SpanMetrics.Interval != "" {
-				interval = effectiveConfig.MetricsSources.SpanMetrics.Interval
+				interval, err := time.ParseDuration(effectiveConfig.MetricsSources.SpanMetrics.Interval)
+				if err != nil {
+					return nil, &odigosv1.ContainerAgentConfig{
+						ContainerName:       containerName,
+						AgentEnabled:        false,
+						AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+						AgentEnabledMessage: fmt.Sprintf("failed to parse span metrics interval: %s", err),
+					}
+				}
+				intervalMs = int(interval.Milliseconds())
 			}
 			if effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions != nil {
 				dimensions = append(dimensions, effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions...)
 			}
 		}
 		metricsConfig.SpanMetrics = &odigosv1.AgentSpanMetricsConfig{
-			Interval:   interval,
+			IntervalMs: intervalMs,
 			Dimensions: dimensions,
 		}
 	}
