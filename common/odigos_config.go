@@ -271,6 +271,15 @@ type MetricsSourceOdigosOwnMetricsConfiguration struct {
 	Interval string `json:"interval,omitempty"`
 }
 
+type MetricsSourceAgentSpanMetricsConfiguration struct {
+	Enabled bool `json:"enabled"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceAgentMetricsConfiguration struct {
+	SpanMetrics *MetricsSourceAgentSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
+}
+
 // AgentsInitContainerResources defines resource limits and requests for the init container
 // that is injected into user pods when using the k8s-init-container mount method.
 type AgentsInitContainerResources struct {
@@ -309,6 +318,9 @@ type MetricsSourceConfiguration struct {
 
 	// configuration for odigos own metrics which are send to configured destinations.
 	OdigosOwnMetrics *MetricsSourceOdigosOwnMetricsConfiguration `json:"odigosOwnMetrics,omitempty"`
+
+	// configuration for agent span metrics.
+	AgentMetrics *MetricsSourceAgentMetricsConfiguration `json:"agentMetrics,omitempty"`
 }
 
 type OdigosOwnTelemetryConfiguration struct {
