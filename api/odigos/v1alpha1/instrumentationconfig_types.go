@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
 type AgentEnabledReason string
 
 const (
@@ -108,6 +108,9 @@ const (
 	// used for the rollback feature, when an application was instrumented and it caused a CrashLoopBackOff
 	// We're marking it as that and rolling back the instrumentation
 	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
+	// used for the rollback feature, when an application was instrumented and it caused an ImagePullBackOff
+	// We're marking it as that and rolling back the instrumentation
+	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
 )
 
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
@@ -154,7 +157,7 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 80
 	case AgentEnabledReasonOtherAgentDetected:
 		return 90
-	case AgentEnabledReasonCrashLoopBackOff:
+	case AgentEnabledReasonCrashLoopBackOff, AgentEnabledReasonImagePullBackOff:
 		return 95
 	default:
 		return 100
@@ -175,6 +178,7 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(AgentEnabledReasonInjectionConflict),
 		string(AgentEnabledReasonOtherAgentDetected),
 		string(AgentEnabledReasonCrashLoopBackOff),
+		string(AgentEnabledReasonImagePullBackOff),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true

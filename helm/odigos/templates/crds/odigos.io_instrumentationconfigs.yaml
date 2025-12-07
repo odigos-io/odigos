@@ -99,6 +99,7 @@ spec:
                       - OtherAgentDetected
                       - RuntimeDetailsUnavailable
                       - CrashLoopBackOff
+                      - ImagePullBackOff
                       type: string
                     containerName:
                       description: The name of the container to which this configuration
