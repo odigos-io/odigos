@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -41,7 +42,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	podWorkload, err := getPodWorkloadObject(&pod)
+	podWorkload, err := kubecommon.GetPodWorkloadObject(&pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
 		return reconcile.Result{}, err
