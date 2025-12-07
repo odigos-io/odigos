@@ -334,6 +334,19 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
 	}
 
+	agentSpanMetricsEnabled := containerConfig.Metrics != nil && containerConfig.Metrics.SpanMetrics != nil
+	if agentSpanMetricsEnabled {
+		setAgentSpanMetricsAsEnvVar := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.InjectAsEnvVar
+		if setAgentSpanMetricsAsEnvVar {
+			// parse span metrics config to json
+			spanMetricsConfigJson, err := json.Marshal(containerConfig.Metrics.SpanMetrics)
+			if err != nil {
+				return false, nil, fmt.Errorf("failed to marshal span metrics config: %w", err)
+			}
+			existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_METRICS_CONFIG", string(spanMetricsConfigJson))
+		}
+	}
+
 	volumeMounted := false
 	containerDirsToCopy := make(map[string]struct{})
 	if distroMetadata.RuntimeAgent != nil {
