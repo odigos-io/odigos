@@ -2,7 +2,7 @@
 
 # Arguments with defaults
 NAMESPACE=${1:-odigos-test}
-TIMEOUT="10m"
+TIMEOUT="5m"
 
 echo "Waiting for NodeDetails to be created in namespace: $NAMESPACE with timeout: $TIMEOUT"
 

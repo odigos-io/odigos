@@ -42,7 +42,7 @@ spec:
     - name: Wait for NodeDetails to be created
       try:
         - script:
-            timeout: 10m
+            timeout: 5m
             content: |
               ../../common/wait-for-nodedetails.sh odigos-test
 
@@ -55,7 +55,7 @@ spec:
     - name: Verify odiglet pods are running without discovery
       try:
         - assert:
-            timeout: 2m
+            timeout: 5m
             file: ../../common/assert/odiglet-without-discovery.yaml
 
     - name: Assert Trace DB is up
