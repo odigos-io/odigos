@@ -31,6 +31,5 @@ func (r *queryResolver) GatewayPods(ctx context.Context) ([]*model.PodInfo, erro
 
 // OdigletPods is the resolver for the odigletPods field.
 func (r *queryResolver) OdigletPods(ctx context.Context) ([]*model.PodInfo, error) {
-	selector := fmt.Sprintf("%s=%s", k8sconsts.OdigosCollectorRoleLabel, string(k8sconsts.CollectorsRoleNodeCollector))
-	return collectors.GetPodsBySelector(ctx, selector)
+	return collectors.GetOdigletPodsWithMetrics(ctx, r.PromAPI)
 }
