@@ -259,6 +259,18 @@ type MetricsSourceKubeletStatsConfiguration struct {
 	Interval string `json:"interval,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
+type MetricsSourceOdigosOwnMetricsConfiguration struct {
+
+	// currently, odigos own metrics collection is based on:
+	// - if destination requires it (can be opt-in and out in destination level).
+	// - if odigos metrics store (odigos prometheus) is enabled.
+	// there is no way to enable or disable odigos own metrics globally here.
+
+	// time interval for scraping odigos ownmetrics (format: 15s, 1m etc). defaults: 10s.
+	Interval string `json:"interval,omitempty"`
+}
+
 // AgentsInitContainerResources defines resource limits and requests for the init container
 // that is injected into user pods when using the k8s-init-container mount method.
 type AgentsInitContainerResources struct {
@@ -294,18 +306,14 @@ type MetricsSourceConfiguration struct {
 
 	// configuration for kubelet stats.
 	KubeletStats *MetricsSourceKubeletStatsConfiguration `json:"kubeletStats,omitempty"`
+
+	// configuration for odigos own metrics which are send to configured destinations.
+	OdigosOwnMetrics *MetricsSourceOdigosOwnMetricsConfiguration `json:"odigosOwnMetrics,omitempty"`
 }
 
-type OdigosOwnMetricsConfiguration struct {
-
-	// if set to true, odigos will not collect metrics about itself.
-	// this will deploy odigos without prometheus and pipeline to send own metrics to it.
-	Disabled *bool `json:"disabled,omitempty"`
-
-	// if own metrics are enabled, this is the interval at which odigos will scrape metrics from itself.
-	// format: duration string (15s, 1m, etc).
-	// default is 10s.
-	ScrapeInterval string `json:"scrapeInterval,omitempty"`
+type OdigosOwnTelemetryConfiguration struct {
+	// if set to true, odigos will not deploy victoriametrics as own metrics store and will not send own metrics to it.
+	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
 }
 
 // OdigosConfiguration defines the desired state of OdigosConfiguration
@@ -359,5 +367,6 @@ type OdigosConfiguration struct {
 
 	AllowedTestConnectionHosts []string `json:"allowedTestConnectionHosts,omitempty" yaml:"allowedTestConnectionHosts"`
 
-	OdigosMetrics *OdigosOwnMetricsConfiguration `json:"odigosMetrics,omitempty" yaml:"odigosMetrics"`
+	// configuration for odigos own metrics store in the cluster.
+	OdigosOwnTelemetryStore *OdigosOwnTelemetryConfiguration `json:"odigosOwnTelemetryStore,omitempty" yaml:"odigosOwnTelemetryStore"`
 }

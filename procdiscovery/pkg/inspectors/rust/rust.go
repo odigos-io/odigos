@@ -4,8 +4,6 @@ import (
 	"debug/elf"
 	"strings"
 
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
@@ -50,7 +48,7 @@ func (n *RustInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 	return "", false
 }
 
-func (n *RustInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+func (n *RustInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
 	// TODO: Implement this function to get the Rust runtime version
-	return nil
+	return ""
 }

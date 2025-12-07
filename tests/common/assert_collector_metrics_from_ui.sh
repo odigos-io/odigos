@@ -154,8 +154,8 @@ fi
 
 # Assert total number of top-level services [user, frontend, coupon]
 service_count=$(echo "$services_node" | jq 'length')
-if [[ "$service_count" -ne 3 ]]; then
-    echo "❌ Error: Expected 3 top-level services, found $service_count."
+if [[ "$service_count" -ne 4 ]]; then
+    echo "❌ Error: Expected 4 top-level services, found $service_count."
     exit 1
 fi
 

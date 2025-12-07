@@ -48,6 +48,14 @@ query: |
         && 
       parent.span.serviceName == 'coupon' && parent.span.resourceAttributes."telemetry.sdk.language" == 'nodejs'
     ]
+  ) > `0` &&
+
+  length(
+    [?
+      span.resourceAttributes."telemetry.sdk.language" == 'dotnet' && span.serviceName == 'pricing' && span.kind == 'server'
+        && 
+      parent.span.serviceName == 'membership' && parent.span.resourceAttributes."telemetry.sdk.language" == 'go'
+    ]
   ) > `0`
 
 expected:

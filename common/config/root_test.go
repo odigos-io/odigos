@@ -353,7 +353,7 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 		nil, dataStreamDetails, gatewayOptions,
 	)
 
-	assert.Equal(t, config, want)
+	assert.Equal(t, want, config)
 	assert.Nil(t, err)
 	assert.Equal(t, len(statuses.Destination), 0)
 	assert.Equal(t, len(statuses.Processor), 0)

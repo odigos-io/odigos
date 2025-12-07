@@ -154,6 +154,15 @@ type CollectorDaemonSetInfo struct {
 	RolloutInProgress bool                  `json:"rolloutInProgress"`
 }
 
+type CollectorPodMetrics struct {
+	MetricsAcceptedRps float64 `json:"metricsAcceptedRps"`
+	MetricsDroppedRps  float64 `json:"metricsDroppedRps"`
+	ExporterSuccessRps float64 `json:"exporterSuccessRps"`
+	ExporterFailedRps  float64 `json:"exporterFailedRps"`
+	Window             string  `json:"window"`
+	LastScrape         *string `json:"lastScrape,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	APITokens            []*APIToken            `json:"apiTokens"`
@@ -181,6 +190,17 @@ type ContainerAgentConfigAnalyze struct {
 	Reason         *EntityProperty `json:"reason,omitempty"`
 	Message        *EntityProperty `json:"message,omitempty"`
 	OtelDistroName *EntityProperty `json:"otelDistroName,omitempty"`
+}
+
+type ContainerOverview struct {
+	Name        string                   `json:"name"`
+	Image       *string                  `json:"image,omitempty"`
+	Status      ContainerLifecycleStatus `json:"status"`
+	StateReason *string                  `json:"stateReason,omitempty"`
+	Ready       bool                     `json:"ready"`
+	Restarts    int                      `json:"restarts"`
+	StartedAt   *string                  `json:"startedAt,omitempty"`
+	Resources   *Resources               `json:"resources,omitempty"`
 }
 
 type ContainerRuntimeInfoAnalyze struct {
@@ -820,6 +840,14 @@ type PodAnalyze struct {
 	Containers                    []*PodContainerAnalyze `json:"containers"`
 }
 
+type PodCondition struct {
+	Type               *PodConditionType   `json:"type,omitempty"`
+	Status             *K8sConditionStatus `json:"status,omitempty"`
+	LastTransitionTime *string             `json:"lastTransitionTime,omitempty"`
+	Reason             *string             `json:"reason,omitempty"`
+	Message            *string             `json:"message,omitempty"`
+}
+
 type PodContainerAnalyze struct {
 	ContainerName            *EntityProperty                   `json:"containerName"`
 	ActualDevices            *EntityProperty                   `json:"actualDevices"`
@@ -828,14 +856,25 @@ type PodContainerAnalyze struct {
 	InstrumentationInstances []*InstrumentationInstanceAnalyze `json:"instrumentationInstances"`
 }
 
+type PodDetails struct {
+	Name         string               `json:"name"`
+	Namespace    string               `json:"namespace"`
+	Node         *string              `json:"node,omitempty"`
+	Status       *PodPhase            `json:"status,omitempty"`
+	Containers   []*ContainerOverview `json:"containers"`
+	ManifestYaml string               `json:"manifestYAML"`
+}
+
 type PodInfo struct {
-	Name              string  `json:"name"`
-	Ready             string  `json:"ready"`
-	Status            *string `json:"status,omitempty"`
-	RestartsCount     int     `json:"restartsCount"`
-	NodeName          string  `json:"nodeName"`
-	CreationTimestamp string  `json:"creationTimestamp"`
-	Image             string  `json:"image"`
+	Name              string               `json:"name"`
+	Namespace         string               `json:"namespace"`
+	Ready             string               `json:"ready"`
+	Status            *string              `json:"status,omitempty"`
+	RestartsCount     int                  `json:"restartsCount"`
+	NodeName          string               `json:"nodeName"`
+	CreationTimestamp string               `json:"creationTimestamp"`
+	Image             string               `json:"image"`
+	CollectorMetrics  *CollectorPodMetrics `json:"collectorMetrics,omitempty"`
 }
 
 type PodWorkload struct {
@@ -1170,6 +1209,49 @@ func (e ConditionStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type ContainerLifecycleStatus string
+
+const (
+	ContainerLifecycleStatusRunning    ContainerLifecycleStatus = "Running"
+	ContainerLifecycleStatusWaiting    ContainerLifecycleStatus = "Waiting"
+	ContainerLifecycleStatusTerminated ContainerLifecycleStatus = "Terminated"
+)
+
+var AllContainerLifecycleStatus = []ContainerLifecycleStatus{
+	ContainerLifecycleStatusRunning,
+	ContainerLifecycleStatusWaiting,
+	ContainerLifecycleStatusTerminated,
+}
+
+func (e ContainerLifecycleStatus) IsValid() bool {
+	switch e {
+	case ContainerLifecycleStatusRunning, ContainerLifecycleStatusWaiting, ContainerLifecycleStatusTerminated:
+		return true
+	}
+	return false
+}
+
+func (e ContainerLifecycleStatus) String() string {
+	return string(e)
+}
+
+func (e *ContainerLifecycleStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ContainerLifecycleStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ContainerLifecycleStatus", str)
+	}
+	return nil
+}
+
+func (e ContainerLifecycleStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type DesiredStateProgress string
 
 const (
@@ -1411,6 +1493,49 @@ func (e K8sAttributesFrom) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type K8sConditionStatus string
+
+const (
+	K8sConditionStatusTrue    K8sConditionStatus = "True"
+	K8sConditionStatusFalse   K8sConditionStatus = "False"
+	K8sConditionStatusUnknown K8sConditionStatus = "Unknown"
+)
+
+var AllK8sConditionStatus = []K8sConditionStatus{
+	K8sConditionStatusTrue,
+	K8sConditionStatusFalse,
+	K8sConditionStatusUnknown,
+}
+
+func (e K8sConditionStatus) IsValid() bool {
+	switch e {
+	case K8sConditionStatusTrue, K8sConditionStatusFalse, K8sConditionStatusUnknown:
+		return true
+	}
+	return false
+}
+
+func (e K8sConditionStatus) String() string {
+	return string(e)
+}
+
+func (e *K8sConditionStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = K8sConditionStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid K8sConditionStatus", str)
+	}
+	return nil
+}
+
+func (e K8sConditionStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type K8sResourceKind string
 
 const (
@@ -1551,6 +1676,100 @@ func (e *NumberOperation) UnmarshalGQL(v any) error {
 }
 
 func (e NumberOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PodConditionType string
+
+const (
+	PodConditionTypePodScheduled    PodConditionType = "PodScheduled"
+	PodConditionTypeInitialized     PodConditionType = "Initialized"
+	PodConditionTypeContainersReady PodConditionType = "ContainersReady"
+	PodConditionTypeReady           PodConditionType = "Ready"
+	PodConditionTypeOther           PodConditionType = "Other"
+)
+
+var AllPodConditionType = []PodConditionType{
+	PodConditionTypePodScheduled,
+	PodConditionTypeInitialized,
+	PodConditionTypeContainersReady,
+	PodConditionTypeReady,
+	PodConditionTypeOther,
+}
+
+func (e PodConditionType) IsValid() bool {
+	switch e {
+	case PodConditionTypePodScheduled, PodConditionTypeInitialized, PodConditionTypeContainersReady, PodConditionTypeReady, PodConditionTypeOther:
+		return true
+	}
+	return false
+}
+
+func (e PodConditionType) String() string {
+	return string(e)
+}
+
+func (e *PodConditionType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PodConditionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PodConditionType", str)
+	}
+	return nil
+}
+
+func (e PodConditionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type PodPhase string
+
+const (
+	PodPhasePending   PodPhase = "Pending"
+	PodPhaseRunning   PodPhase = "Running"
+	PodPhaseSucceeded PodPhase = "Succeeded"
+	PodPhaseFailed    PodPhase = "Failed"
+	PodPhaseUnknown   PodPhase = "Unknown"
+)
+
+var AllPodPhase = []PodPhase{
+	PodPhasePending,
+	PodPhaseRunning,
+	PodPhaseSucceeded,
+	PodPhaseFailed,
+	PodPhaseUnknown,
+}
+
+func (e PodPhase) IsValid() bool {
+	switch e {
+	case PodPhasePending, PodPhaseRunning, PodPhaseSucceeded, PodPhaseFailed, PodPhaseUnknown:
+		return true
+	}
+	return false
+}
+
+func (e PodPhase) String() string {
+	return string(e)
+}
+
+func (e *PodPhase) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PodPhase(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PodPhase", str)
+	}
+	return nil
+}
+
+func (e PodPhase) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

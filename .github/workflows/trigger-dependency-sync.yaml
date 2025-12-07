@@ -1,4 +1,4 @@
-name: Trigger Odigos Enterprise Workflow
+name: Trigger Odigos Dependency Sync Workflow
 
 on:
   push:
@@ -12,6 +12,7 @@ on:
       - 'instrumentation/**'
       - 'odiglet/**'
       - 'profiles/**'
+      - 'instrumentor/**'
 
 jobs:
   trigger-odigos-enterprise:
@@ -41,4 +42,12 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
           https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
+          -d '{"event_type": "process_update_dependencies_pr", "client_payload": {"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ env.PR_URL }}" }}'
+
+      - name: Trigger process PR in Odigos VM Agent
+        run: |
+          curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+          https://api.github.com/repos/odigos-io/vm-agent/dispatches \
           -d '{"event_type": "process_update_dependencies_pr", "client_payload": {"pr_creator": "${{ github.event.pusher.name }}", "source_pr_url": "${{ env.PR_URL }}" }}'

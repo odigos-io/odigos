@@ -3,8 +3,6 @@ package java
 import (
 	"regexp"
 
-	"github.com/hashicorp/go-version"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
@@ -43,11 +41,11 @@ func (j *JavaInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 	return "", false
 }
 
-func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) *version.Version {
+func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
 	if value, exists := pcx.GetDetailedEnvsValue(process.JavaVersionConst); exists {
 		javaVersion := versionRegex.FindString(value)
-		return common.GetVersion(javaVersion)
+		return javaVersion
 	}
 
-	return nil
+	return ""
 }
