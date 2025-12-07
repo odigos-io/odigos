@@ -77,10 +77,10 @@ type CollectorDaemonSetInfo {
 type PodInfo {
   namespace: String!
   name: String!
-  # Ready containers in format "X/Y" where X is the number of ready containers and Y is the total number of containers (e.g., "2/2", "1/3")
-  ready: String!
-  # Container status reason when pod is in waiting or terminated state (e.g., "ImagePullBackOff", "CrashLoopBackOff", "Completed"). Null if all containers are running normally.
-  status: String
+  ready: Boolean!
+  started: Boolean!
+  # Container status reason when pod is in waiting or terminated state (e.g., "ImagePullBackOff", "CrashLoopBackOff", "Completed"). "Running" if all containers are running normally.
+  status: String!
   # Total number of container restarts across all containers in the pod
   restartsCount: Int!
   nodeName: String!

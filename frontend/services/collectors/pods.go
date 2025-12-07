@@ -2,7 +2,6 @@ package collectors
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -31,6 +30,7 @@ func GetPodsBySelector(ctx context.Context, selector string) ([]*model.PodInfo, 
 
 func podToInfo(pod *corev1.Pod) *model.PodInfo {
 	ready := formatReady(pod.Status.ContainerStatuses)
+	started := formatStarted(pod.Status.ContainerStatuses)
 	status := deriveStatus(pod)
 	restarts := sumRestarts(pod.Status.ContainerStatuses)
 	node := pod.Spec.NodeName
@@ -38,10 +38,12 @@ func podToInfo(pod *corev1.Pod) *model.PodInfo {
 
 	containerName := containers.GetCollectorContainerName(pod)
 	imageVersion := extractImageVersionForContainer(pod.Spec.Containers, containerName)
+
 	return &model.PodInfo{
 		Namespace:         pod.Namespace,
 		Name:              pod.Name,
 		Ready:             ready,
+		Started:           started,
 		Status:            status,
 		RestartsCount:     restarts,
 		NodeName:          node,
@@ -50,9 +52,9 @@ func podToInfo(pod *corev1.Pod) *model.PodInfo {
 	}
 }
 
-func formatReady(statuses []corev1.ContainerStatus) string {
+func formatReady(statuses []corev1.ContainerStatus) bool {
 	if len(statuses) == 0 {
-		return "0/0"
+		return false
 	}
 	total := len(statuses)
 	ready := 0
@@ -61,22 +63,36 @@ func formatReady(statuses []corev1.ContainerStatus) string {
 			ready++
 		}
 	}
-	return fmt.Sprintf("%d/%d", ready, total)
+	return ready == total
 }
 
-func deriveStatus(pod *corev1.Pod) *string {
+func formatStarted(statuses []corev1.ContainerStatus) bool {
+	if len(statuses) == 0 {
+		return false
+	}
+	total := len(statuses)
+	started := 0
+	for _, cs := range statuses {
+		if cs.Started != nil && *cs.Started {
+			started++
+		}
+	}
+	return started == total
+}
+
+func deriveStatus(pod *corev1.Pod) string {
+	// Container status reason when pod is in waiting or terminated state (e.g., "ImagePullBackOff", "CrashLoopBackOff", "Completed").
+	// "Running" if all containers are running normally.
 	for _, cs := range pod.Status.ContainerStatuses {
 		if cs.State.Waiting != nil && cs.State.Waiting.Reason != "" {
-			reason := cs.State.Waiting.Reason
-			return &reason
+			return cs.State.Waiting.Reason
 		}
 		if cs.State.Terminated != nil && cs.State.Terminated.Reason != "" {
-			reason := cs.State.Terminated.Reason
-			return &reason
+			return cs.State.Terminated.Reason
 		}
 	}
 
-	return nil
+	return string(corev1.PodRunning)
 }
 
 func sumRestarts(statuses []corev1.ContainerStatus) int {

@@ -859,14 +859,15 @@ type PodDetails struct {
 }
 
 type PodInfo struct {
-	Namespace         string  `json:"namespace"`
-	Name              string  `json:"name"`
-	Ready             string  `json:"ready"`
-	Status            *string `json:"status,omitempty"`
-	RestartsCount     int     `json:"restartsCount"`
-	NodeName          string  `json:"nodeName"`
-	CreationTimestamp string  `json:"creationTimestamp"`
-	Image             string  `json:"image"`
+	Namespace         string `json:"namespace"`
+	Name              string `json:"name"`
+	Ready             bool   `json:"ready"`
+	Started           bool   `json:"started"`
+	Status            string `json:"status"`
+	RestartsCount     int    `json:"restartsCount"`
+	NodeName          string `json:"nodeName"`
+	CreationTimestamp string `json:"creationTimestamp"`
+	Image             string `json:"image"`
 }
 
 type PodWorkload struct {
