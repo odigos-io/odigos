@@ -6,6 +6,8 @@ import (
 	"github.com/odigos-io/odigos/deviceplugin/pkg"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+
+	_ "net/http/pprof"
 )
 
 func main() {
