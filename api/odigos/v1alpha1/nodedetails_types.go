@@ -33,6 +33,9 @@ type NodeDetailsSpec struct {
 
 	// MemoryCapacity is the memory capacity of the node in MB (megabytes)
 	MemoryCapacity int `json:"memoryCapacity"`
+
+	// DiscoveryOdigletPodName is the name of the odiglet pod that discovered this node
+	DiscoveryOdigletPodName string `json:"discoveryOdigletPodName"`
 }
 
 // NodeDetailsStatus defines the observed state of NodeDetails

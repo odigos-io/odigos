@@ -20,10 +20,11 @@ package v1alpha1
 // NodeDetailsSpecApplyConfiguration represents a declarative configuration of the NodeDetailsSpec type for use
 // with apply.
 type NodeDetailsSpecApplyConfiguration struct {
-	WaspEnabled    *bool   `json:"waspEnabled,omitempty"`
-	KernelVersion  *string `json:"kernelVersion,omitempty"`
-	CPUCapacity    *int    `json:"cpuCapacity,omitempty"`
-	MemoryCapacity *int    `json:"memoryCapacity,omitempty"`
+	WaspEnabled             *bool   `json:"waspEnabled,omitempty"`
+	KernelVersion           *string `json:"kernelVersion,omitempty"`
+	CPUCapacity             *int    `json:"cpuCapacity,omitempty"`
+	MemoryCapacity          *int    `json:"memoryCapacity,omitempty"`
+	DiscoveryOdigletPodName *string `json:"discoveryOdigletPodName,omitempty"`
 }
 
 // NodeDetailsSpecApplyConfiguration constructs a declarative configuration of the NodeDetailsSpec type for use with
@@ -61,5 +62,13 @@ func (b *NodeDetailsSpecApplyConfiguration) WithCPUCapacity(value int) *NodeDeta
 // If called multiple times, the MemoryCapacity field is set to the value of the last call.
 func (b *NodeDetailsSpecApplyConfiguration) WithMemoryCapacity(value int) *NodeDetailsSpecApplyConfiguration {
 	b.MemoryCapacity = &value
+	return b
+}
+
+// WithDiscoveryOdigletPodName sets the DiscoveryOdigletPodName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DiscoveryOdigletPodName field is set to the value of the last call.
+func (b *NodeDetailsSpecApplyConfiguration) WithDiscoveryOdigletPodName(value string) *NodeDetailsSpecApplyConfiguration {
+	b.DiscoveryOdigletPodName = &value
 	return b
 }

@@ -45,6 +45,10 @@ spec:
                 description: CPUCapacity is the CPU capacity of the node (number of
                   cores)
                 type: integer
+              discoveryOdigletPodName:
+                description: DiscoveryOdigletPodName is the name of the odiglet pod
+                  that discovered this node
+                type: string
               kernelVersion:
                 description: KernelVersion is the version of the kernel running on
                   the node
@@ -59,6 +63,7 @@ spec:
                 type: boolean
             required:
             - cpuCapacity
+            - discoveryOdigletPodName
             - kernelVersion
             - memoryCapacity
             - waspEnabled
