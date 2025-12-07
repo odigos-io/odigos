@@ -1,6 +1,8 @@
 package signalconfig
 
 import (
+	"fmt"
+
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -21,6 +23,11 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 		effectiveConfig.MetricsSources.AgentMetrics != nil &&
 		effectiveConfig.MetricsSources.AgentMetrics.SpanMetrics != nil &&
 		effectiveConfig.MetricsSources.AgentMetrics.SpanMetrics.Enabled
+
+	if distro.Name == "java-enterprise" {
+		fmt.Println("distroSupportsAgentSpanMetrics", distroSupportsAgentSpanMetrics)
+		fmt.Println("agentSpanMetricsEnabled", agentSpanMetricsEnabled)
+	}
 
 	if distroSupportsAgentSpanMetrics && agentSpanMetricsEnabled {
 		metricsConfig.SpanMetrics = &odigosv1.AgentSpanMetricsConfig{
