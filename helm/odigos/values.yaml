@@ -643,6 +643,15 @@ metricsSources:
     ## default is 10s.
     # scrapeInterval: '10s'
 
+  agentMetrics:
+
+    ## uncomment the next section to enable computing and reporting
+    ## span metrics directly in agents that support it.
+    ## the configuration for agent span metrics is the same as the 
+    ## span metrics collector settings.
+    ## agents have different capabilities and support different configuration options.
+    # spanMetrics:
+    #   enabled: true
 
 
 # Enable automatic Go library offsets updates.
