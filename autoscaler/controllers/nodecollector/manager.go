@@ -25,7 +25,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		WithEventFilter(
 			predicate.Or(
 				predicate.And(&odigospredicate.OdigosCollectorsGroupNodePredicate, &predicate.GenerationChangedPredicate{}),
-				predicate.And(&odigospredicate.OdigosCollectorsGroupClusterPredicate, &odigospredicate.ReceiverSignalsChangedPredicate{}),
+				predicate.And(&odigospredicate.OdigosCollectorsGroupClusterPredicate),
 			)).
 		Complete(&CollectorsGroupReconciler{
 			nodeCollectorBaseReconciler: nodeCollectorBaseReconciler{
