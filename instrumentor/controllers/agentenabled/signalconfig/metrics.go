@@ -25,6 +25,11 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 		effectiveConfig.MetricsSources.AgentMetrics.SpanMetrics != nil &&
 		effectiveConfig.MetricsSources.AgentMetrics.SpanMetrics.Enabled
 
+	if distro.Name == "java-enterprise" {
+		fmt.Println("=============== distroSupportsAgentSpanMetrics", distroSupportsAgentSpanMetrics)
+		fmt.Println("=============== agentSpanMetricsEnabled", agentSpanMetricsEnabled)
+	}
+
 	if distroSupportsAgentSpanMetrics && agentSpanMetricsEnabled {
 		// TODO: these defaults are duplication of the value written to the
 		// collector config in autoscaler.
