@@ -114,7 +114,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 	// Start pprof server
 	g.Go(func() error {
-		err := common.StartPprofServer(groupCtx, log.Logger)
+		err := common.StartPprofServer(groupCtx, log.Logger, int(k8sconsts.OdigletPprofEndpointPort))
 		if err != nil {
 			log.Logger.Error(err, "Failed to start pprof server")
 		} else {

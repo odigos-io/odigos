@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
 )
@@ -18,6 +20,16 @@ func runDeviceManager() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Start pprof server
+	go func() {
+		err := common.StartPprofServer(ctx, log.Logger, int(k8sconsts.DevicePluginPprofEndpointPort))
+		if err != nil {
+			log.Logger.Error(err, "Failed to start pprof server")
+		} else {
+			log.Logger.V(0).Info("Pprof server exited")
+		}
+	}()
 
 	lister, err := instrumentation.NewLister(ctx)
 	if err != nil {
