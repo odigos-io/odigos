@@ -59,7 +59,7 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	// Read and merge remote config (from central-ui) if it exists
+	// Read and merge remote config (from central-backend) if it exists
 	// Remote config takes precedence over helm-managed config
 	remoteConfig, err := r.getRemoteConfig(ctx)
 	if err != nil {
