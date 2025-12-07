@@ -23,9 +23,28 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 		effectiveConfig.MetricsSources.AgentMetrics.SpanMetrics.Enabled
 
 	if distroSupportsAgentSpanMetrics && agentSpanMetricsEnabled {
+		// TODO: these defaults are duplication of the value written to the
+		// collector config in autoscaler.
+		// it would be better to consolidate them going forward.
+		interval := "60s"
+		dimensions := []string{
+			"http.method",
+			"http.request.method",
+			"http.status_code",
+			"http.response.status_code",
+			"http.route",
+		}
+		if effectiveConfig.MetricsSources.SpanMetrics != nil {
+			if effectiveConfig.MetricsSources.SpanMetrics.Interval != "" {
+				interval = effectiveConfig.MetricsSources.SpanMetrics.Interval
+			}
+			if effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions != nil {
+				dimensions = append(dimensions, effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions...)
+			}
+		}
 		metricsConfig.SpanMetrics = &odigosv1.AgentSpanMetricsConfig{
-			Interval:   "123s",
-			Dimensions: []string{"foo.bar"},
+			Interval:   interval,
+			Dimensions: dimensions,
 		}
 	}
 
