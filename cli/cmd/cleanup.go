@@ -1,17 +1,23 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
+	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common/consts"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/spf13/cobra"
 )
@@ -77,6 +83,13 @@ All other Odigos components and system resources are deleted automatically by He
 			err = removeAllSources(ctx, client)
 			if err != nil {
 				fmt.Printf("\033[31mERROR\033[0m Failed to remove all sources for cleanup: %s\n", err)
+				os.Exit(1)
+			}
+
+			// Remove all NodeDetails after sources are removed
+			err = removeAllNodeDetails(ctx, client, ns)
+			if err != nil {
+				fmt.Printf("\033[31mERROR\033[0m Failed to remove all node details for cleanup: %s\n", err)
 				os.Exit(1)
 			}
 			if autoRolloutDisabled {
@@ -148,4 +161,64 @@ func init() {
 	cleanupCmd.Flags().Bool("instrumentation-only", false, "only remove instrumentation from workloads, without removing the entire Odigos setup")
 	cleanupCmd.Flags().StringP("namespace", "n", "", "namespace to uninstall Odigos from (overrides auto-detection)")
 
+}
+
+func removeAllNodeDetails(ctx context.Context, client *kube.Client, ns string) error {
+	l := log.Print("Removing Odigos NodeDetails...")
+	nodeDetails, err := client.OdigosClient.NodeDetailses(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) || (nodeDetails != nil && len(nodeDetails.Items) == 0) {
+			// no node details found, nothing to do here
+			l.Success()
+			return nil
+		}
+		return err
+	}
+
+	var deleteErr error
+	for _, nd := range nodeDetails.Items {
+		e := client.OdigosClient.NodeDetailses(ns).Delete(ctx, nd.Name, metav1.DeleteOptions{})
+		if e != nil && !apierrors.IsNotFound(e) {
+			deleteErr = errors.Join(deleteErr, e)
+		}
+	}
+
+	if deleteErr != nil {
+		return deleteErr
+	}
+
+	// make sure all node details are deleted
+	pollErr := wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(innerCtx context.Context) (bool, error) {
+		nodeDetails, err := client.OdigosClient.NodeDetailses(ns).List(innerCtx, metav1.ListOptions{
+			Limit: 1,
+		})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				l.Success()
+				return true, nil
+			}
+			return false, err
+		}
+		if len(nodeDetails.Items) == 0 {
+			l.Success()
+			return true, nil
+		}
+		// if the node details is not marked for deletion, delete it
+		if nodeDetails.Items[0].DeletionTimestamp.IsZero() {
+			client.OdigosClient.NodeDetailses(ns).Delete(innerCtx, nodeDetails.Items[0].Name, metav1.DeleteOptions{})
+		}
+		return false, nil
+	})
+
+	var returnErr error
+	if pollErr != nil {
+		if errors.Is(pollErr, context.DeadlineExceeded) {
+			returnErr = fmt.Errorf("deadline exceeded for waiting node details to be deleted\n")
+		} else if errors.Is(pollErr, context.Canceled) {
+			returnErr = fmt.Errorf("canceled while waiting node details to be deleted\n")
+		} else {
+			returnErr = fmt.Errorf("error while waiting for node details to be deleted: %w\n", pollErr)
+		}
+	}
+	return returnErr
 }
