@@ -1,0 +1,28 @@
+apiVersion: odigos.io/v1alpha1
+kind: NodeDetails
+metadata:
+  # NodeDetails is named after the node name
+  # This assertion checks that at least one NodeDetails exists
+  namespace: odigos-test
+  ownerReferences:
+    - apiVersion: v1
+      kind: Node
+      # Should have owner reference to a Node
+      (name != null): true
+      (uid != null): true
+spec:
+  # WaspRequired should be a boolean (true or false)
+  (waspRequired == `true` || waspRequired == `false`): true
+  # KernelVersion should be set and non-empty
+  (kernelVersion != null): true
+  (kernelVersion != ''): true
+  # CPUCapacity should be set (resource.Quantity format)
+  (cpuCapacity != null): true
+  (cpuCapacity != ''): true
+  # MemoryCapacity should be set (resource.Quantity format)
+  (memoryCapacity != null): true
+  (memoryCapacity != ''): true
+  # DiscoveryOdigletPodName should be set to the pod that ran discovery
+  (discoveryOdigletPodName != null): true
+  (discoveryOdigletPodName != ''): true
+
