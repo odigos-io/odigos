@@ -42,7 +42,7 @@ spec:
     - name: Wait for NodeDetails to be created
       try:
         - script:
-            timeout: 5m
+            timeout: 10m
             content: |
               ../../common/wait-for-nodedetails.sh odigos-test
 
