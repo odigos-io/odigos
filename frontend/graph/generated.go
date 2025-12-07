@@ -620,6 +620,7 @@ type ComplexityRoot struct {
 		UpdateDestination            func(childComplexity int, id string, destination model.DestinationInput) int
 		UpdateInstrumentationRule    func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
 		UpdateK8sActualSource        func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
+		UpdateRemoteConfig           func(childComplexity int, config model.RemoteConfigInput) int
 	}
 
 	NodeCollectorAnalyze struct {
@@ -753,8 +754,17 @@ type ComplexityRoot struct {
 		OdigletPods                       func(childComplexity int) int
 		Pod                               func(childComplexity int, namespace string, name string) int
 		PotentialDestinations             func(childComplexity int) int
+		RemoteConfig                      func(childComplexity int) int
 		SourceConditions                  func(childComplexity int) int
 		Workloads                         func(childComplexity int, filter *model.WorkloadFilter) int
+	}
+
+	RemoteConfig struct {
+		Rollout func(childComplexity int) int
+	}
+
+	RemoteConfigRollout struct {
+		AutomaticRolloutDisabled func(childComplexity int) int
 	}
 
 	ResourceAmounts struct {
@@ -924,6 +934,7 @@ type MutationResolver interface {
 	DeleteDataStream(ctx context.Context, id string) (bool, error)
 	RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error)
 	DeleteCentralProxy(ctx context.Context) (bool, error)
+	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (*model.RemoteConfig, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -938,6 +949,7 @@ type QueryResolver interface {
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
 	InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
+	RemoteConfig(ctx context.Context) (*model.RemoteConfig, error)
 	GatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error)
 	OdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error)
 	GatewayPods(ctx context.Context) ([]*model.PodInfo, error)
@@ -3530,6 +3542,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateK8sActualSource(childComplexity, args["sourceId"].(model.K8sSourceID), args["patchSourceRequest"].(model.PatchSourceRequestInput)), true
 
+	case "Mutation.updateRemoteConfig":
+		if e.complexity.Mutation.UpdateRemoteConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateRemoteConfig_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateRemoteConfig(childComplexity, args["config"].(model.RemoteConfigInput)), true
+
 	case "NodeCollectorAnalyze.availableNodes":
 		if e.complexity.NodeCollectorAnalyze.AvailableNodes == nil {
 			break
@@ -4145,6 +4169,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.PotentialDestinations(childComplexity), true
 
+	case "Query.remoteConfig":
+		if e.complexity.Query.RemoteConfig == nil {
+			break
+		}
+
+		return e.complexity.Query.RemoteConfig(childComplexity), true
+
 	case "Query.sourceConditions":
 		if e.complexity.Query.SourceConditions == nil {
 			break
@@ -4163,6 +4194,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Workloads(childComplexity, args["filter"].(*model.WorkloadFilter)), true
+
+	case "RemoteConfig.rollout":
+		if e.complexity.RemoteConfig.Rollout == nil {
+			break
+		}
+
+		return e.complexity.RemoteConfig.Rollout(childComplexity), true
+
+	case "RemoteConfigRollout.automaticRolloutDisabled":
+		if e.complexity.RemoteConfigRollout.AutomaticRolloutDisabled == nil {
+			break
+		}
+
+		return e.complexity.RemoteConfigRollout.AutomaticRolloutDisabled(childComplexity), true
 
 	case "ResourceAmounts.cpu":
 		if e.complexity.ResourceAmounts.CPU == nil {
@@ -4611,6 +4656,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPersistNamespaceItemInput,
 		ec.unmarshalInputPersistNamespaceSourceInput,
 		ec.unmarshalInputPodWorkloadInput,
+		ec.unmarshalInputRemoteConfigInput,
+		ec.unmarshalInputRemoteConfigRolloutInput,
 		ec.unmarshalInputServiceNameFilterInput,
 		ec.unmarshalInputSpanAttributeFilterInput,
 		ec.unmarshalInputStringConditionInput,
@@ -5425,6 +5472,34 @@ func (ec *executionContext) field_Mutation_updateK8sActualSource_argsPatchSource
 	}
 
 	var zeroVal model.PatchSourceRequestInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateRemoteConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateRemoteConfig_argsConfig(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["config"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateRemoteConfig_argsConfig(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.RemoteConfigInput, error) {
+	if _, ok := rawArgs["config"]; !ok {
+		var zeroVal model.RemoteConfigInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
+	if tmp, ok := rawArgs["config"]; ok {
+		return ec.unmarshalNRemoteConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfigInput(ctx, tmp)
+	}
+
+	var zeroVal model.RemoteConfigInput
 	return zeroVal, nil
 }
 
@@ -22603,6 +22678,62 @@ func (ec *executionContext) fieldContext_Mutation_deleteCentralProxy(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateRemoteConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateRemoteConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateRemoteConfig(rctx, fc.Args["config"].(model.RemoteConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RemoteConfig)
+	fc.Result = res
+	return ec.marshalORemoteConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateRemoteConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "rollout":
+				return ec.fieldContext_RemoteConfig_rollout(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RemoteConfig", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateRemoteConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NodeCollectorAnalyze_enabled(ctx context.Context, field graphql.CollectedField, obj *model.NodeCollectorAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NodeCollectorAnalyze_enabled(ctx, field)
 	if err != nil {
@@ -26730,6 +26861,51 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_remoteConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_remoteConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RemoteConfig(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RemoteConfig)
+	fc.Result = res
+	return ec.marshalORemoteConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_remoteConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "rollout":
+				return ec.fieldContext_RemoteConfig_rollout(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RemoteConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_gatewayDeploymentInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_gatewayDeploymentInfo(ctx, field)
 	if err != nil {
@@ -27169,6 +27345,92 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoteConfig_rollout(ctx context.Context, field graphql.CollectedField, obj *model.RemoteConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoteConfig_rollout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rollout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RemoteConfigRollout)
+	fc.Result = res
+	return ec.marshalORemoteConfigRollout2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfigRollout(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoteConfig_rollout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoteConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "automaticRolloutDisabled":
+				return ec.fieldContext_RemoteConfigRollout_automaticRolloutDisabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RemoteConfigRollout", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RemoteConfigRollout_automaticRolloutDisabled(ctx context.Context, field graphql.CollectedField, obj *model.RemoteConfigRollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RemoteConfigRollout_automaticRolloutDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AutomaticRolloutDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RemoteConfigRollout_automaticRolloutDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RemoteConfigRollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -33284,6 +33546,60 @@ func (ec *executionContext) unmarshalInputPodWorkloadInput(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRemoteConfigInput(ctx context.Context, obj any) (model.RemoteConfigInput, error) {
+	var it model.RemoteConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"rollout"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "rollout":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rollout"))
+			data, err := ec.unmarshalORemoteConfigRolloutInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfigRolloutInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Rollout = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRemoteConfigRolloutInput(ctx context.Context, obj any) (model.RemoteConfigRolloutInput, error) {
+	var it model.RemoteConfigRolloutInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"automaticRolloutDisabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "automaticRolloutDisabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("automaticRolloutDisabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutomaticRolloutDisabled = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputServiceNameFilterInput(ctx context.Context, obj any) (model.ServiceNameFilterInput, error) {
 	var it model.ServiceNameFilterInput
 	asMap := map[string]any{}
@@ -38061,6 +38377,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateRemoteConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateRemoteConfig(ctx, field)
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39146,6 +39466,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "remoteConfig":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_remoteConfig(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "gatewayDeploymentInfo":
 			field := field
 
@@ -39264,6 +39603,78 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var remoteConfigImplementors = []string{"RemoteConfig"}
+
+func (ec *executionContext) _RemoteConfig(ctx context.Context, sel ast.SelectionSet, obj *model.RemoteConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, remoteConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RemoteConfig")
+		case "rollout":
+			out.Values[i] = ec._RemoteConfig_rollout(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var remoteConfigRolloutImplementors = []string{"RemoteConfigRollout"}
+
+func (ec *executionContext) _RemoteConfigRollout(ctx context.Context, sel ast.SelectionSet, obj *model.RemoteConfigRollout) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, remoteConfigRolloutImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RemoteConfigRollout")
+		case "automaticRolloutDisabled":
+			out.Values[i] = ec._RemoteConfigRollout_automaticRolloutDisabled(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -42702,6 +43113,11 @@ func (ec *executionContext) marshalNProgrammingLanguage2githubᚗcomᚋodigosᚑ
 	return v
 }
 
+func (ec *executionContext) unmarshalNRemoteConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfigInput(ctx context.Context, v any) (model.RemoteConfigInput, error) {
+	res, err := ec.unmarshalInputRemoteConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNRuntimeInfoAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRuntimeInfoAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.RuntimeInfoAnalyze) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -44939,6 +45355,28 @@ func (ec *executionContext) marshalOProgrammingLanguage2ᚖgithubᚗcomᚋodigos
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalORemoteConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfig(ctx context.Context, sel ast.SelectionSet, v *model.RemoteConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RemoteConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORemoteConfigRollout2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfigRollout(ctx context.Context, sel ast.SelectionSet, v *model.RemoteConfigRollout) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RemoteConfigRollout(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalORemoteConfigRolloutInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfigRolloutInput(ctx context.Context, v any) (*model.RemoteConfigRolloutInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputRemoteConfigRolloutInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOResourceAmounts2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐResourceAmounts(ctx context.Context, sel ast.SelectionSet, v *model.ResourceAmounts) graphql.Marshaler {
