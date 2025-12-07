@@ -227,6 +227,11 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				m.logger.Info("instrumentation requests channel closed, stopping eBPF instrumentation manager")
 				return
 			}
+			// handle duplicate requests gracefully, this can happen
+			// in environments where the requests are triggered by external systems such as k8s controllers
+			if m.isInstrumented(req.PID) {
+				continue
+			}
 			m.logger.V(1).Info("received explicit instrumentation request", "pid", req.PID)
 			err := m.tryInstrument(ctx, req.ProcessDetails, req.PID)
 			if err != nil {

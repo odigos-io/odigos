@@ -66,11 +66,11 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 	}
 
 	return &K8sProcessDetails{
-		pod:           pod,
-		containerName: containerName,
-		distro:        distro,
-		pw:            podWorkload,
-		procEvent:     event,
+		Pod:           pod,
+		ContainerName: containerName,
+		Distro:        distro,
+		Pw:            podWorkload,
+		ProcEvent:     event,
 	}, nil
 }
 

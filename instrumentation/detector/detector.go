@@ -7,6 +7,7 @@ import (
 )
 
 type ProcessEvent = detector.ProcessEvent
+type ExecDetails = detector.ProcessExecDetails
 
 type DetectorOption = detector.DetectorOption
 
