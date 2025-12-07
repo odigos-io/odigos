@@ -29,6 +29,7 @@ rules:
       - list
       - watch
       - get
+      - delete
   - apiGroups:
       - 'batch'
     resources:
@@ -93,6 +94,17 @@ rules:
     resources:
       - odigos/finalizers
     verbs:
+      - update
+  - apiGroups:
+      - odigos.io
+    resources:
+      - nodedetailses
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
       - update
   - apiGroups:
       - odigos.io

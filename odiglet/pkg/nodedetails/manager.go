@@ -19,8 +19,7 @@ import (
 
 // CollectAndPersist runs all registered features and creates the NodeDetails CRD.
 // This function is called during the odiglet init phase.
-// The NodeDetails has owner references to both the odiglet pod and the node,
-// so it will be garbage collected when the pod is deleted.
+// The NodeDetails has owner reference to the node, so it will be garbage collected when the node is deleted.
 func CollectAndPersist(ctx context.Context, odigosClient odigosclientset.Interface, node *v1.Node, podName string, podUID string, namespace string) error {
 	nodeName := node.Name
 	log.Logger.V(0).Info("Checking node features", "node", nodeName, "features", len(features))
@@ -58,7 +57,8 @@ func CollectAndPersist(ctx context.Context, odigosClient odigosclientset.Interfa
 			WithWaspEnabled(spec.WaspEnabled).
 			WithKernelVersion(spec.KernelVersion).
 			WithCPUCapacity(spec.CPUCapacity).
-			WithMemoryCapacity(spec.MemoryCapacity))
+			WithMemoryCapacity(spec.MemoryCapacity).
+			WithDiscoveryOdigletPodName(podName))
 
 	if _, err := nodeDetailsClient.Apply(ctx, applyConfig, metav1.ApplyOptions{FieldManager: "odiglet"}); err != nil {
 		return fmt.Errorf("failed to apply NodeDetails: %w", err)

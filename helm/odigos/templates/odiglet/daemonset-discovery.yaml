@@ -127,11 +127,6 @@ spec:
           {{- if .Values.odiglet.traceIdSuffix }}
             - --trace-id-suffix={{ .Values.odiglet.traceIdSuffix }}
           {{- end }}
-
-          {{/* This is the first usecase for the discovery mode, adding it dynamically in the odiglet mutation webhook */}}
-          {{/* {{- if .Values.wasp.enabled }}
-            - --wasp-enabled
-          {{- end }} */}}
           command:
             - /root/odiglet
           imagePullPolicy: IfNotPresent
