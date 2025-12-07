@@ -13,7 +13,7 @@ var KratosProfile = profile.Profile{
 	Dependencies: []common.ProfileName{
 		"db-payload-collection",
 		"semconv",
-		"category-attributes",
+		// "category-attributes",
 		"copy-scope",
 		"hostname-as-podname",
 		"code-attributes",
