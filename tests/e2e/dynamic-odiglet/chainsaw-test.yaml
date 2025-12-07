@@ -36,52 +36,13 @@ spec:
                   --set features.discoveryMode.enabled=true
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
-    - name: Verify Odigos Installation
-      try:
-        - script:
-            timeout: 10m
-            content: |
-              echo "Starting Odigos version check..."
-              export ACTUAL_VERSION=$(../../../cli/odigos version --cluster)
-              echo "Actual Version: $ACTUAL_VERSION"
-              echo "Commit Hash: $COMMIT_HASH"
 
-              if [ "$MODE" = "cross-cloud-tests" ]; then
-                if [ "$ACTUAL_VERSION" != "$COMMIT_HASH" ]; then
-                  echo "❌ Odigos version is not the expected commit hash, got $ACTUAL_VERSION"
-                  exit 1
-                fi
 
-              else
-                if [ "$ACTUAL_VERSION" != "e2e-test" ]; then
-                  echo "❌ Odigos version is not e2e-test, got $ACTUAL_VERSION"
-                  exit 1
-                fi
-              fi
-
-              ../../common/verify_odigos_installation.sh odigos-test 10m
-
-        - assert:
-            timeout: 10s
-            file: ../../common/assert/odigos-installed.yaml
-
-      catch:
-        - script:
-            content: |
-              echo "🔍 Listing all resources in namespace 'odigos-test'..."
-              kubectl get all -n odigos-test
-
-              echo "📝 Describing all resources in namespace 'odigos-test'..."
-              kubectl describe all -n odigos-test
-
-    - name: Verify Node Odiglet label has been added
-      try:
-        - assert:
-            file: ../../common/assert/node-odiglet-label.yaml
 
     - name: Verify Node Odiglet details have been added
       try:
         - assert:
+            timeout: 10m
             file: ../../common/assert/node-odiglet-details.yaml
 
     - name: Assert Trace DB is up

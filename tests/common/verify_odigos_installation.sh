@@ -2,9 +2,7 @@
 
 # Arguments with defaults
 NAMESPACE=${1:-odigos-test}
-TIMEOUT=${2:-4m}
-
-echo "Verifying Odigos installation in namespace: $NAMESPACE with timeout: $TIMEOUT"
+TIMEOUT="4m"
 
 # Function to check if a command succeeded
 check_command() {
