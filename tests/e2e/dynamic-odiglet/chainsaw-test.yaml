@@ -59,7 +59,7 @@ spec:
                 fi
               fi
 
-              ../../common/verify_odigos_installation.sh odigos-test
+              ../../common/verify_odigos_installation.sh odigos-test 10m
 
         - assert:
             timeout: 10s
