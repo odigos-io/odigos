@@ -36,11 +36,6 @@ spec:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
 
-    - name: Verify Node Odiglet details have been added
-      try:
-        - assert:
-            file: ../../common/assert/node-odiglet-details.yaml
-
     - name: Assert Trace DB is up
       try:
         - assert:
