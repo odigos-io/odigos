@@ -74,6 +74,22 @@ type CollectorDaemonSetInfo {
 # Gateway Pods List API
 # =====================
 
+# 5m-rate view of collector data flow for a single pod
+type CollectorPodMetrics {
+  # Receiver: accepted metric points per second
+  metricsAcceptedRps: Float!
+  # Receiver rejected/dropped metric points per second (refused/dropped)
+  metricsDroppedRps: Float!
+  # Exporter successfully sent metric points per second
+  exporterSuccessRps: Float!
+  # Exporter failed-to-send metric points per second
+  exporterFailedRps: Float!
+  # e.g. "5m"
+  window: String!
+  # Last evaluation timestamp from Prometheus, RFC3339
+  lastScrape: String
+}
+
 type PodInfo {
   namespace: String!
   name: String!
@@ -86,6 +102,8 @@ type PodInfo {
   nodeName: String!
   creationTimestamp: String!
   image: String!
+  # Odiglet per-pod collector throughput and error rates over a recent window
+  collectorMetrics: CollectorPodMetrics
 }
 
 extend type Query {

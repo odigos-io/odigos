@@ -146,6 +146,15 @@ type ComplexityRoot struct {
 		Status            func(childComplexity int) int
 	}
 
+	CollectorPodMetrics struct {
+		ExporterFailedRps  func(childComplexity int) int
+		ExporterSuccessRps func(childComplexity int) int
+		LastScrape         func(childComplexity int) int
+		MetricsAcceptedRps func(childComplexity int) int
+		MetricsDroppedRps  func(childComplexity int) int
+		Window             func(childComplexity int) int
+	}
+
 	ComputePlatform struct {
 		APITokens            func(childComplexity int) int
 		Actions              func(childComplexity int) int
@@ -713,6 +722,7 @@ type ComplexityRoot struct {
 	}
 
 	PodInfo struct {
+		CollectorMetrics  func(childComplexity int) int
 		CreationTimestamp func(childComplexity int) int
 		Image             func(childComplexity int) int
 		Name              func(childComplexity int) int
@@ -1397,6 +1407,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CollectorDaemonSetInfo.Status(childComplexity), true
+
+	case "CollectorPodMetrics.exporterFailedRps":
+		if e.complexity.CollectorPodMetrics.ExporterFailedRps == nil {
+			break
+		}
+
+		return e.complexity.CollectorPodMetrics.ExporterFailedRps(childComplexity), true
+
+	case "CollectorPodMetrics.exporterSuccessRps":
+		if e.complexity.CollectorPodMetrics.ExporterSuccessRps == nil {
+			break
+		}
+
+		return e.complexity.CollectorPodMetrics.ExporterSuccessRps(childComplexity), true
+
+	case "CollectorPodMetrics.lastScrape":
+		if e.complexity.CollectorPodMetrics.LastScrape == nil {
+			break
+		}
+
+		return e.complexity.CollectorPodMetrics.LastScrape(childComplexity), true
+
+	case "CollectorPodMetrics.metricsAcceptedRps":
+		if e.complexity.CollectorPodMetrics.MetricsAcceptedRps == nil {
+			break
+		}
+
+		return e.complexity.CollectorPodMetrics.MetricsAcceptedRps(childComplexity), true
+
+	case "CollectorPodMetrics.metricsDroppedRps":
+		if e.complexity.CollectorPodMetrics.MetricsDroppedRps == nil {
+			break
+		}
+
+		return e.complexity.CollectorPodMetrics.MetricsDroppedRps(childComplexity), true
+
+	case "CollectorPodMetrics.window":
+		if e.complexity.CollectorPodMetrics.Window == nil {
+			break
+		}
+
+		return e.complexity.CollectorPodMetrics.Window(childComplexity), true
 
 	case "ComputePlatform.apiTokens":
 		if e.complexity.ComputePlatform.APITokens == nil {
@@ -3900,6 +3952,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PodDetails.Status(childComplexity), true
+
+	case "PodInfo.collectorMetrics":
+		if e.complexity.PodInfo.CollectorMetrics == nil {
+			break
+		}
+
+		return e.complexity.PodInfo.CollectorMetrics(childComplexity), true
 
 	case "PodInfo.creationTimestamp":
 		if e.complexity.PodInfo.CreationTimestamp == nil {
@@ -8733,6 +8792,267 @@ func (ec *executionContext) _CollectorDaemonSetInfo_manifestYAML(ctx context.Con
 func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorPodMetrics_metricsAcceptedRps(ctx context.Context, field graphql.CollectedField, obj *model.CollectorPodMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorPodMetrics_metricsAcceptedRps(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricsAcceptedRps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorPodMetrics_metricsAcceptedRps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorPodMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorPodMetrics_metricsDroppedRps(ctx context.Context, field graphql.CollectedField, obj *model.CollectorPodMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorPodMetrics_metricsDroppedRps(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricsDroppedRps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorPodMetrics_metricsDroppedRps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorPodMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorPodMetrics_exporterSuccessRps(ctx context.Context, field graphql.CollectedField, obj *model.CollectorPodMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorPodMetrics_exporterSuccessRps(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExporterSuccessRps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorPodMetrics_exporterSuccessRps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorPodMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorPodMetrics_exporterFailedRps(ctx context.Context, field graphql.CollectedField, obj *model.CollectorPodMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorPodMetrics_exporterFailedRps(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExporterFailedRps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorPodMetrics_exporterFailedRps(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorPodMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorPodMetrics_window(ctx context.Context, field graphql.CollectedField, obj *model.CollectorPodMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorPodMetrics_window(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Window, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorPodMetrics_window(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorPodMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorPodMetrics_lastScrape(ctx context.Context, field graphql.CollectedField, obj *model.CollectorPodMetrics) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorPodMetrics_lastScrape(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastScrape, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorPodMetrics_lastScrape(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorPodMetrics",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -25669,6 +25989,61 @@ func (ec *executionContext) fieldContext_PodInfo_image(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _PodInfo_collectorMetrics(ctx context.Context, field graphql.CollectedField, obj *model.PodInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodInfo_collectorMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CollectorMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CollectorPodMetrics)
+	fc.Result = res
+	return ec.marshalOCollectorPodMetrics2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorPodMetrics(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PodInfo_collectorMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PodInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "metricsAcceptedRps":
+				return ec.fieldContext_CollectorPodMetrics_metricsAcceptedRps(ctx, field)
+			case "metricsDroppedRps":
+				return ec.fieldContext_CollectorPodMetrics_metricsDroppedRps(ctx, field)
+			case "exporterSuccessRps":
+				return ec.fieldContext_CollectorPodMetrics_exporterSuccessRps(ctx, field)
+			case "exporterFailedRps":
+				return ec.fieldContext_CollectorPodMetrics_exporterFailedRps(ctx, field)
+			case "window":
+				return ec.fieldContext_CollectorPodMetrics_window(ctx, field)
+			case "lastScrape":
+				return ec.fieldContext_CollectorPodMetrics_lastScrape(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CollectorPodMetrics", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PodWorkload_namespace(ctx context.Context, field graphql.CollectedField, obj *model.PodWorkload) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodWorkload_namespace(ctx, field)
 	if err != nil {
@@ -26691,6 +27066,8 @@ func (ec *executionContext) fieldContext_Query_gatewayPods(_ context.Context, fi
 				return ec.fieldContext_PodInfo_creationTimestamp(ctx, field)
 			case "image":
 				return ec.fieldContext_PodInfo_image(ctx, field)
+			case "collectorMetrics":
+				return ec.fieldContext_PodInfo_collectorMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PodInfo", field.Name)
 		},
@@ -26755,6 +27132,8 @@ func (ec *executionContext) fieldContext_Query_odigletPods(_ context.Context, fi
 				return ec.fieldContext_PodInfo_creationTimestamp(ctx, field)
 			case "image":
 				return ec.fieldContext_PodInfo_image(ctx, field)
+			case "collectorMetrics":
+				return ec.fieldContext_PodInfo_collectorMetrics(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PodInfo", field.Name)
 		},
@@ -33789,6 +34168,67 @@ func (ec *executionContext) _CollectorDaemonSetInfo(ctx context.Context, sel ast
 	return out
 }
 
+var collectorPodMetricsImplementors = []string{"CollectorPodMetrics"}
+
+func (ec *executionContext) _CollectorPodMetrics(ctx context.Context, sel ast.SelectionSet, obj *model.CollectorPodMetrics) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, collectorPodMetricsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CollectorPodMetrics")
+		case "metricsAcceptedRps":
+			out.Values[i] = ec._CollectorPodMetrics_metricsAcceptedRps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "metricsDroppedRps":
+			out.Values[i] = ec._CollectorPodMetrics_metricsDroppedRps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "exporterSuccessRps":
+			out.Values[i] = ec._CollectorPodMetrics_exporterSuccessRps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "exporterFailedRps":
+			out.Values[i] = ec._CollectorPodMetrics_exporterFailedRps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "window":
+			out.Values[i] = ec._CollectorPodMetrics_window(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastScrape":
+			out.Values[i] = ec._CollectorPodMetrics_lastScrape(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var computePlatformImplementors = []string{"ComputePlatform"}
 
 func (ec *executionContext) _ComputePlatform(ctx context.Context, sel ast.SelectionSet, obj *model.ComputePlatform) graphql.Marshaler {
@@ -38543,6 +38983,8 @@ func (ec *executionContext) _PodInfo(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "collectorMetrics":
+			out.Values[i] = ec._PodInfo_collectorMetrics(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -43362,6 +43804,13 @@ func (ec *executionContext) unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodig
 	}
 	res, err := ec.unmarshalInputCodeAttributesInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOCollectorPodMetrics2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorPodMetrics(ctx context.Context, sel ast.SelectionSet, v *model.CollectorPodMetrics) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CollectorPodMetrics(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx context.Context, sel ast.SelectionSet, v *model.ComputePlatform) graphql.Marshaler {
