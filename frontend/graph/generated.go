@@ -707,7 +707,6 @@ type ComplexityRoot struct {
 		Name         func(childComplexity int) int
 		Namespace    func(childComplexity int) int
 		Node         func(childComplexity int) int
-		Role         func(childComplexity int) int
 		Status       func(childComplexity int) int
 	}
 
@@ -3876,13 +3875,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PodDetails.Node(childComplexity), true
-
-	case "PodDetails.role":
-		if e.complexity.PodDetails.Role == nil {
-			break
-		}
-
-		return e.complexity.PodDetails.Role(childComplexity), true
 
 	case "PodDetails.status":
 		if e.complexity.PodDetails.Status == nil {
@@ -25013,8 +25005,6 @@ func (ec *executionContext) fieldContext_PodDetails_node(_ context.Context, fiel
 	}
 	return fc, nil
 }
-
-// role field removed from PodDetails
 
 func (ec *executionContext) _PodDetails_status(ctx context.Context, field graphql.CollectedField, obj *model.PodDetails) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodDetails_status(ctx, field)

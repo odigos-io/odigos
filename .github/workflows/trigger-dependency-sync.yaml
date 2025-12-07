@@ -12,6 +12,7 @@ on:
       - 'instrumentation/**'
       - 'odiglet/**'
       - 'profiles/**'
+      - 'instrumentor/**'
 
 jobs:
   trigger-odigos-enterprise:
