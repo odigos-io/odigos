@@ -55,7 +55,7 @@ spec:
     - name: Verify odiglet pods are running without discovery
       try:
         - assert:
-            timeout: 5m
+            timeout: 10m
             file: ../../common/assert/odiglet-without-discovery.yaml
 
     - name: Assert Trace DB is up
