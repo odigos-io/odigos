@@ -36,9 +36,10 @@ type Instrumentor struct {
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
 	waspMutator        func(*corev1.Pod, common.OdigosConfiguration) error
+	imagePullSecrets   []string
 }
 
-func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator func(*corev1.Pod, common.OdigosConfiguration) error) (*Instrumentor, error) {
+func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator func(*corev1.Pod, common.OdigosConfiguration) error, imagePullSecrets []string) (*Instrumentor, error) {
 	err := feature.Setup()
 	if err != nil {
 		return nil, err
@@ -133,6 +134,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 		dp:                 dp,
 		webhooksRegistered: webhooksRegistered,
 		waspMutator:        waspMutator,
+		imagePullSecrets:   imagePullSecrets,
 	}, nil
 }
 
@@ -181,8 +183,9 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		}
 		i.logger.V(0).Info("Cert rotator is ready")
 		err := controllers.RegisterWebhooks(i.mgr, controllers.WebhookConfig{
-			DistrosProvider: i.dp,
-			WaspMutator:     i.waspMutator,
+			DistrosProvider:  i.dp,
+			WaspMutator:      i.waspMutator,
+			ImagePullSecrets: i.imagePullSecrets,
 		})
 		if err != nil {
 			return err

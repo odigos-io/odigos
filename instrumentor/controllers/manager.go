@@ -183,8 +183,9 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 }
 
 type WebhookConfig struct {
-	DistrosProvider *distros.Provider
-	WaspMutator     func(*corev1.Pod, common.OdigosConfiguration) error
+	DistrosProvider  *distros.Provider
+	WaspMutator      func(*corev1.Pod, common.OdigosConfiguration) error
+	ImagePullSecrets []string
 }
 
 func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
@@ -205,10 +206,11 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
 	webhook := &agentenabled.PodsWebhook{
-		Client:        mgr.GetClient(),
-		DistrosGetter: config.DistrosProvider.Getter,
-		Decoder:       decoder,
-		WaspMutator:   config.WaspMutator,
+		Client:           mgr.GetClient(),
+		DistrosGetter:    config.DistrosProvider.Getter,
+		Decoder:          decoder,
+		WaspMutator:      config.WaspMutator,
+		ImagePullSecrets: config.ImagePullSecrets,
 	}
 
 	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.
