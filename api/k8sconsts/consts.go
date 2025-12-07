@@ -8,7 +8,7 @@ const RedHatImagePrefix = "registry.connect.redhat.com/odigos"
 const OdigosImagePrefix = "registry.odigos.io"
 
 const (
-	OdigletPprofEndpointPort      int32 = 6060
+	DefaultPprofEndpointPort      int32 = 6060
 	DevicePluginPprofEndpointPort int32 = 6061
 	CollectorsPprofEndpointPort   int32 = 1777
 )
