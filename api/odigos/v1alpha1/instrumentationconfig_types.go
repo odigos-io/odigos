@@ -278,6 +278,18 @@ type IdGeneratorConfig struct {
 	TimedWall *IdGeneratorTimedWallConfig `json:"timedWall,omitempty"`
 }
 
+type AgentSpanMetricsConfig struct {
+	// additional dimensions to add for the span metrics.
+	// for example, if you add `http.method` to the dimensions,
+	// then the span metrics data points will include the `http.method` in the attributes,
+	// and different values of `http.method` will be aggregated into different time series.
+	Dimensions []string `json:"dimensions,omitempty"`
+
+	// time interval for flushing the span metrics (format: 15s, 1m etc).
+	// defaults: 60s (one minute).
+	Interval string `json:"interval,omitempty"`
+}
+
 // all "traces" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
 type AgentTracesConfig struct {
@@ -288,7 +300,14 @@ type AgentTracesConfig struct {
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
-type AgentMetricsConfig struct{}
+type AgentMetricsConfig struct {
+
+	// if not nil, it means agent should report span metrics,
+	// calculated directly in the agent.
+	// this is most accurate as it includes any sampled spans,
+	// and is not affected if spans are dropped anywhere in the pipeline.
+	SpanMetrics *AgentSpanMetricsConfig `json:"spanMetrics,omitempty"`
+}
 
 // all "logs" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
