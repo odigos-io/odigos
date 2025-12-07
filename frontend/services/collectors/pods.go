@@ -40,6 +40,7 @@ func podToInfo(pod *corev1.Pod) *model.PodInfo {
 	imageVersion := extractImageVersionForContainer(pod.Spec.Containers, containerName)
 	return &model.PodInfo{
 		Name:              pod.Name,
+		Namespace:         pod.Namespace,
 		Ready:             ready,
 		Status:            status,
 		RestartsCount:     restarts,
