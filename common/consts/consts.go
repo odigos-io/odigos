@@ -16,7 +16,6 @@ const (
 	OdigosConfigurationFileName = "config.yaml"
 	OTLPPort                    = 4317
 	OTLPHttpPort                = 4318
-	PprofOdigosPort             = 6060
 
 	// DefaultDataStream is the default data stream name used for telemetry data.
 	DefaultDataStream = "default"
