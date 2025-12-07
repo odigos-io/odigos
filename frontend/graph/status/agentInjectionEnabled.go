@@ -36,6 +36,8 @@ func agentEnabledStatusCondition(reason *string) model.DesiredStateProgress {
 		return model.DesiredStateProgressIrrelevant // we should refactor this out and merge with AgentEnabledReasonWaitingForRuntimeInspection in future PR
 	case v1alpha1.AgentEnabledReasonCrashLoopBackOff:
 		return model.DesiredStateProgressNotice // crash loop back off detected, rollback applied and source is uninstrumented
+	case v1alpha1.AgentEnabledReasonImagePullBackOff:
+		return model.DesiredStateProgressNotice // image pull back off detected, rollback applied and source is uninstrumented
 	}
 	return model.DesiredStateProgressUnknown
 }
