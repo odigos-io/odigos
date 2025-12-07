@@ -113,7 +113,7 @@ func applyOdigletContainerModifications(container *corev1.Container, nodeDetails
 			modified = true
 		}
 
-		// Modification 2: Add "--wasp-enabled" argument if WaspEnabled is true
+		// Modification 2: Add "--wasp-enabled" argument if WaspRequired is true
 		if addWaspEnabledArgument(container, nodeDetails, nodeName, logger) {
 			modified = true
 		}
@@ -148,11 +148,11 @@ func removeDiscoveryArgument(container *corev1.Container, nodeName string, logge
 	return found
 }
 
-// addWaspEnabledArgument adds the "--wasp-enabled" argument if WaspEnabled is true in NodeDetails.
-// This enables WASP (eBPF) instrumentation for the odiglet on this node.
+// addWaspEnabledArgument adds the "--wasp-enabled" argument if WaspRequired is true in NodeDetails.
+// This enables WASP instrumentation for the odiglet on this node.
 // Returns true if the argument was added.
 func addWaspEnabledArgument(container *corev1.Container, nodeDetails *odigosv1.NodeDetails, nodeName string, logger logr.Logger) bool {
-	if !nodeDetails.Spec.WaspEnabled {
+	if !nodeDetails.Spec.WaspRequired {
 		return false
 	}
 

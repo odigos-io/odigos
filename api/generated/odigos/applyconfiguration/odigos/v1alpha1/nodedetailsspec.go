@@ -17,14 +17,18 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	resource "k8s.io/apimachinery/pkg/api/resource"
+)
+
 // NodeDetailsSpecApplyConfiguration represents a declarative configuration of the NodeDetailsSpec type for use
 // with apply.
 type NodeDetailsSpecApplyConfiguration struct {
-	WaspEnabled             *bool   `json:"waspEnabled,omitempty"`
-	KernelVersion           *string `json:"kernelVersion,omitempty"`
-	CPUCapacity             *int    `json:"cpuCapacity,omitempty"`
-	MemoryCapacity          *int    `json:"memoryCapacity,omitempty"`
-	DiscoveryOdigletPodName *string `json:"discoveryOdigletPodName,omitempty"`
+	WaspRequired            *bool              `json:"waspRequired,omitempty"`
+	KernelVersion           *string            `json:"kernelVersion,omitempty"`
+	CPUCapacity             *resource.Quantity `json:"cpuCapacity,omitempty"`
+	MemoryCapacity          *resource.Quantity `json:"memoryCapacity,omitempty"`
+	DiscoveryOdigletPodName *string            `json:"discoveryOdigletPodName,omitempty"`
 }
 
 // NodeDetailsSpecApplyConfiguration constructs a declarative configuration of the NodeDetailsSpec type for use with
@@ -33,11 +37,11 @@ func NodeDetailsSpec() *NodeDetailsSpecApplyConfiguration {
 	return &NodeDetailsSpecApplyConfiguration{}
 }
 
-// WithWaspEnabled sets the WaspEnabled field in the declarative configuration to the given value
+// WithWaspRequired sets the WaspRequired field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the WaspEnabled field is set to the value of the last call.
-func (b *NodeDetailsSpecApplyConfiguration) WithWaspEnabled(value bool) *NodeDetailsSpecApplyConfiguration {
-	b.WaspEnabled = &value
+// If called multiple times, the WaspRequired field is set to the value of the last call.
+func (b *NodeDetailsSpecApplyConfiguration) WithWaspRequired(value bool) *NodeDetailsSpecApplyConfiguration {
+	b.WaspRequired = &value
 	return b
 }
 
@@ -52,7 +56,7 @@ func (b *NodeDetailsSpecApplyConfiguration) WithKernelVersion(value string) *Nod
 // WithCPUCapacity sets the CPUCapacity field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the CPUCapacity field is set to the value of the last call.
-func (b *NodeDetailsSpecApplyConfiguration) WithCPUCapacity(value int) *NodeDetailsSpecApplyConfiguration {
+func (b *NodeDetailsSpecApplyConfiguration) WithCPUCapacity(value resource.Quantity) *NodeDetailsSpecApplyConfiguration {
 	b.CPUCapacity = &value
 	return b
 }
@@ -60,7 +64,7 @@ func (b *NodeDetailsSpecApplyConfiguration) WithCPUCapacity(value int) *NodeDeta
 // WithMemoryCapacity sets the MemoryCapacity field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the MemoryCapacity field is set to the value of the last call.
-func (b *NodeDetailsSpecApplyConfiguration) WithMemoryCapacity(value int) *NodeDetailsSpecApplyConfiguration {
+func (b *NodeDetailsSpecApplyConfiguration) WithMemoryCapacity(value resource.Quantity) *NodeDetailsSpecApplyConfiguration {
 	b.MemoryCapacity = &value
 	return b
 }

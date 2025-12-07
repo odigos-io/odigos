@@ -28,7 +28,7 @@ func (c *CPUCapacityFeature) Name() string {
 
 func (c *CPUCapacityFeature) Check(ctx context.Context, node *v1.Node, spec *v1alpha1.NodeDetailsSpec) error {
 	if cpu, ok := node.Status.Capacity[v1.ResourceCPU]; ok {
-		spec.CPUCapacity = int(cpu.Value()) // in cores
+		spec.CPUCapacity = cpu
 	}
 	return nil
 }
@@ -42,8 +42,7 @@ func (m *MemoryCapacityFeature) Name() string {
 
 func (m *MemoryCapacityFeature) Check(ctx context.Context, node *v1.Node, spec *v1alpha1.NodeDetailsSpec) error {
 	if memory, ok := node.Status.Capacity[v1.ResourceMemory]; ok {
-		// Convert from bytes to megabytes (MB)
-		spec.MemoryCapacity = int(memory.Value() / (1024 * 1024))
+		spec.MemoryCapacity = memory
 	}
 	return nil
 }

@@ -26,7 +26,7 @@ func CollectAndPersist(ctx context.Context, odigosClient odigosclientset.Interfa
 
 	// Initialize the spec
 	spec := &v1alpha1.NodeDetailsSpec{
-		WaspEnabled: false, // Default to false, enterprise can override
+		WaspRequired: false, // Default to false, enterprise can override
 	}
 
 	// Check all features
@@ -54,7 +54,7 @@ func CollectAndPersist(ctx context.Context, odigosClient odigosclientset.Interfa
 			WithName(nodeName).
 			WithUID(node.UID)).
 		WithSpec(odigosv1alpha1.NodeDetailsSpec().
-			WithWaspEnabled(spec.WaspEnabled).
+			WithWaspRequired(spec.WaspRequired).
 			WithKernelVersion(spec.KernelVersion).
 			WithCPUCapacity(spec.CPUCapacity).
 			WithMemoryCapacity(spec.MemoryCapacity).
@@ -70,7 +70,7 @@ func CollectAndPersist(ctx context.Context, odigosClient odigosclientset.Interfa
 		"kernelVersion", spec.KernelVersion,
 		"cpuCapacity", spec.CPUCapacity,
 		"memoryCapacity", spec.MemoryCapacity,
-		"waspEnabled", spec.WaspEnabled)
+		"waspRequired", spec.WaspRequired)
 
 	return nil
 }

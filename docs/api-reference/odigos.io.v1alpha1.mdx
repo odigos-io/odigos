@@ -2624,13 +2624,13 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
   
 <tr>
 <td>
-<code>waspEnabled</code> <B>[Required]</B>
+<code>waspRequired</code> <B>[Required]</B>
 </td>
 <td>
 <code>bool</code>
 </td>
 <td>
-   <p>WaspEnabled indicates whether wasp is enabled on this node</p>
+   <p>WaspRequired indicates whether WASP is required on this node</p>
 </td>
 </tr>
 <tr>
@@ -2649,10 +2649,11 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>cpuCapacity</code> <B>[Required]</B>
 </td>
 <td>
-<code>int</code>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity"><code>k8s.io/apimachinery/pkg/api/resource.Quantity</code></a>
 </td>
 <td>
-   <p>CPUCapacity is the CPU capacity of the node (number of cores)</p>
+   <p>CPUCapacity is the CPU capacity of the node
+Uses Kubernetes resource.Quantity for proper unit handling (e.g., &quot;4&quot;, &quot;4000m&quot;)</p>
 </td>
 </tr>
 <tr>
@@ -2660,10 +2661,11 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>memoryCapacity</code> <B>[Required]</B>
 </td>
 <td>
-<code>int</code>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity"><code>k8s.io/apimachinery/pkg/api/resource.Quantity</code></a>
 </td>
 <td>
-   <p>MemoryCapacity is the memory capacity of the node in MB (megabytes)</p>
+   <p>MemoryCapacity is the memory capacity of the node
+Uses Kubernetes resource.Quantity for proper unit handling (e.g., &quot;8Gi&quot;, &quot;8192Mi&quot;)</p>
 </td>
 </tr>
 <tr>

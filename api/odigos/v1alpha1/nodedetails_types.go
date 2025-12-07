@@ -17,22 +17,25 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NodeDetailsSpec defines the desired state of NodeDetails
 type NodeDetailsSpec struct {
-	// WaspEnabled indicates whether wasp is enabled on this node
-	WaspEnabled bool `json:"waspEnabled"`
+	// WaspRequired indicates whether WASP is required on this node
+	WaspRequired bool `json:"waspRequired"`
 
 	// KernelVersion is the version of the kernel running on the node
 	KernelVersion string `json:"kernelVersion"`
 
-	// CPUCapacity is the CPU capacity of the node (number of cores)
-	CPUCapacity int `json:"cpuCapacity"`
+	// CPUCapacity is the CPU capacity of the node
+	// Uses Kubernetes resource.Quantity for proper unit handling (e.g., "4", "4000m")
+	CPUCapacity resource.Quantity `json:"cpuCapacity"`
 
-	// MemoryCapacity is the memory capacity of the node in MB (megabytes)
-	MemoryCapacity int `json:"memoryCapacity"`
+	// MemoryCapacity is the memory capacity of the node
+	// Uses Kubernetes resource.Quantity for proper unit handling (e.g., "8Gi", "8192Mi")
+	MemoryCapacity resource.Quantity `json:"memoryCapacity"`
 
 	// DiscoveryOdigletPodName is the name of the odiglet pod that discovered this node
 	DiscoveryOdigletPodName string `json:"discoveryOdigletPodName"`

@@ -79,16 +79,16 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, req ctrl.
 	waspEnabled := odigosConfiguration.WaspEnabled
 	// user not explicitly set the waspEnabled, so we need to check in NodeDetails
 	if waspEnabled == nil {
-		// list all NodeDetails and use the first one's WaspEnabled field
+		// list all NodeDetails and use the first one's WaspRequired field
 		nodeDetailsList := &odigosv1.NodeDetailsList{}
 		if err := r.List(ctx, nodeDetailsList); err != nil {
 			return ctrl.Result{}, err
 		}
 
-		// if at least one NodeDetails is found, use the first one's WaspEnabled value
-		// this under the assumption that all NodeDetails have the same WaspEnabled value
+		// if at least one NodeDetails is found, use the first one's WaspRequired value
+		// this under the assumption that all NodeDetails have the same WaspRequired value
 		if len(nodeDetailsList.Items) > 0 {
-			wasEnabled = boolPtr(nodeDetailsList.Items[0].Spec.WaspEnabled)
+			wasEnabled = boolPtr(nodeDetailsList.Items[0].Spec.WaspRequired)
 			if wasEnabled != nil {
 				odigosConfiguration.WaspEnabled = wasEnabled
 			}

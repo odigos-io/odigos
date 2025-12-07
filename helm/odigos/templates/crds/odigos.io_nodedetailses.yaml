@@ -42,9 +42,14 @@ spec:
             description: NodeDetailsSpec defines the desired state of NodeDetails
             properties:
               cpuCapacity:
-                description: CPUCapacity is the CPU capacity of the node (number of
-                  cores)
-                type: integer
+                anyOf:
+                - type: integer
+                - type: string
+                description: |-
+                  CPUCapacity is the CPU capacity of the node
+                  Uses Kubernetes resource.Quantity for proper unit handling (e.g., "4", "4000m")
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
               discoveryOdigletPodName:
                 description: DiscoveryOdigletPodName is the name of the odiglet pod
                   that discovered this node
@@ -54,11 +59,16 @@ spec:
                   the node
                 type: string
               memoryCapacity:
-                description: MemoryCapacity is the memory capacity of the node in
-                  MB (megabytes)
-                type: integer
-              waspEnabled:
-                description: WaspEnabled indicates whether wasp is enabled on this
+                anyOf:
+                - type: integer
+                - type: string
+                description: |-
+                  MemoryCapacity is the memory capacity of the node
+                  Uses Kubernetes resource.Quantity for proper unit handling (e.g., "8Gi", "8192Mi")
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              waspRequired:
+                description: WaspRequired indicates whether WASP is required on this
                   node
                 type: boolean
             required:
@@ -66,7 +76,7 @@ spec:
             - discoveryOdigletPodName
             - kernelVersion
             - memoryCapacity
-            - waspEnabled
+            - waspRequired
             type: object
           status:
             description: NodeDetailsStatus defines the observed state of NodeDetails
