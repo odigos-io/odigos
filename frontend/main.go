@@ -21,8 +21,8 @@ import (
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
@@ -274,7 +274,7 @@ func main() {
 	}()
 
 	logger := logr.FromSlogHandler(slog.Default().Handler())
-	go common.StartPprofServer(ctx, logger, consts.PprofOdigosPort)
+	go common.StartPprofServer(ctx, logger, int(k8sconsts.DefaultPprofEndpointPort))
 
 	// Load destinations data
 	err := destinations.Load()
