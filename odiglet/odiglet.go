@@ -92,7 +92,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		AppendEnvVarNames:       appendEnvVarNames,
 	}
 
-	err = kube.SetupWithManager(kubeManagerOptions)
+	err = kube.SetupWithManager(kubeManagerOptions, instrumentationMgrOpts.DistributionGetter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}

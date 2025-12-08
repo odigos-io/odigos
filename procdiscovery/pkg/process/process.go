@@ -167,13 +167,13 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
-func FindAllProcesses(predicate func(int) bool, runtimeDetectionEnvs map[string]struct{}) ([]Details, error) {
+func FindAllProcesses(predicate func(int) bool) ([]int, error) {
 	dirs, err := os.ReadDir(procDir)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Details
+	var result []int
 	for _, di := range dirs {
 		if !di.IsDir() {
 			continue
@@ -192,8 +192,45 @@ func FindAllProcesses(predicate func(int) bool, runtimeDetectionEnvs map[string]
 			continue
 		}
 
-		details := GetPidDetails(pid, runtimeDetectionEnvs)
-		result = append(result, details)
+		result = append(result, pid)
+	}
+	return result, nil
+}
+
+func Group[K comparable](predicate func(int) (K, bool)) (map[K]map[int]struct{}, error) {
+	if predicate == nil {
+		return nil, errors.New("predicate must be provided for grouping")
+	}
+
+	dirs, err := os.ReadDir(procDir)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[K]map[int]struct{})
+	for _, di := range dirs {
+		if !di.IsDir() {
+			continue
+		}
+
+		dirName := di.Name()
+
+		pid, isProcessDirectory := isDirectoryPid(dirName)
+		if !isProcessDirectory {
+			continue
+		}
+
+		k, ok := predicate(pid)
+		if !ok {
+			continue
+		}
+
+		_, keyExists := result[k]
+		if !keyExists {
+			result[k] = make(map[int]struct{})
+		}
+
+		result[k][pid] = struct{}{}
 	}
 
 	return result, nil
@@ -279,8 +316,10 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 		envName := envParts[0]
 		envDetectionValue := envParts[1]
 
-		if _, ok := runtimeDetectionEnvs[envName]; ok {
-			overWriteEnvsResult[envName] = envDetectionValue
+		if runtimeDetectionEnvs != nil {
+			if _, ok := runtimeDetectionEnvs[envName]; ok {
+				overWriteEnvsResult[envName] = envDetectionValue
+			}
 		}
 
 		if _, ok := LangsVersionEnvs[envName]; ok {

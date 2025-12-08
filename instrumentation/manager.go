@@ -34,6 +34,10 @@ var meter = otel.Meter(otelMeterName)
 // The manager will apply the configuration to all instrumentations that match the config group.
 type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 
+type InstrumentationRequest[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
+	ProcessDetailsByPid map[int]processDetails
+}
+
 type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
 	// we want to track the instrumentation even if it failed to load, to be able to report the error
 	// and clean up the reporter resources once the process exits.
@@ -42,11 +46,6 @@ type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup, 
 	pd   processDetails
 	cg   configGroup
 	pg   processGroup
-}
-
-type InstrumentationRequest[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
-	PID            int
-	ProcessDetails processDetails
 }
 
 type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
@@ -156,18 +155,18 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 	}
 
 	return &manager[processGroup, configGroup, processDetails]{
-		procEvents:            procEvents,
-		detector:              detector,
-		handler:               handler,
-		factories:             options.Factories,
-		logger:                logger.WithName("ebpf-instrumentation-manager"),
-		detailsByPid:          make(map[int]*instrumentationDetails[processGroup, configGroup, processDetails]),
-		detailsByConfigGroup:  map[configGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
-		detailsByProcessGroup: map[processGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
-		configUpdates:         options.ConfigUpdates,
+		procEvents:              procEvents,
+		detector:                detector,
+		handler:                 handler,
+		factories:               options.Factories,
+		logger:                  logger.WithName("ebpf-instrumentation-manager"),
+		detailsByPid:            make(map[int]*instrumentationDetails[processGroup, configGroup, processDetails]),
+		detailsByConfigGroup:    map[configGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
+		detailsByProcessGroup:   map[processGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
+		configUpdates:           options.ConfigUpdates,
 		instrumentationRequests: options.InstrumentationRequests,
-		metrics:               managerMetrics,
-		tracesMap:             options.TracesMap,
+		metrics:                 managerMetrics,
+		tracesMap:               options.TracesMap,
 	}, nil
 }
 
@@ -227,16 +226,19 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				m.logger.Info("instrumentation requests channel closed, stopping eBPF instrumentation manager")
 				return
 			}
-			// handle duplicate requests gracefully, this can happen
-			// in environments where the requests are triggered by external systems such as k8s controllers
-			if m.isInstrumented(req.PID) {
-				continue
+			for pid, details := range req.ProcessDetailsByPid {
+				// handle duplicate requests gracefully, this can happen
+				// in environments where the requests are triggered by external systems such as k8s controllers
+				if m.isInstrumented(pid) {
+					continue
+				}
+				m.logger.Info("received explicit instrumentation request", "pid", pid)
+				err := m.tryInstrument(ctx, details, pid)
+				if err != nil {
+					m.handleInstrumentError(err)
+				}
 			}
-			m.logger.V(1).Info("received explicit instrumentation request", "pid", req.PID)
-			err := m.tryInstrument(ctx, req.ProcessDetails, req.PID)
-			if err != nil {
-				m.handleInstrumentError(err)
-			}
+
 		case configUpdate := <-m.configUpdates:
 			for configGroup, config := range configUpdate {
 				err := m.applyInstrumentationConfigurationForSDK(ctx, configGroup, config)
