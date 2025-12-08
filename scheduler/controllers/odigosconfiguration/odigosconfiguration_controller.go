@@ -16,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/profiles/manifests"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -41,6 +42,8 @@ type odigosConfigurationController struct {
 }
 
 func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+	logger := ctrl.LoggerFrom(ctx)
+
 	odigosConfigMap, err := r.getOdigosConfigMap(ctx)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -55,6 +58,16 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	err = yaml.Unmarshal([]byte(odigosConfigMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	// Read and merge remote config (from central-backend) if it exists
+	// Remote config takes precedence over helm-managed config
+	remoteConfig, err := r.getRemoteConfig(ctx)
+	if err != nil {
+		logger.Error(err, "Failed to get remote config, using only helm-managed config")
+	} else if remoteConfig != nil {
+		mergeRemoteConfig(&odigosConfiguration, remoteConfig)
+		logger.V(1).Info("Merged remote config into effective config")
 	}
 
 	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
@@ -131,6 +144,58 @@ func (r *odigosConfigurationController) getOdigosConfigMap(ctx context.Context) 
 	}
 
 	return &configMap, nil
+}
+
+// getRemoteConfig reads the odigos-remote-config ConfigMap which contains
+// configuration managed by the central-backend. This config takes precedence
+// over helm-managed configuration for supported fields.
+func (r *odigosConfigurationController) getRemoteConfig(ctx context.Context) (*common.OdigosConfiguration, error) {
+	var configMap corev1.ConfigMap
+	odigosNs := env.GetCurrentNamespace()
+
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: consts.OdigosRemoteConfigName}, &configMap)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// Remote config doesn't exist - this is expected for most deployments
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get remote config ConfigMap: %w", err)
+	}
+
+	if configMap.Data == nil || configMap.Data[consts.OdigosConfigurationFileName] == "" {
+		// ConfigMap exists but is empty - treat as no remote config
+		return nil, nil
+	}
+
+	remoteConfig := &common.OdigosConfiguration{}
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), remoteConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse remote config: %w", err)
+	}
+
+	return remoteConfig, nil
+}
+
+// mergeRemoteConfig merges the remote configuration (from central-backend) into the base configuration.
+// Remote config values take precedence over helm-managed values for supported fields.
+func mergeRemoteConfig(baseConfig *common.OdigosConfiguration, remoteConfig *common.OdigosConfiguration) {
+	if remoteConfig == nil {
+		return
+	}
+
+	if remoteConfig.Rollout != nil {
+		if baseConfig.Rollout == nil {
+			baseConfig.Rollout = &common.RolloutConfiguration{}
+		}
+		if remoteConfig.Rollout.AutomaticRolloutDisabled != nil {
+			baseConfig.Rollout.AutomaticRolloutDisabled = remoteConfig.Rollout.AutomaticRolloutDisabled
+		}
+	}
+
+	// Future fields can be added here following the same pattern:
+	// - ignoredNamespaces, ignoredContainers
+	// - profiles
+	// - ...
 }
 
 func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {

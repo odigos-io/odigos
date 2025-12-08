@@ -892,6 +892,22 @@ type PodWorkloadInput struct {
 type Query struct {
 }
 
+type RemoteConfig struct {
+	Rollout *RemoteConfigRollout `json:"rollout,omitempty"`
+}
+
+type RemoteConfigInput struct {
+	Rollout *RemoteConfigRolloutInput `json:"rollout,omitempty"`
+}
+
+type RemoteConfigRollout struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+}
+
+type RemoteConfigRolloutInput struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+}
+
 type ResourceAmounts struct {
 	CPU    *string `json:"cpu,omitempty"`
 	Memory *string `json:"memory,omitempty"`
