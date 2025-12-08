@@ -526,13 +526,6 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 		}
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
-
-	// Add image pull secrets to the pod spec if configured
-	if len(config.ImagePullSecrets) > 0 {
-		for _, secret := range config.ImagePullSecrets {
-			pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
-		}
-	}
 }
 
 func getInitContainerImage(config common.OdigosConfiguration) string {
