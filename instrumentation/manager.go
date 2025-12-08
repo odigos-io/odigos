@@ -34,8 +34,7 @@ var meter = otel.Meter(otelMeterName)
 type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 
 type InstrumentationRequest[processDetails ProcessDetails] struct {
-	PID            int
-	ProcessDetails processDetails
+	ProcessDetailsByPid map[int]processDetails
 }
 
 type instrumentationDetails[processDetails ProcessDetails, configGroup ConfigGroup] struct {
@@ -227,16 +226,19 @@ func (m *manager[ProcessDetails, ConfigGroup]) runEventLoop(ctx context.Context)
 				m.logger.Info("instrumentation requests channel closed, stopping eBPF instrumentation manager")
 				return
 			}
-			// handle duplicate requests gracefully, this can happen
-			// in environments where the requests are triggered by external systems such as k8s controllers
-			if m.isInstrumented(req.PID) {
-				continue
+			for pid, details := range req.ProcessDetailsByPid {
+				// handle duplicate requests gracefully, this can happen
+				// in environments where the requests are triggered by external systems such as k8s controllers
+				if m.isInstrumented(pid) {
+					continue
+				}
+				m.logger.Info("received explicit instrumentation request", "pid", pid)
+				err := m.tryInstrument(ctx, details, pid)
+				if err != nil {
+					m.handleInstrumentError(err)
+				}
 			}
-			m.logger.V(1).Info("received explicit instrumentation request", "pid", req.PID)
-			err := m.tryInstrument(ctx, req.ProcessDetails, req.PID)
-			if err != nil {
-				m.handleInstrumentError(err)
-			}
+
 		case configUpdate := <-m.configUpdates:
 			for configGroup, config := range configUpdate {
 				err := m.applyInstrumentationConfigurationForSDK(ctx, configGroup, config)

@@ -5,14 +5,19 @@ import (
 	"errors"
 	"time"
 
+"sigs.k8s.io/controller-runtime/pkg/log"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
+	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
+	"github.com/odigos-io/odigos/odiglet/pkg/process"
+	procdiscovery "github.com/odigos-io/odigos/procdiscovery/pkg/process"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -99,6 +104,7 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 }
 
 func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context.Context, podWorkload k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
+	logger := log.FromContext(ctx)
 	// check for distributions that support instrumentation without a restart
 	instrumentableContainers := make(map[string]*distro.OtelDistro)
 	for _, containerConfig := range instrumentationConfig.Spec.Containers {
@@ -122,9 +128,67 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 		return nil
 	}
 
-	// go over the (pod, container) pairs that are relevant for instrumentation
-	// for each pair, find all processes that are part of that container - and send an instrumentation request
-	
+	// build all the relevant (podUID, containerName) combinations for this node
+	pcs := make([]process.PodContainerUID, len(selectedPods)*len(instrumentableContainers))
+	count := 0
+	for _, p := range selectedPods {
+		for c := range instrumentableContainers {
+			pcs[count] = process.PodContainerUID{PodUID: string(p.UID), ContainerName: c}
+			count++
+		}
+	}
+
+	// group relevant processes by (podUID, containerName)
+	// this is an expensive operation and can be optimized in the future
+	pidsByPodContainer, err := process.GroupByPodContainer(pcs)
+	if err != nil {
+		return err
+	}
+	if len(pidsByPodContainer) == 0 {
+		return nil
+	}
+
+	// build the instrumentation request
+	ir := instrumentation.InstrumentationRequest[ebpf.K8sProcessDetails]{
+		ProcessDetailsByPid: make(map[int]ebpf.K8sProcessDetails, len(pidsByPodContainer)),
+	}
+	podByUID := make(map[string]*corev1.Pod, len(selectedPods))
+	for _, p := range selectedPods {
+		podByUID[string(p.UID)] = &p
+	}
+	for podContainer, pidSet := range pidsByPodContainer {
+		distribution, ok := instrumentableContainers[podContainer.ContainerName]
+		if !ok {
+			continue
+		}
+		for pid := range pidSet {
+			details := procdiscovery.GetPidDetails(pid, nil)
+			ir.ProcessDetailsByPid[pid] = ebpf.K8sProcessDetails{
+				ContainerName: podContainer.ContainerName,
+				DistroName:    distribution.Name,
+				Pw:            &podWorkload,
+				Pod:           podByUID[podContainer.PodUID],
+				ProcEvent: detector.ProcessEvent{
+					EventType: detector.ProcessExecEvent,
+					PID: pid,
+					ExecDetails: &detector.ExecDetails{
+						ExePath: details.ExePath,
+						CmdLine: details.CmdLine,
+						Environments: details.Environments.DetailedEnvs,
+					},
+				},
+			}
+		}
+	}
+
+	// try to send the request, return an error if the consumer is busy
+	// the caller (controller) can retry/requeue the handling
+	select {
+	case i.InstrumentationRequests <- ir:
+		logger.Info("send instrumentation request", "numPIDs", len(ir.ProcessDetailsByPid))
+	default:
+		return errors.New("failed to send instrumentation request, consumer is busy")	
+	}
 
 	return nil
 }
