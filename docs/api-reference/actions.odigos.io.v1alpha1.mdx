@@ -673,6 +673,42 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
+## `AttributeBasedFiltersConfig` <a id="AttributeBasedFiltersConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<p>FiltersConfig defines the configuration for the Filters action.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>attributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>Attributes is a map of attribute keys and values to filter on.
+This will drop any spans, metrics, data points, or log records that contain the given attribute key and value,
+based on what signal the Action is configured for.
+This applies to both resource attributes and telemetry attributes. Multiple rules are ORed together.
+For example, if you want to drop all spans that contain the attribute &quot;url.path&quot; with the value &quot;/api/v1/users&quot;, you can set the following:
+attributes:
+url.path: /api/v1/users
+The value can be a string literal or a regex pattern.
+Note that for traces, this can lead to apparent &quot;gaps&quot; in a trace when matching spans are filtered.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `AttributeCondition` <a id="AttributeCondition"></a>
     
 
@@ -1049,45 +1085,6 @@ It may include conditions such as &quot;Available&quot; or &quot;Progressing&quo
 </td>
 <td>
    <p>Conditions captures the current operational state of the sampler.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `FiltersConfig` <a id="FiltersConfig"></a>
-    
-
-**Appears in:**
-
-- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
-
-<p>FiltersConfig defines the configuration for the Filters action.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>attributes</code> <B>[Required]</B>
-</td>
-<td>
-<code>map[string]string</code>
-</td>
-<td>
-   <p>Attributes is a map of attribute keys and values to filter on.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>resource_attributes</code> <B>[Required]</B>
-</td>
-<td>
-<code>map[string]string</code>
-</td>
-<td>
-   <p>ResourceAttributes is a map of resource attribute keys and values to filter on.</p>
 </td>
 </tr>
 </tbody>

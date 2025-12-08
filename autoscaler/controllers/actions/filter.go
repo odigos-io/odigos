@@ -2,9 +2,18 @@ package actions
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 )
+
+// regexMetaChars contains characters that indicate a regex pattern
+const regexMetaChars = `^$*+?{[]()|\`
+
+// isRegexPattern checks if a string contains regex metacharacters
+func isRegexPattern(s string) bool {
+	return strings.ContainsAny(s, regexMetaChars)
+}
 
 type filterProcessorConfig struct {
 	ErrorMode string        `json:"error_mode"`
@@ -27,7 +36,7 @@ type logsConfig struct {
 	LogRecord []string `json:"log_record"`
 }
 
-func filtersConfig(attributes map[string]string, resourceAttributes map[string]string, signals []common.ObservabilitySignal) (any, error) {
+func attributeBasedFiltersConfig(attributes map[string]string, signals []common.ObservabilitySignal) (any, error) {
 	config := filterProcessorConfig{
 		ErrorMode: "ignore",
 	}
@@ -35,10 +44,13 @@ func filtersConfig(attributes map[string]string, resourceAttributes map[string]s
 	// Build filter lists once
 	var filters []string
 	for key, value := range attributes {
-		filters = append(filters, fmt.Sprintf("IsMatch(attributes[\"%s\"], \"%s\")", key, value))
-	}
-	for key, value := range resourceAttributes {
-		filters = append(filters, fmt.Sprintf("IsMatch(resource.attributes[\"%s\"], \"%s\")", key, value))
+		if isRegexPattern(value) {
+			filters = append(filters, fmt.Sprintf("IsMatch(attributes[\"%s\"], \"%s\")", key, value))
+			filters = append(filters, fmt.Sprintf("IsMatch(resource.attributes[\"%s\"], \"%s\")", key, value))
+		} else {
+			filters = append(filters, fmt.Sprintf("attributes[\"%s\"] == \"%s\"", key, value))
+			filters = append(filters, fmt.Sprintf("resource.attributes[\"%s\"] == \"%s\"", key, value))
+		}
 	}
 
 	// Apply to each enabled signal
@@ -46,8 +58,7 @@ func filtersConfig(attributes map[string]string, resourceAttributes map[string]s
 		switch signal {
 		case common.TracesObservabilitySignal:
 			config.Traces = tracesConfig{
-				Span:      filters,
-				SpanEvent: filters,
+				Span: filters,
 			}
 		case common.MetricsObservabilitySignal:
 			config.Metrics = metricsConfig{

@@ -25,17 +25,17 @@ import (
 // ActionSpecApplyConfiguration represents a declarative configuration of the ActionSpec type for use
 // with apply.
 type ActionSpecApplyConfiguration struct {
-	ActionName      *string                                `json:"actionName,omitempty"`
-	Notes           *string                                `json:"notes,omitempty"`
-	Disabled        *bool                                  `json:"disabled,omitempty"`
-	Signals         []common.ObservabilitySignal           `json:"signals,omitempty"`
-	AddClusterInfo  *actionsv1alpha1.AddClusterInfoConfig  `json:"addClusterInfo,omitempty"`
-	DeleteAttribute *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
-	RenameAttribute *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
-	PiiMasking      *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
-	K8sAttributes   *actionsv1alpha1.K8sAttributesConfig   `json:"k8sAttributes,omitempty"`
-	Samplers        *actionsv1alpha1.SamplersConfig        `json:"samplers,omitempty"`
-	Filters         *actionsv1alpha1.FiltersConfig         `json:"filters,omitempty"`
+	ActionName            *string                                      `json:"actionName,omitempty"`
+	Notes                 *string                                      `json:"notes,omitempty"`
+	Disabled              *bool                                        `json:"disabled,omitempty"`
+	Signals               []common.ObservabilitySignal                 `json:"signals,omitempty"`
+	AddClusterInfo        *actionsv1alpha1.AddClusterInfoConfig        `json:"addClusterInfo,omitempty"`
+	DeleteAttribute       *actionsv1alpha1.DeleteAttributeConfig       `json:"deleteAttribute,omitempty"`
+	RenameAttribute       *actionsv1alpha1.RenameAttributeConfig       `json:"renameAttribute,omitempty"`
+	PiiMasking            *actionsv1alpha1.PiiMaskingConfig            `json:"piiMasking,omitempty"`
+	K8sAttributes         *actionsv1alpha1.K8sAttributesConfig         `json:"k8sAttributes,omitempty"`
+	Samplers              *actionsv1alpha1.SamplersConfig              `json:"samplers,omitempty"`
+	AttributeBasedFilters *actionsv1alpha1.AttributeBasedFiltersConfig `json:"attributeBasedFilters,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -126,10 +126,10 @@ func (b *ActionSpecApplyConfiguration) WithSamplers(value actionsv1alpha1.Sample
 	return b
 }
 
-// WithFilters sets the Filters field in the declarative configuration to the given value
+// WithAttributeBasedFilters sets the AttributeBasedFilters field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Filters field is set to the value of the last call.
-func (b *ActionSpecApplyConfiguration) WithFilters(value actionsv1alpha1.FiltersConfig) *ActionSpecApplyConfiguration {
-	b.Filters = &value
+// If called multiple times, the AttributeBasedFilters field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithAttributeBasedFilters(value actionsv1alpha1.AttributeBasedFiltersConfig) *ActionSpecApplyConfiguration {
+	b.AttributeBasedFilters = &value
 	return b
 }

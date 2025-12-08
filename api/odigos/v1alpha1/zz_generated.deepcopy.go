@@ -127,9 +127,9 @@ func (in *ActionSpec) DeepCopyInto(out *ActionSpec) {
 		*out = new(actionsv1alpha1.SamplersConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Filters != nil {
-		in, out := &in.Filters, &out.Filters
-		*out = new(actionsv1alpha1.FiltersConfig)
+	if in.AttributeBasedFilters != nil {
+		in, out := &in.AttributeBasedFilters, &out.AttributeBasedFilters
+		*out = new(actionsv1alpha1.AttributeBasedFiltersConfig)
 		(*in).DeepCopyInto(*out)
 	}
 }

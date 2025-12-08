@@ -13,26 +13,23 @@ func TestFiltersConfig_TracesOnly(t *testing.T) {
 		"http.method": "GET",
 		"http.status": "200",
 	}
-	resourceAttributes := map[string]string{
-		"service.name": "my-service",
-	}
 	signals := []common.ObservabilitySignal{common.TracesObservabilitySignal}
 
-	result, err := filtersConfig(attributes, resourceAttributes, signals)
+	result, err := attributeBasedFiltersConfig(attributes, signals)
 	require.NoError(t, err)
 
 	config, ok := result.(filterProcessorConfig)
 	require.True(t, ok)
 
 	assert.Equal(t, "ignore", config.ErrorMode)
-	
-	// Check traces config
-	assert.Len(t, config.Traces.Span, 3)
-	assert.Contains(t, config.Traces.Span, `IsMatch(attributes["http.method"], "GET")`)
-	assert.Contains(t, config.Traces.Span, `IsMatch(attributes["http.status"], "200")`)
-	assert.Contains(t, config.Traces.Span, `IsMatch(resource.attributes["service.name"], "my-service")`)
-	assert.Len(t, config.Traces.SpanEvent, 3)
-	
+
+	// Check traces config - literal values use equality check (2 filters per attribute: attributes + resource.attributes)
+	assert.Len(t, config.Traces.Span, 4)
+	assert.Contains(t, config.Traces.Span, `attributes["http.method"] == "GET"`)
+	assert.Contains(t, config.Traces.Span, `resource.attributes["http.method"] == "GET"`)
+	assert.Contains(t, config.Traces.Span, `attributes["http.status"] == "200"`)
+	assert.Contains(t, config.Traces.Span, `resource.attributes["http.status"] == "200"`)
+
 	// Metrics and logs should be zero-value
 	assert.Empty(t, config.Metrics.Metric)
 	assert.Empty(t, config.Metrics.DataPoint)
@@ -43,26 +40,24 @@ func TestFiltersConfig_MetricsOnly(t *testing.T) {
 	attributes := map[string]string{
 		"metric.type": "counter",
 	}
-	resourceAttributes := map[string]string{
-		"service.name": "metrics-service",
-	}
 	signals := []common.ObservabilitySignal{common.MetricsObservabilitySignal}
 
-	result, err := filtersConfig(attributes, resourceAttributes, signals)
+	result, err := attributeBasedFiltersConfig(attributes, signals)
 	require.NoError(t, err)
 
 	config, ok := result.(filterProcessorConfig)
 	require.True(t, ok)
 
 	assert.Equal(t, "ignore", config.ErrorMode)
-	
-	// Check metrics config
+
+	// Check metrics config - literal values use equality check (2 filters per attribute: attributes + resource.attributes)
 	assert.Len(t, config.Metrics.Metric, 2)
-	assert.Contains(t, config.Metrics.Metric, `IsMatch(attributes["metric.type"], "counter")`)
-	assert.Contains(t, config.Metrics.Metric, `IsMatch(resource.attributes["service.name"], "metrics-service")`)
+	assert.Contains(t, config.Metrics.Metric, `attributes["metric.type"] == "counter"`)
+	assert.Contains(t, config.Metrics.Metric, `resource.attributes["metric.type"] == "counter"`)
 	assert.Len(t, config.Metrics.DataPoint, 2)
-	assert.Contains(t, config.Metrics.DataPoint, `IsMatch(attributes["metric.type"], "counter")`)
-	
+	assert.Contains(t, config.Metrics.DataPoint, `attributes["metric.type"] == "counter"`)
+	assert.Contains(t, config.Metrics.DataPoint, `resource.attributes["metric.type"] == "counter"`)
+
 	// Traces and logs should be zero-value
 	assert.Empty(t, config.Traces.Span)
 	assert.Empty(t, config.Traces.SpanEvent)
@@ -73,24 +68,21 @@ func TestFiltersConfig_LogsOnly(t *testing.T) {
 	attributes := map[string]string{
 		"log.level": "error",
 	}
-	resourceAttributes := map[string]string{
-		"service.name": "log-service",
-	}
 	signals := []common.ObservabilitySignal{common.LogsObservabilitySignal}
 
-	result, err := filtersConfig(attributes, resourceAttributes, signals)
+	result, err := attributeBasedFiltersConfig(attributes, signals)
 	require.NoError(t, err)
 
 	config, ok := result.(filterProcessorConfig)
 	require.True(t, ok)
 
 	assert.Equal(t, "ignore", config.ErrorMode)
-	
-	// Check logs config
+
+	// Check logs config - literal values use equality check (2 filters per attribute: attributes + resource.attributes)
 	assert.Len(t, config.Logs.LogRecord, 2)
-	assert.Contains(t, config.Logs.LogRecord, `IsMatch(attributes["log.level"], "error")`)
-	assert.Contains(t, config.Logs.LogRecord, `IsMatch(resource.attributes["service.name"], "log-service")`)
-	
+	assert.Contains(t, config.Logs.LogRecord, `attributes["log.level"] == "error"`)
+	assert.Contains(t, config.Logs.LogRecord, `resource.attributes["log.level"] == "error"`)
+
 	// Traces and metrics should be zero-value
 	assert.Empty(t, config.Traces.Span)
 	assert.Empty(t, config.Traces.SpanEvent)
@@ -102,56 +94,51 @@ func TestFiltersConfig_AllSignals(t *testing.T) {
 	attributes := map[string]string{
 		"env": "production",
 	}
-	resourceAttributes := map[string]string{
-		"service.namespace": "default",
-	}
 	signals := []common.ObservabilitySignal{
 		common.TracesObservabilitySignal,
 		common.MetricsObservabilitySignal,
 		common.LogsObservabilitySignal,
 	}
 
-	result, err := filtersConfig(attributes, resourceAttributes, signals)
+	result, err := attributeBasedFiltersConfig(attributes, signals)
 	require.NoError(t, err)
 
 	config, ok := result.(filterProcessorConfig)
 	require.True(t, ok)
 
 	assert.Equal(t, "ignore", config.ErrorMode)
-	
+
+	// Literal values use equality check (2 filters per attribute: attributes + resource.attributes)
 	expectedFilters := []string{
-		`IsMatch(attributes["env"], "production")`,
-		`IsMatch(resource.attributes["service.namespace"], "default")`,
+		`attributes["env"] == "production"`,
+		`resource.attributes["env"] == "production"`,
 	}
-	
+
 	// All signals should have the same filters
 	assert.Len(t, config.Traces.Span, 2)
 	assert.ElementsMatch(t, expectedFilters, config.Traces.Span)
-	assert.Len(t, config.Traces.SpanEvent, 2)
-	assert.ElementsMatch(t, expectedFilters, config.Traces.SpanEvent)
-	
+
 	assert.Len(t, config.Metrics.Metric, 2)
 	assert.ElementsMatch(t, expectedFilters, config.Metrics.Metric)
 	assert.Len(t, config.Metrics.DataPoint, 2)
 	assert.ElementsMatch(t, expectedFilters, config.Metrics.DataPoint)
-	
+
 	assert.Len(t, config.Logs.LogRecord, 2)
 	assert.ElementsMatch(t, expectedFilters, config.Logs.LogRecord)
 }
 
 func TestFiltersConfig_EmptyAttributes(t *testing.T) {
 	attributes := map[string]string{}
-	resourceAttributes := map[string]string{}
 	signals := []common.ObservabilitySignal{common.TracesObservabilitySignal}
 
-	result, err := filtersConfig(attributes, resourceAttributes, signals)
+	result, err := attributeBasedFiltersConfig(attributes, signals)
 	require.NoError(t, err)
 
 	config, ok := result.(filterProcessorConfig)
 	require.True(t, ok)
 
 	assert.Equal(t, "ignore", config.ErrorMode)
-	
+
 	// Should have empty filter lists
 	assert.Empty(t, config.Traces.Span)
 	assert.Empty(t, config.Traces.SpanEvent)
@@ -161,19 +148,16 @@ func TestFiltersConfig_NoSignals(t *testing.T) {
 	attributes := map[string]string{
 		"key": "value",
 	}
-	resourceAttributes := map[string]string{
-		"resource.key": "resource.value",
-	}
 	signals := []common.ObservabilitySignal{}
 
-	result, err := filtersConfig(attributes, resourceAttributes, signals)
+	result, err := attributeBasedFiltersConfig(attributes, signals)
 	require.NoError(t, err)
 
 	config, ok := result.(filterProcessorConfig)
 	require.True(t, ok)
 
 	assert.Equal(t, "ignore", config.ErrorMode)
-	
+
 	// All should be zero-value since no signals provided
 	assert.Empty(t, config.Traces.Span)
 	assert.Empty(t, config.Traces.SpanEvent)
@@ -182,62 +166,131 @@ func TestFiltersConfig_NoSignals(t *testing.T) {
 	assert.Empty(t, config.Logs.LogRecord)
 }
 
-func TestFiltersConfig_MultipleAttributesAndResourceAttributes(t *testing.T) {
+func TestFiltersConfig_MultipleAttributes(t *testing.T) {
 	attributes := map[string]string{
 		"attr1": "value1",
 		"attr2": "value2",
 		"attr3": "value3",
 	}
-	resourceAttributes := map[string]string{
-		"res1": "resvalue1",
-		"res2": "resvalue2",
-	}
 	signals := []common.ObservabilitySignal{common.TracesObservabilitySignal}
 
-	result, err := filtersConfig(attributes, resourceAttributes, signals)
+	result, err := attributeBasedFiltersConfig(attributes, signals)
 	require.NoError(t, err)
 
 	config, ok := result.(filterProcessorConfig)
 	require.True(t, ok)
 
-	// Should have 5 total filters (3 attributes + 2 resource attributes)
-	assert.Len(t, config.Traces.Span, 5)
-	
-	// Check attributes
-	assert.Contains(t, config.Traces.Span, `IsMatch(attributes["attr1"], "value1")`)
-	assert.Contains(t, config.Traces.Span, `IsMatch(attributes["attr2"], "value2")`)
-	assert.Contains(t, config.Traces.Span, `IsMatch(attributes["attr3"], "value3")`)
-	
-	// Check resource attributes
-	assert.Contains(t, config.Traces.Span, `IsMatch(resource.attributes["res1"], "resvalue1")`)
-	assert.Contains(t, config.Traces.Span, `IsMatch(resource.attributes["res2"], "resvalue2")`)
+	// Should have 6 total filters (2 per attribute: attributes + resource.attributes)
+	assert.Len(t, config.Traces.Span, 6)
+
+	// Check attributes - literal values use equality check
+	assert.Contains(t, config.Traces.Span, `attributes["attr1"] == "value1"`)
+	assert.Contains(t, config.Traces.Span, `resource.attributes["attr1"] == "value1"`)
+	assert.Contains(t, config.Traces.Span, `attributes["attr2"] == "value2"`)
+	assert.Contains(t, config.Traces.Span, `resource.attributes["attr2"] == "value2"`)
+	assert.Contains(t, config.Traces.Span, `attributes["attr3"] == "value3"`)
+	assert.Contains(t, config.Traces.Span, `resource.attributes["attr3"] == "value3"`)
 }
 
 func TestFiltersConfig_TracesAndMetrics(t *testing.T) {
 	attributes := map[string]string{
-		"common.attr": "common.value",
+		"env": "production",
 	}
-	resourceAttributes := map[string]string{}
 	signals := []common.ObservabilitySignal{
 		common.TracesObservabilitySignal,
 		common.MetricsObservabilitySignal,
 	}
 
-	result, err := filtersConfig(attributes, resourceAttributes, signals)
+	result, err := attributeBasedFiltersConfig(attributes, signals)
 	require.NoError(t, err)
 
 	config, ok := result.(filterProcessorConfig)
 	require.True(t, ok)
 
-	expectedFilter := `IsMatch(attributes["common.attr"], "common.value")`
-	
+	// Literal values use equality check
+	expectedFilter := `attributes["env"] == "production"`
+	expectedResourceFilter := `resource.attributes["env"] == "production"`
+
 	// Traces and metrics should both have the filter
 	assert.Contains(t, config.Traces.Span, expectedFilter)
-	assert.Contains(t, config.Traces.SpanEvent, expectedFilter)
+	assert.Contains(t, config.Traces.Span, expectedResourceFilter)
 	assert.Contains(t, config.Metrics.Metric, expectedFilter)
+	assert.Contains(t, config.Metrics.Metric, expectedResourceFilter)
 	assert.Contains(t, config.Metrics.DataPoint, expectedFilter)
-	
+	assert.Contains(t, config.Metrics.DataPoint, expectedResourceFilter)
+
 	// Logs should be empty
 	assert.Empty(t, config.Logs.LogRecord)
 }
 
+func TestFiltersConfig_RegexPattern(t *testing.T) {
+	attributes := map[string]string{
+		"http.url": ".*health.*",
+	}
+	signals := []common.ObservabilitySignal{common.TracesObservabilitySignal}
+
+	result, err := attributeBasedFiltersConfig(attributes, signals)
+	require.NoError(t, err)
+
+	config, ok := result.(filterProcessorConfig)
+	require.True(t, ok)
+
+	// Regex patterns should use IsMatch (2 filters: attributes + resource.attributes)
+	assert.Len(t, config.Traces.Span, 2)
+	assert.Contains(t, config.Traces.Span, `IsMatch(attributes["http.url"], ".*health.*")`)
+	assert.Contains(t, config.Traces.Span, `IsMatch(resource.attributes["http.url"], ".*health.*")`)
+}
+
+func TestFiltersConfig_MixedLiteralAndRegex(t *testing.T) {
+	attributes := map[string]string{
+		"http.method": "GET",       // literal
+		"http.url":    "^/api/.*$", // regex
+	}
+	signals := []common.ObservabilitySignal{common.TracesObservabilitySignal}
+
+	result, err := attributeBasedFiltersConfig(attributes, signals)
+	require.NoError(t, err)
+
+	config, ok := result.(filterProcessorConfig)
+	require.True(t, ok)
+
+	// Should have 4 filters (2 per attribute: attributes + resource.attributes)
+	assert.Len(t, config.Traces.Span, 4)
+
+	// Literal value uses equality check
+	assert.Contains(t, config.Traces.Span, `attributes["http.method"] == "GET"`)
+	assert.Contains(t, config.Traces.Span, `resource.attributes["http.method"] == "GET"`)
+
+	// Regex pattern uses IsMatch
+	assert.Contains(t, config.Traces.Span, `IsMatch(attributes["http.url"], "^/api/.*$")`)
+	assert.Contains(t, config.Traces.Span, `IsMatch(resource.attributes["http.url"], "^/api/.*$")`)
+}
+
+func TestIsRegexPattern(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"simple", false},
+		{"hello-world", false},
+		{"GET", false},
+		{"200", false},
+		{"production", false},
+		{".*", true},
+		{"^start", true},
+		{"end$", true},
+		{"a+b", true},
+		{"a?b", true},
+		{"a*b", true},
+		{"[abc]", true},
+		{"(a|b)", true},
+		{`a\d`, true},
+		{"a{2,3}", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			assert.Equal(t, tt.expected, isRegexPattern(tt.input))
+		})
+	}
+}

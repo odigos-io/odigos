@@ -162,9 +162,9 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers"), samplerFields, fmt.Sprintf("Only one of (%s) may be set", strings.Join(validSamplerFields, ", "))))
 		}
 	}
-	if action.Spec.Filters != nil {
-		path := field.NewPath("spec").Child("filters")
-		fields[path] = action.Spec.Filters
+	if action.Spec.AttributeBasedFilters != nil {
+		path := field.NewPath("spec").Child("attributeBasedFilters")
+		fields[path] = action.Spec.AttributeBasedFilters
 	}
 
 	if len(fields) == 0 {

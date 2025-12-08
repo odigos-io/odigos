@@ -68,6 +68,25 @@ spec:
                 required:
                 - clusterAttributes
                 type: object
+              attributeBasedFilters:
+                description: AttributeBasedFilters is the config for the AttributeBasedFilters
+                  Action.
+                properties:
+                  attributes:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      Attributes is a map of attribute keys and values to filter on.
+                      This will drop any spans, metrics, data points, or log records that contain the given attribute key and value,
+                      based on what signal the Action is configured for.
+                      This applies to both resource attributes and telemetry attributes. Multiple rules are ORed together.
+                      For example, if you want to drop all spans that contain the attribute "url.path" with the value "/api/v1/users", you can set the following:
+                      attributes:
+                        url.path: /api/v1/users
+                      The value can be a string literal or a regex pattern.
+                      Note that for traces, this can lead to apparent "gaps" in a trace when matching spans are filtered.
+                    type: object
+                type: object
               deleteAttribute:
                 description: DeleteAttribute is the config for the DeleteAttribute
                   Action.
@@ -83,22 +102,6 @@ spec:
                 description: A boolean field allowing to temporarily disable the action,
                   but keep it around for future use
                 type: boolean
-              filters:
-                description: Filters is the config for the Filter Action.
-                properties:
-                  attributes:
-                    additionalProperties:
-                      type: string
-                    description: Attributes is a map of attribute keys and values
-                      to filter on.
-                    type: object
-                  resource_attributes:
-                    additionalProperties:
-                      type: string
-                    description: ResourceAttributes is a map of resource attribute
-                      keys and values to filter on.
-                    type: object
-                type: object
               k8sAttributes:
                 description: K8sAttributes is the config for the K8sAttributes Action.
                 properties:

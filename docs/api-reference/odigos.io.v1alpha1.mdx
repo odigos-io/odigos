@@ -532,13 +532,13 @@ auto_generated: true
 </tr>
 <tr>
 <td>
-<code>filters</code> <B>[Required]</B>
+<code>attributeBasedFilters</code> <B>[Required]</B>
 </td>
 <td>
-<code>actions/v1alpha1.FiltersConfig</code>
+<code>actions/v1alpha1.AttributeBasedFiltersConfig</code>
 </td>
 <td>
-   <p>Filters is the config for the Filter Action.</p>
+   <p>AttributeBasedFilters is the config for the AttributeBasedFilters Action.</p>
 </td>
 </tr>
 </tbody>
@@ -603,7 +603,68 @@ The presence of this struct (as opposed to nil) means that logs collection is en
 <p>all &quot;metrics&quot; related configuration for an agent running on any process in a specific container.
 The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.</p>
 
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentSpanMetricsConfig"><code>AgentSpanMetricsConfig</code></a>
+</td>
+<td>
+   <p>if not nil, it means agent should report span metrics,
+calculated directly in the agent.
+this is most accurate as it includes any sampled spans,
+and is not affected if spans are dropped anywhere in the pipeline.</p>
+</td>
+</tr>
+</tbody>
+</table>
 
+## `AgentSpanMetricsConfig` <a id="odigos-io-v1alpha1-AgentSpanMetricsConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentMetricsConfig](#odigos-io-v1alpha1-AgentMetricsConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>dimensions</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>additional dimensions to add for the span metrics.
+for example, if you add <code>http.method</code> to the dimensions,
+then the span metrics data points will include the <code>http.method</code> in the attributes,
+and different values of <code>http.method</code> will be aggregated into different time series.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>intervalMs</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>time interval in miliseconds for flushing the span metrics.
+defaults: 60000 (60 seconds, 1 minute)</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `AgentTracesConfig` <a id="odigos-io-v1alpha1-AgentTracesConfig"></a>
     
@@ -1170,31 +1231,6 @@ it's being calculated based on active destinations and their settings,
 and global settings provided in the odigos configuration or instrumentation rules.
 it allows for the collector group reconciler to be simplified,
 and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ownTelemetryEnabled</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <p>wether to setup and collect own telemetry in the collector.
-currently, it is used to send odigos own metrics to the odigos prometheus (internal metrics store).</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ownMetricsScrapeInterval</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>the interval at which odigos will scrape own metrics from itself if own telemetry is enabled.
-format: duration string (15s, 1m, etc).
-default is 10s.</p>
 </td>
 </tr>
 <tr>
@@ -2601,7 +2637,54 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 - [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
 
+<p>configuration for collecting and exporting odigos own metrics.
+e.g. metrics about odigos components, and not about the user's application.</p>
 
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sendToMetricsDestinations</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if true, odigos will send all the metrics it collects about itself to the metrics pipeline,
+which will make them available to the metrics destinations.
+users can troubleshoot odigos itself by monitoring these metrics in their existing systems,
+and create their own dashboards, alerting, and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sendToOdigosMetricsStore</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if true, odigos will send all the metrics it collects about itself to the odigos metrics store,
+which is available to odigos UI.
+it can help in presenting a consistent view of odigos itself, without relying on user system and integrations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>interval</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>time interval for flusing metrics (format: 15s, 1m etc). defaults: 10s</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
     
