@@ -42,6 +42,8 @@ func (o *OdigletPodsWebhook) Handle(ctx context.Context, req admission.Request) 
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	logger.Info("Odiglet pod webhook called", "operation", req.Operation, "podName", pod.Name)
+
 	// Extract target node name from pod affinity
 	nodeName := extractTargetNodeName(pod)
 	if nodeName == "" {
@@ -50,10 +52,14 @@ func (o *OdigletPodsWebhook) Handle(ctx context.Context, req admission.Request) 
 		return admission.Allowed("unable to determine target node")
 	}
 
+	logger.Info("Extracted target node for odiglet pod", "node", nodeName, "podName", pod.Name)
+
 	// Get NodeDetails for this node (if exists)
 	nodeDetails := &odigosv1.NodeDetails{}
 	err = o.Client.Get(ctx, types.NamespacedName{Name: nodeName, Namespace: req.Namespace}, nodeDetails)
 	nodeDetailsExists := err == nil
+
+	logger.Info("NodeDetails lookup result", "node", nodeName, "exists", nodeDetailsExists)
 
 	// Apply modifications to the odiglet container
 	modified := false
@@ -67,6 +73,7 @@ func (o *OdigletPodsWebhook) Handle(ctx context.Context, req admission.Request) 
 
 	if !modified {
 		// No changes needed
+		logger.Info("No modifications applied to odiglet pod", "node", nodeName, "nodeDetailsExists", nodeDetailsExists)
 		return admission.Allowed("no modifications applied")
 	}
 
@@ -76,6 +83,8 @@ func (o *OdigletPodsWebhook) Handle(ctx context.Context, req admission.Request) 
 		logger.Error(err, "Failed to marshal modified pod")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
+
+	logger.Info("Odiglet pod modified successfully", "node", nodeName, "nodeDetailsExists", nodeDetailsExists)
 
 	// Return patch response
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
@@ -144,6 +153,7 @@ func removeDiscoveryArgument(container *corev1.Container, nodeName string, logge
 
 	if found {
 		container.Args = newArgs
+		logger.Info("Removed 'discovery' argument from odiglet container", "node", nodeName)
 	}
 
 	return found
