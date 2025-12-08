@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/go-logr/logr"
@@ -45,6 +46,7 @@ func (o *OdigletPodsWebhook) Handle(ctx context.Context, req admission.Request) 
 	nodeName := extractTargetNodeName(pod)
 	if nodeName == "" {
 		// Can't determine target node, allow it through unchanged
+		logger.Error(errors.New("unable to determine target node"), "Unable to determine target node, allowing it through unchanged", "podName", pod.Name, "namespace", pod.Namespace)
 		return admission.Allowed("unable to determine target node")
 	}
 
@@ -137,7 +139,6 @@ func removeDiscoveryArgument(container *corev1.Container, nodeName string, logge
 			newArgs = append(newArgs, arg)
 		} else {
 			found = true
-			logger.Info("Removing 'discovery' argument from odiglet container", "node", nodeName)
 		}
 	}
 

@@ -125,7 +125,7 @@ webhooks:
         app.kubernetes.io/name: odiglet
     namespaceSelector:
       matchLabels:
-        kubernetes.io/metadata.name: {{ .Release.Namespace }}
+        name: {{ .Release.Namespace }}
     failurePolicy: Ignore
     reinvocationPolicy: Never
     sideEffects: None
