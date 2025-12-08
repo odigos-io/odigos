@@ -102,7 +102,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = clustercollector.SetupWithManager(k8sManager, nil, "")
+	err = clustercollector.SetupWithManager(k8sManager, "")
 	Expect(err).ToNot(HaveOccurred())
 
 	setupResources()

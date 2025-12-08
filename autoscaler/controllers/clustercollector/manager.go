@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion string) error {
+func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 
 	err := builder.
 		ControllerManagedBy(mgr).
@@ -22,10 +22,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// thus, we need to monitor any change to the spec which is what the generation field is for.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&CollectorsGroupReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -39,10 +38,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// filter out events on resource status and metadata changes.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&DestinationReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -59,10 +57,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 			predicate.LabelChangedPredicate{},
 		)).
 		Complete(&InstrumentationConfigReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -76,10 +73,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// filter out events on resource status and metadata changes.
 		WithEventFilter(&predicate.GenerationChangedPredicate{}).
 		Complete(&ProcessorReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
@@ -94,10 +90,9 @@ func SetupWithManager(mgr ctrl.Manager, imagePullSecrets []string, odigosVersion
 		// when the secret was just created (via auto-scaler restart or initial deployment), the cluster collector will be reconciled by other controllers.
 		WithEventFilter(predicate.And(&odigospredicate.OnlyUpdatesPredicate{}, &predicate.ResourceVersionChangedPredicate{})).
 		Complete(&SecretReconciler{
-			Client:           mgr.GetClient(),
-			Scheme:           mgr.GetScheme(),
-			ImagePullSecrets: imagePullSecrets,
-			OdigosVersion:    odigosVersion,
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			OdigosVersion: odigosVersion,
 		})
 	if err != nil {
 		return err
