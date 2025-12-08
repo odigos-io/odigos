@@ -16,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/profiles/manifests"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -63,8 +64,8 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	// Remote config takes precedence over helm-managed config
 	remoteConfig, err := r.getRemoteConfig(ctx)
 	if err != nil {
-		logger.V(1).Info("No remote config found, using only helm-managed config", "error", err)
-	} else {
+		logger.Error(err, "Failed to get remote config, using only helm-managed config")
+	} else if remoteConfig != nil {
 		mergeRemoteConfig(&odigosConfiguration, remoteConfig)
 		logger.V(1).Info("Merged remote config into effective config")
 	}
@@ -154,11 +155,16 @@ func (r *odigosConfigurationController) getRemoteConfig(ctx context.Context) (*c
 
 	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: consts.OdigosRemoteConfigName}, &configMap)
 	if err != nil {
-		return nil, err
+		if apierrors.IsNotFound(err) {
+			// Remote config doesn't exist - this is expected for most deployments
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get remote config ConfigMap: %w", err)
 	}
 
 	if configMap.Data == nil || configMap.Data[consts.OdigosConfigurationFileName] == "" {
-		return nil, fmt.Errorf("remote config ConfigMap exists but has no config data")
+		// ConfigMap exists but is empty - treat as no remote config
+		return nil, nil
 	}
 
 	remoteConfig := &common.OdigosConfiguration{}
