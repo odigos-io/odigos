@@ -153,6 +153,7 @@ type CollectorDaemonSetInfo struct {
 	LastRolloutAt     *string               `json:"lastRolloutAt,omitempty"`
 	RolloutInProgress bool                  `json:"rolloutInProgress"`
 	ManifestYaml      string                `json:"manifestYAML"`
+	ConfigMapYaml     string                `json:"configMapYAML"`
 }
 
 type CollectorPodMetrics struct {
@@ -348,6 +349,7 @@ type GatewayDeploymentInfo struct {
 	LastRolloutAt     *string                      `json:"lastRolloutAt,omitempty"`
 	RolloutInProgress bool                         `json:"rolloutInProgress"`
 	ManifestYaml      string                       `json:"manifestYAML"`
+	ConfigMapYaml     string                       `json:"configMapYAML"`
 }
 
 type GetConfigResponse struct {

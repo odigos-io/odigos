@@ -31,6 +31,7 @@ export const GET_GATEWAY_INFO = gql`
       lastRolloutAt
       rolloutInProgress
       manifestYAML
+      configMapYAML
     }
   }
 `;
@@ -73,6 +74,7 @@ export const GET_NODE_COLLECTOR_INFO = gql`
       lastRolloutAt
       rolloutInProgress
       manifestYAML
+      configMapYAML
     }
   }
 `;

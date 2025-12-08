@@ -58,6 +58,7 @@ type GatewayDeploymentInfo {
   lastRolloutAt: String
   rolloutInProgress: Boolean!
   manifestYAML: String!
+  configMapYAML: String!
 }
 
 type CollectorDaemonSetInfo {
@@ -68,6 +69,7 @@ type CollectorDaemonSetInfo {
   lastRolloutAt: String
   rolloutInProgress: Boolean!
   manifestYAML: String!
+  configMapYAML: String!
 }
 
 # =====================

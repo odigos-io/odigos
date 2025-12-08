@@ -137,6 +137,7 @@ type ComplexityRoot struct {
 	}
 
 	CollectorDaemonSetInfo struct {
+		ConfigMapYaml     func(childComplexity int) int
 		ImageVersion      func(childComplexity int) int
 		LastRolloutAt     func(childComplexity int) int
 		ManifestYaml      func(childComplexity int) int
@@ -298,6 +299,7 @@ type ComplexityRoot struct {
 	}
 
 	GatewayDeploymentInfo struct {
+		ConfigMapYaml     func(childComplexity int) int
 		Hpa               func(childComplexity int) int
 		ImageVersion      func(childComplexity int) int
 		LastRolloutAt     func(childComplexity int) int
@@ -1359,6 +1361,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CodeAttributes.Stacktrace(childComplexity), true
 
+	case "CollectorDaemonSetInfo.configMapYAML":
+		if e.complexity.CollectorDaemonSetInfo.ConfigMapYaml == nil {
+			break
+		}
+
+		return e.complexity.CollectorDaemonSetInfo.ConfigMapYaml(childComplexity), true
+
 	case "CollectorDaemonSetInfo.imageVersion":
 		if e.complexity.CollectorDaemonSetInfo.ImageVersion == nil {
 			break
@@ -2054,6 +2063,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ExportedSignals.Traces(childComplexity), true
+
+	case "GatewayDeploymentInfo.configMapYAML":
+		if e.complexity.GatewayDeploymentInfo.ConfigMapYaml == nil {
+			break
+		}
+
+		return e.complexity.GatewayDeploymentInfo.ConfigMapYaml(childComplexity), true
 
 	case "GatewayDeploymentInfo.hpa":
 		if e.complexity.GatewayDeploymentInfo.Hpa == nil {
@@ -8802,6 +8818,50 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_manifestYAML(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _CollectorDaemonSetInfo_configMapYAML(ctx context.Context, field graphql.CollectedField, obj *model.CollectorDaemonSetInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorDaemonSetInfo_configMapYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConfigMapYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_configMapYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorDaemonSetInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _CollectorPodMetrics_metricsAcceptedRps(ctx context.Context, field graphql.CollectedField, obj *model.CollectorPodMetrics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_CollectorPodMetrics_metricsAcceptedRps(ctx, field)
 	if err != nil {
@@ -13412,6 +13472,50 @@ func (ec *executionContext) _GatewayDeploymentInfo_manifestYAML(ctx context.Cont
 }
 
 func (ec *executionContext) fieldContext_GatewayDeploymentInfo_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GatewayDeploymentInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GatewayDeploymentInfo_configMapYAML(ctx context.Context, field graphql.CollectedField, obj *model.GatewayDeploymentInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GatewayDeploymentInfo_configMapYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConfigMapYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GatewayDeploymentInfo_configMapYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "GatewayDeploymentInfo",
 		Field:      field,
@@ -26942,6 +27046,8 @@ func (ec *executionContext) fieldContext_Query_gatewayDeploymentInfo(_ context.C
 				return ec.fieldContext_GatewayDeploymentInfo_rolloutInProgress(ctx, field)
 			case "manifestYAML":
 				return ec.fieldContext_GatewayDeploymentInfo_manifestYAML(ctx, field)
+			case "configMapYAML":
+				return ec.fieldContext_GatewayDeploymentInfo_configMapYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GatewayDeploymentInfo", field.Name)
 		},
@@ -27002,6 +27108,8 @@ func (ec *executionContext) fieldContext_Query_odigletDaemonSetInfo(_ context.Co
 				return ec.fieldContext_CollectorDaemonSetInfo_rolloutInProgress(ctx, field)
 			case "manifestYAML":
 				return ec.fieldContext_CollectorDaemonSetInfo_manifestYAML(ctx, field)
+			case "configMapYAML":
+				return ec.fieldContext_CollectorDaemonSetInfo_configMapYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CollectorDaemonSetInfo", field.Name)
 		},
@@ -34145,6 +34253,11 @@ func (ec *executionContext) _CollectorDaemonSetInfo(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "configMapYAML":
+			out.Values[i] = ec._CollectorDaemonSetInfo_configMapYAML(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -35553,6 +35666,11 @@ func (ec *executionContext) _GatewayDeploymentInfo(ctx context.Context, sel ast.
 			}
 		case "manifestYAML":
 			out.Values[i] = ec._GatewayDeploymentInfo_manifestYAML(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "configMapYAML":
+			out.Values[i] = ec._GatewayDeploymentInfo_configMapYAML(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
