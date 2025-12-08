@@ -148,11 +148,11 @@ spec:
                               items:
                                 type: string
                               type: array
-                            interval:
+                            intervalMs:
                               description: |-
-                                time interval for flushing the span metrics (format: 15s, 1m etc).
-                                defaults: 60s (one minute).
-                              type: string
+                                time interval in miliseconds for flushing the span metrics.
+                                defaults: 60000 (60 seconds, 1 minute)
+                              type: integer
                           type: object
                       type: object
                     otelDistroName:

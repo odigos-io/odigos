@@ -21,7 +21,7 @@ package v1alpha1
 // with apply.
 type AgentSpanMetricsConfigApplyConfiguration struct {
 	Dimensions []string `json:"dimensions,omitempty"`
-	Interval   *string  `json:"interval,omitempty"`
+	IntervalMs *int     `json:"intervalMs,omitempty"`
 }
 
 // AgentSpanMetricsConfigApplyConfiguration constructs a declarative configuration of the AgentSpanMetricsConfig type for use with
@@ -40,10 +40,10 @@ func (b *AgentSpanMetricsConfigApplyConfiguration) WithDimensions(values ...stri
 	return b
 }
 
-// WithInterval sets the Interval field in the declarative configuration to the given value
+// WithIntervalMs sets the IntervalMs field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Interval field is set to the value of the last call.
-func (b *AgentSpanMetricsConfigApplyConfiguration) WithInterval(value string) *AgentSpanMetricsConfigApplyConfiguration {
-	b.Interval = &value
+// If called multiple times, the IntervalMs field is set to the value of the last call.
+func (b *AgentSpanMetricsConfigApplyConfiguration) WithIntervalMs(value int) *AgentSpanMetricsConfigApplyConfiguration {
+	b.IntervalMs = &value
 	return b
 }
