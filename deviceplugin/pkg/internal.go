@@ -3,6 +3,9 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -11,15 +14,21 @@ import (
 	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
 )
 
-// Start device manager
-// the device manager library doesn't support passing a context,
-// however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
-// We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
+// Start device manager with proper signal handling for graceful shutdown
 func runDeviceManager() error {
 	log.Logger.V(0).Info("Starting device manager")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Set up signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		sig := <-sigChan
+		log.Logger.V(0).Info("Received signal, initiating graceful shutdown", "signal", sig)
+		cancel()
+	}()
 
 	// Start pprof server
 	pprofDone := make(chan struct{})
