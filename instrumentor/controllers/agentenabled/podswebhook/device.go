@@ -58,11 +58,17 @@ func CheckDevicePluginContainersHealth(ctx context.Context, kubeClient client.Cl
 			if container.Name != k8sconsts.OdigletDevicePluginContainerName {
 				continue
 			}
-			// we consider only "crash loop backoff" as a reason for not injecting instrumentation.
+			// we consider "crash loop backoff" or "image pull backoff" as reasons for not injecting instrumentation.
 			// it the container is initializing, starting, or anything else,
 			// we assume it will ready shortly and should not block the entire cluster from injection
-			if containerutils.IsContainerInCrashLoopBackOff(container) {
-				return fmt.Errorf("odiglet %s/%s device plugin container is in crash loop backoff", pod.Namespace, pod.Name)
+			if containerutils.IsContainerInBackOff(container) {
+				reason := "backoff"
+				if containerutils.IsContainerInCrashLoopBackOff(container) {
+					reason = "crash loop backoff"
+				} else if containerutils.IsContainerInImagePullBackOff(container) {
+					reason = "image pull backoff"
+				}
+				return fmt.Errorf("odiglet %s/%s device plugin container is in %s", pod.Namespace, pod.Name, reason)
 			}
 		}
 	}

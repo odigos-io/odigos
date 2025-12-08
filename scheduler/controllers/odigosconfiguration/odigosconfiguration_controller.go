@@ -517,9 +517,13 @@ func verifyMetricsConfig(odigosConfiguration *common.OdigosConfiguration) error 
 	}
 
 	if odigosConfiguration.MetricsSources.SpanMetrics != nil {
-		_, err := time.ParseDuration(odigosConfiguration.MetricsSources.SpanMetrics.Interval)
-		if err != nil {
-			return fmt.Errorf("failed to parse span metrics interval: %w", err)
+		if odigosConfiguration.MetricsSources.SpanMetrics.Interval == "" {
+			odigosConfiguration.MetricsSources.SpanMetrics.Interval = "60s"
+		} else {
+			_, err := time.ParseDuration(odigosConfiguration.MetricsSources.SpanMetrics.Interval)
+			if err != nil {
+				return fmt.Errorf("failed to parse span metrics interval: %w", err)
+			}
 		}
 	}
 

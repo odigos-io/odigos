@@ -66,11 +66,12 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		}
 
 		stripedStatus := corev1.PodStatus{
-			Phase:             pod.Status.Phase,
-			ContainerStatuses: pod.Status.ContainerStatuses, // TODO: we don't need all data here
-			Message:           pod.Status.Message,
-			Reason:            pod.Status.Reason,
-			StartTime:         pod.Status.StartTime,
+			Phase:                 pod.Status.Phase,
+			ContainerStatuses:     pod.Status.ContainerStatuses,     // TODO: we don't need all data here
+			InitContainerStatuses: pod.Status.InitContainerStatuses, // needed for backoff detection
+			Message:               pod.Status.Message,
+			Reason:                pod.Status.Reason,
+			StartTime:             pod.Status.StartTime,
 		}
 		strippedPod := corev1.Pod{
 			ObjectMeta: pod.ObjectMeta,

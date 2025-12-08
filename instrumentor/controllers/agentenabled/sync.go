@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signalconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -168,9 +167,29 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	defaultDistrosPerLanguage := distroProvider.GetDefaultDistroNames()
 	distroPerLanguage := calculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
-	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff we'd like to stop
+	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
 	// instrumentating it and to disable future instrumentation of this service
-	crashDetected := ic.Status.RollbackOccurred
+	rollbackOccurred := ic.Status.RollbackOccurred
+	// Get existing backoff reason from status conditions if available
+	var existingBackoffReason odigosv1.AgentEnabledReason
+	for _, condition := range ic.Status.Conditions {
+		if condition.Type == odigosv1.AgentEnabledStatusConditionType {
+			reason := odigosv1.AgentEnabledReason(condition.Reason)
+			if reason == odigosv1.AgentEnabledReasonCrashLoopBackOff || reason == odigosv1.AgentEnabledReasonImagePullBackOff {
+				existingBackoffReason = reason
+				break
+			}
+		}
+	}
+	// If not found in conditions, check existing container configs
+	if existingBackoffReason == "" {
+		for _, container := range ic.Spec.Containers {
+			if container.AgentEnabledReason == odigosv1.AgentEnabledReasonCrashLoopBackOff || container.AgentEnabledReason == odigosv1.AgentEnabledReasonImagePullBackOff {
+				existingBackoffReason = container.AgentEnabledReason
+				break
+			}
+		}
+	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
 
@@ -178,7 +197,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, crashDetected, cg, irls, containerOverride)
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -203,7 +222,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	if len(instrumentedContainerNames) > 0 {
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
-		ic.Spec.AgentInjectionEnabled = !crashDetected
+		ic.Spec.AgentInjectionEnabled = !rollbackOccurred
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
@@ -238,47 +257,6 @@ func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentCon
 			Message: containerConfig.AgentEnabledMessage,
 		}
 	}
-}
-
-func getEnabledSignalsForContainer(nodeCollectorsGroup *odigosv1.CollectorsGroup, irls *[]odigosv1.InstrumentationRule) (tracesEnabled bool, metricsEnabled bool, logsEnabled bool) {
-	tracesEnabled = false
-	metricsEnabled = false
-	logsEnabled = false
-
-	if nodeCollectorsGroup == nil {
-		// if the node collectors group is not created yet,
-		// it means the collectors are not running thus all signals are disabled.
-		return false, false, false
-	}
-
-	// first set each signal to enabled/disabled based on the node collectors group global signals for collection.
-	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.TracesObservabilitySignal) {
-		tracesEnabled = true
-	}
-	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.MetricsObservabilitySignal) {
-		metricsEnabled = true
-	}
-	if slices.Contains(nodeCollectorsGroup.Status.ReceiverSignals, common.LogsObservabilitySignal) {
-		logsEnabled = true
-	}
-
-	// disable specific signals if they are disabled in any of the workload level instrumentation rules.
-	for _, irl := range *irls {
-
-		// these signals are in the workload level,
-		// and library specific rules are not relevant to the current calculation.
-		if irl.Spec.InstrumentationLibraries != nil {
-			continue
-		}
-
-		// if any instrumentation rule has trace config disabled, we should disable traces for this container.
-		// the list is already filtered to only include rules that are relevant to the current workload.
-		if irl.Spec.TraceConfig != nil && irl.Spec.TraceConfig.Disabled != nil && *irl.Spec.TraceConfig.Disabled {
-			tracesEnabled = false
-		}
-	}
-
-	return tracesEnabled, metricsEnabled, logsEnabled
 }
 
 func getEnvVarFromList(envVars []odigosv1.EnvVar, envVarName string) (string, bool) {
@@ -392,46 +370,12 @@ func calculateContainerInstrumentationConfig(containerName string,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
-	crashDetected bool,
+	rollbackOccurred bool,
+	existingBackoffReason odigosv1.AgentEnabledReason,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 	irls *[]odigosv1.InstrumentationRule,
 	containerOverride *odigosv1.ContainerOverride,
 ) odigosv1.ContainerAgentConfig {
-
-	tracesEnabled, metricsEnabled, logsEnabled := getEnabledSignalsForContainer(nodeCollectorsGroup, irls)
-
-	// at this time, we don't populate the signals specific configs, but we will do it soon
-	var tracesConfig *odigosv1.AgentTracesConfig
-	var metricsConfig *odigosv1.AgentMetricsConfig
-	var logsConfig *odigosv1.AgentLogsConfig
-	if tracesEnabled {
-		tracesConfig = &odigosv1.AgentTracesConfig{}
-
-		// for traces, also allow to configure the id generator as "timedwall",
-		// if trace id suffix is provided.
-		if effectiveConfig.TraceIdSuffix != "" {
-			sourceId, err := strconv.ParseUint(effectiveConfig.TraceIdSuffix, 16, 8)
-			if err != nil {
-				return odigosv1.ContainerAgentConfig{
-					ContainerName:       containerName,
-					AgentEnabled:        false,
-					AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
-					AgentEnabledMessage: fmt.Sprintf("failed to parse trace id suffix: %s. trace id suffix must be a single byte hex value (for example 'A3')", err),
-				}
-			}
-			tracesConfig.IdGenerator = &odigosv1.IdGeneratorConfig{
-				TimedWall: &odigosv1.IdGeneratorTimedWallConfig{
-					SourceId: uint8(sourceId),
-				},
-			}
-		}
-	}
-	if metricsEnabled {
-		metricsConfig = &odigosv1.AgentMetricsConfig{}
-	}
-	if logsEnabled {
-		logsConfig = &odigosv1.AgentLogsConfig{}
-	}
 
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
 	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
@@ -467,6 +411,22 @@ func calculateContainerInstrumentationConfig(containerName string,
 		return *err
 	}
 	distroName := distro.Name
+
+	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
+
+	// at this time, we don't populate the signals specific configs, but we will do it soon
+	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName)
+	if err != nil {
+		return *err
+	}
+	metricsConfig, err := signalconfig.CalculateMetricsConfig(metricsEnabled, effectiveConfig, distro, containerName)
+	if err != nil {
+		return *err
+	}
+	logsConfig, err := signalconfig.CalculateLogsConfig(logsEnabled, effectiveConfig, containerName)
+	if err != nil {
+		return *err
+	}
 
 	envInjectionDecision, unsupportedDetails := getEnvInjectionDecision(containerName, effectiveConfig, runtimeDetails, distro)
 	if unsupportedDetails != nil {
@@ -522,12 +482,13 @@ func calculateContainerInstrumentationConfig(containerName string,
 		return *err
 	}
 
-	if crashDetected {
+	if rollbackOccurred {
+		message := fmt.Sprintf("Pods entered %s; instrumentation disabled", existingBackoffReason)
 		return odigosv1.ContainerAgentConfig{
 			ContainerName:       containerName,
 			AgentEnabled:        false,
-			AgentEnabledReason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
-			AgentEnabledMessage: "Pods entered CrashLoopBackOff; instrumentation disabled",
+			AgentEnabledReason:  existingBackoffReason,
+			AgentEnabledMessage: message,
 			OtelDistroName:      distroName,
 			DistroParams:        distroParameters,
 		}
