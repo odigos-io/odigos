@@ -262,6 +262,18 @@ rules:
   - patch
   - update
 - apiGroups:
+  - odigos.io
+  resources:
+  - nodedetails
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - operator.odigos.io
   resources:
   - odigos
