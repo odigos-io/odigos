@@ -30,6 +30,8 @@ import (
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/service"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -136,14 +138,19 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		return ErrInjectionDisabled
 	}
 
-	if CommonOdigosConfiguration.MountMethod == nil {
+	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, p.Client)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrMissingOdigosConfiguration, err)
+	}
+
+	if odigosConfiguration.MountMethod == nil {
 		// we are reading the effective config which should already have the mount method resolved or defaulted
 		return ErrMountMethodNotSet
 	}
-	mountMethod := *CommonOdigosConfiguration.MountMethod
+	mountMethod := *odigosConfiguration.MountMethod
 
 	mountIsVirtualDevice := (mountMethod == common.K8sVirtualDeviceMountMethod)
-	if mountIsVirtualDevice && CommonOdigosConfiguration.CheckDeviceHealthBeforeInjection != nil && *CommonOdigosConfiguration.CheckDeviceHealthBeforeInjection {
+	if mountIsVirtualDevice && odigosConfiguration.CheckDeviceHealthBeforeInjection != nil && *odigosConfiguration.CheckDeviceHealthBeforeInjection {
 		err := podswebhook.CheckDevicePluginContainersHealth(ctx, p.Client, odigosNamespace)
 		if err != nil {
 			return fmt.Errorf("%w: %v", ErrOdigletDeviceNotHealthy, err)
@@ -156,8 +163,8 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		return ErrMissingServiceName
 	}
 
-	karpenterDisabled := CommonOdigosConfiguration.KarpenterEnabled == nil || !*CommonOdigosConfiguration.KarpenterEnabled
-	mountIsHostPath := CommonOdigosConfiguration.MountMethod != nil && *CommonOdigosConfiguration.MountMethod == common.K8sHostPathMountMethod
+	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
+	mountIsHostPath := odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod
 
 	// Add odiglet-installed node affinity to the pod for non-Karpenter installations,
 	// but only when the mount method is hostPath. This ensures that the pod is scheduled
@@ -190,7 +197,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			return ErrUnknownDistroName
 		}
 
-		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, distroMetadata, pod.OwnerReferences)
+		containerVolumeMounted, containerDirsToCopy, err := p.injectOdigosToContainer(containerConfig, podContainerSpec, *pw, serviceName, odigosConfiguration, distroMetadata, pod.OwnerReferences)
 		if err != nil {
 			return err
 		}
@@ -208,30 +215,30 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		podswebhook.MountPodVolumeToHostPath(pod)
 	}
 
-	if CommonOdigosConfiguration.MountMethod != nil && *CommonOdigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
+	if odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sInitContainerMountMethod && volumeMounted {
 		// only mount the volume if at least one container has a volume to mount
 		podswebhook.MountPodVolumeToEmptyDir(pod)
 		if len(dirsToCopy) > 0 {
 			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
-			createInitContainer(pod, dirsToCopy)
+			createInitContainer(pod, dirsToCopy, odigosConfiguration)
 		}
 	}
 
-	if CommonOdigosConfiguration.WaspEnabled != nil && *CommonOdigosConfiguration.WaspEnabled && waspSupported && p.WaspMutator != nil {
-		err = p.WaspMutator(pod, *CommonOdigosConfiguration)
+	if odigosConfiguration.WaspEnabled != nil && *odigosConfiguration.WaspEnabled && waspSupported && p.WaspMutator != nil {
+		err = p.WaspMutator(pod, odigosConfiguration)
 		if err != nil {
 			return fmt.Errorf("failed to do wasp mutation: %w", err)
 		}
 	}
 
 	// Inject ODIGOS environment variables and instrumentation device into all containers
-	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw)
+	injectErr := p.injectOdigosInstrumentation(ctx, pod, &ic, pw, &odigosConfiguration)
 	if injectErr != nil {
 		return fmt.Errorf("%w: %v", ErrEnvVarInjection, injectErr)
 	}
 
-	if CommonOdigosConfiguration.UserInstrumentationEnvs != nil {
-		podswebhook.InjectUserEnvForLang(CommonOdigosConfiguration, pod, &ic)
+	if odigosConfiguration.UserInstrumentationEnvs != nil {
+		podswebhook.InjectUserEnvForLang(&odigosConfiguration, pod, &ic)
 	}
 
 	// store the agents deployment value so we can later associate each pod with the instrumentation version.
@@ -271,7 +278,7 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod, req admi
 	return pw, nil
 }
 
-func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload) error {
+func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
 	logger := log.FromContext(ctx)
 
 	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
@@ -295,7 +302,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, CommonOdigosConfiguration)
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, config)
 		if err != nil {
 			return err
 		}
@@ -304,7 +311,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 }
 
 func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.ContainerAgentConfig, podContainerSpec *corev1.Container,
-	pw k8sconsts.PodWorkload, serviceName string, distroMetadata *distro.OtelDistro, ownerReferences []metav1.OwnerReference) (bool, map[string]struct{}, error) {
+	pw k8sconsts.PodWorkload, serviceName string, config common.OdigosConfiguration, distroMetadata *distro.OtelDistro, ownerReferences []metav1.OwnerReference) (bool, map[string]struct{}, error) {
 	var err error
 
 	// check for existing env vars so we don't introduce them again
@@ -347,7 +354,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	volumeMounted := false
 	containerDirsToCopy := make(map[string]struct{})
 	if distroMetadata.RuntimeAgent != nil {
-		if *CommonOdigosConfiguration.MountMethod == common.K8sHostPathMountMethod || *CommonOdigosConfiguration.MountMethod == common.K8sInitContainerMountMethod {
+		if *config.MountMethod == common.K8sHostPathMountMethod || *config.MountMethod == common.K8sInitContainerMountMethod {
 			// mount directory only if the mount type is host-path or init container
 			for _, agentDirectoryName := range distroMetadata.RuntimeAgent.DirectoryNames {
 				containerDirsToCopy[agentDirectoryName] = struct{}{}
@@ -356,9 +363,9 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			}
 
 			// if loader is enabled, mount the loader directory
-			if CommonOdigosConfiguration.AgentEnvVarsInjectionMethod != nil && distroMetadata.RuntimeAgent.LdPreloadInjectionSupported &&
-				(*CommonOdigosConfiguration.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod ||
-					*CommonOdigosConfiguration.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
+			if config.AgentEnvVarsInjectionMethod != nil && distroMetadata.RuntimeAgent.LdPreloadInjectionSupported &&
+				(*config.AgentEnvVarsInjectionMethod == common.LoaderFallbackToPodManifestInjectionMethod ||
+					*config.AgentEnvVarsInjectionMethod == common.LoaderEnvInjectionMethod) {
 				containerDirsToCopy[filepath.Join(distro.AgentPlaceholderDirectory, consts.OdigosLoaderDirName)] = struct{}{}
 				podswebhook.MountDirectory(podContainerSpec, filepath.Join(k8sconsts.OdigosAgentsDirectory, consts.OdigosLoaderDirName))
 				volumeMounted = true
@@ -375,7 +382,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			// even if mount method is not device, we still need to inject the deprecated agent specific device
 			// while we remove them one by one
 			isGenericDevice := *distroMetadata.RuntimeAgent.Device == k8sconsts.OdigosGenericDeviceName
-			if *CommonOdigosConfiguration.MountMethod == common.K8sVirtualDeviceMountMethod || !isGenericDevice {
+			if *config.MountMethod == common.K8sVirtualDeviceMountMethod || !isGenericDevice {
 				deviceName := *distroMetadata.RuntimeAgent.Device
 				// TODO: currently devices are composed with glibc as input for dotnet.
 				// as devices will soon converge to a single device, I am hardcoding the logic here,
@@ -452,12 +459,12 @@ func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containe
 	return nil
 }
 
-func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}) {
+func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration) {
 	const (
 		instrumentationsPath = "/instrumentations"
 	)
 
-	imageName := getInitContainerImage()
+	imageName := getInitContainerImage(config)
 
 	var copyCommands []string
 
@@ -498,10 +505,10 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}) {
 
 	// Set resource limits and requests for the instrumentation init container
 	// We can always trust the values from the effective config, because it is validated and defaulted if not ok in the scheduler.
-	cpuRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", CommonOdigosConfiguration.AgentsInitContainerResources.RequestCPUm))
-	memoryRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", CommonOdigosConfiguration.AgentsInitContainerResources.RequestMemoryMiB))
-	cpuLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", CommonOdigosConfiguration.AgentsInitContainerResources.LimitCPUm))
-	memoryLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", CommonOdigosConfiguration.AgentsInitContainerResources.LimitMemoryMiB))
+	cpuRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", config.AgentsInitContainerResources.RequestCPUm))
+	memoryRequestQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", config.AgentsInitContainerResources.RequestMemoryMiB))
+	cpuLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dm", config.AgentsInitContainerResources.LimitCPUm))
+	memoryLimitQuantity, _ := resource.ParseQuantity(fmt.Sprintf("%dMi", config.AgentsInitContainerResources.LimitMemoryMiB))
 	agentInitContainer.Resources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			"cpu":    cpuRequestQuantity,
@@ -521,14 +528,14 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}) {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
 
 	// Add image pull secrets to the pod spec if configured
-	if len(CommonOdigosConfiguration.ImagePullSecrets) > 0 {
-		for _, secret := range CommonOdigosConfiguration.ImagePullSecrets {
+	if len(config.ImagePullSecrets) > 0 {
+		for _, secret := range config.ImagePullSecrets {
 			pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
 		}
 	}
 }
 
-func getInitContainerImage() string {
+func getInitContainerImage(config common.OdigosConfiguration) string {
 	initContainerImage := k8sconsts.OdigosInitContainerImage
 	imageVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 
@@ -538,5 +545,5 @@ func getInitContainerImage() string {
 	}
 
 	// This is a fallback for the case where the init container image is not set as env var for some reason.
-	return CommonOdigosConfiguration.ImagePrefix + "/" + initContainerImage + ":" + imageVersion
+	return config.ImagePrefix + "/" + initContainerImage + ":" + imageVersion
 }

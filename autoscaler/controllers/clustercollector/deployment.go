@@ -263,9 +263,14 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		}
 	}
 
-	if len(CommonOdigosConfiguration.ImagePullSecrets) > 0 {
+	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
+	}
+
+	if len(odigosConfiguration.ImagePullSecrets) > 0 {
 		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
-		for _, secret := range CommonOdigosConfiguration.ImagePullSecrets {
+		for _, secret := range odigosConfiguration.ImagePullSecrets {
 			desiredDeployment.Spec.Template.Spec.ImagePullSecrets = append(desiredDeployment.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
 		}
 	}
@@ -281,10 +286,6 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = adjusted
 	}
 
-	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
-	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
-	}
 	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
 		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
 			desiredDeployment.Spec.Template.Spec.Containers[0].Args,

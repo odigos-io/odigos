@@ -7,13 +7,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
-
-var CommonOdigosConfiguration = &common.OdigosConfiguration{}
 
 func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 	err := builder.
@@ -74,19 +71,6 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		Complete(&EffectiveConfigReconciler{
 			Client:          mgr.GetClient(),
 			DistrosProvider: dp,
-		})
-	if err != nil {
-		return err
-	}
-
-	// Odigos config controller reconciles the common Odigos configuration so we don't need to make an API call every time.
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.ConfigMap{}).
-		Named("agentenabled-odigosconfiguration").
-		WithEventFilter(&odigospredicate.OdigosEffectiveConfigMapPredicate).
-		Complete(&odigosConfigurationController{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
 		return err

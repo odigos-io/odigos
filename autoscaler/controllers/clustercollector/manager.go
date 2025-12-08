@@ -2,7 +2,6 @@ package clustercollector
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -10,10 +9,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
-
-// CommonOdigosConfiguration is a global variable that stores the effective Odigos configuration.
-// It is reconciled on updates to the config so we don't need to make an API call every time.
-var CommonOdigosConfiguration = &common.OdigosConfiguration{}
 
 func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 
@@ -110,20 +105,6 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 		WithEventFilter(&odigospredicate.ClusterCollectorDeploymentPredicate).
 		Complete(&ClusterCollectorDeploymentReconciler{
 			Client: mgr.GetClient(),
-		})
-	if err != nil {
-		return err
-	}
-
-	// Odigos config controller reconciles the common Odigos configuration so we don't need to make an API call every time.
-	// It is stored in a global variable, right now used for image pull secrets.
-	err = ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.ConfigMap{}).
-		Named("clustercollector-odigosconfiguration").
-		WithEventFilter(&odigospredicate.OdigosEffectiveConfigMapPredicate).
-		Complete(&odigosConfigurationController{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
 		})
 	if err != nil {
 		return err
