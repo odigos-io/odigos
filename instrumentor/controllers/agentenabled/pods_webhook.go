@@ -22,6 +22,7 @@ import (
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -332,6 +333,21 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 	if distroMetadata.EnvironmentVariables.OtlpHttpLocalNode {
 		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
+	}
+
+	agentSpanMetricsEnabled := containerConfig.Metrics != nil && containerConfig.Metrics.SpanMetrics != nil
+	if agentSpanMetricsEnabled {
+		setAgentSpanMetricsAsEnvVar := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.InjectAsEnvVar
+		if setAgentSpanMetricsAsEnvVar {
+			// parse span metrics config to json
+			spanMetricsConfigJson, err := json.Marshal(containerConfig.Metrics.SpanMetrics)
+			if err != nil {
+				return false, nil, fmt.Errorf("failed to marshal span metrics config: %w", err)
+			}
+			existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_METRICS_CONFIG", string(spanMetricsConfigJson))
+			otlpHttpMetricsEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)") + "/v1/metrics"
+			podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
+		}
 	}
 
 	volumeMounted := false
