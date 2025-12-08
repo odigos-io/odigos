@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -115,4 +116,18 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		Containers:        containers,
 		Conditions:        services.ConvertConditions(instruConfig.Status.Conditions),
 	}, nil
+}
+
+func RemoteConfigToModel(config *common.OdigosConfiguration) *model.RemoteConfig {
+	if config == nil {
+		return nil
+	}
+
+	result := &model.RemoteConfig{}
+	if config.Rollout != nil {
+		result.Rollout = &model.RemoteConfigRollout{
+			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
+		}
+	}
+	return result
 }

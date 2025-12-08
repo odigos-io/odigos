@@ -856,6 +856,27 @@ type InstrumentationInstanceComponent {
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
+# Remote configuration managed by central-backend
+# These settings take precedence over Helm values and persist through upgrades
+type RemoteConfig {
+  rollout: RemoteConfigRollout
+  # Future fields:
+  # ignoredNamespaces: [String]
+  # ignoredContainers: [String]
+}
+
+type RemoteConfigRollout {
+  automaticRolloutDisabled: Boolean
+}
+
+input RemoteConfigInput {
+  rollout: RemoteConfigRolloutInput
+}
+
+input RemoteConfigRolloutInput {
+  automaticRolloutDisabled: Boolean
+}
+
 type Query {
   computePlatform: ComputePlatform
   config: GetConfigResponse
@@ -892,6 +913,9 @@ type Query {
 
   # get all sources that match the filter
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
+
+  # remote configuration (managed by central-backend and persisted in the odigos-remote-config ConfigMap)
+  remoteConfig: RemoteConfig
 }
 
 type Mutation {
@@ -932,4 +956,7 @@ type Mutation {
 
   # enterprise: remove the central-proxy from this cluster
   deleteCentralProxy: Boolean!
+
+  # remote configuration (managed by central-backend and persisted in the odigos-remote-config ConfigMap)
+  updateRemoteConfig(config: RemoteConfigInput!): RemoteConfig
 }

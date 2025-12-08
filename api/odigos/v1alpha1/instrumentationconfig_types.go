@@ -289,9 +289,9 @@ type AgentSpanMetricsConfig struct {
 	// and different values of `http.method` will be aggregated into different time series.
 	Dimensions []string `json:"dimensions,omitempty"`
 
-	// time interval for flushing the span metrics (format: 15s, 1m etc).
-	// defaults: 60s (one minute).
-	Interval string `json:"interval,omitempty"`
+	// time interval in miliseconds for flushing the span metrics.
+	// defaults: 60000 (60 seconds, 1 minute)
+	IntervalMs int `json:"intervalMs,omitempty"`
 }
 
 // all "traces" related configuration for an agent running on any process in a specific container.
