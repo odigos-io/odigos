@@ -36,7 +36,7 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/odigos-io/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so && \
     mv OpenTelemetry.AutoInstrumentation.Native-${ARCH_SUFFIX}.so linux-glibc/OpenTelemetry.AutoInstrumentation.Native.so
 
-# PHP
+######### PHP agents #########
 FROM --platform=$BUILDPLATFORM maniator/gh AS php-agents
 WORKDIR /php-agents
 ARG TARGETARCH
@@ -53,8 +53,7 @@ RUN for v in ${PHP_VERSIONS}; do \
     rm -rf opentelemetry-php/$v/bin; \
     done
 
-
-# Ruby
+######### Ruby agents #########
 FROM --platform=$BUILDPLATFORM maniator/gh AS ruby-agents
 WORKDIR /ruby-agents
 ARG TARGETARCH
@@ -74,44 +73,9 @@ RUN for v in ${RUBY_VERSIONS}; do \
     rm -rf opentelemetry-ruby/$v/arm64; \
     done
 
-######### ODIGLET #########
-FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
-WORKDIR /go/src/github.com/odigos-io/odigos
-# Copy local modules required by the build
-COPY api/ api/
-COPY common/ common/
-COPY k8sutils/ k8sutils/
-COPY procdiscovery/ procdiscovery/
-COPY opampserver/ opampserver/
-COPY instrumentation/ instrumentation/
-COPY distros/ distros/
-WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
-COPY odiglet/ .
-
-ARG TARGETARCH
-ARG LD_FLAGS
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
-
-
-# Build deviceplugin binary
-WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
-COPY deviceplugin/ .
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
-
-# Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        GRPC_ARCH="arm64"; \
-    else \
-        GRPC_ARCH="amd64"; \
-    fi && \
-    wget -O /tmp/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${GRPC_ARCH} && \
-    chmod +x /tmp/grpc_health_probe
-
+######### agents builder #########
+# combine all agents into a single image
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS agents-builder
 WORKDIR /instrumentations
 
 # Java
@@ -142,12 +106,116 @@ COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.3 /instrumentations/ru
 COPY --from=ruby-agents /ruby-agents/opentelemetry-ruby/3.4 /instrumentations/ruby/3.4
 
 # loader
+ARG TARGETARCH
 ARG ODIGOS_LOADER_VERSION=v0.0.6
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
+
+######### Odiglet builder #########
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
+WORKDIR /go/src/github.com/odigos-io/odigos
+# Copy local modules required by the build
+COPY api/ api/
+COPY common/ common/
+COPY k8sutils/ k8sutils/
+COPY procdiscovery/ procdiscovery/
+COPY opampserver/ opampserver/
+COPY instrumentation/ instrumentation/
+COPY distros/ distros/
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
+COPY odiglet/ .
+
+ARG TARGETARCH
+ARG LD_FLAGS
+ARG RHEL=false
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
+RUN if [ "$RHEL" = "true" ] ; then \
+      make licenses ; \
+    fi
+
+# Build deviceplugin binary
+WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
+COPY deviceplugin/ .
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
+
+# Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        GRPC_ARCH="arm64"; \
+    else \
+        GRPC_ARCH="amd64"; \
+    fi && \
+    wget -O /tmp/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-${GRPC_ARCH} && \
+    chmod +x /tmp/grpc_health_probe
 
 # Note that we do not pass --platform=$BUILDPLATFORM here because we want to have the base image for all target architecture - each contains the corresponding rsync binary for the target arch.
 FROM ${ODIGLET_BASE_IMAGE} AS rsync-base
 
+######### agents final image #########
+# Use BusyBox for the final image instead of distroless.
+# Rationale:
+# - Provides built-in `sh`, `cp`, and other essential Unix tools.
+# - Allows `sh -c` command chaining (`cp dir1 dst1 && cp dir2 dst2`) in init containers.
+# - Very small (~1MB), making it good for init containers.
+FROM busybox:1.36.1 AS agents
+WORKDIR /instrumentations/
+
+# Copy all instrumentation assets from the build stage
+COPY --from=agents-builder /instrumentations/ .
+
+# make sure we run as non root user
+# this is required when this container is added to a pod that has runAsNonRoot: true
+USER 1000:1000
+
+######### RHEL agents final image #########
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS agents-rhel
+ARG VERSION
+ARG RELEASE
+ARG SUMMARY
+ARG DESCRIPTION
+LABEL "name"="Odigos-Init-Container"
+LABEL "vendor"="Odigos"
+LABEL "maintainer"="Odigos"
+LABEL "version"=$VERSION
+LABEL "release"=$RELEASE
+LABEL "summary"=$SUMMARY
+LABEL "description"=$DESCRIPTION
+
+WORKDIR /instrumentations/
+COPY --from=agents-builder /instrumentations/ .
+
+# make sure we run as non root user
+# this is required when this container is added to a pod that has runAsNonRoot: true
+USER 1000:1000
+
+######### RHEL Odiglet #########
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS rhel
+ARG VERSION
+ARG RELEASE
+ARG SUMMARY
+ARG DESCRIPTION
+LABEL "name"="Odiglet"
+LABEL "vendor"="Odigos"
+LABEL "maintainer"="Odigos"
+LABEL "version"=$VERSION
+LABEL "release"=$RELEASE
+LABEL "summary"=$SUMMARY
+LABEL "description"=$DESCRIPTION
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
+COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
+COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+# Copy statically compiled rsync (no shared libraries needed)
+COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
+WORKDIR /instrumentations/
+COPY --from=agents-builder /instrumentations/ .
+CMD ["/root/odiglet"]
+
+######### Default Odiglet #########
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
@@ -155,5 +223,5 @@ COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
-COPY --from=builder /instrumentations/ .
+COPY --from=agents-builder /instrumentations/ .
 CMD ["/root/odiglet"]
