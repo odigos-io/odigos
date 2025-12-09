@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -85,9 +84,6 @@ func init() {
 }
 
 func main() {
-	var imagePullSecretsString string
-	var imagePullSecrets []string
-
 	managerOptions := controllers.KubeManagerOptions{}
 
 	flag.StringVar(&managerOptions.MetricsServerBindAddress, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -95,8 +91,6 @@ func main() {
 	flag.BoolVar(&managerOptions.EnableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&imagePullSecretsString, "image-pull-secrets", "",
-		"The image pull secrets to use for the collectors created by autoscaler")
 
 	odigosVersion := os.Getenv(consts.OdigosVersionEnvVarName)
 	if odigosVersion == "" {
@@ -113,10 +107,6 @@ func main() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	if imagePullSecretsString != "" {
-		imagePullSecrets = strings.Split(imagePullSecretsString, ",")
-	}
-
 	zapLogger := ctrlzap.NewRaw(ctrlzap.UseFlagOptions(&opts))
 	zapLogger = bridge.AttachToZapLogger(zapLogger)
 	logger := zapr.NewLogger(zapLogger)
@@ -128,7 +118,7 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
-	go common.StartPprofServer(ctx, setupLog)
+	go common.StartPprofServer(ctx, setupLog, int(k8sconsts.DefaultPprofEndpointPort))
 
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
 
@@ -209,7 +199,7 @@ func main() {
 	}
 
 	// wire up the controllers
-	err = controllers.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
+	err = controllers.SetupWithManager(mgr, odigosVersion)
 	if err != nil {
 		setupLog.Error(err, "unable to create odigos controllers")
 		os.Exit(1)

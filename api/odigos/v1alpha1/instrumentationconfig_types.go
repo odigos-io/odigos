@@ -87,7 +87,7 @@ const (
 	RuntimeDetectionReasonError RuntimeDetectionReason = "Error"
 )
 
-// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff
+// +kubebuilder:validation:Enum=EnabledSuccessfully;WaitingForRuntimeInspection;WaitingForNodeCollector;IgnoredContainer;NoCollectedSignals;InjectionConflict;UnsupportedProgrammingLanguage;NoAvailableAgent;UnsupportedRuntimeVersion;MissingDistroParameter;OtherAgentDetected;RuntimeDetailsUnavailable;CrashLoopBackOff;ImagePullBackOff
 type AgentEnabledReason string
 
 const (
@@ -108,6 +108,9 @@ const (
 	// used for the rollback feature, when an application was instrumented and it caused a CrashLoopBackOff
 	// We're marking it as that and rolling back the instrumentation
 	AgentEnabledReasonCrashLoopBackOff AgentEnabledReason = "CrashLoopBackOff"
+	// used for the rollback feature, when an application was instrumented and it caused an ImagePullBackOff
+	// We're marking it as that and rolling back the instrumentation
+	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
 )
 
 // +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
@@ -154,7 +157,7 @@ func AgentInjectionReasonPriority(reason AgentEnabledReason) int {
 		return 80
 	case AgentEnabledReasonOtherAgentDetected:
 		return 90
-	case AgentEnabledReasonCrashLoopBackOff:
+	case AgentEnabledReasonCrashLoopBackOff, AgentEnabledReasonImagePullBackOff:
 		return 95
 	default:
 		return 100
@@ -175,6 +178,7 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(AgentEnabledReasonInjectionConflict),
 		string(AgentEnabledReasonOtherAgentDetected),
 		string(AgentEnabledReasonCrashLoopBackOff),
+		string(AgentEnabledReasonImagePullBackOff),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true
@@ -278,6 +282,18 @@ type IdGeneratorConfig struct {
 	TimedWall *IdGeneratorTimedWallConfig `json:"timedWall,omitempty"`
 }
 
+type AgentSpanMetricsConfig struct {
+	// additional dimensions to add for the span metrics.
+	// for example, if you add `http.method` to the dimensions,
+	// then the span metrics data points will include the `http.method` in the attributes,
+	// and different values of `http.method` will be aggregated into different time series.
+	Dimensions []string `json:"dimensions,omitempty"`
+
+	// time interval in miliseconds for flushing the span metrics.
+	// defaults: 60000 (60 seconds, 1 minute)
+	IntervalMs int `json:"intervalMs,omitempty"`
+}
+
 // all "traces" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
 type AgentTracesConfig struct {
@@ -288,7 +304,14 @@ type AgentTracesConfig struct {
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
-type AgentMetricsConfig struct{}
+type AgentMetricsConfig struct {
+
+	// if not nil, it means agent should report span metrics,
+	// calculated directly in the agent.
+	// this is most accurate as it includes any sampled spans,
+	// and is not affected if spans are dropped anywhere in the pipeline.
+	SpanMetrics *AgentSpanMetricsConfig `json:"spanMetrics,omitempty"`
+}
 
 // all "logs" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.

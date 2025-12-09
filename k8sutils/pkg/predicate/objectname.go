@@ -100,3 +100,9 @@ var OdigosProSecretPredicate = ObjectNamePredicate{
 var OdigosDeploymentConfigMapPredicate = ObjectNamePredicate{
 	AllowedObjectName: k8sconsts.OdigosDeploymentConfigMapName,
 }
+
+// OdigosRemoteConfigMapPredicate filters events for the odigos-remote-config ConfigMap
+// which contains configuration managed by the central-backend.
+var OdigosRemoteConfigMapPredicate = ObjectNamePredicate{
+	AllowedObjectName: consts.OdigosRemoteConfigName,
+}

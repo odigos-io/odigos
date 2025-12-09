@@ -66,11 +66,12 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		}
 
 		stripedStatus := corev1.PodStatus{
-			Phase:             pod.Status.Phase,
-			ContainerStatuses: pod.Status.ContainerStatuses, // TODO: we don't need all data here
-			Message:           pod.Status.Message,
-			Reason:            pod.Status.Reason,
-			StartTime:         pod.Status.StartTime,
+			Phase:                 pod.Status.Phase,
+			ContainerStatuses:     pod.Status.ContainerStatuses,     // TODO: we don't need all data here
+			InitContainerStatuses: pod.Status.InitContainerStatuses, // needed for backoff detection
+			Message:               pod.Status.Message,
+			Reason:                pod.Status.Reason,
+			StartTime:             pod.Status.StartTime,
 		}
 		strippedPod := corev1.Pod{
 			ObjectMeta: pod.ObjectMeta,
@@ -184,7 +185,6 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 type WebhookConfig struct {
 	DistrosProvider  *distros.Provider
 	WaspMutator      func(*corev1.Pod, common.OdigosConfiguration) error
-	ImagePullSecrets []string
 }
 
 func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
@@ -209,7 +209,6 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 		DistrosGetter:    config.DistrosProvider.Getter,
 		Decoder:          decoder,
 		WaspMutator:      config.WaspMutator,
-		ImagePullSecrets: config.ImagePullSecrets,
 	}
 
 	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.

@@ -17,12 +17,36 @@ COPY operator/ .
 RUN go mod download
 
 ARG LD_FLAGS
+ARG RHEL=false
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags="${LD_FLAGS}" -tags=embed_manifests -a -o manager cmd/main.go
+RUN if [ "$RHEL" = "true" ] ; then \
+      make licenses ; \
+    fi
+
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS rhel
+ARG VERSION
+ARG RELEASE
+ARG SUMMARY
+ARG DESCRIPTION
+LABEL "name"="operator"
+LABEL "vendor"="Odigos"
+LABEL "maintainer"="Odigos"
+LABEL "version"=$VERSION
+LABEL "release"=$RELEASE
+LABEL "summary"=$SUMMARY
+LABEL "description"=$DESCRIPTION
+WORKDIR /
+COPY --from=builder /go/src/github.com/odigos-io/odigos/operator/manager .
+COPY --from=builder /go/src/github.com/odigos-io/odigos/operator/licenses /licenses
+COPY --from=builder /go/src/github.com/odigos-io/odigos/operator/LICENSE /licenses/.
+USER 65532:65532
+
+ENTRYPOINT ["/manager"]
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

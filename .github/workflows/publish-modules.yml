@@ -117,7 +117,7 @@ jobs:
       packages: 'write'
     strategy:
       matrix:
-        dockerfile: ['Dockerfile', 'Dockerfile.rhel']
+        rhel: ['true', 'false']
         service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
         include:
           - service: autoscaler
@@ -212,9 +212,9 @@ jobs:
           push: true
           provenance: false
           tags: |
-            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
-            keyval/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
-            ghcr.io/odigos-io/odigos-${{ matrix.service }}${{ matrix.dockerfile == 'Dockerfile.rhel' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
+            keyval/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
+            ghcr.io/odigos-io/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
             ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
@@ -223,14 +223,19 @@ jobs:
             SUMMARY=${{ matrix.summary }}
             DESCRIPTION=${{ matrix.description }}
             LD_FLAGS=-s -w
+            RHEL=${{ matrix.rhel }}
           platforms: linux/amd64,linux/arm64
           file: >-
-            ${{ matrix.service == 'odiglet' && format('odiglet/{0}', matrix.dockerfile) ||
-                matrix.service == 'collector' && format('collector/{0}', matrix.dockerfile) ||
-                matrix.service == 'ui' && format('frontend/{0}', matrix.dockerfile) ||
-                matrix.service == 'operator' && format('operator/{0}', matrix.dockerfile) ||
-                matrix.service == 'agents' && format('agents/{0}', matrix.dockerfile) ||
-                matrix.dockerfile }}
+            ${{ matrix.service == 'odiglet' && 'odiglet/Dockerfile' ||
+                matrix.service == 'collector' && 'collector/Dockerfile' ||
+                matrix.service == 'ui' && 'frontend/Dockerfile' ||
+                matrix.service == 'operator' && 'operator/Dockerfile' ||
+                matrix.service == 'agents' && 'odiglet/Dockerfile' ||
+                'Dockerfile' }}
+          target: >-
+            ${{ matrix.service == 'agents' && matrix.rhel == 'true' && 'agents-rhel' ||
+                matrix.rhel == 'true' && 'rhel' ||
+                '' }}
 
       - name: Notify Slack
         if: always()

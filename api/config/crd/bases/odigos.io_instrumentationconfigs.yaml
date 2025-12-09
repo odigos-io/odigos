@@ -99,6 +99,7 @@ spec:
                       - OtherAgentDetected
                       - RuntimeDetailsUnavailable
                       - CrashLoopBackOff
+                      - ImagePullBackOff
                       type: string
                     containerName:
                       description: The name of the container to which this configuration
@@ -130,6 +131,29 @@ spec:
                       description: |-
                         all "metrics" related configuration for an agent running on any process in a specific container.
                         The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
+                      properties:
+                        spanMetrics:
+                          description: |-
+                            if not nil, it means agent should report span metrics,
+                            calculated directly in the agent.
+                            this is most accurate as it includes any sampled spans,
+                            and is not affected if spans are dropped anywhere in the pipeline.
+                          properties:
+                            dimensions:
+                              description: |-
+                                additional dimensions to add for the span metrics.
+                                for example, if you add `http.method` to the dimensions,
+                                then the span metrics data points will include the `http.method` in the attributes,
+                                and different values of `http.method` will be aggregated into different time series.
+                              items:
+                                type: string
+                              type: array
+                            intervalMs:
+                              description: |-
+                                time interval in miliseconds for flushing the span metrics.
+                                defaults: 60000 (60 seconds, 1 minute)
+                              type: integer
+                          type: object
                       type: object
                     otelDistroName:
                       description: |-
