@@ -21,6 +21,7 @@ const (
 // Detector is used to report process events.
 type Detector interface {
 	Run(ctx context.Context) error
+	TrackProcesses(pids []int) error
 }
 
 // NewDetector creates a new Detector.
