@@ -108,6 +108,7 @@ jobs:
                 --base $RELEASE_BRANCH \
                 --head $PR_BRANCH \
                 --title "$PR_TITLE" \
+                --label "prerelease" \
                 --body "This is an automated PR for the patch release ${{ steps.calculate_patch_version.outputs.patch_version }}"
             fi
 
