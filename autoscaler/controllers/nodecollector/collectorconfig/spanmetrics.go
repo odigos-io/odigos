@@ -8,12 +8,18 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
+const (
+	// SpanInstrumentationScopeNameAttributeName is the span attribute name used to store the instrumentation scope name
+	SpanInstrumentationScopeNameAttributeName = "span.instrumentation.scope.name"
+)
+
 var (
 	spanMetricsConnectorName                         = "spanmetrics"
 	spanMetricsTracesInConnectorName                 = "forward/trace/spanmetrics"
 	spanMetricsPipelineName                          = "traces/spanmetrics"
 	spanMetricsExportingPipelineName                 = "metrics/spanmetrics-exporting"
 	spanMetricsResourceRemoveDimensionsProcessorName = "resource/spanmetrics/remove-dimensions"
+	spanMetricsCopyScopeSpanMetricsProcessorName     = "transform/copy-scope-span-metrics"
 )
 
 func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMetricsConfiguration) config.GenericMap {
@@ -35,6 +41,7 @@ func getSpanMetricsConnectorConfig(spanMetricsConfig common.MetricsSourceSpanMet
 		"http.status_code",
 		"http.response.status_code",
 		"http.route",
+		SpanInstrumentationScopeNameAttributeName,
 	}
 	if spanMetricsConfig.AdditionalDimensions != nil {
 		dimensionsAttributeNames = append(dimensionsAttributeNames, spanMetricsConfig.AdditionalDimensions...)
@@ -119,6 +126,18 @@ func getSpanMetricsPipelineProcessors(spanMetricsConfig common.MetricsSourceSpan
 	// but the list is expected to be small anyway.
 	slices.Sort(resourceAttrToExclude)
 	resourceAttrToExclude = slices.Compact(resourceAttrToExclude)
+
+	processors[spanMetricsCopyScopeSpanMetricsProcessorName] = config.GenericMap{
+		"trace_statements": []config.GenericMap{
+			{
+				"context": "span",
+				"statements": []string{
+					"set(span.attributes[\"" + SpanInstrumentationScopeNameAttributeName + "\"], instrumentation_scope.name)",
+				},
+			},
+		},
+	}
+	processorNames = append(processorNames, spanMetricsCopyScopeSpanMetricsProcessorName)
 
 	attributes := []config.GenericMap{}
 	for _, attributeName := range resourceAttrToExclude {
