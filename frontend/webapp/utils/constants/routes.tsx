@@ -22,7 +22,7 @@ const IS_INGRESSED_DOMAIN = !!HOSTNAME && HOSTNAME !== 'localhost' && PORT === '
 const IS_DEV = process.env.NODE_ENV === 'development';
 const DEFAULT_BACKEND_HTTP_ORIGIN = 'http://localhost:8085';
 
-const BACKEND_HTTP_ORIGIN = typeof window !== 'undefined' ? (IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : window.location.origin) : 'http://localhost:3000/';
+const BACKEND_HTTP_ORIGIN = typeof window !== 'undefined' ? (IS_INGRESSED_DOMAIN ? `${PROTOCOL}//${HOSTNAME}` : window.location.origin) : 'http://localhost:3000';
 
 export const API = {
   GRAPHQL: `${BACKEND_HTTP_ORIGIN}/graphql`,
