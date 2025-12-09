@@ -1,6 +1,6 @@
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { type ApolloError, useLazyQuery } from '@apollo/client';
-import { GET_GATEWAY_INFO, GET_GATEWAY_PODS, GET_NODE_COLLECTOR_INFO, GET_NODE_COLLECTOR_PODS, GET_POD_INFO } from '@/graphql';
+import { GET_GATEWAY_INFO, GET_GATEWAY_PODS, GET_NODE_COLLECTOR_INFO, GET_NODE_COLLECTOR_PODS, GET_COLLECTOR_POD_INFO } from '@/graphql';
 import {
   Crud,
   type GatewayInfo,
@@ -31,13 +31,13 @@ export const useCollectors = (): UseCollectorsResult => {
   const [getGatewayPods] = useLazyQuery<{ gatewayPods?: PodInfo[] }, {}>(GET_GATEWAY_PODS, { onError });
   const [getNodeCollectorInfo] = useLazyQuery<{ odigletDaemonSetInfo?: NodeCollectoInfo }, {}>(GET_NODE_COLLECTOR_INFO, { onError });
   const [getNodeCollectorPods] = useLazyQuery<{ odigletPods?: PodInfo[] }, {}>(GET_NODE_COLLECTOR_PODS, { onError });
-  const [getExtendedPodInfo] = useLazyQuery<{ pod?: ExtendedPodInfo }, { namespace: string; name: string }>(GET_POD_INFO, { onError });
+  const [getExtendedPodInfo] = useLazyQuery<{ collectorPod?: ExtendedPodInfo }, { namespace: string; name: string }>(GET_COLLECTOR_POD_INFO, { onError });
 
   return {
     getGatewayInfo: () => getGatewayInfo().then((result) => result.data?.gatewayDeploymentInfo),
     getGatewayPods: () => getGatewayPods().then((result) => result.data?.gatewayPods),
     getNodeCollectorInfo: () => getNodeCollectorInfo().then((result) => result.data?.odigletDaemonSetInfo),
     getNodeCollectorPods: () => getNodeCollectorPods().then((result) => result.data?.odigletPods),
-    getExtendedPodInfo: (namespace: string, name: string) => getExtendedPodInfo({ variables: { namespace, name } }).then((result) => result.data?.pod),
+    getExtendedPodInfo: (namespace: string, name: string) => getExtendedPodInfo({ variables: { namespace, name } }).then((result) => result.data?.collectorPod),
   };
 };

@@ -118,6 +118,9 @@ extend type Query {
   # Gateway Pods list with summary information about all the pods containers and their statuses
   gatewayPods: [PodInfo!]!
 
-  # Odiglet Pods list with summary information about all the pods containers and their statuses
+  # Odiglet Pods list with status information for the data-collection container in each pod
   odigletPods: [PodInfo!]!
+
+  # Collector Pod details with only the collector container (used in pod details drawer)
+  collectorPod(namespace: String!, name: String!): PodDetails!
 }

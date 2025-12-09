@@ -95,9 +95,9 @@ export const GET_NODE_COLLECTOR_PODS = gql`
   }
 `;
 
-export const GET_POD_INFO = gql`
-  query GetPodDetails($namespace: String!, $name: String!) {
-    pod(namespace: $namespace, name: $name) {
+export const GET_COLLECTOR_POD_INFO = gql`
+  query GetCollectorPodDetails($namespace: String!, $name: String!) {
+    collectorPod(namespace: $namespace, name: $name) {
       namespace
       name
       node
