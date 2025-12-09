@@ -226,6 +226,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				m.logger.Info("instrumentation requests channel closed, stopping eBPF instrumentation manager")
 				return
 			}
+			instrumentedPIDs := make([]int, len(req.ProcessDetailsByPid))
 			for pid, details := range req.ProcessDetailsByPid {
 				// handle duplicate requests gracefully, this can happen
 				// in environments where the requests are triggered by external systems such as k8s controllers
@@ -236,9 +237,13 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				err := m.tryInstrument(ctx, details, pid)
 				if err != nil {
 					m.handleInstrumentError(err)
+				} else {
+					instrumentedPIDs = append(instrumentedPIDs, pid)
 				}
 			}
-
+			// let the detector know that we are interested to get events for the instrumented processes
+			// specifically, we want to be notified once these processes exit, so we can clean the instrumentation resources.
+			m.detector.TrackProcesses(instrumentedPIDs)
 		case configUpdate := <-m.configUpdates:
 			for configGroup, config := range configUpdate {
 				err := m.applyInstrumentationConfigurationForSDK(ctx, configGroup, config)
