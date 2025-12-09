@@ -33,3 +33,8 @@ func (r *queryResolver) GatewayPods(ctx context.Context) ([]*model.PodInfo, erro
 func (r *queryResolver) OdigletPods(ctx context.Context) ([]*model.PodInfo, error) {
 	return collectors.GetOdigletPodsWithMetrics(ctx, r.PromAPI)
 }
+
+// CollectorPod is the resolver for the collectorPod field.
+func (r *queryResolver) CollectorPod(ctx context.Context, namespace string, name string) (*model.PodDetails, error) {
+	return collectors.GetCollectorPodDetails(ctx, namespace, name)
+}
