@@ -14,12 +14,9 @@ export default function App() {
   useEffect(() => {
     if (config) {
       const { installationStatus, readonly } = config;
+      const redirectTo = !readonly && installationStatus === InstallationStatus.New ? ROUTES.CHOOSE_SOURCES : ROUTES.OVERVIEW;
 
-      if (installationStatus === InstallationStatus.New && !readonly) {
-        router.push(ROUTES.CHOOSE_SOURCES);
-      } else {
-        router.push(ROUTES.OVERVIEW);
-      }
+      router.push(redirectTo);
     }
   }, [config]);
 
