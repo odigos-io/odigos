@@ -68,6 +68,19 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 	}
 	conditions = append(conditions, aggregateContainerProcessesHealth)
 
+	workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
+		Namespace: obj.ID.Namespace,
+		Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
+		Name:      obj.ID.Name,
+	})
+	var totalDataSent *int
+	if ok {
+		tds := int(workloadMetrics.TotalDataSent())
+		totalDataSent = &tds
+	}
+	telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
+	conditions = append(conditions, telemetryMetrics.TelemetryObservedStatus)
+
 	mostSevereCondition := aggregateConditionsBySeverity(conditions)
 	if mostSevereCondition == nil {
 		mostSevereCondition = &model.DesiredConditionStatus{
@@ -80,35 +93,8 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 
 	// exception, if all is well, we return a special condition to denote it
 	if mostSevereCondition.Status == model.DesiredStateProgressSuccess {
-
-		workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
-			Namespace: obj.ID.Namespace,
-			Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
-			Name:      obj.ID.Name,
-		})
-		var totalDataSent *int
-		if ok {
-			tds := int(workloadMetrics.TotalDataSent())
-			totalDataSent = &tds
-		}
-
-		// consider the telemetry metrics status if relevant.
-		telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
-		expectingTelemetry := telemetryMetrics != nil && telemetryMetrics.IsExpectingTelemetry != nil && *telemetryMetrics.IsExpectingTelemetry
-
-		var reasonStr, message string
-		if expectingTelemetry {
-			if telemetryMetrics.TelemetryObservedStatus.Status == model.DesiredStateProgressSuccess {
-				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
-				message = "source is instrumented, healthy and telemetry has been observed"
-			} else {
-				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
-				message = "source is instrumented and healthy, no telemetry recorded yet"
-			}
-		} else {
-			reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
-			message = "source is healthy, no telemetry is expected"
-		}
+		reasonStr := string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
+		message := "source is instrumented, healthy and telemetry has been observed"
 		return &model.DesiredConditionStatus{
 			Name:       status.WorkloadOdigosHealthStatus,
 			Status:     model.DesiredStateProgressSuccess,
@@ -310,6 +296,40 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 
 	containers := make([]*model.K8sWorkloadContainer, 0, len(containerByName))
 	for _, container := range containerByName {
+		instrumentationInstances, err := l.GetInstrumentationInstancesForWorkloadContainer(ctx, loaders.WorkloadContainerId{
+			Namespace:     obj.ID.Namespace,
+			Kind:          k8sconsts.WorkloadKind(obj.ID.Kind),
+			Name:          obj.ID.Name,
+			ContainerName: container.ContainerName,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		instrumentations := map[string]model.K8sWorkloadPodContainerProcessInstrumentation{}
+		for _, instrumentationInstance := range instrumentationInstances {
+			for _, component := range instrumentationInstance.Status.Components {
+				if component.Type == "instrumentation" {
+					if _, ok := instrumentations[component.Name]; !ok {
+						isStandardLibrary := false
+						for _, attribute := range component.NonIdentifyingAttributes {
+							if attribute.Key == "is_standard_lib" {
+								isStandardLibrary = attribute.Value == "true"
+								break
+							}
+						}
+						instrumentations[component.Name] = model.K8sWorkloadPodContainerProcessInstrumentation{
+							Name:              component.Name,
+							IsStandardLibrary: &isStandardLibrary,
+						}
+					}
+				}
+			}
+		}
+		container.Instrumentations = make([]*model.K8sWorkloadPodContainerProcessInstrumentation, 0, len(instrumentations))
+		for _, instrumentation := range instrumentations {
+			container.Instrumentations = append(container.Instrumentations, &instrumentation)
+		}
 		containers = append(containers, container)
 	}
 
@@ -517,7 +537,7 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 	}
 	workloadId := *(*c).ID
 
-	instrumentationInstances, err := l.GetInstrumentationInstancesForContainer(ctx, loaders.ContainerId{
+	instrumentationInstances, err := l.GetInstrumentationInstancesForContainer(ctx, loaders.PodContainerId{
 		Namespace:     workloadId.Namespace,
 		PodName:       podName,
 		ContainerName: containerName,
@@ -529,6 +549,7 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 	processes := make([]*model.K8sWorkloadPodContainerProcess, 0, len(instrumentationInstances))
 	for _, instrumentationInstance := range instrumentationInstances {
 		processHealthStatus := status.CalculateProcessHealthStatus(instrumentationInstance)
+
 		identifyingAttributes := make([]*model.K8sWorkloadPodContainerProcessAttribute, 0, len(instrumentationInstance.Status.IdentifyingAttributes))
 		for _, attribute := range instrumentationInstance.Status.IdentifyingAttributes {
 			identifyingAttributes = append(identifyingAttributes, &model.K8sWorkloadPodContainerProcessAttribute{
@@ -536,10 +557,30 @@ func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *mo
 				Value: attribute.Value,
 			})
 		}
+
+		instrumentations := make([]*model.K8sWorkloadPodContainerProcessInstrumentation, 0, len(instrumentationInstance.Status.Components))
+		for _, components := range instrumentationInstance.Status.Components {
+			if components.Type == "instrumentation" {
+				var isStandardLibrary *bool
+				for _, attribute := range components.NonIdentifyingAttributes {
+					if attribute.Key == "is_standard_lib" {
+						valBool := attribute.Value == "true"
+						isStandardLibrary = &valBool
+						break
+					}
+				}
+				instrumentations = append(instrumentations, &model.K8sWorkloadPodContainerProcessInstrumentation{
+					Name:              components.Name,
+					IsStandardLibrary: isStandardLibrary,
+				})
+			}
+		}
+
 		processes = append(processes, &model.K8sWorkloadPodContainerProcess{
 			Healthy:               instrumentationInstance.Status.Healthy,
 			HealthStatus:          processHealthStatus,
 			IdentifyingAttributes: identifyingAttributes,
+			Instrumentations:      instrumentations,
 		})
 	}
 	return processes, nil
@@ -590,3 +631,16 @@ func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsReso
 type k8sWorkloadResolver struct{ *Resolver }
 type k8sWorkloadPodContainerResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *Resolver) K8sWorkloadContainer() K8sWorkloadContainerResolver {
+	return &k8sWorkloadContainerResolver{r}
+}
+type k8sWorkloadContainerResolver struct{ *Resolver }
+*/

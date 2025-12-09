@@ -128,7 +128,7 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
-	go common.StartPprofServer(ctx, setupLog)
+	go common.StartPprofServer(ctx, setupLog, int(k8sconsts.DefaultPprofEndpointPort))
 
 	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
 

@@ -13,6 +13,7 @@ type OdigletDaemonSetOptions struct {
 	ImagePrefix    string
 	OdigletImage   string
 	CollectorImage string
+	AgentsImage    string
 
 	// Deployment/runtime
 	Tier                             common.OdigosTier

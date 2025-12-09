@@ -27,9 +27,16 @@ type loadersKeyType string
 
 const loadersKey loadersKeyType = "dataloaders"
 
-type ContainerId struct {
+type PodContainerId struct {
 	Namespace     string
 	PodName       string
+	ContainerName string
+}
+
+type WorkloadContainerId struct {
+	Namespace     string
+	Kind          k8sconsts.WorkloadKind
+	Name          string
 	ContainerName string
 }
 
@@ -63,9 +70,10 @@ type Loaders struct {
 	workloadPodsFetched bool
 	workloadPods        map[model.K8sWorkloadID][]computed.CachedPod
 
-	instrumentationInstancesMutex       sync.Mutex
-	instrumentationInstancesFetched     bool
-	instrumentationInstancesByContainer map[ContainerId][]*v1alpha1.InstrumentationInstance
+	instrumentationInstancesMutex               sync.Mutex
+	instrumentationInstancesFetched             bool
+	instrumentationInstancesByPodContainer      map[PodContainerId][]*v1alpha1.InstrumentationInstance
+	instrumentationInstancesByWorkloadContainer map[WorkloadContainerId][]*v1alpha1.InstrumentationInstance
 }
 
 func WithLoaders(ctx context.Context, loaders *Loaders) context.Context {
@@ -236,11 +244,12 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 	if l.instrumentationInstancesFetched {
 		return nil
 	}
-	byContainer, err := fetchInstrumentationInstances(ctx, l.logger, l.workloadFilter)
+	byPodContainer, byWorkloadContainer, err := fetchInstrumentationInstances(ctx, l.logger, l.workloadFilter)
 	if err != nil {
 		return err
 	}
-	l.instrumentationInstancesByContainer = byContainer
+	l.instrumentationInstancesByPodContainer = byPodContainer
+	l.instrumentationInstancesByWorkloadContainer = byWorkloadContainer
 	l.instrumentationInstancesFetched = true
 	return nil
 }
@@ -330,8 +339,12 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 		// calculate the source ids from the workload sources and manifests.
 		// we can have workloads without sources, and sources without workloads.
 		allWorkloads := make(map[model.K8sWorkloadID]struct{})
-		for workloadId := range l.workloadSources {
-			allWorkloads[workloadId] = struct{}{}
+		for workloadId, source := range l.workloadSources {
+			// only take into account sources that represent a workload,
+			// and not a group of workloads.
+			if source.Spec.MatchWorkloadNameAsRegex {
+				allWorkloads[workloadId] = struct{}{}
+			}
 		}
 		for workloadId := range l.workloadManifests {
 			allWorkloads[workloadId] = struct{}{}
