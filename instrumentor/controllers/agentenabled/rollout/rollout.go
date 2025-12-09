@@ -18,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -296,6 +297,44 @@ func getPodBackOffReason(p *corev1.Pod) (odigosv1alpha1.AgentEnabledReason, stri
 	return "", ""
 }
 
+// instrumentedPodsSelector returns a selector for all the instrumented pods that are associated with the workload object
+func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
+	var selector *metav1.LabelSelector
+
+	switch o := obj.(type) {
+	case *appsv1.Deployment:
+		selector = o.Spec.Selector
+	case *appsv1.StatefulSet:
+		selector = o.Spec.Selector
+	case *appsv1.DaemonSet:
+		selector = o.Spec.Selector
+	case *openshiftappsv1.DeploymentConfig:
+		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
+		selector = &metav1.LabelSelector{
+			MatchLabels: o.Spec.Selector,
+		}
+	default:
+		return nil, fmt.Errorf("crashLoopBackOffDuration: unsupported workload kind %T", obj)
+	}
+
+	if selector == nil {
+		return nil, fmt.Errorf("crashLoopBackOffDuration: workload has nil selector")
+	}
+
+	// Create a deep copy of the selector to avoid mutating the original
+	selectorCopy := selector.DeepCopy()
+	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
+		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
+		Operator: metav1.LabelSelectorOpExists,
+	})
+	sel, err := metav1.LabelSelectorAsSelector(selectorCopy)
+	if err != nil {
+		return nil, fmt.Errorf("crashLoopBackOffDuration: invalid selector: %w", err)
+	}
+
+	return sel, nil
+}
+
 // podBackOffDuration returns how long the supplied workload
 // (Deployment, StatefulSet, or DaemonSet) has been in CrashLoopBackOff or ImagePullBackOff.
 //
@@ -310,39 +349,7 @@ func getPodBackOffReason(p *corev1.Pod) (odigosv1alpha1.AgentEnabledReason, stri
 // A non-nil error is returned only for unexpected situations (e.g. unsupported
 // workload kind, invalid selector, or failed Pod list call).
 func podBackOffDuration(ctx context.Context, c client.Client, obj client.Object) (podBackOffInfo, error) {
-	var (
-		ns       string
-		selector *metav1.LabelSelector
-	)
-
-	switch o := obj.(type) {
-	case *appsv1.Deployment:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *appsv1.StatefulSet:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *appsv1.DaemonSet:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *openshiftappsv1.DeploymentConfig:
-		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
-		ns = o.Namespace
-		selector = &metav1.LabelSelector{
-			MatchLabels: o.Spec.Selector,
-		}
-	default:
-		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: unsupported workload kind %T", obj)
-	}
-
-	if selector == nil {
-		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: workload has nil selector")
-	}
-
-	// Create a deep copy of the selector to avoid mutating the original
-	selectorCopy := selector.DeepCopy()
-	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
-		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
-		Operator: metav1.LabelSelectorOpExists,
-	})
-	sel, err := metav1.LabelSelectorAsSelector(selectorCopy)
+	sel, err := instrumentedPodsSelector(obj)
 	if err != nil {
 		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: invalid selector: %w", err)
 	}
@@ -350,7 +357,7 @@ func podBackOffDuration(ctx context.Context, c client.Client, obj client.Object)
 	// 2. List matching Pods once (single API call for both checks).
 	var podList corev1.PodList
 	if err := c.List(ctx, &podList,
-		client.InNamespace(ns),
+		client.InNamespace(obj.GetNamespace()),
 		client.MatchingLabelsSelector{Selector: sel},
 	); err != nil {
 		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: failed listing pods: %w", err)
@@ -392,47 +399,20 @@ func podBackOffDuration(ctx context.Context, c client.Client, obj client.Object)
 
 // workloadHasOdigosAgents returns true if the workload still has *any* pod present in the instrumented-pod.
 func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
-	var (
-		ns       string
-		selector *metav1.LabelSelector
-	)
-
-	switch o := obj.(type) {
-	case *appsv1.Deployment:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *appsv1.StatefulSet:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *appsv1.DaemonSet:
-		ns, selector = o.Namespace, o.Spec.Selector
-	case *openshiftappsv1.DeploymentConfig:
-		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
-		ns = o.Namespace
-		selector = &metav1.LabelSelector{
-			MatchLabels: o.Spec.Selector,
-		}
-	default:
-		return false, fmt.Errorf("workloadHasOdigosAgents: unsupported workload kind %T", obj)
-	}
-
-	if selector == nil {
-		return false, errors.New("workloadHasOdigosAgents: workload has nil selector")
-	}
-
-	sel, err := metav1.LabelSelectorAsSelector(selector)
+	sel, err := instrumentedPodsSelector(obj)
 	if err != nil {
-		return false, fmt.Errorf("workloadHasOdigosAgents: invalid selector: %w", err)
+		return false, fmt.Errorf("podBackOffDuration: invalid selector: %w", err)
 	}
 
 	var pods corev1.PodList
 	if err := c.List(
 		ctx, &pods,
-		client.InNamespace(ns),
+		client.InNamespace(obj.GetNamespace()),
 		client.MatchingLabelsSelector{Selector: sel},
 	); err != nil {
 		return false, fmt.Errorf("workloadHasOdigosAgents: listing pods failed: %w", err)
 	}
 
-	// Because the cache already filters on k8sconsts.OdigosAgentsMetaHashLabel,
 	// any non-empty list means the workload still runs instrumented pods.
 	return len(pods.Items) > 0, nil
 }
