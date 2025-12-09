@@ -48,6 +48,18 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
 
 	result.LastRolloutAt = services.StringPtr(findLastRolloutTime(ctx, dep))
 
+	manifestYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindDeployment, name)
+	if err != nil {
+		return nil, err
+	}
+	result.ManifestYaml = manifestYAML
+
+	configMapYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindConfigMap, k8sconsts.OdigosClusterCollectorConfigMapName)
+	if err != nil {
+		return nil, err
+	}
+	result.ConfigMapYaml = configMapYAML
+
 	return result, nil
 }
 
