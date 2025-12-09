@@ -47,10 +47,9 @@ spec:
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
-      # if host mounts are not allowed we don't need the init container
-      # also, if mount method is k8s-init-container, we don't need odiglet to copy files to host fs
-      # since each user pod will have its own init container to copy the agent files
-      {{- if or (or (not .Values.odiglet.noHostPathMounts) (not (eq .Values.instrumentor.mountMethod "k8s-init-container"))) (eq .Values.instrumentor.mountMethod "k8s-init-container") }}
+      # we will always have at least one init container
+      # if the mountMethod is k8s-init-container, we will pre-pull the agents image here as an init container
+      # otherwise, we must be using a mountMethod that allows hostPathMounts and we will use the standard odiglet init
       initContainers:
       {{- if or (not .Values.odiglet.noHostPathMounts) (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
         - name: init
@@ -116,7 +115,6 @@ spec:
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
-      {{- end }}
       {{- end }}
       containers:
         - name: odiglet
