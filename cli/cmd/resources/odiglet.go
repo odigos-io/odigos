@@ -789,6 +789,16 @@ func NewOdigletDaemonSet(odigletOptions *OdigletDaemonSetOptions) *appsv1.Daemon
 		},
 	}
 
+	// If mount method is k8s-init-container, add an init container to pre-pull the agents image
+	// so it's available in the node's image cache when user pods need it
+	if odigletOptions.MountMethod != nil && *odigletOptions.MountMethod == common.K8sInitContainerMountMethod {
+		ds.Spec.Template.Spec.InitContainers = append(ds.Spec.Template.Spec.InitContainers, corev1.Container{
+			Name:            "odigos-agents-image-pull",
+			Image:           containers.GetImageName(odigletOptions.ImagePrefix, odigletOptions.AgentsImage, odigletOptions.Version),
+			ImagePullPolicy: "IfNotPresent",
+		})
+	}
+
 	// If mount method is not set (default is k8s-virtual-device), or it is k8s-virtual-device, we need to install the device plugin
 	if odigletOptions.MountMethod == nil || *odigletOptions.MountMethod == common.K8sVirtualDeviceMountMethod {
 		ds.Spec.Template.Spec.Containers = append(ds.Spec.Template.Spec.Containers, corev1.Container{
@@ -1074,6 +1084,7 @@ func (a *odigletResourceManager) InstallFromScratch(ctx context.Context) error {
 		ImagePrefix:      a.config.ImagePrefix,
 		OdigletImage:     a.managerOpts.ImageReferences.OdigletImage,
 		CollectorImage:   a.managerOpts.ImageReferences.CollectorImage,
+		AgentsImage:      a.managerOpts.ImageReferences.InitContainerImage,
 		Tier:             a.odigosTier,
 		OpenShiftEnabled: a.config.OpenshiftEnabled,
 		ClusterDetails: &autodetect.ClusterDetails{

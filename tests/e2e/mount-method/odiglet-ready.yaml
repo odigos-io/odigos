@@ -11,6 +11,11 @@ metadata:
       kind: DaemonSet
       name: odiglet
 spec:
+  initContainers:
+    - name: init
+      image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: odigos-agents-image-pull
+      image: registry.odigos.io/odigos-agents:e2e-test
   containers:
     - name: odiglet
       resources: {}
@@ -80,6 +85,11 @@ metadata:
       kind: DaemonSet
       name: odiglet
 spec:
+  initContainers:
+    - name: init
+      image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: odigos-agents-image-pull
+      image: registry.odigos.io/odigos-agents:e2e-test
   containers:
     - name: odiglet
       resources: {}
