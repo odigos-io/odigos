@@ -4,7 +4,7 @@ import React, { CSSProperties, useCallback, useMemo, type PropsWithChildren } fr
 import { usePathname, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { EntityTypes } from '@odigos/ui-kit/types';
-import { ServiceMapIcon } from '@odigos/ui-kit/icons';
+import { PipelineCollectorIcon, ServiceMapIcon } from '@odigos/ui-kit/icons';
 import { DATA_FLOW_HEIGHT, MENU_BAR_HEIGHT, ROUTES } from '@/utils';
 import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
 import { ErrorBoundary, FlexColumn } from '@odigos/ui-kit/components';
@@ -35,6 +35,9 @@ const ContentUnderActions = styled.div`
 const serviceMapId = 'service-map';
 const serviceMapDisplayName = 'Service Map';
 
+const pipelineCollectorsId = 'pipeline-collectors';
+const pipelineCollectorsDisplayName = 'Pipeline Collectors';
+
 const getEntityType = (pathname: string) => {
   return pathname.includes(ROUTES.SOURCES)
     ? EntityTypes.Source
@@ -60,6 +63,8 @@ const getSelectedId = (pathname: string) => {
     ? NavIconIds.InstrumentationRules
     : pathname.includes(ROUTES.SERVICE_MAP)
     ? serviceMapId
+    : pathname.includes(ROUTES.PIPELINE_COLLECTORS)
+    ? pipelineCollectorsId
     : undefined;
 };
 
@@ -70,6 +75,7 @@ const routesMap = {
   [NavIconIds.Actions]: ROUTES.ACTIONS,
   [NavIconIds.InstrumentationRules]: ROUTES.INSTRUMENTATION_RULES,
   [serviceMapId]: ROUTES.SERVICE_MAP,
+  [pipelineCollectorsId]: ROUTES.PIPELINE_COLLECTORS,
 };
 
 function OverviewLayout({ children }: PropsWithChildren) {
@@ -115,6 +121,13 @@ function OverviewLayout({ children }: PropsWithChildren) {
                   selected: selectedId === serviceMapId,
                   onClick: () => onClickId(serviceMapId),
                   tooltip: serviceMapDisplayName,
+                },
+                {
+                  id: pipelineCollectorsId,
+                  icon: PipelineCollectorIcon,
+                  selected: selectedId === pipelineCollectorsId,
+                  onClick: () => onClickId(pipelineCollectorsId),
+                  tooltip: pipelineCollectorsDisplayName,
                 },
               ]}
             />

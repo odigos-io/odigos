@@ -57,6 +57,8 @@ type GatewayDeploymentInfo {
   imageVersion: String
   lastRolloutAt: String
   rolloutInProgress: Boolean!
+  manifestYAML: String!
+  configMapYAML: String!
 }
 
 type CollectorDaemonSetInfo {
@@ -66,6 +68,8 @@ type CollectorDaemonSetInfo {
   imageVersion: String
   lastRolloutAt: String
   rolloutInProgress: Boolean!
+  manifestYAML: String!
+  configMapYAML: String!
 }
 
 # =====================
@@ -89,12 +93,12 @@ type CollectorPodMetrics {
 }
 
 type PodInfo {
-  name: String!
   namespace: String!
-  # Ready containers in format "X/Y" where X is the number of ready containers and Y is the total number of containers (e.g., "2/2", "1/3")
-  ready: String!
-  # Container status reason when pod is in waiting or terminated state (e.g., "ImagePullBackOff", "CrashLoopBackOff", "Completed"). Null if all containers are running normally.
-  status: String
+  name: String!
+  ready: Boolean!
+  started: Boolean!
+  # Container status reason when pod is in waiting or terminated state (e.g., "ImagePullBackOff", "CrashLoopBackOff", "Completed"). "Running" if all containers are running normally.
+  status: String!
   # Total number of container restarts across all containers in the pod
   restartsCount: Int!
   nodeName: String!
@@ -114,6 +118,9 @@ extend type Query {
   # Gateway Pods list with summary information about all the pods containers and their statuses
   gatewayPods: [PodInfo!]!
 
-  # Odiglet Pods list with summary information about all the pods containers and their statuses
+  # Odiglet Pods list with status information for the data-collection container in each pod
   odigletPods: [PodInfo!]!
+
+  # Collector Pod details with only the collector container (used in pod details drawer)
+  collectorPod(namespace: String!, name: String!): PodDetails!
 }
