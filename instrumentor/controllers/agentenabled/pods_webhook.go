@@ -10,6 +10,14 @@ import (
 	"sort"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -25,22 +33,14 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type PodsWebhook struct {
 	client.Client
 	DistrosGetter *distros.Getter
 	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
-	Decoder          admission.Decoder
-	WaspMutator      func(*corev1.Pod, common.OdigosConfiguration) error
-	ImagePullSecrets []string
+	Decoder     admission.Decoder
+	WaspMutator func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
 var _ admission.Handler = &PodsWebhook{}
@@ -142,6 +142,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrMissingOdigosConfiguration, err)
 	}
+
 	if odigosConfiguration.MountMethod == nil {
 		// we are reading the effective config which should already have the mount method resolved or defaulted
 		return ErrMountMethodNotSet
@@ -219,7 +220,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		podswebhook.MountPodVolumeToEmptyDir(pod)
 		if len(dirsToCopy) > 0 {
 			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
-			createInitContainer(pod, dirsToCopy, odigosConfiguration, p.ImagePullSecrets)
+			createInitContainer(pod, dirsToCopy, odigosConfiguration)
 		}
 	}
 
@@ -458,7 +459,7 @@ func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containe
 	return nil
 }
 
-func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration, imagePullSecrets []string) {
+func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration) {
 	const (
 		instrumentationsPath = "/instrumentations"
 	)
@@ -527,8 +528,8 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
 
 	// Add image pull secrets to the pod spec if configured
-	if len(imagePullSecrets) > 0 {
-		for _, secret := range imagePullSecrets {
+	if len(config.ImagePullSecrets) > 0 {
+		for _, secret := range config.ImagePullSecrets {
 			pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
 		}
 	}

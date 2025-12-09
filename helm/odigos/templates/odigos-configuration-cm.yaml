@@ -219,3 +219,7 @@ data:
       {{- if .Values.ownTelemetry.metricsStore.disabled }}
       metricsStoreDisabled: {{ .Values.ownTelemetry.metricsStore.disabled }}
       {{- end }}
+    {{- if .Values.imagePullSecrets }}
+    imagePullSecrets:
+      {{- toYaml .Values.imagePullSecrets | nindent 6 }}
+    {{- end }}
