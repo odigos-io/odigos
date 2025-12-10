@@ -4,11 +4,6 @@ signals:
   - metrics
   - logs
 
-# Feature flags for advanced capabilities
-features:
-  # Discovery mode collects node characteristics and capabilities
-  discoveryMode:
-    enabled: false
 
 image:
   tag: ''
@@ -353,6 +348,10 @@ instrumentor:
   # podsWebhookTimeoutSeconds: 25
 
 odiglet:
+  # Discovery mode collects node characteristics and capabilities.
+  # This is disabled by default.
+  discoveryMode:
+    enabled: false
   odiglet:
     livenessProbe:
       httpGet:
@@ -653,7 +652,7 @@ metricsSources:
 
     ## uncomment the next section to enable computing and reporting
     ## span metrics directly in agents that support it.
-    ## the configuration for agent span metrics is the same as the 
+    ## the configuration for agent span metrics is the same as the
     ## span metrics collector settings.
     ## agents have different capabilities and support different configuration options.
     # spanMetrics:

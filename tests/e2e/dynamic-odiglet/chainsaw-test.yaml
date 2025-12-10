@@ -28,12 +28,12 @@ spec:
                   --set image.tag="$COMMIT_HASH" \
                   --set imagePrefix=public.ecr.aws/y2v0v6s7 \
                   --set nodeSelector."kubernetes\.io/os"=linux \
-                  --set features.discoveryMode.enabled=true
+                  --set odiglet.discoveryMode.enabled=true
               else
                 helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
                   --set image.tag=e2e-test \
                   --set nodeSelector."kubernetes\.io/os"=linux \
-                  --set features.discoveryMode.enabled=true
+                  --set odiglet.discoveryMode.enabled=true
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
 

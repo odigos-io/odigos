@@ -1,4 +1,4 @@
-{{- if .Values.features.discoveryMode.enabled }}
+{{- if .Values.odiglet.discoveryMode.enabled }}
 {{- $imageTag := .Values.image.tag | default .Chart.AppVersion -}}
 {{- $signals := .Values.signals | default (list "traces") -}}
 {{- $collectLogs := has "logs" $signals -}}
