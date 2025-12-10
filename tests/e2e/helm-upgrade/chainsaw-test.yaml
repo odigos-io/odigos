@@ -84,6 +84,8 @@ spec:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
+    # keeping this for now to not break the test, however once https://github.com/odigos-io/odigos/pull/3926 is merged
+    # we can remove this
     - name: Ruby Detected, Rollout Restart
       try:
         - assert:
