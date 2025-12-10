@@ -13,6 +13,7 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -78,6 +79,7 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 	instrumentedAppName string, pid int, scheme *runtime.Scheme, options ...InstrumentationInstanceOption) error {
 	instrumentationInstanceName := InstrumentationInstanceName(owner.GetName(), pid)
 	instance := odigosv1.InstrumentationInstance{}
+	logger := log.FromContext(ctx)
 
 	err := kubeClient.Get(ctx,
 		client.ObjectKey{Namespace: owner.GetNamespace(), Name: instrumentationInstanceName},
@@ -90,7 +92,8 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 
 		// check if we can create a new instance
 		if instrumentationInstancesCountReachedLimit(ctx, owner, kubeClient) {
-			return fmt.Errorf("instrumentation instances count per pod is over the limit of %d", maxInstrumentationInstancesPerPod)
+			logger.V(0).Info("WARNING: instrumentation instances count per pod is over the limit of %d", maxInstrumentationInstancesPerPod)
+			return nil
 		}
 
 		// create new instance

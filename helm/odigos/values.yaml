@@ -13,6 +13,13 @@ imagePullSecrets: []
 # For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
 imagePrefix:
 
+# Global log level setting
+# This applies to all logger types (controller logs and OTEL logs) across all components
+# unless overridden at the component level
+# Valid values: debug, info, error
+# Default: info (if not set)
+# logLevel: debug
+
 # namespaces list not to show in odigos ui
 # set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
 # you can add additional namespaces to ignore by adding them to the list
@@ -233,6 +240,10 @@ autoscaler:
     limits:
       cpu: 500m
       memory: 512Mi
+  # logLevel controls the verbosity of controller logs. Valid values: debug, info, error
+  # If not set, will use the global logLevel value. If global is also not set, defaults to info
+  # This overrides the global logLevel for this component's controller logs only
+  # logLevel: debug
 
 scheduler:
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -247,6 +258,10 @@ scheduler:
     limits:
       cpu: 500m
       memory: 512Mi
+  # logLevel controls the verbosity of controller logs. Valid values: debug, info, error
+  # If not set, will use the global logLevel value. If global is also not set, defaults to info
+  # This overrides the global logLevel for this component's controller logs only
+  # logLevel: debug
 
 ui:
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -323,6 +338,10 @@ instrumentor:
     limits:
       cpu: 500m
       memory: 512Mi
+  # logLevel controls the verbosity of controller logs. Valid values: debug, info, error
+  # If not set, will use the global logLevel value. If global is also not set, defaults to info
+  # This overrides the global logLevel for this component's controller logs only
+  # logLevel: debug
   # skipWebhookIssuerCreation:
   #   - This flag controls whether the chart should skip creating an Issuer
   #     and associated Certificate for securing the mutating webhook communication.
@@ -463,6 +482,13 @@ odiglet:
   # Collecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.
   # Set this to true to turn off code attribute recording for Go instrumentation.
   disableGoCodeAttributes: false
+
+  # otelLogLevel controls the log level for eBPF instrumentations that Odiglet invokes directly.
+  # Valid values: debug, info, error
+  # If not set, will use the global logLevel value. If global is also not set, defaults to info
+  # This overrides the global logLevel for OTEL logs only
+  # Note: This only controls the log level for eBPF instrumentations, not the Odiglet controller logs.
+  # otelLogLevel: debug
 
 centralProxy:
   # Central backend URL where this proxy will forward data
