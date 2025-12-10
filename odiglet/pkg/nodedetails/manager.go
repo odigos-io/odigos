@@ -14,7 +14,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -79,7 +78,7 @@ func CollectAndPersist(ctx context.Context, odigosClient odigosclientset.Interfa
 // PrepareAndCollect orchestrates the complete node details collection process.
 // It handles reading environment, creating clients, and persisting the NodeDetails.
 // This is the main entry point called during odiglet init phase.
-func PrepareAndCollect(config *rest.Config, clientset *kubernetes.Clientset, node *v1.Node) error {
+func PrepareAndCollect(config *rest.Config, node *v1.Node) error {
 	ctx := context.Background()
 
 	// Read pod information from environment

@@ -262,7 +262,7 @@ func OdigletDiscoveryPhase(config *rest.Config, clientset *kubernetes.Clientset)
 	}
 
 	// Collect and persist node details (OSS + enterprise features)
-	if err := nodedetails.PrepareAndCollect(config, clientset, node); err != nil {
+	if err := nodedetails.PrepareAndCollect(config, node); err != nil {
 		log.Logger.Error(err, "Failed to check and persist node features")
 		os.Exit(-1)
 	}
@@ -280,4 +280,5 @@ func OdigletDiscoveryPhase(config *rest.Config, clientset *kubernetes.Clientset)
 
 	<-ctx.Done()
 	log.Logger.V(0).Info("Received termination signal, exiting discovery phase")
+	os.Exit(0)
 }
