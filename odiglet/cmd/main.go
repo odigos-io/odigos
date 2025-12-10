@@ -48,7 +48,7 @@ func main() {
 		case "init":
 			odiglet.OdigletInitPhase(clientset)
 			return
-		case "discovery":
+		case k8sconsts.OdigletDiscoveryArgument:
 			odiglet.OdigletDiscoveryPhase(cfg, clientset)
 			return
 		}

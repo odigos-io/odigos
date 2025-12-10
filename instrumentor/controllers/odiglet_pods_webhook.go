@@ -115,7 +115,7 @@ func applyOdigletContainerModifications(container *corev1.Container, nodeDetails
 
 	// Modification 1: Remove "discovery" argument
 	// NodeDetails exists, so discovery has already been completed
-	if removeDiscoveryArgument(container, nodeName, logger) {
+	if removeDiscoveryArgument(container) {
 		modified = true
 	}
 
@@ -133,12 +133,12 @@ func applyOdigletContainerModifications(container *corev1.Container, nodeDetails
 // removeDiscoveryArgument removes the "discovery" argument from the container args.
 // This is called only when NodeDetails exists, preventing the pod from re-running discovery.
 // Returns true if the argument was found and removed.
-func removeDiscoveryArgument(container *corev1.Container, nodeName string, logger logr.Logger) bool {
+func removeDiscoveryArgument(container *corev1.Container) bool {
 	newArgs := []string{}
 	found := false
 
 	for _, arg := range container.Args {
-		if arg != "discovery" {
+		if arg != k8sconsts.OdigletDiscoveryArgument {
 			newArgs = append(newArgs, arg)
 		} else {
 			found = true
