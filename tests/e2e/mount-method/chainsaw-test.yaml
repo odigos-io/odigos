@@ -81,17 +81,6 @@ spec:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
-    - name: '[2 - Workload Instrumentation] Ruby Detected, Rollout Restart'
-      try:
-        - assert:
-            timeout: 2m
-            file: ../../common/assert/ruby-partial-runtime-detected.yaml
-        - script:
-            timeout: 1m
-            content: |
-              kubectl rollout restart deployment geolocation
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=60s
-
     - name: '[2 - Workload Instrumentation] Assert Runtime Detected'
       try:
         - assert:

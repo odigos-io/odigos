@@ -1,3 +1,5 @@
+# keeping this for now to not break the test, however once https://github.com/odigos-io/odigos/pull/3926 is merged and a version is released
+# we can remove this
 apiVersion: odigos.io/v1alpha1
 kind: InstrumentationConfig
 metadata:
