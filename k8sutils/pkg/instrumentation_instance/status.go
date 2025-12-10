@@ -93,7 +93,7 @@ func UpdateInstrumentationInstanceStatus(ctx context.Context, owner client.Objec
 		// check if we can create a new instance
 		if instrumentationInstancesCountReachedLimit(ctx, owner, kubeClient) {
 			logger.V(0).Info("WARNING: instrumentation instances count per pod is over the limit of %d", maxInstrumentationInstancesPerPod)
-			//return nil
+			return nil
 		}
 
 		// create new instance
