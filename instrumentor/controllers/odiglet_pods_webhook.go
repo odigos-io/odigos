@@ -55,11 +55,16 @@ func (o *OdigletPodsWebhook) Handle(ctx context.Context, req admission.Request) 
 	err = o.Client.Get(ctx, types.NamespacedName{Name: nodeName, Namespace: req.Namespace}, nodeDetails)
 	nodeDetailsExists := err == nil
 
+	// If NodeDetails doesn't exist, allow pod through unchanged so it can run discovery
+	if !nodeDetailsExists {
+		return admission.Allowed("no NodeDetails found - pod will run discovery")
+	}
+
 	// Apply modifications to the odiglet container
 	modified := false
 	for i := range pod.Spec.Containers {
 		if pod.Spec.Containers[i].Name == k8sconsts.OdigletDaemonSetName {
-			containerModified := applyOdigletContainerModifications(&pod.Spec.Containers[i], nodeDetails, nodeDetailsExists, nodeName, logger)
+			containerModified := applyOdigletContainerModifications(&pod.Spec.Containers[i], nodeDetails, nodeName, logger)
 			modified = modified || containerModified
 			break
 		}
@@ -77,7 +82,7 @@ func (o *OdigletPodsWebhook) Handle(ctx context.Context, req admission.Request) 
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	logger.Info("Odiglet pod modified successfully", "node", nodeName, "nodeDetailsExists", nodeDetailsExists)
+	logger.Info("Odiglet pod modified successfully", "node", nodeName)
 
 	// Return patch response
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
@@ -103,27 +108,24 @@ func extractTargetNodeName(pod *corev1.Pod) string {
 }
 
 // applyOdigletContainerModifications applies all NodeDetails-based modifications to the odiglet container.
+// This function is only called when NodeDetails exists.
 // Returns true if any modifications were made.
-func applyOdigletContainerModifications(container *corev1.Container, nodeDetails *odigosv1.NodeDetails, nodeDetailsExists bool, nodeName string, logger logr.Logger) bool {
+func applyOdigletContainerModifications(container *corev1.Container, nodeDetails *odigosv1.NodeDetails, nodeName string, logger logr.Logger) bool {
 	modified := false
 
-	// Only apply modifications if NodeDetails exists
-	// If NodeDetails doesn't exist, the pod needs to run discovery first
-	if nodeDetailsExists {
-		// Modification 1: Remove "discovery" argument
-		// NodeDetails exists, so discovery has already been completed
-		if removeDiscoveryArgument(container, nodeName, logger) {
-			modified = true
-		}
-
-		// Modification 2: Add "--wasp-enabled" argument if WaspRequired is true
-		if addWaspEnabledArgument(container, nodeDetails, nodeName, logger) {
-			modified = true
-		}
-
-		// Future modifications can be added here as separate functions
-		// Example: if addSomeOtherArgument(container, nodeDetails, nodeName, logger) { modified = true }
+	// Modification 1: Remove "discovery" argument
+	// NodeDetails exists, so discovery has already been completed
+	if removeDiscoveryArgument(container, nodeName, logger) {
+		modified = true
 	}
+
+	// Modification 2: Add "--wasp-enabled" argument if WaspRequired is true
+	if addWaspEnabledArgument(container, nodeDetails, nodeName, logger) {
+		modified = true
+	}
+
+	// Future modifications can be added here as separate functions
+	// Example: if addSomeOtherArgument(container, nodeDetails, nodeName, logger) { modified = true }
 
 	return modified
 }
