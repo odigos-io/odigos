@@ -77,7 +77,7 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 		return nil, err
 	}
 
-	managerOpts := instrumentation.ManagerOptions[K8sProcessDetails, K8sConfigGroup]{
+	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
 		Logger:          logger,
 		Factories:       opts.Factories,
 		Handler:         newHandler(logger, client, opts.DistributionGetter),
@@ -121,25 +121,20 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	return manager, nil
 }
 
-func newHandler(logger logr.Logger, client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessDetails, K8sConfigGroup] {
+func newHandler(logger logr.Logger, client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] {
 	reporter := &k8sReporter{
 		client: client,
 	}
 	processDetailsResolver := &k8sDetailsResolver{
-		client: client,
+		client:             client,
+		distributionGetter: distributionGetter,
 	}
-	configGroupResolver := &k8sConfigGroupResolver{}
 	settingsGetter := &k8sSettingsGetter{
 		client: client,
 	}
-	distributionMatcher := &podDeviceDistributionMatcher{
-		distributionGetter: distributionGetter,
-	}
-	return &instrumentation.Handler[K8sProcessDetails, K8sConfigGroup]{
+	return &instrumentation.Handler[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
 		ProcessDetailsResolver: processDetailsResolver,
-		ConfigGroupResolver:    configGroupResolver,
 		Reporter:               reporter,
-		DistributionMatcher:    distributionMatcher,
 		SettingsGetter:         settingsGetter,
 	}
 }
