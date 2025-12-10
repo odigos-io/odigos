@@ -170,7 +170,7 @@ func addWaspEnabledArgument(container *corev1.Container, nodeDetails *odigosv1.N
 	// Add the argument
 	container.Args = append(container.Args, "--wasp-enabled")
 	logger.Info("Adding '--wasp-enabled' argument to odiglet container",
-		"node", nodeName, "nodeDetails", nodeDetails.Name)
+		"node", nodeName)
 
 	return true
 }
