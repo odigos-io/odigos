@@ -264,7 +264,7 @@ rules:
 - apiGroups:
   - odigos.io
   resources:
-  - nodedetails
+  - nodedetailses
   verbs:
   - create
   - delete
