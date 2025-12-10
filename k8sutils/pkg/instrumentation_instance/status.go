@@ -19,7 +19,7 @@ import (
 const (
 	// maxInstrumentationInstancesPerPod is the maximum number of instrumentation instances that can be created per pod
 	// this is required to bound the number of instrumentation instances that can be created.
-	maxInstrumentationInstancesPerPod = 1
+	maxInstrumentationInstancesPerPod = 16
 )
 
 type InstrumentationInstanceOption interface {
