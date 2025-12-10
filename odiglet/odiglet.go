@@ -215,7 +215,7 @@ func prepareNode(clientset *kubernetes.Clientset) error {
 		return fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar)
 	}
 
-	_, err := k8snode.PrepareNodeForOdigosInstallation(clientset, nodeName)
+	err := k8snode.PrepareNodeForOdigosInstallation(clientset, nodeName)
 	if err != nil {
 		return err
 	}
