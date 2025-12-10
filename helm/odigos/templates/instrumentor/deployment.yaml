@@ -52,6 +52,10 @@ spec:
           - --health-probe-bind-address=:8081
           - --metrics-bind-address=0.0.0.0:8080
           - --leader-elect
+          {{- $logLevel := .Values.instrumentor.logLevel | default .Values.logLevel }}
+          {{- if $logLevel }}
+          - --zap-log-level={{ $logLevel }}
+          {{- end }}
           {{- with .Values.imagePullSecrets }}
           - --image-pull-secrets={{ include "odigos.joinPullSecrets" $ }}
           {{- end }}

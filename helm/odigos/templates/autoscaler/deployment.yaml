@@ -44,6 +44,10 @@ spec:
           - --health-probe-bind-address=:8081
           - --metrics-bind-address=0.0.0.0:8080
           - --leader-elect
+          {{- $logLevel := .Values.autoscaler.logLevel | default .Values.logLevel }}
+          {{- if $logLevel }}
+          - --zap-log-level={{ $logLevel }}
+          {{- end }}
         command:
           - /app
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
