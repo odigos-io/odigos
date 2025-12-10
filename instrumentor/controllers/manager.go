@@ -136,6 +136,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.NodeDetails{}: {
+					Field: nsSelector,
+				},
 				&odigosv1.InstrumentationConfig{}: {
 					// all instrumentation configs are managed by this controller
 					// and should be pulled into the cache
