@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap"
 )
@@ -127,6 +128,147 @@ func (p *conditionalAttributesProcessor) setDefaultValueAttributes(
 	for uniqueAttribute := range p.uniqueNewAttributes {
 		if _, exists := spanAttributes.Get(uniqueAttribute); !exists {
 			spanAttributes.PutStr(uniqueAttribute, p.config.GlobalDefault)
+		}
+	}
+}
+
+// ============================================================================
+// Metrics Processing
+// ============================================================================
+
+func (p *conditionalAttributesProcessor) processMetrics(ctx context.Context, md pmetric.Metrics) (pmetric.Metrics, error) {
+	rms := md.ResourceMetrics()
+	for i := 0; i < rms.Len(); i++ {
+		resourceMetrics := rms.At(i)
+		ilms := resourceMetrics.ScopeMetrics()
+		for j := 0; j < ilms.Len(); j++ {
+			scopeMetrics := ilms.At(j)
+			metrics := scopeMetrics.Metrics()
+			for k := 0; k < metrics.Len(); k++ {
+				metric := metrics.At(k)
+				p.processMetric(metric, resourceMetrics.Resource().Attributes())
+			}
+		}
+	}
+	return md, nil
+}
+
+func (p *conditionalAttributesProcessor) processMetric(metric pmetric.Metric, resourceAttributes pcommon.Map) {
+	switch metric.Type() {
+	case pmetric.MetricTypeGauge:
+		dps := metric.Gauge().DataPoints()
+		for i := 0; i < dps.Len(); i++ {
+			p.processMetricDataPoint(dps.At(i).Attributes(), resourceAttributes)
+		}
+	case pmetric.MetricTypeSum:
+		dps := metric.Sum().DataPoints()
+		for i := 0; i < dps.Len(); i++ {
+			p.processMetricDataPoint(dps.At(i).Attributes(), resourceAttributes)
+		}
+	case pmetric.MetricTypeHistogram:
+		dps := metric.Histogram().DataPoints()
+		for i := 0; i < dps.Len(); i++ {
+			p.processMetricDataPoint(dps.At(i).Attributes(), resourceAttributes)
+		}
+	case pmetric.MetricTypeExponentialHistogram:
+		dps := metric.ExponentialHistogram().DataPoints()
+		for i := 0; i < dps.Len(); i++ {
+			p.processMetricDataPoint(dps.At(i).Attributes(), resourceAttributes)
+		}
+	case pmetric.MetricTypeSummary:
+		dps := metric.Summary().DataPoints()
+		for i := 0; i < dps.Len(); i++ {
+			p.processMetricDataPoint(dps.At(i).Attributes(), resourceAttributes)
+		}
+	}
+}
+
+func (p *conditionalAttributesProcessor) processMetricDataPoint(dataPointAttributes pcommon.Map, resourceAttributes pcommon.Map) {
+	// Iterate over each rule in the configuration.
+	for _, rule := range p.config.Rules {
+		// Skip rules that don't have field_to_check_metrics defined
+		if rule.FieldToCheckMetrics == "" {
+			continue
+		}
+		// Add attributes based on the rule
+		p.addAttributesForMetrics(dataPointAttributes, rule, resourceAttributes)
+	}
+	p.setDefaultValueAttributes(dataPointAttributes)
+}
+
+func (p *conditionalAttributesProcessor) addAttributesForMetrics(dataPointAttributes pcommon.Map, rule ConditionalRule,
+	resourceAttributes pcommon.Map) {
+
+	// Handle cases where rule checks for scope_name ['instrumentation_scope.name'].
+	if rule.FieldToCheck == OTTLScopeNameKey {
+		p.handleScopeNameConditionalAttributeForMetrics(dataPointAttributes, rule)
+		return
+	}
+
+	var attrStr string
+
+	attributeSets := []pcommon.Map{dataPointAttributes, resourceAttributes}
+	for _, attrs := range attributeSets {
+		if attrValue, ok := attrs.Get(rule.FieldToCheckMetrics); ok {
+			attrStr = attrValue.AsString()
+			break
+		}
+	}
+
+	// Check if the value matches a configured value in the rule.
+	if valueConfig, exists := rule.NewAttributeValueConfigurations[attrStr]; exists {
+		for _, configAction := range valueConfig {
+
+			// Add a static value as a new attribute if defined.
+			if configAction.Value != "" {
+				if _, exists := dataPointAttributes.Get(configAction.NewAttributeName); !exists {
+					dataPointAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
+				} else if _, exists := resourceAttributes.Get(configAction.NewAttributeName); !exists {
+					dataPointAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
+				}
+			} else if configAction.FromField != "" { // Copy a value from another attribute if specified.
+				if fromAttrValue, ok := dataPointAttributes.Get(configAction.FromField); ok {
+					if _, exists := dataPointAttributes.Get(configAction.NewAttributeName); !exists {
+						dataPointAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
+					} else if _, exists := resourceAttributes.Get(configAction.NewAttributeName); !exists {
+						dataPointAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
+					}
+				}
+			}
+
+		}
+
+	}
+}
+
+func (p *conditionalAttributesProcessor) handleScopeNameConditionalAttributeForMetrics(
+	dataPointAttributes pcommon.Map,
+	rule ConditionalRule,
+) {
+	// For metrics, we look for the field_to_check_metrics attribute value
+	scopeNameAttr, ok := dataPointAttributes.Get(rule.FieldToCheckMetrics)
+	if !ok {
+		// No fallback - if the attribute doesn't exist, skip this rule
+		return
+	}
+
+	scopeName := scopeNameAttr.AsString()
+
+	if valueConfigActions, exists := rule.NewAttributeValueConfigurations[scopeName]; exists {
+		for _, configAction := range valueConfigActions {
+			if configAction.Value != "" {
+				// Add static value if not already present
+				if _, exists := dataPointAttributes.Get(configAction.NewAttributeName); !exists {
+					dataPointAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
+				}
+			} else if configAction.FromField != "" {
+				// Copy value from another attribute if defined
+				if fromAttrValue, ok := dataPointAttributes.Get(configAction.FromField); ok {
+					if _, exists := dataPointAttributes.Get(configAction.NewAttributeName); !exists {
+						dataPointAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
+					}
+				}
+			}
 		}
 	}
 }
