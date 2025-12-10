@@ -167,7 +167,7 @@ func removeAllNodeDetails(ctx context.Context, client *kube.Client, ns string) e
 	l := log.Print("Removing Odigos NodeDetails...")
 	nodeDetails, err := client.OdigosClient.NodeDetailses(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) || (nodeDetails != nil && len(nodeDetails.Items) == 0) {
+		if apierrors.IsNotFound(err) {
 			// no node details found, nothing to do here
 			l.Success()
 			return nil
