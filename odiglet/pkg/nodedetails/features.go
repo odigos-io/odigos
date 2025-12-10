@@ -14,7 +14,7 @@ type Feature interface {
 	// Check examines the node and updates the NodeDetailsSpec with feature information.
 	// It receives the Kubernetes Node object and the current spec, and should modify the spec
 	// with the detected feature state.
-	Check(ctx context.Context, node *v1.Node, spec *v1alpha1.NodeDetailsSpec) error
+	ChekcAndPersist(ctx context.Context, node *v1.Node, spec *v1alpha1.NodeDetailsSpec) error
 
 	// Name returns a human-readable name for this feature, used for logging.
 	Name() string

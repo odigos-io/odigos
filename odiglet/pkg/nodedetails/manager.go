@@ -33,7 +33,7 @@ func CollectAndPersist(ctx context.Context, odigosClient odigosclientset.Interfa
 	// Check all features
 	for _, feature := range features {
 		log.Logger.V(1).Info("Checking feature", "feature", feature.Name())
-		if err := feature.Check(ctx, node, spec); err != nil {
+		if err := feature.ChekcAndPersist(ctx, node, spec); err != nil {
 			log.Logger.Error(err, "Feature check failed", "feature", feature.Name())
 			// Continue with other features even if one fails
 		}
