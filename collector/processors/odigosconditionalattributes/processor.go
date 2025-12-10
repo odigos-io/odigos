@@ -225,14 +225,10 @@ func (p *conditionalAttributesProcessor) addAttributesForMetrics(dataPointAttrib
 			if configAction.Value != "" {
 				if _, exists := dataPointAttributes.Get(configAction.NewAttributeName); !exists {
 					dataPointAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
-				} else if _, exists := resourceAttributes.Get(configAction.NewAttributeName); !exists {
-					dataPointAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
 				}
 			} else if configAction.FromField != "" { // Copy a value from another attribute if specified.
 				if fromAttrValue, ok := dataPointAttributes.Get(configAction.FromField); ok {
 					if _, exists := dataPointAttributes.Get(configAction.NewAttributeName); !exists {
-						dataPointAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
-					} else if _, exists := resourceAttributes.Get(configAction.NewAttributeName); !exists {
 						dataPointAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
 					}
 				}
