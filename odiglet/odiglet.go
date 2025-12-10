@@ -177,11 +177,6 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
 	}()
 
-	// Initialize logging
-	if err := log.Init(); err != nil {
-		panic(err)
-	}
-
 	// Step 1: Copy instrumentation agents to host
 	if err := copyAgentsToHost(); err != nil {
 		log.Logger.Error(err, "Failed to copy agents directory to host")
@@ -238,11 +233,6 @@ func OdigletDiscoveryPhase(config *rest.Config, clientset *kubernetes.Clientset)
 	defer func() {
 		log.Logger.V(0).Info("Odiglet discovery phase finished", "duration", time.Since(discoveryPhaseStart))
 	}()
-
-	// Initialize logging
-	if err := log.Init(); err != nil {
-		panic(err)
-	}
 
 	log.Logger.V(0).Info("Starting odiglet discovery phase")
 

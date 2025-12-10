@@ -41,6 +41,11 @@ func main() {
 		panic(err)
 	}
 
+	// Initialize logging (shared by all execution modes)
+	if err := log.Init(); err != nil {
+		panic(err)
+	}
+
 	// Check if started in a special mode
 	// The mode can be passed as any argument, not necessarily the first one
 	for _, arg := range os.Args {
@@ -50,10 +55,6 @@ func main() {
 		case k8sconsts.OdigletDiscoveryArgument:
 			odiglet.OdigletDiscoveryPhase(cfg, clientset)
 		}
-	}
-
-	if err := log.Init(); err != nil {
-		panic(err)
 	}
 
 	log.Logger.V(0).Info("Starting odiglet")
