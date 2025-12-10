@@ -12,6 +12,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// The NodeDetailsReconciler is responsible for deleting the odiglet pod that discovered the node.
+// This is done by reconcile the NodeDetails object which created by the odiglet in the discovery phase.
+// The odiglet pod is deleted to trigger a restart and then the OdigletPodsWebhook will prevent the new pod from running discovery again.
 type NodeDetailsReconciler struct {
 	Client client.Client
 	Scheme *runtime.Scheme
@@ -37,7 +40,6 @@ func (r *NodeDetailsReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if err != nil {
 			// If pod not found, it's already been deleted or doesn't exist - nothing to do
 			if client.IgnoreNotFound(err) == nil {
-				logger.V(1).Info("Odiglet pod not found, already deleted", "pod", podName)
 				return ctrl.Result{}, nil
 			}
 			return ctrl.Result{}, err
@@ -47,7 +49,6 @@ func (r *NodeDetailsReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		logger.Info("Deleting odiglet pod for node details update", "pod", podName, "namespace", podNamespace)
 		err = r.Client.Delete(ctx, pod)
 		if err != nil {
-			logger.Error(err, "Failed to delete odiglet pod", "pod", podName, "namespace", podNamespace)
 			return ctrl.Result{}, err
 		}
 

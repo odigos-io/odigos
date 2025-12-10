@@ -99,8 +99,7 @@ func extractTargetNodeName(pod *corev1.Pod) string {
 		}
 	}
 
-	// Fallback to NodeName if already scheduled
-	return pod.Spec.NodeName
+	return ""
 }
 
 // applyOdigletContainerModifications applies all NodeDetails-based modifications to the odiglet container.

@@ -2,6 +2,7 @@ package nodedetails
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -84,11 +85,11 @@ func PrepareAndCollect(config *rest.Config, clientset *kubernetes.Clientset, nod
 	// Read pod information from environment
 	podName, ok := os.LookupEnv("POD_NAME")
 	if !ok {
-		return fmt.Errorf("env var POD_NAME is not set")
+		return errors.New("env var POD_NAME is not set")
 	}
 	podUID, ok := os.LookupEnv("POD_UID")
 	if !ok {
-		return fmt.Errorf("env var POD_UID is not set")
+		return errors.New("env var POD_UID is not set")
 	}
 
 	// Create Odigos clientset
