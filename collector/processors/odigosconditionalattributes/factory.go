@@ -15,6 +15,7 @@ func NewFactory() processor.Factory {
 		component.MustNewType("odigosconditionalattributes"),
 		createDefaultConfig,
 		processor.WithTraces(createTracesProcessor, component.StabilityLevelBeta),
+		processor.WithMetrics(createMetricsProcessor, component.StabilityLevelBeta),
 	)
 }
 
@@ -37,6 +38,25 @@ func createTracesProcessor(
 		cfg,
 		nextConsumer,
 		proc.processTraces,
+		processorhelper.WithCapabilities(consumer.Capabilities{MutatesData: true}),
+	)
+}
+
+func createMetricsProcessor(
+	ctx context.Context,
+	set processor.Settings,
+	cfg component.Config,
+	nextConsumer consumer.Metrics) (processor.Metrics, error) {
+
+	uniqueNewAttributes := calculateUniqueNewAttributes(cfg.(*Config))
+	proc := &conditionalAttributesProcessor{logger: set.Logger, config: cfg.(*Config), uniqueNewAttributes: uniqueNewAttributes}
+
+	return processorhelper.NewMetrics(
+		ctx,
+		set,
+		cfg,
+		nextConsumer,
+		proc.processMetrics,
 		processorhelper.WithCapabilities(consumer.Capabilities{MutatesData: true}),
 	)
 }
