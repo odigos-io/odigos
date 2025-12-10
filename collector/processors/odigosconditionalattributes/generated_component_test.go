@@ -39,6 +39,13 @@ func TestComponentLifecycle(t *testing.T) {
 	}{
 
 		{
+			name: "metrics",
+			createFn: func(ctx context.Context, set processor.Settings, cfg component.Config) (component.Component, error) {
+				return factory.CreateMetrics(ctx, set, cfg, consumertest.NewNop())
+			},
+		},
+
+		{
 			name: "traces",
 			createFn: func(ctx context.Context, set processor.Settings, cfg component.Config) (component.Component, error) {
 				return factory.CreateTraces(ctx, set, cfg, consumertest.NewNop())

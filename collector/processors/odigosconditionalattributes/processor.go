@@ -19,6 +19,10 @@ type conditionalAttributesProcessor struct {
 	uniqueNewAttributes map[string]struct{}
 }
 
+// ============================================================================
+// Traces Processing
+// ============================================================================
+
 func (p *conditionalAttributesProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	rss := td.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
@@ -199,12 +203,6 @@ func (p *conditionalAttributesProcessor) processMetricDataPoint(dataPointAttribu
 func (p *conditionalAttributesProcessor) addAttributesForMetrics(dataPointAttributes pcommon.Map, rule ConditionalRule,
 	resourceAttributes pcommon.Map) {
 
-	// Handle cases where rule checks for scope_name ['instrumentation_scope.name'].
-	if rule.FieldToCheck == OTTLScopeNameKey {
-		p.handleScopeNameConditionalAttributeForMetrics(dataPointAttributes, rule)
-		return
-	}
-
 	var attrStr string
 
 	attributeSets := []pcommon.Map{dataPointAttributes, resourceAttributes}
@@ -213,6 +211,10 @@ func (p *conditionalAttributesProcessor) addAttributesForMetrics(dataPointAttrib
 			attrStr = attrValue.AsString()
 			break
 		}
+	}
+
+	if attrStr == "" {
+		return
 	}
 
 	// Check if the value matches a configured value in the rule.
@@ -238,37 +240,5 @@ func (p *conditionalAttributesProcessor) addAttributesForMetrics(dataPointAttrib
 
 		}
 
-	}
-}
-
-func (p *conditionalAttributesProcessor) handleScopeNameConditionalAttributeForMetrics(
-	dataPointAttributes pcommon.Map,
-	rule ConditionalRule,
-) {
-	// For metrics, we look for the field_to_check_metrics attribute value
-	scopeNameAttr, ok := dataPointAttributes.Get(rule.FieldToCheckMetrics)
-	if !ok {
-		// No fallback - if the attribute doesn't exist, skip this rule
-		return
-	}
-
-	scopeName := scopeNameAttr.AsString()
-
-	if valueConfigActions, exists := rule.NewAttributeValueConfigurations[scopeName]; exists {
-		for _, configAction := range valueConfigActions {
-			if configAction.Value != "" {
-				// Add static value if not already present
-				if _, exists := dataPointAttributes.Get(configAction.NewAttributeName); !exists {
-					dataPointAttributes.PutStr(configAction.NewAttributeName, configAction.Value)
-				}
-			} else if configAction.FromField != "" {
-				// Copy value from another attribute if defined
-				if fromAttrValue, ok := dataPointAttributes.Get(configAction.FromField); ok {
-					if _, exists := dataPointAttributes.Get(configAction.NewAttributeName); !exists {
-						dataPointAttributes.PutStr(configAction.NewAttributeName, fromAttrValue.AsString())
-					}
-				}
-			}
-		}
 	}
 }
