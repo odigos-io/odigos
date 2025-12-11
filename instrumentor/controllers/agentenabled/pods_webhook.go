@@ -487,6 +487,7 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	// Each 'cp -r <src> <dst>' copies agent directories from the image's /instrumentations/
 	// into the shared /var/odigos volume (an EmptyDir). This allows sidecar injection of
 	// required binaries without writing to the host filesystem.
+	falseConst := false
 	agentInitContainer := corev1.Container{
 		Name:            k8sconsts.OdigosInitContainerName,
 		Image:           imageName,
@@ -501,6 +502,12 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 				Name:      k8sconsts.OdigosAgentMountVolumeName,
 				MountPath: k8sconsts.OdigosAgentsDirectory,
 			},
+		},
+		// explicitly set the privileged field and the allowPrivilegedEscalation fields to false
+		// some security policies may require these fields to be explicitly set to false, and we don't need special permission in this container
+		SecurityContext: &corev1.SecurityContext{
+			Privileged:               &falseConst,
+			AllowPrivilegeEscalation: &falseConst,
 		},
 	}
 
