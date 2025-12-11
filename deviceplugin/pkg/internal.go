@@ -3,9 +3,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -20,15 +17,6 @@ func runDeviceManager() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// Set up signal handling for graceful shutdown
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
-	go func() {
-		sig := <-sigChan
-		log.Logger.V(0).Info("Received signal, initiating graceful shutdown", "signal", sig)
-		cancel()
-	}()
 
 	// Start pprof server
 	pprofDone := make(chan struct{})
