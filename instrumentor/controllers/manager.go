@@ -236,7 +236,7 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 		Decoder: decoder,
 	}
 	mgr.GetWebhookServer().Register(
-		"/mutate-odiglet-pod",
+		"/mutate-odigos-pod",
 		&admission.Webhook{Handler: odigletWebhook},
 	)
 
