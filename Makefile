@@ -477,6 +477,7 @@ build-cli-image:
 # 1. privileged containers
 # 2. hostPath volumes (except for some specific paths which are allowed on most clusters)
 # 3. hostNamespace (hostNetwork, hostPID, hostIPC)
+# 4. allowPrivilegeEscalation is enforced to explicitly set to false
 install-gatekeeper:
 	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	helm repo update
