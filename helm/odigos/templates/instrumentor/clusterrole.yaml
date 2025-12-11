@@ -69,6 +69,12 @@ rules:
       - patch
 {{- if .Values.openshift.enabled }}
   - apiGroups:
+      - ''
+    resources:
+      - nodes/finalizers
+    verbs:
+      - update
+  - apiGroups:
       - apps
     resources:
       - statefulsets/finalizers
