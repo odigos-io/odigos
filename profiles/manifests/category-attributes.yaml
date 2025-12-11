@@ -1282,7 +1282,7 @@ spec:
             - new_attribute: "odigos.sub_category"
               from_field: "http.request.method"
             - new_attribute: "odigos.transaction.type"
-              value: "web"              
+              value: "web"
           "io.opentelemetry.jetty-8.0":
             - new_attribute: "odigos.category"
               value: "HTTP"

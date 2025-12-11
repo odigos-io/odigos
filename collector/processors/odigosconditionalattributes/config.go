@@ -13,6 +13,7 @@ var _ component.Config = (*Config)(nil)
 
 type ConditionalRule struct {
 	FieldToCheck                    string                                      `mapstructure:"field_to_check"`
+	FieldToCheckMetrics             string                                      `mapstructure:"field_to_check_metrics,omitempty"`
 	NewAttributeValueConfigurations map[string][]NewAttributeValueConfiguration `mapstructure:"new_attribute_value_configurations"`
 }
 

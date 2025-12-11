@@ -488,8 +488,9 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	// into the shared /var/odigos volume (an EmptyDir). This allows sidecar injection of
 	// required binaries without writing to the host filesystem.
 	agentInitContainer := corev1.Container{
-		Name:  k8sconsts.OdigosInitContainerName,
-		Image: imageName,
+		Name:            k8sconsts.OdigosInitContainerName,
+		Image:           imageName,
+		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command: []string{
 			"sh",
 			"-c",
@@ -526,13 +527,6 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 		}
 	}
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, agentInitContainer)
-
-	// Add image pull secrets to the pod spec if configured
-	if len(config.ImagePullSecrets) > 0 {
-		for _, secret := range config.ImagePullSecrets {
-			pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
-		}
-	}
 }
 
 func getInitContainerImage(config common.OdigosConfiguration) string {
