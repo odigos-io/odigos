@@ -103,3 +103,8 @@ rules:
       - pods
     verbs: ["list", "delete"]
   {{- end }}
+  - apiGroups:
+      - ''
+    resources:
+      - pods/log
+    verbs: ["get"]

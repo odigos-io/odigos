@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.8.7
-    createdAt: "2025-11-10T13:38:22Z"
+    createdAt: "2025-12-12T21:27:41Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -32,7 +32,7 @@ metadata:
     features.operators.openshift.io/token-auth-gcp: "false"
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for
       enterprise features)
-    operators.operatorframework.io/builder: operator-sdk-v1.39.1
+    operators.operatorframework.io/builder: operator-sdk-v1.41.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
   name: odigos-operator.v1.8.7
@@ -204,6 +204,7 @@ spec:
         - apiGroups:
           - ""
           resources:
+          - pods/log
           - pods/status
           verbs:
           - get

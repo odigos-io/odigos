@@ -213,6 +213,11 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get"},
 			},
+			{ // Needed for reading Pods logs
+				APIGroups: []string{""},
+				Resources: []string{"pods/log"},
+				Verbs:     []string{"get"},
+			},
 		}
 	} else {
 		rules = []rbacv1.PolicyRule{
@@ -254,6 +259,11 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 			{ // Needed for reading HPA status in the namespace
 				APIGroups: []string{"autoscaling"},
 				Resources: []string{"horizontalpodautoscalers"},
+				Verbs:     []string{"get"},
+			},
+			{ // Needed for reading Pods logs
+				APIGroups: []string{""},
+				Resources: []string{"pods/log"},
 				Verbs:     []string{"get"},
 			},
 		}
