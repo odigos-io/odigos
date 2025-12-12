@@ -1,0 +1,112 @@
+---
+title: "Attribute Based Filter"
+description: "This action is a [Service Action](/pipeline/actions/introduction#scope-categories) that filters traces, metrics, and logs based on the presence of the configured attributes."
+sidebarTitle: "Attribute Based Filter"
+icon: "tag"
+---
+
+import BetaWarning from "/snippets/beta-warning.mdx";
+import AssumeNoMeaning from "/snippets/assume-no-meaning.mdx";
+
+<BetaWarning />
+
+<Warning>
+  Before enabling the **Attribute Based Filter**, please consider the following:
+
+  - All spans, data points, metrics, and log records that match the configured attributes will be dropped.
+  - For traces, this can create an apparent "gap" as spans within a trace that match the given attributes will be filtered.
+  - This applies to both resource attributes and telemetry attributes.
+  - Filtered attributes are ORed, meaning any matched condition will drop the matching signal.
+  - Attribute values support regex, which will add resource consumption if used instead of string literals.
+</Warning>
+
+## Overview
+
+The **Attribute Based Filter** is designed to filter telemetry data based on configured attribute values. It is
+intended to help reduce noise and cost by filtering out spans, metrics, or logs that are irrelevant or sensitive.
+
+## Use Cases
+
+### Health Checks
+
+Kubernetes health checks can produce a lot of telemetry, especially spans, which may not be required for your needs.
+These spans can be filtered based on their path like so:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: healthcheck-filter
+  namespace: odigos-system
+spec:
+  signals:
+    - TRACES
+  attributeBasedFilter:
+    attributes:
+      url.path: "/healthz"
+```
+
+While `/healthz` is a common path for health checks, you may need to configure this value based on your specific application.
+
+### Sensitive Data
+
+Data from sensitive endpoints, such as user account requests, can be filtered. For example:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: healthcheck-filter
+  namespace: odigos-system
+spec:
+  signals:
+    - TRACES
+  attributeBasedFilter:
+    attributes:
+      url.path: "^/user/(.*)/account$"
+```
+
+In this example, using a regex all spans from the user account section will be filtered such
+as `/user/2784124/account`.
+
+## Configuration Options
+
+The Attribute Based Filter action is configured using the `odigos.io/v1alpha1.Action` CRD with the `attributeBasedFilter` configuration section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the action will operate on.
+    - This field is *required*
+    - Supported values: `TRACES`, `METRICS`, `LOGS`
+  </Accordion>
+  <Accordion title="attributeBasedFilter *">
+    **attributeBasedFilter** `object` : Configuration for the Attribute Based Filter action.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="attributes *">
+        **attributes** `map[string]string` : A map of attribute keys and values to filter on.
+        - This field is *required*
+        - This will drop any spans, metrics, data points, or log records that contain the given attribute key and value, based on what signal the Action is configured for.
+        - This includes both resource attributes and telemetry attributes.
+        - Multiple rules are ORed together (any condition must be met for a record to be dropped).
+        - The value can be a **string literal** (e.g., `"GET"`) or a **regex pattern** (e.g., `"^/api/.*$"`).
+        - String literals use exact equality matching for better performance.
+        - Regex patterns (values containing `^`, `$`, `*`, `+`, `?`, `{`, `[`, `]`, `(`, `)`, `|`, or `\`) use pattern matching.
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>

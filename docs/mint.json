@@ -215,7 +215,8 @@
                 "pipeline/actions/attributes/deleteattribute",
                 "pipeline/actions/attributes/renameattribute",
                 "pipeline/actions/attributes/piimasking",
-                "pipeline/actions/attributes/k8sattributes"
+                "pipeline/actions/attributes/k8sattributes",
+                "pipeline/actions/sampling/attributesfilter"
               ]
             },
             {

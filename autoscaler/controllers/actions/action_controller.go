@@ -163,6 +163,14 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 		}
 	}
 
+	if action.Spec.AttributeBasedFilters != nil {
+		config, err := attributeBasedFiltersConfig(action.Spec.AttributeBasedFilters.Attributes, action.Spec.Signals)
+		if err != nil {
+			return nil, err
+		}
+		return convertToDefaultProcessor(action, action.Spec.AttributeBasedFilters, config)
+	}
+
 	return nil, errors.New("no supported action found in resource")
 }
 

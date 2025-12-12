@@ -75,6 +75,9 @@ type ActionSpec struct {
 
 	// Samplers is the config for the Samplers Action.
 	Samplers *actionsv1.SamplersConfig `json:"samplers,omitempty"`
+
+	// AttributeBasedFilters is the config for the AttributeBasedFilters Action.
+	AttributeBasedFilters *actionsv1.AttributeBasedFiltersConfig `json:"attributeBasedFilters,omitempty"`
 }
 
 type ActionStatus struct {
