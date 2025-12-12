@@ -214,6 +214,9 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// SSE handler
 	r.GET("/api/events", sse.HandleSSEConnections)
 
+	// Pod logs streaming endpoint
+	r.GET("/api/pod/:namespace/:name/logs", services.StreamPodLogs)
+
 	// Remote CLI handlers
 	r.POST("/token/update", services.UpdateToken)
 	r.GET("/describe/odigos", services.DescribeOdigos)

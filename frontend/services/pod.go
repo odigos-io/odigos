@@ -1,9 +1,13 @@
 package services
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"io"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	corev1 "k8s.io/api/core/v1"
@@ -184,4 +188,92 @@ func RestartPod(ctx context.Context, namespace, name string) error {
 	}
 
 	return err
+}
+
+// StreamPodLogs streams pod logs via SSE (Server-Sent Events).
+// It supports optional query parameters:
+//   - container: specific container name (defaults to first container)
+//   - follow: "true" to stream logs in real-time (defaults to "true")
+//   - tailLines: number of lines to show from the end (defaults to 100)
+//   - previous: "true" to get logs from previous terminated container
+func StreamPodLogs(c *gin.Context) {
+	namespace := c.Param("namespace")
+	podName := c.Param("name")
+	containerName := c.Query("container")
+	follow := c.DefaultQuery("follow", "true") == "true"
+	previous := c.Query("previous") == "true"
+
+	// Parse tailLines, default to 100
+	var tailLines int64 = 100
+	if tl := c.Query("tailLines"); tl != "" {
+		fmt.Sscanf(tl, "%d", &tailLines)
+	}
+
+	// If no container specified, get the first container from the pod
+	if containerName == "" {
+		pod, err := kube.DefaultClient.CoreV1().Pods(namespace).Get(c.Request.Context(), podName, metav1.GetOptions{})
+		if err != nil {
+			c.JSON(500, gin.H{"error": fmt.Sprintf("failed to get pod: %v", err)})
+			return
+		}
+		if len(pod.Spec.Containers) == 0 {
+			c.JSON(400, gin.H{"error": "pod has no containers"})
+			return
+		}
+		containerName = pod.Spec.Containers[0].Name
+	}
+
+	// Build log options
+	logOptions := &corev1.PodLogOptions{
+		Container: containerName,
+		Follow:    follow,
+		TailLines: &tailLines,
+		Previous:  previous,
+	}
+
+	// Get the log stream
+	req := kube.DefaultClient.CoreV1().Pods(namespace).GetLogs(podName, logOptions)
+	stream, err := req.Stream(c.Request.Context())
+	if err != nil {
+		c.JSON(500, gin.H{"error": fmt.Sprintf("failed to stream logs: %v", err)})
+		return
+	}
+	defer stream.Close()
+
+	// Set SSE headers
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no")
+
+	// Stream logs line by line
+	reader := bufio.NewReader(stream)
+	for {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		default:
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					if !follow {
+						// For non-follow mode, we're done when we reach EOF
+						return
+					}
+					// For follow mode, EOF means the container stopped
+					fmt.Fprintf(c.Writer, "data: [stream ended]\n\n")
+					c.Writer.Flush()
+					return
+				}
+				// Other error
+				fmt.Fprintf(c.Writer, "data: [error: %v]\n\n", err)
+				c.Writer.Flush()
+				return
+			}
+
+			// Send the log line as an SSE event
+			fmt.Fprintf(c.Writer, "data: %s\n", line)
+			c.Writer.Flush()
+		}
+	}
 }
