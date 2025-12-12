@@ -187,10 +187,12 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 	return strings.Join(result, "/"), true
 }
 
-// return the name to use for templatization "id" / "date" etc which will be embedded in the template
-// as {id} / {date} etc
-// empty string as return value means that the segment is not a templated id
-func getSegmentTemplatizationString(segment string, customIds []internalCustomIdConfig) string {
+// givin a path segment, (e.g. for "/users/12345678" this will be called twice for "users" and "12345678")
+// this function will calculate the templatization string for the segment.
+// the templatization is non contextual, meaning it is calculated regardles of
+// any other url segments or it's position.
+// the return value is the templatization name "id" / "date" / "email" etc, or empty string if no templatization is needed.
+func calculateNonContextualTemplatization(segment string, customIds []internalCustomIdConfig) string {
 
 	// check if the segment matches any of the custom ids regexp
 	for _, customRegexp := range customIds {
@@ -221,11 +223,19 @@ func getSegmentTemplatizationString(segment string, customIds []internalCustomId
 
 // This function will replace all segments that matches a number or uuid with "{id}"
 func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []internalCustomIdConfig) (string, bool) {
+
+	k8sApiTemplatedUrlPath, isK8sApiEndpoint := TemplatizeK8sApiEndpoint(pathSegments)
+	if isK8sApiEndpoint {
+		return k8sApiTemplatedUrlPath, true
+	}
+
 	templated := false
 	// avoid modifying the original segments slice
 	templatizedSegments := make([]string, len(pathSegments))
+
+	// following rules are non-contextual, they will templatize each rule on it's own.
 	for i, segment := range pathSegments {
-		if templateName := getSegmentTemplatizationString(segment, customIdsRegexp); templateName != "" {
+		if templateName := calculateNonContextualTemplatization(segment, customIdsRegexp); templateName != "" {
 			templatizedSegments[i] = "{" + templateName + "}"
 			templated = true
 		} else {

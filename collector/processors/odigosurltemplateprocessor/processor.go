@@ -229,17 +229,20 @@ func (p *urlTemplateProcessor) enhanceSpan(span ptrace.Span, httpMethod string, 
 
 	attr := span.Attributes()
 
-	// edge case: target attribute (http.route) exists but is empty (e.g. no path)
-	// in this case, we align and normalize the value to "/" to denote that.
+	// avoid templatizing if we already have the templated attribute set on the span.
+	// this attribute can be recorded at instrumentation level, or pre-calculated
+	// upstream in the pipeline.
 	if val, found := attr.Get(targetAttribute); found {
 		if val.Type() != pcommon.ValueTypeStr {
 			// should not happen.
 			return
 		}
+		// edge case: target attribute (http.route) exists but is empty (e.g. no path)
+		// in this case, we align and normalize the span name to "/" to denote that.
 		if val.Str() == "" {
 			updateHttpSpanName(span, httpMethod, "/")
 		}
-		// avoid overriding the attribute if it is already set
+		// return early here and don't templatize the span.
 		return
 	}
 
@@ -258,6 +261,8 @@ func (p *urlTemplateProcessor) processSpan(span ptrace.Span) {
 
 	attr := span.Attributes()
 
+	// we consider a span for url templatization only if it's an http span,
+	// the way we check it at the moment is by checking for the http method to classify as http / non-http.
 	httpMethod, found := getHttpMethod(attr)
 	if !found {
 		// we only enhance http spans, so if there is no http.method attribute, we can skip it

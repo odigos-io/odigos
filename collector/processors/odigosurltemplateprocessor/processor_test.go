@@ -1033,3 +1033,190 @@ func TestProcessor_IncludeExclude(t *testing.T) {
 		})
 	}
 }
+
+func TestProcessor_K8sApiEndpoint(t *testing.T) {
+	tt := []struct {
+		name              string
+		path              string
+		expectedName      string
+		expectedHttpRoute string
+	}{
+		{
+			name:              "core api cluster-scoped resource list",
+			path:              "/api/v1/persistentvolumes",
+			expectedName:      "GET /api/v1/persistentvolumes",
+			expectedHttpRoute: "/api/v1/persistentvolumes",
+		},
+		{
+			name:              "core api cluster-scoped resource by name",
+			path:              "/api/v1/nodes/foo",
+			expectedName:      "GET /api/v1/nodes/{resource-name}",
+			expectedHttpRoute: "/api/v1/nodes/{resource-name}",
+		},
+		{
+			name:              "core api cluster-scoped subresource",
+			path:              "/api/v1/nodes/foo/status",
+			expectedName:      "GET /api/v1/nodes/{resource-name}/status",
+			expectedHttpRoute: "/api/v1/nodes/{resource-name}/status",
+		},
+		{
+			name:              "core api namespaces list endpoint",
+			path:              "/api/v1/namespaces",
+			expectedName:      "GET /api/v1/namespaces",
+			expectedHttpRoute: "/api/v1/namespaces",
+		},
+		{
+			name:              "core api specific namespace endpoint",
+			path:              "/api/v1/namespaces/default",
+			expectedName:      "GET /api/v1/namespaces/{namespace-name}",
+			expectedHttpRoute: "/api/v1/namespaces/{namespace-name}",
+		},
+		{
+			name:              "core api similar endpoint but invalid cluster-scoped resource type",
+			path:              "/api/v1/users/foo",
+			expectedName:      "GET /api/v1/users/foo", // should not be templatized since foo is not a valid cluster-scoped resource type
+			expectedHttpRoute: "/api/v1/users/foo",
+		},
+		{
+			name:              "core api similar endpoint but namespace-scoped resource type",
+			path:              "/api/v1/events/foo",
+			expectedName:      "GET /api/v1/events/foo", // should not be templatized since events is not a valid cluster-scoped resource type (it is namespace-scoped)
+			expectedHttpRoute: "/api/v1/events/foo",
+		},
+		{
+			name:              "core api similar endpoint but too long",
+			path:              "/api/v1/nodes/foo/status/bar/baz",
+			expectedName:      "GET /api/v1/nodes/foo/status/bar/baz", // should not be templatized since it is too long
+			expectedHttpRoute: "/api/v1/nodes/foo/status/bar/baz",
+		},
+		{
+			name:              "core api similar endpoint without resource type",
+			path:              "/api/v1",
+			expectedName:      "GET /api/v1", // should not be templatized since it is too short
+			expectedHttpRoute: "/api/v1",
+		},
+		{
+			name:              "core api namespaced-scoped resource list",
+			path:              "/api/v1/namespaces/default/services",
+			expectedName:      "GET /api/v1/namespaces/{namespace-name}/services",
+			expectedHttpRoute: "/api/v1/namespaces/{namespace-name}/services",
+		},
+		{
+			name:              "core api namespaced-scoped resource by name",
+			path:              "/api/v1/namespaces/default/configmaps/foo",
+			expectedName:      "GET /api/v1/namespaces/{namespace-name}/configmaps/{resource-name}",
+			expectedHttpRoute: "/api/v1/namespaces/{namespace-name}/configmaps/{resource-name}",
+		},
+		{
+			name:              "core api namespaced-scoped subresource",
+			path:              "/api/v1/namespaces/default/pods/bar/status",
+			expectedName:      "GET /api/v1/namespaces/{namespace-name}/pods/{resource-name}/status",
+			expectedHttpRoute: "/api/v1/namespaces/{namespace-name}/pods/{resource-name}/status",
+		},
+		{
+			name:              "core api namespaced-scoped similar endpoint but invalid resource type",
+			path:              "/api/v1/namespaces/default/users/foo",
+			expectedName:      "GET /api/v1/namespaces/default/users/foo", // should not be templatized since users is not a valid namespace-scoped resource type
+			expectedHttpRoute: "/api/v1/namespaces/default/users/foo",
+		},
+		{
+			name:              "core api namespaced-scoped similar endpoint but too long",
+			path:              "/api/v1/namespaces/default/pods/bar/status/baz",
+			expectedName:      "GET /api/v1/namespaces/default/pods/bar/status/baz", // should not be templatized since it is too long
+			expectedHttpRoute: "/api/v1/namespaces/default/pods/bar/status/baz",
+		},
+		{
+			name:              "core api not v1 version",
+			path:              "/api/v2/nodes",
+			expectedName:      "GET /api/v2/nodes", // should not be templatized since v2 is not a valid k8s core api version
+			expectedHttpRoute: "/api/v2/nodes",
+		},
+		{
+			name:              "named api group cluster-scoped resource list",
+			path:              "/apis/rbac.authorization.k8s.io/v1/clusterroles",
+			expectedName:      "GET /apis/rbac.authorization.k8s.io/v1/clusterroles",
+			expectedHttpRoute: "/apis/rbac.authorization.k8s.io/v1/clusterroles",
+		},
+		{
+			name:              "named api group cluster-scoped resource by name",
+			path:              "/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/foo",
+			expectedName:      "GET /apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/{resource-name}",
+			expectedHttpRoute: "/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations/{resource-name}",
+		},
+		{
+			name:              "named api group cluster-scoped resource by name and subresource",
+			path:              "/apis/external-secrets.io/v1/clustersecretstores/foo/status",
+			expectedName:      "GET /apis/external-secrets.io/v1/clustersecretstores/{resource-name}/status",
+			expectedHttpRoute: "/apis/external-secrets.io/v1/clustersecretstores/{resource-name}/status",
+		},
+		{
+			name:              "named api group cluster-scoped too long",
+			path:              "/apis/external-secrets.io/v1/clustersecretstores/foo/status/bar/baz",
+			expectedName:      "GET /apis/external-secrets.io/v1/clustersecretstores/foo/status/bar/baz", // should not be templatized since it is too long
+			expectedHttpRoute: "/apis/external-secrets.io/v1/clustersecretstores/foo/status/bar/baz",
+		},
+		{
+			name:              "named api group namespaced-scoped resource list",
+			path:              "/apis/apps/v1/namespaces/default/deployments",
+			expectedName:      "GET /apis/apps/v1/namespaces/{namespace-name}/deployments",
+			expectedHttpRoute: "/apis/apps/v1/namespaces/{namespace-name}/deployments",
+		},
+		{
+			name:              "named api group namespaced-scoped resource by name",
+			path:              "/apis/core.humio.com/v1alpha1/namespaces/default/humioalerts/alert-name",
+			expectedName:      "GET /apis/core.humio.com/v1alpha1/namespaces/{namespace-name}/humioalerts/{resource-name}",
+			expectedHttpRoute: "/apis/core.humio.com/v1alpha1/namespaces/{namespace-name}/humioalerts/{resource-name}",
+		},
+		{
+			name:              "named api group namespaced-scoped resource by name and subresource",
+			path:              "/apis/batch/v1/namespaces/default/cronjobs/foo/status",
+			expectedName:      "GET /apis/batch/v1/namespaces/{namespace-name}/cronjobs/{resource-name}/status",
+			expectedHttpRoute: "/apis/batch/v1/namespaces/{namespace-name}/cronjobs/{resource-name}/status",
+		},
+		{
+			name:              "named api group namespaced-scoped too long",
+			path:              "/apis/batch/v1/namespaces/default/cronjobs/foo/status/bar/baz",
+			expectedName:      "GET /apis/batch/v1/namespaces/default/cronjobs/foo/status/bar/baz", // should not be templatized since it is too long
+			expectedHttpRoute: "/apis/batch/v1/namespaces/default/cronjobs/foo/status/bar/baz",
+		},
+		{
+			name:              "group name is not k8s api group name",
+			path:              "/apis/Apps/v1/namespaces/default/bazs/foo",
+			expectedName:      "GET /apis/Apps/v1/namespaces/default/bazs/foo", // should not be templatized since Apps.v1 is not a valid k8s api group name (starts with uppercase)
+			expectedHttpRoute: "/apis/Apps/v1/namespaces/default/bazs/foo",
+		},
+		{
+			name:              "group version is not k8s api group version",
+			path:              "/apis/apps/v1.2/namespaces/default/bazs/foo",
+			expectedName:      "GET /apis/apps/v1.2/namespaces/default/bazs/foo", // should not be templatized since v1.2 is not a valid k8s api group version
+			expectedHttpRoute: "/apis/apps/v1.2/namespaces/default/bazs/foo",
+		},
+		{
+			name:              "group version is not a version",
+			path:              "/apis/foo/bar/baz",
+			expectedName:      "GET /apis/foo/bar/baz", // should not be templatized since bar does not start with v
+			expectedHttpRoute: "/apis/foo/bar/baz",
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			spanAttr := map[string]any{
+				"http.request.method": "GET",
+				"url.path":            tc.path,
+			}
+			traces := generateTraceData("test-service-name", "GET", ptrace.SpanKindServer, spanAttr)
+			// Add the templated rule to the processor
+			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{})
+			require.NoError(t, err)
+			// Process the traces
+			ctx := context.Background()
+			processedTraces, err := processor.processTraces(ctx, traces)
+			require.NoError(t, err)
+			// Get the processed span
+			processedSpan := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+			// Assert the span name and http.route attribute
+			assertSpanNameAndAttribute(t, processedSpan, tc.expectedName, "http.route", tc.expectedHttpRoute)
+		})
+	}
+}
