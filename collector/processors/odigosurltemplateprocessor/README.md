@@ -123,7 +123,17 @@ The templatization process should be monitored and adjusted according to the val
 
 ### Default Templatization
 
-By default, the processor will split the path to segment (e.g. "/user/1234" -> ["user", "1234"]) and replace the segments with the following rules:
+The processor applies templatization rules in two stages:
+
+#### Full URL Path Templatization
+
+The processor first checks if the entire URL path matches known patterns:
+
+- Kubernetes API endpoints - `/api/v1/...` and `/apis/{group}/{version}/...` patterns templatize namespace names to `{namespace-name}` and resource names to `{resource-name}` (e.g., `/api/v1/namespaces/default/pods/foo/status` -> `/api/v1/namespaces/{namespace-name}/pods/{resource-name}/status`)
+
+#### Segment-Based Templatization
+
+If the full path doesn't match any pattern above, the processor will split the path to segments (e.g. "/user/1234" -> ["user", "1234"]) and replace the segments with the following rules:
 
 - only digits or special characters - ```^[\d_\-!@#$%^&*()=+{}\[\]:;"'<>,.?/\\|`~]+$``` -> `{id}` (`1234`, `123_456`, `0`)
 - uuids - `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` -> `{id}` (`123e4567-e89b-12d3-a456-426614174000`). They can appear as either prefix or suffix of the segment (for example `/process/PROCESS_123e4567-e89b-12d3-a456-42661bd74000`)
