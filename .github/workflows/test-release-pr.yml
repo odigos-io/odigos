@@ -1,4 +1,4 @@
-name: Test Release Candidate
+name: Test Release PR
 
 on:
   pull_request:
@@ -13,11 +13,10 @@ jobs:
       - name: Check if PR has prerelease label
         id: check
         run: |
-          if [[ "${{ github.event.pull_request.labels.*.name }}" == *"prerelease"* ]]; then
-            echo "skip=false" >> $GITHUB_OUTPUT
+          echo "skip=${{ !contains(github.event.pull_request.labels.*.name, 'prerelease') }}" >> $GITHUB_OUTPUT
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'prerelease') }}" == "true" ]]; then
             echo "✅ PR has prerelease label, running tests"
           else
-            echo "skip=true" >> $GITHUB_OUTPUT
             echo "⏭️ PR does not have prerelease label, skipping tests"
           fi
 
@@ -68,7 +67,7 @@ jobs:
           # Fetch open PRs and filter by "dependencies-syncer-bot" label
           result=$(curl -s -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
-            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100&base=${{ github.base_ref }}")
 
           pr_links=$(echo "$result" \
             | jq -r '[.[] | select(.labels | any(.name == "dependencies-syncer-bot")) | .html_url] | join(" ")')
@@ -101,7 +100,7 @@ jobs:
           # Fetch open PRs and filter by "release-blocker" label
           result=$(curl -s -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
-            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100")
+            "https://api.github.com/repos/odigos-io/${{ matrix.repo }}/pulls?state=open&per_page=100&base=${{ github.base_ref }}")
 
           pr_links=$(echo "$result" \
             | jq -r '[.[] | select(.labels | any(.name == "release-blocker")) | .html_url] | join(" ")')

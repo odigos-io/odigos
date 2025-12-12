@@ -44,7 +44,7 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	if runningOnGKE {
 		detectors = []string{"gcp"}
 	} else {
-		detectors = []string{"ec2", "azure", "aks"}
+		detectors = []string{"ec2", "eks", "azure", "aks"}
 	}
 	allProcessors[resourceDetectionProcessorName] = config.GenericMap{
 		"detectors": detectors,
