@@ -60,13 +60,22 @@ type TemplatizationConfig struct {
 
 	// This option allows fine-tuning for specific paths to customize what to templatize and what not.
 	// The rule looks like this: "/v1/{foo:regex}/bar/{baz}".
+	//
+	// Templated segments:
 	// Each segment part in "{}" denote templatization, and all other segments should match the text exactly.
 	// Inside the "{}" you can optionally set the template name and matching regex.
 	// The template name is the name that will be used in the span name and attributes (e.g. "/users/{userId}").
 	// The regex is optional, and if provided, it will be used to match the segment.
 	// If the regex does not match, the rule will be skipped and other rules and templatization will be evaluated.
 	// Example: "/v1/{foo:\d+}" will match "/v1/123" producing "/v1/{foo}", but not with "/v1/abc".
-	// compatible with golang regexp module https://pkg.go.dev/regexp
+	//
+	// Non templated segments:
+	// You can match using 3 different ways:
+	// 1. Static string: "/v1/users" will match "/v1/users" but not "/v1/admins".
+	// 2. Regex pattern: "/v1/regex:api-v\d+/bar" will match "/v1/api-v1/bar" or "/v1/api-v2/bar" but not "/v1/api/bar".
+	// 3. Wildcard: "/v1/*" will match "/v1/users" or "/v1/admins" but not "/v1/api-v1/bar" since it only captures one segment.
+	//
+	// regex compatible with golang regexp module https://pkg.go.dev/regexp
 	// for performance reasons, avoid using compute-intensive expressions or adding too many values here.
 	TemplatizationRules []string `mapstructure:"templatization_rules"`
 
