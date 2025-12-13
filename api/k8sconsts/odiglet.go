@@ -15,9 +15,10 @@ const (
 	OdigletEnterpriseImageUBI9       = "odigos-enterprise-odiglet-ubi9"
 	OdigletImageUBI9                 = "odigos-odiglet-ubi9"
 
-	GrpcHealthProbePath    = "unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic"
-	GrpcHealthBinaryPath   = "/root/grpc_health_probe"
-	GrpcHealthProbeTimeout = 10
+	OdigletDiscoveryArgument = "discovery"
+	GrpcHealthProbePath      = "unix:///var/lib/kubelet/device-plugins/instrumentation.odigos.io_generic"
+	GrpcHealthBinaryPath     = "/root/grpc_health_probe"
+	GrpcHealthProbeTimeout   = 10
 
 	// Used to indicate that the odiglet is installed on a node.
 	OdigletOSSInstalledLabel          = "odigos.io/odiglet-oss-installed"

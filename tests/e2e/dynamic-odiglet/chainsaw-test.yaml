@@ -1,0 +1,142 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: helm-chart
+spec:
+  description: This e2e test install Odigos via helm chart on custom namespace
+  skipDelete: true
+  steps:
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install - Simple Demo Apps
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
+              P="../../.."
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                  --set image.tag="$COMMIT_HASH" \
+                  --set imagePrefix=public.ecr.aws/y2v0v6s7 \
+                  --set nodeSelector."kubernetes\.io/os"=linux \
+                  --set odiglet.discoveryMode.enabled=true
+              else
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test \
+                  --set image.tag=e2e-test \
+                  --set nodeSelector."kubernetes\.io/os"=linux \
+                  --set odiglet.discoveryMode.enabled=true
+              fi
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+
+
+
+    - name: Wait for NodeDetails to be created
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              ../../common/wait-for-nodedetails.sh odigos-test
+
+    - name: Assert NodeDetails have correct content
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/nodedetails-created.yaml
+
+    - name: Verify odiglet pods are running without discovery
+      try:
+        - assert:
+            timeout: 10m
+            file: ../../common/assert/odiglet-without-discovery.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Assert - Simple Demo Apps Installed
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-installed.yaml
+
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Ruby Detected, Rollout Restart
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/ruby-partial-runtime-detected.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl rollout restart deployment geolocation
+              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=60s
+
+    - name: Assert Runtime Detected
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
+
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Simple-demo instrumented after destination added
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-instrumented-full.yaml
+
+    - name: Uninstall Odigos
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              helm uninstall odigos -n odigos-test
+
+    - name: Verify Odigos Uninstallation
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              for i in $(seq 1 10); do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 5 seconds..."
+                sleep 5
+              done
+
+              echo "Failed to verify Odigos uninstallation after 12 attempts"
+              exit 1
+      catch:
+        - script:
+            content: |
+              echo "🔍 Listing all resources in namespace 'odigos-test'..."
+              kubectl get all -n odigos-test
+
+              echo "📝 Describing all resources in namespace 'odigos-test'..."
+              kubectl describe all -n odigos-test

@@ -136,6 +136,9 @@ func main() {
 				&odigosv1.Destination{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.NodeDetails{}: {
+					Field: nsSelector,
+				},
 			},
 		},
 		HealthProbeBindAddress: probeAddr,

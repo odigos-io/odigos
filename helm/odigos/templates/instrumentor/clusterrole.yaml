@@ -69,6 +69,12 @@ rules:
       - patch
 {{- if .Values.openshift.enabled }}
   - apiGroups:
+      - ''
+    resources:
+      - nodes/finalizers
+    verbs:
+      - update
+  - apiGroups:
       - apps
     resources:
       - statefulsets/finalizers
@@ -147,6 +153,7 @@ rules:
     resourceNames:
       - odigos-source-mutating-webhook-configuration
       - odigos-pod-mutating-webhook-configuration
+      - odigos-self-pod-mutating-webhook-configuration
     verbs:
       - update
   - apiGroups:

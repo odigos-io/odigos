@@ -41,13 +41,20 @@ func main() {
 		panic(err)
 	}
 
-	// If started in init mode
-	if len(os.Args) == 2 && os.Args[1] == "init" {
-		odiglet.OdigletInitPhase(clientset)
-	}
-
+	// Initialize logging (shared by all execution modes)
 	if err := log.Init(); err != nil {
 		panic(err)
+	}
+
+	// Check if started in a special mode
+	// The mode can be passed as any argument, not necessarily the first one
+	for _, arg := range os.Args {
+		switch arg {
+		case "init":
+			odiglet.OdigletInitPhase(clientset)
+		case k8sconsts.OdigletDiscoveryArgument:
+			odiglet.OdigletDiscoveryPhase(cfg, clientset)
+		}
 	}
 
 	log.Logger.V(0).Info("Starting odiglet")

@@ -8,6 +8,20 @@ metadata:
 rules:
   - apiGroups:
       - ''
+    resources:
+      - pods
+    verbs:
+      - delete
+  - apiGroups:
+      - odigos.io
+    resources:
+      - nodedetailses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ''
     resourceNames:
       - effective-config
     resources:

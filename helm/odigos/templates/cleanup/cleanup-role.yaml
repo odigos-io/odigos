@@ -6,6 +6,9 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
+- apiGroups: ["odigos.io"]
+  resources: ["nodedetailses"]
+  verbs: ["list", "delete"]
 # we check installation method using odigos-deployment because when using helm we
 # need to explicitly delete the odigos-configuration resource.
 # This is necessary because it has a Helm hook annotation and is not managed by Helm directly.

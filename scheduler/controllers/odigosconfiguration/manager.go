@@ -1,6 +1,7 @@
 package odigosconfiguration
 
 import (
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	odigospredicates "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	corev1 "k8s.io/api/core/v1"
@@ -45,6 +46,20 @@ func SetupWithManager(mgr ctrl.Manager, tier common.OdigosTier, odigosVersion st
 		For(&corev1.ConfigMap{}).
 		Named("odigosconfiguration-remoteconfig").
 		WithEventFilter(&odigospredicates.OdigosRemoteConfigMapPredicate).
+		Complete(&odigosConfigurationController{
+			Client:        mgr.GetClient(),
+			Scheme:        mgr.GetScheme(),
+			Tier:          tier,
+			OdigosVersion: odigosVersion,
+			DynamicClient: dynamicClient,
+		})
+	if err != nil {
+		return err
+	}
+
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&odigosv1.NodeDetails{}).
+		Named("odigosconfiguration-nodeDetails").
 		Complete(&odigosConfigurationController{
 			Client:        mgr.GetClient(),
 			Scheme:        mgr.GetScheme(),

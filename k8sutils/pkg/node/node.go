@@ -34,7 +34,7 @@ func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName 
 	// Determine Odigos Installed label [OSS/Enterprise]
 	labelKey := DetermineNodeOdigletInstalledLabelByTier()
 
-	return retry.OnError(retry.DefaultBackoff, apierrors.IsConflict, func() error {
+	err := retry.OnError(retry.DefaultBackoff, apierrors.IsConflict, func() error {
 		node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to get node %s: %w", nodeName, err)
@@ -69,4 +69,6 @@ func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName 
 		_, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
 		return err
 	})
+
+	return err
 }

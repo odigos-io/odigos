@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odiglet
+  namespace: odigos-test
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: odiglet
+spec:
+  containers:
+    - name: odiglet
+      # Assert that the args do NOT contain "discovery"
+      # This validates that the webhook removed the discovery argument
+      args:
+        (contains(@, 'discovery') == `false`): true
+      resources: {}
+      securityContext:
+        privileged: true
+    - name: data-collection
+      securityContext:
+        privileged: true
+    - name: deviceplugin
+  hostPID: true
+  nodeSelector:
+    kubernetes.io/os: linux
+  serviceAccount: odiglet
+  serviceAccountName: odiglet
+status:
+  containerStatuses:
+    - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
+    - name: deviceplugin
+      ready: true
+      restartCount: 0
+      started: true
+    - name: odiglet
+      ready: true
+      # Allow at most 1 restart (from the initial discovery phase deletion)
+      (restartCount <= `1`): true
+      started: true
+  phase: Running
+

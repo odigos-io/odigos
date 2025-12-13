@@ -99,6 +99,8 @@ spec:
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
+
+
     - name: Assert Trace DB is up
       try:
         - assert:
