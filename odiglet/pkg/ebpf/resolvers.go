@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -13,18 +14,21 @@ import (
 )
 
 type k8sDetailsResolver struct {
-	client client.Client
+	client             client.Client
+	distributionGetter *distros.Getter
 }
 
-func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.ProcessEvent) (K8sProcessDetails, error) {
+var _ instrumentation.ProcessDetailsResolver[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] = &k8sDetailsResolver{}
+
+func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.ProcessEvent) (*K8sProcessDetails, error) {
 	pod, err := dr.podFromProcEvent(ctx, event)
 	if err != nil {
-		return K8sProcessDetails{}, err
+		return nil, err
 	}
 
 	containerName, found := containerNameFromProcEvent(event)
 	if !found {
-		return K8sProcessDetails{}, errContainerNameNotReported
+		return nil, errContainerNameNotReported
 	}
 
 	distroName, found := distroNameFromProcEvent(event)
@@ -34,13 +38,15 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 
 	podWorkload, err := workload.PodWorkloadObjectOrError(ctx, pod)
 	if err != nil {
-		return K8sProcessDetails{}, fmt.Errorf("failed to find workload object from pod manifest owners references: %w", err)
+		return nil, fmt.Errorf("failed to find workload object from pod manifest owners references: %w", err)
 	}
 
-	return K8sProcessDetails{
+	distro := dr.distributionGetter.GetDistroByName(distroName)
+
+	return &K8sProcessDetails{
 		pod:           pod,
 		containerName: containerName,
-		distroName:    distroName,
+		distro:        distro,
 		pw:            podWorkload,
 		procEvent:     event,
 	}, nil
@@ -78,14 +84,3 @@ func distroNameFromProcEvent(event detector.ProcessEvent) (string, bool) {
 	return distronName, ok
 }
 
-type k8sConfigGroupResolver struct{}
-
-func (cr *k8sConfigGroupResolver) Resolve(ctx context.Context, d K8sProcessDetails, dist *distro.OtelDistro) (K8sConfigGroup, error) {
-	if d.pw == nil {
-		return K8sConfigGroup{}, fmt.Errorf("podWorkload is not provided, cannot resolve config group")
-	}
-	return K8sConfigGroup{
-		Pw:   *d.pw,
-		Lang: dist.Language,
-	}, nil
-}
