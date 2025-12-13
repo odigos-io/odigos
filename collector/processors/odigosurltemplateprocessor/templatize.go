@@ -75,13 +75,20 @@ var (
 
 type RulePathSegment struct {
 
+	// if wildcard is true, it mean that tthis path segment always matches the path segment.
+	// the content of the path will not be templated,
+	// and it's the user responsibility to ensure this value has low cardinality.
+	Wildcard bool
+
 	// if this rule path segment is a static string (e.g. "users"), this value will be non-empty
 	StaticString string
 
 	// it this rule segment path is replaced with templated name, the TemplateName will be non-empty
 	TemplateName string
+
 	// for templated segment names, a user can also include an optional regexp
 	// which must match for the rule to be applied.
+	// it templatedName is unset, the regexp will be used to match the path segment but not template them.
 	RegexpPattern *regexp.Regexp
 }
 
@@ -115,6 +122,21 @@ func parseRuleTemplateString(ruleTemplateString string) (string, *regexp.Regexp,
 	return templateName, regexpPattern, nil
 }
 
+// parseRegexPattern checks if a segment starts with "regex:" prefix
+// and returns the regex pattern if found, or nil if not
+func parseRegexPattern(segment string) (*regexp.Regexp, string, error) {
+	// Check if segment starts with "regex:" prefix
+	if strings.HasPrefix(segment, "regex:") && len(segment) > 6 {
+		regexString := segment[6:] // len("regex:") = 6
+		regexpPattern, err := regexp.Compile(regexString)
+		if err != nil {
+			return nil, "", fmt.Errorf("invalid regexp pattern %q: %w", regexString, err)
+		}
+		return regexpPattern, "", nil
+	}
+	return nil, segment, nil
+}
+
 func parseUserInputRuleString(userInputRule string) ([]RulePathSegment, error) {
 	segments := strings.Split(userInputRule, "/")
 	if strings.HasPrefix(userInputRule, "/") {
@@ -127,7 +149,12 @@ func parseUserInputRuleString(userInputRule string) ([]RulePathSegment, error) {
 
 	for i, segment := range segments {
 		// if the segment looks like {text}, then it's a template
-		if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
+		if segment == "*" {
+			ruleSegments[i] = RulePathSegment{
+				Wildcard: true,
+			}
+			continue
+		} else if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
 			// remove the curly braces
 			templatizationRule := segment[1 : len(segment)-1]
 			// parse the template name and optional regexp
@@ -140,9 +167,21 @@ func parseUserInputRuleString(userInputRule string) ([]RulePathSegment, error) {
 				RegexpPattern: regexpPattern,
 			}
 		} else {
-			// otherwise, it's a static string
-			ruleSegments[i] = RulePathSegment{
-				StaticString: segment,
+			// Check if it's a regex pattern prefixed with "regex:"
+			regexpPattern, staticString, err := parseRegexPattern(segment)
+			if err != nil {
+				return nil, err
+			}
+			if regexpPattern != nil {
+				// it's a regex pattern for untemplatized section matching
+				ruleSegments[i] = RulePathSegment{
+					RegexpPattern: regexpPattern,
+				}
+			} else {
+				// otherwise, it's a static string
+				ruleSegments[i] = RulePathSegment{
+					StaticString: staticString,
+				}
 			}
 		}
 	}
@@ -151,14 +190,15 @@ func parseUserInputRuleString(userInputRule string) ([]RulePathSegment, error) {
 }
 
 func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationRule) (string, bool) {
-
-	// all segments must match, so they have to be the same length
-	if len(pathSegments) != len(ruleSegments) {
-		return "", false
-	}
+	// already verified that the len of the lists match pre calling this function
 
 	for i, pathSegment := range pathSegments {
 		ruleSegment := ruleSegments[i]
+
+		if ruleSegment.Wildcard {
+			// if this segment is a wildcard, it always matches the path segment
+			continue
+		}
 
 		// if this segment is a static string, it must match the path segment exactly
 		if ruleSegment.StaticString != "" && ruleSegment.StaticString != pathSegment {
@@ -172,13 +212,22 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 				// if the regexp pattern does not match, we can't use this rule
 				return "", false
 			}
+		} else if ruleSegment.RegexpPattern != nil {
+			// if a regexp pattern is provided, use it for matching
+			if !ruleSegment.RegexpPattern.MatchString(pathSegment) {
+				// if the regexp pattern does not match, we can't use this rule
+				return "", false
+			}
 		}
 	}
 
 	result := make([]string, 0, len(ruleSegments))
-	for _, segment := range ruleSegments {
+	for i, segment := range ruleSegments {
 		if segment.TemplateName != "" {
 			result = append(result, "{"+segment.TemplateName+"}")
+		} else if segment.Wildcard || segment.RegexpPattern != nil {
+			// untemplated value, keep whatever is in the path (assumes low cardinality)
+			result = append(result, pathSegments[i])
 		} else {
 			result = append(result, segment.StaticString)
 		}

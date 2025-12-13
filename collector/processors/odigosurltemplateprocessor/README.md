@@ -68,16 +68,27 @@ processors:
 
     # This option allows fine-tuning for specific paths to customize what to templatize and what not.
     # The rule looks like this: "/v1/{foo:regex}/bar/{baz}".
+    #
+    # Templated segments:
     # Each segment part in "{}" denote templatization, and all other segments should match the text exactly.
     # Inside the "{}" you can optionally set the template name and matching regex.
     # The template name is the name that will be used in the span name and attributes (e.g. "/users/{userId}").
     # The regex is optional, and if provided, it will be used to match the segment.
     # If the regex does not match, the rule will be skipped and other rules and templatization will be evaluated.
     # Example: "/v1/{foo:\d+}" will match "/v1/123" producing "/v1/{foo}", but not with "/v1/abc".
-    # compatible with golang regexp module https://pkg.go.dev/regexp
+    #
+    # Non templated segments:
+    # You can match using 3 different ways:
+    # 1. Static string: "/v1/users" will match "/v1/users" but not "/v1/admins".
+    # 2. Regex pattern: "/regex:api-v\d+/bar" will match "/api-v1/bar" or "/api-v2/bar" but not "/api/bar".
+    # 3. Wildcard: "/v1/*" will match "/v1/users" or "/v1/admins" but not "/v1/foo/bar" since it's 3 segments long.
+    #
+    # regex compatible with golang regexp module https://pkg.go.dev/regexp
     # for performance reasons, avoid using compute-intensive expressions or adding too many values here.
     templatization_rules:
       - "/user/{user-name}/friends/{friend-id:\d+}"
+      - "/regex:api-v\d+/users/{id}"  # matches "/api-v1/users/123" or "/api-v2/users/123"
+      - "/v1/*"  # matches "/v1/users" or "/v1/admins" but not "/v1/foo/bar" which is 3 segments long.
 
     # list of additional regex patterns that will be used to match and templated matching path segment.
     # It allows users to define their own regex patterns for custom id formats used/observed in their applications.
@@ -148,6 +159,8 @@ Example for templatization rules:
 This rule, when applied to the path `/user/john/friends/1234`, will result in the templated value `/user/{user-name}/friends/{friend-id}`.
 
 To denote a template path segment, use `{}` brackets with name and optional regexp: `{name:regexp}`. name will be used to generate the templated path (e.g `/user/{foo})` will result in this template value when matched against `/user/john`).
+
+For static string segments (non-templated), you can use regex patterns by prefixing with `regex:`. This allows matching multiple variations of a static segment. For example, `/v1/regex:api-v\d+/users/{id}` will match paths like `/v1/api-v1/users/123` or `/v1/api-v2/users/123`, where the `regex:api-v\d+` segment matches any version number.
 
 ### Custom Ids
 

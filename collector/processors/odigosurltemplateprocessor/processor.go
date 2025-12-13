@@ -17,7 +17,7 @@ import (
 
 type urlTemplateProcessor struct {
 	logger              *zap.Logger
-	templatizationRules []TemplatizationRule
+	templatizationRules map[int][]TemplatizationRule // group templatization rules by segments length
 	customIds           []internalCustomIdConfig
 
 	excludeMatcher *PropertiesMatcher
@@ -29,13 +29,17 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 	excludeMatcher := NewPropertiesMatcher(config.Exclude)
 	includeMatcher := NewPropertiesMatcher(config.Include)
 
-	parsedRules := make([]TemplatizationRule, 0, len(config.TemplatizationRules))
+	parsedRules := map[int][]TemplatizationRule{}
 	for _, rule := range config.TemplatizationRules {
 		parsedRule, err := parseUserInputRuleString(rule)
 		if err != nil {
 			return nil, err
 		}
-		parsedRules = append(parsedRules, parsedRule)
+		parsedRuleNumSegments := len(parsedRule)
+		if _, ok := parsedRules[parsedRuleNumSegments]; !ok {
+			parsedRules[parsedRuleNumSegments] = []TemplatizationRule{}
+		}
+		parsedRules[parsedRuleNumSegments] = append(parsedRules[parsedRuleNumSegments], parsedRule)
 	}
 
 	customIdsRegexp := make([]internalCustomIdConfig, 0, len(config.CustomIds))
@@ -155,16 +159,19 @@ func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
 		return "/" // always set a leading slash even if missing
 	}
 
-	for _, rule := range p.templatizationRules {
-		// apply the rule on the path and return the result if it matches
-		if templatedUrl, matched := attemptTemplateWithRule(inputPathSegments, rule); matched {
-			if hasLeadingSlash {
-				// if the path has a leading slash, we need to add it back
-				templatedUrl = "/" + templatedUrl
+	rules, found := p.templatizationRules[len(inputPathSegments)]
+	if found {
+		for _, rule := range rules {
+			if templatedUrl, matched := attemptTemplateWithRule(inputPathSegments, rule); matched {
+				if hasLeadingSlash {
+					// if the path has a leading slash, we need to add it back
+					templatedUrl = "/" + templatedUrl
+				}
+				return templatedUrl
 			}
-			return templatedUrl
 		}
 	}
+
 	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIds)
 	if isTemplated {
 		if hasLeadingSlash {
