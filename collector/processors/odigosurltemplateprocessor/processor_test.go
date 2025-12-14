@@ -845,6 +845,27 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			expectedName:      "GET /user/{user-name}",
 			expectedHttpRoute: "/user/{user-name}",
 		},
+		{
+			name:              "static-string-with-regex-match",
+			rules:             []string{"/regex:api-v\\d+/users/{id}"},
+			path:              "/api-v1/users/123",
+			expectedName:      "GET /api-v1/users/{id}",
+			expectedHttpRoute: "/api-v1/users/{id}",
+		},
+		{
+			name:              "static-string-with-regex-match-different-version",
+			rules:             []string{"/regex:api-v\\d+/users/{id}"},
+			path:              "/api-v2/users/456",
+			expectedName:      "GET /api-v2/users/{id}",
+			expectedHttpRoute: "/api-v2/users/{id}",
+		},
+		{
+			name:              "static-string-with-regex-no-match",
+			rules:             []string{"/regex:api-v\\d+/users/{id}"},
+			path:              "/api/users/123",
+			expectedName:      "GET /api/users/{id}",
+			expectedHttpRoute: "/api/users/{id}",
+		},
 	}
 
 	for _, tc := range tt {
@@ -873,6 +894,47 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 	}
 }
 
+func TestProcessor_Wildcard(t *testing.T) {
+	tt := []struct {
+		name              string
+		rules             []string
+		path              string
+		expectedName      string
+		expectedHttpRoute string
+	}{
+		{
+			name:              "wildcard",
+			rules:             []string{"/support-cases/{case-id}/*"},
+			path:              "/support-cases/foo/comments",
+			expectedName:      "GET /support-cases/{case-id}/comments",
+			expectedHttpRoute: "/support-cases/{case-id}/comments",
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			spanAttr := map[string]any{
+				"http.request.method": "GET",
+				"url.path":            tc.path,
+			}
+			traces := generateTraceData("test-service-name", "GET", ptrace.SpanKindServer, spanAttr)
+			// Add the templated rule to the processor
+			processor, err := newUrlTemplateProcessor(processortest.NewNopSettings(processortest.NopType), &Config{
+				TemplatizationConfig: TemplatizationConfig{
+					TemplatizationRules: tc.rules,
+				},
+			})
+			require.NoError(t, err)
+			// Process the traces
+			ctx := context.Background()
+			processedTraces, err := processor.processTraces(ctx, traces)
+			require.NoError(t, err)
+			// Get the processed span
+			processedSpan := processedTraces.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+			// Assert the span name and http.route attribute
+			assertSpanNameAndAttribute(t, processedSpan, tc.expectedName, "http.route", tc.expectedHttpRoute)
+		})
+	}
+}
 func TestProcessor_CustomIdsRegexp(t *testing.T) {
 	tt := []struct {
 		name              string
