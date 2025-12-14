@@ -213,6 +213,11 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get"},
 			},
+			{ // Needed for pod operations (restart pod)
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list"},
+			},
 		}
 	} else {
 		rules = []rbacv1.PolicyRule{
