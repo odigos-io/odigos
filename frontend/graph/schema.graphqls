@@ -124,6 +124,7 @@ type K8sActualSource {
   containers: [SourceContainer!]
   conditions: [Condition!]
   workloadOdigosHealthStatus: DesiredConditionStatus
+  manifestYAML: String
 }
 
 input K8sDesiredSourceInput {

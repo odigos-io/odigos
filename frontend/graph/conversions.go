@@ -42,7 +42,7 @@ func getContainerAgentInfo(ic *v1alpha1.InstrumentationConfig, containerName str
 	return false, "", ""
 }
 
-func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, dataStreamNames []*string) (*model.K8sActualSource, error) {
+func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alpha1.InstrumentationConfig, dataStreamNames []*string, manifestYAML string) (*model.K8sActualSource, error) {
 	selected := true
 	var containers []*model.SourceContainer
 
@@ -115,6 +115,7 @@ func instrumentationConfigToActualSource(ctx context.Context, instruConfig v1alp
 		NumberOfInstances: nil,
 		Containers:        containers,
 		Conditions:        services.ConvertConditions(instruConfig.Status.Conditions),
+		ManifestYaml:      &manifestYAML,
 	}, nil
 }
 
