@@ -640,10 +640,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.146":
-  version "0.0.146"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.146.tgz#cafedd4744bd38a2ebc72a91890f0a8077668124"
-  integrity sha512-C+9d30e3/Pr0L08Xp1Dj8G/Z3eLilg9K3YZqdvLBZyNhrrtfe20NOhmRyMsuvUoiCmWGNTxkjYWh7dYOeJCvSw==
+"@odigos/ui-kit@^0.0.147":
+  version "0.0.147"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.147.tgz#b8f6ed749d056da9471e52e244e12d45ea5f12a0"
+  integrity sha512-n+PFq0yHnl+Cv/B5KkFEX7qcerRWXpMrRUuwJVPamo+KU6VCQW+0OOubSiFITKb9PY9m5dQ/X7QKGKSq6jFE9g==
   dependencies:
     "@tanstack/react-virtual" "^3.13.12"
     "@xyflow/react" "^12.9.3"
