@@ -17,3 +17,9 @@ export const RESTART_WORKLOADS = gql`
     restartWorkloads(sourceIds: $sourceIds)
   }
 `;
+
+export const RESTART_POD = gql`
+  mutation RestartPod($namespace: String!, $name: String!) {
+    restartPod(namespace: $namespace, name: $name)
+  }
+`;
