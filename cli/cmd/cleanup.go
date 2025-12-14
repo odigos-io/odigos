@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/spf13/cobra"
 )
@@ -183,42 +181,5 @@ func removeAllNodeDetails(ctx context.Context, client *kube.Client, ns string) e
 		}
 	}
 
-	if deleteErr != nil {
-		return deleteErr
-	}
-
-	// make sure all node details are deleted
-	pollErr := wait.PollUntilContextTimeout(ctx, 5*time.Second, 1*time.Minute, true, func(innerCtx context.Context) (bool, error) {
-		nodeDetails, err := client.OdigosClient.NodeDetailses(ns).List(innerCtx, metav1.ListOptions{
-			Limit: 1,
-		})
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				l.Success()
-				return true, nil
-			}
-			return false, err
-		}
-		if len(nodeDetails.Items) == 0 {
-			l.Success()
-			return true, nil
-		}
-		// if the node details is not marked for deletion, delete it
-		if nodeDetails.Items[0].DeletionTimestamp.IsZero() {
-			client.OdigosClient.NodeDetailses(ns).Delete(innerCtx, nodeDetails.Items[0].Name, metav1.DeleteOptions{})
-		}
-		return false, nil
-	})
-
-	var returnErr error
-	if pollErr != nil {
-		if errors.Is(pollErr, context.DeadlineExceeded) {
-			returnErr = fmt.Errorf("deadline exceeded for waiting node details to be deleted\n")
-		} else if errors.Is(pollErr, context.Canceled) {
-			returnErr = fmt.Errorf("canceled while waiting node details to be deleted\n")
-		} else {
-			returnErr = fmt.Errorf("error while waiting for node details to be deleted: %w\n", pollErr)
-		}
-	}
-	return returnErr
+	return deleteErr
 }
