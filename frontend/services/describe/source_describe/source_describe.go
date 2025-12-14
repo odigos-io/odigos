@@ -7,6 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services"
 	describe_utils "github.com/odigos-io/odigos/frontend/services/describe/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe"
 	"github.com/odigos-io/odigos/k8sutils/pkg/describe/properties"
@@ -34,13 +35,20 @@ func GetSourceDescription(ctx context.Context, namespace string, kind string, na
 		return nil, err
 	}
 
-	gqlResponse := ConvertSourceAnalyzeToGQL(desc)
+	gqlResponse := ConvertSourceAnalyzeToGQL(ctx, desc)
 	return gqlResponse, nil
 }
 
-func ConvertSourceAnalyzeToGQL(analyze *source.SourceAnalyze) *model.SourceAnalyze {
+func ConvertSourceAnalyzeToGQL(ctx context.Context, analyze *source.SourceAnalyze) *model.SourceAnalyze {
 	if analyze == nil {
 		return nil
+	}
+
+	var namespace string
+	if analyze.Namespace.Value != nil {
+		if ns, ok := analyze.Namespace.Value.(string); ok {
+			namespace = ns
+		}
 	}
 
 	return &model.SourceAnalyze{
@@ -61,7 +69,7 @@ func ConvertSourceAnalyzeToGQL(analyze *source.SourceAnalyze) *model.SourceAnaly
 		},
 		TotalPods:       analyze.TotalPods,
 		PodsPhasesCount: analyze.PodsPhasesCount,
-		Pods:            convertPodsToGQL(analyze.Pods),
+		Pods:            convertPodsToGQL(ctx, namespace, analyze.Pods),
 	}
 }
 
@@ -109,9 +117,24 @@ func convertEntityPropertiesToGQL(props []properties.EntityProperty) []*model.En
 	return gqlProps
 }
 
-func convertPodsToGQL(pods []source.PodAnalyze) []*model.PodAnalyze {
+func convertPodsToGQL(ctx context.Context, namespace string, pods []source.PodAnalyze) []*model.PodAnalyze {
 	gqlPods := make([]*model.PodAnalyze, 0, len(pods))
 	for _, pod := range pods {
+		var podName string
+		if pod.PodName.Value != nil {
+			if name, ok := pod.PodName.Value.(string); ok {
+				podName = name
+			}
+		}
+
+		var manifestYAML *string
+		if podName != "" && namespace != "" {
+			manifest, err := services.K8sManifest(ctx, namespace, model.K8sResourceKindPod, podName)
+			if err == nil {
+				manifestYAML = &manifest
+			}
+		}
+
 		gqlPods = append(gqlPods, &model.PodAnalyze{
 			PodName:                       describe_utils.ConvertEntityPropertyToGQL(&pod.PodName),
 			NodeName:                      describe_utils.ConvertEntityPropertyToGQL(&pod.NodeName),
@@ -119,6 +142,7 @@ func convertPodsToGQL(pods []source.PodAnalyze) []*model.PodAnalyze {
 			AgentInjected:                 describe_utils.ConvertEntityPropertyToGQL(&pod.AgentInjected),
 			RunningLatestWorkloadRevision: describe_utils.ConvertEntityPropertyToGQL(pod.RunningLatestWorkloadRevision),
 			Containers:                    convertPodContainersToGQL(pod.Containers),
+			ManifestYaml:                  manifestYAML,
 		})
 	}
 	return gqlPods

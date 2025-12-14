@@ -694,6 +694,7 @@ type ComplexityRoot struct {
 	PodAnalyze struct {
 		AgentInjected                 func(childComplexity int) int
 		Containers                    func(childComplexity int) int
+		ManifestYaml                  func(childComplexity int) int
 		NodeName                      func(childComplexity int) int
 		Phase                         func(childComplexity int) int
 		PodName                       func(childComplexity int) int
@@ -3868,6 +3869,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PodAnalyze.Containers(childComplexity), true
+
+	case "PodAnalyze.manifestYAML":
+		if e.complexity.PodAnalyze.ManifestYaml == nil {
+			break
+		}
+
+		return e.complexity.PodAnalyze.ManifestYaml(childComplexity), true
 
 	case "PodAnalyze.nodeName":
 		if e.complexity.PodAnalyze.NodeName == nil {
@@ -25270,6 +25278,47 @@ func (ec *executionContext) fieldContext_PodAnalyze_containers(_ context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _PodAnalyze_manifestYAML(ctx context.Context, field graphql.CollectedField, obj *model.PodAnalyze) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodAnalyze_manifestYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManifestYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PodAnalyze_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PodAnalyze",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PodCondition_type(ctx context.Context, field graphql.CollectedField, obj *model.PodCondition) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodCondition_type(ctx, field)
 	if err != nil {
@@ -29468,6 +29517,8 @@ func (ec *executionContext) fieldContext_SourceAnalyze_pods(_ context.Context, f
 				return ec.fieldContext_PodAnalyze_runningLatestWorkloadRevision(ctx, field)
 			case "containers":
 				return ec.fieldContext_PodAnalyze_containers(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_PodAnalyze_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PodAnalyze", field.Name)
 		},
@@ -39448,6 +39499,8 @@ func (ec *executionContext) _PodAnalyze(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "manifestYAML":
+			out.Values[i] = ec._PodAnalyze_manifestYAML(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
