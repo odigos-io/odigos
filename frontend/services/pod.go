@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -167,4 +168,20 @@ func buildContainerResources(reqs corev1.ResourceRequirements) *model.Resources 
 		Requests: requests,
 		Limits:   limits,
 	}
+}
+
+// RestartPod deletes a pod to trigger a restart. If the pod is managed by a Deployment,
+// StatefulSet, DaemonSet, etc., the controller will automatically recreate it.
+func RestartPod(ctx context.Context, namespace, name string) error {
+	policy := metav1.DeletePropagationBackground
+	err := kube.DefaultClient.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{
+		PropagationPolicy: &policy,
+	})
+
+	// If the pod doesn't exist, consider it already deleted/restarted
+	if apierrors.IsNotFound(err) {
+		return nil
+	}
+
+	return err
 }

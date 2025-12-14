@@ -842,6 +842,7 @@ type PodAnalyze struct {
 	AgentInjected                 *EntityProperty        `json:"agentInjected"`
 	RunningLatestWorkloadRevision *EntityProperty        `json:"runningLatestWorkloadRevision,omitempty"`
 	Containers                    []*PodContainerAnalyze `json:"containers"`
+	ManifestYaml                  *string                `json:"manifestYAML,omitempty"`
 }
 
 type PodCondition struct {

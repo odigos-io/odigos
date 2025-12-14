@@ -758,6 +758,7 @@ type PodAnalyze {
   agentInjected: EntityProperty!
   runningLatestWorkloadRevision: EntityProperty
   containers: [PodContainerAnalyze!]!
+  manifestYAML: String
 }
 
 type SourceAnalyze {
