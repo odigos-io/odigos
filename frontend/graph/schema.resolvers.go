@@ -111,7 +111,7 @@ func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.Comput
 	sources := make([]*model.K8sActualSource, 0)
 	for _, ic := range icList.Items {
 		dataStreamNames := services.ExtractDataStreamsFromInstrumentationConfig(&ic)
-		source, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNames)
+		source, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNames, "")
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +136,13 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	}
 
 	dataStreamNames := services.ExtractDataStreamsFromInstrumentationConfig(ic)
-	payload, err := instrumentationConfigToActualSource(ctx, *ic, dataStreamNames)
+
+	manifestYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKind(kind), name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get manifest YAML: %w", err)
+	}
+
+	payload, err := instrumentationConfigToActualSource(ctx, *ic, dataStreamNames, manifestYAML)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}

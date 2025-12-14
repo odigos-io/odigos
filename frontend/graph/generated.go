@@ -419,6 +419,7 @@ type ComplexityRoot struct {
 		Containers                 func(childComplexity int) int
 		DataStreamNames            func(childComplexity int) int
 		Kind                       func(childComplexity int) int
+		ManifestYaml               func(childComplexity int) int
 		Name                       func(childComplexity int) int
 		Namespace                  func(childComplexity int) int
 		NumberOfInstances          func(childComplexity int) int
@@ -2584,6 +2585,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sActualSource.Kind(childComplexity), true
+
+	case "K8sActualSource.manifestYAML":
+		if e.complexity.K8sActualSource.ManifestYaml == nil {
+			break
+		}
+
+		return e.complexity.K8sActualSource.ManifestYaml(childComplexity), true
 
 	case "K8sActualSource.name":
 		if e.complexity.K8sActualSource.Name == nil {
@@ -9609,6 +9617,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_sources(_ context.Conte
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			case "workloadOdigosHealthStatus":
 				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -9675,6 +9685,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_source(ctx context.Cont
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			case "workloadOdigosHealthStatus":
 				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -16446,6 +16458,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_sources(_ context.Co
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			case "workloadOdigosHealthStatus":
 				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -16908,6 +16922,47 @@ func (ec *executionContext) fieldContext_K8sActualSource_workloadOdigosHealthSta
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sActualSource_manifestYAML(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManifestYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sActualSource_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sActualSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -37125,6 +37180,8 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "manifestYAML":
+			out.Values[i] = ec._K8sActualSource_manifestYAML(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
