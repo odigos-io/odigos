@@ -615,6 +615,7 @@ type ComplexityRoot struct {
 		PauseOdigos                  func(childComplexity int) int
 		PersistK8sNamespaces         func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
+		RestartPod                   func(childComplexity int, namespace string, name string) int
 		RestartWorkloads             func(childComplexity int, sourceIds []*model.K8sSourceID) int
 		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
 		UninstrumentCluster          func(childComplexity int) int
@@ -941,6 +942,7 @@ type MutationResolver interface {
 	RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error)
 	DeleteCentralProxy(ctx context.Context) (bool, error)
 	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (*model.RemoteConfig, error)
+	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -3474,6 +3476,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["sources"].([]*model.PersistNamespaceSourceInput)), true
 
+	case "Mutation.restartPod":
+		if e.complexity.Mutation.RestartPod == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_restartPod_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RestartPod(childComplexity, args["namespace"].(string), args["name"].(string)), true
+
 	case "Mutation.restartWorkloads":
 		if e.complexity.Mutation.RestartWorkloads == nil {
 			break
@@ -5187,6 +5201,57 @@ func (ec *executionContext) field_Mutation_persistK8sSources_argsSources(
 	}
 
 	var zeroVal []*model.PersistNamespaceSourceInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_restartPod_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_restartPod_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Mutation_restartPod_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_restartPod_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_restartPod_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -23015,6 +23080,61 @@ func (ec *executionContext) fieldContext_Mutation_updateRemoteConfig(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_restartPod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_restartPod(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RestartPod(rctx, fc.Args["namespace"].(string), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_restartPod(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_restartPod_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NodeCollectorAnalyze_enabled(ctx context.Context, field graphql.CollectedField, obj *model.NodeCollectorAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NodeCollectorAnalyze_enabled(ctx, field)
 	if err != nil {
@@ -38810,6 +38930,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateRemoteConfig(ctx, field)
 			})
+		case "restartPod":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_restartPod(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

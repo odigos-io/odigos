@@ -6,10 +6,20 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
 )
+
+// RestartPod is the resolver for the restartPod field.
+func (r *mutationResolver) RestartPod(ctx context.Context, namespace string, name string) (bool, error) {
+	err := services.RestartPod(ctx, namespace, name)
+	if err != nil {
+		return false, fmt.Errorf("failed to restart pod %s/%s: %v", namespace, name, err)
+	}
+	return true, nil
+}
 
 // Pod resolver: fetches full pod details by namespace and name.
 func (r *queryResolver) Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error) {

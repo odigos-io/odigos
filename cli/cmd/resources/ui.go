@@ -256,6 +256,11 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get"},
 			},
+			{ // Needed for pod operations (restart pod)
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "delete"},
+			},
 		}
 	}
 
@@ -383,9 +388,10 @@ func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole 
 			},
 			{ // Need "pods" for "Describe Source"
 				// for collector metrics - watch and list collectors pods
+				// delete is needed for restart pod functionality
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
-				Verbs:     []string{"get", "list", "watch"},
+				Verbs:     []string{"get", "list", "watch", "delete"},
 			},
 			{ // Needed to read Odigos entities,
 				// "watch" to notify UI about changes with sources
