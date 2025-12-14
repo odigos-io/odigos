@@ -62,6 +62,7 @@ export const GET_SOURCE = gql`
           reasonEnum
           message
         }
+        manifestYAML
       }
     }
   }
