@@ -19,6 +19,7 @@ const (
 	InstrumentorMutatingWebhookName         = "odigos-pod-mutating-webhook-configuration"
 	InstrumentorSourceMutatingWebhookName   = "odigos-source-mutating-webhook-configuration"
 	InstrumentorSourceValidatingWebhookName = "odigos-source-validating-webhook-configuration"
+	InstrumentorOdigletMutatingWebhookName  = "odigos-self-pod-mutating-webhook-configuration"
 	InstrumentorContainerName               = "manager"
 
 	InstrumentorWebhookSecretName = "instrumentor-webhooks-cert"

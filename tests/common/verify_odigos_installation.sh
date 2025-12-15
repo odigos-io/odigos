@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# Default namespace
+# Arguments with defaults
 NAMESPACE=${1:-odigos-test}
 TIMEOUT="4m"
-
-echo "Verifying Odigos installation in namespace: $NAMESPACE"
 
 # Function to check if a command succeeded
 check_command() {
@@ -40,4 +38,4 @@ done
 kubectl wait --for=condition=ready pods --all -n $NAMESPACE --timeout=$TIMEOUT
 check_command "All pods are ready"
 
-echo "✅ Odigos installation verification completed successfully" 
+echo "✅ Odigos installation verification completed successfully"

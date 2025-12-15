@@ -51,6 +51,10 @@ func (c *FakeOdigosV1alpha1) InstrumentationRules(namespace string) v1alpha1.Ins
 	return newFakeInstrumentationRules(c, namespace)
 }
 
+func (c *FakeOdigosV1alpha1) NodeDetailses(namespace string) v1alpha1.NodeDetailsInterface {
+	return newFakeNodeDetailses(c, namespace)
+}
+
 func (c *FakeOdigosV1alpha1) Processors(namespace string) v1alpha1.ProcessorInterface {
 	return newFakeProcessors(c, namespace)
 }

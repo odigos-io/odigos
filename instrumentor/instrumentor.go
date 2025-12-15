@@ -69,6 +69,7 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 			{Name: k8sconsts.InstrumentorMutatingWebhookName, Type: rotator.Mutating},
 			{Name: k8sconsts.InstrumentorSourceMutatingWebhookName, Type: rotator.Mutating},
 			{Name: k8sconsts.InstrumentorSourceValidatingWebhookName, Type: rotator.Validating},
+			{Name: k8sconsts.InstrumentorOdigletMutatingWebhookName, Type: rotator.Mutating},
 		},
 		DNSName: "serving-cert",
 		ExtraDNSNames: []string{

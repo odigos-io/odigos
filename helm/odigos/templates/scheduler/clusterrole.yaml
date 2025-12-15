@@ -34,3 +34,13 @@ rules:
       - configmaps
     verbs:
       - list
+  - apiGroups:
+      - odigos.io
+    resources:
+      - nodedetailses
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch

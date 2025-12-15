@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/nodedetails"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -135,6 +136,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.NodeDetails{}: {
+					Field: nsSelector,
+				},
 				&odigosv1.InstrumentationConfig{}: {
 					// all instrumentation configs are managed by this controller
 					// and should be pulled into the cache
@@ -179,6 +183,11 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 		return fmt.Errorf("failed to create controller for instrumentation config: %w", err)
 	}
 
+	err = nodedetails.SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("failed to create controller for node details: %w", err)
+	}
+
 	return nil
 }
 
@@ -217,6 +226,16 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 	mgr.GetWebhookServer().Register(
 		"/mutate--v1-pod",
 		&admission.Webhook{Handler: webhook},
+	)
+
+	// Register webhook for odiglet pods
+	odigletWebhook := &OdigletPodsWebhook{
+		Client:  mgr.GetClient(),
+		Decoder: decoder,
+	}
+	mgr.GetWebhookServer().Register(
+		"/mutate-odigos-pod",
+		&admission.Webhook{Handler: odigletWebhook},
 	)
 
 	return nil

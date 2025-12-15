@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -19,13 +21,16 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/odiglet/pkg/nodedetails"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
@@ -168,35 +173,102 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	odigletInitPhaseStart := time.Now()
-	if err := log.Init(); err != nil {
-		panic(err)
-	}
-	err := fs.CopyAgentsDirectoryToHost()
-	if err != nil {
+	defer func() {
+		log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
+	}()
+
+	// Step 1: Copy instrumentation agents to host
+	if err := copyAgentsToHost(); err != nil {
 		log.Logger.Error(err, "Failed to copy agents directory to host")
 		os.Exit(-1)
 	}
 
-	nn, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
+	// Step 2: Prepare node for Odigos installation (labels, taints)
+	if err := prepareNode(clientset); err != nil {
+		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
+		os.Exit(-1)
+	}
+
+	// Step 3: Apply SELinux settings (must be last - uses chroot)
+	if err := applySecuritySettings(); err != nil {
+		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
+		os.Exit(-1)
+	}
+
+	os.Exit(0)
+}
+
+// copyAgentsToHost copies instrumentation agents from the odiglet image to the host filesystem.
+func copyAgentsToHost() error {
+	return fs.CopyAgentsDirectoryToHost()
+}
+
+// prepareNode prepares the Kubernetes node for Odigos installation by updating labels and taints.
+func prepareNode(clientset *kubernetes.Clientset) error {
+	nodeName, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
+	if !ok {
+		return fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar)
+	}
+
+	err := k8snode.PrepareNodeForOdigosInstallation(clientset, nodeName)
+	if err != nil {
+		return err
+	}
+
+	log.Logger.Info("Successfully prepared node for Odigos installation")
+	return nil
+}
+
+// applySecuritySettings applies security settings like SELinux contexts.
+// This must be called last as it uses chroot to access host commands.
+func applySecuritySettings() error {
+	return fs.ApplyOpenShiftSELinuxSettings()
+}
+
+// OdigletDiscoveryPhase runs the node discovery phase to collect and persist node details.
+// This is run as a separate container/mode to collect node characteristics and capabilities.
+// It checks all registered features (OSS + enterprise extensions) and creates a NodeDetails CRD.
+func OdigletDiscoveryPhase(config *rest.Config, clientset *kubernetes.Clientset) {
+	discoveryPhaseStart := time.Now()
+	defer func() {
+		log.Logger.V(0).Info("Odiglet discovery phase finished", "duration", time.Since(discoveryPhaseStart))
+	}()
+
+	log.Logger.V(0).Info("Starting odiglet discovery phase")
+
+	// Get node name from environment
+	nodeName, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
 	if !ok {
 		log.Logger.Error(fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar), "Failed to load env")
 		os.Exit(-1)
 	}
 
-	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
-		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
-		os.Exit(-1)
-	} else {
-		log.Logger.Info("Successfully prepared node for Odigos installation")
-	}
-
-	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
-	// executing selinux commands to make agents readable by pods.
-	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
-		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
+	// Get node object from Kubernetes
+	ctx := context.Background()
+	node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
+	if err != nil {
+		log.Logger.Error(err, "Failed to get node", "node", nodeName)
 		os.Exit(-1)
 	}
 
-	log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
+	// Collect and persist node details (OSS + enterprise features)
+	if err := nodedetails.PrepareAndCollect(config, node); err != nil {
+		log.Logger.Error(err, "Failed to check and persist node features")
+		os.Exit(-1)
+	}
+
+	log.Logger.V(0).Info("Successfully collected and persisted node details", "node", nodeName)
+
+	// Keep the process running to allow for future restarts via signal
+	// We wait for SIGTERM/SIGINT to exit gracefully
+	log.Logger.V(0).Info("Discovery phase completed, waiting for signal...")
+
+	// Create a context that is canceled on termination signals
+	// We handle SIGINT, SIGTERM, and SIGQUIT to ensure graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	defer stop()
+
+	<-ctx.Done()
+	log.Logger.V(0).Info("Received termination signal, exiting discovery phase")
 	os.Exit(0)
 }

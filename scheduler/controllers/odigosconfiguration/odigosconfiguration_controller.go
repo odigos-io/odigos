@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
@@ -41,7 +42,9 @@ type odigosConfigurationController struct {
 	DynamicClient *dynamic.DynamicClient
 }
 
-func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+func boolPtr(b bool) *bool { return &b }
+
+func (r *odigosConfigurationController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := ctrl.LoggerFrom(ctx)
 
 	odigosConfigMap, err := r.getOdigosConfigMap(ctx)
@@ -68,6 +71,28 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	} else if remoteConfig != nil {
 		mergeRemoteConfig(&odigosConfiguration, remoteConfig)
 		logger.V(1).Info("Merged remote config into effective config")
+	}
+	// this section is for dynamic odiglet
+	// we should be able to identify the waspEnabled from the node details dynamically
+	var wasEnabled *bool // nil by default
+
+	waspEnabled := odigosConfiguration.WaspEnabled
+	// user not explicitly set the waspEnabled, so we need to check in NodeDetails
+	if waspEnabled == nil {
+		// list all NodeDetails and use the first one's WaspRequired field
+		nodeDetailsList := &odigosv1.NodeDetailsList{}
+		if err := r.List(ctx, nodeDetailsList); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// if at least one NodeDetails is found, use the first one's WaspRequired value
+		// this under the assumption that all NodeDetails have the same WaspRequired value
+		if len(nodeDetailsList.Items) > 0 {
+			wasEnabled = boolPtr(nodeDetailsList.Items[0].Spec.WaspRequired)
+			if wasEnabled != nil {
+				odigosConfiguration.WaspEnabled = wasEnabled
+			}
+		}
 	}
 
 	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
