@@ -5,7 +5,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -50,16 +49,16 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 }
 
 func getTemplateRules(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
-	templateRules := []odigosv1.Action{}
-	err := c.List(ctx, &odigosv1.ActionList{}, &client.ListOptions{Namespace: env.GetCurrentNamespace()})
+	actionList := &odigosv1.ActionList{}
+	err := c.List(ctx, actionList, &client.ListOptions{Namespace: env.GetCurrentNamespace()})
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter only actions of type odigosurltemplate
+	// Filter only actions that have URLTemplatization config
 	templateRulesList := []odigosv1.Action{}
-	for _, action := range templateRules {
-		if action.Spec.ActionName == actions.ActionNameURLTemplatization {
+	for _, action := range actionList.Items {
+		if action.Spec.URLTemplatization != nil {
 			templateRulesList = append(templateRulesList, action)
 		}
 	}
