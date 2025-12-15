@@ -9,6 +9,14 @@ import (
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
 
+var (
+	// ErrProcessLanguageNotMatchesDistribution is returned when the detected programming language of a process
+	// does not match the language of the distribution determined for instrumentation.
+	// This can happen in scenarios where a process spawns child processes of different languages.
+	// For example, a bash script that launches a python process - The distribution will be python but the bash process will not match.
+	ErrProcessLanguageNotMatchesDistribution = fmt.Errorf("the detected programming language of the process does not match the language of the distribution determined for instrumentation")
+)
+
 // ProcessDetails is used to convert the common process details reported by the detector to details relevant to hosting platform.
 //
 // ProcessDetails can contain details that associates a process to a group of processes that are managed together by the hosting platform.

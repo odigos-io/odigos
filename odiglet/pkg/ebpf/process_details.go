@@ -14,6 +14,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// K8sProcessDetails holds Kubernetes-specific details about a process.
+// It can be used to group processes by their associated workloads and to determine
+// the appropriate OpenTelemetry distribution for instrumentation.
 type K8sProcessDetails struct {
 	pod           *corev1.Pod
 	containerName string

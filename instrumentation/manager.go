@@ -230,11 +230,10 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) handleInstrumentErr
 		return
 	}
 
-	// we might fail to get the distribution for the process details,
 	// in cases where we detected a certain language for a container, but multiple processes are running in it,
 	// only one or some of them are in the language we detected.
-	if errors.Is(err, errFailedToGetDistribution) {
-		m.logger.Info("failed to get otel distribution for process", "error", err)
+	if errors.Is(err, ErrProcessLanguageNotMatchesDistribution) {
+		m.logger.Info("process language does not match the detected language for container, skipping instrumentation", "error", err)
 		return
 	}
 
