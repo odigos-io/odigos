@@ -195,16 +195,15 @@ func collectOdigosCRDs(ctx context.Context, collector *tarCollector, rootDir, ns
 }
 
 // collectCRD collects a single CRD type using dynamic client
-func collectCRD(ctx context.Context, collector *tarCollector, rootDir, ns string, gvr schema.GroupVersionResource) error {
+func collectCRD(ctx context.Context, collector *tarCollector, rootDir, odigosNs string, gvr schema.GroupVersionResource) error {
 	// Use capitalized resource name as directory (e.g., "destinations" -> "Destinations")
 	dirName := capitalizeFirst(gvr.Resource)
-	crdDir := path.Join(rootDir, ns, dirName)
 
 	// Try to list from all namespaces first (works for both namespaced and cluster-scoped resources)
 	list, err := kube.DefaultClient.DynamicClient.Resource(gvr).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		// If all-namespace list fails, try namespace-scoped
-		list, err = kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(ns).List(ctx, metav1.ListOptions{})
+		list, err = kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(odigosNs).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to list %s: %w", gvr.Resource, err)
 		}
@@ -220,14 +219,14 @@ func collectCRD(ctx context.Context, collector *tarCollector, rootDir, ns string
 		// Clean managedFields from the object
 		unstructured.RemoveNestedField(item.Object, "metadata", "managedFields")
 
-		// Include namespace in filename if the resource is from a different namespace
-		var filename string
+		// Determine the namespace folder - use item's namespace, or odigos namespace for cluster-scoped resources
 		itemNs := item.GetNamespace()
-		if itemNs != "" && itemNs != ns {
-			filename = fmt.Sprintf("%s.%s.yaml", itemNs, item.GetName())
-		} else {
-			filename = fmt.Sprintf("%s.yaml", item.GetName())
+		if itemNs == "" {
+			itemNs = odigosNs // cluster-scoped resources go under odigos namespace
 		}
+
+		crdDir := path.Join(rootDir, itemNs, dirName)
+		filename := fmt.Sprintf("%s.yaml", item.GetName())
 
 		// Marshal to YAML
 		yamlData, err := yaml.Marshal(item.Object)
