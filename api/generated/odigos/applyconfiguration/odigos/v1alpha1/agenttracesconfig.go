@@ -20,7 +20,8 @@ package v1alpha1
 // AgentTracesConfigApplyConfiguration represents a declarative configuration of the AgentTracesConfig type for use
 // with apply.
 type AgentTracesConfigApplyConfiguration struct {
-	IdGenerator *IdGeneratorConfigApplyConfiguration `json:"idGenerator,omitempty"`
+	IdGenerator   *IdGeneratorConfigApplyConfiguration `json:"idGenerator,omitempty"`
+	TemplateRules []string                             `json:"templateRules,omitempty"`
 }
 
 // AgentTracesConfigApplyConfiguration constructs a declarative configuration of the AgentTracesConfig type for use with
@@ -34,5 +35,15 @@ func AgentTracesConfig() *AgentTracesConfigApplyConfiguration {
 // If called multiple times, the IdGenerator field is set to the value of the last call.
 func (b *AgentTracesConfigApplyConfiguration) WithIdGenerator(value *IdGeneratorConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
 	b.IdGenerator = value
+	return b
+}
+
+// WithTemplateRules adds the given value to the TemplateRules field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the TemplateRules field.
+func (b *AgentTracesConfigApplyConfiguration) WithTemplateRules(values ...string) *AgentTracesConfigApplyConfiguration {
+	for i := range values {
+		b.TemplateRules = append(b.TemplateRules, values[i])
+	}
 	return b
 }

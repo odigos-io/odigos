@@ -380,8 +380,8 @@ func getEnvInjectionDecision(
 //   - FilterK8sWorkloadName: check against the workload's name
 //
 // Each new filter should only reject the group if it's explicitly set AND doesn't match.
-func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language common.ProgrammingLanguage) []odigosv1.TemplateRuleConfig {
-	filteredRules := []odigosv1.TemplateRuleConfig{}
+func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language common.ProgrammingLanguage) []string {
+	filteredRules := []string{}
 
 	for _, templateRule := range *templateRules {
 		// Safety check: actions were already filtered to only include template actions.
@@ -392,9 +392,7 @@ func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language 
 		for _, rulesGroup := range templateRule.Spec.URLTemplatization.TemplatizationRulesGroups {
 			if templatizationRulesGroupMatchesContainer(rulesGroup, language) {
 				for _, rule := range rulesGroup.TemplatizationRules {
-					filteredRules = append(filteredRules, odigosv1.TemplateRuleConfig{
-						Template: rule.Template,
-					})
+					filteredRules = append(filteredRules, rule.Template)
 				}
 			}
 		}
@@ -465,8 +463,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 
 	filteredTemplateRules := filterTemplateRulesForContainer(templateRules, runtimeDetails.Language)
 
-	fmt.Println("filteredTemplateRules", filteredTemplateRules)
-
 	distro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {
 		return *err
@@ -480,7 +476,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 	if err != nil {
 		return *err
 	}
-	fmt.Printf("tracesConfig for container %s: %+v\n", containerName, tracesConfig)
 	metricsConfig, err := signalconfig.CalculateMetricsConfig(metricsEnabled, effectiveConfig, distro, containerName)
 	if err != nil {
 		return *err
@@ -580,11 +575,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 				Logs:                logsConfig,
 			}
 		}
-	}
-
-	fmt.Printf("Final ContainerAgentConfig for %s - tracesConfig: %+v\n", containerName, tracesConfig)
-	if tracesConfig != nil {
-		fmt.Printf("Final ContainerAgentConfig for %s - tracesConfig.TemplateRules: %+v\n", containerName, tracesConfig.TemplateRules)
 	}
 
 	return odigosv1.ContainerAgentConfig{

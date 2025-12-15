@@ -190,6 +190,12 @@ spec:
                               - sourceId
                               type: object
                           type: object
+                        templateRules:
+                          description: A list of template rules to be applied to the
+                            traces.
+                          items:
+                            type: string
+                          type: array
                       type: object
                   required:
                   - agentEnabled
