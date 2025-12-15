@@ -9,11 +9,14 @@ import (
 )
 
 func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosConfiguration, containerName string, templateRules *[]odigosv1.TemplateRuleConfig) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
+	fmt.Printf("CalculateTracesConfig - tracesEnabled: %v, containerName: %s, templateRules count: %d\n", tracesEnabled, containerName, len(*templateRules))
 	if !tracesEnabled {
+		fmt.Printf("CalculateTracesConfig - traces disabled, returning nil\n")
 		return nil, nil
 	}
 
 	tracesConfig := &odigosv1.AgentTracesConfig{}
+	fmt.Printf("CalculateTracesConfig - created empty tracesConfig: %+v\n", tracesConfig)
 
 	// for traces, also allow to configure the id generator as "timedwall",
 	// if trace id suffix is provided.
@@ -34,9 +37,13 @@ func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosCon
 		}
 	}
 
-	for _, templateRule := range *templateRules {
+	fmt.Printf("CalculateTracesConfig - processing %d template rules\n", len(*templateRules))
+	for i, templateRule := range *templateRules {
+		fmt.Printf("CalculateTracesConfig - adding template rule %d: %+v\n", i, templateRule)
 		tracesConfig.TemplateRules = append(tracesConfig.TemplateRules, templateRule)
 	}
 
+	fmt.Printf("CalculateTracesConfig - final tracesConfig: %+v\n", tracesConfig)
+	fmt.Printf("CalculateTracesConfig - final tracesConfig.TemplateRules: %+v\n", tracesConfig.TemplateRules)
 	return tracesConfig, nil
 }

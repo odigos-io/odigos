@@ -480,6 +480,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	if err != nil {
 		return *err
 	}
+	fmt.Printf("tracesConfig for container %s: %+v\n", containerName, tracesConfig)
 	metricsConfig, err := signalconfig.CalculateMetricsConfig(metricsEnabled, effectiveConfig, distro, containerName)
 	if err != nil {
 		return *err
@@ -579,6 +580,11 @@ func calculateContainerInstrumentationConfig(containerName string,
 				Logs:                logsConfig,
 			}
 		}
+	}
+
+	fmt.Printf("Final ContainerAgentConfig for %s - tracesConfig: %+v\n", containerName, tracesConfig)
+	if tracesConfig != nil {
+		fmt.Printf("Final ContainerAgentConfig for %s - tracesConfig.TemplateRules: %+v\n", containerName, tracesConfig.TemplateRules)
 	}
 
 	return odigosv1.ContainerAgentConfig{
