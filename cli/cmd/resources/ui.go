@@ -183,9 +183,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"configmaps"},
 				Verbs:     []string{"get", "list"},
 			},
-			{ // Needed for CRUD on instr. rule and destinations
+			{ // Needed to read all odigos.io CRDs in the odigos namespace
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationrules", "destinations"},
+				Resources: []string{"*"},
 				Verbs:     []string{"get", "list"},
 			},
 			{ // Needed to notify UI about changes with destinations
@@ -193,14 +193,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"destinations"},
 				Verbs:     []string{"watch"},
 			},
-			{ // Needed to read Odigos entities
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups"},
-				Verbs:     []string{"get", "list"},
-			},
-			{ // Needed for CRUD on actions
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"actions"},
+			{ // Needed to read all actions.odigos.io CRDs in the odigos namespace
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"*"},
 				Verbs:     []string{"get", "list"},
 			},
 			{ // Needed for reading collectors related resources
@@ -236,9 +231,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"secrets"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
-			{ // Needed for CRUD on instr. rule and destinations
+			{ // Needed for CRUD on all odigos.io CRDs in the odigos namespace
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationrules", "destinations"},
+				Resources: []string{"*"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
 			{ // Needed to notify UI about changes with destinations
@@ -246,14 +241,9 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"destinations"},
 				Verbs:     []string{"watch"},
 			},
-			{ // Needed to read Odigos entities
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"collectorsgroups"},
-				Verbs:     []string{"get", "list"},
-			},
-			{ // Needed for CRUD on actions
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"actions"},
+			{ // Needed for CRUD on all actions.odigos.io CRDs in the odigos namespace
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"*"},
 				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
 			},
 			{ // Needed for reading ReplicaSets owned by workloads
@@ -353,15 +343,14 @@ func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole 
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed to read Odigos entities,
-				// "watch" to notify UI about changes with sources
+			{ // Needed to read all odigos.io CRDs cluster-wide
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
+				Resources: []string{"*"},
 				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed to instrument / uninstrument sources
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"sources"},
+			{ // Needed to read all actions.odigos.io CRDs cluster-wide
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"*"},
 				Verbs:     []string{"get", "list"},
 			},
 		}
@@ -414,16 +403,14 @@ func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole 
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "watch", "delete"},
 			},
-			{ // Needed to read Odigos entities,
-				// "watch" to notify UI about changes with sources
+			{ // Needed for CRUD on all odigos.io CRDs cluster-wide
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"instrumentationconfigs", "instrumentationinstances"},
-				Verbs:     []string{"get", "list", "watch"},
+				Resources: []string{"*"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch", "delete"},
 			},
-			{ // Needed to instrument / uninstrument sources.
-				// Patch is needed to update service name.
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"sources"},
+			{ // Needed for CRUD on all actions.odigos.io CRDs cluster-wide
+				APIGroups: []string{"actions.odigos.io"},
+				Resources: []string{"*"},
 				Verbs:     []string{"get", "list", "create", "patch", "delete"},
 			},
 		}
