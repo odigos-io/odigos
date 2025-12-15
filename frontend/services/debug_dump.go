@@ -80,6 +80,12 @@ func DebugDump(c *gin.Context) {
 		return
 	}
 
+	// Collect ConfigMaps from odigos namespace
+	if err := collectConfigMaps(ctx, collector, rootDir, ns); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect configmaps: %v", err)})
+		return
+	}
+
 	c.Status(http.StatusOK)
 }
 
@@ -230,6 +236,23 @@ func collectCRD(ctx context.Context, collector *tarCollector, rootDir, ns string
 		}
 
 		_ = collector.addFile(crdDir, filename, yamlData)
+	}
+
+	return nil
+}
+
+// collectConfigMaps collects all ConfigMaps from the odigos namespace
+func collectConfigMaps(ctx context.Context, collector *tarCollector, rootDir, ns string) error {
+	configMaps, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list configmaps: %w", err)
+	}
+
+	configMapDir := path.Join(rootDir, ns, "ConfigMaps")
+	for _, cm := range configMaps.Items {
+		if err := addResourceYAML(collector, configMapDir, "configmap", cm.Name, &cm); err != nil {
+			continue // Skip this item but continue with others
+		}
 	}
 
 	return nil
@@ -444,6 +467,10 @@ func cleanObjectForExport(obj interface{}) interface{} {
 		cleaned.ManagedFields = nil
 		return cleaned
 	case *corev1.Pod:
+		cleaned := v.DeepCopy()
+		cleaned.ManagedFields = nil
+		return cleaned
+	case *corev1.ConfigMap:
 		cleaned := v.DeepCopy()
 		cleaned.ManagedFields = nil
 		return cleaned
