@@ -74,6 +74,9 @@ rules:
       - get
       - list
       - watch
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - delete
+      {{- end }}
   - apiGroups:
       - odigos.io
     resources:
