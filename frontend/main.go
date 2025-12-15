@@ -255,6 +255,9 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
 	})
 
+	// Debug dump endpoint - downloads tar.gz of all odigos component logs and YAML
+	r.GET("/debug/dump", services.DebugDump)
+
 	return r, nil
 }
 
