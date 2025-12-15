@@ -218,6 +218,11 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list"},
 			},
+			{ // Needed for reading Pods logs
+				APIGroups: []string{""},
+				Resources: []string{"pods/log"},
+				Verbs:     []string{"get"},
+			},
 		}
 	} else {
 		rules = []rbacv1.PolicyRule{
@@ -265,6 +270,11 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "delete"},
+			},
+			{ // Needed for reading Pods logs
+				APIGroups: []string{""},
+				Resources: []string{"pods/log"},
+				Verbs:     []string{"get"},
 			},
 		}
 	}
