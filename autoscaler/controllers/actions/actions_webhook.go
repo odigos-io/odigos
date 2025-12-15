@@ -31,6 +31,7 @@ import (
 
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
@@ -41,6 +42,7 @@ var validActionConfigNames = []string{
 	actionsv1alpha1.ActionNamePiiMasking,
 	actionsv1alpha1.ActionNameK8sAttributes,
 	actionsv1alpha1.ActionNameSamplers,
+	actions.ActionNameURLTemplatization,
 }
 
 type ActionsValidator struct {
@@ -160,6 +162,10 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 		if len(samplerFields) > 1 {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers"), samplerFields, fmt.Sprintf("Only one of (%s) may be set", strings.Join(validSamplerFields, ", "))))
 		}
+	}
+	if action.Spec.URLTemplatization != nil {
+		path := field.NewPath("spec").Child("urlTemplatization")
+		fields[path] = action.Spec.URLTemplatization
 	}
 
 	if len(fields) == 0 {
