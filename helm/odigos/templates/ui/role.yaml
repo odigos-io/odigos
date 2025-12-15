@@ -14,6 +14,7 @@ rules:
       - get
       - list
   {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - create
       - update
       - patch
   - apiGroups:
@@ -82,24 +83,37 @@ rules:
       - delete
       {{- end }}
   # Permissions for pauseOdigos mutation
-  {{- if include "odigos.ui.requiresWritePermissions" . }}
   - apiGroups:
       - apps
     resources:
       - deployments/scale
     resourceNames:
       - odigos-instrumentor
-    verbs: ["get", "update", "patch"]
+    verbs:
+      - get
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - update
+      - patch
+      {{- end }}
   - apiGroups:
       - apps
     resources:
       - daemonsets
     resourceNames:
       - odiglet
-    verbs: ["get", "update", "patch"]
+    verbs:
+      - get
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - update
+      - patch
+      {{- end }}
   - apiGroups:
       - ''
     resources:
       - pods
-    verbs: ["list", "delete"]
-  {{- end }}
+    verbs:
+      - get
+      - list
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - delete
+      {{- end }}
