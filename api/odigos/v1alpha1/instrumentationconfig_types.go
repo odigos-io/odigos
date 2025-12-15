@@ -300,6 +300,14 @@ type AgentTracesConfig struct {
 	// id generator configuration for the traces.
 	// if not specified, the default random id generator will be used.
 	IdGenerator *IdGeneratorConfig `json:"idGenerator,omitempty"`
+
+	// A list of template rules to be applied to the traces.
+	TemplateRules []TemplateRuleConfig `json:"templateRules,omitempty"`
+}
+
+type TemplateRuleConfig struct {
+	// the template rule to use.
+	Template string `json:"template"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.

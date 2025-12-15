@@ -5,6 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -20,28 +21,51 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
 	*common.OdigosConfiguration,
+	*[]odigosv1.Action,
 	error) {
 
 	cg, err := getCollectorsGroup(ctx, c)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	// TODO: we are yaml unmarshalling the configmap data for every workload, this is not efficient
 	// can we cache the configmap data in the controller?
 	effectiveConfig, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	return cg, irls, &effectiveConfig, nil
+	templateRules, err := getTemplateRules(ctx, c)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	return cg, irls, &effectiveConfig, templateRules, nil
 }
 
+func getTemplateRules(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
+	templateRules := []odigosv1.Action{}
+	err := c.List(ctx, &odigosv1.ActionList{}, &client.ListOptions{Namespace: env.GetCurrentNamespace()})
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter only actions of type odigosurltemplate
+	templateRulesList := []odigosv1.Action{}
+	for _, action := range templateRules {
+		if action.Spec.ActionName == actions.ActionNameURLTemplatization {
+			templateRulesList = append(templateRulesList, action)
+		}
+	}
+
+	return &templateRulesList, nil
+}
 func getCollectorsGroup(ctx context.Context, c client.Client) (*odigosv1.CollectorsGroup, error) {
 	cg := odigosv1.CollectorsGroup{}
 	err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &cg)

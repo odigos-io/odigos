@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosConfiguration, containerName string) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
+func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosConfiguration, containerName string, templateRules *[]odigosv1.TemplateRuleConfig) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
 	if !tracesEnabled {
 		return nil, nil
 	}
@@ -32,6 +32,10 @@ func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosCon
 				SourceId: uint8(sourceId),
 			},
 		}
+	}
+
+	for _, templateRule := range *templateRules {
+		tracesConfig.TemplateRules = append(tracesConfig.TemplateRules, templateRule)
 	}
 
 	return tracesConfig, nil
