@@ -302,7 +302,7 @@ type AgentTracesConfig struct {
 	IdGenerator *IdGeneratorConfig `json:"idGenerator,omitempty"`
 
 	// A list of template rules to be applied to the traces.
-	TemplateRules []string `json:"templateRules,omitempty"`
+	TemplateRules []string `json:"templatization_rules,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
