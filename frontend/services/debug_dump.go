@@ -26,6 +26,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 const odigosGroupSuffix = "odigos.io"
@@ -125,7 +126,7 @@ func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, 
 			for _, source := range sourceList.Items {
 				w := source.Spec.Workload
 				if w.Name != "" && w.Namespace != "" && w.Kind != "" && w.Kind != k8sconsts.WorkloadKindNamespace {
-					targets = append(targets, workloadTarget{w.Namespace, w.Name, w.Kind, w.Name, false})
+					targets = append(targets, workloadTarget{w.Namespace, w.Name, w.Kind, fmt.Sprintf("%s-%s", workload.WorkloadKindLowerCaseFromKind(w.Kind), w.Name), false})
 				}
 			}
 		}
