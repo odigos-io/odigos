@@ -45,9 +45,12 @@ func newTarCollector(tw *tar.Writer) *tarCollector {
 
 // DebugDump generates a tar.gz file containing logs and YAML manifests
 // for all Odigos components running in the odigos system namespace.
+// Query params:
+//   - includeWorkloads: if "true", also include workload and pod YAMLs for each Source
 func DebugDump(c *gin.Context) {
 	ctx := c.Request.Context()
 	ns := env.GetCurrentNamespace()
+	includeWorkloads := c.Query("includeWorkloads") == "true"
 
 	// Set headers for file download
 	timestamp := time.Now().Format("20060102-150405")
@@ -65,8 +68,8 @@ func DebugDump(c *gin.Context) {
 
 	collector := newTarCollector(tarWriter)
 
-	// Collect all workloads (odigos components with logs, source workloads without logs)
-	if err := collectAllWorkloads(ctx, collector, rootDir, ns); err != nil {
+	// Collect odigos workloads (and optionally source workloads)
+	if err := collectAllWorkloads(ctx, collector, rootDir, ns, includeWorkloads); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect workloads: %v", err)})
 		return
 	}
@@ -89,8 +92,8 @@ type workloadTarget struct {
 	includeLogs bool
 }
 
-// collectAllWorkloads collects workloads from odigos namespace and from Sources
-func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, odigosNs string) error {
+// collectAllWorkloads collects workloads from odigos namespace and optionally from Sources
+func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, odigosNs string, includeWorkloads bool) error {
 	var targets []workloadTarget
 
 	// Add all workloads from odigos namespace (with logs)
@@ -109,13 +112,15 @@ func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, 
 		targets = append(targets, workloadTarget{odigosNs, s.Name, k8sconsts.WorkloadKindStatefulSet, fmt.Sprintf("statefulset-%s", s.Name), true})
 	}
 
-	// Add workloads from Sources (without logs)
-	sourceList, _ := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
-	if sourceList != nil {
-		for _, source := range sourceList.Items {
-			w := source.Spec.Workload
-			if w.Name != "" && w.Namespace != "" && w.Kind != "" && w.Kind != k8sconsts.WorkloadKindNamespace {
-				targets = append(targets, workloadTarget{w.Namespace, w.Name, w.Kind, w.Name, false})
+	// Optionally add workloads from Sources (without logs)
+	if includeWorkloads {
+		sourceList, _ := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+		if sourceList != nil {
+			for _, source := range sourceList.Items {
+				w := source.Spec.Workload
+				if w.Name != "" && w.Namespace != "" && w.Kind != "" && w.Kind != k8sconsts.WorkloadKindNamespace {
+					targets = append(targets, workloadTarget{w.Namespace, w.Name, w.Kind, w.Name, false})
+				}
 			}
 		}
 	}
