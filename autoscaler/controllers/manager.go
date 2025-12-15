@@ -166,13 +166,13 @@ func durationPointer(d time.Duration) *time.Duration {
 	return &d
 }
 
-func SetupWithManager(mgr manager.Manager, imagePullSecrets []string, odigosVersion string) error {
+func SetupWithManager(mgr manager.Manager, odigosVersion string) error {
 	err := nodecollector.SetupWithManager(mgr)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for node collector: %w", err)
 	}
 
-	err = clustercollector.SetupWithManager(mgr, imagePullSecrets, odigosVersion)
+	err = clustercollector.SetupWithManager(mgr, odigosVersion)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for cluster collector: %w", err)
 	}

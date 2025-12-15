@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
@@ -49,6 +50,18 @@ func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKi
 			return "", err
 		}
 		return string(yb), nil
+
+	case model.K8sResourceKindConfigMap:
+		obj, err := kube.DefaultClient.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		obj.ObjectMeta.ManagedFields = nil
+		yb, err := syaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
+		return strings.ReplaceAll(string(yb), ": |", ":"), nil
 
 	default:
 		return "", fmt.Errorf("unsupported kind: %s", kind)

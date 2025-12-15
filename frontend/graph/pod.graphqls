@@ -62,3 +62,7 @@ type PodDetails {
 extend type Query {
   pod(namespace: String!, name: String!): PodDetails!
 }
+
+extend type Mutation {
+  restartPod(namespace: String!, name: String!): Boolean!
+}

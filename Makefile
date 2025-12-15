@@ -17,7 +17,25 @@ endif
 DOCKERFILE=Dockerfile
 IMG_PREFIX?=
 IMG_SUFFIX?=
+TARGET?=
+RHEL?=false
 BUILD_DIR=.
+
+ifeq ($(RHEL),true)
+    IMG_SUFFIX=-ubi9
+
+    # If TARGET is empty, set it to rhel
+    ifeq ($(strip $(TARGET)),)
+        TARGET := rhel
+    else
+        # If TARGET is not empty, append -rhel
+        TARGET := $(TARGET)-rhel
+    endif
+endif
+
+ifneq ($(strip $(TARGET)),)
+  TARGET_FLAG := --target $(TARGET)
+endif
 
 .PHONY: install-golangci-lint
 install-golangci-lint:
@@ -70,14 +88,16 @@ rbac-docs:
 	cd scripts/rbac-docgen && go run main.go
 
 build-image/%:
-	docker build -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	docker build $(TARGET_FLAG) \
+	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg ODIGOS_VERSION=$(TAG) \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="$(SUMMARY)" \
 	--build-arg DESCRIPTION="$(DESCRIPTION)" \
-	--build-arg LD_FLAGS="$(LD_FLAGS)"
+	--build-arg LD_FLAGS="$(LD_FLAGS)" \
+	--build-arg RHEL="$(RHEL)"
 
 .PHONY: build-operator-index
 build-operator-index:
@@ -93,7 +113,11 @@ build-odiglet:
 
 .PHONY: build-agents
 build-agents:
-	$(MAKE) build-image/agents DOCKERFILE=agents/$(DOCKERFILE) SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) build-image/agents \
+		DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=$(if $(filter true,$(RHEL)),agents-rhel,agents) \
+		SUMMARY="Init container for Odigos" \
+		DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." \
+		TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 
 .PHONY: build-autoscaler
@@ -130,17 +154,20 @@ build-images:
 
 .PHONY: build-images-rhel
 build-images-rhel:
-	$(MAKE) build-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
+	$(MAKE) build-images RHEL=true TAG=$(TAG) ORG=$(ORG)
 
 push-image/%:
-	docker buildx build --platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
+	docker buildx build $(TARGET_FLAG) \
+	--platform linux/amd64,linux/arm64/v8 -t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
 	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
 	$(if $(filter true,$(GCP_MARKETPLACE)),--annotation="index:com.googleapis.cloudmarketplace.product.service.name=services/odigos.endpoints.odigos-public.cloud.goog",) \
 	--build-arg SERVICE_NAME="$*" \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="$(SUMMARY)" \
-	--build-arg DESCRIPTION="$(DESCRIPTION)"
+	--build-arg DESCRIPTION="$(DESCRIPTION)" \
+	--build-arg LD_FLAGS="$(LD_FLAGS)" \
+	--build-arg RHEL="$(RHEL)"
 
 .PHONY: push-operator
 push-operator:
@@ -172,7 +199,7 @@ push-ui:
 
 .PHONY: push-agents
 push-agents:
-	$(MAKE) push-image/agents DOCKERFILE=agents/$(DOCKERFILE) SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
+	$(MAKE) push-image/agents DOCKERFILE=odiglet/$(DOCKERFILE) TARGET=agents SUMMARY="Init container for Odigos" DESCRIPTION="Init container for Odigos managing auto-instrumentation. This container requires a root user to run and manage eBPF programs." TAG=$(TAG) ORG=$(ORG) IMG_SUFFIX=$(IMG_SUFFIX)
 
 .PHONY: push-images
 push-images:
@@ -180,7 +207,7 @@ push-images:
 
 .PHONY: push-images-rhel
 push-images-rhel:
-	$(MAKE) push-images IMG_SUFFIX=-ubi9 DOCKERFILE=Dockerfile.rhel TAG=$(TAG) ORG=$(ORG)
+	$(MAKE) push-images RHEL=true TAG=$(TAG) ORG=$(ORG)
 
 load-to-kind-%:
 	kind load docker-image $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG)
@@ -482,6 +509,7 @@ build-cli-image:
 # 1. privileged containers
 # 2. hostPath volumes (except for some specific paths which are allowed on most clusters)
 # 3. hostNamespace (hostNetwork, hostPID, hostIPC)
+# 4. allowPrivilegeEscalation is enforced to explicitly set to false
 install-gatekeeper:
 	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	helm repo update

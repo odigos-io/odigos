@@ -381,4 +381,7 @@ type OdigosConfiguration struct {
 
 	// configuration for odigos own metrics store in the cluster.
 	OdigosOwnTelemetryStore *OdigosOwnTelemetryConfiguration `json:"odigosOwnTelemetryStore,omitempty" yaml:"odigosOwnTelemetryStore"`
+
+	// ImagePullSecrets to use for collectors and init container
+	ImagePullSecrets []string `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets"`
 }

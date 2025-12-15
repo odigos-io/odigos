@@ -20,8 +20,8 @@ const OverviewModalsAndDrawers = () => {
   const { fetchNamespace } = useNamespace();
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
-  const { restartWorkloads } = useWorkloadUtils();
   const { categories } = useDestinationCategories();
+  const { restartWorkloads, restartPod } = useWorkloadUtils();
   const { potentialDestinations } = usePotentialDestinations();
   const { createAction, updateAction, deleteAction } = useActionCRUD();
   const { persistSources, updateSource, fetchSourceById, fetchSourceLibraries } = useSourceCRUD();
@@ -48,6 +48,7 @@ const OverviewModalsAndDrawers = () => {
       <SourceDrawer
         persistSources={persistSources}
         restartWorkloads={restartWorkloads}
+        restartPod={restartPod}
         updateSource={updateSource}
         fetchSourceById={fetchSourceById}
         fetchSourceDescribe={fetchDescribeSource}

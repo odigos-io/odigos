@@ -35,7 +35,7 @@ const (
 )
 
 func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
-	ctx context.Context, c client.Client, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string) (*appsv1.Deployment, error) {
+	ctx context.Context, c client.Client, scheme *runtime.Scheme, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
 	autoscalerDeployment := &appsv1.Deployment{}
@@ -52,7 +52,7 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 	// Use the hash of the secrets  to make sure the gateway will restart when the secrets (mounted as environment variables) changes
 	configDataHash := commonconfig.Sha256Hash(secretsVersionHash)
 	desiredDeployment, err := getDesiredDeployment(ctx, c, enabledDests, configDataHash, gateway,
-		scheme, imagePullSecrets, odigosVersion, autoScalerTopologySpreadConstraints)
+		scheme, odigosVersion, autoScalerTopologySpreadConstraints)
 	if err != nil {
 		return nil, errors.Join(err, errors.New("failed to get desired deployment"))
 	}
@@ -96,7 +96,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 }
 
 func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *odigosv1.DestinationList, configDataHash string,
-	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, imagePullSecrets []string, odigosVersion string, topologySpreadConstraints []corev1.TopologySpreadConstraint) (*appsv1.Deployment, error) {
+	gateway *odigosv1.CollectorsGroup, scheme *runtime.Scheme, odigosVersion string, topologySpreadConstraints []corev1.TopologySpreadConstraint) (*appsv1.Deployment, error) {
 
 	nodeSelector := gateway.Spec.NodeSelector
 	if nodeSelector == nil {
@@ -263,9 +263,14 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		}
 	}
 
-	if len(imagePullSecrets) > 0 {
+	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
+	}
+
+	if len(odigosConfiguration.ImagePullSecrets) > 0 {
 		desiredDeployment.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{}
-		for _, secret := range imagePullSecrets {
+		for _, secret := range odigosConfiguration.ImagePullSecrets {
 			desiredDeployment.Spec.Template.Spec.ImagePullSecrets = append(desiredDeployment.Spec.Template.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: secret})
 		}
 	}
@@ -281,10 +286,6 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		desiredDeployment.Spec.Template.Spec.TopologySpreadConstraints = adjusted
 	}
 
-	odigosConfiguration, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
-	if err != nil {
-		return nil, errors.Join(err, errors.New("failed to get current odigos configuration"))
-	}
 	if odigosConfiguration.ClickhouseJsonTypeEnabledProperty != nil && *odigosConfiguration.ClickhouseJsonTypeEnabledProperty {
 		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
 			desiredDeployment.Spec.Template.Spec.Containers[0].Args,
