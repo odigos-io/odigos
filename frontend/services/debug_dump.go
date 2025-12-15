@@ -15,12 +15,16 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
+
+const odigosGroupSuffix = "odigos.io"
 
 // tarCollector wraps tar.Writer and tracks created directories
 type tarCollector struct {
@@ -70,6 +74,12 @@ func DebugDump(c *gin.Context) {
 
 	if err := collectStatefulSets(ctx, collector, rootDir, ns); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect statefulsets: %v", err)})
+		return
+	}
+
+	// Collect Odigos CRDs dynamically
+	if err := collectOdigosCRDs(ctx, collector, rootDir, ns); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect odigos CRDs: %v", err)})
 		return
 	}
 
@@ -148,6 +158,107 @@ func collectStatefulSets(ctx context.Context, collector *tarCollector, rootDir, 
 	return nil
 }
 
+// discoverOdigosCRDs uses the discovery client to find all CRDs in groups ending with ".odigos.io"
+func discoverOdigosCRDs() []schema.GroupVersionResource {
+	var gvrs []schema.GroupVersionResource
+
+	// Get all API groups and resources
+	// Note: ServerGroupsAndResources can return partial results with errors for some groups,
+	// which is normal. We use the results we get and ignore errors.
+	_, apiResourceLists, _ := kube.DefaultClient.Discovery().ServerGroupsAndResources()
+
+	for _, resourceList := range apiResourceLists {
+		if resourceList == nil {
+			continue
+		}
+
+		// Parse the GroupVersion
+		gv, err := schema.ParseGroupVersion(resourceList.GroupVersion)
+		if err != nil {
+			continue
+		}
+
+		// Check if this group is "odigos.io" or ends with ".odigos.io" (e.g., "actions.odigos.io")
+		if gv.Group != odigosGroupSuffix && !strings.HasSuffix(gv.Group, "."+odigosGroupSuffix) {
+			continue
+		}
+
+		// Add all resources from this group
+		for _, resource := range resourceList.APIResources {
+			// Skip subresources (they contain "/")
+			if strings.Contains(resource.Name, "/") {
+				continue
+			}
+
+			gvrs = append(gvrs, schema.GroupVersionResource{
+				Group:    gv.Group,
+				Version:  gv.Version,
+				Resource: resource.Name,
+			})
+		}
+	}
+
+	return gvrs
+}
+
+// collectOdigosCRDs dynamically discovers and collects all Odigos CRDs
+func collectOdigosCRDs(ctx context.Context, collector *tarCollector, rootDir, ns string) error {
+	gvrs := discoverOdigosCRDs()
+
+	for _, gvr := range gvrs {
+		// Errors are not fatal - continue with other CRDs
+		_ = collectCRD(ctx, collector, rootDir, ns, gvr)
+	}
+	return nil
+}
+
+// collectCRD collects a single CRD type using dynamic client
+func collectCRD(ctx context.Context, collector *tarCollector, rootDir, ns string, gvr schema.GroupVersionResource) error {
+	// Use capitalized resource name as directory (e.g., "destinations" -> "Destinations")
+	dirName := capitalizeFirst(gvr.Resource)
+	crdDir := path.Join(rootDir, ns, dirName)
+
+	// Try to list from all namespaces first (works for both namespaced and cluster-scoped resources)
+	list, err := kube.DefaultClient.DynamicClient.Resource(gvr).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		// If all-namespace list fails, try namespace-scoped
+		list, err = kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to list %s: %w", gvr.Resource, err)
+		}
+	}
+
+	if len(list.Items) == 0 {
+		return nil
+	}
+
+	for i := range list.Items {
+		item := &list.Items[i]
+
+		// Clean managedFields from the object
+		unstructured.RemoveNestedField(item.Object, "metadata", "managedFields")
+
+		// Include namespace in filename if the resource is from a different namespace
+		var filename string
+		itemNs := item.GetNamespace()
+		if itemNs != "" && itemNs != ns {
+			filename = fmt.Sprintf("%s.%s.yaml", itemNs, item.GetName())
+		} else {
+			filename = fmt.Sprintf("%s.yaml", item.GetName())
+		}
+
+		// Marshal to YAML
+		yamlData, err := yaml.Marshal(item.Object)
+		if err != nil {
+			continue // Skip this item but continue with others
+		}
+
+		_ = collector.addFile(crdDir, filename, yamlData)
+	}
+
+	return nil
+}
+
 func collectPodsForWorkload(ctx context.Context, collector *tarCollector, ns, componentDir string, selector labels.Selector) error {
 	pods, err := kube.DefaultClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
 		LabelSelector: selector.String(),
@@ -191,7 +302,7 @@ func collectPodLogs(ctx context.Context, collector *tarCollector, ns, componentD
 }
 
 func addContainerLogs(ctx context.Context, collector *tarCollector, ns, componentDir, podName, containerName string, previous bool) {
-	// Create filename - use simple naming for single container, include container name for clarity
+	// Create filename - include container name for clarity
 	var filename string
 	if previous {
 		filename = fmt.Sprintf("pod-%s.%s.previous.logs", podName, containerName)
@@ -236,6 +347,14 @@ func addResourceYAML(collector *tarCollector, componentDir, resourceType, name s
 
 	filename := fmt.Sprintf("%s-%s.yaml", resourceType, name)
 	return collector.addFile(componentDir, filename, yamlData)
+}
+
+// capitalizeFirst capitalizes the first letter of a string
+func capitalizeFirst(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
 func cleanObjectForExport(obj interface{}) interface{} {
