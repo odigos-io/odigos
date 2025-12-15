@@ -19,22 +19,24 @@ package v1alpha1
 
 import (
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	common "github.com/odigos-io/odigos/common"
 )
 
 // ActionSpecApplyConfiguration represents a declarative configuration of the ActionSpec type for use
 // with apply.
 type ActionSpecApplyConfiguration struct {
-	ActionName      *string                                `json:"actionName,omitempty"`
-	Notes           *string                                `json:"notes,omitempty"`
-	Disabled        *bool                                  `json:"disabled,omitempty"`
-	Signals         []common.ObservabilitySignal           `json:"signals,omitempty"`
-	AddClusterInfo  *actionsv1alpha1.AddClusterInfoConfig  `json:"addClusterInfo,omitempty"`
-	DeleteAttribute *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
-	RenameAttribute *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
-	PiiMasking      *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
-	K8sAttributes   *actionsv1alpha1.K8sAttributesConfig   `json:"k8sAttributes,omitempty"`
-	Samplers        *actionsv1alpha1.SamplersConfig        `json:"samplers,omitempty"`
+	ActionName        *string                                `json:"actionName,omitempty"`
+	Notes             *string                                `json:"notes,omitempty"`
+	Disabled          *bool                                  `json:"disabled,omitempty"`
+	Signals           []common.ObservabilitySignal           `json:"signals,omitempty"`
+	AddClusterInfo    *actionsv1alpha1.AddClusterInfoConfig  `json:"addClusterInfo,omitempty"`
+	DeleteAttribute   *actionsv1alpha1.DeleteAttributeConfig `json:"deleteAttribute,omitempty"`
+	RenameAttribute   *actionsv1alpha1.RenameAttributeConfig `json:"renameAttribute,omitempty"`
+	PiiMasking        *actionsv1alpha1.PiiMaskingConfig      `json:"piiMasking,omitempty"`
+	K8sAttributes     *actionsv1alpha1.K8sAttributesConfig   `json:"k8sAttributes,omitempty"`
+	Samplers          *actionsv1alpha1.SamplersConfig        `json:"samplers,omitempty"`
+	URLTemplatization *actions.URLTemplatizationConfig       `json:"urlTemplatization,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -122,5 +124,13 @@ func (b *ActionSpecApplyConfiguration) WithK8sAttributes(value actionsv1alpha1.K
 // If called multiple times, the Samplers field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithSamplers(value actionsv1alpha1.SamplersConfig) *ActionSpecApplyConfiguration {
 	b.Samplers = &value
+	return b
+}
+
+// WithURLTemplatization sets the URLTemplatization field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the URLTemplatization field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithURLTemplatization(value actions.URLTemplatizationConfig) *ActionSpecApplyConfiguration {
+	b.URLTemplatization = &value
 	return b
 }
