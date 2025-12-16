@@ -107,7 +107,7 @@ var relatedImageEnvVars = map[string]string{
 // +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch;patch;update
 // +kubebuilder:rbac:groups="",resources=nodes/proxy,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=nodes/stats,verbs=get;list
-// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;delete
 // +kubebuilder:rbac:groups="",resources=pods/status,verbs=get
 // +kubebuilder:rbac:groups="",resources=pods/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch

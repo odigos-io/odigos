@@ -1,6 +1,6 @@
 import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
-import { RESTART_WORKLOADS } from '@/graphql';
+import { RESTART_POD, RESTART_WORKLOADS } from '@/graphql';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
@@ -8,6 +8,7 @@ import { type WorkloadId, EntityTypes, StatusType, Crud } from '@odigos/ui-kit/t
 
 interface UseWorkloadUtils {
   restartWorkloads: (sourceIds: WorkloadId[]) => Promise<void>;
+  restartPod: (namespace: string, name: string) => Promise<void>;
 }
 
 export const useWorkloadUtils = (): UseWorkloadUtils => {
@@ -20,6 +21,9 @@ export const useWorkloadUtils = (): UseWorkloadUtils => {
   };
 
   const [mutateRestartWorkloads] = useMutation<{ restartWorkloads: boolean }, { sourceIds: WorkloadId[] }>(RESTART_WORKLOADS, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
+  });
+  const [mutateRestartPod] = useMutation<{ restartPod: boolean }, { namespace: string; name: string }>(RESTART_POD, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
   });
 
@@ -39,7 +43,19 @@ export const useWorkloadUtils = (): UseWorkloadUtils => {
     }
   };
 
+  const restartPod: UseWorkloadUtils['restartPod'] = async (namespace, name) => {
+    if (isReadonly) {
+      notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
+    } else {
+      notifyUser(StatusType.Default, 'Pending', 'Restarting pod...', undefined, true);
+    }
+
+    const { data } = await mutateRestartPod({ variables: { namespace, name } });
+    if (data?.restartPod) notifyUser(StatusType.Success, Crud.Update, `Successfully restarted pod ${namespace}/${name}`);
+  };
+
   return {
     restartWorkloads,
+    restartPod,
   };
 };

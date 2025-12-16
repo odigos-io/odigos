@@ -521,6 +521,7 @@ type K8sActualSource struct {
 	Containers                 []*SourceContainer      `json:"containers,omitempty"`
 	Conditions                 []*Condition            `json:"conditions,omitempty"`
 	WorkloadOdigosHealthStatus *DesiredConditionStatus `json:"workloadOdigosHealthStatus,omitempty"`
+	ManifestYaml               *string                 `json:"manifestYAML,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
@@ -842,6 +843,7 @@ type PodAnalyze struct {
 	AgentInjected                 *EntityProperty        `json:"agentInjected"`
 	RunningLatestWorkloadRevision *EntityProperty        `json:"runningLatestWorkloadRevision,omitempty"`
 	Containers                    []*PodContainerAnalyze `json:"containers"`
+	ManifestYaml                  *string                `json:"manifestYAML,omitempty"`
 }
 
 type PodCondition struct {

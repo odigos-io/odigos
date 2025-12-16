@@ -213,13 +213,18 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get"},
 			},
+			{ // Needed for pod operations (restart pod)
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list"},
+			},
 		}
 	} else {
 		rules = []rbacv1.PolicyRule{
 			{ // Needed to read and update odigos-configuration configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "update", "patch"},
+				Verbs:     []string{"get", "list", "create", "update", "patch"},
 			},
 			{ // Needed for secret values in destinations
 				APIGroups: []string{""},
@@ -255,6 +260,11 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				APIGroups: []string{"autoscaling"},
 				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get"},
+			},
+			{ // Needed for pod operations (restart pod)
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
+				Verbs:     []string{"get", "list", "delete"},
 			},
 		}
 	}
@@ -383,9 +393,10 @@ func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole 
 			},
 			{ // Need "pods" for "Describe Source"
 				// for collector metrics - watch and list collectors pods
+				// delete is needed for restart pod functionality
 				APIGroups: []string{""},
 				Resources: []string{"pods"},
-				Verbs:     []string{"get", "list", "watch"},
+				Verbs:     []string{"get", "list", "watch", "delete"},
 			},
 			{ // Needed to read Odigos entities,
 				// "watch" to notify UI about changes with sources

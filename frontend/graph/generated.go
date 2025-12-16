@@ -419,6 +419,7 @@ type ComplexityRoot struct {
 		Containers                 func(childComplexity int) int
 		DataStreamNames            func(childComplexity int) int
 		Kind                       func(childComplexity int) int
+		ManifestYaml               func(childComplexity int) int
 		Name                       func(childComplexity int) int
 		Namespace                  func(childComplexity int) int
 		NumberOfInstances          func(childComplexity int) int
@@ -615,6 +616,7 @@ type ComplexityRoot struct {
 		PauseOdigos                  func(childComplexity int) int
 		PersistK8sNamespaces         func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
 		PersistK8sSources            func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
+		RestartPod                   func(childComplexity int, namespace string, name string) int
 		RestartWorkloads             func(childComplexity int, sourceIds []*model.K8sSourceID) int
 		TestConnectionForDestination func(childComplexity int, destination model.DestinationInput) int
 		UninstrumentCluster          func(childComplexity int) int
@@ -693,6 +695,7 @@ type ComplexityRoot struct {
 	PodAnalyze struct {
 		AgentInjected                 func(childComplexity int) int
 		Containers                    func(childComplexity int) int
+		ManifestYaml                  func(childComplexity int) int
 		NodeName                      func(childComplexity int) int
 		Phase                         func(childComplexity int) int
 		PodName                       func(childComplexity int) int
@@ -941,6 +944,7 @@ type MutationResolver interface {
 	RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error)
 	DeleteCentralProxy(ctx context.Context) (bool, error)
 	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (*model.RemoteConfig, error)
+	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -2582,6 +2586,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sActualSource.Kind(childComplexity), true
 
+	case "K8sActualSource.manifestYAML":
+		if e.complexity.K8sActualSource.ManifestYaml == nil {
+			break
+		}
+
+		return e.complexity.K8sActualSource.ManifestYaml(childComplexity), true
+
 	case "K8sActualSource.name":
 		if e.complexity.K8sActualSource.Name == nil {
 			break
@@ -3474,6 +3485,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["sources"].([]*model.PersistNamespaceSourceInput)), true
 
+	case "Mutation.restartPod":
+		if e.complexity.Mutation.RestartPod == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_restartPod_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RestartPod(childComplexity, args["namespace"].(string), args["name"].(string)), true
+
 	case "Mutation.restartWorkloads":
 		if e.complexity.Mutation.RestartWorkloads == nil {
 			break
@@ -3854,6 +3877,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PodAnalyze.Containers(childComplexity), true
+
+	case "PodAnalyze.manifestYAML":
+		if e.complexity.PodAnalyze.ManifestYaml == nil {
+			break
+		}
+
+		return e.complexity.PodAnalyze.ManifestYaml(childComplexity), true
 
 	case "PodAnalyze.nodeName":
 		if e.complexity.PodAnalyze.NodeName == nil {
@@ -5187,6 +5217,57 @@ func (ec *executionContext) field_Mutation_persistK8sSources_argsSources(
 	}
 
 	var zeroVal []*model.PersistNamespaceSourceInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_restartPod_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_restartPod_argsNamespace(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["namespace"] = arg0
+	arg1, err := ec.field_Mutation_restartPod_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_restartPod_argsNamespace(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["namespace"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("namespace"))
+	if tmp, ok := rawArgs["namespace"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_restartPod_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -9536,6 +9617,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_sources(_ context.Conte
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			case "workloadOdigosHealthStatus":
 				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -9602,6 +9685,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_source(ctx context.Cont
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			case "workloadOdigosHealthStatus":
 				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -16373,6 +16458,8 @@ func (ec *executionContext) fieldContext_K8sActualNamespace_sources(_ context.Co
 				return ec.fieldContext_K8sActualSource_conditions(ctx, field)
 			case "workloadOdigosHealthStatus":
 				return ec.fieldContext_K8sActualSource_workloadOdigosHealthStatus(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type K8sActualSource", field.Name)
 		},
@@ -16835,6 +16922,47 @@ func (ec *executionContext) fieldContext_K8sActualSource_workloadOdigosHealthSta
 				return ec.fieldContext_DesiredConditionStatus_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DesiredConditionStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sActualSource_manifestYAML(ctx context.Context, field graphql.CollectedField, obj *model.K8sActualSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sActualSource_manifestYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManifestYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sActualSource_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sActualSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -23015,6 +23143,61 @@ func (ec *executionContext) fieldContext_Mutation_updateRemoteConfig(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_restartPod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_restartPod(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RestartPod(rctx, fc.Args["namespace"].(string), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_restartPod(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_restartPod_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NodeCollectorAnalyze_enabled(ctx context.Context, field graphql.CollectedField, obj *model.NodeCollectorAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NodeCollectorAnalyze_enabled(ctx, field)
 	if err != nil {
@@ -25145,6 +25328,47 @@ func (ec *executionContext) fieldContext_PodAnalyze_containers(_ context.Context
 				return ec.fieldContext_PodContainerAnalyze_instrumentationInstances(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PodContainerAnalyze", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PodAnalyze_manifestYAML(ctx context.Context, field graphql.CollectedField, obj *model.PodAnalyze) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PodAnalyze_manifestYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManifestYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PodAnalyze_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PodAnalyze",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -29348,6 +29572,8 @@ func (ec *executionContext) fieldContext_SourceAnalyze_pods(_ context.Context, f
 				return ec.fieldContext_PodAnalyze_runningLatestWorkloadRevision(ctx, field)
 			case "containers":
 				return ec.fieldContext_PodAnalyze_containers(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_PodAnalyze_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PodAnalyze", field.Name)
 		},
@@ -36954,6 +37180,8 @@ func (ec *executionContext) _K8sActualSource(ctx context.Context, sel ast.Select
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "manifestYAML":
+			out.Values[i] = ec._K8sActualSource_manifestYAML(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -38810,6 +39038,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateRemoteConfig(ctx, field)
 			})
+		case "restartPod":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_restartPod(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39321,6 +39556,8 @@ func (ec *executionContext) _PodAnalyze(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "manifestYAML":
+			out.Values[i] = ec._PodAnalyze_manifestYAML(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

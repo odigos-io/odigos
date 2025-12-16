@@ -23,6 +23,7 @@ package v1alpha1
 import (
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	corev1 "k8s.io/api/core/v1"
@@ -125,6 +126,11 @@ func (in *ActionSpec) DeepCopyInto(out *ActionSpec) {
 	if in.Samplers != nil {
 		in, out := &in.Samplers, &out.Samplers
 		*out = new(actionsv1alpha1.SamplersConfig)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.URLTemplatization != nil {
+		in, out := &in.URLTemplatization, &out.URLTemplatization
+		*out = new(actions.URLTemplatizationConfig)
 		(*in).DeepCopyInto(*out)
 	}
 }

@@ -20,6 +20,7 @@ import (
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 
+	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -75,6 +76,9 @@ type ActionSpec struct {
 
 	// Samplers is the config for the Samplers Action.
 	Samplers *actionsv1.SamplersConfig `json:"samplers,omitempty"`
+
+	// URLTemplatization is the config for the URLTemplatization Action.
+	URLTemplatization *actions.URLTemplatizationConfig `json:"urlTemplatization,omitempty"`
 }
 
 type ActionStatus struct {
