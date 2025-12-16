@@ -48,10 +48,21 @@ func newTarCollector(tw *tar.Writer) *tarCollector {
 // for all Odigos components running in the odigos system namespace.
 // Query params:
 //   - includeWorkloads: if "true", also include workload and pod YAMLs for each Source
+//   - workloadNamespaces: comma-separated list of namespaces to collect workloads from (only used when includeWorkloads=true, defaults to all namespaces)
 func DebugDump(c *gin.Context) {
 	ctx := c.Request.Context()
 	ns := env.GetCurrentNamespace()
 	includeWorkloads := c.Query("includeWorkloads") == "true"
+
+	// Parse workloadNamespaces - comma-separated list of namespaces to filter by
+	var workloadNamespaces []string
+	if nsParam := c.Query("workloadNamespaces"); nsParam != "" {
+		for _, n := range strings.Split(nsParam, ",") {
+			if trimmed := strings.TrimSpace(n); trimmed != "" {
+				workloadNamespaces = append(workloadNamespaces, trimmed)
+			}
+		}
+	}
 
 	// Set headers for file download
 	timestamp := time.Now().Format("20060102-150405")
@@ -70,7 +81,7 @@ func DebugDump(c *gin.Context) {
 	collector := newTarCollector(tarWriter)
 
 	// Collect odigos workloads (and optionally source workloads)
-	if err := collectAllWorkloads(ctx, collector, rootDir, ns, includeWorkloads); err != nil {
+	if err := collectAllWorkloads(ctx, collector, rootDir, ns, includeWorkloads, workloadNamespaces); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect workloads: %v", err)})
 		return
 	}
@@ -100,7 +111,8 @@ type workloadTarget struct {
 }
 
 // collectAllWorkloads collects workloads from odigos namespace and optionally from Sources
-func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, odigosNs string, includeWorkloads bool) error {
+// workloadNamespaces filters which namespaces to collect Source workloads from (empty means all namespaces)
+func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, odigosNs string, includeWorkloads bool, workloadNamespaces []string) error {
 	var targets []workloadTarget
 
 	// Add all workloads from odigos namespace (with logs)
@@ -121,6 +133,12 @@ func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, 
 
 	// Optionally add workloads from Sources (without logs)
 	if includeWorkloads {
+		// Build namespace filter set for quick lookup
+		nsFilter := make(map[string]bool)
+		for _, ns := range workloadNamespaces {
+			nsFilter[ns] = true
+		}
+
 		sourceList, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to list sources: %w", err)
@@ -129,6 +147,10 @@ func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, 
 			for _, source := range sourceList.Items {
 				w := source.Spec.Workload
 				if w.Name != "" && w.Namespace != "" && w.Kind != "" && w.Kind != k8sconsts.WorkloadKindNamespace {
+					// Filter by namespace if workloadNamespaces is specified
+					if len(nsFilter) > 0 && !nsFilter[w.Namespace] {
+						continue
+					}
 					targets = append(targets, workloadTarget{w.Namespace, w.Name, w.Kind, fmt.Sprintf("%s-%s", workload.WorkloadKindLowerCaseFromKind(w.Kind), w.Name), false})
 				}
 			}
