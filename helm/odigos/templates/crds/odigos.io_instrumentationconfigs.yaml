@@ -190,7 +190,7 @@ spec:
                               - sourceId
                               type: object
                           type: object
-                        templateRules:
+                        templatization_rules:
                           description: A list of template rules to be applied to the
                             traces.
                           items:

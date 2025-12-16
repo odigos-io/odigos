@@ -21,7 +21,7 @@ package v1alpha1
 // with apply.
 type AgentTracesConfigApplyConfiguration struct {
 	IdGenerator   *IdGeneratorConfigApplyConfiguration `json:"idGenerator,omitempty"`
-	TemplateRules []string                             `json:"templateRules,omitempty"`
+	TemplateRules []string                             `json:"templatization_rules,omitempty"`
 }
 
 // AgentTracesConfigApplyConfiguration constructs a declarative configuration of the AgentTracesConfig type for use with

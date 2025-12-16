@@ -9,6 +9,9 @@ import (
 )
 
 func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosConfiguration, containerName string, templateRules *[]string) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
+	fmt.Printf("DEBUG: CalculateTracesConfig - tracesEnabled: %v, containerName: %s, templateRules count: %d\n", tracesEnabled, containerName, len(*templateRules))
+	fmt.Printf("DEBUG: CalculateTracesConfig - templateRules: %v\n", *templateRules)
+
 	if !tracesEnabled {
 		return nil, nil
 	}
@@ -37,6 +40,9 @@ func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosCon
 	for _, templateRule := range *templateRules {
 		tracesConfig.TemplateRules = append(tracesConfig.TemplateRules, templateRule)
 	}
+
+	fmt.Printf("DEBUG: Final tracesConfig for container %s: %+v\n", containerName, tracesConfig)
+	fmt.Printf("DEBUG: Final tracesConfig.TemplateRules: %v\n", tracesConfig.TemplateRules)
 
 	return tracesConfig, nil
 }
