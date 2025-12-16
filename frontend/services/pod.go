@@ -5,11 +5,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -240,11 +242,7 @@ func StreamPodLogs(c *gin.Context) {
 	}
 	defer stream.Close()
 
-	// Set SSE headers
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
-	c.Header("X-Accel-Buffering", "no")
+	target := fmt.Sprintf("namespace=%s&name=%s&container=%s", namespace, podName, containerName)
 
 	// Stream logs line by line
 	reader := bufio.NewReader(stream)
@@ -261,19 +259,34 @@ func StreamPodLogs(c *gin.Context) {
 						return
 					}
 					// For follow mode, EOF means the container stopped
-					fmt.Fprintf(c.Writer, "data: [stream ended]\n\n")
-					c.Writer.Flush()
+					sse.SendMessageToClient(sse.SSEMessage{
+						Type:    sse.MessageTypeInfo,
+						Event:   sse.MessageEventLogEnd,
+						Data:    "Stream ended",
+						CRDType: "PodLogs",
+						Target:  target,
+					})
 					return
 				}
 				// Other error
-				fmt.Fprintf(c.Writer, "data: [error: %v]\n\n", err)
-				c.Writer.Flush()
+				sse.SendMessageToClient(sse.SSEMessage{
+					Type:    sse.MessageTypeError,
+					Event:   sse.MessageEventLogError,
+					Data:    fmt.Sprintf("Error reading logs: %v", err),
+					CRDType: "PodLogs",
+					Target:  target,
+				})
 				return
 			}
 
 			// Send the log line as an SSE event
-			fmt.Fprintf(c.Writer, "data: %s\n", line)
-			c.Writer.Flush()
+			sse.SendMessageToClient(sse.SSEMessage{
+				Type:    sse.MessageTypeDefault,
+				Event:   sse.MessageEventLogLine,
+				Data:    strings.TrimSuffix(line, "\n"),
+				CRDType: "PodLogs",
+				Target:  target,
+			})
 		}
 	}
 }
