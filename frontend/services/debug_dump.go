@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"path"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -121,7 +121,10 @@ func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, 
 
 	// Optionally add workloads from Sources (without logs)
 	if includeWorkloads {
-		sourceList, _ := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+		sourceList, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to list sources: %w", err)
+		}
 		if sourceList != nil {
 			for _, source := range sourceList.Items {
 				w := source.Spec.Workload
@@ -135,7 +138,9 @@ func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, 
 	// Collect all targets
 	for _, t := range targets {
 		workloadDir := path.Join(rootDir, t.namespace, t.dirName)
-		_ = collectWorkload(ctx, collector, workloadDir, t.namespace, t.name, t.kind, t.includeLogs)
+		if err := collectWorkload(ctx, collector, workloadDir, t.namespace, t.name, t.kind, t.includeLogs); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to collect workload %s: %w", t.name, err)
+		}
 	}
 
 	return nil
@@ -189,8 +194,9 @@ func collectOdigosCRDs(ctx context.Context, collector *tarCollector, rootDir, ns
 	gvrs := discoverOdigosCRDs()
 
 	for _, gvr := range gvrs {
-		// Errors are not fatal - continue with other CRDs
-		_ = collectCRD(ctx, collector, rootDir, ns, gvr)
+		if err := collectCRD(ctx, collector, rootDir, ns, gvr); err != nil {
+			return fmt.Errorf("failed to collect CRD %s: %w", gvr.Resource, err)
+		}
 	}
 	return nil
 }
@@ -235,7 +241,9 @@ func collectCRD(ctx context.Context, collector *tarCollector, rootDir, odigosNs 
 			continue // Skip this item but continue with others
 		}
 
-		_ = collector.addFile(crdDir, filename, yamlData)
+		if err := collector.addFile(crdDir, filename, yamlData); err != nil {
+			return fmt.Errorf("failed to add CRD %s to tar: %w", item.GetName(), err)
+		}
 	}
 
 	return nil
@@ -268,7 +276,7 @@ func collectWorkload(ctx context.Context, collector *tarCollector, workloadDir, 
 		if err != nil {
 			return err
 		}
-		if err := addResourceYAML(collector, workloadDir, "deployment", name, obj); err != nil {
+		if err := addResourceYAML(collector, workloadDir, string(k8sconsts.WorkloadKindLowerCaseDeployment), name, obj); err != nil {
 			return err
 		}
 		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
@@ -278,7 +286,7 @@ func collectWorkload(ctx context.Context, collector *tarCollector, workloadDir, 
 		if err != nil {
 			return err
 		}
-		if err := addResourceYAML(collector, workloadDir, "daemonset", name, obj); err != nil {
+		if err := addResourceYAML(collector, workloadDir, string(k8sconsts.WorkloadKindLowerCaseDaemonSet), name, obj); err != nil {
 			return err
 		}
 		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
@@ -288,7 +296,7 @@ func collectWorkload(ctx context.Context, collector *tarCollector, workloadDir, 
 		if err != nil {
 			return err
 		}
-		if err := addResourceYAML(collector, workloadDir, "statefulset", name, obj); err != nil {
+		if err := addResourceYAML(collector, workloadDir, string(k8sconsts.WorkloadKindLowerCaseStatefulSet), name, obj); err != nil {
 			return err
 		}
 		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
@@ -324,7 +332,7 @@ func collectCronJob(ctx context.Context, collector *tarCollector, workloadDir, n
 		if err != nil {
 			return nil, err
 		}
-		if err := addResourceYAML(collector, workloadDir, "cronjob", name, obj); err != nil {
+		if err := addResourceYAML(collector, workloadDir, string(k8sconsts.WorkloadKindLowerCaseCronJob), name, obj); err != nil {
 			return nil, err
 		}
 		if obj.Spec.JobTemplate.Spec.Selector != nil {
@@ -361,33 +369,42 @@ func collectPods(ctx context.Context, collector *tarCollector, ns, componentDir 
 			return err
 		}
 		if includeLogs {
-			collectPodLogs(ctx, collector, ns, componentDir, pod)
+			if err := collectPodLogs(ctx, collector, ns, componentDir, pod); err != nil {
+				return fmt.Errorf("failed to collect pod logs: %w", err)
+			}
 		}
 	}
 
 	return nil
 }
 
-func collectPodLogs(ctx context.Context, collector *tarCollector, ns, componentDir string, pod *corev1.Pod) {
+func collectPodLogs(ctx context.Context, collector *tarCollector, ns, componentDir string, pod *corev1.Pod) error {
 	for _, container := range pod.Spec.Containers {
 		// Get current logs
-		addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, false)
+		if err := addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, false); err != nil {
+			return fmt.Errorf("failed to add container logs: %w", err)
+		}
 
 		// Check if container has been restarted and get previous logs
 		for _, status := range pod.Status.ContainerStatuses {
 			if status.Name == container.Name && status.RestartCount > 0 {
-				addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, true)
+				if err := addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, true); err != nil {
+					return fmt.Errorf("failed to add container logs: %w", err)
+				}
 			}
 		}
 	}
 
 	// Also collect logs from init containers
 	for _, container := range pod.Spec.InitContainers {
-		addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, false)
+		if err := addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, false); err != nil {
+			return fmt.Errorf("failed to add container logs: %w", err)
+		}
 	}
+	return nil
 }
 
-func addContainerLogs(ctx context.Context, collector *tarCollector, ns, componentDir, podName, containerName string, previous bool) {
+func addContainerLogs(ctx context.Context, collector *tarCollector, ns, componentDir, podName, containerName string, previous bool) error {
 	// Create filename - include container name for clarity
 	var filename string
 	if previous {
@@ -401,25 +418,21 @@ func addContainerLogs(ctx context.Context, collector *tarCollector, ns, componen
 		Previous:  previous,
 	})
 
-	logStream, err := req.Stream(ctx)
+	logData, err := req.Do(ctx).Raw()
 	if err != nil {
 		// Write error message to log file so user knows what happened
 		errorMsg := fmt.Sprintf("Error fetching logs: %v\n", err)
-		_ = collector.addFile(componentDir, filename, []byte(errorMsg))
-		return
-	}
-	defer logStream.Close()
-
-	// Read all logs into memory
-	logData, err := io.ReadAll(logStream)
-	if err != nil {
-		errorMsg := fmt.Sprintf("Error reading logs: %v\n", err)
-		_ = collector.addFile(componentDir, filename, []byte(errorMsg))
-		return
+		if err := collector.addFile(componentDir, filename, []byte(errorMsg)); err != nil {
+			return fmt.Errorf("failed to add error message to tar: %w", err)
+		}
+		return fmt.Errorf("failed to fetch logs: %w", err)
 	}
 
 	// Write logs to tar (even if empty)
-	_ = collector.addFile(componentDir, filename, logData)
+	if err := collector.addFile(componentDir, filename, logData); err != nil {
+		return fmt.Errorf("failed to add logs to tar: %w", err)
+	}
+	return nil
 }
 
 func addResourceYAML(collector *tarCollector, componentDir, resourceType, name string, obj interface{}) error {
