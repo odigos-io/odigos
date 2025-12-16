@@ -52,9 +52,6 @@ spec:
           - --health-probe-bind-address=:8081
           - --metrics-bind-address=0.0.0.0:8080
           - --leader-elect
-          {{- with .Values.imagePullSecrets }}
-          - --image-pull-secrets={{ include "odigos.joinPullSecrets" $ }}
-          {{- end }}
         command:
           - /app
         {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
