@@ -35,12 +35,16 @@ const odigosGroupSuffix = "odigos.io"
 type tarCollector struct {
 	tarWriter   *tar.Writer
 	createdDirs map[string]bool
+	dryRun      bool
+	totalSize   int64
+	fileCount   int
 }
 
-func newTarCollector(tw *tar.Writer) *tarCollector {
+func newTarCollector(tw *tar.Writer, dryRun bool) *tarCollector {
 	return &tarCollector{
 		tarWriter:   tw,
 		createdDirs: make(map[string]bool),
+		dryRun:      dryRun,
 	}
 }
 
@@ -49,10 +53,12 @@ func newTarCollector(tw *tar.Writer) *tarCollector {
 // Query params:
 //   - includeWorkloads: if "true", also include workload and pod YAMLs for each Source
 //   - workloadNamespaces: comma-separated list of namespaces to collect workloads from (only used when includeWorkloads=true, defaults to all namespaces)
+//   - dryRun: if "true", returns JSON with estimated size instead of generating the file
 func DebugDump(c *gin.Context) {
 	ctx := c.Request.Context()
 	ns := env.GetCurrentNamespace()
 	includeWorkloads := c.Query("includeWorkloads") == "true"
+	dryRun := c.Query("dryRun") == "true"
 
 	// Parse workloadNamespaces - comma-separated list of namespaces to filter by
 	var workloadNamespaces []string
@@ -64,21 +70,51 @@ func DebugDump(c *gin.Context) {
 		}
 	}
 
-	// Set headers for file download
 	timestamp := time.Now().Format("20060102-150405")
 	rootDir := fmt.Sprintf("odigos-debug-%s", timestamp)
+
+	var tarWriter *tar.Writer
+	if !dryRun {
+		// Create gzip writer directly to response
+		gzipWriter := gzip.NewWriter(c.Writer)
+		defer gzipWriter.Close()
+
+		tarWriter = tar.NewWriter(gzipWriter)
+		defer tarWriter.Close()
+	}
+	collector := newTarCollector(tarWriter, dryRun)
+
+	if err := collectAllWorkloads(ctx, collector, rootDir, ns, includeWorkloads, workloadNamespaces); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect workloads: %v", err)})
+		return
+	}
+
+	if err := collectOdigosCRDs(ctx, collector, rootDir, ns); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect odigos CRDs: %v", err)})
+		return
+	}
+
+	if err := collectConfigMaps(ctx, collector, rootDir, ns); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect configmaps: %v", err)})
+		return
+	}
+
+	if dryRun {
+		c.JSON(http.StatusOK, gin.H{
+			"dryRun":             true,
+			"includeWorkloads":   includeWorkloads,
+			"workloadNamespaces": workloadNamespaces,
+			"fileCount":          collector.fileCount,
+			"totalSizeBytes":     collector.totalSize,
+			"totalSizeHuman":     formatBytes(collector.totalSize),
+		})
+		return
+	}
+
+	// Set headers for file download
 	filename := fmt.Sprintf("%s.tar.gz", rootDir)
 	c.Header("Content-Type", "application/gzip")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-
-	// Create gzip writer directly to response
-	gzipWriter := gzip.NewWriter(c.Writer)
-	defer gzipWriter.Close()
-
-	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
-
-	collector := newTarCollector(tarWriter)
 
 	// Collect odigos workloads (and optionally source workloads)
 	if err := collectAllWorkloads(ctx, collector, rootDir, ns, includeWorkloads, workloadNamespaces); err != nil {
@@ -515,6 +551,15 @@ func cleanObjectForExport(obj interface{}) interface{} {
 }
 
 func (c *tarCollector) addFile(dir, filename string, data []byte) error {
+	// Track size and count for dry-run mode
+	c.totalSize += int64(len(data))
+	c.fileCount++
+
+	// In dry-run mode, just count the size without writing
+	if c.dryRun {
+		return nil
+	}
+
 	// Ensure directory entries exist
 	dirs := strings.Split(dir, "/")
 	currentPath := ""
@@ -562,4 +607,18 @@ func (c *tarCollector) addFile(dir, filename string, data []byte) error {
 	}
 
 	return nil
+}
+
+// formatBytes converts bytes to a human-readable string
+func formatBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
