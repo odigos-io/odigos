@@ -146,13 +146,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-	fmt.Printf("DEBUG: Calling getRelevantResources for workload %s/%s\n", pw.Namespace, pw.Name)
 	cg, irls, effectiveConfig, templateRules, err := getRelevantResources(ctx, c, pw)
-	if templateRules != nil {
-		fmt.Printf("DEBUG: getRelevantResources returned %d template rules\n", len(*templateRules))
-	} else {
-		fmt.Printf("DEBUG: getRelevantResources returned nil templateRules\n")
-	}
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
@@ -389,34 +383,21 @@ func getEnvInjectionDecision(
 func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language common.ProgrammingLanguage) []string {
 	filteredRules := []string{}
 
-	fmt.Printf("DEBUG: filterTemplateRulesForContainer called with %d actions for language: %s\n", len(*templateRules), language)
-
 	for _, templateRule := range *templateRules {
 		// Safety check: actions were already filtered to only include template actions.
 		if templateRule.Spec.URLTemplatization == nil {
-			fmt.Printf("DEBUG: Action %s has no URLTemplatization, skipping\n", templateRule.Name)
 			continue
 		}
 
-		fmt.Printf("DEBUG: Processing Action %s with %d rule groups\n", templateRule.Name, len(templateRule.Spec.URLTemplatization.TemplatizationRulesGroups))
-
-		for i, rulesGroup := range templateRule.Spec.URLTemplatization.TemplatizationRulesGroups {
-			fmt.Printf("DEBUG: Rule group %d: FilterProgrammingLanguage=%v, TemplatizationRules count=%d\n",
-				i, rulesGroup.FilterProgrammingLanguage, len(rulesGroup.TemplatizationRules))
-
-			matches := templatizationRulesGroupMatchesContainer(rulesGroup, language)
-			fmt.Printf("DEBUG: Rule group %d matches container: %v\n", i, matches)
-
-			if matches {
+		for _, rulesGroup := range templateRule.Spec.URLTemplatization.TemplatizationRulesGroups {
+			if templatizationRulesGroupMatchesContainer(rulesGroup, language) {
 				for _, rule := range rulesGroup.TemplatizationRules {
-					fmt.Printf("DEBUG: Adding rule: %s\n", rule.Template)
 					filteredRules = append(filteredRules, rule.Template)
 				}
 			}
 		}
 	}
 
-	fmt.Printf("DEBUG: filterTemplateRulesForContainer returning %d rules: %v\n", len(filteredRules), filteredRules)
 	return filteredRules
 }
 
@@ -425,14 +406,9 @@ func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language 
 func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizationRulesGroup, language common.ProgrammingLanguage) bool {
 	// Filter by programming language
 	if rulesGroup.FilterProgrammingLanguage != nil {
-		fmt.Printf("DEBUG: Comparing filter language '%s' with container language '%s'\n", *rulesGroup.FilterProgrammingLanguage, language)
 		if *rulesGroup.FilterProgrammingLanguage != language {
-			fmt.Printf("DEBUG: Language mismatch, rejecting rule group\n")
 			return false
 		}
-		fmt.Printf("DEBUG: Language matches!\n")
-	} else {
-		fmt.Printf("DEBUG: No language filter, accepting rule group (global)\n")
 	}
 
 	// TODO: Add additional filter checks here as needed:
@@ -440,7 +416,6 @@ func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizati
 	// if rulesGroup.FilterK8sWorkloadKind != nil && *rulesGroup.FilterK8sWorkloadKind != workloadKind { return false }
 	// if rulesGroup.FilterK8sWorkloadName != "" && rulesGroup.FilterK8sWorkloadName != workloadName { return false }
 
-	fmt.Printf("DEBUG: Rule group matches container\n")
 	return true
 }
 
@@ -486,9 +461,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	fmt.Printf("DEBUG: About to filter template rules for container %s with language %s\n", containerName, runtimeDetails.Language)
 	filteredTemplateRules := filterTemplateRulesForContainer(templateRules, runtimeDetails.Language)
-	fmt.Printf("DEBUG: Filtered template rules for %s: %v\n", containerName, filteredTemplateRules)
 
 	distro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {

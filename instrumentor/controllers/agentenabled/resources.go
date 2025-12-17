@@ -2,7 +2,6 @@ package agentenabled
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -50,28 +49,20 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 }
 
 func getTemplateRules(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
-	fmt.Printf("DEBUG: getTemplateRules() called, listing Actions in namespace: %s\n", env.GetCurrentNamespace())
-
 	actionList := &odigosv1.ActionList{}
 	err := c.List(ctx, actionList, &client.ListOptions{Namespace: env.GetCurrentNamespace()})
 	if err != nil {
-		fmt.Printf("ERROR: Failed to list Actions: %v\n", err)
 		return nil, err
 	}
-
-	fmt.Printf("DEBUG: Found %d total Actions\n", len(actionList.Items))
 
 	// Filter only actions that have URLTemplatization config
 	templateRulesList := []odigosv1.Action{}
 	for _, action := range actionList.Items {
-		fmt.Printf("DEBUG: Processing Action '%s', URLTemplatization: %v\n", action.Name, action.Spec.URLTemplatization != nil)
 		if action.Spec.URLTemplatization != nil {
-			fmt.Printf("DEBUG: Action '%s' has %d rule groups\n", action.Name, len(action.Spec.URLTemplatization.TemplatizationRulesGroups))
 			templateRulesList = append(templateRulesList, action)
 		}
 	}
 
-	fmt.Printf("DEBUG: Returning %d Actions with URLTemplatization\n", len(templateRulesList))
 	return &templateRulesList, nil
 }
 func getCollectorsGroup(ctx context.Context, c client.Client) (*odigosv1.CollectorsGroup, error) {
