@@ -108,10 +108,40 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	if automaticRolloutDisabled {
-		// TODO: add more fine grained status conditions for this case.
-		// For example: if the workload has already been rolled out, we can set the status to true
-		// and signal that the process is considered completed.
-		// If manual rollout is required, we can mention this for better UX.
+		savedRolloutHash := ic.Status.WorkloadRolloutHash
+		newRolloutHash := ic.Spec.AgentsMetaHash
+
+		currentCondition := meta.FindStatusCondition(ic.Status.Conditions, odigosv1alpha1.WorkloadRolloutStatusConditionType)
+		if currentCondition != nil && currentCondition.Reason == string(odigosv1alpha1.WorkloadRolloutReasonManualRolloutInProgress) {
+
+			rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
+			if rolloutDone {
+				ic.Status.WorkloadRolloutHash = newRolloutHash
+				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+					Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+					Status:  metav1.ConditionTrue,
+					Reason:  string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully),
+					Message: "manual rollout completed successfully",
+				})
+				logger.Info("manual rollout completed, updating status", "workload", pw.Name, "namespace", pw.Namespace)
+				// Always return true to ensure status is updated (hash changed even if condition didn't)
+				return true, ctrl.Result{}, nil
+			}
+			logger.Info("manual rollout still in progress, requeueing", "workload", pw.Name, "namespace", pw.Namespace)
+			return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
+		}
+
+		if savedRolloutHash != newRolloutHash && newRolloutHash != "" {
+			statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+				Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+				Status:  metav1.ConditionFalse,
+				Reason:  string(odigosv1alpha1.WorkloadRolloutReasonManualRolloutRequired),
+				Message: "manual rollout required - automatic rollout is disabled",
+			})
+			return statusChanged, ctrl.Result{}, nil
+		}
+
+		// Hashes match or no agent enabled - no rollout needed
 		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionTrue, // this might not be a success, need to refine into multiple discrete states

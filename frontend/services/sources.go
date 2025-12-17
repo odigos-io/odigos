@@ -24,6 +24,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -265,6 +266,13 @@ func getDeploymentConfigs(ctx context.Context, namespace corev1.Namespace) ([]mo
 func RolloutRestartWorkload(ctx context.Context, namespace string, name string, kind model.K8sResourceKind) error {
 	now := time.Now().Format(time.RFC3339)
 
+	// Update InstrumentationConfig status to indicate manual rollout is in progress
+	if err := updateInstrumentationConfigRolloutStatus(ctx, namespace, name, kind); err != nil {
+		// Log but don't fail - the rollout itself is more important
+		// The status will be corrected by the instrumentor controller after rollout completes
+		fmt.Printf("Warning: failed to update InstrumentationConfig status: %v\n", err)
+	}
+
 	switch kind {
 	case WorkloadKindDeployment:
 		dep, err := kube.DefaultClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -365,6 +373,41 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 
 	default:
 		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, DaemonSet, CronJob or DeploymentConfig)", kind)
+	}
+
+	return nil
+}
+
+// updateInstrumentationConfigRolloutStatus updates the InstrumentationConfig status to indicate
+// that a manual rollout has been triggered and is in progress.
+func updateInstrumentationConfigRolloutStatus(ctx context.Context, namespace string, name string, kind model.K8sResourceKind) error {
+	// Calculate the InstrumentationConfig name from workload info
+	icName := workload.CalculateWorkloadRuntimeObjectName(name, string(kind))
+
+	// Get the InstrumentationConfig
+	ic, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Get(ctx, icName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// No InstrumentationConfig exists for this workload - this is fine, skip the update
+			return nil
+		}
+		return fmt.Errorf("failed to get InstrumentationConfig: %w", err)
+	}
+
+	// Update the condition to ManualRolloutInProgress
+	// Note: We do NOT update WorkloadRolloutHash here - the instrumentor will update it
+	// once the rollout actually completes (all pods running with new config)
+	meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+		Type:    v1alpha1.WorkloadRolloutStatusConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(v1alpha1.WorkloadRolloutReasonManualRolloutInProgress),
+		Message: "manual rollout triggered by user",
+	})
+
+	// Update the status
+	_, err = kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).UpdateStatus(ctx, ic, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update InstrumentationConfig status: %w", err)
 	}
 
 	return nil

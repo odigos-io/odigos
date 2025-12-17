@@ -38,9 +38,11 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&odigosv1.InstrumentationConfig{}).
 		// When the runtime details change we need to potentially update the instrumentation config and roll out the workload.
 		// When the instrumentation config is deleted, we need to roll out the workload to un-instrument it.
+		// When manual rollout is triggered by the user, we need to start polling for rollout completion.
 		WithEventFilter(predicate.Or(
 			&instrumentorpredicate.RuntimeDetailsChangedPredicate{},
 			&instrumentorpredicate.ContainerOverridesChangedPredicate{},
+			&instrumentorpredicate.ManualRolloutInProgressPredicate{},
 			odigospredicate.DeletionPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
 			Client:          mgr.GetClient(),

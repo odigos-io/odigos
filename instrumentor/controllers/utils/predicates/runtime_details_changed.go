@@ -3,6 +3,7 @@ package predicates
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -110,4 +111,55 @@ func (i ContainerOverridesChangedPredicate) Delete(e event.DeleteEvent) bool {
 
 func (i ContainerOverridesChangedPredicate) Generic(e event.GenericEvent) bool {
 	return false
+}
+
+// ManualRolloutInProgressPredicate triggers reconciliation when the WorkloadRollout
+// condition changes to ManualRolloutInProgress. This is needed because the frontend
+// sets this condition when the user triggers a manual restart, and the controller
+// needs to start polling to detect when the rollout completes.
+type ManualRolloutInProgressPredicate struct{}
+
+var _ predicate.Predicate = &ManualRolloutInProgressPredicate{}
+
+func (p ManualRolloutInProgressPredicate) Create(e event.CreateEvent) bool {
+	return false
+}
+
+func (p ManualRolloutInProgressPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+
+	oldIc, oldOk := e.ObjectOld.(*odigosv1.InstrumentationConfig)
+	newIc, newOk := e.ObjectNew.(*odigosv1.InstrumentationConfig)
+	if !oldOk || !newOk {
+		return false
+	}
+
+	// Check if the condition changed to ManualRolloutInProgress
+	oldCondition := findWorkloadRolloutCondition(oldIc)
+	newCondition := findWorkloadRolloutCondition(newIc)
+
+	oldIsInProgress := oldCondition != nil && oldCondition.Reason == string(odigosv1.WorkloadRolloutReasonManualRolloutInProgress)
+	newIsInProgress := newCondition != nil && newCondition.Reason == string(odigosv1.WorkloadRolloutReasonManualRolloutInProgress)
+
+	// Trigger reconciliation when condition changes TO ManualRolloutInProgress
+	return !oldIsInProgress && newIsInProgress
+}
+
+func (p ManualRolloutInProgressPredicate) Delete(e event.DeleteEvent) bool {
+	return false
+}
+
+func (p ManualRolloutInProgressPredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
+
+func findWorkloadRolloutCondition(ic *odigosv1.InstrumentationConfig) *metav1.Condition {
+	for i := range ic.Status.Conditions {
+		if ic.Status.Conditions[i].Type == odigosv1.WorkloadRolloutStatusConditionType {
+			return &ic.Status.Conditions[i]
+		}
+	}
+	return nil
 }

@@ -113,15 +113,17 @@ const (
 	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart;ManualRolloutRequired;ManualRolloutInProgress
 type WorkloadRolloutReason string
 
 const (
-	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
-	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
-	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
-	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
-	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
+	WorkloadRolloutReasonTriggeredSuccessfully   WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
+	WorkloadRolloutReasonFailedToPatch           WorkloadRolloutReason = "FailedToPatch"
+	WorkloadRolloutReasonPreviousRolloutOngoing  WorkloadRolloutReason = "PreviousRolloutOngoing"
+	WorkloadRolloutReasonDisabled                WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonWaitingForRestart       WorkloadRolloutReason = "WaitingForRestart"
+	WorkloadRolloutReasonManualRolloutRequired   WorkloadRolloutReason = "ManualRolloutRequired"
+	WorkloadRolloutReasonManualRolloutInProgress WorkloadRolloutReason = "ManualRolloutInProgress"
 )
 
 const (
@@ -179,6 +181,8 @@ func IsReasonStatusDisabled(reason string) bool {
 		string(AgentEnabledReasonOtherAgentDetected),
 		string(AgentEnabledReasonCrashLoopBackOff),
 		string(AgentEnabledReasonImagePullBackOff),
+		string(WorkloadRolloutReasonManualRolloutRequired),
+		string(WorkloadRolloutReasonManualRolloutInProgress),
 		string(AgentEnabledReasonRuntimeDetailsUnavailable):
 
 		return true
