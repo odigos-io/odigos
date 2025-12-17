@@ -38,6 +38,10 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: KEYCLOAK_SECRET_NAME
               value: "keycloak-admin-credentials"
+            {{- if .Values.centralBackend.maxMessageSize }}
+            - name: MAX_MESSAGE_SIZE
+              value: {{ .Values.centralBackend.maxMessageSize | quote }}
+            {{- end }}
           resources:
             requests:
               cpu: {{ .Values.centralBackend.resources.requests.cpu }}

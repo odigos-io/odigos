@@ -9,6 +9,8 @@ imagePullSecrets: []
 
 centralBackend:
   # Resources and scheduling for the Central backend
+  # -- Maximum message size in bytes for gRPC messages (empty = use default)
+  # maxMessageSize: ''
   resources:
     requests:
       cpu: 100m
