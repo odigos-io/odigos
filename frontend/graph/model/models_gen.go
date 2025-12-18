@@ -1059,6 +1059,7 @@ const (
 	ActionTypeLatencySampler        ActionType = "LatencySampler"
 	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
 	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
+	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1073,12 +1074,13 @@ var AllActionType = []ActionType{
 	ActionTypeLatencySampler,
 	ActionTypeServiceNameSampler,
 	ActionTypeSpanAttributeSampler,
+	ActionTypeURLTemplatization,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
 		return true
 	}
 	return false
