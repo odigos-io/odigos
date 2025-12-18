@@ -65,7 +65,6 @@ rules:
       - destinations
     verbs:
       - watch
-  # actions.odigos.io CRDs in the odigos namespace
   - apiGroups:
       - odigos.io
     resources:
@@ -75,7 +74,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - odigos.io
+      - actions.odigos.io
     resources:
       - '*'
     verbs:
