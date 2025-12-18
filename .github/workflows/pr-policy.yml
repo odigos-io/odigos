@@ -1,15 +1,16 @@
 name: PR Policy
 
-permissions:
-  contents: read
-  pull-requests: read
-  statuses: write
-
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
+    
+permissions:
+  pull-requests: read
+  statuses: write
 
 jobs:
   require-linear:
-      uses: odigos-io/ci-core/.github/workflows/require-linear.yml@v1
-      secrets: inherit
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'dependencies-syncer-bot') }}
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: odigos-io/ci-core/require-linear@main
