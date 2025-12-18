@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -100,14 +102,21 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
-	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider)
+	// Save original spec for comparison to avoid unnecessary updates
+	originalSpec := ic.Spec.DeepCopy()
+
+	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider, conf)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = c.Update(ctx, &ic)
-	if err != nil {
-		return utils.K8SUpdateErrorHandler(err)
+	// Only update if spec actually changed
+	// Use cmp.Equal with EquateEmpty to treat nil and empty slices/maps as equal
+	if diff := cmp.Diff(originalSpec, &ic.Spec, cmpopts.EquateEmpty()); diff != "" {
+		err = c.Update(ctx, &ic)
+		if err != nil {
+			return utils.K8SUpdateErrorHandler(err)
+		}
 	}
 
 	cond := metav1.Condition{
@@ -145,8 +154,8 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // if the function returns without an error, it also returns an agentInjectedStatusCondition object
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
-func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-	cg, irls, effectiveConfig, urlTemplatizationRules, err := getRelevantResources(ctx, c, pw)
+func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
+	cg, irls, urlTemplatizationRules, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
@@ -540,7 +549,8 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	distroParameters, err := calculateDistroParams(distro, runtimeDetails, envInjectionDecision)
+	var existingDistroParams map[string]string
+	distroParameters, err := calculateDistroParams(distro, runtimeDetails, envInjectionDecision, existingDistroParams)
 	if err != nil {
 		return *err
 	}
