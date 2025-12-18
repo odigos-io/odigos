@@ -9,7 +9,7 @@ func GetImageName(imagePrefix string, name string, version string) string {
 	var fullName string
 	if strings.Contains(name, "@") || strings.Contains(name, ":") {
 		// don't append the tag if the image is pinned to a SHA or has a tag, for example:
-		// registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9@SHA26:ab312...
+		// registry.connect.redhat.com/odigos/odigos-instrumentor-certified@SHA26:ab312...
 		fullName = name
 	} else {
 		fullName = fmt.Sprintf("%s:%s", name, version)

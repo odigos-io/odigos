@@ -66,27 +66,27 @@ type OdigosReconciler struct {
 // relatedImageEnvVars is a reverse-lookup map to quickly find the environment variable
 // for component images when openshift is enabled
 var relatedImageEnvVars = map[string]string{
-	k8sconsts.AutoScalerImageName: "RELATED_IMAGE_AUTOSCALER",
-	k8sconsts.AutoScalerImageUBI9: "RELATED_IMAGE_AUTOSCALER",
+	k8sconsts.AutoScalerImageName:      "RELATED_IMAGE_AUTOSCALER",
+	k8sconsts.AutoScalerImageCertified: "RELATED_IMAGE_AUTOSCALER",
 
-	k8sconsts.OdigosClusterCollectorImage:     "RELATED_IMAGE_COLLECTOR",
-	k8sconsts.OdigosClusterCollectorImageUBI9: "RELATED_IMAGE_COLLECTOR",
+	k8sconsts.OdigosClusterCollectorImage:          "RELATED_IMAGE_COLLECTOR",
+	k8sconsts.OdigosClusterCollectorImageCertified: "RELATED_IMAGE_COLLECTOR",
 
-	k8sconsts.InstrumentorImage:               "RELATED_IMAGE_INSTRUMENTOR",
-	k8sconsts.InstrumentorImageUBI9:           "RELATED_IMAGE_INSTRUMENTOR",
-	k8sconsts.InstrumentorEnterpriseImage:     "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
-	k8sconsts.InstrumentorEnterpriseImageUBI9: "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
+	k8sconsts.InstrumentorImage:                    "RELATED_IMAGE_INSTRUMENTOR",
+	k8sconsts.InstrumentorImageCertified:           "RELATED_IMAGE_INSTRUMENTOR",
+	k8sconsts.InstrumentorEnterpriseImage:          "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
+	k8sconsts.InstrumentorEnterpriseImageCertified: "RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR",
 
-	k8sconsts.UIImage:     "RELATED_IMAGE_FRONTEND",
-	k8sconsts.UIImageUBI9: "RELATED_IMAGE_FRONTEND",
+	k8sconsts.UIImage:          "RELATED_IMAGE_FRONTEND",
+	k8sconsts.UIImageCertified: "RELATED_IMAGE_FRONTEND",
 
-	k8sconsts.OdigletImageName:           "RELATED_IMAGE_ODIGLET",
-	k8sconsts.OdigletImageUBI9:           "RELATED_IMAGE_ODIGLET",
-	k8sconsts.OdigletEnterpriseImageName: "RELATED_IMAGE_ENTERPRISE_ODIGLET",
-	k8sconsts.OdigletEnterpriseImageUBI9: "RELATED_IMAGE_ENTERPRISE_ODIGLET",
+	k8sconsts.OdigletImageName:                "RELATED_IMAGE_ODIGLET",
+	k8sconsts.OdigletImageCertified:           "RELATED_IMAGE_ODIGLET",
+	k8sconsts.OdigletEnterpriseImageName:      "RELATED_IMAGE_ENTERPRISE_ODIGLET",
+	k8sconsts.OdigletEnterpriseImageCertified: "RELATED_IMAGE_ENTERPRISE_ODIGLET",
 
-	k8sconsts.SchedulerImage:     "RELATED_IMAGE_SCHEDULER",
-	k8sconsts.SchedulerImageUBI9: "RELATED_IMAGE_SCHEDULER",
+	k8sconsts.SchedulerImage:          "RELATED_IMAGE_SCHEDULER",
+	k8sconsts.SchedulerImageCertified: "RELATED_IMAGE_SCHEDULER",
 }
 
 // +kubebuilder:rbac:groups=operator.odigos.io,resources=odigos,verbs=get;list;watch;create;update;patch;delete

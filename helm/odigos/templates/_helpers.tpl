@@ -13,11 +13,11 @@
 {{- end -}}
 
 {{- define "utils.imageName" -}}
-{{- $ubi9 := $.Values.openshift.enabled }}
-{{- if hasKey $.Values.openshift "ubi9ImageTags" }}
-  {{- $ubi9 = $.Values.openshift.ubi9ImageTags }}
+{{- $certified := $.Values.openshift.enabled }}
+{{- if hasKey $.Values.openshift "certifiedImageTags" }}
+  {{- $certified = $.Values.openshift.certifiedImageTags }}
 {{- end }}
-{{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-ubi9" "" (and $.Values.openshift.enabled $ubi9)) .Tag }}
+{{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-certified" "" (and $.Values.openshift.enabled $certified)) .Tag }}
 {{- end -}}
 {{/*
 Returns "true" if any userInstrumentationEnvs.language is enabled or has env vars

@@ -22,7 +22,7 @@ RHEL?=false
 BUILD_DIR=.
 
 ifeq ($(RHEL),true)
-    IMG_SUFFIX=-ubi9
+    IMG_SUFFIX=-rhel-certified
 
     # If TARGET is empty, set it to rhel
     ifeq ($(strip $(TARGET)),)

@@ -53,15 +53,15 @@ endif
 # This is useful for CI or a project to utilize a specific version of the operator-sdk toolkit.
 OPERATOR_SDK_VERSION ?= v1.39.1
 # Image URL to use all building/pushing image targets
-IMG ?= registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v$(VERSION)
-AUTOSCALER_IMG ?= $(ORG)/odigos-autoscaler-ubi9:v$(VERSION)
-COLLECTOR_IMG ?= $(ORG)/odigos-collector-ubi9:v$(VERSION)
-FRONTEND_IMG ?= $(ORG)/odigos-ui-ubi9:v$(VERSION)
-INSTRUMENTOR_IMG ?= $(ORG)/odigos-instrumentor-ubi9:v$(VERSION)
-ENTERPRISE_INSTRUMENTOR_IMG ?= $(ORG)/odigos-enterprise-instrumentor-ubi9:v$(VERSION)
-ODIGLET_IMG ?= $(ORG)/odigos-odiglet-ubi9:v$(VERSION)
-ENTERPRISE_ODIGLET_IMG ?= $(ORG)/odigos-enterprise-odiglet-ubi9:v$(VERSION)
-SCHEDULER_IMG ?= $(ORG)/odigos-scheduler-ubi9:v$(VERSION)
+IMG ?= registry.connect.redhat.com/odigos/odigos-operator-certified:v$(VERSION)
+AUTOSCALER_IMG ?= $(ORG)/odigos-autoscaler-certified:v$(VERSION)
+COLLECTOR_IMG ?= $(ORG)/odigos-collector-certified:v$(VERSION)
+FRONTEND_IMG ?= $(ORG)/odigos-ui-certified:v$(VERSION)
+INSTRUMENTOR_IMG ?= $(ORG)/odigos-instrumentor-certified:v$(VERSION)
+ENTERPRISE_INSTRUMENTOR_IMG ?= $(ORG)/odigos-enterprise-instrumentor-certified:v$(VERSION)
+ODIGLET_IMG ?= $(ORG)/odigos-odiglet-certified:v$(VERSION)
+ENTERPRISE_ODIGLET_IMG ?= $(ORG)/odigos-enterprise-odiglet-certified:v$(VERSION)
+SCHEDULER_IMG ?= $(ORG)/odigos-scheduler-certified:v$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.31.0
 
