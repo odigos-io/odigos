@@ -71,6 +71,95 @@ func NewGatewayRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
+func NewGatewayClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRole",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sconsts.OdigosClusterCollectorClusterRoleName,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{
+					"events",
+					"namespaces",
+					"namespaces/status",
+					"nodes",
+					"nodes/spec",
+					"pods",
+					"pods/status",
+					"replicationcontrollers",
+					"replicationcontrollers/status",
+					"resourcequotas",
+					"services",
+				},
+				Verbs: []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{
+					"daemonsets",
+					"deployments",
+					"replicasets",
+					"statefulsets",
+				},
+				Verbs: []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"extensions"},
+				Resources: []string{
+					"daemonsets",
+					"deployments",
+					"replicasets",
+				},
+				Verbs: []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"batch"},
+				Resources: []string{
+					"jobs",
+					"cronjobs",
+				},
+				Verbs: []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"autoscaling"},
+				Resources: []string{
+					"horizontalpodautoscalers",
+				},
+				Verbs: []string{"get", "list", "watch"},
+			},
+		},
+	}
+}
+
+func NewGatewayClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sconsts.OdigosClusterCollectorClusterRoleBindingName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      k8sconsts.OdigosClusterCollectorServiceAccountName,
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     k8sconsts.OdigosClusterCollectorClusterRoleName,
+		},
+	}
+}
+
 type gatewayResourceManager struct {
 	client      *kube.Client
 	ns          string
@@ -90,5 +179,16 @@ func (a *gatewayResourceManager) InstallFromScratch(ctx context.Context) error {
 		NewGatewayRole(a.ns),
 		NewGatewayRoleBinding(a.ns),
 	}
+
+	// Add ClusterRole and ClusterRoleBinding only if cluster metrics are enabled
+	if a.config.CollectorGateway != nil &&
+		a.config.CollectorGateway.ClusterMetricsEnabled != nil &&
+		*a.config.CollectorGateway.ClusterMetricsEnabled {
+		resources = append(resources,
+			NewGatewayClusterRole(),
+			NewGatewayClusterRoleBinding(a.ns),
+		)
+	}
+
 	return a.client.ApplyResources(ctx, a.config.ConfigVersion, resources, a.managerOpts)
 }

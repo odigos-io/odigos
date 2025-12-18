@@ -56,6 +56,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.130.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.130.0
@@ -86,8 +87,10 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.130.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.130.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/signalfxreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.130.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.36.0
@@ -391,6 +394,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.2 // indirect
 	github.com/gophercloud/gophercloud/v2 v2.7.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grafana/loki/pkg/push v0.0.0-20240514112848-a1b1eeb09583 // indirect
 	github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc // indirect

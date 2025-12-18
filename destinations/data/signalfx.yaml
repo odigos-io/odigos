@@ -1,0 +1,319 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: signalfx
+  displayName: SignalFx
+  category: managed
+spec:
+  image: splunk.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: true
+  fields:
+    - name: SIGNALFX_ACCESS_TOKEN_SECRET_REF_ENABLED
+      displayName: Use Existing Secret for Access Token
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, allows you to reference an existing Kubernetes secret containing the access token instead of providing it directly.
+    - name: SIGNALFX_ACCESS_TOKEN
+      displayName: Access Token
+      componentType: input
+      componentProps:
+        type: password
+        required: false
+        tooltip: The authentication token provided by Splunk Observability Cloud.
+      secret: true
+      renderCondition: ['SIGNALFX_ACCESS_TOKEN_SECRET_REF_ENABLED', '!=', 'true']
+    - name: SIGNALFX_ACCESS_TOKEN_SECRET_NAME
+      displayName: Secret Name
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: The name of the existing Kubernetes secret containing the access token.
+      renderCondition: ['SIGNALFX_ACCESS_TOKEN_SECRET_REF_ENABLED', '==', 'true']
+    - name: SIGNALFX_ACCESS_TOKEN_SECRET_KEY
+      displayName: Secret Key
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: SIGNALFX_ACCESS_TOKEN
+        tooltip: The key within the secret that contains the access token. Defaults to 'SIGNALFX_ACCESS_TOKEN' if not specified.
+      renderCondition: ['SIGNALFX_ACCESS_TOKEN_SECRET_REF_ENABLED', '==', 'true']
+
+    - name: SIGNALFX_REALM
+      displayName: Realm
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: The SignalFx realm where your data will be sent (e.g., us0, us1, eu0). This is the second part of the URL you use to access Splunk Observability Cloud.
+
+    - name: SIGNALFX_CUSTOM_URLS_ENABLED
+      displayName: Use Custom API/Ingest URLs
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, allows you to specify custom API and Ingest URLs instead of using the default realm-based URLs.
+    - name: SIGNALFX_API_URL
+      displayName: API URL
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: Custom API URL for SignalFx. If not specified, defaults to 'https://api.<realm>.signalfx.com'.
+      renderCondition: ['SIGNALFX_CUSTOM_URLS_ENABLED', '==', 'true']
+    - name: SIGNALFX_INGEST_URL
+      displayName: Ingest URL
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: Custom Ingest URL for SignalFx. If not specified, defaults to 'https://ingest.<realm>.signalfx.com'.
+      renderCondition: ['SIGNALFX_CUSTOM_URLS_ENABLED', '==', 'true']
+
+    - name: SIGNALFX_SEND_OTLP_HISTOGRAMS
+      displayName: Send OTLP Histograms
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, histograms will be sent in OTLP format instead of being converted to SignalFx format.
+    - name: SIGNALFX_SYNC_HOST_METADATA
+      displayName: Sync Host Metadata
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, syncs host metadata to SignalFx. This can help with host correlation and infrastructure monitoring.
+
+    - name: SIGNALFX_SENDING_QUEUE_ENABLED
+      displayName: Enable Sending Queue
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, enables the sending queue for the SignalFx exporter.
+    - name: SIGNALFX_SENDING_QUEUE_NUM_CONSUMERS
+      displayName: Sending Queue Consumers
+      componentType: input
+      componentProps:
+        type: number
+        required: false
+        tooltip: Number of consumers for the sending queue. Higher values can increase throughput at the cost of more resources.
+      renderCondition: ['SIGNALFX_SENDING_QUEUE_ENABLED', '==', 'true']
+
+    - name: SIGNALFX_ENABLE_TLS
+      displayName: Enable TLS
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, TLS will be enabled for the SignalFx exporter.
+    - name: SIGNALFX_INSECURE_SKIP_VERIFY
+      displayName: Skip TLS Verification
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, TLS certificate verification will be skipped. Not recommended for production environments.
+      renderCondition: ['SIGNALFX_ENABLE_TLS', '==', 'true']
+    - name: SIGNALFX_CA_PEM
+      displayName: CA Certificate (PEM)
+      componentType: textarea
+      componentProps:
+        required: false
+        tooltip: The CA certificate in PEM format used for TLS verification. This is mounted as a file in the collector pod. Takes precedence over ConfigMap if both are specified.
+      secret: true
+      renderCondition: ['SIGNALFX_ENABLE_TLS', '==', 'true']
+    - name: SIGNALFX_CA_CONFIGMAP_ENABLED
+      displayName: Use Existing ConfigMap for CA Certificate
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, allows you to reference an existing Kubernetes ConfigMap containing the CA certificate instead of providing it directly.
+      renderCondition: ['SIGNALFX_ENABLE_TLS', '==', 'true']
+    - name: SIGNALFX_CA_CONFIGMAP_NAME
+      displayName: CA ConfigMap Name
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: Name of an existing ConfigMap containing the CA certificate. Use this to reference a CA certificate that already exists in the cluster.
+      renderCondition: ['SIGNALFX_CA_CONFIGMAP_ENABLED', '==', 'true']
+    - name: SIGNALFX_CA_CONFIGMAP_KEY
+      displayName: CA ConfigMap Key
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: ca.crt
+        tooltip: The key within the ConfigMap that contains the CA certificate. Defaults to 'ca.crt' if not specified.
+      renderCondition: ['SIGNALFX_CA_CONFIGMAP_ENABLED', '==', 'true']
+
+    - name: SIGNALFX_ENABLE_INCLUDE_METRICS
+      displayName: Enable Include Metrics
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, enables the include metrics filter for the SignalFx exporter.
+    - name: SIGNALFX_INCLUDE_METRICS
+      displayName: Include Metrics Filter
+      componentType: textarea
+      componentProps:
+        required: false
+        tooltip: Line-separated list of metric names to include. Only these metrics will be exported. Leave empty to export all metrics.
+      renderCondition: ['SIGNALFX_ENABLE_INCLUDE_METRICS', '==', 'true']
+
+    - name: SIGNALFX_DISABLE_DEFAULT_TRANSLATION_RULES
+      displayName: Disable Default Translation Rules
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, disables the default translation rules that convert metrics to SignalFx format.
+
+    - name: SIGNALFX_CORRELATION_ENABLED
+      displayName: Enable Trace Correlation
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, configures trace correlation for the SignalFx exporter. This links traces to services in Splunk Observability Cloud.
+    - name: SIGNALFX_CORRELATION_ENDPOINT
+      displayName: Correlation Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        tooltip: The correlation endpoint URL. If not specified, uses the API URL derived from the realm.
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_TIMEOUT
+      displayName: Correlation Timeout
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 5s
+        tooltip: Timeout for correlation requests. Uses Go duration format (e.g., 5s, 1m).
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_STALE_SERVICE_TIMEOUT
+      displayName: Stale Service Timeout
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 5m
+        tooltip: How long to wait before expiring a service. Uses Go duration format (e.g., 5m, 1h).
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_MAX_REQUESTS
+      displayName: Max Concurrent Requests
+      componentType: input
+      componentProps:
+        type: number
+        required: false
+        placeholder: 20
+        tooltip: Maximum number of concurrent correlation requests.
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_MAX_BUFFERED
+      displayName: Max Buffered Updates
+      componentType: input
+      componentProps:
+        type: number
+        required: false
+        placeholder: 10000
+        tooltip: Maximum number of correlation updates that can be buffered.
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_MAX_RETRIES
+      displayName: Max Retries
+      componentType: input
+      componentProps:
+        type: number
+        required: false
+        placeholder: 2
+        tooltip: Maximum number of retries for failed correlation requests.
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_LOG_UPDATES
+      displayName: Log Correlation Updates
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, logs all correlation updates for debugging purposes.
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_RETRY_DELAY
+      displayName: Retry Delay
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 100ms
+        tooltip: Delay between retries for failed correlation requests. Uses Go duration format (e.g., 100ms, 1s).
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_CLEANUP_INTERVAL
+      displayName: Cleanup Interval
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 1m
+        tooltip: Interval between cleanup runs for stale correlations. Uses Go duration format (e.g., 1m, 5m).
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+    - name: SIGNALFX_CORRELATION_SYNC_ATTRIBUTES
+      displayName: Sync Attributes
+      componentType: textarea
+      componentProps:
+        required: false
+        tooltip: "Additional attributes to sync for correlation. One per line in the format: attribute_name=source_name"
+      renderCondition: ['SIGNALFX_CORRELATION_ENABLED', '==', 'true']
+
+    - name: SIGNALFX_RECEIVER_ENABLED
+      displayName: Enable SignalFx Receiver
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, creates a SignalFx receiver to accept incoming SignalFx data format.
+    - name: SIGNALFX_RECEIVER_ONLY
+      displayName: Receiver Only Mode
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, only configures the SignalFx receiver without the exporter. Use this when you want to receive SignalFx format data and route it to a different pipeline or data stream.
+      renderCondition: ['SIGNALFX_RECEIVER_ENABLED', '==', 'true']
+    - name: SIGNALFX_RECEIVER_ONLY_OTLP_ENDPOINT
+      displayName: OTLP Exporter Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: localhost:4317
+        tooltip: The OTLP exporter endpoint to send the received SignalFx data to. When set, creates a pipeline with the SignalFx receiver and OTLP exporter.
+      renderCondition: ['SIGNALFX_RECEIVER_ONLY', '==', 'true']
+    - name: SIGNALFX_RECEIVER_ONLY_OTLP_TLS_INSECURE
+      displayName: OTLP TLS Insecure
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, disables TLS verification for the OTLP exporter connection. Use this for local or development endpoints.
+      renderCondition: ['SIGNALFX_RECEIVER_ONLY', '==', 'true']
+    - name: SIGNALFX_RECEIVER_ENDPOINT
+      displayName: Receiver Endpoint
+      componentType: input
+      componentProps:
+        type: text
+        required: false
+        placeholder: 0.0.0.0:9943
+        tooltip: The endpoint address for the SignalFx receiver. Defaults to '0.0.0.0:9943' if not specified.
+      renderCondition: ['SIGNALFX_RECEIVER_ENABLED', '==', 'true']
+    - name: SIGNALFX_RECEIVER_ACCESS_TOKEN_PASSTHROUGH
+      displayName: Receiver Access Token Passthrough
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, the receiver will pass through the access token from incoming requests to the exporter.
+      renderCondition: ['SIGNALFX_RECEIVER_ENABLED', '==', 'true']
+
+    - name: SIGNALFX_K8S_CLUSTER_RECEIVER_ENABLED
+      displayName: Enable K8s Cluster Receiver
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, creates a k8s_cluster receiver to collect Kubernetes cluster metrics. The receiver uses serviceAccount authentication and exports metadata to the SignalFx exporter.

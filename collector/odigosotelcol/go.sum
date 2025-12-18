@@ -761,6 +761,8 @@ github.com/googleapis/gax-go/v2 v2.14.2/go.mod h1:ON64QhlJkhVtSqp4v1uaK92VyZ2gmv
 github.com/gophercloud/gophercloud/v2 v2.7.0 h1:o0m4kgVcPgHlcXiWAjoVxGd8QCmvM5VU+YM71pFbn0E=
 github.com/gophercloud/gophercloud/v2 v2.7.0/go.mod h1:Ki/ILhYZr/5EPebrPL9Ej+tUg4lqx71/YH2JWVeU+Qk=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
+github.com/gorilla/mux v1.8.1 h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=
+github.com/gorilla/mux v1.8.1/go.mod h1:AKf9I4AEqPTmMytcMc0KkNouC66V3BtZ4qD5fmWSiMQ=
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
@@ -1161,6 +1163,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclient
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.130.0/go.mod h1:rrzn0jJKcrECCOn6kuKumv+uBq2pp6ETP2s/dz/VDOI=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.130.0 h1:ie3vJsvidoCWJ9mbqD6+iGOearM0ytKXPeFK2CNGyiY=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.130.0/go.mod h1:+srlMcmws/8gOTLCiV9SZxW/upfO7G/VYzw58+1EN3A=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.130.0 h1:zzzPSZ89qDeNi6AU7oKagiXXKcrsRnnmz3cUWpDGo8c=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/k8sleaderelector v0.130.0/go.mod h1:1M9+Q/in43pouLUgxCW+LqSA1OJGQ5vFC7GvIsrAqKA=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.130.0 h1:G2659+jqbrIiYDtz+wa6q2YrmK8dnrx82DjDGQK2EVo=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.130.0/go.mod h1:QZwlKasxnIf4pw5c0wWKYrrYnXaB+ppVliK6ZDYoJZE=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.130.0 h1:Rby+EBahv7BtTs5zkc0G+nhJ4CZLHQcfQetaMf4YLUk=
@@ -1299,12 +1303,16 @@ github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiv
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.130.0/go.mod h1:3yzRJ95JrcxqLE9d6HnYIf9ONtTIeUIDP/A9EiKF1h4=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.130.0 h1:OuaYQSPAMuXGPyClRWk044zxQVlzOoAftqJs304vLB4=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.130.0/go.mod h1:APDKabtOIyUQk2ckItvxFD6CBf3GJZcYnE09Mk0JKXI=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.130.0 h1:6JRw2K3otCs5qYfAgcHAO4OcyA8F4rNm50NNoWrMCN8=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.130.0/go.mod h1:ICtF9NOjZkA3PNZsjnXl8InWIYoyxuBPKjjLDK+/AME=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.130.0 h1:ZG4URb37AmAhP9jZDs+5dTF29g18RPwZo35V4zi6Cuo=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.130.0/go.mod h1:OSir1av/yalzBEqdF71So8end7V5p5QhuxdHPHwIWdE=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/opencensusreceiver v0.130.0 h1:I/WKVMUzJtg3QdEexAH2dbNH7oOYncWv+t8ABB4ZCMQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/opencensusreceiver v0.130.0/go.mod h1:BvAek2+NgWbA7rUeSHGadGamBuC0dzCSYEol5ui0G9g=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.130.0 h1:KE5HhK1BT3/RfLwHJPWA8T15BA/PadZ9FM0xbrhhfag=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.130.0/go.mod h1:+s9H03sshgDFAPCar9Ef/oLzgtmiYuHqTiu1mq+XVwo=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/signalfxreceiver v0.130.0 h1:UDBvuEX7BN8SnwdwajlbDhvv8IZZMR4brkC0r6eeg08=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/signalfxreceiver v0.130.0/go.mod h1:/1qsSGkGbV/SAznYTQnfayRzepuV7e9aCHDiXs98iSw=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.130.0 h1:Y2vJWMBf90ly/ZMtP1r+btK2wB1J+5g+FBJ3u31ulvs=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.130.0/go.mod h1:97hwnam8NY5WUD7/cJRTSIuROSo9blPgKypwJg19JuU=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
