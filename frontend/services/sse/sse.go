@@ -24,6 +24,9 @@ const (
 	MessageEventAdded    MessageEvent = "Added"
 	MessageEventDeleted  MessageEvent = "Deleted"
 	MessageEventModified MessageEvent = "Modified"
+	MessageEventLogLine  MessageEvent = "LogLine"
+	MessageEventLogEnd   MessageEvent = "LogEnd"
+	MessageEventLogError MessageEvent = "LogError"
 )
 
 type SSEMessage struct {
