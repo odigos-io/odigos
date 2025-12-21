@@ -35,7 +35,7 @@ type Odiglet struct {
 	mgr                     controllerruntime.Manager
 	ebpfManager             commonInstrumentation.Manager
 	configUpdates           chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	instrumentationRequests chan<- commonInstrumentation.InstrumentationRequest[ebpf.K8sProcessDetails]
+	instrumentationRequests chan<- commonInstrumentation.InstrumentationRequest[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	criClient               *criwrapper.CriClient
 }
 
@@ -77,7 +77,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
-	instrumentationRequests := make(chan commonInstrumentation.InstrumentationRequest[ebpf.K8sProcessDetails], instrumentationRequestsBufferSize)
+	instrumentationRequests := make(chan commonInstrumentation.InstrumentationRequest[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails], instrumentationRequestsBufferSize)
 	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates, instrumentationRequests, appendEnvVarNames)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
