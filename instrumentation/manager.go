@@ -34,8 +34,13 @@ var meter = otel.Meter(otelMeterName)
 // The manager will apply the configuration to all instrumentations that match the config group.
 type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 
-type InstrumentationRequest[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
+// Request is used to send an instrumentation or un-instrumentation request to the manager.
+// For instrumentation requests, the ProcessDetailsByPid map should be populated with the details of each process to instrument.
+// For un-instrumentation requests, the ProcessGroup should be populated to un-instrument all processes that match it.
+type Request[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
+	Instrument          bool
 	ProcessDetailsByPid map[int]processDetails
+	ProcessGroup        processGroup
 }
 
 type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
@@ -76,7 +81,10 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 	// The caller is responsible for closing the channel once no more updates are expected.
 	ConfigUpdates <-chan ConfigUpdate[configGroup]
 
-	InstrumentationRequests <-chan InstrumentationRequest[processGroup, configGroup, processDetails]
+	// InstrumentationRequests is a channel for receiving explicit instrumentation/un- instrumentation requests.
+	// The sender can request instrumentation for specific processes by providing their process details mapped by pid.
+	// For un-instrumentation requests, the sender provides the process group to un-instrument all processes that match it.
+	InstrumentationRequests <-chan Request[processGroup, configGroup, processDetails]
 
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
 	TracesMap *cilumebpf.Map
@@ -113,7 +121,7 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 
 	configUpdates <-chan ConfigUpdate[configGroup]
 
-	instrumentationRequests <-chan InstrumentationRequest[processGroup, configGroup, processDetails]
+	requests <-chan Request[processGroup, configGroup, processDetails]
 
 	metrics *managerMetrics
 
@@ -155,18 +163,18 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 	}
 
 	return &manager[processGroup, configGroup, processDetails]{
-		procEvents:              procEvents,
-		detector:                detector,
-		handler:                 handler,
-		factories:               options.Factories,
-		logger:                  logger.WithName("ebpf-instrumentation-manager"),
-		detailsByPid:            make(map[int]*instrumentationDetails[processGroup, configGroup, processDetails]),
-		detailsByConfigGroup:    map[configGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
-		detailsByProcessGroup:   map[processGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
-		configUpdates:           options.ConfigUpdates,
-		instrumentationRequests: options.InstrumentationRequests,
-		metrics:                 managerMetrics,
-		tracesMap:               options.TracesMap,
+		procEvents:            procEvents,
+		detector:              detector,
+		handler:               handler,
+		factories:             options.Factories,
+		logger:                logger.WithName("ebpf-instrumentation-manager"),
+		detailsByPid:          make(map[int]*instrumentationDetails[processGroup, configGroup, processDetails]),
+		detailsByConfigGroup:  map[configGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
+		detailsByProcessGroup: map[processGroup]map[int]*instrumentationDetails[processGroup, configGroup, processDetails]{},
+		configUpdates:         options.ConfigUpdates,
+		requests:              options.InstrumentationRequests,
+		metrics:               managerMetrics,
+		tracesMap:             options.TracesMap,
 	}, nil
 }
 
@@ -221,29 +229,42 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 			case detector.ProcessExitEvent:
 				m.cleanInstrumentation(ctx, e.PID)
 			}
-		case req, ok := <-m.instrumentationRequests:
+		case req, ok := <-m.requests:
 			if !ok {
 				m.logger.Info("instrumentation requests channel closed, stopping eBPF instrumentation manager")
 				return
 			}
-			instrumentedPIDs := make([]int, len(req.ProcessDetailsByPid))
-			for pid, details := range req.ProcessDetailsByPid {
-				// handle duplicate requests gracefully, this can happen
-				// in environments where the requests are triggered by external systems such as k8s controllers
-				if m.isInstrumented(pid) {
+			if req.Instrument {
+				instrumentedPIDs := make([]int, len(req.ProcessDetailsByPid))
+				for pid, details := range req.ProcessDetailsByPid {
+					// handle duplicate requests gracefully, this can happen
+					// in environments where the requests are triggered by external systems such as k8s controllers
+					if m.isInstrumented(pid) {
+						continue
+					}
+					m.logger.Info("received explicit instrumentation request", "pid", pid)
+					err := m.tryInstrument(ctx, details, pid)
+					if err != nil {
+						m.handleInstrumentError(err)
+					} else {
+						instrumentedPIDs = append(instrumentedPIDs, pid)
+					}
+				}
+				// let the detector know that we are interested to get events for the instrumented processes
+				// specifically, we want to be notified once these processes exit, so we can clean the instrumentation resources.
+				m.detector.TrackProcesses(instrumentedPIDs)
+			} else {
+				// for un-instrumentation requests, we find all instrumentations that match the process group
+				// and clean them up.
+				procs, ok := m.detailsByProcessGroup[req.ProcessGroup]
+				if !ok {
 					continue
 				}
-				m.logger.Info("received explicit instrumentation request", "pid", pid)
-				err := m.tryInstrument(ctx, details, pid)
-				if err != nil {
-					m.handleInstrumentError(err)
-				} else {
-					instrumentedPIDs = append(instrumentedPIDs, pid)
+				m.logger.Info("received explicit un-instrumentation request", "process group", req.ProcessGroup, "numPIDs", len(procs))
+				for pid := range procs {
+					m.cleanInstrumentation(ctx, pid)
 				}
 			}
-			// let the detector know that we are interested to get events for the instrumented processes
-			// specifically, we want to be notified once these processes exit, so we can clean the instrumentation resources.
-			m.detector.TrackProcesses(instrumentedPIDs)
 		case configUpdate := <-m.configUpdates:
 			for configGroup, config := range configUpdate {
 				err := m.applyInstrumentationConfigurationForSDK(ctx, configGroup, config)

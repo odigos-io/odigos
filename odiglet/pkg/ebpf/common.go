@@ -38,7 +38,7 @@ func NewManager(
 	logger logr.Logger,
 	opts InstrumentationManagerOptions,
 	configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup],
-	instrumentationRequests <-chan instrumentation.InstrumentationRequest[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails],
+	instrumentationRequests <-chan instrumentation.Request[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails],
 	appendEnvVarNames map[string]struct{},
 ) (instrumentation.Manager, error) {
 	if len(opts.Factories) == 0 {

@@ -197,6 +197,11 @@ func FindAllProcesses(predicate func(int) bool) ([]int, error) {
 	return result, nil
 }
 
+// Group processes by a key returned by the predicate function.
+// The predicate function should return the key and a boolean indicating whether to include the process in the result.
+// If the boolean is false, the process will be skipped.
+// The function returns a map where the keys are the keys returned by the predicate function
+// and the values are maps of process IDs that belong to each key.
 func Group[K comparable](predicate func(int) (K, bool)) (map[K]map[int]struct{}, error) {
 	if predicate == nil {
 		return nil, errors.New("predicate must be provided for grouping")
