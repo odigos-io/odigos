@@ -650,14 +650,15 @@ type K8sWorkloadMarkedForInstrumentation struct {
 }
 
 type K8sWorkloadPod struct {
-	PodName                       string                     `json:"podName"`
-	NodeName                      string                     `json:"nodeName"`
-	StartTime                     string                     `json:"startTime"`
-	AgentInjected                 bool                       `json:"agentInjected"`
-	AgentInjectedStatus           *DesiredConditionStatus    `json:"agentInjectedStatus"`
-	RunningLatestWorkloadRevision *string                    `json:"runningLatestWorkloadRevision,omitempty"`
-	PodHealthStatus               *DesiredConditionStatus    `json:"podHealthStatus"`
-	Containers                    []*K8sWorkloadPodContainer `json:"containers"`
+	PodName                        string                     `json:"podName"`
+	NodeName                       string                     `json:"nodeName"`
+	StartTime                      string                     `json:"startTime"`
+	AgentInjected                  bool                       `json:"agentInjected"`
+	StartedPostAgentMetaHashChange *bool                      `json:"startedPostAgentMetaHashChange,omitempty"`
+	AgentInjectedStatus            *DesiredConditionStatus    `json:"agentInjectedStatus"`
+	RunningLatestWorkloadRevision  *string                    `json:"runningLatestWorkloadRevision,omitempty"`
+	PodHealthStatus                *DesiredConditionStatus    `json:"podHealthStatus"`
+	Containers                     []*K8sWorkloadPodContainer `json:"containers"`
 }
 
 type K8sWorkloadPodContainer struct {
