@@ -523,14 +523,15 @@ type ComplexityRoot struct {
 	}
 
 	K8sWorkloadPod struct {
-		AgentInjected                 func(childComplexity int) int
-		AgentInjectedStatus           func(childComplexity int) int
-		Containers                    func(childComplexity int) int
-		NodeName                      func(childComplexity int) int
-		PodHealthStatus               func(childComplexity int) int
-		PodName                       func(childComplexity int) int
-		RunningLatestWorkloadRevision func(childComplexity int) int
-		StartTime                     func(childComplexity int) int
+		AgentInjected                  func(childComplexity int) int
+		AgentInjectedStatus            func(childComplexity int) int
+		Containers                     func(childComplexity int) int
+		NodeName                       func(childComplexity int) int
+		PodHealthStatus                func(childComplexity int) int
+		PodName                        func(childComplexity int) int
+		RunningLatestWorkloadRevision  func(childComplexity int) int
+		StartTime                      func(childComplexity int) int
+		StartedPostAgentMetaHashChange func(childComplexity int) int
 	}
 
 	K8sWorkloadPodContainer struct {
@@ -3075,6 +3076,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.K8sWorkloadPod.StartTime(childComplexity), true
+
+	case "K8sWorkloadPod.startedPostAgentMetaHashChange":
+		if e.complexity.K8sWorkloadPod.StartedPostAgentMetaHashChange == nil {
+			break
+		}
+
+		return e.complexity.K8sWorkloadPod.StartedPostAgentMetaHashChange(childComplexity), true
 
 	case "K8sWorkloadPodContainer.containerName":
 		if e.complexity.K8sWorkloadPodContainer.ContainerName == nil {
@@ -17725,6 +17733,8 @@ func (ec *executionContext) fieldContext_K8sWorkload_pods(_ context.Context, fie
 				return ec.fieldContext_K8sWorkloadPod_startTime(ctx, field)
 			case "agentInjected":
 				return ec.fieldContext_K8sWorkloadPod_agentInjected(ctx, field)
+			case "startedPostAgentMetaHashChange":
+				return ec.fieldContext_K8sWorkloadPod_startedPostAgentMetaHashChange(ctx, field)
 			case "agentInjectedStatus":
 				return ec.fieldContext_K8sWorkloadPod_agentInjectedStatus(ctx, field)
 			case "runningLatestWorkloadRevision":
@@ -19798,6 +19808,47 @@ func (ec *executionContext) _K8sWorkloadPod_agentInjected(ctx context.Context, f
 }
 
 func (ec *executionContext) fieldContext_K8sWorkloadPod_agentInjected(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sWorkloadPod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sWorkloadPod_startedPostAgentMetaHashChange(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkloadPod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sWorkloadPod_startedPostAgentMetaHashChange(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartedPostAgentMetaHashChange, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sWorkloadPod_startedPostAgentMetaHashChange(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "K8sWorkloadPod",
 		Field:      field,
@@ -38303,6 +38354,8 @@ func (ec *executionContext) _K8sWorkloadPod(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "startedPostAgentMetaHashChange":
+			out.Values[i] = ec._K8sWorkloadPod_startedPostAgentMetaHashChange(ctx, field, obj)
 		case "agentInjectedStatus":
 			out.Values[i] = ec._K8sWorkloadPod_agentInjectedStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
