@@ -36,8 +36,6 @@ func podToInfo(pod *corev1.Pod) *model.PodInfo {
 	return &model.PodInfo{
 		Namespace:         pod.Namespace,
 		Name:              pod.Name,
-		Ready:             containerReady(cs),
-		Started:           containerStarted(cs),
 		Status:            containerStatus(cs),
 		RestartsCount:     containerRestarts(cs),
 		NodeName:          pod.Spec.NodeName,
@@ -53,14 +51,6 @@ func getContainerStatusByName(statuses []corev1.ContainerStatus, name string) *c
 		}
 	}
 	return nil
-}
-
-func containerReady(cs *corev1.ContainerStatus) bool {
-	return cs != nil && cs.Ready
-}
-
-func containerStarted(cs *corev1.ContainerStatus) bool {
-	return cs != nil && cs.Started != nil && *cs.Started
 }
 
 func containerStatus(cs *corev1.ContainerStatus) string {

@@ -200,6 +200,7 @@ type ContainerOverview struct {
 	Status      ContainerLifecycleStatus `json:"status"`
 	StateReason *string                  `json:"stateReason,omitempty"`
 	Ready       bool                     `json:"ready"`
+	Started     bool                     `json:"started"`
 	Restarts    int                      `json:"restarts"`
 	StartedAt   *string                  `json:"startedAt,omitempty"`
 	Resources   *Resources               `json:"resources,omitempty"`
@@ -875,8 +876,6 @@ type PodDetails struct {
 type PodInfo struct {
 	Namespace         string               `json:"namespace"`
 	Name              string               `json:"name"`
-	Ready             bool                 `json:"ready"`
-	Started           bool                 `json:"started"`
 	Status            string               `json:"status"`
 	RestartsCount     int                  `json:"restartsCount"`
 	NodeName          string               `json:"nodeName"`
