@@ -33,7 +33,12 @@ type InstrumentationManagerOptions struct {
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
 // Instrumentation factories must be provided in order to create the instrumentation objects.
 // Detector options can be provided to configure the process detector, but if not provided, default options will be used.
-func NewManager(client client.Client, logger logr.Logger, opts InstrumentationManagerOptions, configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup], instrumentationRequests <-chan instrumentation.InstrumentationRequest[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails],
+func NewManager(
+	client client.Client,
+	logger logr.Logger,
+	opts InstrumentationManagerOptions,
+	configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup],
+	instrumentationRequests <-chan instrumentation.InstrumentationRequest[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails],
 	appendEnvVarNames map[string]struct{},
 ) (instrumentation.Manager, error) {
 	if len(opts.Factories) == 0 {

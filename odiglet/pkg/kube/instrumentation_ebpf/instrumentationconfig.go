@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-"sigs.k8s.io/controller-runtime/pkg/log"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/distros"
@@ -22,13 +21,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme                  *runtime.Scheme
 	ConfigUpdates           chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	InstrumentationRequests chan<- instrumentation.InstrumentationRequest[ebpf.K8sProcessDetails]
+	InstrumentationRequests chan<- instrumentation.InstrumentationRequest[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	DistributionGetter      *distros.Getter
 }
 
@@ -106,16 +106,16 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context.Context, podWorkload k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
 	logger := log.FromContext(ctx)
 	// check for distributions that support instrumentation without a restart
-	instrumentableContainers := make(map[string]*distro.OtelDistro)
+	distroByContainer := make(map[string]*distro.OtelDistro)
 	for _, containerConfig := range instrumentationConfig.Spec.Containers {
 		d := i.DistributionGetter.GetDistroByName(containerConfig.OtelDistroName)
 		if d != nil && d.RuntimeAgent != nil && d.RuntimeAgent.NoRestartRequired {
-			instrumentableContainers[containerConfig.ContainerName] = d
+			distroByContainer[containerConfig.ContainerName] = d
 		}
 	}
 
 	// if none of the containers support instrumentation without a restart - nothing to do here
-	if len(instrumentableContainers) == 0 {
+	if len(distroByContainer) == 0 {
 		return nil
 	}
 
@@ -129,10 +129,10 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	}
 
 	// build all the relevant (podUID, containerName) combinations for this node
-	pcs := make([]process.PodContainerUID, len(selectedPods)*len(instrumentableContainers))
+	pcs := make([]process.PodContainerUID, len(selectedPods)*len(distroByContainer))
 	count := 0
 	for _, p := range selectedPods {
-		for c := range instrumentableContainers {
+		for c := range distroByContainer {
 			pcs[count] = process.PodContainerUID{PodUID: string(p.UID), ContainerName: c}
 			count++
 		}
@@ -149,31 +149,31 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	}
 
 	// build the instrumentation request
-	ir := instrumentation.InstrumentationRequest[ebpf.K8sProcessDetails]{
-		ProcessDetailsByPid: make(map[int]ebpf.K8sProcessDetails, len(pidsByPodContainer)),
+	ir := instrumentation.InstrumentationRequest[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]{
+		ProcessDetailsByPid: make(map[int]*ebpf.K8sProcessDetails, len(pidsByPodContainer)),
 	}
 	podByUID := make(map[string]*corev1.Pod, len(selectedPods))
 	for _, p := range selectedPods {
 		podByUID[string(p.UID)] = &p
 	}
 	for podContainer, pidSet := range pidsByPodContainer {
-		distribution, ok := instrumentableContainers[podContainer.ContainerName]
+		distribution, ok := distroByContainer[podContainer.ContainerName]
 		if !ok {
 			continue
 		}
 		for pid := range pidSet {
 			details := procdiscovery.GetPidDetails(pid, nil)
-			ir.ProcessDetailsByPid[pid] = ebpf.K8sProcessDetails{
+			ir.ProcessDetailsByPid[pid] = &ebpf.K8sProcessDetails{
 				ContainerName: podContainer.ContainerName,
-				DistroName:    distribution.Name,
+				Distro:        distribution,
 				Pw:            &podWorkload,
 				Pod:           podByUID[podContainer.PodUID],
 				ProcEvent: detector.ProcessEvent{
 					EventType: detector.ProcessExecEvent,
-					PID: pid,
+					PID:       pid,
 					ExecDetails: &detector.ExecDetails{
-						ExePath: details.ExePath,
-						CmdLine: details.CmdLine,
+						ExePath:      details.ExePath,
+						CmdLine:      details.CmdLine,
 						Environments: details.Environments.DetailedEnvs,
 					},
 				},
@@ -187,7 +187,7 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	case i.InstrumentationRequests <- ir:
 		logger.Info("send instrumentation request", "numPIDs", len(ir.ProcessDetailsByPid))
 	default:
-		return errors.New("failed to send instrumentation request, consumer is busy")	
+		return errors.New("failed to send instrumentation request, consumer is busy")
 	}
 
 	return nil

@@ -12,7 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 )
 
-func SetupWithManager(mgr ctrl.Manager, configUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup], InstrumentationRequests chan<- instrumentation.InstrumentationRequest[ebpf.K8sProcessDetails], distributionGetter *distros.Getter) error {
+func SetupWithManager(
+	mgr ctrl.Manager,
+	configUpdates chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup],
+	InstrumentationRequests chan<- instrumentation.InstrumentationRequest[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails],
+	distributionGetter *distros.Getter) error {
 	log.Logger.V(0).Info("Starting reconcileres for ebpf instrumentation")
 	var err error
 

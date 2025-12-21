@@ -29,9 +29,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
-var (
-	scheme = runtime.NewScheme()
-)
+var scheme = runtime.NewScheme()
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -41,7 +39,7 @@ func init() {
 type KubeManagerOptions struct {
 	Mgr                     ctrl.Manager
 	ConfigUpdates           chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	InstrumentationRequests chan<- instrumentation.InstrumentationRequest[ebpf.K8sProcessDetails]
+	InstrumentationRequests chan<- instrumentation.InstrumentationRequest[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	CriClient               *criwrapper.CriClient
 	// map where keys are the names of the environment variables that participate in append mechanism
 	// they need to be recorded by runtime detection into the runtime info, and this list instruct what to collect.
@@ -81,7 +79,6 @@ func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (c
 }
 
 func SetupWithManager(kubeManagerOptions KubeManagerOptions, distributionGetter *distros.Getter) error {
-
 	err := runtime_details.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.CriClient, kubeManagerOptions.AppendEnvVarNames)
 	if err != nil {
 		return err
