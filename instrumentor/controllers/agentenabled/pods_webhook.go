@@ -352,13 +352,13 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 
 	// URL Templatization configuration
-	urlTemplatizationEnabled := containerConfig.Traces != nil && containerConfig.Traces.TemplateRules != nil && len(containerConfig.Traces.TemplateRules) > 0
+	urlTemplatizationEnabled := containerConfig.Traces != nil && containerConfig.Traces.UrlTemplatization != nil && len(containerConfig.Traces.UrlTemplatization.Rules) > 0
 	if urlTemplatizationEnabled {
 		// Reuse span metrics support check - URL templatization is supported by the same distros that support span metrics
 		setUrlTemplatizationAsEnvVar := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.InjectAsEnvVar
 		if setUrlTemplatizationAsEnvVar {
 			// parse URL templatization config to json using the existing AgentTracesConfig struct
-			urlTemplatizationConfigJson, err := json.Marshal(containerConfig.Traces)
+			urlTemplatizationConfigJson, err := json.Marshal(containerConfig.Traces.UrlTemplatization.Rules)
 			if err != nil {
 				return false, nil, fmt.Errorf("failed to marshal URL templatization config: %w", err)
 			}

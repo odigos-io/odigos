@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosConfiguration, containerName string, urlTemplatizationRules []odigosv1.UrlTemplatizationConfig) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
+func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosConfiguration, containerName string, urlTemplatizationConfig *odigosv1.UrlTemplatizationConfig) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
 	if !tracesEnabled {
 		return nil, nil
 	}
@@ -34,7 +34,7 @@ func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosCon
 		}
 	}
 
-	tracesConfig.TemplateRules = urlTemplatizationRules
+	tracesConfig.UrlTemplatization = urlTemplatizationConfig
 
 	return tracesConfig, nil
 }

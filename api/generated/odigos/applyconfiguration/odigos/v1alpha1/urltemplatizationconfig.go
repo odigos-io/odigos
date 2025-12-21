@@ -20,7 +20,7 @@ package v1alpha1
 // UrlTemplatizationConfigApplyConfiguration represents a declarative configuration of the UrlTemplatizationConfig type for use
 // with apply.
 type UrlTemplatizationConfigApplyConfiguration struct {
-	Rule *string `json:"rule,omitempty"`
+	Rules []string `json:"templatization_rules,omitempty"`
 }
 
 // UrlTemplatizationConfigApplyConfiguration constructs a declarative configuration of the UrlTemplatizationConfig type for use with
@@ -29,10 +29,12 @@ func UrlTemplatizationConfig() *UrlTemplatizationConfigApplyConfiguration {
 	return &UrlTemplatizationConfigApplyConfiguration{}
 }
 
-// WithRule sets the Rule field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Rule field is set to the value of the last call.
-func (b *UrlTemplatizationConfigApplyConfiguration) WithRule(value string) *UrlTemplatizationConfigApplyConfiguration {
-	b.Rule = &value
+// WithRules adds the given value to the Rules field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Rules field.
+func (b *UrlTemplatizationConfigApplyConfiguration) WithRules(values ...string) *UrlTemplatizationConfigApplyConfiguration {
+	for i := range values {
+		b.Rules = append(b.Rules, values[i])
+	}
 	return b
 }

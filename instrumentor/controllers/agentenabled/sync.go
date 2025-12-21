@@ -380,8 +380,8 @@ func getEnvInjectionDecision(
 //   - FilterK8sWorkloadName: check against the workload's name
 //
 // Each new filter should only reject the group if it's explicitly set AND doesn't match.
-func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language common.ProgrammingLanguage) []odigosv1.UrlTemplatizationConfig {
-	filteredRules := []odigosv1.UrlTemplatizationConfig{}
+func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.UrlTemplatizationConfig {
+	var rules []string
 
 	for _, templateRule := range *templateRules {
 		// Safety check: actions were already filtered to only include template actions.
@@ -392,15 +392,19 @@ func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language 
 		for _, rulesGroup := range templateRule.Spec.URLTemplatization.TemplatizationRulesGroups {
 			if templatizationRulesGroupMatchesContainer(rulesGroup, language) {
 				for _, rule := range rulesGroup.TemplatizationRules {
-					filteredRules = append(filteredRules, odigosv1.UrlTemplatizationConfig{
-						Rule: rule.Template,
-					})
+					rules = append(rules, rule.Template)
 				}
 			}
 		}
 	}
 
-	return filteredRules
+	if len(rules) == 0 {
+		return nil
+	}
+
+	return &odigosv1.UrlTemplatizationConfig{
+		Rules: rules,
+	}
 }
 
 // templatizationRulesGroupMatchesContainer checks if a rules group matches the container based on all set filters.
@@ -431,7 +435,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 	irls *[]odigosv1.InstrumentationRule,
 	containerOverride *odigosv1.ContainerOverride,
-	templateRules *[]odigosv1.Action,
+	urlTemplatizationRules *[]odigosv1.Action,
 ) odigosv1.ContainerAgentConfig {
 
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
@@ -463,7 +467,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	filteredTemplateRules := filterTemplateRulesForContainer(templateRules, runtimeDetails.Language)
+	filteredTemplateRules := filterTemplateRulesForContainer(urlTemplatizationRules, runtimeDetails.Language)
 
 	distro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {

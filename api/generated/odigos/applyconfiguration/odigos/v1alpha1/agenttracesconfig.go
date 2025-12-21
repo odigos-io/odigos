@@ -20,8 +20,8 @@ package v1alpha1
 // AgentTracesConfigApplyConfiguration represents a declarative configuration of the AgentTracesConfig type for use
 // with apply.
 type AgentTracesConfigApplyConfiguration struct {
-	IdGenerator   *IdGeneratorConfigApplyConfiguration        `json:"idGenerator,omitempty"`
-	TemplateRules []UrlTemplatizationConfigApplyConfiguration `json:"templatization_rules,omitempty"`
+	IdGenerator       *IdGeneratorConfigApplyConfiguration       `json:"idGenerator,omitempty"`
+	UrlTemplatization *UrlTemplatizationConfigApplyConfiguration `json:"urlTemplatization,omitempty"`
 }
 
 // AgentTracesConfigApplyConfiguration constructs a declarative configuration of the AgentTracesConfig type for use with
@@ -38,15 +38,10 @@ func (b *AgentTracesConfigApplyConfiguration) WithIdGenerator(value *IdGenerator
 	return b
 }
 
-// WithTemplateRules adds the given value to the TemplateRules field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the TemplateRules field.
-func (b *AgentTracesConfigApplyConfiguration) WithTemplateRules(values ...*UrlTemplatizationConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithTemplateRules")
-		}
-		b.TemplateRules = append(b.TemplateRules, *values[i])
-	}
+// WithUrlTemplatization sets the UrlTemplatization field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UrlTemplatization field is set to the value of the last call.
+func (b *AgentTracesConfigApplyConfiguration) WithUrlTemplatization(value *UrlTemplatizationConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
+	b.UrlTemplatization = value
 	return b
 }
