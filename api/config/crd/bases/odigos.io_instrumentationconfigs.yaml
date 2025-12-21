@@ -194,14 +194,14 @@ spec:
                           description: A list of URL templatization configurations
                             to be applied to the traces.
                           properties:
-                            templatization_rules:
+                            templatizationRules:
                               description: Rule is the template rule to be applied
                                 to URLs
                               items:
                                 type: string
                               type: array
                           required:
-                          - templatization_rules
+                          - templatizationRules
                           type: object
                       type: object
                   required:

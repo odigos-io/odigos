@@ -20,7 +20,7 @@ package v1alpha1
 // UrlTemplatizationConfigApplyConfiguration represents a declarative configuration of the UrlTemplatizationConfig type for use
 // with apply.
 type UrlTemplatizationConfigApplyConfiguration struct {
-	Rules []string `json:"templatization_rules,omitempty"`
+	Rules []string `json:"templatizationRules,omitempty"`
 }
 
 // UrlTemplatizationConfigApplyConfiguration constructs a declarative configuration of the UrlTemplatizationConfig type for use with

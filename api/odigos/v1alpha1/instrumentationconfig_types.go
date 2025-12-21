@@ -297,7 +297,7 @@ type AgentSpanMetricsConfig struct {
 // UrlTemplatizationConfig represents configuration for URL templatization rules
 type UrlTemplatizationConfig struct {
 	// Rule is the template rule to be applied to URLs
-	Rules []string `json:"templatization_rules"`
+	Rules []string `json:"templatizationRules"`
 }
 
 // all "traces" related configuration for an agent running on any process in a specific container.
