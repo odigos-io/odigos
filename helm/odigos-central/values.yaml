@@ -73,6 +73,19 @@ redis:
   image: redis:7.4.2
   port: 6379
   portName: redis
+  # Set to ~85% of memory limit to leave headroom for Redis overhead
+  # Current: 220mb = 85% of 256Mi limit. Adjust proportionally if changing memory limits.
+  maxmemory: 220mb
+  # Eviction policy when maxmemory is reached
+  # allkeys-lru: evict least recently used keys (good default for mixed use)
+  maxmemoryPolicy: allkeys-lru
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 
 auth:
   # Built-in Keycloak configuration
