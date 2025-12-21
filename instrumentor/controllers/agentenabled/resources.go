@@ -56,14 +56,14 @@ func getTemplateRules(ctx context.Context, c client.Client) (*[]odigosv1.Action,
 	}
 
 	// Filter only actions that have URLTemplatization config
-	templateRulesList := []odigosv1.Action{}
+	urlTemplatizationRulesList := []odigosv1.Action{}
 	for _, action := range actionList.Items {
-		if action.Spec.URLTemplatization != nil {
-			templateRulesList = append(templateRulesList, action)
+		if action.Spec.Disabled == false && action.Spec.URLTemplatization != nil {
+			urlTemplatizationRulesList = append(urlTemplatizationRulesList, action)
 		}
 	}
 
-	return &templateRulesList, nil
+	return &urlTemplatizationRulesList, nil
 }
 func getCollectorsGroup(ctx context.Context, c client.Client) (*odigosv1.CollectorsGroup, error) {
 	cg := odigosv1.CollectorsGroup{}

@@ -191,10 +191,19 @@ spec:
                               type: object
                           type: object
                         templatization_rules:
-                          description: A list of template rules to be applied to the
-                            traces.
+                          description: A list of URL templatization configurations
+                            to be applied to the traces.
                           items:
-                            type: string
+                            description: UrlTemplatizationConfig represents configuration
+                              for URL templatization rules
+                            properties:
+                              rule:
+                                description: Rule is the template rule to be applied
+                                  to URLs
+                                type: string
+                            required:
+                            - rule
+                            type: object
                           type: array
                       type: object
                   required:

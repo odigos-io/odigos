@@ -146,7 +146,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-	cg, irls, effectiveConfig, templateRules, err := getRelevantResources(ctx, c, pw)
+	cg, irls, effectiveConfig, urlTemplatizationRules, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
@@ -198,7 +198,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, templateRules)
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, urlTemplatizationRules)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -380,8 +380,8 @@ func getEnvInjectionDecision(
 //   - FilterK8sWorkloadName: check against the workload's name
 //
 // Each new filter should only reject the group if it's explicitly set AND doesn't match.
-func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language common.ProgrammingLanguage) []string {
-	filteredRules := []string{}
+func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language common.ProgrammingLanguage) []odigosv1.UrlTemplatizationConfig {
+	filteredRules := []odigosv1.UrlTemplatizationConfig{}
 
 	for _, templateRule := range *templateRules {
 		// Safety check: actions were already filtered to only include template actions.
@@ -392,7 +392,9 @@ func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language 
 		for _, rulesGroup := range templateRule.Spec.URLTemplatization.TemplatizationRulesGroups {
 			if templatizationRulesGroupMatchesContainer(rulesGroup, language) {
 				for _, rule := range rulesGroup.TemplatizationRules {
-					filteredRules = append(filteredRules, rule.Template)
+					filteredRules = append(filteredRules, odigosv1.UrlTemplatizationConfig{
+						Rule: rule.Template,
+					})
 				}
 			}
 		}
