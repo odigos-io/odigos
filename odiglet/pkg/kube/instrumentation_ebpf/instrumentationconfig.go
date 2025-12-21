@@ -28,7 +28,7 @@ type InstrumentationConfigReconciler struct {
 	client.Client
 	Scheme                  *runtime.Scheme
 	ConfigUpdates           chan<- instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	InstrumentationRequests chan<- instrumentation.InstrumentationRequest[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
+	InstrumentationRequests chan<- instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	DistributionGetter      *distros.Getter
 }
 
@@ -48,7 +48,17 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	err = i.Get(ctx, req.NamespacedName, instrumentationConfig)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
+			// if the instrumentationConfig is deleted, send un-instrumentation request for the workload
+			ir := instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]{
+				Instrument:   false,
+				ProcessGroup: ebpf.K8sProcessGroup{Pw: podWorkload},
+			}
+			select {
+			case i.InstrumentationRequests <- ir:
+				return ctrl.Result{}, nil
+			default:
+				return ctrl.Result{}, errors.New("failed to send instrumentation request, consumer is busy")
+			}
 		} else {
 			return ctrl.Result{}, err
 		}
@@ -103,8 +113,11 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 	}
 }
 
+// sendInstrumentationRequest sends an instrumentation request for all processes that are part of the given workload
+// and run in containers that support instrumentation without a restart.
 func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context.Context, podWorkload k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
 	logger := log.FromContext(ctx)
+
 	// check for distributions that support instrumentation without a restart
 	distroByContainer := make(map[string]*distro.OtelDistro)
 	for _, containerConfig := range instrumentationConfig.Spec.Containers {
@@ -148,8 +161,10 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 		return nil
 	}
 
-	// build the instrumentation request
-	ir := instrumentation.InstrumentationRequest[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]{
+	// build the instrumentation request including all the relevant processes
+	// for the workload on this node
+	ir := instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]{
+		Instrument:          true,
 		ProcessDetailsByPid: make(map[int]*ebpf.K8sProcessDetails, len(pidsByPodContainer)),
 	}
 	podByUID := make(map[string]*corev1.Pod, len(selectedPods))

@@ -100,6 +100,8 @@ func FindAllInContainer(podUID string, containerName string, runtimeDetectionEnv
 	return details, nil
 }
 
+// GroupByPodContainer groups all the current active processes by (podUID, containerName) using the provided list of PodContainerUIDs to filter relevant processes.
+// Processes that do not belong to any of the provided PodContainerUIDs are ignored.
 func GroupByPodContainer(pcs []PodContainerUID) (map[PodContainerUID]map[int]struct{}, error) {
 	groups, err := process.Group(isInPodContainersBatchPredicate(pcs))
 	if err != nil {
