@@ -640,10 +640,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.148":
-  version "0.0.148"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.148.tgz#81aeec6410d0f9a591720cad78c9507431a835b7"
-  integrity sha512-8re3sez0rmbuyWUfmkdTaDtsJQIrEjBYECmbCSZNhB/wIl4kCUuUpfmN1LPVFFyNxv6Xf2pDV2t2diyHsxU2Ug==
+"@odigos/ui-kit@^0.0.160":
+  version "0.0.160"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.160.tgz#10c6dc011902dbea8f5c5c4e087203acadcd552c"
+  integrity sha512-JM5sfaTVpXAzTal+91LUlhWmiyDIloGZVFdCrPFRY0a8xwcuSS9hKW6c6zEHER70QkmDvewcdUnFUcl/j22dyg==
   dependencies:
     "@tanstack/react-virtual" "^3.13.12"
     "@xyflow/react" "^12.9.3"
@@ -753,10 +753,10 @@
   dependencies:
     undici-types "~7.16.0"
 
-"@types/node@25.0.2":
-  version "25.0.2"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-25.0.2.tgz#411f9dd6cb2bf5ee46aed7199a9f85ca6b068b4e"
-  integrity sha512-gWEkeiyYE4vqjON/+Obqcoeffmk0NF15WSBwSs7zwVA2bAbTaE0SJ7P0WNGoJn8uE7fiaV5a7dKYIJriEqOrmA==
+"@types/node@25.0.3":
+  version "25.0.3"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-25.0.3.tgz#79b9ac8318f373fbfaaf6e2784893efa9701f269"
+  integrity sha512-W609buLVRVmeW693xKfzHeIV6nJGGz98uCPfeXI1ELMLXVeKYZ9m15fAMSaUPBHYLGFsVRcMmSCksQOrZV9BYA==
   dependencies:
     undici-types "~7.16.0"
 
