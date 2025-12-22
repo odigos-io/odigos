@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -102,21 +100,14 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
-	// Save original spec for comparison to avoid unnecessary updates
-	originalSpec := ic.Spec.DeepCopy()
-
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider, conf)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// Only update if spec actually changed
-	// Use cmp.Equal with EquateEmpty to treat nil and empty slices/maps as equal
-	if diff := cmp.Diff(originalSpec, &ic.Spec, cmpopts.EquateEmpty()); diff != "" {
-		err = c.Update(ctx, &ic)
-		if err != nil {
-			return utils.K8SUpdateErrorHandler(err)
-		}
+	err = c.Update(ctx, &ic)
+	if err != nil {
+		return utils.K8SUpdateErrorHandler(err)
 	}
 
 	cond := metav1.Condition{
@@ -549,8 +540,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	var existingDistroParams map[string]string
-	distroParameters, err := calculateDistroParams(distro, runtimeDetails, envInjectionDecision, existingDistroParams)
+	distroParameters, err := calculateDistroParams(distro, runtimeDetails, envInjectionDecision)
 	if err != nil {
 		return *err
 	}

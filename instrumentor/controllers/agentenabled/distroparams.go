@@ -116,7 +116,7 @@ func calculateAppendEnvParameters(distro *distroTypes.OtelDistro, runtimeDetails
 	return appendEnvParams, nil
 }
 
-func calculateDistroParams(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer, envInjectionMethod *common.EnvInjectionDecision, existingDistroParams DistroParam) (distroParams DistroParam, err *odigosv1.ContainerAgentConfig) {
+func calculateDistroParams(distro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer, envInjectionMethod *common.EnvInjectionDecision) (distroParams DistroParam, err *odigosv1.ContainerAgentConfig) {
 	distroParams = DistroParam{}
 
 	if len(distro.RequireParameters) > 0 {
@@ -137,7 +137,7 @@ func calculateDistroParams(distro *distroTypes.OtelDistro, runtimeDetails *odigo
 
 	// If result is empty, preserve the existing value's nil/empty state to avoid unnecessary diffs
 	if len(distroParams) == 0 {
-		return existingDistroParams, nil
+		return nil, nil
 	}
 
 	return distroParams, nil
