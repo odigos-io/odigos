@@ -55,6 +55,7 @@ func buildContainersOverview(pod *corev1.Pod) []*model.ContainerOverview {
 		cs, ok := statusByName[c.Name]
 
 		ready := false
+		started := false
 		restarts := 0
 		status := model.ContainerLifecycleStatusWaiting
 		var stateReasonPtr *string
@@ -62,6 +63,7 @@ func buildContainersOverview(pod *corev1.Pod) []*model.ContainerOverview {
 
 		if ok {
 			ready = cs.Ready
+			started = cs.Started != nil && *cs.Started
 			restarts = int(cs.RestartCount)
 			if cs.State.Running != nil {
 				status = model.ContainerLifecycleStatusRunning
@@ -87,6 +89,7 @@ func buildContainersOverview(pod *corev1.Pod) []*model.ContainerOverview {
 			Status:      status,
 			StateReason: stateReasonPtr,
 			Ready:       ready,
+			Started:     started,
 			Restarts:    restarts,
 			StartedAt:   startedAtPtr,
 			Resources:   buildContainerResources(c.Resources),

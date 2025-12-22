@@ -191,6 +191,7 @@ type ComplexityRoot struct {
 		Ready       func(childComplexity int) int
 		Resources   func(childComplexity int) int
 		Restarts    func(childComplexity int) int
+		Started     func(childComplexity int) int
 		StartedAt   func(childComplexity int) int
 		StateReason func(childComplexity int) int
 		Status      func(childComplexity int) int
@@ -735,9 +736,7 @@ type ComplexityRoot struct {
 		Name              func(childComplexity int) int
 		Namespace         func(childComplexity int) int
 		NodeName          func(childComplexity int) int
-		Ready             func(childComplexity int) int
 		RestartsCount     func(childComplexity int) int
-		Started           func(childComplexity int) int
 		Status            func(childComplexity int) int
 	}
 
@@ -1662,6 +1661,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ContainerOverview.Restarts(childComplexity), true
+
+	case "ContainerOverview.started":
+		if e.complexity.ContainerOverview.Started == nil {
+			break
+		}
+
+		return e.complexity.ContainerOverview.Started(childComplexity), true
 
 	case "ContainerOverview.startedAt":
 		if e.complexity.ContainerOverview.StartedAt == nil {
@@ -4075,26 +4081,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PodInfo.NodeName(childComplexity), true
 
-	case "PodInfo.ready":
-		if e.complexity.PodInfo.Ready == nil {
-			break
-		}
-
-		return e.complexity.PodInfo.Ready(childComplexity), true
-
 	case "PodInfo.restartsCount":
 		if e.complexity.PodInfo.RestartsCount == nil {
 			break
 		}
 
 		return e.complexity.PodInfo.RestartsCount(childComplexity), true
-
-	case "PodInfo.started":
-		if e.complexity.PodInfo.Started == nil {
-			break
-		}
-
-		return e.complexity.PodInfo.Started(childComplexity), true
 
 	case "PodInfo.status":
 		if e.complexity.PodInfo.Status == nil {
@@ -10635,6 +10627,50 @@ func (ec *executionContext) _ContainerOverview_ready(ctx context.Context, field 
 }
 
 func (ec *executionContext) fieldContext_ContainerOverview_ready(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ContainerOverview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ContainerOverview_started(ctx context.Context, field graphql.CollectedField, obj *model.ContainerOverview) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ContainerOverview_started(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Started, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ContainerOverview_started(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ContainerOverview",
 		Field:      field,
@@ -26111,6 +26147,8 @@ func (ec *executionContext) fieldContext_PodDetails_containers(_ context.Context
 				return ec.fieldContext_ContainerOverview_stateReason(ctx, field)
 			case "ready":
 				return ec.fieldContext_ContainerOverview_ready(ctx, field)
+			case "started":
+				return ec.fieldContext_ContainerOverview_started(ctx, field)
 			case "restarts":
 				return ec.fieldContext_ContainerOverview_restarts(ctx, field)
 			case "startedAt":
@@ -26251,94 +26289,6 @@ func (ec *executionContext) fieldContext_PodInfo_name(_ context.Context, field g
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PodInfo_ready(ctx context.Context, field graphql.CollectedField, obj *model.PodInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PodInfo_ready(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Ready, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PodInfo_ready(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PodInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _PodInfo_started(ctx context.Context, field graphql.CollectedField, obj *model.PodInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_PodInfo_started(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Started, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_PodInfo_started(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "PodInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -27676,10 +27626,6 @@ func (ec *executionContext) fieldContext_Query_gatewayPods(_ context.Context, fi
 				return ec.fieldContext_PodInfo_namespace(ctx, field)
 			case "name":
 				return ec.fieldContext_PodInfo_name(ctx, field)
-			case "ready":
-				return ec.fieldContext_PodInfo_ready(ctx, field)
-			case "started":
-				return ec.fieldContext_PodInfo_started(ctx, field)
 			case "status":
 				return ec.fieldContext_PodInfo_status(ctx, field)
 			case "restartsCount":
@@ -27742,10 +27688,6 @@ func (ec *executionContext) fieldContext_Query_odigletPods(_ context.Context, fi
 				return ec.fieldContext_PodInfo_namespace(ctx, field)
 			case "name":
 				return ec.fieldContext_PodInfo_name(ctx, field)
-			case "ready":
-				return ec.fieldContext_PodInfo_ready(ctx, field)
-			case "started":
-				return ec.fieldContext_PodInfo_started(ctx, field)
 			case "status":
 				return ec.fieldContext_PodInfo_status(ctx, field)
 			case "restartsCount":
@@ -35559,6 +35501,11 @@ func (ec *executionContext) _ContainerOverview(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "started":
+			out.Values[i] = ec._ContainerOverview_started(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "restarts":
 			out.Values[i] = ec._ContainerOverview_restarts(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -39807,16 +39754,6 @@ func (ec *executionContext) _PodInfo(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "name":
 			out.Values[i] = ec._PodInfo_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "ready":
-			out.Values[i] = ec._PodInfo_ready(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "started":
-			out.Values[i] = ec._PodInfo_started(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

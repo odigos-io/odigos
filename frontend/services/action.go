@@ -231,6 +231,10 @@ func convertK8sAttributesFromInput(details *model.ActionFieldsInput, existingAct
 					from := actionsv1.K8sAttributeSource(*attr.From)
 					config.LabelsAttributes[i].From = &from
 				}
+				if config.LabelsAttributes[i].From == nil {
+					from := actionsv1.K8sAttributeSource(actionsv1.PodAttributeSource)
+					config.LabelsAttributes[i].From = &from
+				}
 			}
 			withK8sAttributes = true
 		}
@@ -244,6 +248,10 @@ func convertK8sAttributesFromInput(details *model.ActionFieldsInput, existingAct
 				if attr.From != nil {
 					from := string(*attr.From)
 					config.AnnotationsAttributes[i].From = &from
+				}
+				if config.LabelsAttributes[i].From == nil {
+					from := actionsv1.K8sAttributeSource(actionsv1.PodAttributeSource)
+					config.LabelsAttributes[i].From = &from
 				}
 			}
 			withK8sAttributes = true
