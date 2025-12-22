@@ -177,6 +177,11 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		for _, pod := range pods {
 			ic := l.instrumentationConfigs[sourceId]
 			agentInjected, agentInjectedStatus := status.CalculatePodAgentInjectedStatus(pod, ic)
+			var startedPostAgentMetaHashChange *bool
+			if ic != nil && ic.Spec.AgentsMetaHashChangedTime != nil {
+				posStartTimeAfterAgentMetaHashChange := pod.CreationTimestamp.After(ic.Spec.AgentsMetaHashChangedTime.Time)
+				startedPostAgentMetaHashChange = &posStartTimeAfterAgentMetaHashChange
+			}
 			containers := make([]computed.ComputedPodContainer, 0, len(pod.Spec.Containers))
 			for _, container := range pod.Spec.Containers {
 				otelDistroName := getEnvValueFromManifest(container.Env, k8sconsts.OdigosEnvVarDistroName)
@@ -220,13 +225,14 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 				})
 			}
 			cachedPod := computed.CachedPod{
-				PodNamespace:        pod.Namespace,
-				PodName:             pod.Name,
-				PodNodeName:         pod.Spec.NodeName,
-				PodStartTime:        pod.CreationTimestamp.Format(time.RFC3339),
-				AgentInjected:       agentInjected,
-				AgentInjectedStatus: agentInjectedStatus,
-				Containers:          containers,
+				PodNamespace:                   pod.Namespace,
+				PodName:                        pod.Name,
+				PodNodeName:                    pod.Spec.NodeName,
+				PodStartTime:                   pod.CreationTimestamp.Format(time.RFC3339),
+				StartedPostAgentMetaHashChange: startedPostAgentMetaHashChange,
+				AgentInjected:                  agentInjected,
+				AgentInjectedStatus:            agentInjectedStatus,
+				Containers:                     containers,
 			}
 
 			cachePods[sourceId] = append(cachePods[sourceId], cachedPod)

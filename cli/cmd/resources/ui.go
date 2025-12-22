@@ -224,7 +224,7 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 			{ // Needed to read and update odigos-configuration configmap for settings
 				APIGroups: []string{""},
 				Resources: []string{"configmaps"},
-				Verbs:     []string{"get", "list", "update", "patch"},
+				Verbs:     []string{"get", "list", "create", "update", "patch"},
 			},
 			{ // Needed for secret values in destinations
 				APIGroups: []string{""},

@@ -200,6 +200,7 @@ type ContainerOverview struct {
 	Status      ContainerLifecycleStatus `json:"status"`
 	StateReason *string                  `json:"stateReason,omitempty"`
 	Ready       bool                     `json:"ready"`
+	Started     bool                     `json:"started"`
 	Restarts    int                      `json:"restarts"`
 	StartedAt   *string                  `json:"startedAt,omitempty"`
 	Resources   *Resources               `json:"resources,omitempty"`
@@ -650,14 +651,15 @@ type K8sWorkloadMarkedForInstrumentation struct {
 }
 
 type K8sWorkloadPod struct {
-	PodName                       string                     `json:"podName"`
-	NodeName                      string                     `json:"nodeName"`
-	StartTime                     string                     `json:"startTime"`
-	AgentInjected                 bool                       `json:"agentInjected"`
-	AgentInjectedStatus           *DesiredConditionStatus    `json:"agentInjectedStatus"`
-	RunningLatestWorkloadRevision *string                    `json:"runningLatestWorkloadRevision,omitempty"`
-	PodHealthStatus               *DesiredConditionStatus    `json:"podHealthStatus"`
-	Containers                    []*K8sWorkloadPodContainer `json:"containers"`
+	PodName                        string                     `json:"podName"`
+	NodeName                       string                     `json:"nodeName"`
+	StartTime                      string                     `json:"startTime"`
+	AgentInjected                  bool                       `json:"agentInjected"`
+	StartedPostAgentMetaHashChange *bool                      `json:"startedPostAgentMetaHashChange,omitempty"`
+	AgentInjectedStatus            *DesiredConditionStatus    `json:"agentInjectedStatus"`
+	RunningLatestWorkloadRevision  *string                    `json:"runningLatestWorkloadRevision,omitempty"`
+	PodHealthStatus                *DesiredConditionStatus    `json:"podHealthStatus"`
+	Containers                     []*K8sWorkloadPodContainer `json:"containers"`
 }
 
 type K8sWorkloadPodContainer struct {
@@ -874,8 +876,6 @@ type PodDetails struct {
 type PodInfo struct {
 	Namespace         string               `json:"namespace"`
 	Name              string               `json:"name"`
-	Ready             bool                 `json:"ready"`
-	Started           bool                 `json:"started"`
 	Status            string               `json:"status"`
 	RestartsCount     int                  `json:"restartsCount"`
 	NodeName          string               `json:"nodeName"`
