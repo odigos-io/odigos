@@ -76,5 +76,18 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		return err
 	}
 
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("agentenabled-urltemplatizationaction").
+		For(&odigosv1.Action{}).
+		WithEventFilter(&odigospredicate.URLTemplatizationActionPredicate{}).
+		Complete(&ActionReconciler{
+			Client:          mgr.GetClient(),
+			DistrosProvider: dp,
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
