@@ -119,13 +119,18 @@ auth:
     # -- Use an existing PVC by name instead of creating one
     # If set, the chart will not create a PVC and will mount this claim
     existingClaim: ''
+
   resources:
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 384Mi
     limits:
       cpu: 500m
-      memory: 1Gi
+      memory: 512Mi
+
+  # Limits Keycloak's JVM memory to a small, efficient range suitable for medium traffic
+  javaOpts: "-Xms128m -Xmx256m"
+
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
