@@ -149,22 +149,7 @@ metadata:
   namespace: default
   labels:
     app: membership
-spec:
-  containers:
-    - name: membership
-      (env[?name == 'ODIGOS_CONTAINER_NAME']):
-        - value: membership
-      (env[?name == 'ODIGOS_DISTRO_NAME']):
-        - value: golang-community
-      (env[?name == 'ODIGOS_POD_NAME']):
-        - valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.name
-      (env[?name == 'ODIGOS_WORKLOAD_NAMESPACE']):
-        - value: default
-      (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=membership,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=membership,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=membership-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+# no restart required for go instrumentation - hence webhook parameters are not expected
 status:
   containerStatuses:
     - name: membership
