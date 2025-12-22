@@ -24,7 +24,7 @@ interface UseSourceCrud {
   sourcesLoading: boolean;
   fetchSources: () => Promise<void>;
   fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<Source | undefined>;
-  fetchSourceLibraries: (req: { variables: WorkloadId }) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
+  fetchSourceLibraries: (id: WorkloadId) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
@@ -184,7 +184,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     sourcesLoading,
     fetchSources,
     fetchSourceById,
-    fetchSourceLibraries: querySourceLibraries,
+    fetchSourceLibraries: (payload: WorkloadId) => querySourceLibraries({ variables: payload }),
     persistSources,
     updateSource,
   };
