@@ -12,7 +12,6 @@ import (
 )
 
 func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error) {
-
 	// this can be extended to support other kinds of resources in the future.
 	switch kind {
 	case model.K8sResourceKindDeployment:
@@ -29,6 +28,30 @@ func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKi
 
 	case model.K8sResourceKindDaemonSet:
 		obj, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		obj.ObjectMeta.ManagedFields = nil
+		yb, err := syaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
+		return string(yb), nil
+
+	case model.K8sResourceKindStatefulSet:
+		obj, err := kube.DefaultClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		obj.ObjectMeta.ManagedFields = nil
+		yb, err := syaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
+		return string(yb), nil
+
+	case model.K8sResourceKindCronJob:
+		obj, err := kube.DefaultClient.BatchV1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
