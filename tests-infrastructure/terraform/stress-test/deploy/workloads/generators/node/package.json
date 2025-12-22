@@ -1,0 +1,9 @@
+{
+  "name": "node-span-gen",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@opentelemetry/api": "1.8.0"
+  }
+}

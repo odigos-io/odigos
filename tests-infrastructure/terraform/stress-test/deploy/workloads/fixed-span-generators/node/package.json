@@ -1,0 +1,23 @@
+{
+  "name": "node-fixed-span-gen",
+  "version": "1.0.0",
+  "description": "Node.js fixed span generator for load testing",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.40.3",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.1"
+  },
+  "keywords": [
+    "opentelemetry",
+    "tracing",
+    "load-testing"
+  ],
+  "author": "Odigos",
+  "license": "MIT"
+}
