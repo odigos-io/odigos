@@ -1,0 +1,153 @@
+name: Stress Test on Pre/RC Release
+
+on:
+  push:
+    tags:
+      - 'v*-rc*'  # Release candidates
+      - 'v*-pre*' # Pre-releases
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to test (e.g., v1.0.0-rc1, v1.0.0-pre1)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER_NAME: odigos-stress-test
+  NAMESPACE: load-test
+
+jobs:
+  stress-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Determine Release Tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+          echo "Release tag: ${{ steps.tag.outputs.tag }}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.32.0'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.15.2'
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Verify cluster connection
+        run: |
+          kubectl get nodes
+          kubectl get namespaces
+
+      - name: Install/Upgrade Odigos via Helm
+        run: |
+          helm repo add odigos https://odigos-io.github.io/odigos
+          helm repo update
+          helm upgrade --install odigos odigos/odigos --version ${{ steps.tag.outputs.tag }} --namespace odigos-system --create-namespace --wait
+
+      - name: Wait for Odigos to be ready
+        run: |
+          kubectl wait --for=condition=available --timeout=300s deployment/odigos-scheduler -n odigos-system
+
+      - name: Create load-test namespace
+        run: |
+          kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy Load Test Applications
+        run: |
+          # Deploy each generator from its individual directory (already configured with 7 replicas)
+          kubectl apply -f stress-test/deploy/workloads/generators/go/deployment.yaml
+          kubectl apply -f stress-test/deploy/workloads/generators/java/deployment.yaml
+          kubectl apply -f stress-test/deploy/workloads/generators/node/deployment.yaml
+          kubectl apply -f stress-test/deploy/workloads/generators/python/deployment.yaml
+          
+          echo "All generators deployed with 1 replica for stress testing"
+          
+          # Deploy a Job that will scale down after 2 hours
+          kubectl apply -f stress-test/deploy/workloads/scale-down-job.yaml
+          echo "Scale-down job deployed - will scale generators to 0 after 2 hours"
+
+      - name: Wait for load test apps to be ready
+        run: |
+          kubectl wait --for=condition=available --timeout=300s deployment/go-span-generator -n ${{ env.NAMESPACE }}
+          kubectl wait --for=condition=available --timeout=300s deployment/java-span-generator -n ${{ env.NAMESPACE }}
+          kubectl wait --for=condition=available --timeout=300s deployment/node-span-generator -n ${{ env.NAMESPACE }}
+          kubectl wait --for=condition=available --timeout=300s deployment/python-span-generator -n ${{ env.NAMESPACE }}
+
+      - name: Get cluster information
+        id: cluster-info
+        run: |
+          # Get cluster endpoint
+          CLUSTER_ENDPOINT=$(aws eks describe-cluster --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }} --query 'cluster.endpoint' --output text)
+          echo "cluster_endpoint=$CLUSTER_ENDPOINT" >> $GITHUB_OUTPUT
+          
+          # Get cluster region
+          echo "cluster_region=${{ env.AWS_REGION }}" >> $GITHUB_OUTPUT
+          
+          # Get cluster name
+          echo "cluster_name=${{ env.EKS_CLUSTER_NAME }}" >> $GITHUB_OUTPUT
+          
+          # Get EC2 instance ID for port forwarding - specifically look for k6-runner where infra services are running
+          echo "Looking for EC2 instance for Grafana port forwarding..."
+          INSTANCE_ID=$(aws ec2 describe-instances --region ${{ env.AWS_REGION }} --filters "Name=tag:Name,Values=k6-runner" "Name=instance-state-name,Values=running" --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          echo "EC2 Instance ID: $INSTANCE_ID"
+          
+          if [ "$INSTANCE_ID" = "None" ] || [ -z "$INSTANCE_ID" ]; then
+            echo "EC2 instance not found, trying cluster nodes as fallback..."
+            # Fallback: try to get any running instance in the cluster
+            INSTANCE_ID=$(aws ec2 describe-instances --region ${{ env.AWS_REGION }} --filters "Name=tag:kubernetes.io/cluster/${{ env.EKS_CLUSTER_NAME }},Values=owned" "Name=instance-state-name,Values=running" --query 'Reservations[0].Instances[0].InstanceId' --output text)
+            echo "Cluster node Instance ID: $INSTANCE_ID"
+          fi
+          
+          # If still no instance found, set a placeholder
+          if [ "$INSTANCE_ID" = "None" ] || [ -z "$INSTANCE_ID" ]; then
+            INSTANCE_ID="INSTANCE_ID_NOT_FOUND"
+            echo "Warning: No EC2 instance found for port forwarding"
+          fi
+          
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: Send Slack notification - Success
+        if: success()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Stress test started for release: ${{ steps.tag.outputs.tag }} | Cluster: ${{ steps.cluster-info.outputs.cluster_name }} | Connect: aws eks update-kubeconfig --region ${{ steps.cluster-info.outputs.cluster_region }} --name ${{ steps.cluster-info.outputs.cluster_name }}${{ steps.cluster-info.outputs.instance_id != 'INSTANCE_ID_NOT_FOUND' && format(' | Port Forward: ClickHouse(8123), Prometheus(9090), Grafana(3000) via aws ssm start-session --target {0}', steps.cluster-info.outputs.instance_id) || '' }}"
+          tag: ${{ steps.tag.outputs.tag }}
+
+      - name: Send Slack notification - Failure
+        if: failure()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          failure-description: "Stress test run failed! Release: ${{ steps.tag.outputs.tag }} | Cluster: ${{ steps.cluster-info.outputs.cluster_name }} | Region: ${{ steps.cluster-info.outputs.cluster_region }} | Connect: aws eks update-kubeconfig --region ${{ steps.cluster-info.outputs.cluster_region }} --name ${{ steps.cluster-info.outputs.cluster_name }}${{ steps.cluster-info.outputs.instance_id != 'INSTANCE_ID_NOT_FOUND' && format(' | Port Forward: ClickHouse(8123), Prometheus(9090), Grafana(3000) via aws ssm start-session --target {0}', steps.cluster-info.outputs.instance_id) || '' }}"
+          tag: ${{ steps.tag.outputs.tag }}
+
+

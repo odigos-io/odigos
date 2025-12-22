@@ -1,0 +1,63 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: go-span-generator-source
+  namespace: load-test
+  labels:
+    odigos.io/data-stream-default: "true"
+    odigos.io/workload-kind: Deployment
+    odigos.io/workload-name: go-span-generator
+    odigos.io/workload-namespace: load-test
+spec:
+  workload:
+    kind: Deployment
+    name: go-span-generator
+    namespace: load-test
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: java-span-generator-source
+  namespace: load-test
+  labels:
+    odigos.io/data-stream-default: "true"
+    odigos.io/workload-kind: Deployment
+    odigos.io/workload-name: java-span-generator
+    odigos.io/workload-namespace: load-test
+spec:
+  workload:
+    kind: Deployment
+    name: java-span-generator
+    namespace: load-test
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: node-span-generator-source
+  namespace: load-test
+  labels:
+    odigos.io/data-stream-default: "true"
+    odigos.io/workload-kind: Deployment
+    odigos.io/workload-name: node-span-generator
+    odigos.io/workload-namespace: load-test
+spec:
+  workload:
+    kind: Deployment
+    name: node-span-generator
+    namespace: load-test
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: python-span-generator-source
+  namespace: load-test
+  labels:
+    odigos.io/data-stream-default: "true"
+    odigos.io/workload-kind: Deployment
+    odigos.io/workload-name: python-span-generator
+    odigos.io/workload-namespace: load-test
+spec:
+  workload:
+    kind: Deployment
+    name: python-span-generator
+    namespace: load-test
