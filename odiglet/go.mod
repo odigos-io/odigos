@@ -31,6 +31,7 @@ require (
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/agoda-com/opentelemetry-logs-go v0.5.1 // indirect
+	github.com/argoproj/argo-rollouts v1.8.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
