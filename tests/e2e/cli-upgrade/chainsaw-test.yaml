@@ -84,19 +84,6 @@ spec:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
-    # keeping this for now to not break the test, however once https://github.com/odigos-io/odigos/pull/3926 is merged
-    # we can remove this
-    - name: Ruby Detected, Rollout Restart
-      try:
-        - assert:
-            timeout: 3m
-            file: ../../common/assert/ruby-partial-runtime-detected.yaml
-        - script:
-            timeout: 1m
-            content: |
-              kubectl rollout restart deployment geolocation
-              kubectl wait --for=condition=ready pod -l app=geolocation --timeout=60s
-
     - name: Assert Runtime Detected
       try:
         - assert:

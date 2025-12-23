@@ -135,5 +135,10 @@ func calculateDistroParams(distro *distroTypes.OtelDistro, runtimeDetails *odigo
 		distroParams = mergeMaps(distroParams, appendEnvParams)
 	}
 
+	// If result is empty, preserve the existing value's nil/empty state to avoid unnecessary diffs
+	if len(distroParams) == 0 {
+		return nil, nil
+	}
+
 	return distroParams, nil
 }

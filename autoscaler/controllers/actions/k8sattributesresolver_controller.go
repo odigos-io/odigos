@@ -2,6 +2,8 @@ package actions
 
 import (
 	"context"
+	"fmt"
+	"sort"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -105,6 +107,67 @@ type k8sAttributesConfig struct {
 	Filter         k8sAttributesFilter          `json:"filter"`
 	Extract        k8sAttributeExtract          `json:"extract"`
 	PodAssociation k8sAttributesPodsAssociation `json:"pod_association"`
+}
+
+// getEffectiveSources returns the list of sources to use for label extraction.
+// It handles backward compatibility with the deprecated From field.
+// If FromSources is specified, it returns those sources.
+// If only From is specified (deprecated), it returns a single-element slice with that source.
+// If neither is specified, it defaults to pod.
+func getEffectiveSources(from *actionv1.K8sAttributeSource, fromSources []actionv1.K8sAttributeSource) []actionv1.K8sAttributeSource {
+	if len(fromSources) > 0 {
+		return fromSources
+	}
+	if from != nil {
+		return []actionv1.K8sAttributeSource{*from}
+	}
+	return []actionv1.K8sAttributeSource{actionv1.PodAttributeSource}
+}
+
+// getEffectiveSourcesFromString is similar to getEffectiveSources but handles the string pointer type
+// used in K8sAnnotationAttribute.From for backward compatibility.
+func getEffectiveSourcesFromString(from *string, fromSources []actionv1.K8sAttributeSource) []actionv1.K8sAttributeSource {
+	if len(fromSources) > 0 {
+		return fromSources
+	}
+	if from != nil {
+		return []actionv1.K8sAttributeSource{actionv1.K8sAttributeSource(*from)}
+	}
+	return []actionv1.K8sAttributeSource{actionv1.PodAttributeSource}
+}
+
+// sourcePrecedence returns the precedence value for a source.
+// Lower values mean lower precedence (will be overwritten by higher precedence).
+func sourcePrecedence(source actionv1.K8sAttributeSource) int {
+	for i, s := range actionv1.K8sAttributeSourcePrecedence {
+		if s == source {
+			return i
+		}
+	}
+	// Unknown sources get lowest precedence
+	return -1
+}
+
+// sortByPrecedence converts a map of k8sTagAttribute to a sorted slice.
+// The slice is sorted by source precedence (lower precedence first),
+// so that when the k8sattributes processor iterates through them,
+// higher precedence sources overwrite lower precedence ones.
+func sortByPrecedence(attrs map[string]k8sTagAttribute) []k8sTagAttribute {
+	result := make([]k8sTagAttribute, 0, len(attrs))
+	for _, attr := range attrs {
+		result = append(result, attr)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		// Sort by source precedence (lower precedence first)
+		precedenceI := sourcePrecedence(actionv1.K8sAttributeSource(result[i].From))
+		precedenceJ := sourcePrecedence(actionv1.K8sAttributeSource(result[j].From))
+		if precedenceI != precedenceJ {
+			return precedenceI < precedenceJ
+		}
+		// For same precedence, sort by key for deterministic ordering
+		return result[i].Key < result[j].Key
+	})
+	return result
 }
 
 func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -217,29 +280,38 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 		collectContainer = collectContainer || config.CollectContainerAttributes
 		collectClusterUID = collectClusterUID || config.CollectClusterUID
 
-		// Add label attributes, newer configs override older ones with same Tag
+		// Add label attributes
+		// For each label, we may have multiple sources (e.g., pod and namespace).
+		// We need to generate separate processor config entries for each source,
+		// with the correct precedence order (lower precedence sources processed first,
+		// so higher precedence sources can override).
 		for _, label := range config.LabelsAttributes {
-			from := actionv1.PodAttributeSource
-			if label.From != nil {
-				from = actionv1.K8sAttributeSource(*label.From)
-			}
-			labelAttributes[label.LabelKey] = k8sTagAttribute{
-				Tag:  label.AttributeKey,
-				Key:  label.LabelKey,
-				From: string(from),
+			sources := getEffectiveSources(label.From, label.FromSources)
+			for _, source := range sources {
+				// Use a composite labelKeyWithSource of LabelKey and source to allow multiple sources for the same label
+				labelKeyWithSource := fmt.Sprintf("%s:%s", label.LabelKey, string(source))
+				labelAttributes[labelKeyWithSource] = k8sTagAttribute{
+					Tag:  label.AttributeKey,
+					Key:  label.LabelKey,
+					From: string(source),
+				}
 			}
 		}
 
-		// Add annotation attributes, newer configs override older ones with same Tag
+		// Add annotation attributes
+		// For each annotation, we may have multiple sources (e.g., pod and namespace).
+		// We need to generate separate processor config entries for each source,
+		// with the correct precedence order.
 		for _, annotation := range config.AnnotationsAttributes {
-			from := actionv1.PodAttributeSource
-			if annotation.From != nil {
-				from = actionv1.K8sAttributeSource(*annotation.From)
-			}
-			annotationAttributes[annotation.AnnotationKey] = k8sTagAttribute{
-				Tag:  annotation.AttributeKey,
-				Key:  annotation.AnnotationKey,
-				From: string(from),
+			sources := getEffectiveSourcesFromString(annotation.From, annotation.FromSources)
+			for _, source := range sources {
+				// Use a composite key of AnnotationKey and source to allow multiple sources for the same annotation
+				annotationKeyWithSource := fmt.Sprintf("%s:%s", annotation.AnnotationKey, string(source))
+				annotationAttributes[annotationKeyWithSource] = k8sTagAttribute{
+					Tag:  annotation.AttributeKey,
+					Key:  annotation.AnnotationKey,
+					From: string(source),
+				}
 			}
 		}
 
@@ -257,16 +329,12 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 		metadataAttributes = append(metadataAttributes, string(semconv.K8SClusterUIDKey))
 	}
 
-	// Convert maps back to slices
-	var labelAttrs []k8sTagAttribute
-	for _, attr := range labelAttributes {
-		labelAttrs = append(labelAttrs, attr)
-	}
-
-	var annotationAttrs []k8sTagAttribute
-	for _, attr := range annotationAttributes {
-		annotationAttrs = append(annotationAttrs, attr)
-	}
+	// Convert maps back to slices, sorted by precedence (lower precedence first)
+	// This ensures that when the k8sattributes processor processes these entries,
+	// higher precedence sources (e.g., pod) are processed last and overwrite
+	// lower precedence sources (e.g., namespace).
+	labelAttrs := sortByPrecedence(labelAttributes)
+	annotationAttrs := sortByPrecedence(annotationAttributes)
 
 	if len(metadataAttributes) == 0 {
 		// when metadata attributes are not set, the collector will take the default

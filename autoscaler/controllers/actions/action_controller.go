@@ -235,6 +235,24 @@ func (r *ActionReconciler) reportReconciledToProcessorFailed(ctx context.Context
 	return nil
 }
 
+func (r *ActionReconciler) reportProcessorNotRequired(ctx context.Context, action *odigosv1.Action) error {
+	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
+		Type:               odigosv1.ActionTransformedToProcessorType,
+		Status:             metav1.ConditionTrue,
+		Reason:             string(odigosv1.ActionTransformedToProcessorReasonProcessorNotRequired),
+		Message:            "is not required for this action type.",
+		ObservedGeneration: action.Generation,
+	})
+
+	if changed {
+		err := r.Status().Update(ctx, action)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, action *odigosv1.Action) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               odigosv1.ActionTransformedToProcessorType,
@@ -263,6 +281,15 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// If the action is a URL templatization action, we should not need to transform it to a processor CR.
+	if action.Spec.URLTemplatization != nil {
+		err = r.reportProcessorNotRequired(ctx, action)
+		if err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		return ctrl.Result{}, nil
 	}
 
 	processor, err := convertActionToProcessor(ctx, r.Client, action)

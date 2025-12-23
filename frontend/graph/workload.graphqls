@@ -331,6 +331,14 @@ type K8sWorkloadPod {
   # and the availability of the instrumentor webhook to handle requests.
   agentInjected: Boolean!
 
+  # true if the pod started after the agent meta hash changed.
+  # false if the pod started before the agent meta hash changed.
+  # pods that started before the agent meta hash need to restart for odigos to apply changes to pod manifest.
+  # this process will be invoked automatically by odigos, but it can be disabled, delayed, or fail.
+  # this boolean indicates the actual state for a running pod and may change as the workload is rolled out.
+  # if agent injection was never yet enabled for this workload, or it started before support for this time capture was added, this will be null.
+  startedPostAgentMetaHashChange: Boolean
+
   # the status of the agentInjected decision.
   # this status is not a condition on a resource, it's a calculated value based on the observed state of the pod.
   # it is used to track if the agent injected state is as desired, or if there are any issues.

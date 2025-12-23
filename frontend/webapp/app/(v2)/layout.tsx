@@ -5,12 +5,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import { useTheme } from 'styled-components';
 import { OverviewHeader } from '@/components';
-import { useSSE, useTokenTracker } from '@/hooks';
+import { useDarkMode } from '@odigos/ui-kit/store';
 import { Navbar } from '@odigos/ui-kit/components/v2';
+import { OdigosProvider } from '@odigos/ui-kit/contexts';
+import { useConfig, useSSE, useTokenTracker } from '@/hooks';
 import { NavIconIds, ToastList } from '@odigos/ui-kit/containers';
 import { ErrorBoundary, FlexColumn, FlexRow } from '@odigos/ui-kit/components';
 import { OverviewIcon, PipelineCollectorIcon, ServiceMapIcon } from '@odigos/ui-kit/icons';
-import { useDarkMode } from '@odigos/ui-kit/store';
 
 const serviceMapId = 'service-map';
 const pipelineCollectorsId = 'pipeline-collectors';
@@ -47,6 +48,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
+  const { config } = useConfig();
 
   // TODO: remove this after migration to v2
   const theme = useTheme();
@@ -92,15 +94,17 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   return (
     <ErrorBoundary>
-      <FlexColumn $gap={0}>
-        <OverviewHeader v2 />
-        <FlexRow $gap={0}>
-          <Navbar height='calc(100vh - 60px)' icons={navbarIcons(getSelectedId(pathname) || '')} />
-          {children}
-        </FlexRow>
-      </FlexColumn>
+      <OdigosProvider tier={config?.tier} version={config?.odigosVersion} platformType={config?.platformType}>
+        <FlexColumn $gap={0}>
+          <OverviewHeader v2 />
+          <FlexRow $gap={0}>
+            <Navbar height='calc(100vh - 60px)' icons={navbarIcons(getSelectedId(pathname) || '')} />
+            {children}
+          </FlexRow>
+        </FlexColumn>
 
-      <ToastList />
+        <ToastList />
+      </OdigosProvider>
     </ErrorBoundary>
   );
 }

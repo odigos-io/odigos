@@ -44,7 +44,9 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	deploymentData := odigosDeployment.Data
 
 	response.Readonly = IsReadonlyMode(ctx)
+	response.PlatformType = model.ComputePlatformTypeK8s // TODO: add support for VM (or others)
 	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
+	response.OdigosVersion = deploymentData[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
 
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)

@@ -23,9 +23,9 @@ type k8sSettingsGetter struct {
 	client client.Client
 }
 
-var _ instrumentation.SettingsGetter[K8sProcessDetails] = &k8sSettingsGetter{}
+var _ instrumentation.SettingsGetter[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] = &k8sSettingsGetter{}
 
-func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, kd K8sProcessDetails, dist *distro.OtelDistro) (instrumentation.Settings, error) {
+func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, kd *K8sProcessDetails, dist *distro.OtelDistro) (instrumentation.Settings, error) {
 	sdkConfig, serviceName, err := ksg.instrumentationSDKConfig(ctx, kd, dist.Language)
 	if err != nil {
 		return instrumentation.Settings{}, err
@@ -48,7 +48,7 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, 
 	}, nil
 }
 
-func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd K8sProcessDetails, lang common.ProgrammingLanguage) (*odigosv1.SdkConfig, string, error) {
+func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd *K8sProcessDetails, lang common.ProgrammingLanguage) (*odigosv1.SdkConfig, string, error) {
 	instrumentationConfig := odigosv1.InstrumentationConfig{}
 	instrumentationConfigKey := client.ObjectKey{
 		Namespace: kd.pw.Namespace,

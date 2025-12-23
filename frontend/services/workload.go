@@ -314,6 +314,7 @@ const verboseQuery = `
 				nodeName
 				startTime
 				agentInjected
+				startedPostAgentMetaHashChange
 				agentInjectedStatus {
 					name
 					status
@@ -464,6 +465,7 @@ const podsQuery = `
 				nodeName
 				startTime
 				agentInjected
+				startedPostAgentMetaHashChange
 				agentInjectedStatus {
 					name
 					status

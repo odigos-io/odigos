@@ -351,6 +351,21 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		}
 	}
 
+	// URL Templatization configuration
+	urlTemplatizationEnabled := containerConfig.Traces != nil && containerConfig.Traces.UrlTemplatization != nil && len(containerConfig.Traces.UrlTemplatization.Rules) > 0
+	if urlTemplatizationEnabled {
+		// Reuse span metrics support check - URL templatization is supported by the same distros that support span metrics
+		setUrlTemplatizationAsEnvVar := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.InjectAsEnvVar
+		if setUrlTemplatizationAsEnvVar {
+			// parse URL templatization config to json using the existing AgentTracesConfig struct
+			urlTemplatizationConfigJson, err := json.Marshal(containerConfig.Traces.UrlTemplatization)
+			if err != nil {
+				return false, nil, fmt.Errorf("failed to marshal URL templatization config: %w", err)
+			}
+			existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_URL_TEMPLATIZATION", string(urlTemplatizationConfigJson))
+		}
+	}
+
 	volumeMounted := false
 	containerDirsToCopy := make(map[string]struct{})
 	if distroMetadata.RuntimeAgent != nil {

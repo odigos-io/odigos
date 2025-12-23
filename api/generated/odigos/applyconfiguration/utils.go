@@ -127,6 +127,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SourceSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceStatus"):
 		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("UrlTemplatizationConfig"):
+		return &odigosv1alpha1.UrlTemplatizationConfigApplyConfiguration{}
 
 	}
 	return nil

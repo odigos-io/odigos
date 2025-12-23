@@ -7,6 +7,10 @@ import { GET_NAMESPACE, GET_NAMESPACES, PERSIST_NAMESPACES } from '@/graphql';
 import { Crud, EntityTypes, Namespace, StatusType } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 
+interface FetchSingleNamespacePayload {
+  namespaceName: string;
+}
+
 export const useNamespace = () => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
@@ -20,7 +24,7 @@ export const useNamespace = () => {
   const [queryAllNs] = useLazyQuery<{ computePlatform?: { k8sActualNamespaces?: Namespace[] } }>(GET_NAMESPACES, {
     onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
-  const [querySingleNs] = useLazyQuery<{ computePlatform?: { k8sActualNamespace?: Namespace } }, { namespaceName: string }>(GET_NAMESPACE, {
+  const [querySingleNs] = useLazyQuery<{ computePlatform?: { k8sActualNamespace?: Namespace } }, FetchSingleNamespacePayload>(GET_NAMESPACE, {
     onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
 
@@ -63,7 +67,7 @@ export const useNamespace = () => {
     namespacesLoading,
     namespaces,
     fetchNamespaces,
-    fetchNamespace: querySingleNs,
+    fetchNamespace: (payload: FetchSingleNamespacePayload) => querySingleNs({ variables: payload }),
     persistNamespaces,
   };
 };

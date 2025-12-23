@@ -24,16 +24,26 @@ import (
 
 const ActionNameK8sAttributes = "K8sAttributes"
 
-// +kubebuilder:validation:Enum=pod;namespace
+// +kubebuilder:validation:Enum=pod;namespace;node
 type K8sAttributeSource string
 
 const (
 	PodAttributeSource       K8sAttributeSource = "pod"
 	NamespaceAttributeSource K8sAttributeSource = "namespace"
+	NodeAttributeSource      K8sAttributeSource = "node"
 )
 
+// K8sAttributeSourcePrecedence defines the precedence order for attribute sources.
+// Lower index = lower precedence, higher index = higher precedence.
+// When extracting the same label from multiple sources, the source with higher precedence wins.
+var K8sAttributeSourcePrecedence = []K8sAttributeSource{
+	NodeAttributeSource,      // Lowest precedence
+	NamespaceAttributeSource, // Medium precedence
+	PodAttributeSource,       // Highest precedence
+}
+
 type K8sLabelAttribute struct {
-	// The label name to be extracted from the pod.
+	// The label name to be extracted.
 	// e.g. "app.kubernetes.io/name"
 	// +kubebuilder:validation:Required
 	LabelKey string `json:"labelKey"`
@@ -45,23 +55,39 @@ type K8sLabelAttribute struct {
 	// e.g. "pod" or "namespace"
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=pod
+	// Deprecated: Use FromSources instead for specifying multiple sources with precedence.
 	From *K8sAttributeSource `json:"from,omitempty"`
+	// The sources from which to extract the label, in order of precedence (most specific first).
+	// When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+	// over less specific sources (e.g., namespace).
+	// If a label exists in multiple sources, the value from the most specific source will be used.
+	// Supported sources: "pod", "namespace", "node"
+	// +kubebuilder:validation:Optional
+	FromSources []K8sAttributeSource `json:"fromSources,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
-	// The label name to be extracted from the pod.
+	// The annotation name to be extracted.
 	// e.g. "kubectl.kubernetes.io/restartedAt"
 	// +kubebuilder:validation:Required
 	AnnotationKey string `json:"annotationKey"`
-	// The attribute key to be used for the resource attribute created from the label.
-	// e.g. "kubectl.kubernetes.restartedAte"
+	// The attribute key to be used for the resource attribute created from the annotation.
+	// e.g. "kubectl.kubernetes.restartedAt"
 	// +kubebuilder:validation:Required
 	AttributeKey string `json:"attributeKey"`
 	// The source of the annotation.
 	// e.g. "pod" or "namespace"
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=pod
+	// Deprecated: Use FromSources instead for specifying multiple sources with precedence.
 	From *string `json:"from,omitempty"`
+	// The sources from which to extract the annotation, in order of precedence (most specific first).
+	// When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+	// over less specific sources (e.g., namespace).
+	// If an annotation exists in multiple sources, the value from the most specific source will be used.
+	// Supported sources: "pod", "namespace", "node"
+	// +kubebuilder:validation:Optional
+	FromSources []K8sAttributeSource `json:"fromSources,omitempty"`
 }
 
 type K8sAttributesConfig struct {
