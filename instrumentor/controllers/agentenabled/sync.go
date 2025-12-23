@@ -100,7 +100,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
-	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider)
+	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider, conf)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -145,8 +145,8 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // if the function returns without an error, it also returns an agentInjectedStatusCondition object
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
-func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-	cg, irls, effectiveConfig, urlTemplatizationRules, err := getRelevantResources(ctx, c, pw)
+func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
+	cg, irls, urlTemplatizationRules, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
