@@ -19,11 +19,13 @@ export const GET_ACTIONS = gql`
             labelKey
             attributeKey
             from
+            fromSources
           }
           annotationsAttributes {
             annotationKey
             attributeKey
             from
+            fromSources
           }
           clusterAttributes {
             attributeName
