@@ -16,7 +16,7 @@ require (
 )
 
 require (
-	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
+	github.com/argoproj/argo-rollouts v1.8.3 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44 // indirect
