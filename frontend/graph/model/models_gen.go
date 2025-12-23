@@ -354,10 +354,12 @@ type GatewayDeploymentInfo struct {
 }
 
 type GetConfigResponse struct {
-	Readonly           bool               `json:"readonly"`
-	Tier               Tier               `json:"tier"`
-	InstallationMethod string             `json:"installationMethod"`
-	InstallationStatus InstallationStatus `json:"installationStatus"`
+	Readonly           bool                `json:"readonly"`
+	PlatformType       ComputePlatformType `json:"platformType"`
+	Tier               Tier                `json:"tier"`
+	OdigosVersion      string              `json:"odigosVersion"`
+	InstallationMethod string              `json:"installationMethod"`
+	InstallationStatus InstallationStatus  `json:"installationStatus"`
 }
 
 type GetDestinationCategories struct {

@@ -6,7 +6,6 @@ import { ROUTES } from '@/utils';
 import { useTheme } from 'styled-components';
 import { OverviewHeader } from '@/components';
 import { useDarkMode } from '@odigos/ui-kit/store';
-import { PlatformType } from '@odigos/ui-kit/types';
 import { Navbar } from '@odigos/ui-kit/components/v2';
 import { OdigosProvider } from '@odigos/ui-kit/contexts';
 import { useConfig, useSSE, useTokenTracker } from '@/hooks';
@@ -95,8 +94,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   return (
     <ErrorBoundary>
-      {/* TODO: get version and platform type from the config, then remove hard coded values */}
-      <OdigosProvider tier={config?.tier} version='v1.13.0' platformType={PlatformType.K8s}>
+      <OdigosProvider tier={config?.tier} version={config?.odigosVersion} platformType={config?.platformType}>
         <FlexColumn $gap={0}>
           <OverviewHeader v2 />
           <FlexRow $gap={0}>
