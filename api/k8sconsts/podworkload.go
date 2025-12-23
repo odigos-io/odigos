@@ -12,6 +12,7 @@ const (
 	WorkloadKindCronJob          WorkloadKind = "CronJob"
 	WorkloadKindJob              WorkloadKind = "Job"
 	WorkloadKindDeploymentConfig WorkloadKind = "DeploymentConfig"
+	WorkloadKindRollout          WorkloadKind = "Rollout"
 )
 
 // 2. the lower case representation of the workload kind

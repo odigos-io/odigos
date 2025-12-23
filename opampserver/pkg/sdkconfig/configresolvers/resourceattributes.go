@@ -65,6 +65,9 @@ func CalculateServerAttributes(k8sAttributes *K8sResourceAttributes, nodeName st
 		objectNameKey = string(semconv.K8SJobNameKey)
 	case "CronJob":
 		objectNameKey = string(semconv.K8SCronJobNameKey)
+	case "Rollout":
+		// Argo Rollout - use custom key with argoproj prefix since it's an Argo-specific resource
+		objectNameKey = "k8s.argoproj.rollout.name"
 	default:
 		return serverOfferResourceAttributes, errors.New("unsupported workload kind")
 	}
