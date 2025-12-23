@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
@@ -145,7 +146,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider) (*agentInjectedStatusCondition, error) {
-	cg, irls, effectiveConfig, err := getRelevantResources(ctx, c, pw)
+	cg, irls, effectiveConfig, urlTemplatizationRules, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
@@ -197,7 +198,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride)
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, urlTemplatizationRules)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -365,6 +366,65 @@ func getEnvInjectionDecision(
 	return &envInjectionDecision, nil
 }
 
+// filterTemplateRulesForContainer filters template rules to only include those relevant to the container.
+// A rule group is applied if ALL set filters match (AND logic).
+// If no filters are set in a group, it's considered global and applies to all containers.
+//
+// Currently implemented filters:
+//   - FilterProgrammingLanguage: matches if nil OR equals the container's language
+//
+// To expand filtering support, add additional checks to templatizationRulesGroupMatchesContainer
+// following the same pattern:
+//   - FilterK8sNamespace: check against the workload's namespace
+//   - FilterK8sWorkloadKind: check against the workload's kind (Deployment, StatefulSet, etc.)
+//   - FilterK8sWorkloadName: check against the workload's name
+//
+// Each new filter should only reject the group if it's explicitly set AND doesn't match.
+func filterTemplateRulesForContainer(templateRules *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.UrlTemplatizationConfig {
+	var rules []string
+
+	for _, templateRule := range *templateRules {
+		// Safety check: actions were already filtered to only include template actions.
+		if templateRule.Spec.URLTemplatization == nil {
+			continue
+		}
+
+		for _, rulesGroup := range templateRule.Spec.URLTemplatization.TemplatizationRulesGroups {
+			if templatizationRulesGroupMatchesContainer(rulesGroup, language) {
+				for _, rule := range rulesGroup.TemplatizationRules {
+					rules = append(rules, rule.Template)
+				}
+			}
+		}
+	}
+
+	if len(rules) == 0 {
+		return nil
+	}
+
+	return &odigosv1.UrlTemplatizationConfig{
+		Rules: rules,
+	}
+}
+
+// templatizationRulesGroupMatchesContainer checks if a rules group matches the container based on all set filters.
+// Returns true if all explicitly-set filters match (AND logic), or if no filters are set (global rule).
+func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizationRulesGroup, language common.ProgrammingLanguage) bool {
+	// Filter by programming language
+	if rulesGroup.FilterProgrammingLanguage != nil {
+		if *rulesGroup.FilterProgrammingLanguage != language {
+			return false
+		}
+	}
+
+	// TODO: Add additional filter checks here as needed:
+	// if rulesGroup.FilterK8sNamespace != "" && rulesGroup.FilterK8sNamespace != workloadNamespace { return false }
+	// if rulesGroup.FilterK8sWorkloadKind != nil && *rulesGroup.FilterK8sWorkloadKind != workloadKind { return false }
+	// if rulesGroup.FilterK8sWorkloadName != "" && rulesGroup.FilterK8sWorkloadName != workloadName { return false }
+
+	return true
+}
+
 func calculateContainerInstrumentationConfig(containerName string,
 	effectiveConfig *common.OdigosConfiguration,
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
@@ -375,6 +435,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	nodeCollectorsGroup *odigosv1.CollectorsGroup,
 	irls *[]odigosv1.InstrumentationRule,
 	containerOverride *odigosv1.ContainerOverride,
+	urlTemplatizationRules *[]odigosv1.Action,
 ) odigosv1.ContainerAgentConfig {
 
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
@@ -406,6 +467,8 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
+	filteredTemplateRules := filterTemplateRulesForContainer(urlTemplatizationRules, runtimeDetails.Language)
+
 	distro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {
 		return *err
@@ -415,7 +478,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 
 	// at this time, we don't populate the signals specific configs, but we will do it soon
-	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName)
+	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, filteredTemplateRules)
 	if err != nil {
 		return *err
 	}
