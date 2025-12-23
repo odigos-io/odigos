@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
@@ -287,9 +288,9 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 		for _, label := range config.LabelsAttributes {
 			sources := getEffectiveSources(label.From, label.FromSources)
 			for _, source := range sources {
-				// Use a composite key of LabelKey and source to allow multiple sources for the same label
-				key := label.LabelKey + ":" + string(source)
-				labelAttributes[key] = k8sTagAttribute{
+				// Use a composite labelKeyWithSource of LabelKey and source to allow multiple sources for the same label
+				labelKeyWithSource := fmt.Sprintf("%s:%s", label.LabelKey, string(source))
+				labelAttributes[labelKeyWithSource] = k8sTagAttribute{
 					Tag:  label.AttributeKey,
 					Key:  label.LabelKey,
 					From: string(source),
@@ -305,8 +306,8 @@ func k8sAttributeConfig(ctx context.Context, k8sclient client.Client, namespace 
 			sources := getEffectiveSourcesFromString(annotation.From, annotation.FromSources)
 			for _, source := range sources {
 				// Use a composite key of AnnotationKey and source to allow multiple sources for the same annotation
-				key := annotation.AnnotationKey + ":" + string(source)
-				annotationAttributes[key] = k8sTagAttribute{
+				annotationKeyWithSource := fmt.Sprintf("%s:%s", annotation.AnnotationKey, string(source))
+				annotationAttributes[annotationKeyWithSource] = k8sTagAttribute{
 					Tag:  annotation.AttributeKey,
 					Key:  annotation.AnnotationKey,
 					From: string(source),
