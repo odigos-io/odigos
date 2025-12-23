@@ -313,6 +313,8 @@ type ComplexityRoot struct {
 	GetConfigResponse struct {
 		InstallationMethod func(childComplexity int) int
 		InstallationStatus func(childComplexity int) int
+		OdigosVersion      func(childComplexity int) int
+		PlatformType       func(childComplexity int) int
 		Readonly           func(childComplexity int) int
 		Tier               func(childComplexity int) int
 	}
@@ -2160,6 +2162,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GetConfigResponse.InstallationStatus(childComplexity), true
+
+	case "GetConfigResponse.odigosVersion":
+		if e.complexity.GetConfigResponse.OdigosVersion == nil {
+			break
+		}
+
+		return e.complexity.GetConfigResponse.OdigosVersion(childComplexity), true
+
+	case "GetConfigResponse.platformType":
+		if e.complexity.GetConfigResponse.PlatformType == nil {
+			break
+		}
+
+		return e.complexity.GetConfigResponse.PlatformType(childComplexity), true
 
 	case "GetConfigResponse.readonly":
 		if e.complexity.GetConfigResponse.Readonly == nil {
@@ -13861,6 +13877,50 @@ func (ec *executionContext) fieldContext_GetConfigResponse_readonly(_ context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _GetConfigResponse_platformType(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GetConfigResponse_platformType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PlatformType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ComputePlatformType)
+	fc.Result = res
+	return ec.marshalNComputePlatformType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatformType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GetConfigResponse_platformType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GetConfigResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ComputePlatformType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _GetConfigResponse_tier(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_GetConfigResponse_tier(ctx, field)
 	if err != nil {
@@ -13900,6 +13960,50 @@ func (ec *executionContext) fieldContext_GetConfigResponse_tier(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Tier does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GetConfigResponse_odigosVersion(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GetConfigResponse_odigosVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OdigosVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GetConfigResponse_odigosVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GetConfigResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -26904,8 +27008,12 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 			switch field.Name {
 			case "readonly":
 				return ec.fieldContext_GetConfigResponse_readonly(ctx, field)
+			case "platformType":
+				return ec.fieldContext_GetConfigResponse_platformType(ctx, field)
 			case "tier":
 				return ec.fieldContext_GetConfigResponse_tier(ctx, field)
+			case "odigosVersion":
+				return ec.fieldContext_GetConfigResponse_odigosVersion(ctx, field)
 			case "installationMethod":
 				return ec.fieldContext_GetConfigResponse_installationMethod(ctx, field)
 			case "installationStatus":
@@ -36503,8 +36611,18 @@ func (ec *executionContext) _GetConfigResponse(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "platformType":
+			out.Values[i] = ec._GetConfigResponse_platformType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "tier":
 			out.Values[i] = ec._GetConfigResponse_tier(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "odigosVersion":
+			out.Values[i] = ec._GetConfigResponse_odigosVersion(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

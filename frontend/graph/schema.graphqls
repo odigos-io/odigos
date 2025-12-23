@@ -386,7 +386,9 @@ type Destination {
 
 type GetConfigResponse {
   readonly: Boolean!
+  platformType: ComputePlatformType!
   tier: Tier!
+  odigosVersion: String!
   installationMethod: String!
   installationStatus: InstallationStatus!
 }
