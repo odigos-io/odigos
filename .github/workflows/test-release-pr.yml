@@ -55,7 +55,7 @@ jobs:
 
   verify-dependencies-sync:
     if: ${{ needs.decide.outputs.skip != 'true' }}
-    needs: verify-offsets
+    needs: decide
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -88,7 +88,7 @@ jobs:
 
   verify-release-blockers:
     if: ${{ needs.decide.outputs.skip != 'true' }}
-    needs: verify-dependencies-sync
+    needs: decide
     runs-on: ubuntu-latest
     strategy:
       matrix:
