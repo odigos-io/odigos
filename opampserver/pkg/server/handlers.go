@@ -277,7 +277,7 @@ func resolveFromDirectAttributes(ctx context.Context, attrs opampAgentAttributes
 
 	ownerRefs := pod.GetOwnerReferences()
 	for _, ownerRef := range ownerRefs {
-		workloadName, workloadKind, err = workload.GetWorkloadFromOwnerReference(ownerRef)
+		workloadName, workloadKind, err = workload.GetWorkloadFromOwnerReference(ownerRef, pod)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get workload from owner reference: %w", err)
 		}

@@ -2,7 +2,9 @@ package utils
 
 import (
 	"context"
+	"strconv"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
@@ -73,6 +75,8 @@ func GetMatchLabels(obj metav1.Object) map[string]string {
 	case *openshiftappsv1.DeploymentConfig:
 		// DeploymentConfig selector is map[string]string directly
 		labels = obj.Spec.Selector
+	case *argorolloutsv1alpha1.Rollout:
+		labels = obj.Spec.Selector.MatchLabels
 	default:
 		return nil
 	}
@@ -176,6 +180,34 @@ func isDeploymentConfigRolloutDone(dc *openshiftappsv1.DeploymentConfig) bool {
 	return true
 }
 
+func isArgoRolloutRolloutDone(rollout *argorolloutsv1alpha1.Rollout) bool {
+	// Yes, this name is ridiculous. The function returns whether the rollout of an Argo rollout is done.
+
+	// ObservedGeneration in Argo Rollouts is a string, so we need to parse it
+	observedGen, err := strconv.ParseInt(rollout.Status.ObservedGeneration, 10, 64)
+	if err != nil {
+		// If we can't parse it, assume the spec hasn't been observed yet
+		return false
+	}
+	if rollout.Generation > observedGen {
+		// Waiting for rollout spec update to be observed
+		return false
+	}
+	if rollout.Spec.Replicas != nil && rollout.Status.UpdatedReplicas < *rollout.Spec.Replicas {
+		// Waiting for rollout to finish: updated replicas are less than desired
+		return false
+	}
+	if rollout.Status.Replicas > rollout.Status.UpdatedReplicas {
+		// Waiting for rollout to finish: old replicas are pending termination
+		return false
+	}
+	if rollout.Status.AvailableReplicas < rollout.Status.UpdatedReplicas {
+		// Waiting for rollout to finish: not all updated replicas are available
+		return false
+	}
+	return true
+}
+
 func IsWorkloadRolloutDone(obj metav1.Object) bool {
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
@@ -186,6 +218,8 @@ func IsWorkloadRolloutDone(obj metav1.Object) bool {
 		return isDaemonSetRolloutDone(o)
 	case *openshiftappsv1.DeploymentConfig:
 		return isDeploymentConfigRolloutDone(o)
+	case *argorolloutsv1alpha1.Rollout:
+		return isArgoRolloutRolloutDone(o)
 	default:
 		return false
 	}

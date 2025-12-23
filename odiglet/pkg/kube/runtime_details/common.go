@@ -8,7 +8,7 @@ import (
 
 func getPodWorkloadObject(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
-		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
+		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner, pod)
 		if err != nil {
 			return nil, workload.IgnoreErrorKindNotSupported(err)
 		}
