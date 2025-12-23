@@ -5,10 +5,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,33 +17,25 @@ import (
 func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (
 	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
-	*common.OdigosConfiguration,
 	*[]odigosv1.Action,
 	error) {
 
 	cg, err := getCollectorsGroup(ctx, c)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
 	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-
-	// TODO: we are yaml unmarshalling the configmap data for every workload, this is not efficient
-	// can we cache the configmap data in the controller?
-	effectiveConfig, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
-	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	templateRules, err := getTemplateRules(ctx, c)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return cg, irls, &effectiveConfig, templateRules, nil
+	return cg, irls, templateRules, nil
 }
 
 func getTemplateRules(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
