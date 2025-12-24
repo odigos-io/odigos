@@ -41,3 +41,7 @@ nfpms:
       preinstall: distribution/odigos-otelcol/preinstall.sh
       postinstall: distribution/odigos-otelcol/postinstall.sh
       preremove: distribution/odigos-otelcol/preremove.sh
+# we don't need the otelcol to have releases in github.
+# this goreleaser is only about publishing the collector as deb/rpm package to the google repository
+release:
+  disable: true
