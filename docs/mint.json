@@ -298,6 +298,7 @@
             "backends/quickwit",
             "backends/sentry",
             "backends/seq",
+            "backends/signalfx",
             "backends/signoz",
             "backends/splunk",
             "backends/splunkotlp",
