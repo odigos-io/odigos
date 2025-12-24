@@ -71,8 +71,6 @@ spec:
                   key: admin-password
             - name: KC_HOSTNAME
               value: "localhost"
-            - name: KC_HEALTH_ENABLED
-              value: "true"
           {{- if .Values.auth.persistence.enabled }}
           volumeMounts:
             - name: keycloak-data
@@ -81,8 +79,6 @@ spec:
           ports:
             - containerPort: {{ .Values.auth.port }}
               name: {{ .Values.auth.portName }}
-            - containerPort: 9000
-              name: management
           {{- if .Values.auth.livenessProbe.enabled }}
           livenessProbe:
             httpGet:

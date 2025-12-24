@@ -90,7 +90,7 @@ redis:
 auth:
   # Built-in Keycloak configuration
   enabled: true
-  image: quay.io/keycloak/keycloak:24.0.3
+  image: registry.odigos.io/keycloak:24.0.3
   adminUsername: admin
   port: 8080
   portName: http
@@ -133,7 +133,7 @@ auth:
 
   # Liveness probe settings
   # Keycloak exposes /health/live for liveness checks
-  # Note: Health endpoints are available on management port (9000) when KC_HEALTH_ENABLED=true
+  # Note: Health endpoints are available on main HTTP port (8080) when KC_HEALTH_ENABLED=true
   livenessProbe:
     enabled: true
     initialDelaySeconds: 120
@@ -141,7 +141,7 @@ auth:
     timeoutSeconds: 5
     failureThreshold: 3
     successThreshold: 1
-    port: 9000
+    port: 8080
 
   # Readiness probe settings
   # Keycloak exposes /health/ready for readiness checks
@@ -152,7 +152,7 @@ auth:
     timeoutSeconds: 5
     failureThreshold: 3
     successThreshold: 1
-    port: 9000
+    port: 8080
 
   nodeSelector:
     kubernetes.io/os: linux
