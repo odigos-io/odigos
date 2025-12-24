@@ -363,6 +363,12 @@ func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole 
 				Verbs:     []string{"get", "list"},
 			})
 		}
+		// Argo Rollouts support
+		rules = append(rules, rbacv1.PolicyRule{
+			APIGroups: []string{"argoproj.io"},
+			Resources: []string{"rollouts"},
+			Verbs:     []string{"get", "list"},
+		})
 	} else {
 		rules = []rbacv1.PolicyRule{
 			{ // Needed to get and instrument namespaces
@@ -419,6 +425,12 @@ func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole 
 				Verbs:     []string{"get", "list", "patch", "update"},
 			})
 		}
+		// Argo Rollouts support
+		rules = append(rules, rbacv1.PolicyRule{
+			APIGroups: []string{"argoproj.io"},
+			Resources: []string{"rollouts"},
+			Verbs:     []string{"get", "list", "patch", "update"},
+		})
 	}
 
 	return &rbacv1.ClusterRole{
