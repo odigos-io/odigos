@@ -131,6 +131,29 @@ auth:
   # Limits Keycloak's JVM memory to a small, efficient range suitable for medium traffic
   javaOpts: "-Xms128m -Xmx256m"
 
+  # Liveness probe settings
+  # Keycloak exposes /health/live for liveness checks
+  # Note: Without --optimized, Keycloak does a runtime build which takes longer to start
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    port: 8080
+
+  # Readiness probe settings
+  # Keycloak exposes /health/ready for readiness checks
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    port: 8080
+
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []
