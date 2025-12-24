@@ -5,10 +5,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,7 +17,7 @@ import (
 func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) (
 	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
-	*common.OdigosConfiguration,
+	*[]odigosv1.Action,
 	error) {
 
 	cg, err := getCollectorsGroup(ctx, c)
@@ -32,16 +30,31 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 		return nil, nil, nil, err
 	}
 
-	// TODO: we are yaml unmarshalling the configmap data for every workload, this is not efficient
-	// can we cache the configmap data in the controller?
-	effectiveConfig, err := k8sutils.GetCurrentOdigosConfiguration(ctx, c)
+	templateRules, err := getTemplateRules(ctx, c)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	return cg, irls, &effectiveConfig, nil
+	return cg, irls, templateRules, nil
 }
 
+func getTemplateRules(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
+	actionList := &odigosv1.ActionList{}
+	err := c.List(ctx, actionList, &client.ListOptions{Namespace: env.GetCurrentNamespace()})
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter only actions that have URLTemplatization config
+	urlTemplatizationRulesList := []odigosv1.Action{}
+	for _, action := range actionList.Items {
+		if action.Spec.Disabled == false && action.Spec.URLTemplatization != nil {
+			urlTemplatizationRulesList = append(urlTemplatizationRulesList, action)
+		}
+	}
+
+	return &urlTemplatizationRulesList, nil
+}
 func getCollectorsGroup(ctx context.Context, c client.Client) (*odigosv1.CollectorsGroup, error) {
 	cg := odigosv1.CollectorsGroup{}
 	err := c.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosNodeCollectorCollectorGroupName}, &cg)

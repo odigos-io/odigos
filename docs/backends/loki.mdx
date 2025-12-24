@@ -58,13 +58,15 @@ You can configure your grafana cloud loki labels in the `Labels` multi-input con
 - **LOKI_URL** `string` : Endpoint. If scheme is not provided, it defaults to `http`. If port is not provided, it defaults to `3100`. If path is not provided, it defaults to `/otlp`.
   - This field is required
   - Example: `http://<loki-host>:<loki-port>/otlp`
+- **LOKI_SCOPE_ORG_ID** `string` : X-Scope-OrgID. use this X-Scope-OrgID if you need to scope the data to a specific org. Multiple orgs can be chained using `|`
+  - This field is optional
+  - Example: `org1|org2|org3`
 - **LOKI_USERNAME** `string` : Basic Auth Username. username for basic authentication
   - This field is optional
   - Example: `<loki-username>`
 - **LOKI_PASSWORD** `string` : Basic Auth Password. password for basic authentication
   - This field is optional
   - Example: `<loki-password>`
-- **LOKI_SCOPE_ORG_ID** `string` : Org ID used for scoping. Multiple orgs can be chained using `|`, for example `org-1|org-2`
 - **LOKI_LABELS** `string[]` : Labels. use these OpenTelemetry resource attributes as loki labels for each log record
   - This field is required and defaults to `["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]`
 
@@ -106,6 +108,7 @@ There are two primary methods for configuring destinations in Odigos:
         LOKI_LABELS: '<Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>'
         LOKI_URL: <Endpoint>
         # Note: The commented fields below are optional.
+        # LOKI_SCOPE_ORG_ID: <X-Scope-OrgID>
         # LOKI_USERNAME: <Basic Auth Username>
       destinationName: loki
       # Uncomment the 'secretRef' below if you are using the optional Secret.

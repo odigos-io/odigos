@@ -24,9 +24,10 @@ import (
 // K8sLabelAttributeApplyConfiguration represents a declarative configuration of the K8sLabelAttribute type for use
 // with apply.
 type K8sLabelAttributeApplyConfiguration struct {
-	LabelKey     *string                             `json:"labelKey,omitempty"`
-	AttributeKey *string                             `json:"attributeKey,omitempty"`
-	From         *actionsv1alpha1.K8sAttributeSource `json:"from,omitempty"`
+	LabelKey     *string                              `json:"labelKey,omitempty"`
+	AttributeKey *string                              `json:"attributeKey,omitempty"`
+	From         *actionsv1alpha1.K8sAttributeSource  `json:"from,omitempty"`
+	FromSources  []actionsv1alpha1.K8sAttributeSource `json:"fromSources,omitempty"`
 }
 
 // K8sLabelAttributeApplyConfiguration constructs a declarative configuration of the K8sLabelAttribute type for use with
@@ -56,5 +57,15 @@ func (b *K8sLabelAttributeApplyConfiguration) WithAttributeKey(value string) *K8
 // If called multiple times, the From field is set to the value of the last call.
 func (b *K8sLabelAttributeApplyConfiguration) WithFrom(value actionsv1alpha1.K8sAttributeSource) *K8sLabelAttributeApplyConfiguration {
 	b.From = &value
+	return b
+}
+
+// WithFromSources adds the given value to the FromSources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the FromSources field.
+func (b *K8sLabelAttributeApplyConfiguration) WithFromSources(values ...actionsv1alpha1.K8sAttributeSource) *K8sLabelAttributeApplyConfiguration {
+	for i := range values {
+		b.FromSources = append(b.FromSources, values[i])
+	}
 	return b
 }

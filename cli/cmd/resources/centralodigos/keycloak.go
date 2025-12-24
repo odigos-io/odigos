@@ -37,11 +37,14 @@ func NewKeycloakResourceManager(client *kube.Client, ns string, managerOpts reso
 func (m *keycloakResourceManager) Name() string { return k8sconsts.KeycloakResourceManagerName }
 
 func (m *keycloakResourceManager) InstallFromScratch(ctx context.Context) error {
+	withPvc := m.config.StorageClassName != nil && *m.config.StorageClassName != ""
 	resources := []kube.Object{
 		NewKeycloakSecret(m.ns, m.config),
-		NewKeycloakPVC(m.ns, m.config),
-		NewKeycloakDeployment(m.ns, m.config),
+		NewKeycloakDeployment(m.ns, m.config, withPvc),
 		NewKeycloakService(m.ns),
+	}
+	if withPvc {
+		resources = append(resources, NewKeycloakPVC(m.ns, m.config))
 	}
 	return m.client.ApplyResources(ctx, 1, resources, m.managerOpts)
 }
@@ -65,12 +68,12 @@ func NewKeycloakSecret(ns string, config AuthConfig) *corev1.Secret {
 	}
 }
 
-func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
+func NewKeycloakDeployment(ns string, config AuthConfig, withPvc bool) *appsv1.Deployment {
 	fsGroup := int64(1000)
 	runAsNonRoot := true
 	allowPrivilegeEscalation := false
 
-	return &appsv1.Deployment{
+	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
@@ -125,25 +128,15 @@ func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
 										},
 									},
 								},
-								{Name: "KC_HOSTNAME", Value: "localhost"},
-							},
-							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      k8sconsts.KeycloakDataVolumeName,
-									MountPath: "/opt/keycloak/data",
+									Name:  "KC_HOSTNAME",
+									Value: "localhost",
 								},
 							},
 							Ports: []corev1.ContainerPort{
-								{Name: k8sconsts.KeycloakPortName, ContainerPort: k8sconsts.KeycloakPort},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: k8sconsts.KeycloakDataVolumeName,
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: k8sconsts.KeycloakDataPVCName,
+								{
+									Name:          k8sconsts.KeycloakPortName,
+									ContainerPort: k8sconsts.KeycloakPort,
 								},
 							},
 						},
@@ -152,6 +145,27 @@ func NewKeycloakDeployment(ns string, config AuthConfig) *appsv1.Deployment {
 			},
 		},
 	}
+
+	if withPvc {
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      k8sconsts.KeycloakDataVolumeName,
+				MountPath: "/opt/keycloak/data",
+			},
+		}
+		deployment.Spec.Template.Spec.Volumes = []corev1.Volume{
+			{
+				Name: k8sconsts.KeycloakDataVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: k8sconsts.KeycloakDataPVCName,
+					},
+				},
+			},
+		}
+	}
+
+	return deployment
 }
 
 func NewKeycloakService(ns string) *corev1.Service {
@@ -188,7 +202,10 @@ func NewKeycloakPVC(ns string, config AuthConfig) *corev1.PersistentVolumeClaim 
 			Labels:    map[string]string{"app": k8sconsts.KeycloakAppName},
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			StorageClassName: config.StorageClassName,
+			AccessModes: []corev1.PersistentVolumeAccessMode{
+				corev1.ReadWriteOnce,
+			},
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceStorage: resource.MustParse("1Gi"),
@@ -196,8 +213,6 @@ func NewKeycloakPVC(ns string, config AuthConfig) *corev1.PersistentVolumeClaim 
 			},
 		},
 	}
-	if config.StorageClassName != nil {
-		pvc.Spec.StorageClassName = config.StorageClassName
-	}
+
 	return pvc
 }

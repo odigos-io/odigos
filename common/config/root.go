@@ -66,6 +66,7 @@ var availableConfigers = []Configer{
 	&Quickwit{},
 	&Sentry{},
 	&Seq{},
+	&SignalFx{},
 	&Signoz{},
 	&Splunk{},
 	&SplunkOTLP{},
