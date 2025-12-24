@@ -41,26 +41,7 @@ nfpms:
       preinstall: distribution/odigos-otelcol/preinstall.sh
       postinstall: distribution/odigos-otelcol/postinstall.sh
       preremove: distribution/odigos-otelcol/preremove.sh
-
-publishers:
-  - name: fury deb publisher
-    ids: # publish only the artifacts created in the nfpms section. e.g. ignore the tar.gz archive
-      - packages
-    cmd: fury push {{ .ArtifactName }} --account {{ .Env.FURY_ACCOUNT }} --api-token {{ .Env.FURY_API_TOKEN }} --public --quiet
-    dir: dist
-# archives:
-#   builds:
-checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  version_template: "{{ incpatch .Version }}-next"
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
 # we don't need the otelcol to have releases in github.
-# this goreleaser is only about publishing the collector as deb/rpm package to the fury repository
+# this goreleaser is only about publishing the collector as deb/rpm package to the google repository
 release:
   disable: true
