@@ -532,9 +532,29 @@ var portForwardCentralCmd = &cobra.Command{
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-		startResilientPortForward(&wg, ctx, client, k8sconsts.CentralBackendPort, "Backend", localAddress, proNamespaceFlag, k8sconsts.CentralBackendAppName)
+		// Start resilient port forwarding for backend
+		kube.StartResilientPortForward(ctx, kube.ResilientPortForwardConfig{
+			WaitGroup:    &wg,
+			Client:       client,
+			LocalPort:    k8sconsts.CentralBackendPort,
+			RemotePort:   k8sconsts.CentralBackendPort,
+			LocalAddress: localAddress,
+			Namespace:    proNamespaceFlag,
+			Name:         "Backend",
+			AppLabel:     k8sconsts.CentralBackendAppName,
+		})
 
-		startResilientPortForward(&wg, ctx, client, k8sconsts.CentralUIPort, "UI", localAddress, proNamespaceFlag, k8sconsts.CentralUIAppName)
+		// Start resilient port forwarding for UI
+		kube.StartResilientPortForward(ctx, kube.ResilientPortForwardConfig{
+			WaitGroup:    &wg,
+			Client:       client,
+			LocalPort:    k8sconsts.CentralUIPort,
+			RemotePort:   k8sconsts.CentralUIPort,
+			LocalAddress: localAddress,
+			Namespace:    proNamespaceFlag,
+			Name:         "UI",
+			AppLabel:     k8sconsts.CentralUIAppName,
+		})
 
 		fmt.Printf("Odigos Central UI is available at: http://%s:%s\n", localAddress, k8sconsts.CentralUIPort)
 		fmt.Printf("Odigos Central Backend is available at: http://%s:%s\n", localAddress, k8sconsts.CentralBackendPort)
@@ -545,89 +565,6 @@ var portForwardCentralCmd = &cobra.Command{
 		cancel()
 		wg.Wait()
 	},
-}
-
-func startResilientPortForward(wg *sync.WaitGroup, ctx context.Context, client *kube.Client, port string, name string, localAddress string, namespace string, appLabel string) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		retryDelay := time.Second * 3
-		maxRetryDelay := time.Second * 30
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-
-			// Find the current pod
-			pod, err := findPodWithAppLabel(ctx, client, namespace, appLabel)
-			if err != nil {
-				fmt.Printf("\033[33mWARN\033[0m %s: Cannot find pod (will retry in %v): %v\n", name, retryDelay, err)
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(retryDelay):
-					// Exponential backoff with max limit
-					retryDelay = time.Duration(float64(retryDelay) * 1.5)
-					if retryDelay > maxRetryDelay {
-						retryDelay = maxRetryDelay
-					}
-					continue
-				}
-			}
-
-			// Reset retry delay on successful pod discovery
-			retryDelay = time.Second * 3
-			fmt.Printf("\033[32mINFO\033[0m %s: Starting port-forward to pod %s\n", name, pod.Name)
-
-			// Create port forward
-			fw, err := kube.PortForwardWithContext(ctx, pod, client, port, port, localAddress)
-			if err != nil {
-				fmt.Printf("\033[33mWARN\033[0m %s: Failed to create port-forward (will retry): %v\n", name, err)
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(retryDelay):
-					continue
-				}
-			}
-
-			// Start port forwarding (this blocks until connection is lost)
-			err = fw.ForwardPorts()
-			if err != nil && ctx.Err() == nil {
-				// Only log as warning if context wasn't cancelled (i.e., not a clean shutdown)
-				fmt.Printf("\033[33mWARN\033[0m %s: Port-forward connection lost (will retry): %v\n", name, err)
-				// Brief pause before retrying to avoid tight retry loops
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(time.Second * 2):
-					continue
-				}
-			}
-
-			// If we reach here, either context was cancelled or we had a clean exit
-			return
-		}
-	}()
-}
-
-func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel string) (*corev1.Pod, error) {
-	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", appLabel),
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(pods.Items) != 1 {
-		return nil, fmt.Errorf("expected 1 pod for app=%s, got %d", appLabel, len(pods.Items))
-	}
-	pod := &pods.Items[0]
-	if pod.Status.Phase != corev1.PodRunning {
-		return nil, fmt.Errorf("pod %s is not running", pod.Name)
-	}
-	return pod, nil
 }
 
 func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
