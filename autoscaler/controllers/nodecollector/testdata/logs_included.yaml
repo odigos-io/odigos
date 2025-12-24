@@ -51,6 +51,7 @@ processors:
     - k8s.statefulset.name
     - k8s.daemonset.name
     - k8s.cronjob.name
+    - k8s.argoproj.rollout.name
     - odigos.workload.kind
   resource/node-name:
     attributes:
