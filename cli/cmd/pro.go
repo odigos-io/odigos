@@ -532,21 +532,9 @@ var portForwardCentralCmd = &cobra.Command{
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-		backendPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralBackendAppName)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot find backend pod: %v\n", err)
-			os.Exit(1)
-		}
-		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend", localAddress)
+		startResilientPortForward(&wg, ctx, client, k8sconsts.CentralBackendPort, "Backend", localAddress, proNamespaceFlag, k8sconsts.CentralBackendAppName)
 
-		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUIAppName)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
-			cancel()
-			wg.Wait()
-			os.Exit(1)
-		}
-		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI", localAddress)
+		startResilientPortForward(&wg, ctx, client, k8sconsts.CentralUIPort, "UI", localAddress, proNamespaceFlag, k8sconsts.CentralUIAppName)
 
 		fmt.Printf("Odigos Central UI is available at: http://%s:%s\n", localAddress, k8sconsts.CentralUIPort)
 		fmt.Printf("Odigos Central Backend is available at: http://%s:%s\n", localAddress, k8sconsts.CentralBackendPort)
@@ -559,18 +547,67 @@ var portForwardCentralCmd = &cobra.Command{
 	},
 }
 
-func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string, localAddress string) {
+func startResilientPortForward(wg *sync.WaitGroup, ctx context.Context, client *kube.Client, port string, name string, localAddress string, namespace string, appLabel string) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		fw, err := kube.PortForwardWithContext(ctx, pod, client, port, port, localAddress)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
-			return
-		}
-		err = fw.ForwardPorts()
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
+		retryDelay := time.Second * 3
+		maxRetryDelay := time.Second * 30
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			// Find the current pod
+			pod, err := findPodWithAppLabel(ctx, client, namespace, appLabel)
+			if err != nil {
+				fmt.Printf("\033[33mWARN\033[0m %s: Cannot find pod (will retry in %v): %v\n", name, retryDelay, err)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(retryDelay):
+					// Exponential backoff with max limit
+					retryDelay = time.Duration(float64(retryDelay) * 1.5)
+					if retryDelay > maxRetryDelay {
+						retryDelay = maxRetryDelay
+					}
+					continue
+				}
+			}
+
+			// Reset retry delay on successful pod discovery
+			retryDelay = time.Second * 5
+			fmt.Printf("\033[32mINFO\033[0m %s: Starting port-forward to pod %s\n", name, pod.Name)
+
+			// Create port forward
+			fw, err := kube.PortForwardWithContext(ctx, pod, client, port, port, localAddress)
+			if err != nil {
+				fmt.Printf("\033[33mWARN\033[0m %s: Failed to create port-forward (will retry): %v\n", name, err)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(retryDelay):
+					continue
+				}
+			}
+
+			// Start port forwarding (this blocks until connection is lost)
+			err = fw.ForwardPorts()
+			if err != nil && ctx.Err() == nil {
+				// Only log as warning if context wasn't cancelled (i.e., not a clean shutdown)
+				fmt.Printf("\033[33mWARN\033[0m %s: Port-forward connection lost (will retry): %v\n", name, err)
+				// Brief pause before retrying to avoid tight retry loops
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(time.Second * 2):
+					continue
+				}
+			}
+
+			// If we reach here, either context was cancelled or we had a clean exit
 			return
 		}
 	}()
