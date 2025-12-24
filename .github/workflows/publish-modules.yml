@@ -249,6 +249,9 @@ jobs:
   publish-collector-linux-packages:
     if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: decide
+    permissions:
+      contents: read
+      id-token: write
     runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Extract Tag
@@ -270,11 +273,18 @@ jobs:
           fetch-depth: 0
           ref: ${{ steps.extract_tag.outputs.tag }}
 
-      - name: Install GemFury CLI
-        run: |
-          sudo bash -c "echo 'deb [trusted=yes] https://apt.fury.io/cli/ * *' > /etc/apt/sources.list.d/fury-cli.list"
-          sudo apt-get update
-          sudo apt-get install -y fury-cli
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - id: gcp-auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          access_token_lifetime: 1200s
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -288,9 +298,30 @@ jobs:
           version: latest
           args: release --clean
           workdir: collector
-        env:
-          FURY_ACCOUNT: ${{ secrets.FURY_ACCOUNT }}
-          FURY_API_TOKEN: ${{ secrets.FURY_API_TOKEN }}
+
+      # Upload deb packages directly to Artifact Registry
+      - name: Upload deb packages to Artifact Registry (odigos-apt)
+        run: |
+          for deb in collector/dist/*.deb; do
+            if [ -f "$deb" ]; then
+              echo "Uploading $deb to Artifact Registry..."
+              gcloud artifacts apt upload odigos-apt \
+                --location=us-central1 \
+                --source="$deb"
+            fi
+          done
+
+      # Upload rpm packages directly to Artifact Registry
+      - name: Upload rpm packages to Artifact Registry (odigos-rpm)
+        run: |
+          for rpm in collector/dist/*.rpm; do
+            if [ -f "$rpm" ]; then
+              echo "Uploading $rpm to Artifact Registry..."
+              gcloud artifacts yum upload odigos-rpm \
+                --location=us-central1 \
+                --source="$rpm"
+            fi
+          done
 
       - name: Notify Slack Success
         if: always()
