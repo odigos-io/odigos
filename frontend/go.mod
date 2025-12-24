@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/99designs/gqlgen v0.17.70
+	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/distribution/reference v0.6.0
 	github.com/gin-contrib/cors v1.7.5

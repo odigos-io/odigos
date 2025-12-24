@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned/typed/actions/v1alpha1"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -25,11 +26,16 @@ var (
 	deploymentConfigAvailable           bool
 	deploymentConfigAvailabilityChecked bool
 	deploymentConfigCheckMu             sync.Mutex
+	rolloutAvailable                    bool
+	rolloutAvailabilityChecked          bool
+	rolloutCheckMu                      sync.Mutex
 )
 
 func init() {
 	// Register OpenShift types with the scheme
 	_ = openshiftappsv1.AddToScheme(Scheme)
+	// Register Argo Rollouts types with the scheme
+	_ = argorolloutsv1alpha1.AddToScheme(Scheme)
 }
 
 func SetDefaultClient(client *Client) {
@@ -120,5 +126,37 @@ func IsDeploymentConfigAvailable() bool {
 	// Resource exists and we have permission
 	deploymentConfigAvailable = true
 	deploymentConfigAvailabilityChecked = true
+	return true
+}
+
+// IsArgoRolloutsAvailable checks if the Argo Rollout resource is available in the cluster
+// and if we have permission to list it. This is cached after the first check to avoid repeated API calls.
+func IsArgoRolloutsAvailable() bool {
+	rolloutCheckMu.Lock()
+	defer rolloutCheckMu.Unlock()
+
+	if rolloutAvailabilityChecked {
+		return rolloutAvailable
+	}
+
+	gvr := schema.GroupVersionResource{
+		Group:    "argoproj.io",
+		Version:  "v1alpha1",
+		Resource: "rollouts",
+	}
+
+	listOptions := metav1.ListOptions{Limit: 0}
+	_, err := DefaultClient.DynamicClient.Resource(gvr).List(context.Background(), listOptions)
+
+	if err != nil {
+		// Resource doesn't exist or we don't have permission to access it
+		rolloutAvailable = false
+		rolloutAvailabilityChecked = true
+		return false
+	}
+
+	// Resource exists and we have permission
+	rolloutAvailable = true
+	rolloutAvailabilityChecked = true
 	return true
 }
