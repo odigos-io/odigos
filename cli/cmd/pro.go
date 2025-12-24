@@ -578,7 +578,7 @@ func startResilientPortForward(wg *sync.WaitGroup, ctx context.Context, client *
 			}
 
 			// Reset retry delay on successful pod discovery
-			retryDelay = time.Second * 5
+			retryDelay = time.Second * 3
 			fmt.Printf("\033[32mINFO\033[0m %s: Starting port-forward to pod %s\n", name, pod.Name)
 
 			// Create port forward
