@@ -55,9 +55,8 @@ To enable authentication for Prometheus remote write, check the `Use Authenticat
   - This field is required
 - **PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS** `string[]` : Resource Attributes Labels (Deprecated). deprecated. will be removed soon.
   - This field is optional
-- **PROMETHEUS_USE_AUTHENTICATION** `boolean` : Use Authentication. Enable this checkbox if your Prometheus remote write endpoint requires authentication
-  - This field is optional
-  - Default: `false`
+- **PROMETHEUS_USE_AUTHENTICATION** `boolean` : Use Authentication.
+  - This field is optional and defaults to `False`
 - **PROMETHEUS_BEARER_TOKEN** `string` : Bearer Token. use this bearer token if your prometheus remote write endpoint requires authentication
   - This field is optional
   - Example: `your-bearer-token`
@@ -102,7 +101,8 @@ There are two primary methods for configuring destinations in Odigos:
         PROMETHEUS_REMOTEWRITE_URL: <Remote Write URL>
         # Note: The commented fields below are optional.
         # PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS: <Resource Attributes Labels (Deprecated)>
-        # PROMETHEUS_USE_AUTHENTICATION: "true"  # Enable authentication
+        # PROMETHEUS_USE_AUTHENTICATION: <Use Authentication>
+        # PROMETHEUS_BASIC_AUTH_USERNAME: <Basic Auth Username>
       destinationName: prometheus
       # Uncomment the 'secretRef' below if you are using the optional Secret.
       # secretRef:
@@ -114,13 +114,10 @@ There are two primary methods for configuring destinations in Odigos:
     ---
 
     # The following Secret is optional. Uncomment the entire block if you need to use it.
-    # You can use either Bearer Token or Basic Auth (Basic Auth takes precedence if both are provided).
     # apiVersion: v1
     # data:
-    #   PROMETHEUS_BEARER_TOKEN: <Bearer Token>
-    #   # OR use basic auth:
-    #   # PROMETHEUS_BASIC_AUTH_USERNAME: <Username>
-    #   # PROMETHEUS_BASIC_AUTH_PASSWORD: <Password>
+    #   PROMETHEUS_BASIC_AUTH_PASSWORD: <Base64 Basic Auth Password>
+    #   PROMETHEUS_BEARER_TOKEN: <Base64 Bearer Token>
     # kind: Secret
     # metadata:
     #   name: prometheus-secret

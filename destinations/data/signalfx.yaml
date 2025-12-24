@@ -5,7 +5,7 @@ metadata:
   displayName: SignalFx
   category: managed
 spec:
-  image: splunk.svg
+  image: signalfx.svg
   signals:
     traces:
       supported: false
