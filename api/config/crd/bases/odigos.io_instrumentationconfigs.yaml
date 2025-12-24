@@ -190,6 +190,19 @@ spec:
                               - sourceId
                               type: object
                           type: object
+                        urlTemplatization:
+                          description: A list of URL templatization configurations
+                            to be applied to the traces.
+                          properties:
+                            templatizationRules:
+                              description: Rule is the template rule to be applied
+                                to URLs
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - templatizationRules
+                          type: object
                       type: object
                   required:
                   - agentEnabled
