@@ -42,11 +42,11 @@ rules:
       - horizontalpodautoscalers
     verbs:
       - get
+  # odigos.io CRDs in the odigos namespace
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentationrules
-      - destinations
+      - '*'
     verbs:
       - get
       - list
@@ -62,17 +62,11 @@ rules:
       - destinations
     verbs:
       - watch
+  # actions.odigos.io CRDs in the odigos namespace
   - apiGroups:
-      - odigos.io
+      - actions.odigos.io
     resources:
-      - collectorsgroups
-    verbs:
-      - get
-      - list
-  - apiGroups:
-      - odigos.io
-    resources:
-      - 'actions'
+      - '*'
     verbs:
       - get
       - list
@@ -117,3 +111,9 @@ rules:
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - delete
       {{- end }}
+  - apiGroups:
+      - ''
+    resources:
+      - pods/log
+    verbs:
+      - get
