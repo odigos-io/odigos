@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
@@ -26,13 +28,9 @@ var uiCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(cmd.Context())
 		defer cancel()
 
+		var wg sync.WaitGroup
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, os.Interrupt)
-		go func() {
-			<-sigCh
-			fmt.Println("\nReceived interrupt. Stopping UI port forwarding...")
-			cancel()
-		}()
 
 		client := cmdcontext.KubeClientFromContextOrExit(ctx)
 
@@ -51,26 +49,29 @@ var uiCmd = &cobra.Command{
 		remotePort := cmd.Flag("remote-port").Value.String()
 		localAddress := cmd.Flag("address").Value.String()
 
-		uiPod, err := kube.FindOdigosUIPod(client, ctx, ns)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("Odigos UI is available at: http://%s:%s\n", localAddress, localPort)
-		fmt.Printf("Port-forwarding from %s/%s\n", uiPod.Namespace, uiPod.Name)
+		fmt.Printf("Starting resilient port-forward to Odigos UI...\n")
 		fmt.Printf("Press Ctrl+C to stop\n")
 
-		fw, err := kube.PortForwardWithContext(ctx, uiPod, client, localPort, remotePort, localAddress)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot start port-forward: %s\n", err)
-			os.Exit(1)
-		}
-		err = fw.ForwardPorts()
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot forward ports: %s\n", err)
-			os.Exit(1)
-		}
+		// Start resilient port forwarding for UI
+		kube.StartResilientPortForward(ctx, kube.ResilientPortForwardConfig{
+			WaitGroup:    &wg,
+			Client:       client,
+			LocalPort:    localPort,
+			RemotePort:   remotePort,
+			LocalAddress: localAddress,
+			Namespace:    ns,
+			Name:         "UI",
+			AppLabel:     k8sconsts.UIAppLabelValue,
+		})
 
+		// Show initial status
+		fmt.Printf("Odigos UI will be available at: http://%s:%s\n", localAddress, localPort)
+
+		// Wait for interrupt signal
+		<-sigCh
+		fmt.Println("\nReceived interrupt. Stopping UI port forwarding...")
+		cancel()
+		wg.Wait()
 	},
 	Example: `
 # Start the Odigos UI on http://localhost:3000
