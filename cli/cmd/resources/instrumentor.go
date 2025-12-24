@@ -256,6 +256,11 @@ func NewInstrumentorClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
 				ResourceNames: []string{k8sconsts.InstrumentorSourceValidatingWebhookName},
 				Verbs:         []string{"update"},
 			},
+			{
+				APIGroups: []string{"argoproj.io"},
+				Resources: []string{"rollouts"},
+				Verbs:     []string{"get", "list", "watch", "patch"},
+			},
 		}, openshiftRules...),
 	}
 }
