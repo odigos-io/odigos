@@ -90,7 +90,7 @@ redis:
 auth:
   # Built-in Keycloak configuration
   enabled: true
-  image: quay.io/keycloak/keycloak:24.0.3
+  image: registry.odigos.io/keycloak:24.0.3
   adminUsername: admin
   port: 8080
   portName: http
@@ -130,6 +130,28 @@ auth:
 
   # Limits Keycloak's JVM memory to a small, efficient range suitable for medium traffic
   javaOpts: "-Xms128m -Xmx256m"
+
+  # Liveness probe settings
+  # Keycloak exposes /health/live for liveness checks
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    port: 8080
+
+  # Readiness probe settings
+  # Keycloak exposes /health/ready for readiness checks
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    port: 8080
 
   nodeSelector:
     kubernetes.io/os: linux
