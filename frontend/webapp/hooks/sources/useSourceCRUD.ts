@@ -5,9 +5,9 @@ import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { SourceConditions, SourceInstrumentInput } from '@/types';
-import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
-import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCE_LIBRARIES, GET_SOURCES, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
+import { addAgentInjectionStatusToSources, addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCE_LIBRARIES, GET_SOURCES, GET_WORKLOADS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, Workload } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
   type SourceSelectionFormData,
@@ -49,6 +49,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [querySourceLibraries] = useLazyQuery<{ instrumentationInstanceComponents: InstrumentationInstanceComponent[] }, WorkloadId>(GET_SOURCE_LIBRARIES, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
   });
+  const [queryWorkloads] = useLazyQuery<{ workloads: Workload[] }, { filter?: WorkloadId }>(GET_WORKLOADS);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
@@ -98,6 +99,24 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
   };
 
+  const fetchAllAgentInjectionStatuses = async (allSources: Source[]) => {
+    const reqPayload = allSources.length === 1 ? { variables: { filter: { namespace: allSources[0].namespace, kind: allSources[0].kind, name: allSources[0].name } } } : undefined;
+
+    const { data } = await queryWorkloads(reqPayload);
+    const { workloads } = data || {};
+
+    if (workloads) {
+      const tempSources: Source[] = [];
+
+      for (const item of workloads) {
+        const updatedSource = addAgentInjectionStatusToSources(item, allSources);
+        if (updatedSource) tempSources.push(updatedSource);
+      }
+
+      addEntities(EntityTypes.Source, tempSources);
+    }
+  };
+
   const fetchSources: UseSourceCrud['fetchSources'] = async () => {
     if (!shouldFetchSource()) return;
     setEntitiesLoading(EntityTypes.Source, true);
@@ -110,7 +129,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
     } else if (fetchedSources) {
       setEntities(EntityTypes.Source, fetchedSources);
       setEntitiesLoading(EntityTypes.Source, false);
-      if (fetchedSources.length) fetchAllConditions(fetchedSources);
+      if (fetchedSources.length) {
+        fetchAllAgentInjectionStatuses(fetchedSources);
+        fetchAllConditions(fetchedSources);
+      }
     }
   };
 
@@ -124,6 +146,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     } else if (data?.computePlatform?.source) {
       const { source } = data.computePlatform;
       addEntities(EntityTypes.Source, [source]);
+      fetchAllAgentInjectionStatuses([source]);
       return source;
     }
   };
