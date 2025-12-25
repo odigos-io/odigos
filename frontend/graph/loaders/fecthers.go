@@ -56,7 +56,7 @@ func timedAPICall[T any](logger logr.Logger, operation string, apiCall func() (T
 // function to get just the instrumentation configs that match the filter.
 // e.g. load only sources which are marked for instrumentation after the instrumentor reconciles it.
 // this is cheaper and faster query than to load all the sources and resolve each one.
-func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
+func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, k8sCacheClient client.Client) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
 
 	// diffrentiate between a single source query and a namespace / cluster wide query.
 	if filters.SingleWorkload != nil {
@@ -65,7 +65,15 @@ func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filter
 			logger,
 			fmt.Sprintf("Get InstrumentationConfig %s/%s", filters.NamespaceString, instrumentationConfigName),
 			func() (*odigosv1.InstrumentationConfig, error) {
-				return kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).Get(ctx, instrumentationConfigName, metav1.GetOptions{})
+				var instrumentationConfig odigosv1.InstrumentationConfig
+				err := k8sCacheClient.Get(ctx, client.ObjectKey{
+					Namespace: filters.NamespaceString,
+					Name:      instrumentationConfigName,
+				}, &instrumentationConfig)
+				if err != nil {
+					return nil, err
+				}
+				return &instrumentationConfig, nil
 			},
 		)
 		if err != nil {
@@ -88,7 +96,12 @@ func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filter
 			logger,
 			formatOperationMessage("List InstrumentationConfigs", filters.NamespaceString),
 			func() (*odigosv1.InstrumentationConfigList, error) {
-				return kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+				var instrumentationConfigs odigosv1.InstrumentationConfigList
+				err := k8sCacheClient.List(ctx, &instrumentationConfigs, client.InNamespace(filters.NamespaceString))
+				if err != nil {
+					return nil, err
+				}
+				return &instrumentationConfigs, nil
 			},
 		)
 		if err != nil {

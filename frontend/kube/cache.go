@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -16,7 +20,7 @@ var CacheClient client.Client
 
 // SetupK8sCache initializes and starts the controller runtime cache for Source resources
 // Returns the cache client for direct usage
-func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string) (client.Client, error) {
+func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, odigosNs string) (client.Client, error) {
 	// Get the Kubernetes config
 	cfg, err := config.GetConfigWithContext(kubeContext)
 	if err != nil {
@@ -31,17 +35,22 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string) (
 		}
 	}
 
-	// Create a new scheme and register the Source type
+	// Create a new scheme and register all required types
 	scheme := runtime.NewScheme()
-	if err := v1alpha1.AddToScheme(scheme); err != nil {
-		return nil, fmt.Errorf("failed to add odigos scheme: %w", err)
-	}
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(odigosv1.AddToScheme(scheme))
+	utilruntime.Must(actionsv1.AddToScheme(scheme))
 
+	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	// Create cache options
 	cacheOptions := cache.Options{
 		Scheme: scheme,
 		ByObject: map[client.Object]cache.ByObject{
-			&v1alpha1.Source{}: {},
+			&corev1.ConfigMap{}: {
+				Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
+			},
+			&odigosv1.Source{}:                {},
+			&odigosv1.InstrumentationConfig{}: {},
 		},
 	}
 

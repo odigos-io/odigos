@@ -22,15 +22,18 @@ const (
 type PodAgentInjectedReason string
 
 const (
-	PodAgentInjectedReasonWorkloadNotMarkedForInstrumentationAgentNotInjected PodAgentInjectedReason = "WorkloadNotMarkedForInstrumentationAgentNotInjected"
-	PodAgentInjectedReasonWorkloadNotMarkedForInstrumentationAgentInjected    PodAgentInjectedReason = "WorkloadNotMarkedForInstrumentationAgentInjected"
-	PodAgentInjectedReasonWorkloadAgnetDisabledAndNotInjected                 PodAgentInjectedReason = "WorkloadAgnetDisabledAndNotInjected"
-	PodAgentInjectedReasonWorkloadAgentDisabledButInjected                    PodAgentInjectedReason = "WorkloadAgentDisabledButInjected"
-	PodAgentInjectedReasonWorkloadAgentEnabledAndInjected                     PodAgentInjectedReason = "WorkloadAgentEnabledAndInjected"
-	PodAgentInjectedReasonWorkloadAgentEnabledAndNotInjected                  PodAgentInjectedReason = "WorkloadAgentEnabledAndNotInjected"
-	PodAgentInjectedReasonWorkloadAgentEnabledAndInjectedWithDifferentHash    PodAgentInjectedReason = "WorkloadAgentEnabledAndInjectedWithDifferentHash"
-	PodAgentInjectedReasonWorkloadAgentEnabledNotFinishRollout                PodAgentInjectedReason = "WorkloadAgentEnabledNotFinishRollout"
-	PodAgentInjectedReasonWorkloadAgentEnabledAfterPodStarted                 PodAgentInjectedReason = "WorkloadAgentEnabledAfterPodStarted"
+	PodAgentInjectedReasonNotMarkedNotInjected                PodAgentInjectedReason = "NotMarkedNotInjected"
+	PodAgentInjectedReasonNotMarkedAutoRollout                PodAgentInjectedReason = "NotMarkedAutoRollout"
+	PodAgentInjectedReasonNotMarkedManualRollout              PodAgentInjectedReason = "NotMarkedManualRollout"
+	PodAgentInjectedReasonDisabledNotInjected                 PodAgentInjectedReason = "DisabledNotInjected"
+	PodAgentInjectedReasonDisabledAutoRollout                 PodAgentInjectedReason = "DisabledAutoRollout"
+	PodAgentInjectedReasonDisabledManualRollout               PodAgentInjectedReason = "DisabledManualRollout"
+	PodAgentInjectedReasonSuccessfullyInjected                PodAgentInjectedReason = "SuccessfullyInjected"
+	PodAgentInjectedReasonOutOfDateAutoRollout                PodAgentInjectedReason = "OutOfDateAutoRollout"
+	PodAgentInjectedReasonOutOfDateManualRollout              PodAgentInjectedReason = "OutOfDateManualRollout"
+	PodAgentInjectedReasonEnabledNotInjected                  PodAgentInjectedReason = "EnabledNotInjected"
+	PodAgentInjectedReasonEnabledAfterPodCreatedAutoRollout   PodAgentInjectedReason = "EnabledAfterPodCreatedAutoRollout"
+	PodAgentInjectedReasonEnabledAfterPodCreatedManualRollout PodAgentInjectedReason = "EnabledAfterPodCreatedManualRollout"
 )
 
 type AgentInjectionReason string
@@ -43,105 +46,172 @@ const (
 	AgentInjectionReasonSomePodsAgentInjected    AgentInjectionReason = "SomePodsAgentInjected"
 )
 
-func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.InstrumentationConfig) (bool, *model.DesiredConditionStatus) {
+func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.InstrumentationConfig, automaticRolloutEnabled bool) (bool, *model.DesiredConditionStatus) {
 	agentHashValue, agentLabelExists := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]
 
 	// if instrumentation config is missing, the agent should not be injected.
 	if ic == nil {
 		if !agentLabelExists {
-			reasonStr := string(PodAgentInjectedReasonWorkloadNotMarkedForInstrumentationAgentNotInjected)
+			reasonStr := string(PodAgentInjectedReasonNotMarkedNotInjected)
 			return agentLabelExists, &model.DesiredConditionStatus{
 				Name:       PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressSuccess,
 				ReasonEnum: &reasonStr,
-				Message:    "workload is not marked for instrumentation and agent is not injected as expected",
+				Message:    "workload is not marked for instrumentation; odigos agent is not injected (expected)",
 			}
 		} else {
-			reasonStr := string(PodAgentInjectedReasonWorkloadNotMarkedForInstrumentationAgentInjected)
-			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       PodAgentInjectionStatus,
-				Status:     model.DesiredStateProgressWaiting,
-				ReasonEnum: &reasonStr,
-				Message:    "workload is not marked for instrumentation and odigos agent is injected, this source is expected to rollout to replace with a new uninstrumented pod",
+			// diffrentiate between automatic rollout enabled and disabled.
+			if automaticRolloutEnabled {
+				reasonStr := string(PodAgentInjectedReasonNotMarkedAutoRollout)
+				return agentLabelExists, &model.DesiredConditionStatus{
+					Name:       PodAgentInjectionStatus,
+					Status:     model.DesiredStateProgressWaiting,
+					ReasonEnum: &reasonStr,
+					Message:    "source is not marked for instrumentation and odigos agent is injected; this source will be rolled out automatically by odigos to replace with new uninstrumented pods",
+				}
+			} else {
+				reasonStr := string(PodAgentInjectedReasonNotMarkedManualRollout)
+				return agentLabelExists, &model.DesiredConditionStatus{
+					Name:       PodAgentInjectionStatus,
+					Status:     model.DesiredStateProgressNotice,
+					ReasonEnum: &reasonStr,
+					Message:    "source is not marked for instrumentation and odigos agent is injected; rollout this source to start new uninstrumented pods",
+				}
 			}
 		}
 	}
 
 	// at this point, we know the workload is is marked for instrumentation, since we have instrumentaiton config.
 
-	// if the config sets agent injection to false, the agent should not be injected.
+	// if the config sets agent injection enabled to false, the agent should not be injected.
+	// for example: ignored containers, unsupported programming language, etc.
 	if !ic.Spec.AgentInjectionEnabled {
 		if !agentLabelExists {
-			reasonStr := string(PodAgentInjectedReasonWorkloadAgnetDisabledAndNotInjected)
+			reasonStr := string(PodAgentInjectedReasonDisabledNotInjected)
 			return agentLabelExists, &model.DesiredConditionStatus{
 				Name:       PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressSuccess,
 				ReasonEnum: &reasonStr,
-				Message:    "agent is disabled for the source and agent is not injected as expected",
+				Message:    "source is disabled for agent injection; odigos agent is not injected (expected)",
 			}
 		} else {
-			reasonStr := string(PodAgentInjectedReasonWorkloadAgentDisabledButInjected)
-			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       PodAgentInjectionStatus,
-				Status:     model.DesiredStateProgressWaiting,
-				ReasonEnum: &reasonStr,
-				Message:    "agent is disabled for the source, but agent is injected, this kubernetesworkload is expected to rollout and replace this pod with an uninstrumented pod",
+			// diffrentiate between automatic rollout enabled and disabled.
+			if automaticRolloutEnabled {
+				reasonStr := string(PodAgentInjectedReasonDisabledAutoRollout)
+				return agentLabelExists, &model.DesiredConditionStatus{
+					Name:       PodAgentInjectionStatus,
+					Status:     model.DesiredStateProgressWaiting,
+					ReasonEnum: &reasonStr,
+					Message:    fmt.Sprintf("%s is disabled for agent injection but odigos agent is injected; this %s will be rolled out automatically by odigos", ic.Kind, ic.Kind),
+				}
+			} else {
+				reasonStr := string(PodAgentInjectedReasonDisabledManualRollout)
+				return agentLabelExists, &model.DesiredConditionStatus{
+					Name:       PodAgentInjectionStatus,
+					Status:     model.DesiredStateProgressNotice, // action item - restart this source.
+					ReasonEnum: &reasonStr,
+					Message:    fmt.Sprintf("%s is disabled for agent injection but odigos agent is injected; rollout this %s to replace with new uninstrumented pods", ic.Kind, ic.Kind),
+				}
 			}
 		}
 	}
 
 	if agentLabelExists {
 		sameHash := agentHashValue == ic.Spec.AgentsMetaHash
-		if !sameHash {
-			reasonStr := string(PodAgentInjectedReasonWorkloadAgentEnabledAndInjectedWithDifferentHash)
-			return agentLabelExists, &model.DesiredConditionStatus{
-				Name:       PodAgentInjectionStatus,
-				Status:     model.DesiredStateProgressWaiting,
-				ReasonEnum: &reasonStr,
-				Message:    "source is enabled for agent injection but agent is injected with a different hash, this kubernetes workload is expected to rollout and replace this pod with an updated instrumented pod",
-			}
-		} else {
-			reasonStr := string(PodAgentInjectedReasonWorkloadAgentEnabledAndInjected)
+		if sameHash {
+			// this is the common happy path. both the source and the agent are marked for instrumentation and the hash is the same.
+			reasonStr := string(PodAgentInjectedReasonSuccessfullyInjected)
 			return agentLabelExists, &model.DesiredConditionStatus{
 				Name:       PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressSuccess,
 				ReasonEnum: &reasonStr,
-				Message:    "source is enabled for agent injection and agent is injected as expected",
+				Message:    "odigos agent is successfully injected to this pod",
+			}
+		} else {
+			// this is the rare case where the source and the agent are marked for instrumentation but the hash is different.
+			// it can happen when migrating from OSS <-> Enterprise, or when agent version is updated in a way that requires restarts.
+			// pods need to restart for new pods to have the correct agent hash.
+			if automaticRolloutEnabled {
+				reasonStr := string(PodAgentInjectedReasonOutOfDateAutoRollout)
+				return agentLabelExists, &model.DesiredConditionStatus{
+					Name:       PodAgentInjectionStatus,
+					Status:     model.DesiredStateProgressWaiting,
+					ReasonEnum: &reasonStr,
+					Message:    fmt.Sprintf("odigos agent is not up to date; this %s will be rolled out automatically by odigos", ic.Kind),
+				}
+			} else {
+				reasonStr := string(PodAgentInjectedReasonOutOfDateManualRollout)
+				return agentLabelExists, &model.DesiredConditionStatus{
+					Name:       PodAgentInjectionStatus,
+					Status:     model.DesiredStateProgressNotice,
+					ReasonEnum: &reasonStr,
+					Message:    fmt.Sprintf("odigos agent is not up to date; rollout this %s to start new pods with latest agent version", ic.Kind),
+				}
 			}
 		}
 	}
 
-	// no label for agent, and the workload is enabled.
-	// check when it was instrumented.
-	// TODO: record agent enabled time, the current value is when rollout completed.
-	instrumentationTime := ic.Status.InstrumentationTime
-	if instrumentationTime == nil {
-		reasonStr := string(PodAgentInjectedReasonWorkloadAgentEnabledNotFinishRollout)
+	// at this point:
+	// - the source is marked for instrumentation
+	// - agent injection is enabled
+	// - the pod has no odigos label (agent is not injected)
+	//
+	// there can be few options here:
+	// 1. automatic rollout is awaiting or in progress
+	// 2. manual rollout is needed
+	// 3. instrumentor webhook failed to inject the agent
+	//
+	// these are being differentiated by the time at which the agent meta hash changed.
+	// all pods after this time are expected to have the label with the correct agent hash.
+	instrumentationTime := ic.Spec.AgentsMetaHashChangedTime
+	if instrumentationTime == nil { // support for sources that were created before this field was added.
+		reasonStr := string(PodAgentInjectedReasonEnabledNotInjected)
 		return agentLabelExists, &model.DesiredConditionStatus{
 			Name:       PodAgentInjectionStatus,
-			Status:     model.DesiredStateProgressWaiting,
+			Status:     model.DesiredStateProgressNotice,
 			ReasonEnum: &reasonStr,
-			Message:    "source is enabled for agent injection but agent is not injected, this kubernetes workload is expected to rollout and replace this pod with an instrumented pod",
+			Message:    "source is enabled for agent injection but odigos agent was not injected; rollout the workload to replace this pod with an instrumented one",
 		}
 	}
 
 	podCreationTime := pod.CreationTimestamp
+	// pod created before agent was enabled (not up to date)
 	if podCreationTime.Time.Before(instrumentationTime.Time) {
-		reasonStr := string(PodAgentInjectedReasonWorkloadAgentEnabledAfterPodStarted)
-		return agentLabelExists, &model.DesiredConditionStatus{
-			Name:       PodAgentInjectionStatus,
-			Status:     model.DesiredStateProgressWaiting,
-			ReasonEnum: &reasonStr,
-			Message:    "agent not injected because pod started before agent was enabled, expecting a rollout to terminated and replaced it with a new instrumented pod",
+		if automaticRolloutEnabled {
+			reasonStr := string(PodAgentInjectedReasonEnabledAfterPodCreatedAutoRollout)
+			return agentLabelExists, &model.DesiredConditionStatus{
+				Name:       PodAgentInjectionStatus,
+				Status:     model.DesiredStateProgressWaiting,
+				ReasonEnum: &reasonStr,
+				Message:    "old pod - created before agent was enabled; will be rolled out automatically by odigos",
+			}
+		} else {
+			reasonStr := string(PodAgentInjectedReasonEnabledAfterPodCreatedManualRollout)
+			return agentLabelExists, &model.DesiredConditionStatus{
+				Name:       PodAgentInjectionStatus,
+				Status:     model.DesiredStateProgressNotice,
+				ReasonEnum: &reasonStr,
+				Message:    "old pod - created before agent was enabled; rollout the workload to replace this pod with an instrumented one",
+			}
 		}
 	}
 
-	reasonStr := string(PodAgentInjectedReasonWorkloadAgentEnabledAndNotInjected)
+	// at this point:
+	// - the source is marked for instrumentation
+	// - agent injection is enabled
+	// - the pod has no odigos label (agent is not injected)
+	// - the pod was created after agent was enabled
+	//
+	// this means that:
+	// 1. instrumentor webhook failed to run (instrumentor down)
+	// 2. instrumentor webhook returned an error which failed the injection
+	// 3. pods created right after the timestamp was taken and before webhook synced on the change.
+	reasonStr := string(PodAgentInjectedReasonEnabledNotInjected)
 	return agentLabelExists, &model.DesiredConditionStatus{
 		Name:       PodAgentInjectionStatus,
 		Status:     model.DesiredStateProgressNotice,
 		ReasonEnum: &reasonStr,
-		Message:    "source is enabled for agent injection but agent is not injected, rollout the workload to replace this pod with a new instrumented pod",
+		Message:    "agent is not injected to this pod; check for instrumentor component health and rollout the workload to replace this pod with an instrumented one",
 	}
 }
 
