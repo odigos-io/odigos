@@ -22,28 +22,62 @@ const (
 type PodAgentInjectedReason string
 
 const (
-	PodAgentInjectedReasonNotMarkedNotInjected                PodAgentInjectedReason = "NotMarkedNotInjected"
-	PodAgentInjectedReasonNotMarkedAutoRollout                PodAgentInjectedReason = "NotMarkedAutoRollout"
-	PodAgentInjectedReasonNotMarkedManualRollout              PodAgentInjectedReason = "NotMarkedManualRollout"
-	PodAgentInjectedReasonDisabledNotInjected                 PodAgentInjectedReason = "DisabledNotInjected"
-	PodAgentInjectedReasonDisabledAutoRollout                 PodAgentInjectedReason = "DisabledAutoRollout"
-	PodAgentInjectedReasonDisabledManualRollout               PodAgentInjectedReason = "DisabledManualRollout"
-	PodAgentInjectedReasonSuccessfullyInjected                PodAgentInjectedReason = "SuccessfullyInjected"
-	PodAgentInjectedReasonOutOfDateAutoRollout                PodAgentInjectedReason = "OutOfDateAutoRollout"
-	PodAgentInjectedReasonOutOfDateManualRollout              PodAgentInjectedReason = "OutOfDateManualRollout"
-	PodAgentInjectedReasonEnabledNotInjected                  PodAgentInjectedReason = "EnabledNotInjected"
+
+	// not marked for instrumentation
+	PodAgentInjectedReasonNotMarkedNotInjected   PodAgentInjectedReason = "NotMarkedNotInjected"
+	PodAgentInjectedReasonNotMarkedAutoRollout   PodAgentInjectedReason = "NotMarkedAutoRollout"
+	PodAgentInjectedReasonNotMarkedManualRollout PodAgentInjectedReason = "NotMarkedManualRollout"
+
+	// disabled for agent injection
+	PodAgentInjectedReasonDisabledNotInjected   PodAgentInjectedReason = "DisabledNotInjected"
+	PodAgentInjectedReasonDisabledAutoRollout   PodAgentInjectedReason = "DisabledAutoRollout"
+	PodAgentInjectedReasonDisabledManualRollout PodAgentInjectedReason = "DisabledManualRollout"
+
+	// out of date
+	PodAgentInjectedReasonOutOfDateAutoRollout   PodAgentInjectedReason = "OutOfDateAutoRollout"
+	PodAgentInjectedReasonOutOfDateManualRollout PodAgentInjectedReason = "OutOfDateManualRollout"
+
+	// old pods
 	PodAgentInjectedReasonEnabledAfterPodCreatedAutoRollout   PodAgentInjectedReason = "EnabledAfterPodCreatedAutoRollout"
 	PodAgentInjectedReasonEnabledAfterPodCreatedManualRollout PodAgentInjectedReason = "EnabledAfterPodCreatedManualRollout"
+
+	// others
+	PodAgentInjectedReasonSuccessfullyInjected PodAgentInjectedReason = "SuccessfullyInjected"
+	PodAgentInjectedReasonEnabledNotInjected   PodAgentInjectedReason = "EnabledNotInjected"
 )
 
 type AgentInjectionReason string
 
 const (
-	AgentInjectionReasonNoRunningPods            AgentInjectionReason = "NoRunningPods"
-	AgentInjectionReasonAllPodsAgentInjected     AgentInjectionReason = "AllPodsAgentInjected"
-	AgentInjectionReasonAllPodsAgentNotInjected  AgentInjectionReason = "AllPodsAgentNotInjected"
-	AgentInjectionReasonSomePodsAgentNotInjected AgentInjectionReason = "SomePodsAgentNotInjected"
-	AgentInjectionReasonSomePodsAgentInjected    AgentInjectionReason = "SomePodsAgentInjected"
+	AgentInjectionReasonNoRunningPods AgentInjectionReason = "NoRunningPods"
+
+	// this means that agent should not be injected and this is the status
+	AgentInjecteonReasonNotInjectedAsExpected AgentInjectionReason = "AgentNotInjectedAsExpected"
+
+	// some pods still have agent injected when they should not, waiting for automatic rollout to replace them.
+	AgentInjectionReasonSomePodsAgentInjectedWaitingForAutoRollout AgentInjectionReason = "SomePodsAgentInjectedWaitingForAutoRollout"
+
+	// some pods still have agent injected when they should not, waiting for manual rollout to replace them.
+	AgentInjectionReasonSomePodsAgentInjectedRolloutNeeded AgentInjectionReason = "SomePodsAgentInjectedRolloutNeeded"
+
+	// all pods should have agent injected and they do.
+	AgentInjectionReasonAllPodsAgentInjected AgentInjectionReason = "AgentInjectedAsExpected"
+
+	// some old pods still have agent not injected when they should, waiting for automatic rollout to replace them.
+	AgentInjectionReasonSomePodsAgentNotInjectedWaitingForAutoRollout AgentInjectionReason = "SomePodsAgentNotInjectedWaitingForAutoRollout"
+
+	// some old pods still have agent not injected when they should, waiting for manual rollout to replace them.
+	AgentInjectionReasonSomePodsAgentNotInjectedRolloutNeeded AgentInjectionReason = "SomePodsAgentNotInjectedRolloutNeeded"
+
+	// some pods are not running up to date version of the agent, waiting for automatic rollout to replace them.
+	AgentInjectionReasonSomePodsAgentOutOfDateWaitingForAutoRollout AgentInjectionReason = "SomePodsAgentOutOfDateWaitingForAutoRollout"
+
+	// some pods are not running up to date version of the agent, waiting for manual rollout to replace them.
+	AgentInjectionReasonSomePodsAgentOutOfDateRolloutNeeded AgentInjectionReason = "SomePodsAgentOutOfDateRolloutNeeded"
+
+	// some pods that started after agent was enabled have no agent injected.
+	// probably instrumentor webhook failed to run for some reason.
+	AgentInjectionReasonSomePodsAgentNotInjectedWebhookMissed AgentInjectionReason = "SomePodsAgentNotInjectedWebhookMissed"
 )
 
 func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.InstrumentationConfig, automaticRolloutEnabled bool) (bool, *model.DesiredConditionStatus) {
@@ -57,7 +91,7 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 				Name:       PodAgentInjectionStatus,
 				Status:     model.DesiredStateProgressSuccess,
 				ReasonEnum: &reasonStr,
-				Message:    "workload is not marked for instrumentation; odigos agent is not injected (expected)",
+				Message:    "source is not marked for instrumentation; odigos agent is not injected to pod (expected)",
 			}
 		} else {
 			// diffrentiate between automatic rollout enabled and disabled.
@@ -81,7 +115,7 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		}
 	}
 
-	// at this point, we know the workload is is marked for instrumentation, since we have instrumentaiton config.
+	// at this point, we know the workload is marked for instrumentation, since we have instrumentaiton config.
 
 	// if the config sets agent injection enabled to false, the agent should not be injected.
 	// for example: ignored containers, unsupported programming language, etc.
@@ -216,61 +250,139 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 }
 
 func CalculateAgentInjectedStatus(ic *v1alpha1.InstrumentationConfig, pods []computed.CachedPod) *model.DesiredConditionStatus {
+
 	if len(pods) == 0 {
 		reasonStr := string(AgentInjectionReasonNoRunningPods)
 		return &model.DesiredConditionStatus{
 			Name:       AgentInjectedStatus,
 			Status:     model.DesiredStateProgressIrrelevant,
 			ReasonEnum: &reasonStr,
-			Message:    "no pods found for this workload",
+			Message:    "no pods found for this source",
 		}
 	}
 
-	numSuccess := 0
-	numNotSuccess := 0
+	// aggregate the reasons per different pods, to show one status for all of them.
+	reasonsMap := map[PodAgentInjectedReason]int{}
 	for _, pod := range pods {
-		if pod.AgentInjectedStatus.Status == model.DesiredStateProgressSuccess {
-			numSuccess++
-		} else {
-			numNotSuccess++
+		if pod.AgentInjectedStatus != nil && pod.AgentInjectedStatus.ReasonEnum != nil {
+			reasonsMap[PodAgentInjectedReason(*pod.AgentInjectedStatus.ReasonEnum)]++
 		}
 	}
 
-	// if ic is nil, we assume agent is not enabled.
-	agentEnabled := false
-	if ic != nil {
-		agentEnabled = ic.Spec.AgentInjectionEnabled
-	}
+	// check the reasons based on severity, and return the most important reason.
 
-	if numNotSuccess > 0 {
-		var reasonStr, message string
-		if agentEnabled {
-			reasonStr = string(AgentInjectionReasonSomePodsAgentNotInjected)
-			message = fmt.Sprintf("%d/%d pods should have agent injected, but do not", numNotSuccess, len(pods))
-		} else {
-			reasonStr = string(AgentInjectionReasonSomePodsAgentInjected)
-			message = fmt.Sprintf("%d/%d pods have agent injected when it should not", numNotSuccess, len(pods))
+	// ======= Not marked for instrumentation =======
+	if num, found := reasonsMap[PodAgentInjectedReasonNotMarkedManualRollout]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentInjectedRolloutNeeded)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressNotice,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("source not marked for instrumentation but %d/%d pods are running odigos agent; rollout this source to replace these pods with uninstrumented ones", num, len(pods)),
 		}
+	}
+	if num, found := reasonsMap[PodAgentInjectedReasonNotMarkedAutoRollout]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentInjectedWaitingForAutoRollout)
 		return &model.DesiredConditionStatus{
 			Name:       AgentInjectedStatus,
 			Status:     model.DesiredStateProgressWaiting,
 			ReasonEnum: &reasonStr,
-			Message:    message,
+			Message:    fmt.Sprintf("odigos agent is injected in %d/%d pods; odigos will roll out these pods automatically", num, len(pods)),
 		}
-	} else {
-		var reasonStr, message string
-		if agentEnabled {
-			reasonStr = string(AgentInjectionReasonAllPodsAgentInjected)
-			message = fmt.Sprintf("all %d pods have odigos agent injected as expected", numSuccess)
-		} else {
-			reasonStr = string(AgentInjectionReasonAllPodsAgentNotInjected)
-			message = fmt.Sprintf("all %d pods do not have odigos agent injected as expected", numSuccess)
-		}
+	}
+	if _, found := reasonsMap[PodAgentInjectedReasonNotMarkedNotInjected]; found {
+		reasonStr := string(AgentInjecteonReasonNotInjectedAsExpected)
 		return &model.DesiredConditionStatus{
 			Name:       AgentInjectedStatus,
 			Status:     model.DesiredStateProgressSuccess,
 			ReasonEnum: &reasonStr,
-			Message:    message,
+			Message:    "odigos agent is not injected as expected since source is not marked for instrumentation",
 		}
+	}
+
+	// ======= Disabled for agent injection =======
+	if num, found := reasonsMap[PodAgentInjectedReasonDisabledAutoRollout]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentInjectedWaitingForAutoRollout)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressWaiting,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("source is disabled for agent injection but %d/%d pods are running odigos agent; odigos will roll out these pods automatically", num, len(pods)),
+		}
+	}
+	if num, found := reasonsMap[PodAgentInjectedReasonDisabledManualRollout]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentInjectedRolloutNeeded)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressNotice,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("source is disabled for agent injection but %d/%d pods are running odigos agent; rollout this source to replace these pods with uninstrumented ones", num, len(pods)),
+		}
+	}
+	if num, found := reasonsMap[PodAgentInjectedReasonDisabledNotInjected]; found {
+		reasonStr := string(AgentInjecteonReasonNotInjectedAsExpected)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("source is disabled for agent injection but %d/%d pods are running odigos agent; rollout this source to replace these pods with uninstrumented ones", num, len(pods)),
+		}
+	}
+
+	// ======= Enabled after pod created =======
+	if num, found := reasonsMap[PodAgentInjectedReasonEnabledNotInjected]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentNotInjectedRolloutNeeded)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressNotice,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("%d/%d pods are running without odigos agent and require restart to apply instrumentation; check instrumentor component health and trigger a rollout", num, len(pods)),
+		}
+	}
+	if num, found := reasonsMap[PodAgentInjectedReasonEnabledAfterPodCreatedManualRollout]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentNotInjectedRolloutNeeded)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressNotice,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("%d/%d pods are running without odigos agent and require restart to apply instrumentation; trigger a rollout to replace these pods with instrumented ones", num, len(pods)),
+		}
+	}
+	if num, found := reasonsMap[PodAgentInjectedReasonEnabledAfterPodCreatedAutoRollout]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentNotInjectedRolloutNeeded)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressWaiting,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("%d/%d pods are running without odigos agent and require restart to apply instrumentation; trigger a rollout to replace these pods with instrumented ones", num, len(pods)),
+		}
+	}
+
+	// ======= Out of date auto rollout =======
+	if num, found := reasonsMap[PodAgentInjectedReasonOutOfDateManualRollout]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentOutOfDateRolloutNeeded)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressNotice,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("%d/%d pods are running without odigos agent and require restart to apply instrumentation; trigger a rollout to replace these pods with instrumented ones", num, len(pods)),
+		}
+	}
+	if num, found := reasonsMap[PodAgentInjectedReasonOutOfDateAutoRollout]; found {
+		reasonStr := string(AgentInjectionReasonSomePodsAgentOutOfDateWaitingForAutoRollout)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressWaiting,
+			ReasonEnum: &reasonStr,
+			Message:    fmt.Sprintf("%d/%d pods are running without odigos agent and require restart to apply instrumentation; odigos will roll out these pods automatically", num, len(pods)),
+		}
+	}
+
+	reasonStr := string(PodAgentInjectedReasonSuccessfullyInjected)
+	return &model.DesiredConditionStatus{
+		Name:       AgentInjectedStatus,
+		Status:     model.DesiredStateProgressSuccess,
+		ReasonEnum: &reasonStr,
+		Message:    fmt.Sprintf("all %d pods are instrumented as expected", len(pods)),
 	}
 }
