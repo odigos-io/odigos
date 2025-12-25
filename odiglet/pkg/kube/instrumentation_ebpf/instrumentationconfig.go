@@ -3,7 +3,6 @@ package instrumentation_ebpf
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -21,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type InstrumentationConfigReconciler struct {
@@ -31,11 +29,6 @@ type InstrumentationConfigReconciler struct {
 	InstrumentationRequests chan<- instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
 	DistributionGetter      *distros.Getter
 }
-
-var (
-	configUpdateTimeout    = 1 * time.Second
-	errConfigUpdateTimeout = errors.New("failed to update config of workload: timeout waiting for config update")
-)
 
 func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	podWorkload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name, req.Namespace)
@@ -49,16 +42,8 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// if the instrumentationConfig is deleted, send un-instrumentation request for the workload
-			ir := instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]{
-				Instrument:   false,
-				ProcessGroup: ebpf.K8sProcessGroup{Pw: podWorkload},
-			}
-			select {
-			case i.InstrumentationRequests <- ir:
-				return ctrl.Result{}, nil
-			default:
-				return ctrl.Result{}, errors.New("failed to send instrumentation request, consumer is busy")
-			}
+			err = i.sendUnInstrumentationRequest(podWorkload)
+			return ctrl.Result{}, err
 		} else {
 			return ctrl.Result{}, err
 		}
@@ -80,6 +65,19 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	return ctrl.Result{}, nil
 }
 
+func (i *InstrumentationConfigReconciler) sendUnInstrumentationRequest(podWorkload k8sconsts.PodWorkload) error {
+	ir := instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]{
+		Instrument:   false,
+		ProcessGroup: ebpf.K8sProcessGroup{Pw: podWorkload},
+	}
+	select {
+	case i.InstrumentationRequests <- ir:
+		return nil
+	default:
+		return errors.New("failed to send un-instrumentation request, consumer is busy")
+	}
+}
+
 func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context, podWorkload k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
 	if i.ConfigUpdates == nil {
 		return nil
@@ -91,9 +89,6 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 
 	// send a config update request for all the instrumentation which are part of the workload.
 	// if the config request is sent, the configuration updates will occur asynchronously.
-	ctx, cancel := context.WithTimeout(ctx, configUpdateTimeout)
-	defer cancel()
-
 	configUpdate := instrumentation.ConfigUpdate[ebpf.K8sConfigGroup]{}
 	for _, sdkConfig := range instrumentationConfig.Spec.SdkConfigs {
 		cg := ebpf.K8sConfigGroup{Pw: podWorkload, Lang: sdkConfig.Language}
@@ -104,32 +99,32 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 	select {
 	case i.ConfigUpdates <- configUpdate:
 		return nil
-	case <-ctx.Done():
-		if ctx.Err() == context.DeadlineExceeded {
-			// returning the error to retry the reconciliation
-			return errConfigUpdateTimeout
-		}
-		return ctx.Err()
+	default:
+		return errors.New("failed to send config update, consumer is busy")
 	}
 }
 
 // sendInstrumentationRequest sends an instrumentation request for all processes that are part of the given workload
 // and run in containers that support instrumentation without a restart.
 func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context.Context, podWorkload k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
-	logger := log.FromContext(ctx)
-
 	// check for distributions that support instrumentation without a restart
 	distroByContainer := make(map[string]*distro.OtelDistro)
 	for _, containerConfig := range instrumentationConfig.Spec.Containers {
+		if containerConfig.OtelDistroName == "" || !containerConfig.AgentEnabled {
+			continue
+		}
 		d := i.DistributionGetter.GetDistroByName(containerConfig.OtelDistroName)
 		if d != nil && d.RuntimeAgent != nil && d.RuntimeAgent.NoRestartRequired {
 			distroByContainer[containerConfig.ContainerName] = d
 		}
 	}
 
-	// if none of the containers support instrumentation without a restart - nothing to do here
+	// if none of the containers support instrumentation without a restart, send an un-instrumentation request
+	// this condition can happen for:
+	// 1. workloads with instrumentations that do not support no-restart instrumentation (the request will be a no-op)
+	// 2. A config change might caused some of the containers to require un-instrumentation (for example adding container to the ignored containers list)
 	if len(distroByContainer) == 0 {
-		return nil
+		return i.sendUnInstrumentationRequest(podWorkload)
 	}
 
 	selectedPods, err := kubecommon.WorkloadPodsOnCurrentNode(i.Client, ctx, instrumentationConfig)
@@ -142,12 +137,13 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	}
 
 	// build all the relevant (podUID, containerName) combinations for this node
-	pcs := make([]process.PodContainerUID, len(selectedPods)*len(distroByContainer))
-	count := 0
+	pcs := make([]process.PodContainerUID, 0, len(selectedPods)*len(distroByContainer))
 	for _, p := range selectedPods {
 		for c := range distroByContainer {
-			pcs[count] = process.PodContainerUID{PodUID: string(p.UID), ContainerName: c}
-			count++
+			pcs = append(pcs, process.PodContainerUID{
+				PodUID:        string(p.UID),
+				ContainerName: c,
+			})
 		}
 	}
 
@@ -200,10 +196,8 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	// the caller (controller) can retry/requeue the handling
 	select {
 	case i.InstrumentationRequests <- ir:
-		logger.Info("send instrumentation request", "numPIDs", len(ir.ProcessDetailsByPid))
+		return nil
 	default:
 		return errors.New("failed to send instrumentation request, consumer is busy")
 	}
-
-	return nil
 }

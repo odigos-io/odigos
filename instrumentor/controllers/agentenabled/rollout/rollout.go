@@ -108,11 +108,11 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	if !hasDistributionThatRequiresRollout {
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
-		// setting the status as false to indicate no rollout is needed and no rollout will be performed
-		// this might require more logic in the UI to indicate that no rollout is needed
 		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
-			Status:  metav1.ConditionFalse,
+			// currently we interpret False as an error state, so we use True here to indicate a healthy state
+			// it might be confusing since rollout is not actually done, but this is the closest match given the k8s condition semantics.
+			Status:  metav1.ConditionTrue,
 			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonNotRequired),
 			Message: "The selected instrumentation distributions do not require application restart",
 		})
