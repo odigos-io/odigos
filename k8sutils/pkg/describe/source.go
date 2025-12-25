@@ -6,15 +6,16 @@ import (
 	"strings"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/describe/source"
 )
 
 func printWorkloadManifestInfo(analyze *source.SourceAnalyze, sb *strings.Builder) {

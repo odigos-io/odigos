@@ -52,7 +52,9 @@ func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWork
 
 // GetWorkloadFromOwnerReference retrieves both the workload name and workload kind
 // from the provided owner reference.
-func GetWorkloadFromOwnerReference(ownerReference metav1.OwnerReference, pod *corev1.Pod) (workloadName string, workloadKind k8sconsts.WorkloadKind, err error) {
+func GetWorkloadFromOwnerReference(
+	ownerReference metav1.OwnerReference, pod *corev1.Pod,
+) (workloadName string, workloadKind k8sconsts.WorkloadKind, err error) {
 	return GetWorkloadNameAndKind(ownerReference.Name, ownerReference.Kind, pod)
 }
 
@@ -69,7 +71,7 @@ func GetWorkloadNameAndKind(ownerName, ownerKind string, pod *corev1.Pod) (strin
 	}
 }
 
-// ReplicaSets can be created frome either Deployment or (Argo) Rollout kinds,so determine which one is that
+// ReplicaSets can be created from either Deployment or (Argo) Rollout kinds, so determine which one is that
 func determineReplicaSetOwner(ownerName string, pod *corev1.Pod) (string, k8sconsts.WorkloadKind, error) {
 	// If we find a label associated with Argo rollouts, it is an Rollout kind
 	if _, ok := pod.Labels[argorolloutsv1alpha1.DefaultRolloutUniqueLabelKey]; ok {

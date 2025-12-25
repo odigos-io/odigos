@@ -219,4 +219,3 @@ func TestIsWorkloadRolloutDone(t *testing.T) {
 		assert.True(t, IsWorkloadRolloutDone(rollout))
 	})
 }
-
