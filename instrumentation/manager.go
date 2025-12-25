@@ -37,6 +37,8 @@ type ConfigUpdate[configGroup ConfigGroup] map[configGroup]Config
 // Request is used to send an instrumentation or un-instrumentation request to the manager.
 // For instrumentation requests, the ProcessDetailsByPid map should be populated with the details of each process to instrument.
 // For un-instrumentation requests, the ProcessGroup should be populated to un-instrument all processes that match it.
+// reasoning is that the manager saves an index of the instrumented processes by their process group, to make the un-instrumentation efficient
+// and easy.
 type Request[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
 	Instrument          bool
 	ProcessDetailsByPid map[int]processDetails
@@ -242,7 +244,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 					if m.isInstrumented(pid) {
 						continue
 					}
-					m.logger.Info("received explicit instrumentation request", "pid", pid)
+					m.logger.Info("received explicit instrumentation request", "process details", details)
 					err := m.tryInstrument(ctx, details, pid)
 					if err != nil {
 						m.handleInstrumentError(err)
@@ -264,6 +266,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				for pid := range procs {
 					m.cleanInstrumentation(ctx, pid)
 				}
+				// we could add a detector.UntrackProcesses call here, for now this is not necessary
+				// reasoning to add it in the future might be to save resources in the detector
+				// we might get exit events for already un-instrumented processes, which is a no-op.
 			}
 		case configUpdate := <-m.configUpdates:
 			for configGroup, config := range configUpdate {
