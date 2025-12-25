@@ -7,6 +7,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/computed"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -116,6 +117,8 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 	}
 
 	// at this point, we know the workload is marked for instrumentation, since we have instrumentaiton config.
+	pw, _ := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
+	workloadKind := string(pw.Kind)
 
 	// if the config sets agent injection enabled to false, the agent should not be injected.
 	// for example: ignored containers, unsupported programming language, etc.
@@ -136,7 +139,7 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 					Name:       PodAgentInjectionStatus,
 					Status:     model.DesiredStateProgressWaiting,
 					ReasonEnum: &reasonStr,
-					Message:    fmt.Sprintf("%s is disabled for agent injection but odigos agent is injected; this %s will be rolled out automatically by odigos", ic.Kind, ic.Kind),
+					Message:    fmt.Sprintf("%s is disabled for agent injection but odigos agent is injected; this %s will be rolled out automatically by odigos", workloadKind, workloadKind),
 				}
 			} else {
 				reasonStr := string(PodAgentInjectedReasonDisabledManualRollout)
@@ -144,7 +147,7 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 					Name:       PodAgentInjectionStatus,
 					Status:     model.DesiredStateProgressNotice, // action item - restart this source.
 					ReasonEnum: &reasonStr,
-					Message:    fmt.Sprintf("%s is disabled for agent injection but odigos agent is injected; rollout this %s to replace with new uninstrumented pods", ic.Kind, ic.Kind),
+					Message:    fmt.Sprintf("%s is disabled for agent injection but odigos agent is injected; rollout this %s to replace with new uninstrumented pods", workloadKind, workloadKind),
 				}
 			}
 		}
@@ -171,7 +174,7 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 					Name:       PodAgentInjectionStatus,
 					Status:     model.DesiredStateProgressWaiting,
 					ReasonEnum: &reasonStr,
-					Message:    fmt.Sprintf("odigos agent is not up to date; this %s will be rolled out automatically by odigos", ic.Kind),
+					Message:    fmt.Sprintf("odigos agent is not up to date; this %s will be rolled out automatically by odigos", workloadKind),
 				}
 			} else {
 				reasonStr := string(PodAgentInjectedReasonOutOfDateManualRollout)
@@ -179,7 +182,7 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 					Name:       PodAgentInjectionStatus,
 					Status:     model.DesiredStateProgressNotice,
 					ReasonEnum: &reasonStr,
-					Message:    fmt.Sprintf("odigos agent is not up to date; rollout this %s to start new pods with latest agent version", ic.Kind),
+					Message:    fmt.Sprintf("odigos agent is not up to date; rollout this %s to start new pods with latest agent version", workloadKind),
 				}
 			}
 		}
