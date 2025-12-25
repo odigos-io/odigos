@@ -183,6 +183,13 @@ func isDeploymentConfigRolloutDone(dc *openshiftappsv1.DeploymentConfig) bool {
 func isArgoRolloutRolloutDone(rollout *argorolloutsv1alpha1.Rollout) bool {
 	// Yes, this name is ridiculous. The function returns whether the rollout of an Argo rollout is done.
 
+	// A paused rollout (e.g., during a canary pause step) is considered "done" for instrumentation purposes.
+	// This is because the rollout is in a stable state where all current pods are running and healthy,
+	// just waiting for user input to continue. Odigos should be able to instrument pods in this state.
+	if rollout.Status.Phase == argorolloutsv1alpha1.RolloutPhasePaused {
+		return true
+	}
+
 	// ObservedGeneration in Argo Rollouts is a string, so we need to parse it
 	observedGen, err := strconv.ParseInt(rollout.Status.ObservedGeneration, 10, 64)
 	if err != nil {
