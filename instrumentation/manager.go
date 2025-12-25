@@ -244,7 +244,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 					if m.isInstrumented(pid) {
 						continue
 					}
-					m.logger.Info("received explicit instrumentation request", "process details", details)
+					m.logger.Info("received explicit instrumentation request", "process details", details, "pid", pid)
 					err := m.tryInstrument(ctx, details, pid)
 					if err != nil {
 						m.handleInstrumentError(err)

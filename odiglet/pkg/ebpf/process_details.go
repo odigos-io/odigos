@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -26,10 +26,22 @@ type K8sProcessDetails struct {
 }
 
 func (kd K8sProcessDetails) String() string {
+	podName := "<nil>"
+	namespace := "<nil>"
+	if kd.Pod != nil {
+		podName = kd.Pod.Name
+		namespace = kd.Pod.Namespace
+	}
+
+	workloadName := "<nil>"
+	if kd.Pw != nil {
+		workloadName = workload.CalculateWorkloadRuntimeObjectName(kd.Pw.Name, kd.Pw.Kind)
+	}
+
 	return fmt.Sprintf("Pod: %s.%s, Container: %s, Workload: %s",
-		kd.Pod.Name, kd.Pod.Namespace,
+		podName, namespace,
 		kd.ContainerName,
-		workload.CalculateWorkloadRuntimeObjectName(kd.Pw.Name, kd.Pw.Kind),
+		workloadName,
 	)
 }
 
