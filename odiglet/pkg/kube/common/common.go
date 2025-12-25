@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
@@ -27,28 +26,11 @@ func GetPodExternalURL(ip string, ports []corev1.ContainerPort) string {
 	return ""
 }
 
-func GetPodWorkloadObject(pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
-	for _, owner := range pod.OwnerReferences {
-		workloadName, workloadKind, err := workload.GetWorkloadFromOwnerReference(owner)
-		if err != nil {
-			return nil, workload.IgnoreErrorKindNotSupported(err)
-		}
-
-		return &k8sconsts.PodWorkload{
-			Name:      workloadName,
-			Kind:      workloadKind,
-			Namespace: pod.Namespace,
-		}, nil
-	}
-
-	// Pod does not necessarily have to be managed by a controller
-	return nil, nil
-}
-
 func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv1.InstrumentationConfig) ([]corev1.Pod, error) {
 	// find pods that are managed by the workload,
 	// filter out pods that are being deleted or not ready,
-	// note that the controller-runtime cache is assumed here to only contain pods in the same node as the odiglet
+	// note that the controller-runtime cache should only contain pods from the current node
+	// however, we still double check that the pods the returned are from the current node
 	var podList corev1.PodList
 	err := c.List(ctx, &podList, client.InNamespace(ic.Namespace))
 	if err != nil {
@@ -61,7 +43,11 @@ func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv
 		if pod.DeletionTimestamp != nil || !k8scontainer.AllContainersReady(&pod) {
 			continue
 		}
-		podWorkload, err := GetPodWorkloadObject(&pod)
+		// making sure the pod is in the current node
+		if !IsPodInCurrentNode(&pod) {
+			continue
+		}
+		podWorkload, err := workload.PodWorkloadObject(ctx, &pod)
 		if errors.Is(err, workload.ErrKindNotSupported) {
 			continue
 		}
