@@ -87,7 +87,7 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 	}
 
 	// check if there are any rules to ignore health checks
-	healthCheckFraction := calculateAvoidHttpFraction(irls)
+	healthCheckFraction := calculateIgnoreHealthChecksFraction(irls)
 	if healthCheckFraction == nil {
 		return nil
 	}
@@ -138,7 +138,7 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 
 // calculate the max fraction to record for health checks from all the rules
 // return nil if no rules to ignore health checks
-func calculateAvoidHttpFraction(irls *[]odigosv1.InstrumentationRule) *float64 {
+func calculateIgnoreHealthChecksFraction(irls *[]odigosv1.InstrumentationRule) *float64 {
 	var healthCheckFraction *float64
 	for _, irl := range *irls {
 		if irl.Spec.IgnoreHealthChecks != nil {
