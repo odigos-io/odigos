@@ -2,7 +2,7 @@ package instrumentationrules
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
-type AvoidHealthChecks struct {
+type IgnoreHealthChecks struct {
 	// How many health checks traces to record
 	// should be in range [0, 1]
 	// 0 (default) means no health checks traces will be recorded

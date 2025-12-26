@@ -1,14 +1,14 @@
 ---
-title: "Avoid Health Checks"
-description: "The \"Avoid Health Checks\" rule can be used to control the sampling of health check traces. Health checks are typically high-frequency, low-value traces that can clutter your trace data and increase costs."
-sidebarTitle: "Avoid Health Checks"
+title: "IgnoreHealthChecks"
+description: "The \"IgnoreHealthChecks\" rule can be used to control the sampling of health check traces. Health checks are typically high-frequency, low-value traces that can clutter your trace data and increase costs."
+sidebarTitle: "IgnoreHealthChecks"
 icon: "heart-pulse"
 ---
 
 ## Considerations
 
 <Warning>
-  Before configuring **avoid health checks**, please note the following:
+  Before configuring **IgnoreHealthChecks**, please note the following:
   - Health checks are typically high-frequency operations that can generate a large volume of traces
   - Recording all health check traces can significantly increase the cost of processing, storing and analyzing traces
   - Health check traces usually don't provide valuable debugging or monitoring insights
@@ -46,8 +46,8 @@ The following example demonstrates how to completely avoid recording health chec
       name: avoid-health-checks
       namespace: odigos-system
     spec:
-      ruleName: "avoid health check traces"
-      avoidHealthChecks:
+      ruleName: "ignore health check traces"
+      ignoreHealthChecks:
         fractionToRecord: 0
     ```
   </Step>

@@ -37,7 +37,7 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	HeadersCollection        *instrumentationrules.HttpHeadersCollection         `json:"headersCollection,omitempty"`
 	TraceConfig              *instrumentationrules.TraceConfig                   `json:"traceConfig,omitempty"`
 	CustomInstrumentations   *instrumentationrules.CustomInstrumentations        `json:"customInstrumentations,omitempty"`
-	AvoidHealthChecks        *instrumentationrules.AvoidHealthChecks             `json:"avoidHealthChecks,omitempty"`
+	IgnoreHealthChecks       *instrumentationrules.IgnoreHealthChecks            `json:"ignoreHealthChecks,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -154,10 +154,10 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(v
 	return b
 }
 
-// WithAvoidHealthChecks sets the AvoidHealthChecks field in the declarative configuration to the given value
+// WithIgnoreHealthChecks sets the IgnoreHealthChecks field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the AvoidHealthChecks field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithAvoidHealthChecks(value instrumentationrules.AvoidHealthChecks) *InstrumentationRuleSpecApplyConfiguration {
-	b.AvoidHealthChecks = &value
+// If called multiple times, the IgnoreHealthChecks field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithIgnoreHealthChecks(value instrumentationrules.IgnoreHealthChecks) *InstrumentationRuleSpecApplyConfiguration {
+	b.IgnoreHealthChecks = &value
 	return b
 }

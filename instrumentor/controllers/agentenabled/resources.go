@@ -102,7 +102,7 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 		// filter only rules that are relevant to the agent enabled logic
 		if (ir.Spec.OtelSdks != nil || ir.Spec.OtelDistros != nil) ||
 			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
-			(ir.Spec.HeadersCollection != nil || ir.Spec.AvoidHealthChecks != nil) {
+			(ir.Spec.HeadersCollection != nil || ir.Spec.IgnoreHealthChecks != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}

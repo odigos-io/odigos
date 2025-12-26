@@ -1363,9 +1363,9 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 		*out = new(instrumentationrules.CustomInstrumentations)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.AvoidHealthChecks != nil {
-		in, out := &in.AvoidHealthChecks, &out.AvoidHealthChecks
-		*out = new(instrumentationrules.AvoidHealthChecks)
+	if in.IgnoreHealthChecks != nil {
+		in, out := &in.IgnoreHealthChecks, &out.IgnoreHealthChecks
+		*out = new(instrumentationrules.IgnoreHealthChecks)
 		**out = **in
 	}
 }
