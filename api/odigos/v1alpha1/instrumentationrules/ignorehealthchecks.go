@@ -12,3 +12,13 @@ type IgnoreHealthChecks struct {
 	// +kubebuilder:validation:Maximum:=1
 	FractionToRecord float64 `json:"fractionToRecord,omitempty"`
 }
+
+kubectl apply -f - <<'EOF'
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: ignore-health-checks
+  namespace: odigos-system
+spec:
+  ignoreHealthChecks: {}
+EOF

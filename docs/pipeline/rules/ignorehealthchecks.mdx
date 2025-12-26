@@ -33,17 +33,17 @@ icon: "heart-pulse"
 
 ## Basic Example
 
-The following example demonstrates how to completely avoid recording health check traces for all sources in the cluster where the agent supports head sampling.
+The following example demonstrates how to completely ignore health check traces from recording for all sources in the cluster where the agent supports head sampling.
 
 <Steps>
   <Step>
     Create a YAML file with the following content:
 
-    ```yaml avoid-health-checks.yaml
+    ```yaml ignore-health-checks.yaml
     apiVersion: odigos.io/v1alpha1
     kind: InstrumentationRule
     metadata:
-      name: avoid-health-checks
+      name: ignore-health-checks
       namespace: odigos-system
     spec:
       ruleName: "ignore health check traces"
@@ -55,7 +55,7 @@ The following example demonstrates how to completely avoid recording health chec
     Apply the rule to the cluster:
 
     ```shell
-    kubectl apply -f avoid-health-checks.yaml
+    kubectl apply -f ignore-health-checks.yaml
     ```
   </Step>
 </Steps>

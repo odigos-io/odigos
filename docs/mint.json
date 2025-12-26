@@ -200,7 +200,7 @@
             "pipeline/rules/headerscollection",
             "pipeline/rules/payloadcollection",
             "pipeline/rules/custominstrumentation",
-            "pipeline/rules/avoidhealthchecks"
+            "pipeline/rules/ignorehealthchecks"
           ]
         },
         {
