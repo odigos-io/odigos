@@ -8,7 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 )
 
-func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosConfiguration, containerName string, urlTemplatizationConfig *odigosv1.UrlTemplatizationConfig) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
+func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosConfiguration, containerName string, urlTemplatizationConfig *odigosv1.UrlTemplatizationConfig, irls *[]odigosv1.InstrumentationRule) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
 	if !tracesEnabled {
 		return nil, nil
 	}
@@ -35,6 +35,19 @@ func CalculateTracesConfig(tracesEnabled bool, effectiveConfig *common.OdigosCon
 	}
 
 	tracesConfig.UrlTemplatization = urlTemplatizationConfig
+
+	// http headers collection configuration
+	headerKeysToCollectHttp := []string{}
+	for _, irl := range *irls {
+		if irl.Spec.HeadersCollection != nil {
+			headerKeysToCollectHttp = append(headerKeysToCollectHttp, irl.Spec.HeadersCollection.HeaderKeys...)
+		}
+	}
+	if len(headerKeysToCollectHttp) > 0 {
+		tracesConfig.HeadersCollection = &odigosv1.HeadersCollectionConfig{
+			HttpHeaderKeys: headerKeysToCollectHttp,
+		}
+	}
 
 	return tracesConfig, nil
 }
