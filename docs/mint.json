@@ -199,7 +199,8 @@
             "pipeline/rules/codeattributes",
             "pipeline/rules/headerscollection",
             "pipeline/rules/payloadcollection",
-            "pipeline/rules/custominstrumentation"
+            "pipeline/rules/custominstrumentation",
+            "pipeline/rules/avoidhealthchecks"
           ]
         },
         {
