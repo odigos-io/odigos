@@ -165,6 +165,19 @@ spec:
                         Each enabled signal must be set with a non-nil value (even if the config content is empty).
                         nil means that the signal is disabled and should not be instrumented/collected by the agent.
                       properties:
+                        headersCollection:
+                          description: Configuration for headers collection. If not
+                            specified, no headers will be collected.
+                          properties:
+                            httpHeaderKeys:
+                              description: |-
+                                Limit HTTP headers collection to specific header keys.
+                                if unset, no HTTP headers will be collected.
+                                HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.
+                              items:
+                                type: string
+                              type: array
+                          type: object
                         idGenerator:
                           description: |-
                             id generator configuration for the traces.

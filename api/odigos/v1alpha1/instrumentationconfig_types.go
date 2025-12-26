@@ -300,6 +300,14 @@ type UrlTemplatizationConfig struct {
 	Rules []string `json:"templatizationRules"`
 }
 
+// HeadersCollectionConfig represents configuration for HTTP headers collection.
+type HeadersCollectionConfig struct {
+	// Limit HTTP headers collection to specific header keys.
+	// if unset, no HTTP headers will be collected.
+	// HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.
+	HttpHeaderKeys []string `json:"httpHeaderKeys,omitempty"`
+}
+
 // all "traces" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
 type AgentTracesConfig struct {
@@ -309,6 +317,9 @@ type AgentTracesConfig struct {
 
 	// A list of URL templatization configurations to be applied to the traces.
 	UrlTemplatization *UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
+
+	// Configuration for headers collection. If not specified, no headers will be collected.
+	HeadersCollection *HeadersCollectionConfig `json:"headersCollection,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
