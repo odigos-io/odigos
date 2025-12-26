@@ -83,6 +83,9 @@ type InstrumentationRuleSpec struct {
 
 	// Add custom instrumentation probes
 	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+
+	// Configure to sample out health checks from traceing
+	AvoidHealthChecks *instrumentationrules.AvoidHealthChecks `json:"avoidHealthChecks,omitempty"`
 }
 
 // Verify validates the InstrumentationRuleSpec.

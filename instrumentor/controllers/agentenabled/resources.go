@@ -7,6 +7,8 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -18,24 +20,37 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
 	*[]odigosv1.Action,
+	workload.Workload,
 	error) {
+
+	// fetch the workload object, so we can extract the health check paths from it.
+	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
+	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return nil, nil, nil, nil, err
+	}
+
+	workloadObj, err := workload.ObjectToWorkload(obj)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
 
 	cg, err := getCollectorsGroup(ctx, c)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	templateRules, err := getTemplateRules(ctx, c)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	return cg, irls, templateRules, nil
+	return cg, irls, templateRules, workloadObj, nil
 }
 
 func getTemplateRules(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {
@@ -87,7 +102,7 @@ func getRelevantInstrumentationRules(ctx context.Context, c client.Client, pw k8
 		// filter only rules that are relevant to the agent enabled logic
 		if (ir.Spec.OtelSdks != nil || ir.Spec.OtelDistros != nil) ||
 			(ir.Spec.TraceConfig != nil && ir.Spec.TraceConfig.Disabled != nil) ||
-			(ir.Spec.HeadersCollection != nil) {
+			(ir.Spec.HeadersCollection != nil || ir.Spec.AvoidHealthChecks != nil) {
 
 			relevantIr = append(relevantIr, *ir)
 		}

@@ -146,7 +146,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
-	cg, irls, urlTemplatizationRules, err := getRelevantResources(ctx, c, pw)
+	cg, irls, urlTemplatizationRules, workloadObj, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
@@ -198,7 +198,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, urlTemplatizationRules)
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, urlTemplatizationRules, workloadObj)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -436,6 +436,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	irls *[]odigosv1.InstrumentationRule,
 	containerOverride *odigosv1.ContainerOverride,
 	urlTemplatizationRules *[]odigosv1.Action,
+	workloadObj workload.Workload,
 ) odigosv1.ContainerAgentConfig {
 
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
@@ -478,7 +479,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 
 	// at this time, we don't populate the signals specific configs, but we will do it soon
-	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, filteredTemplateRules, irls)
+	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, filteredTemplateRules, irls, workloadObj)
 	if err != nil {
 		return *err
 	}
