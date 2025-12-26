@@ -87,65 +87,84 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 	}
 
 	// check if there are any rules to ignore health checks
-	healthCheckFraction := calculateIgnoreHealthChecksFraction(irls)
-	if healthCheckFraction == nil {
+	healthCheckFraction, headSamplingFallbackFraction := calculateIgnoreHeadSamplingFractions(irls)
+	fallbackFractionSet := headSamplingFallbackFraction != nil && *headSamplingFallbackFraction != 1
+	if healthCheckFraction == nil && !fallbackFractionSet {
 		return nil
 	}
 
 	// find the probes path for this container
 	// use map to avoid duplicates
-	healthCheckPathsHttpGet := map[string]struct{}{}
-	for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
-		if container.Name == containerName {
-			if container.LivenessProbe != nil && container.LivenessProbe.HTTPGet != nil {
-				healthCheckPathsHttpGet[container.LivenessProbe.HTTPGet.Path] = struct{}{}
+	headSamplingRules := []odigosv1.AttributesAndSamplerRule{}
+	if healthCheckFraction != nil {
+		healthCheckPathsHttpGet := map[string]struct{}{}
+		for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
+			if container.Name == containerName {
+				if container.LivenessProbe != nil && container.LivenessProbe.HTTPGet != nil {
+					healthCheckPathsHttpGet[container.LivenessProbe.HTTPGet.Path] = struct{}{}
+				}
+				if container.ReadinessProbe != nil && container.ReadinessProbe.HTTPGet != nil {
+					healthCheckPathsHttpGet[container.ReadinessProbe.HTTPGet.Path] = struct{}{}
+				}
 			}
-			if container.ReadinessProbe != nil && container.ReadinessProbe.HTTPGet != nil {
-				healthCheckPathsHttpGet[container.ReadinessProbe.HTTPGet.Path] = struct{}{}
-			}
+		}
+
+		// if there are no health check paths and fallback is not set, we have nothing to use for the head sampler
+		if len(healthCheckPathsHttpGet) == 0 && !fallbackFractionSet {
+			return nil
+		}
+
+		for path := range healthCheckPathsHttpGet {
+			headSamplingRules = append(headSamplingRules, odigosv1.AttributesAndSamplerRule{
+				AttributeConditions: []odigosv1.AttributeCondition{
+					{
+						Key:      "http.target", // this works for nodejs, if extended, need to check compatibility
+						Val:      path,
+						Operator: odigosv1.Equals,
+					},
+					{
+						Key:      "http.method",
+						Val:      "GET",
+						Operator: odigosv1.Equals,
+					},
+				},
+				Fraction: *healthCheckFraction,
+			})
 		}
 	}
 
-	// if there are no health check paths, we have nothing to use for the head sampler
-	if len(healthCheckPathsHttpGet) == 0 {
-		return nil
-	}
-
-	headSamplingRules := make([]odigosv1.AttributesAndSamplerRule, 0, len(healthCheckPathsHttpGet))
-	for path := range healthCheckPathsHttpGet {
-		headSamplingRules = append(headSamplingRules, odigosv1.AttributesAndSamplerRule{
-			AttributeConditions: []odigosv1.AttributeCondition{
-				{
-					Key:      "http.target", // this works for nodejs, if extended, need to check compatibility
-					Val:      path,
-					Operator: odigosv1.Equals,
-				},
-				{
-					Key:      "http.method",
-					Val:      "GET",
-					Operator: odigosv1.Equals,
-				},
-			},
-			Fraction: *healthCheckFraction,
-		})
+	// use fallback fraction if set, otherwise use 1.0 (take all traces)
+	fallbackFraction := 1.0
+	if headSamplingFallbackFraction != nil {
+		fallbackFraction = *headSamplingFallbackFraction
 	}
 
 	return &odigosv1.HeadSamplingConfig{
 		AttributesAndSamplerRules: headSamplingRules,
-		FallbackFraction:          1.0,
+		FallbackFraction:          fallbackFraction,
 	}
 }
 
-// calculate the max fraction to record for health checks from all the rules
+// calculate the max fraction to record for health checks and the max fraction to keep for head sampling fallback from all the rules
 // return nil if no rules to ignore health checks
-func calculateIgnoreHealthChecksFraction(irls *[]odigosv1.InstrumentationRule) *float64 {
+func calculateIgnoreHeadSamplingFractions(irls *[]odigosv1.InstrumentationRule) (*float64, *float64) {
 	var healthCheckFraction *float64
+	var headSamplingFallbackFraction *float64
 	for _, irl := range *irls {
+		// take the max fraction to record for health checks
 		if irl.Spec.IgnoreHealthChecks != nil {
 			if healthCheckFraction == nil {
 				healthCheckFraction = &irl.Spec.IgnoreHealthChecks.FractionToRecord
 			} else if *healthCheckFraction < irl.Spec.IgnoreHealthChecks.FractionToRecord {
 				healthCheckFraction = &irl.Spec.IgnoreHealthChecks.FractionToRecord
+			}
+		}
+		// take the max fraction to keep for head sampling fallback
+		if irl.Spec.HeadSamplingFallbackFraction != nil {
+			if headSamplingFallbackFraction == nil {
+				headSamplingFallbackFraction = &irl.Spec.HeadSamplingFallbackFraction.FractionToKeep
+			} else if *headSamplingFallbackFraction < irl.Spec.HeadSamplingFallbackFraction.FractionToKeep {
+				headSamplingFallbackFraction = &irl.Spec.HeadSamplingFallbackFraction.FractionToKeep
 			}
 		}
 	}
@@ -157,5 +176,12 @@ func calculateIgnoreHealthChecksFraction(irls *[]odigosv1.InstrumentationRule) *
 			*healthCheckFraction = 1
 		}
 	}
-	return healthCheckFraction
+	if headSamplingFallbackFraction != nil {
+		if *headSamplingFallbackFraction < 0 {
+			*headSamplingFallbackFraction = 0
+		} else if *headSamplingFallbackFraction > 1 {
+			*headSamplingFallbackFraction = 1
+		}
+	}
+	return healthCheckFraction, headSamplingFallbackFraction
 }

@@ -25,19 +25,20 @@ import (
 // InstrumentationRuleSpecApplyConfiguration represents a declarative configuration of the InstrumentationRuleSpec type for use
 // with apply.
 type InstrumentationRuleSpecApplyConfiguration struct {
-	RuleName                 *string                                             `json:"ruleName,omitempty"`
-	Notes                    *string                                             `json:"notes,omitempty"`
-	Disabled                 *bool                                               `json:"disabled,omitempty"`
-	Workloads                *[]k8sconsts.PodWorkload                            `json:"workloads,omitempty"`
-	InstrumentationLibraries *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
-	PayloadCollection        *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
-	OtelSdks                 *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
-	OtelDistros              *instrumentationrules.OtelDistros                   `json:"otelDistros,omitempty"`
-	CodeAttributes           *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
-	HeadersCollection        *instrumentationrules.HttpHeadersCollection         `json:"headersCollection,omitempty"`
-	TraceConfig              *instrumentationrules.TraceConfig                   `json:"traceConfig,omitempty"`
-	CustomInstrumentations   *instrumentationrules.CustomInstrumentations        `json:"customInstrumentations,omitempty"`
-	IgnoreHealthChecks       *instrumentationrules.IgnoreHealthChecks            `json:"ignoreHealthChecks,omitempty"`
+	RuleName                     *string                                             `json:"ruleName,omitempty"`
+	Notes                        *string                                             `json:"notes,omitempty"`
+	Disabled                     *bool                                               `json:"disabled,omitempty"`
+	Workloads                    *[]k8sconsts.PodWorkload                            `json:"workloads,omitempty"`
+	InstrumentationLibraries     *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
+	PayloadCollection            *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
+	OtelSdks                     *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
+	OtelDistros                  *instrumentationrules.OtelDistros                   `json:"otelDistros,omitempty"`
+	CodeAttributes               *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
+	HeadersCollection            *instrumentationrules.HttpHeadersCollection         `json:"headersCollection,omitempty"`
+	TraceConfig                  *instrumentationrules.TraceConfig                   `json:"traceConfig,omitempty"`
+	CustomInstrumentations       *instrumentationrules.CustomInstrumentations        `json:"customInstrumentations,omitempty"`
+	IgnoreHealthChecks           *instrumentationrules.IgnoreHealthChecks            `json:"ignoreHealthChecks,omitempty"`
+	HeadSamplingFallbackFraction *instrumentationrules.HeadSamplingFallbackFraction  `json:"headSamplingFallbackFraction,omitempty"`
 }
 
 // InstrumentationRuleSpecApplyConfiguration constructs a declarative configuration of the InstrumentationRuleSpec type for use with
@@ -159,5 +160,13 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithCustomInstrumentations(v
 // If called multiple times, the IgnoreHealthChecks field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithIgnoreHealthChecks(value instrumentationrules.IgnoreHealthChecks) *InstrumentationRuleSpecApplyConfiguration {
 	b.IgnoreHealthChecks = &value
+	return b
+}
+
+// WithHeadSamplingFallbackFraction sets the HeadSamplingFallbackFraction field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HeadSamplingFallbackFraction field is set to the value of the last call.
+func (b *InstrumentationRuleSpecApplyConfiguration) WithHeadSamplingFallbackFraction(value instrumentationrules.HeadSamplingFallbackFraction) *InstrumentationRuleSpecApplyConfiguration {
+	b.HeadSamplingFallbackFraction = &value
 	return b
 }
