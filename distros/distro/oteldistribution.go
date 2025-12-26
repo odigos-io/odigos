@@ -138,6 +138,24 @@ type AgentMetrics struct {
 	SpanMetrics *SpanMetrics `yaml:"spanMetrics,omitempty"`
 }
 
+type HeadSampling struct {
+	// if true, the distro supports head sampling for health checks.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type HeadersCollection struct {
+	// if true, the distro supports headers collection for health checks.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type Traces struct {
+	// if set, the distro supports head sampling based on root spans of traces.
+	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
+
+	// if set, the distro supports headers collection for http headers.
+	HeadersCollection *HeadersCollection `yaml:"headersCollection,omitempty"`
+}
+
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
 // including instrumentations, SDKs, and other components that are distributed together.
 // Each distribution includes a unique name, and metadata about the ways it is implemented.
@@ -182,4 +200,6 @@ type OtelDistro struct {
 
 	// document support for metrics produced directly from the runtime
 	AgentMetrics *AgentMetrics `yaml:"agentMetrics,omitempty"`
+
+	Traces *Traces `yaml:"traces,omitempty"`
 }

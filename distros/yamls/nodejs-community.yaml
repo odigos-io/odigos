@@ -24,3 +24,8 @@ spec:
     device: 'instrumentation.odigos.io/generic'
     k8sAttrsViaEnvVars: true
     ldPreloadInjectionSupported: true
+  traces:
+    headSampling:
+      supported: true
+    headersCollection:
+      supported: true
