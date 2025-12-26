@@ -320,6 +320,11 @@ type AgentTracesConfig struct {
 
 	// Configuration for headers collection. If not specified, no headers will be collected.
 	HeadersCollection *HeadersCollectionConfig `json:"headersCollection,omitempty"`
+
+	// HeadSamplingConfig is a set sampling rules.
+	// This config currently only applies to root spans.
+	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
+	HeadSampling *HeadSamplingConfig `json:"headSampling,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
