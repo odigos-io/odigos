@@ -357,8 +357,8 @@ func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
 	return sel, nil
 }
 
-// crashLoopBackOffDuration returns how long the supplied workload
-// (Deployment, StatefulSet, or DaemonSet) has been in *CrashLoopBackOff*.
+// podBackOffDuration returns how long the supplied workload
+// (Deployment, StatefulSet, or DaemonSet) has been in CrashLoopBackOff or ImagePullBackOff.
 //
 // It inspects all Pods selected by the workload's label selector:
 //
@@ -373,7 +373,7 @@ func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
 func podBackOffDuration(ctx context.Context, c client.Client, obj client.Object) (podBackOffInfo, error) {
 	sel, err := instrumentedPodsSelector(obj)
 	if err != nil {
-		return podBackOffInfo{}, err
+		return podBackOffInfo{}, fmt.Errorf("podBackOffDuration: invalid selector: %w", err)
 	}
 
 	// 2. List matching Pods once (single API call for both checks).
@@ -423,7 +423,7 @@ func podBackOffDuration(ctx context.Context, c client.Client, obj client.Object)
 func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
 	sel, err := instrumentedPodsSelector(obj)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("workloadHasOdigosAgents: invalid selector: %w", err)
 	}
 
 	var pods corev1.PodList
