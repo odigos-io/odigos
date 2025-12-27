@@ -116,16 +116,27 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 			return nil
 		}
 
+		// support for old http semantic conventions in nodejs.
+		// TODO: remove this once all migrates to new semantic conventions.
+		urlPathAttributeKey := "url.path"
+		if distro.Traces.HeadSampling.UrlPathAttributeKey != "" {
+			urlPathAttributeKey = distro.Traces.HeadSampling.UrlPathAttributeKey
+		}
+		httpRequestMethodAttributeKey := "http.request.method"
+		if distro.Traces.HeadSampling.HttpRequestMethodAttributeKey != "" {
+			httpRequestMethodAttributeKey = distro.Traces.HeadSampling.HttpRequestMethodAttributeKey
+		}
+
 		for path := range healthCheckPathsHttpGet {
 			headSamplingRules = append(headSamplingRules, odigosv1.AttributesAndSamplerRule{
 				AttributeConditions: []odigosv1.AttributeCondition{
 					{
-						Key:      "http.target", // this works for nodejs, if extended, need to check compatibility
+						Key:      urlPathAttributeKey,
 						Val:      path,
 						Operator: odigosv1.Equals,
 					},
 					{
-						Key:      "http.method",
+						Key:      httpRequestMethodAttributeKey,
 						Val:      "GET",
 						Operator: odigosv1.Equals,
 					},

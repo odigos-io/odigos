@@ -27,5 +27,7 @@ spec:
   traces:
     headSampling:
       supported: true
+      urlPathAttributeKey: "http.target"
+      httpRequestMethodAttributeKey: "http.method"
     headersCollection:
       supported: true
