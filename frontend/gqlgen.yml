@@ -112,3 +112,8 @@ models:
     fields:
       workloadOdigosHealthStatus:
         resolver: true
+  
+  Query:
+    fields:
+      recommendations:
+        resolver: true
