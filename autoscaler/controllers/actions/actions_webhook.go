@@ -158,8 +158,13 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 			samplerFields[path] = action.Spec.Samplers.ProbabilisticSampler
 		}
 		if action.Spec.Samplers.IgnoreHealthChecks != nil {
-			path := field.NewPath("spec").Child("samplers").Child("ignoreHealthChecks")
-			samplerFields[path] = action.Spec.Samplers.IgnoreHealthChecks
+			// check if the ignore health checks fraction is in range 0-1
+			if action.Spec.Samplers.IgnoreHealthChecks.FractionToRecord < 0 || action.Spec.Samplers.IgnoreHealthChecks.FractionToRecord > 1 {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers").Child("ignoreHealthChecks").Child("fractionToRecord"), action.Spec.Samplers.IgnoreHealthChecks.FractionToRecord, "fractionToRecord must be in range 0-1"))
+			} else {
+				path := field.NewPath("spec").Child("samplers").Child("ignoreHealthChecks")
+				samplerFields[path] = action.Spec.Samplers.IgnoreHealthChecks
+			}
 		}
 		if len(samplerFields) == 0 {
 			allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("samplers"), samplerFields, fmt.Sprintf("At least one of (%s) must be set", strings.Join(validSamplerFields, ", "))))
