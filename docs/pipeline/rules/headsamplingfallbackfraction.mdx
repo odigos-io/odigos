@@ -1,14 +1,14 @@
 ---
-title: "HeadSamplingFallbackFraction"
-description: "The \"HeadSamplingFallbackFraction\" rule allows you to configure the general fraction of traces to record when none of the head sampling rules evaluate to true. This can help reduce costs for very noisy and heavy traffic services."
-sidebarTitle: "HeadSamplingFallbackFraction"
+title: "Head Sampling Fallback Fraction"
+description: "The \"Head Sampling Fallback Fraction\" rule allows you to configure the general fraction of traces to record when none of the head sampling rules evaluate to true. This can help reduce costs for very noisy and heavy traffic services."
+sidebarTitle: "Head Sampling Fallback Fraction"
 icon: "chart-line"
 ---
 
 ## Considerations
 
 <Warning>
-  Before configuring **HeadSamplingFallbackFraction**, please note the following:
+  Before configuring **Head Sampling Fallback Fraction**, please note the following:
   - This rule applies to traces that don't match any specific head sampling rules (e.g., health checks)
   - Traces will be dropped regardless of their attributes, errors, or importance
   - Setting a low fraction can significantly reduce trace volume and costs, but may also drop important traces
