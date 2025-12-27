@@ -495,7 +495,7 @@ type AttributesAndSamplerRule struct {
 //
 // If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.
 type HeadSamplingConfig struct {
-	AttributesAndSamplerRules []AttributesAndSamplerRule `json:"attributesAndSamplerRules"`
+	AttributesAndSamplerRules []AttributesAndSamplerRule `json:"attributesAndSamplerRules,omitempty"`
 	// Used as a fallback if all rules evaluate to false,
 	// it may be empty - in this case the default value will be 1 - all spans are sampled.
 	// it should be a float value in the range [0, 1] - the fraction of spans to sample.

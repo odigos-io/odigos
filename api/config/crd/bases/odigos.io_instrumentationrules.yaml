@@ -151,20 +151,6 @@ spec:
                       type: string
                     type: array
                 type: object
-              ignoreHealthChecks:
-                description: Configure to sample out health checks from traceing
-                properties:
-                  fractionToRecord:
-                    default: 0
-                    description: |-
-                      How many health checks traces to record
-                      should be in range [0, 1]
-                      0 (default) means no health checks traces will be recorded
-                      1 means all health checks traces will be recorded
-                    maximum: 1
-                    minimum: 0
-                    type: number
-                type: object
               instrumentationLibraries:
                 description: |-
                   For fine grained control, the user can specify the instrumentation library to use.

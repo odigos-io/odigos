@@ -1363,11 +1363,6 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 		*out = new(instrumentationrules.CustomInstrumentations)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.IgnoreHealthChecks != nil {
-		in, out := &in.IgnoreHealthChecks, &out.IgnoreHealthChecks
-		*out = new(instrumentationrules.IgnoreHealthChecks)
-		**out = **in
-	}
 	if in.HeadSamplingFallbackFraction != nil {
 		in, out := &in.HeadSamplingFallbackFraction, &out.HeadSamplingFallbackFraction
 		*out = new(instrumentationrules.HeadSamplingFallbackFraction)

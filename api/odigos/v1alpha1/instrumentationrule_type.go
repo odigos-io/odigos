@@ -84,9 +84,6 @@ type InstrumentationRuleSpec struct {
 	// Add custom instrumentation probes
 	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
 
-	// Configure to sample out health checks from traceing
-	IgnoreHealthChecks *instrumentationrules.IgnoreHealthChecks `json:"ignoreHealthChecks,omitempty"`
-
 	// Configure general fraction of traces to record if none of the rules evaluate to true.
 	// this can help in reducing very noisy and heavy traffic services.
 	// note that traces will be dropped regardless of thier attributes/errors/importance.

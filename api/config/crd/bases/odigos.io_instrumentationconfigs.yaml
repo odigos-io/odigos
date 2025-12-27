@@ -231,7 +231,6 @@ spec:
                                 a value of 0 means no spans are sampled if none of the rules evaluate to true.
                               type: number
                           required:
-                          - attributesAndSamplerRules
                           - fallbackFraction
                           type: object
                         headersCollection:
@@ -551,7 +550,6 @@ spec:
                             a value of 0 means no spans are sampled if none of the rules evaluate to true.
                           type: number
                       required:
-                      - attributesAndSamplerRules
                       - fallbackFraction
                       type: object
                     headersCollection:

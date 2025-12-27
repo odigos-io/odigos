@@ -18,7 +18,6 @@ func (o AgentInjectionRelevantRulesPredicate) Create(e event.CreateEvent) bool {
 		instrumentationRule.Spec.OtelDistros != nil ||
 		instrumentationRule.Spec.HeadersCollection != nil ||
 		instrumentationRule.Spec.TraceConfig != nil ||
-		instrumentationRule.Spec.IgnoreHealthChecks != nil ||
 		instrumentationRule.Spec.HeadSamplingFallbackFraction != nil
 }
 
@@ -35,7 +34,6 @@ func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
 		old.Spec.OtelDistros != nil || new.Spec.OtelDistros != nil ||
 		old.Spec.TraceConfig != nil || new.Spec.TraceConfig != nil ||
 		old.Spec.HeadersCollection != nil || new.Spec.HeadersCollection != nil ||
-		old.Spec.IgnoreHealthChecks != nil || new.Spec.IgnoreHealthChecks != nil ||
 		old.Spec.HeadSamplingFallbackFraction != nil || new.Spec.HeadSamplingFallbackFraction != nil
 }
 
@@ -50,7 +48,6 @@ func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
 		instrumentationRule.Spec.OtelDistros != nil ||
 		instrumentationRule.Spec.TraceConfig != nil ||
 		instrumentationRule.Spec.HeadersCollection != nil ||
-		instrumentationRule.Spec.IgnoreHealthChecks != nil ||
 		instrumentationRule.Spec.HeadSamplingFallbackFraction != nil
 }
 

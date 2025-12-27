@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -15,6 +16,7 @@ func CalculateTracesConfig(
 	effectiveConfig *common.OdigosConfiguration,
 	containerName string,
 	urlTemplatizationConfig *odigosv1.UrlTemplatizationConfig,
+	ignoreHealthChecks []actionsv1.IgnoreHealthChecksConfig,
 	irls *[]odigosv1.InstrumentationRule,
 	workloadObj workload.Workload,
 	distro *distro.OtelDistro) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
@@ -46,7 +48,7 @@ func CalculateTracesConfig(
 
 	tracesConfig.UrlTemplatization = urlTemplatizationConfig
 	tracesConfig.HeadersCollection = calculateHeaderCollectionConfig(distro, irls)
-	tracesConfig.HeadSampling = calculateHeadSamplingConfig(distro, workloadObj, containerName, irls)
+	tracesConfig.HeadSampling = calculateHeadSamplingConfig(distro, workloadObj, containerName, irls, ignoreHealthChecks)
 
 	return tracesConfig, nil
 }
@@ -73,7 +75,7 @@ func calculateHeaderCollectionConfig(distro *distro.OtelDistro, irls *[]odigosv1
 	}
 }
 
-func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, irls *[]odigosv1.InstrumentationRule) *odigosv1.HeadSamplingConfig {
+func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, irls *[]odigosv1.InstrumentationRule, ignoreHealthChecks []actionsv1.IgnoreHealthChecksConfig) *odigosv1.HeadSamplingConfig {
 
 	// only calculate head sampling config if the distro supports it
 	if distro.Traces == nil || distro.Traces.HeadSampling == nil || !distro.Traces.HeadSampling.Supported {
@@ -87,7 +89,7 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 	}
 
 	// check if there are any rules to ignore health checks
-	healthCheckFraction, headSamplingFallbackFraction := calculateIgnoreHeadSamplingFractions(irls)
+	healthCheckFraction, headSamplingFallbackFraction := calculateHeadSamplingFractions(irls, ignoreHealthChecks)
 	fallbackFractionSet := headSamplingFallbackFraction != nil && *headSamplingFallbackFraction != 1
 	if healthCheckFraction == nil && !fallbackFractionSet {
 		return nil
@@ -147,19 +149,24 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 
 // calculate the max fraction to record for health checks and the max fraction to keep for head sampling fallback from all the rules
 // return nil if no rules to ignore health checks
-func calculateIgnoreHeadSamplingFractions(irls *[]odigosv1.InstrumentationRule) (*float64, *float64) {
+func calculateHeadSamplingFractions(irls *[]odigosv1.InstrumentationRule, ignoreHealthChecks []actionsv1.IgnoreHealthChecksConfig) (*float64, *float64) {
+
+	// take the max fraction to record for health checks
 	var healthCheckFraction *float64
+	for _, ignoreHealthCheck := range ignoreHealthChecks {
+		if healthCheckFraction == nil {
+			healthCheckFraction = &ignoreHealthCheck.FractionToRecord
+		} else if *healthCheckFraction < ignoreHealthCheck.FractionToRecord {
+			healthCheckFraction = &ignoreHealthCheck.FractionToRecord
+		}
+	}
+	if healthCheckFraction != nil {
+		*healthCheckFraction = limitFractionToRange(*healthCheckFraction)
+	}
+
+	// take the max fraction to keep for head sampling fallback
 	var headSamplingFallbackFraction *float64
 	for _, irl := range *irls {
-		// take the max fraction to record for health checks
-		if irl.Spec.IgnoreHealthChecks != nil {
-			if healthCheckFraction == nil {
-				healthCheckFraction = &irl.Spec.IgnoreHealthChecks.FractionToRecord
-			} else if *healthCheckFraction < irl.Spec.IgnoreHealthChecks.FractionToRecord {
-				healthCheckFraction = &irl.Spec.IgnoreHealthChecks.FractionToRecord
-			}
-		}
-		// take the max fraction to keep for head sampling fallback
 		if irl.Spec.HeadSamplingFallbackFraction != nil {
 			if headSamplingFallbackFraction == nil {
 				headSamplingFallbackFraction = &irl.Spec.HeadSamplingFallbackFraction.FractionToKeep
@@ -168,20 +175,18 @@ func calculateIgnoreHeadSamplingFractions(irls *[]odigosv1.InstrumentationRule) 
 			}
 		}
 	}
-	// make sure the health check fraction is in range [0, 1]
-	if healthCheckFraction != nil {
-		if *healthCheckFraction < 0 {
-			*healthCheckFraction = 0
-		} else if *healthCheckFraction > 1 {
-			*healthCheckFraction = 1
-		}
-	}
 	if headSamplingFallbackFraction != nil {
-		if *headSamplingFallbackFraction < 0 {
-			*headSamplingFallbackFraction = 0
-		} else if *headSamplingFallbackFraction > 1 {
-			*headSamplingFallbackFraction = 1
-		}
+		*headSamplingFallbackFraction = limitFractionToRange(*headSamplingFallbackFraction)
 	}
+
 	return healthCheckFraction, headSamplingFallbackFraction
+}
+
+func limitFractionToRange(fraction float64) float64 {
+	if fraction < 0 {
+		return 0
+	} else if fraction > 1 {
+		return 1
+	}
+	return fraction
 }
