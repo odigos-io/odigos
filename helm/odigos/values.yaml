@@ -669,3 +669,22 @@ ownTelemetry:
   metricsStore:
     # set to true to disable the odigos victoriametrics own metrics store
     disabled: true
+
+recommendations:
+
+  ## health check traces are typically high-frequency, low-value traces that can clutter your trace data and increase costs.
+  ## odigos can automatically discover and drop them from collection, where the agent supports it.
+  ## the ignore health checks recommendation is enabled by default, unless disabled by the user.
+  ignoreHealthChecks: 
+
+    ## set to true to disable the ignore health checks recommendation
+    ## this option will collect all health check traces by default.
+    # disabled: true
+
+    ## set the fraction of health check traces to record.
+    ## valid range is 0 to 1.
+    ## 0 means no health check traces will be recorded.
+    ## 1 means all health check traces will be recorded.
+    ## default is 0.
+    ## recommended values to record few health check traces are: 0.1, 0.01, 0.001. (10%, 1%, 0.1%)
+    # fractionToRecord: 0.01
