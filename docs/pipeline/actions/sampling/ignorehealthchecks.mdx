@@ -10,19 +10,19 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 <BetaWarning />
 
+This action will reduce the collected traces by dropping traces for kubernetes health checks. 
+Helps to reduce cost and noise by filtering out "uninteresting" traces with low value and high volume.
+
 ## Considerations
 
-<Warning>
-  Before configuring **Ignore Health Checks**, please note the following:
-  - Supports only traces.
-  - Health checks are typically high-frequency operations that can generate a large volume of traces
-  - Recording all health check traces can significantly increase the cost of processing, storing and analyzing traces
-  - Health check traces usually don't provide valuable debugging or monitoring insights
-  - This action is a `global` action, meaning it applies to all traces in the system without filtering for specific services or endpoints
-  - Health checks are sampled at the agent level (head sampling) before traces are pushed into the collector pipeline, regardless of any other sampling configuration
-  - This feature has limited support level based on the agent support
-  - Health check paths are auto-discoverabel - taken from k8s manifest pod spec probe definitions
-</Warning>
+- Supports only traces.
+- Health checks are typically high-frequency operations that can generate a large volume of traces
+- Recording all health check traces can significantly increase the cost of processing, storing and analyzing traces
+- Health check traces usually don't provide valuable debugging or monitoring insights
+- This action is a `global` action, meaning it applies to all traces in the system without filtering for specific services or endpoints
+- Health checks are sampled at the agent level (head sampling) before traces are pushed into the collector pipeline, regardless of any other sampling configuration
+- This feature has limited support level based on the agent support
+- Health check paths are auto-discoverabel - taken from k8s manifest pod spec probe definitions
 
 ## Use Cases
 
