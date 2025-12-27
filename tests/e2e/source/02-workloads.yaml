@@ -22,7 +22,8 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  generation: 3
+# no restart required for go instrumentation
+  generation: 1
   name: membership
   namespace: default
 ---

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
@@ -18,11 +18,31 @@ import (
 // It can be used to group processes by their associated workloads and to determine
 // the appropriate OpenTelemetry distribution for instrumentation.
 type K8sProcessDetails struct {
-	pod           *corev1.Pod
-	containerName string
-	distro        *distro.OtelDistro
-	pw            *k8sconsts.PodWorkload
-	procEvent     detector.ProcessEvent
+	Pod           *corev1.Pod
+	ContainerName string
+	Distro        *distro.OtelDistro
+	Pw            *k8sconsts.PodWorkload
+	ProcEvent     detector.ProcessEvent
+}
+
+func (kd K8sProcessDetails) String() string {
+	podName := "<nil>"
+	namespace := "<nil>"
+	if kd.Pod != nil {
+		podName = kd.Pod.Name
+		namespace = kd.Pod.Namespace
+	}
+
+	workloadName := "<nil>"
+	if kd.Pw != nil {
+		workloadName = workload.CalculateWorkloadRuntimeObjectName(kd.Pw.Name, kd.Pw.Kind)
+	}
+
+	return fmt.Sprintf("Pod: %s.%s, Container: %s, Workload: %s",
+		podName, namespace,
+		kd.ContainerName,
+		workloadName,
+	)
 }
 
 var _ instrumentation.ProcessDetails[K8sProcessGroup, K8sConfigGroup] = &K8sProcessDetails{}
@@ -46,37 +66,29 @@ type K8sConfigGroup struct {
 	Lang common.ProgrammingLanguage
 }
 
-func (kd *K8sProcessDetails) String() string {
-	return fmt.Sprintf("Pod: %s.%s, Container: %s, Workload: %s",
-		kd.pod.Name, kd.pod.Namespace,
-		kd.containerName,
-		workload.CalculateWorkloadRuntimeObjectName(kd.pw.Name, kd.pw.Kind),
-	)
-}
-
 func (kd *K8sProcessDetails) ConfigGroup(ctx context.Context) (K8sConfigGroup, error) {
-	if kd.pw == nil {
+	if kd.Pw == nil {
 		return K8sConfigGroup{}, errors.New("podWorkload is not provided, cannot resolve config group")
 	}
-	if kd.distro == nil {
+	if kd.Distro == nil {
 		return K8sConfigGroup{}, errors.New("distribution is not provided, cannot resolve config group")
 	}
 	return K8sConfigGroup{
-		Pw:   *kd.pw,
-		Lang: kd.distro.Language,
+		Pw:   *kd.Pw,
+		Lang: kd.Distro.Language,
 	}, nil
 }
 
 func (kd *K8sProcessDetails) Distribution(ctx context.Context) (*distro.OtelDistro, error) {
-	if kd.distro == nil {
+	if kd.Distro == nil {
 		return nil, errors.New("distribution is not provided, cannot resolve config group")
 	}
-	return kd.distro, nil
+	return kd.Distro, nil
 }
 
 func (kd *K8sProcessDetails) ProcessGroup(ctx context.Context) (K8sProcessGroup, error) {
-	if kd.pw == nil {
+	if kd.Pw == nil {
 		return K8sProcessGroup{}, errors.New("podWorkload is not provided, cannot resolve config group")
 	}
-	return K8sProcessGroup{Pw: *kd.pw}, nil
+	return K8sProcessGroup{Pw: *kd.Pw}, nil
 }

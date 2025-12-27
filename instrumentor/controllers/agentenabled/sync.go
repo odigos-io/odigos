@@ -93,7 +93,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw, conf)
+			_, res, err := rollout.Do(ctx, c, nil, pw, conf, distroProvider)
 			return res, err
 		}
 		return ctrl.Result{}, err
@@ -119,7 +119,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	}
 
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, conf)
+	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, conf, distroProvider)
 
 	if rolloutChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
