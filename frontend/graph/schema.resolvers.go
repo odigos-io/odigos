@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
+	"github.com/odigos-io/odigos/frontend/graph/recommendations"
 	"github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -1153,6 +1154,20 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 		})
 	}
 	return sources, nil
+}
+
+// Recommendations is the resolver for the recommendations field.
+func (r *queryResolver) Recommendations(ctx context.Context) ([]*model.Recommendation, error) {
+	recommendationsList := make([]*model.Recommendation, 0)
+
+	recommendation, err := recommendations.IgnoreHealthChecksRecommendation(ctx, r.k8sCacheClient)
+	if err != nil {
+		return nil, err
+	}
+	recommendationsList = append(recommendationsList, recommendation)
+
+	return recommendationsList, nil
+
 }
 
 // RemoteConfig is the resolver for the remoteConfig field.

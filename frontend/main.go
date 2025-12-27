@@ -193,6 +193,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 
 	gqlExecutableSchema := graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
+			CacheClient:     k8sCacheClient,
 			MetricsConsumer: odigosMetrics,
 			Logger:          logger,
 			PromAPI:         promAPI,

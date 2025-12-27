@@ -923,6 +923,9 @@ type Query {
   # get all sources that match the filter
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
 
+  # list of recommendations for best performance and telemetry usability
+  recommendations: [Recommendation!]!
+
   # remote configuration (managed by central-backend and persisted in the odigos-remote-config ConfigMap)
   remoteConfig: RemoteConfig
 }

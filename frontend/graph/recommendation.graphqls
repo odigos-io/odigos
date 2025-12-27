@@ -1,0 +1,40 @@
+enum RecommendationType {
+    IgnoreHealthChecks
+}
+
+enum RecommendationStatus {
+
+    # the recommendation is used
+    Recommended
+
+    # there is a suggestion to apply the recommendation but it is not applied yet.
+    RecommedationSuggestion
+
+    # user rejected the recommendation manually.
+    RecommendationRejected
+
+    # the recommendation is not relevant to odigos in it's current configuration or state.
+    RecommendationIrrelevant
+
+    # indicates that the recommendation is disabled by user settings.
+    RecommendationDisabled
+}
+
+# describes a recommendation for best performance and telemetry usability
+type Recommendation {
+  
+  # which type of recommendation this is.
+  # each recommendation has a unique type which defined what it tracks.
+  type: RecommendationType!
+
+  status: RecommendationStatus!
+
+  # enum value describing the reason for the recommendation status.
+  reasonEnum: String!
+
+  # short human readable message describing the recommendation state.
+  message: String!
+
+  # list of optional suggested actions to take to settle the recommendation.
+  actionItems: [String!]
+}

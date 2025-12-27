@@ -905,6 +905,14 @@ type PodWorkloadInput struct {
 type Query struct {
 }
 
+type Recommendation struct {
+	Type        RecommendationType   `json:"type"`
+	Status      RecommendationStatus `json:"status"`
+	ReasonEnum  string               `json:"reasonEnum"`
+	Message     string               `json:"message"`
+	ActionItems []string             `json:"actionItems,omitempty"`
+}
+
 type RemoteConfig struct {
 	Rollout *RemoteConfigRollout `json:"rollout,omitempty"`
 }
@@ -1065,7 +1073,6 @@ const (
 	ActionTypeLatencySampler        ActionType = "LatencySampler"
 	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
 	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
-	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1080,13 +1087,12 @@ var AllActionType = []ActionType{
 	ActionTypeLatencySampler,
 	ActionTypeServiceNameSampler,
 	ActionTypeSpanAttributeSampler,
-	ActionTypeURLTemplatization,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeUnknownType:
 		return true
 	}
 	return false
@@ -1852,6 +1858,92 @@ func (e *ProgrammingLanguage) UnmarshalGQL(v any) error {
 }
 
 func (e ProgrammingLanguage) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type RecommendationStatus string
+
+const (
+	RecommendationStatusRecommended              RecommendationStatus = "Recommended"
+	RecommendationStatusRecommedationSuggestion  RecommendationStatus = "RecommedationSuggestion"
+	RecommendationStatusRecommendationRejected   RecommendationStatus = "RecommendationRejected"
+	RecommendationStatusRecommendationIrrelevant RecommendationStatus = "RecommendationIrrelevant"
+	RecommendationStatusRecommendationDisabled   RecommendationStatus = "RecommendationDisabled"
+)
+
+var AllRecommendationStatus = []RecommendationStatus{
+	RecommendationStatusRecommended,
+	RecommendationStatusRecommedationSuggestion,
+	RecommendationStatusRecommendationRejected,
+	RecommendationStatusRecommendationIrrelevant,
+	RecommendationStatusRecommendationDisabled,
+}
+
+func (e RecommendationStatus) IsValid() bool {
+	switch e {
+	case RecommendationStatusRecommended, RecommendationStatusRecommedationSuggestion, RecommendationStatusRecommendationRejected, RecommendationStatusRecommendationIrrelevant, RecommendationStatusRecommendationDisabled:
+		return true
+	}
+	return false
+}
+
+func (e RecommendationStatus) String() string {
+	return string(e)
+}
+
+func (e *RecommendationStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RecommendationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RecommendationStatus", str)
+	}
+	return nil
+}
+
+func (e RecommendationStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type RecommendationType string
+
+const (
+	RecommendationTypeIgnoreHealthChecks RecommendationType = "IgnoreHealthChecks"
+)
+
+var AllRecommendationType = []RecommendationType{
+	RecommendationTypeIgnoreHealthChecks,
+}
+
+func (e RecommendationType) IsValid() bool {
+	switch e {
+	case RecommendationTypeIgnoreHealthChecks:
+		return true
+	}
+	return false
+}
+
+func (e RecommendationType) String() string {
+	return string(e)
+}
+
+func (e *RecommendationType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = RecommendationType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid RecommendationType", str)
+	}
+	return nil
+}
+
+func (e RecommendationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
