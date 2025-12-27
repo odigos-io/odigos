@@ -971,4 +971,9 @@ type Mutation {
 
   # remote configuration (managed by central-backend and persisted in the odigos-remote-config ConfigMap)
   updateRemoteConfig(config: RemoteConfigInput!): RemoteConfig
+
+  # apply the ignore health checks recommendation
+  applyIgnoreHealthChecksRecommendation(
+    fractionToRecord: Float
+  ): Boolean!
 }

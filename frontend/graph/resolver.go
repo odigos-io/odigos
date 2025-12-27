@@ -12,7 +12,10 @@ import (
 
 type Resolver struct {
 	// allows the resolver to access the k8s cache client to fetch k8s resources efficiently.
-	k8sCacheClient client.Client
+	K8sCacheClient client.Client
+
+	// odigos namespace name
+	OdigosNamespace string
 
 	MetricsConsumer *collectormetrics.OdigosMetricsConsumer
 	Logger          logr.Logger

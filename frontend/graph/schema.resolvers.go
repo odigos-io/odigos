@@ -8,10 +8,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -29,6 +30,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // APITokens is the resolver for the apiTokens field.
@@ -256,8 +258,8 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 		return nil, err
 	}
 
-	var namespaceSource *v1alpha1.Source
-	sourceObjects := make(map[string]*v1alpha1.Source)
+	var namespaceSource *odigosv1.Source
+	sourceObjects := make(map[string]*odigosv1.Source)
 
 	for _, source := range sourceList.Items {
 		if model.K8sResourceKind(source.Spec.Workload.Kind) == services.WorkloadKindNamespace {
@@ -486,7 +488,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 	lang := patchSourceRequest.Language
 	vers := patchSourceRequest.Version
 	if cont != nil {
-		containerOverrides := make([]v1alpha1.ContainerOverride, 0)
+		containerOverrides := make([]odigosv1.ContainerOverride, 0)
 		// get previous overrides (except the one we are updating)
 		if source.Spec.ContainerOverrides != nil {
 			for _, override := range source.Spec.ContainerOverrides {
@@ -496,7 +498,7 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 			}
 		}
 		// add the new override
-		var overrideRuntimeInfo *v1alpha1.RuntimeDetailsByContainer
+		var overrideRuntimeInfo *odigosv1.RuntimeDetailsByContainer
 		if lang == nil || *lang == "" {
 			overrideRuntimeInfo = nil
 		} else {
@@ -507,13 +509,13 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 				}
 				runtimeVersion = *vers
 			}
-			overrideRuntimeInfo = &v1alpha1.RuntimeDetailsByContainer{
+			overrideRuntimeInfo = &odigosv1.RuntimeDetailsByContainer{
 				ContainerName:  *cont,
 				Language:       common.ProgrammingLanguage(*lang),
 				RuntimeVersion: runtimeVersion,
 			}
 		}
-		containerOverrides = append(containerOverrides, v1alpha1.ContainerOverride{
+		containerOverrides = append(containerOverrides, odigosv1.ContainerOverride{
 			ContainerName: *cont,
 			RuntimeInfo:   overrideRuntimeInfo,
 		})
@@ -567,11 +569,11 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		disabled = *destination.Disabled
 	}
 
-	k8sDestination := v1alpha1.Destination{
+	k8sDestination := odigosv1.Destination{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: generateNamePrefix,
 		},
-		Spec: v1alpha1.DestinationSpec{
+		Spec: odigosv1.DestinationSpec{
 			Type:            destType,
 			DestinationName: destName,
 			Data:            dataField,
@@ -580,7 +582,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		},
 	}
 	if destination.CurrentStreamName != "" {
-		k8sDestination.Spec.SourceSelector = &v1alpha1.SourceSelector{
+		k8sDestination.Spec.SourceSelector = &odigosv1.SourceSelector{
 			DataStreams: []string{destination.CurrentStreamName},
 		}
 	}
@@ -594,7 +596,7 @@ func (r *mutationResolver) CreateNewDestination(ctx context.Context, destination
 		k8sDestination.Spec.SecretRef = secretRef
 	}
 
-	dest, err := services.CreateResourceWithGenerateName(ctx, func() (*v1alpha1.Destination, error) {
+	dest, err := services.CreateResourceWithGenerateName(ctx, func() (*odigosv1.Destination, error) {
 		return kube.DefaultClient.OdigosClient.Destinations(ns).Create(ctx, &k8sDestination, metav1.CreateOptions{})
 	})
 	if err != nil {
@@ -712,7 +714,7 @@ func (r *mutationResolver) UpdateDestination(ctx context.Context, id string, des
 	if destination.CurrentStreamName != "" {
 		// Init empty struct if nil
 		if dest.Spec.SourceSelector == nil {
-			dest.Spec.SourceSelector = &v1alpha1.SourceSelector{DataStreams: make([]string, 0)}
+			dest.Spec.SourceSelector = &odigosv1.SourceSelector{DataStreams: make([]string, 0)}
 		}
 		// Init empty slice if nil
 		if dest.Spec.SourceSelector.DataStreams == nil {
@@ -952,6 +954,17 @@ func (r *mutationResolver) UpdateRemoteConfig(ctx context.Context, config model.
 	return RemoteConfigToModel(updated), nil
 }
 
+// ApplyIgnoreHealthChecksRecommendation is the resolver for the applyIgnoreHealthChecksRecommendation field.
+func (r *mutationResolver) ApplyIgnoreHealthChecksRecommendation(ctx context.Context, fractionToRecord *float64) (bool, error) {
+	odigosNamespace := env.GetCurrentNamespace()
+
+	err := recommendations.ApplyIgnoreHealthChecksRecommendation(ctx, r.K8sCacheClient, odigosNamespace, fractionToRecord)
+	if err != nil {
+		return false, fmt.Errorf("failed to apply ignore health checks recommendation: %w", err)
+	}
+	return true, nil
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
@@ -1160,14 +1173,24 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 func (r *queryResolver) Recommendations(ctx context.Context) ([]*model.Recommendation, error) {
 	recommendationsList := make([]*model.Recommendation, 0)
 
-	recommendation, err := recommendations.IgnoreHealthChecksRecommendation(ctx, r.k8sCacheClient)
+	// fetch the collected signals from cluster collectors group
+	var clusterCollectorGroup odigosv1.CollectorsGroup
+	err := r.K8sCacheClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosClusterCollectorCollectorGroupName}, &clusterCollectorGroup)
 	if err != nil {
-		return nil, err
+		return nil, client.IgnoreNotFound(err)
 	}
-	recommendationsList = append(recommendationsList, recommendation)
+	signals := clusterCollectorGroup.Status.ReceiverSignals
+
+	if slices.Contains(signals, common.TracesObservabilitySignal) {
+		// ignore health checks are only relevant for trace collection.
+		recommendation, err := recommendations.IgnoreHealthChecksRecommendation(ctx, r.K8sCacheClient, env.GetCurrentNamespace())
+		if err != nil {
+			return nil, err
+		}
+		recommendationsList = append(recommendationsList, recommendation)
+	}
 
 	return recommendationsList, nil
-
 }
 
 // RemoteConfig is the resolver for the remoteConfig field.
