@@ -10,8 +10,7 @@ import AssumeNoMeaning from '/snippets/assume-no-meaning.mdx';
 
 <BetaWarning />
 
-This action will reduce the collected traces by dropping traces for kubernetes health checks. 
-Helps to reduce cost and noise by filtering out "uninteresting" traces with low value and high volume.
+This action reduces the volume of collected traces by filtering out Kubernetes health check traces. By eliminating these high-frequency, low-value traces, you can reduce costs and minimize noise in your observability data, allowing you to focus on traces that provide meaningful insights.
 
 ## Considerations
 
@@ -115,10 +114,3 @@ The following example demonstrates how to completely ignore health check traces 
     ```
   </Step>
 </Steps>
-
-## Notes
-
-- Odigos discovers the health check paths to use for head sampling based on the "livenessProbe" and "readinessProbe" declared in your workload specifications. For health checks to be correctly identified and ignored, they must be explicitly defined in the workload spec.
-- Health checks are sampled at the agent level (head sampling) before traces are pushed into the collector pipeline, regardless of any other sampling configuration.
-- Only available in supported agents.
-
