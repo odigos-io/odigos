@@ -300,7 +300,8 @@ func main() {
 
 	// Setup Source cache - this initializes a controller-runtime cache for Source resources
 	// from all namespaces, providing fast read access without hitting the Kubernetes API
-	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
+	odigosNs := env.GetCurrentNamespace()
+	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, odigosNs)
 	if err != nil {
 		log.Fatalf("Error setting up Source cache: %s", err)
 	}
@@ -310,7 +311,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		odigosMetrics.Run(ctx, flags.Namespace)
+		odigosMetrics.Run(ctx, odigosNs)
 	}()
 
 	// Start watchers

@@ -1180,6 +1180,7 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 
 // Recommendations is the resolver for the recommendations field.
 func (r *queryResolver) Recommendations(ctx context.Context) ([]*model.Recommendation, error) {
+	odigosNamespace := env.GetCurrentNamespace()
 	recommendationsList := make([]*model.Recommendation, 0)
 
 	// Get dismissed recommendations
@@ -1190,7 +1191,7 @@ func (r *queryResolver) Recommendations(ctx context.Context) ([]*model.Recommend
 
 	// fetch the collected signals from cluster collectors group
 	var clusterCollectorGroup odigosv1.CollectorsGroup
-	err = r.K8sCacheClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosClusterCollectorCollectorGroupName}, &clusterCollectorGroup)
+	err = r.K8sCacheClient.Get(ctx, client.ObjectKey{Namespace: odigosNamespace, Name: k8sconsts.OdigosClusterCollectorCollectorGroupName}, &clusterCollectorGroup)
 	if err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
@@ -1199,7 +1200,7 @@ func (r *queryResolver) Recommendations(ctx context.Context) ([]*model.Recommend
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		// ignore health checks are only relevant for trace collection.
 		isDismissed := dismissedMap[model.RecommendationTypeIgnoreHealthChecks]
-		recommendation, err := recommendations.IgnoreHealthChecksRecommendation(ctx, r.K8sCacheClient, env.GetCurrentNamespace(), isDismissed)
+		recommendation, err := recommendations.IgnoreHealthChecksRecommendation(ctx, r.K8sCacheClient, odigosNamespace, isDismissed)
 		if err != nil {
 			return nil, err
 		}
