@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -238,6 +239,11 @@ func rolloutRestartWorkload(ctx context.Context, workload client.Object, c clien
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *openshiftappsv1.DeploymentConfig:
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
+	case *argorolloutsv1alpha1.Rollout:
+		// Rollouts use a different field (spec.restartAt) for restarting, so we need to patch it differently
+		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
+		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, ts.Format(time.RFC3339)))
+		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, rolloutPatch))
 	default:
 		return errors.New("unknown kind")
 	}
@@ -307,6 +313,10 @@ func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
 		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
 		selector = &metav1.LabelSelector{
 			MatchLabels: o.Spec.Selector,
+		}
+	case *argorolloutsv1alpha1.Rollout:
+		selector = &metav1.LabelSelector{
+			MatchLabels: o.Spec.Selector.MatchLabels,
 		}
 	default:
 		return nil, fmt.Errorf("crashLoopBackOffDuration: unsupported workload kind %T", obj)

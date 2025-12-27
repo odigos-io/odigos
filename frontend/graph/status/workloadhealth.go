@@ -3,6 +3,7 @@ package status
 import (
 	"fmt"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -357,5 +358,59 @@ func CalculateDeploymentConfigHealthStatus(dcStatus openshiftappsv1.DeploymentCo
 		ReasonEnum: &reasonStr,
 		Status:     model.DesiredStateProgressSuccess,
 		Message:    "All deploymentconfig replicas are available and ready",
+	}
+}
+
+func CalculateRolloutHealthStatus(rolloutStatus argorolloutsv1alpha1.RolloutStatus) *model.DesiredConditionStatus {
+
+	if rolloutStatus.Replicas == 0 {
+		reasonStr := string(WorkloadHealthStatusReasonNoAvailableReplicas)
+		return &model.DesiredConditionStatus{
+			Name:       WorkloadHealthStatus,
+			ReasonEnum: &reasonStr,
+			Status:     model.DesiredStateProgressIrrelevant,
+			Message:    "Argo Rollout has no replicas",
+		}
+	}
+
+	// Check if available replicas match total replicas
+	if rolloutStatus.AvailableReplicas < rolloutStatus.Replicas {
+		reasonStr := string(WorkloadHealthStatusReasonProgressing)
+		return &model.DesiredConditionStatus{
+			Name:       WorkloadHealthStatus,
+			ReasonEnum: &reasonStr,
+			Status:     model.DesiredStateProgressWaiting,
+			Message:    fmt.Sprintf("Argo Rollout has %d/%d available replicas", rolloutStatus.AvailableReplicas, rolloutStatus.Replicas),
+		}
+	}
+
+	// Check if updated replicas match total replicas (for rolling updates)
+	if rolloutStatus.UpdatedReplicas < rolloutStatus.Replicas {
+		reasonStr := string(WorkloadHealthStatusReasonProgressing)
+		return &model.DesiredConditionStatus{
+			Name:       WorkloadHealthStatus,
+			ReasonEnum: &reasonStr,
+			Status:     model.DesiredStateProgressWaiting,
+			Message:    fmt.Sprintf("Argo Rollout has %d/%d updated replicas", rolloutStatus.UpdatedReplicas, rolloutStatus.Replicas),
+		}
+	}
+
+	// Check if ready replicas match total replicas
+	if rolloutStatus.ReadyReplicas < rolloutStatus.Replicas {
+		reasonStr := string(WorkloadHealthStatusReasonProgressing)
+		return &model.DesiredConditionStatus{
+			Name:       WorkloadHealthStatus,
+			ReasonEnum: &reasonStr,
+			Status:     model.DesiredStateProgressWaiting,
+			Message:    fmt.Sprintf("Rollout has %d/%d ready replicas", rolloutStatus.ReadyReplicas, rolloutStatus.Replicas),
+		}
+	}
+
+	reasonStr := string(WorkloadHealthStatusReasonHealthy)
+	return &model.DesiredConditionStatus{
+		Name:       WorkloadHealthStatus,
+		ReasonEnum: &reasonStr,
+		Status:     model.DesiredStateProgressSuccess,
+		Message:    "All Argo Rollout replicas are available and ready",
 	}
 }

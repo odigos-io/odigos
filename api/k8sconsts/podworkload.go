@@ -12,6 +12,7 @@ const (
 	WorkloadKindCronJob          WorkloadKind = "CronJob"
 	WorkloadKindJob              WorkloadKind = "Job"
 	WorkloadKindDeploymentConfig WorkloadKind = "DeploymentConfig"
+	WorkloadKindRollout          WorkloadKind = "Rollout"
 )
 
 // 2. the lower case representation of the workload kind
@@ -26,6 +27,7 @@ const (
 	WorkloadKindLowerCaseCronJob          WorkloadKindLowerCase = "cronjob"
 	WorkloadKindLowerCaseJob              WorkloadKindLowerCase = "job"
 	WorkloadKindLowerCaseDeploymentConfig WorkloadKindLowerCase = "deploymentconfig"
+	WorkloadKindLowerCaseRollout          WorkloadKindLowerCase = "rollout"
 )
 
 // PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.

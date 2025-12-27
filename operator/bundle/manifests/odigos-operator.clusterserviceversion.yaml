@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.8.7
-    createdAt: "2025-11-10T13:38:22Z"
+    createdAt: "2025-12-25T12:06:56Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -198,6 +198,7 @@ spec:
           resources:
           - pods
           verbs:
+          - delete
           - get
           - list
           - watch
@@ -315,6 +316,18 @@ spec:
           - deploymentconfigs
           - deploymentconfigs/finalizers
           verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - argoproj.io
+          resources:
+          - rollouts
+          verbs:
+          - create
+          - delete
           - get
           - list
           - patch

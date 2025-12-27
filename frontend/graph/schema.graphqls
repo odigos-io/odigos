@@ -11,6 +11,7 @@ enum K8sResourceKind {
   ConfigMap
   Pod
   DeploymentConfig
+  Rollout
 }
 
 enum ConditionStatus {

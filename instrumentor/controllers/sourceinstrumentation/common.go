@@ -8,6 +8,7 @@ import (
 	"errors"
 	"regexp"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -44,6 +45,7 @@ func syncNamespaceWorkloads(
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindCronJob,
 		k8sconsts.WorkloadKindDeploymentConfig,
+		k8sconsts.WorkloadKindRollout,
 	} {
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
@@ -101,6 +103,14 @@ func syncNamespaceWorkloads(
 					Name:      dc.GetName(),
 					Namespace: dc.GetNamespace(),
 					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+				})
+			}
+		case *argorolloutsv1alpha1.RolloutList:
+			for _, dc := range obj.Items {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      dc.GetName(),
+					Namespace: dc.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindRollout,
 				})
 			}
 		}
@@ -197,6 +207,16 @@ func syncRegexSourceWorkloads(
 					Name:      dc.GetName(),
 					Namespace: dc.GetNamespace(),
 					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+				})
+			}
+		}
+	case *argorolloutsv1alpha1.RolloutList:
+		for _, rollout := range obj.Items {
+			if regex.MatchString(rollout.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      rollout.GetName(),
+					Namespace: rollout.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindRollout,
 				})
 			}
 		}
