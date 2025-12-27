@@ -620,6 +620,7 @@ type ComplexityRoot struct {
 		DeleteDataStream                      func(childComplexity int, id string) int
 		DeleteDestination                     func(childComplexity int, id string, currentStreamName string) int
 		DeleteInstrumentationRule             func(childComplexity int, ruleID string) int
+		DismissRecommendation                 func(childComplexity int, typeArg model.RecommendationType) int
 		PauseOdigos                           func(childComplexity int) int
 		PersistK8sNamespaces                  func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
 		PersistK8sSources                     func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
@@ -959,6 +960,7 @@ type MutationResolver interface {
 	DeleteCentralProxy(ctx context.Context) (bool, error)
 	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (*model.RemoteConfig, error)
 	ApplyIgnoreHealthChecksRecommendation(ctx context.Context, fractionToRecord *float64) (bool, error)
+	DismissRecommendation(ctx context.Context, typeArg model.RecommendationType) (bool, error)
 	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 }
 type QueryResolver interface {
@@ -3524,6 +3526,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteInstrumentationRule(childComplexity, args["ruleId"].(string)), true
 
+	case "Mutation.dismissRecommendation":
+		if e.complexity.Mutation.DismissRecommendation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_dismissRecommendation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DismissRecommendation(childComplexity, args["type"].(model.RecommendationType)), true
+
 	case "Mutation.pauseOdigos":
 		if e.complexity.Mutation.PauseOdigos == nil {
 			break
@@ -5288,6 +5302,34 @@ func (ec *executionContext) field_Mutation_deleteInstrumentationRule_argsRuleID(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_dismissRecommendation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_dismissRecommendation_argsType(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["type"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_dismissRecommendation_argsType(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.RecommendationType, error) {
+	if _, ok := rawArgs["type"]; !ok {
+		var zeroVal model.RecommendationType
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+	if tmp, ok := rawArgs["type"]; ok {
+		return ec.unmarshalNRecommendationType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRecommendationType(ctx, tmp)
+	}
+
+	var zeroVal model.RecommendationType
 	return zeroVal, nil
 }
 
@@ -23586,6 +23628,61 @@ func (ec *executionContext) fieldContext_Mutation_applyIgnoreHealthChecksRecomme
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_dismissRecommendation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_dismissRecommendation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DismissRecommendation(rctx, fc.Args["type"].(model.RecommendationType))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_dismissRecommendation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_dismissRecommendation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_restartPod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_restartPod(ctx, field)
 	if err != nil {
@@ -39702,6 +39799,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "applyIgnoreHealthChecksRecommendation":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_applyIgnoreHealthChecksRecommendation(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "dismissRecommendation":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_dismissRecommendation(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

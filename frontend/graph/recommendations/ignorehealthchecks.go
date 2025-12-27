@@ -16,11 +16,12 @@ type IgnoreHealthChecksReason string
 const (
 	IgnoreHealthChecksReasonActionExists   IgnoreHealthChecksReason = "ActionExists"
 	IgnoreHealthChecksReasonActionNotFound IgnoreHealthChecksReason = "ActionNotFound"
+	IgnoreHealthChecksReasonUserDismissed  IgnoreHealthChecksReason = "UserDismissed"
 )
 
 const AtuoIgnoreHealthChecksRecommendationActionName = "ignore-health-checks"
 
-func IgnoreHealthChecksRecommendation(ctx context.Context, cacheClient client.Client, odigosNamespace string) (*model.Recommendation, error) {
+func IgnoreHealthChecksRecommendation(ctx context.Context, cacheClient client.Client, odigosNamespace string, isDismissed bool) (*model.Recommendation, error) {
 
 	// check if there is any "ignore health checks" action in the cluster
 	actionList := &odigosv1.ActionList{}
@@ -40,11 +41,28 @@ func IgnoreHealthChecksRecommendation(ctx context.Context, cacheClient client.Cl
 		}
 	}
 
-	if !foundIgnoreHealthChecksAction {
-		return ignoredHealthCheckActionNotFound(), nil
+	if foundIgnoreHealthChecksAction {
+		return ignoredHealthCheckActionFound(), nil
 	}
 
-	return ignoredHealthCheckActionFound(), nil
+	// If dismissed, return rejected status
+	if isDismissed {
+		return ignoredHealthCheckActionDismissed(), nil
+	}
+
+	return ignoredHealthCheckActionNotFound(), nil
+}
+
+func ignoredHealthCheckActionDismissed() *model.Recommendation {
+	return &model.Recommendation{
+		Type:       model.RecommendationTypeIgnoreHealthChecks,
+		Status:     model.RecommendationStatusRecommendationRejected,
+		ReasonEnum: string(IgnoreHealthChecksReasonUserDismissed),
+		Message:    "this recommendation was dismissed by the user",
+		ActionItems: []string{
+			"reapply the recommendation to ignore health-check traces",
+		},
+	}
 }
 
 func ignoredHealthCheckActionFound() *model.Recommendation {

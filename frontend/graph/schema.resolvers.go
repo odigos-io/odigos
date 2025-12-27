@@ -965,6 +965,15 @@ func (r *mutationResolver) ApplyIgnoreHealthChecksRecommendation(ctx context.Con
 	return true, nil
 }
 
+// DismissRecommendation is the resolver for the dismissRecommendation field.
+func (r *mutationResolver) DismissRecommendation(ctx context.Context, typeArg model.RecommendationType) (bool, error) {
+	err := services.DismissRecommendation(ctx, typeArg)
+	if err != nil {
+		return false, fmt.Errorf("failed to dismiss recommendation: %w", err)
+	}
+	return true, nil
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
@@ -1173,9 +1182,15 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 func (r *queryResolver) Recommendations(ctx context.Context) ([]*model.Recommendation, error) {
 	recommendationsList := make([]*model.Recommendation, 0)
 
+	// Get dismissed recommendations
+	dismissedMap, err := services.GetDismissedRecommendations(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get dismissed recommendations: %w", err)
+	}
+
 	// fetch the collected signals from cluster collectors group
 	var clusterCollectorGroup odigosv1.CollectorsGroup
-	err := r.K8sCacheClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosClusterCollectorCollectorGroupName}, &clusterCollectorGroup)
+	err = r.K8sCacheClient.Get(ctx, client.ObjectKey{Namespace: env.GetCurrentNamespace(), Name: k8sconsts.OdigosClusterCollectorCollectorGroupName}, &clusterCollectorGroup)
 	if err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
@@ -1183,7 +1198,8 @@ func (r *queryResolver) Recommendations(ctx context.Context) ([]*model.Recommend
 
 	if slices.Contains(signals, common.TracesObservabilitySignal) {
 		// ignore health checks are only relevant for trace collection.
-		recommendation, err := recommendations.IgnoreHealthChecksRecommendation(ctx, r.K8sCacheClient, env.GetCurrentNamespace())
+		isDismissed := dismissedMap[model.RecommendationTypeIgnoreHealthChecks]
+		recommendation, err := recommendations.IgnoreHealthChecksRecommendation(ctx, r.K8sCacheClient, env.GetCurrentNamespace(), isDismissed)
 		if err != nil {
 			return nil, err
 		}

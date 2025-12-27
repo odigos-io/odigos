@@ -976,4 +976,9 @@ type Mutation {
   applyIgnoreHealthChecksRecommendation(
     fractionToRecord: Float
   ): Boolean!
+
+  # dismiss a recommendation by type
+  dismissRecommendation(
+    type: RecommendationType!
+  ): Boolean!
 }
