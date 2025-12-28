@@ -1,5 +1,22 @@
 package k8sconsts
 
+import "k8s.io/apimachinery/pkg/runtime/schema"
+
+// GroupVersionKind constants for external workload types.
+// These can be used to check resource availability in clusters.
+var (
+	DeploymentConfigGVK = schema.GroupVersionKind{
+		Group:   "apps.openshift.io",
+		Version: "v1",
+		Kind:    string(WorkloadKindDeploymentConfig),
+	}
+	ArgoRolloutGVK = schema.GroupVersionKind{
+		Group:   "argoproj.io",
+		Version: "v1alpha1",
+		Kind:    string(WorkloadKindArgoRollout),
+	}
+)
+
 // 1. the pascal case representation of the workload kind
 // it is used in k8s api objects as the `Kind` field.
 type WorkloadKind string
@@ -12,7 +29,11 @@ const (
 	WorkloadKindCronJob          WorkloadKind = "CronJob"
 	WorkloadKindJob              WorkloadKind = "Job"
 	WorkloadKindDeploymentConfig WorkloadKind = "DeploymentConfig"
-	WorkloadKindRollout          WorkloadKind = "Rollout"
+	// Note: The actual Kubernetes resource has kind "Rollout" (not "ArgoRollout"):
+	//   apiVersion: argoproj.io/v1alpha1
+	//   kind: Rollout
+	// We use "ArgoRollout" in the variable name to distinguish it from other rollout concepts.
+	WorkloadKindArgoRollout WorkloadKind = "Rollout"
 )
 
 // 2. the lower case representation of the workload kind
@@ -27,7 +48,7 @@ const (
 	WorkloadKindLowerCaseCronJob          WorkloadKindLowerCase = "cronjob"
 	WorkloadKindLowerCaseJob              WorkloadKindLowerCase = "job"
 	WorkloadKindLowerCaseDeploymentConfig WorkloadKindLowerCase = "deploymentconfig"
-	WorkloadKindLowerCaseRollout          WorkloadKindLowerCase = "rollout"
+	WorkloadKindLowerCaseArgoRollout      WorkloadKindLowerCase = "rollout"
 )
 
 // PodWorkload represents the higher-level controller managing a specific Pod within a Kubernetes cluster.

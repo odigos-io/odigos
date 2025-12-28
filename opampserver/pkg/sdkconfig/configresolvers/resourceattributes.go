@@ -3,6 +3,7 @@ package configresolvers
 import (
 	"errors"
 
+	"github.com/odigos-io/odigos/common/consts"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
@@ -67,7 +68,7 @@ func CalculateServerAttributes(k8sAttributes *K8sResourceAttributes, nodeName st
 		objectNameKey = string(semconv.K8SCronJobNameKey)
 	case "Rollout":
 		// Argo Rollout - use custom key with argoproj prefix since it's an Argo-specific resource
-		objectNameKey = "k8s.argoproj.rollout.name"
+		objectNameKey = consts.K8SArgoRolloutNameAttribute
 	default:
 		return serverOfferResourceAttributes, errors.New("unsupported workload kind")
 	}

@@ -39,7 +39,12 @@ const (
 	WorkloadKindDaemonSet        model.K8sResourceKind = "DaemonSet"
 	WorkloadKindCronJob          model.K8sResourceKind = "CronJob"
 	WorkloadKindDeploymentConfig model.K8sResourceKind = "DeploymentConfig"
-	WorkloadKindRollout          model.K8sResourceKind = "Rollout"
+	// WorkloadKindArgoRollout represents Argo Rollouts workload.
+	// Note: The actual Kubernetes resource has kind "Rollout" (not "ArgoRollout"):
+	//   apiVersion: argoproj.io/v1alpha1
+	//   kind: Rollout
+	// We use "ArgoRollout" in the variable name to distinguish it from other rollout concepts.
+	WorkloadKindArgoRollout model.K8sResourceKind = "Rollout"
 )
 
 type InstanceCounts struct {
@@ -307,7 +312,7 @@ func getRollouts(ctx context.Context, namespace corev1.Namespace) ([]model.K8sAc
 		response = append(response, model.K8sActualSource{
 			Namespace:         rollout.Namespace,
 			Name:              rollout.Name,
-			Kind:              WorkloadKindRollout,
+			Kind:              WorkloadKindArgoRollout,
 			NumberOfInstances: &numberOfInstances,
 		})
 	}
@@ -416,7 +421,7 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 			return fmt.Errorf("failed to update deploymentconfig: %w", err)
 		}
 
-	case WorkloadKindRollout:
+	case WorkloadKindArgoRollout:
 		if !kube.IsArgoRolloutsAvailable() {
 			return fmt.Errorf("argo rollouts resources are not available in this cluster")
 		}
@@ -512,7 +517,7 @@ func stringToWorkloadKind(workloadKind string) (model.K8sResourceKind, bool) {
 	case "cronjob":
 		return WorkloadKindCronJob, true
 	case "rollout":
-		return WorkloadKindRollout, true
+		return WorkloadKindArgoRollout, true
 	}
 
 	return "", false
@@ -526,7 +531,7 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
-	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob, WorkloadKindDeploymentConfig, WorkloadKindRollout:
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob, WorkloadKindDeploymentConfig, WorkloadKindArgoRollout:
 		break
 	default:
 		return nil, errors.New("unsupported workload kind: " + string(workloadKind))

@@ -234,7 +234,7 @@ func WorkloadKindFrombject(obj metav1.Object) k8sconsts.WorkloadKind {
 	case *openshiftappsv1.DeploymentConfig:
 		return k8sconsts.WorkloadKindDeploymentConfig
 	case *argorolloutsv1alpha1.Rollout:
-		return k8sconsts.WorkloadKindRollout
+		return k8sconsts.WorkloadKindArgoRollout
 	default:
 		return k8sconsts.WorkloadKind("")
 	}

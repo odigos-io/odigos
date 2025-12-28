@@ -83,7 +83,7 @@ func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, own
 		return dc, err
 	}
 
-	if ownerRef.Kind == "Rollout" {
+	if ownerRef.Kind == string(k8sconsts.WorkloadKindArgoRollout) {
 		rollout := &argorolloutsv1alpha1.Rollout{}
 		err := k8sClient.Get(ctx, key, rollout)
 		return rollout, err

@@ -38,7 +38,7 @@ func IsValidWorkloadKind(kind k8sconsts.WorkloadKind) bool {
 	switch kind {
 	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet,
 		k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace, k8sconsts.WorkloadKindCronJob,
-		k8sconsts.WorkloadKindDeploymentConfig, k8sconsts.WorkloadKindRollout:
+		k8sconsts.WorkloadKindDeploymentConfig, k8sconsts.WorkloadKindArgoRollout:
 		return true
 	}
 	return false
@@ -60,8 +60,8 @@ func WorkloadKindLowerCaseFromKind(pascalCase k8sconsts.WorkloadKind) k8sconsts.
 		return k8sconsts.WorkloadKindLowerCaseJob
 	case k8sconsts.WorkloadKindDeploymentConfig:
 		return k8sconsts.WorkloadKindLowerCaseDeploymentConfig
-	case k8sconsts.WorkloadKindRollout:
-		return k8sconsts.WorkloadKindLowerCaseRollout
+	case k8sconsts.WorkloadKindArgoRollout:
+		return k8sconsts.WorkloadKindLowerCaseArgoRollout
 	}
 	return ""
 }
@@ -80,8 +80,8 @@ func WorkloadKindFromLowerCase(lowerCase k8sconsts.WorkloadKindLowerCase) k8scon
 		return k8sconsts.WorkloadKindJob
 	case k8sconsts.WorkloadKindLowerCaseDeploymentConfig:
 		return k8sconsts.WorkloadKindDeploymentConfig
-	case k8sconsts.WorkloadKindLowerCaseRollout:
-		return k8sconsts.WorkloadKindRollout
+	case k8sconsts.WorkloadKindLowerCaseArgoRollout:
+		return k8sconsts.WorkloadKindArgoRollout
 	}
 	return ""
 }
@@ -100,8 +100,8 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindJob
 	case string(k8sconsts.WorkloadKindLowerCaseDeploymentConfig):
 		return k8sconsts.WorkloadKindDeploymentConfig
-	case string(k8sconsts.WorkloadKindLowerCaseRollout):
-		return k8sconsts.WorkloadKindRollout
+	case string(k8sconsts.WorkloadKindLowerCaseArgoRollout):
+		return k8sconsts.WorkloadKindArgoRollout
 	default:
 		return k8sconsts.WorkloadKind("")
 	}
@@ -134,7 +134,7 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 		return &batchv1.Job{}
 	case k8sconsts.WorkloadKindDeploymentConfig:
 		return &openshiftappsv1.DeploymentConfig{}
-	case k8sconsts.WorkloadKindRollout:
+	case k8sconsts.WorkloadKindArgoRollout:
 		return &argorolloutsv1alpha1.Rollout{}
 	default:
 		return nil
@@ -164,7 +164,7 @@ func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object
 		return &batchv1.JobList{}
 	case k8sconsts.WorkloadKindDeploymentConfig:
 		return &openshiftappsv1.DeploymentConfigList{}
-	case k8sconsts.WorkloadKindRollout:
+	case k8sconsts.WorkloadKindArgoRollout:
 		return &argorolloutsv1alpha1.RolloutList{}
 	default:
 		return nil

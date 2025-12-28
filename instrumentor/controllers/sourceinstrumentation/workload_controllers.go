@@ -89,7 +89,7 @@ type RolloutReconciler struct {
 func (r *RolloutReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	pw := k8sconsts.PodWorkload{
 		Namespace: req.Namespace,
-		Kind:      k8sconsts.WorkloadKindRollout,
+		Kind:      k8sconsts.WorkloadKindArgoRollout,
 		Name:      req.Name,
 	}
 	return syncWorkload(ctx, r.Client, r.Scheme, pw)

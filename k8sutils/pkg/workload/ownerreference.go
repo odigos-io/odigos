@@ -75,7 +75,7 @@ func GetWorkloadNameAndKind(ownerName, ownerKind string, pod *corev1.Pod) (strin
 func determineReplicaSetOwner(ownerName string, pod *corev1.Pod) (string, k8sconsts.WorkloadKind, error) {
 	// If we find a label associated with Argo rollouts, it is an Rollout kind
 	if _, ok := pod.Labels[argorolloutsv1alpha1.DefaultRolloutUniqueLabelKey]; ok {
-		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindRollout)
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindArgoRollout)
 	} else { // If not, default to Deployment kind
 		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeployment)
 	}

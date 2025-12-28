@@ -45,7 +45,7 @@ func syncNamespaceWorkloads(
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindCronJob,
 		k8sconsts.WorkloadKindDeploymentConfig,
-		k8sconsts.WorkloadKindRollout,
+		k8sconsts.WorkloadKindArgoRollout,
 	} {
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
@@ -106,11 +106,11 @@ func syncNamespaceWorkloads(
 				})
 			}
 		case *argorolloutsv1alpha1.RolloutList:
-			for _, dc := range obj.Items {
+			for _, ar := range obj.Items {
 				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
-					Name:      dc.GetName(),
-					Namespace: dc.GetNamespace(),
-					Kind:      k8sconsts.WorkloadKindRollout,
+					Name:      ar.GetName(),
+					Namespace: ar.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindArgoRollout,
 				})
 			}
 		}
@@ -216,7 +216,7 @@ func syncRegexSourceWorkloads(
 				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
 					Name:      rollout.GetName(),
 					Namespace: rollout.GetNamespace(),
-					Kind:      k8sconsts.WorkloadKindRollout,
+					Kind:      k8sconsts.WorkloadKindArgoRollout,
 				})
 			}
 		}

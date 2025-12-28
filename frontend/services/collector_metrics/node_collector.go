@@ -224,7 +224,7 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 			kind = k8sconsts.WorkloadKindJob
 			name = jobName
 		} else if rolloutName, ok := attrs.Get(K8SRolloutNameKey); ok {
-			kind = k8sconsts.WorkloadKindRollout
+			kind = k8sconsts.WorkloadKindArgoRollout
 			name = rolloutName
 		} else {
 			return common.SourceID{}, errors.New("kind not found")

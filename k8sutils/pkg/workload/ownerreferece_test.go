@@ -105,7 +105,7 @@ func TestGetWorkloadFromOwnerReferenceReplicaSetOwnedByRollout(t *testing.T) {
 	}, pod)
 	assert.Nil(t, err)
 	assert.Equal(t, "myrollout", workloadName)
-	assert.Equal(t, k8sconsts.WorkloadKindRollout, workloadKind)
+	assert.Equal(t, k8sconsts.WorkloadKindArgoRollout, workloadKind)
 }
 
 func TestGetWorkloadFromOwnerReferenceReplicaSetOwnedByDeployment(t *testing.T) {

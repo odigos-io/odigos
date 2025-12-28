@@ -62,6 +62,10 @@ const (
 	// This is needed to distinguish between workloads that share the same semconv key
 	// (e.g., DeploymentConfig uses k8s.deployment.name)
 	OdigosWorkloadKindAttribute = "odigos.workload.kind"
+
+	// Custom resource attribute for Argo Rollouts workload name.
+	// There is no semconv key for Argo Rollouts, so we use this custom key with argoproj prefix.
+	K8SArgoRolloutNameAttribute = "k8s.argoproj.rollout.name"
 )
 
 // Odigos config properties

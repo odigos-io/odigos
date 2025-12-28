@@ -108,7 +108,7 @@ var kindAliases = map[k8sconsts.WorkloadKind][]string{
 	k8sconsts.WorkloadKindStatefulSet:      []string{"sts", "statefulsets", "sts.apps", "statefulset.apps", "statefulsets.apps"},
 	k8sconsts.WorkloadKindNamespace:        []string{"ns", "namespaces"},
 	k8sconsts.WorkloadKindDeploymentConfig: []string{"dc", "deploymentconfigs", "dc.apps.openshift.io", "deploymentconfig.apps.openshift.io", "deploymentconfigs.apps.openshift.io"},
-	k8sconsts.WorkloadKindRollout:          []string{"rollout", "rollouts", "rollouts.argoproj.io", "rollout.argoproj.io", "rollout.app", "rollouts.apps"},
+	k8sconsts.WorkloadKindArgoRollout:      []string{"rollout", "rollouts", "rollouts.argoproj.io", "rollout.argoproj.io", "rollout.app", "rollouts.apps"},
 }
 
 var sourceDisableCmd = &cobra.Command{
@@ -543,7 +543,7 @@ func updateOrCreateSourceForObject(ctx context.Context, client *kube.Client, wor
 		objName = obj.GetName()
 		objNamespace = obj.GetNamespace()
 		sourceNamespace = sourceNamespaceFlag
-	case k8sconsts.WorkloadKindRollout:
+	case k8sconsts.WorkloadKindArgoRollout:
 		// Rollouts are an Argo-specific resource so we use dynamic client to fetch them
 		gvr := kube.TypeMetaToDynamicResource(schema.GroupVersionKind{
 			Group:   "argoproj.io",
@@ -698,7 +698,7 @@ func init() {
 		k8sconsts.WorkloadKindNamespace,
 		k8sconsts.WorkloadKindCronJob,
 		k8sconsts.WorkloadKindDeploymentConfig,
-		k8sconsts.WorkloadKindRollout,
+		k8sconsts.WorkloadKindArgoRollout,
 	} {
 		enableCmd := enableOrDisableSourceCmd(kind, false)
 		disableCmd := enableOrDisableSourceCmd(kind, true)

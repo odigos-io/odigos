@@ -14,36 +14,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
-// isDeploymentConfigAvailable checks if the DeploymentConfig resource is available in the cluster
-// using the RESTMapper to avoid permission errors on non-OpenShift clusters
-func isDeploymentConfigAvailable(mgr ctrl.Manager) bool {
-	gvk := schema.GroupVersionKind{
-		Group:   "apps.openshift.io",
-		Version: "v1",
-		Kind:    "DeploymentConfig",
-	}
-
-	// Try to get the REST mapping for DeploymentConfig
-	// This will fail if the resource doesn't exist in the cluster
-	_, err := mgr.GetRESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
-	return err == nil
-}
-
-// isRolloutAvailable checks if the Rollout resource is available in the cluster
-// using the RESTMapper to avoid permission errors on non-Rollout clusters
-func isRolloutAvailable(mgr ctrl.Manager) bool {
-	gvk := schema.GroupVersionKind{
-		Group:   "argoproj.io",
-		Version: "v1alpha1",
-		Kind:    "Rollout",
-	}
-
-	// Try to get the REST mapping for DeploymentConfig
-	// This will fail if the resource doesn't exist in the cluster
+// isExternalResourceAvailable checks if the external resource is available in the cluster
+// using the RESTMapper to avoid permission errors on cluster that don't have the resource installed
+func isExternalResourceAvailable(mgr ctrl.Manager, gvk schema.GroupVersionKind) bool {
 	_, err := mgr.GetRESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
 	return err == nil
 }
@@ -151,7 +129,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 
 	// Only register the DeploymentConfig controller if the resource is available (OpenShift clusters)
 	// This avoids permission errors on non-OpenShift clusters where the resource doesn't exist
-	if isDeploymentConfigAvailable(mgr) {
+	if isExternalResourceAvailable(mgr, k8sconsts.DeploymentConfigGVK) {
 		err = builder.
 			ControllerManagedBy(mgr).
 			Named("sourceinstrumentation-deploymentconfig").
@@ -167,7 +145,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 	}
 
 	// Only register the Rollout controller if the resource is available (Argo Rollouts installed on cluster)
-	if isRolloutAvailable(mgr) {
+	if isExternalResourceAvailable(mgr, k8sconsts.ArgoRolloutGVK) {
 		err = builder.
 			ControllerManagedBy(mgr).
 			Named("sourceinstrumentation-rollout").

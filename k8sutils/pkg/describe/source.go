@@ -230,7 +230,7 @@ func DescribeRollout(ctx context.Context, kubeClient kubernetes.Interface, dynam
 	}
 
 	workloadObj := &source.K8sSourceObject{
-		Kind:            k8sconsts.WorkloadKindRollout,
+		Kind:            k8sconsts.WorkloadKindArgoRollout,
 		ObjectMeta:      rollout.ObjectMeta,
 		PodTemplateSpec: &rollout.Spec.Template,
 		LabelSelector:   labelSelector,
