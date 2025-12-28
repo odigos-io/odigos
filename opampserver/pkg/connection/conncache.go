@@ -115,6 +115,21 @@ func (c *ConnectionsCache) CleanupStaleConnections() []ConnectionInfo {
 	return deadConnectionInfos
 }
 
+// GetConnectionCountsByLanguage returns the count of live connections grouped by programming language.
+// This is used for metrics reporting.
+func (c *ConnectionsCache) GetConnectionCountsByLanguage() map[string]int {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
+	counts := make(map[string]int)
+	for _, conn := range c.liveConnections {
+		if conn.ProgrammingLanguage != "" {
+			counts[conn.ProgrammingLanguage]++
+		}
+	}
+	return counts
+}
+
 // allow to completely overwrite the remote config for a set of keys for a given workload
 func (c *ConnectionsCache) UpdateWorkloadRemoteConfig(workload k8sconsts.PodWorkload, sdkConfig []v1alpha1.SdkConfig, containers []v1alpha1.ContainerAgentConfig) error {
 	c.mux.Lock()

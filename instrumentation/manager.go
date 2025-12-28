@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	cilumebpf "github.com/cilium/ebpf"
@@ -11,6 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/unixfd"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
@@ -42,6 +44,8 @@ type instrumentationDetails[processGroup ProcessGroup, configGroup ConfigGroup, 
 	pd   processDetails
 	cg   configGroup
 	pg   processGroup
+	// language is the programming language of the instrumented process, used for per-language metrics
+	language common.ProgrammingLanguage
 }
 
 type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
@@ -82,6 +86,10 @@ type Manager interface {
 	// It will block until the context is canceled.
 	// It is an error to not cancel the context before the program exits, and may result in leaked resources.
 	Run(ctx context.Context) error
+
+	// GetInstrumentedCountsByLanguage returns the count of instrumented processes grouped by programming language.
+	// This is used for unified metrics reporting.
+	GetInstrumentedCountsByLanguage() map[string]int
 }
 
 type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]] struct {
@@ -110,6 +118,11 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 	metrics *managerMetrics
 
 	tracesMap *cilumebpf.Map
+
+	// countsByLanguage stores a snapshot of instrumented process counts per language.
+	// Updated atomically from the event loop, read by metrics observers.
+	// Stores map[string]int
+	countsByLanguage atomic.Value
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -146,7 +159,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		return nil, fmt.Errorf("failed to create process detector: %w", err)
 	}
 
-	return &manager[processGroup, configGroup, processDetails]{
+	mgr := &manager[processGroup, configGroup, processDetails]{
 		procEvents:            procEvents,
 		detector:              detector,
 		handler:               handler,
@@ -158,7 +171,10 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		configUpdates:         options.ConfigUpdates,
 		metrics:               managerMetrics,
 		tracesMap:             options.TracesMap,
-	}, nil
+	}
+	// Initialize the atomic counter with an empty map
+	mgr.countsByLanguage.Store(make(map[string]int))
+	return mgr, nil
 }
 
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx context.Context) {
@@ -371,7 +387,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		// we need to track the instrumentation even if the initialization failed.
 		// consider a reporter which writes a persistent record for a failed/successful init
 		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
-		m.startTrackInstrumentation(e.PID, nil, pd, processGroup, configGroup)
+		m.startTrackInstrumentation(e.PID, nil, pd, processGroup, configGroup, otelDistro.Language)
 		m.logger.Error(err, "failed to initialize instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name)
 		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the initialize error? or the handler error? or both?
@@ -388,14 +404,14 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		// consider a reporter which writes a persistent record for a failed/successful load
 		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
 		// saving the inst as nil marking the instrumentation failed to load, and is not valid to run/configure/close.
-		m.startTrackInstrumentation(e.PID, nil, pd, processGroup, configGroup)
+		m.startTrackInstrumentation(e.PID, nil, pd, processGroup, configGroup, otelDistro.Language)
 		m.logger.Error(err, "failed to load instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name)
 		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the load error? or the instance write error? or both?
 		return loadErr
 	}
 
-	m.startTrackInstrumentation(e.PID, inst, pd, processGroup, configGroup)
+	m.startTrackInstrumentation(e.PID, inst, pd, processGroup, configGroup, otelDistro.Language)
 	m.logger.Info("instrumentation loaded", "pid", e.PID, "process group details", pd)
 	m.metrics.instrumentedProcesses.Add(ctx, 1)
 
@@ -413,12 +429,13 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	return nil
 }
 
-func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumentation(pid int, inst Instrumentation, processDetails ProcessDetails, processGroup ProcessGroup, configGroup ConfigGroup) {
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumentation(pid int, inst Instrumentation, processDetails ProcessDetails, processGroup ProcessGroup, configGroup ConfigGroup, language common.ProgrammingLanguage) {
 	instDetails := &instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{
-		inst: inst,
-		pd:   processDetails,
-		cg:   configGroup,
-		pg:   processGroup,
+		inst:     inst,
+		pd:       processDetails,
+		cg:       configGroup,
+		pg:       processGroup,
+		language: language,
 	}
 	m.detailsByPid[pid] = instDetails
 
@@ -435,6 +452,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 	} else {
 		m.detailsByProcessGroup[processGroup][pid] = instDetails
 	}
+
+	// Update the language counts for metrics
+	m.updateLanguageCounts()
 }
 
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) stopTrackInstrumentation(pid int) {
@@ -456,6 +476,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) stopTrackInstrument
 	if len(m.detailsByProcessGroup[pg]) == 0 {
 		delete(m.detailsByProcessGroup, pg)
 	}
+
+	// Update the language counts for metrics
+	m.updateLanguageCounts()
 }
 
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) applyInstrumentationConfigurationForSDK(ctx context.Context, configGroup ConfigGroup, config Config) error {
@@ -475,4 +498,29 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) applyInstrumentatio
 		err = errors.Join(err, applyErr)
 	}
 	return err
+}
+
+// GetInstrumentedCountsByLanguage returns the count of instrumented processes grouped by programming language.
+// This method is safe to call from any goroutine.
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) GetInstrumentedCountsByLanguage() map[string]int {
+	counts := m.countsByLanguage.Load().(map[string]int)
+	// Return a copy to prevent external modification
+	result := make(map[string]int, len(counts))
+	for k, v := range counts {
+		result[k] = v
+	}
+	return result
+}
+
+// updateLanguageCounts recalculates and atomically stores the counts of instrumented processes by language.
+// This should only be called from the event loop after tracking changes.
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) updateLanguageCounts() {
+	counts := make(map[string]int)
+	for _, details := range m.detailsByPid {
+		// Only count successfully instrumented processes (inst != nil)
+		if details.inst != nil && details.language != "" {
+			counts[string(details.language)]++
+		}
+	}
+	m.countsByLanguage.Store(counts)
 }

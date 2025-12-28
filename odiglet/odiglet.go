@@ -19,6 +19,8 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	odigletmetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
+	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
@@ -31,11 +33,12 @@ import (
 )
 
 type Odiglet struct {
-	clientset     *kubernetes.Clientset
-	mgr           controllerruntime.Manager
-	ebpfManager   commonInstrumentation.Manager
-	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	criClient     *criwrapper.CriClient
+	clientset       *kubernetes.Clientset
+	mgr             controllerruntime.Manager
+	ebpfManager     commonInstrumentation.Manager
+	configUpdates   chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	criClient       *criwrapper.CriClient
+	connectionCache *connection.ConnectionsCache
 }
 
 const (
@@ -93,12 +96,16 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}
 
+	// Create the connection cache for OpAMP server (shared for metrics)
+	connectionCache := connection.NewConnectionsCache()
+
 	return &Odiglet{
-		clientset:     clientset,
-		mgr:           mgr,
-		ebpfManager:   ebpfManager,
-		configUpdates: configUpdates,
-		criClient:     &criWrapper,
+		clientset:       clientset,
+		mgr:             mgr,
+		ebpfManager:     ebpfManager,
+		configUpdates:   configUpdates,
+		criClient:       &criWrapper,
+		connectionCache: connectionCache,
 	}, nil
 }
 
@@ -111,6 +118,14 @@ func (o *Odiglet) Run(ctx context.Context) {
 	}
 
 	defer o.criClient.Close()
+
+	// Initialize unified metrics for tracking instrumented pods
+	odigletMetrics, err := odigletmetrics.NewOdigletMetrics(o.ebpfManager, o.connectionCache)
+	if err != nil {
+		log.Logger.Error(err, "Failed to create odiglet metrics")
+	} else {
+		defer odigletMetrics.Close()
+	}
 
 	// Start pprof server
 	g.Go(func() error {
@@ -137,7 +152,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// start OpAmp server
 	odigosNs := env.GetCurrentNamespace()
 	g.Go(func() error {
-		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
+		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs, o.connectionCache)
 		if err != nil {
 			log.Logger.Error(err, "Failed to start opamp server")
 		}
@@ -160,9 +175,8 @@ func (o *Odiglet) Run(ctx context.Context) {
 		return err
 	})
 
-	err := g.Wait()
-	if err != nil {
-		log.Logger.Error(err, "Odiglet exited with error")
+	if waitErr := g.Wait(); waitErr != nil {
+		log.Logger.Error(waitErr, "Odiglet exited with error")
 	}
 }
 
