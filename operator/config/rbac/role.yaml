@@ -194,8 +194,6 @@ rules:
   resources:
   - rollouts
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch

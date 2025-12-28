@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -18,6 +19,7 @@ import (
 	"k8s.io/client-go/metadata"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -139,6 +141,8 @@ func IsArgoRolloutsAvailable() bool {
 		return rolloutAvailable
 	}
 
+	logger := log.Log.WithName("kube.client")
+
 	gvr := schema.GroupVersionResource{
 		Group:    "argoproj.io",
 		Version:  "v1alpha1",
@@ -149,13 +153,20 @@ func IsArgoRolloutsAvailable() bool {
 	_, err := DefaultClient.DynamicClient.Resource(gvr).List(context.Background(), listOptions)
 
 	if err != nil {
-		// Resource doesn't exist or we don't have permission to access it
+		if apierrors.IsForbidden(err) {
+			// Forbidden means the CRD exists but we lack permission - this is a problem!
+			logger.Error(err, "Argo Rollouts CRD is installed but Odigos lacks permission to access rollouts")
+		} else {
+			// Other errors (e.g., "resource not found") mean CRD is not installed - this is normal
+			logger.Info("Argo Rollouts not available in cluster", "reason", err.Error())
+		}
 		rolloutAvailable = false
 		rolloutAvailabilityChecked = true
 		return false
 	}
 
 	// Resource exists and we have permission
+	logger.V(1).Info("Argo Rollouts available in cluster")
 	rolloutAvailable = true
 	rolloutAvailabilityChecked = true
 	return true

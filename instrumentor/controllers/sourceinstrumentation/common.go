@@ -9,6 +9,7 @@ import (
 	"regexp"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -55,6 +56,10 @@ func syncNamespaceWorkloads(
 			// - The DeploymentConfig resource doesn't exist (NoMatchError)
 			// - RBAC permissions aren't granted (Forbidden)
 			if kind == k8sconsts.WorkloadKindDeploymentConfig && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
+				continue
+			}
+			// // Same for Argo Rollouts
+			if kind == k8sconsts.WorkloadKindArgoRollout && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
 				continue
 			}
 			// For other errors or other workload kinds, collect the error
