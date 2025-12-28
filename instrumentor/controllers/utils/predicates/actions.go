@@ -25,7 +25,7 @@ func (u AgentInjectionEnabledActionsPredicate) Update(e event.UpdateEvent) bool 
 		return false
 	}
 
-	return !old.Spec.Disabled && !new.Spec.Disabled &&
+	return (!old.Spec.Disabled || !new.Spec.Disabled) &&
 		(old.Spec.URLTemplatization != nil || (old.Spec.Samplers != nil && old.Spec.Samplers.IgnoreHealthChecks != nil) ||
 			new.Spec.URLTemplatization != nil || (new.Spec.Samplers != nil && new.Spec.Samplers.IgnoreHealthChecks != nil))
 }
