@@ -13,6 +13,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
   {{- if include "odigos.ui.requiresWritePermissions" . }}
       - create
       - update
@@ -24,6 +25,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
       - create
       - patch
       - update
@@ -50,6 +52,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - create
       - patch
@@ -69,6 +72,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
   - apiGroups:
       - odigos.io
     resources:
@@ -76,6 +80,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - create
       - patch
