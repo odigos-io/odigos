@@ -3,37 +3,36 @@ package metrics
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/instrumentation"
-	"github.com/odigos-io/odigos/opampserver/pkg/connection"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	otelmetric "go.opentelemetry.io/otel/metric"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	otelMeterName   = "github.com/odigos.io/odigos/odiglet"
 	languageAttrKey = "language"
-	typeAttrKey     = "type"
 )
 
 var meter = otel.Meter(otelMeterName)
 
 // OdigletMetrics tracks unified metrics for all instrumented pods
 type OdigletMetrics struct {
-	ebpfManager     instrumentation.Manager
-	connectionCache *connection.ConnectionsCache
+	k8sClient client.Client
 
-	// instrumentedPodsByLanguage tracks all instrumented pods (both eBPF and native) per language
+	// instrumentedPodsByLanguage tracks all instrumented pods per language
 	instrumentedPodsByLanguage otelmetric.Int64ObservableGauge
 
 	registration otelmetric.Registration
 }
 
-// NewOdigletMetrics creates unified metrics that aggregate from both eBPF manager and OpAMP connections
-func NewOdigletMetrics(ebpfManager instrumentation.Manager, connectionCache *connection.ConnectionsCache) (*OdigletMetrics, error) {
+// NewOdigletMetrics creates unified metrics based on InstrumentationConfig
+func NewOdigletMetrics(k8sClient client.Client) (*OdigletMetrics, error) {
 	m := &OdigletMetrics{
-		ebpfManager:     ebpfManager,
-		connectionCache: connectionCache,
+		k8sClient: k8sClient,
 	}
 
 	var err error
@@ -58,31 +57,107 @@ func NewOdigletMetrics(ebpfManager instrumentation.Manager, connectionCache *con
 	return m, nil
 }
 
-// observeInstrumentedPods is the callback that observes instrumented pod counts by language
+// observeInstrumentedPods counts instrumented pods by language using InstrumentationConfig
 func (m *OdigletMetrics) observeInstrumentedPods(ctx context.Context, observer otelmetric.Observer) error {
-	// Get eBPF instrumented process counts
-	if m.ebpfManager != nil {
-		ebpfCounts := m.ebpfManager.GetInstrumentedCountsByLanguage()
-		for language, count := range ebpfCounts {
-			observer.ObserveInt64(m.instrumentedPodsByLanguage, int64(count),
-				otelmetric.WithAttributes(
-					attribute.String(languageAttrKey, language),
-				))
+	counts := make(map[string]int)
+
+	// List all pods (the cache is already filtered to this node via manager config)
+	var podList corev1.PodList
+	if err := m.k8sClient.List(ctx, &podList); err != nil {
+		return nil
+	}
+
+	// For each pod, check if it has an associated InstrumentationConfig with enabled agents
+	for _, pod := range podList.Items {
+		if pod.Status.Phase != corev1.PodRunning {
+			continue
+		}
+
+		// Get the workload owner reference
+		ownerRef := getWorkloadOwnerRef(&pod)
+		if ownerRef == nil {
+			continue
+		}
+
+		// Get the InstrumentationConfig for this workload
+		icName := getInstrumentationConfigName(ownerRef.Kind, ownerRef.Name)
+		if icName == "" {
+			continue
+		}
+
+		var ic odigosv1.InstrumentationConfig
+		if err := m.k8sClient.Get(ctx, client.ObjectKey{Namespace: pod.Namespace, Name: icName}, &ic); err != nil {
+			continue
+		}
+
+		// Check each container for enabled agents
+		for _, containerConfig := range ic.Spec.Containers {
+			if !containerConfig.AgentEnabled {
+				continue
+			}
+
+			// Get the language from runtime details
+			for _, runtime := range ic.Status.RuntimeDetailsByContainer {
+				if runtime.ContainerName == containerConfig.ContainerName {
+					counts[string(runtime.Language)]++
+					break
+				}
+			}
 		}
 	}
 
-	// Get native agent connection counts
-	if m.connectionCache != nil {
-		nativeCounts := m.connectionCache.GetConnectionCountsByLanguage()
-		for language, count := range nativeCounts {
-			observer.ObserveInt64(m.instrumentedPodsByLanguage, int64(count),
-				otelmetric.WithAttributes(
-					attribute.String(languageAttrKey, language),
-				))
-		}
+	// Emit all counts
+	for language, count := range counts {
+		observer.ObserveInt64(m.instrumentedPodsByLanguage, int64(count),
+			otelmetric.WithAttributes(
+				attribute.String(languageAttrKey, language),
+			))
 	}
 
 	return nil
+}
+
+// getWorkloadOwnerRef finds the workload owner reference (Deployment, StatefulSet, DaemonSet, ReplicaSet)
+func getWorkloadOwnerRef(pod *corev1.Pod) *metav1.OwnerReference {
+	for i := range pod.OwnerReferences {
+		ref := &pod.OwnerReferences[i]
+		switch ref.Kind {
+		case "ReplicaSet", "Deployment", "StatefulSet", "DaemonSet":
+			return ref
+		}
+	}
+	return nil
+}
+
+// getInstrumentationConfigName returns the name of the InstrumentationConfig for a workload
+func getInstrumentationConfigName(kind, name string) string {
+	kindLower := ""
+	switch kind {
+	case "Deployment":
+		kindLower = "deployment"
+	case "StatefulSet":
+		kindLower = "statefulset"
+	case "DaemonSet":
+		kindLower = "daemonset"
+	case "ReplicaSet":
+		kindLower = "deployment"
+		// For ReplicaSet, strip the hash suffix to get deployment name
+		if lastDash := lastIndex(name, '-'); lastDash > 0 {
+			name = name[:lastDash]
+		}
+	default:
+		return ""
+	}
+	return kindLower + "-" + name
+}
+
+func lastIndex(s string, c byte) int {
+	for i := len(s) - 1; i >= 0; i-- {
+		if s[i] == c {
+			return i
+		}
+	}
+	return -1
 }
 
 // Close unregisters the metrics callback

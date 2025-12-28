@@ -120,7 +120,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	defer o.criClient.Close()
 
 	// Initialize unified metrics for tracking instrumented pods
-	odigletMetrics, err := odigletmetrics.NewOdigletMetrics(o.ebpfManager, o.connectionCache)
+	odigletMetrics, err := odigletmetrics.NewOdigletMetrics(o.mgr.GetClient())
 	if err != nil {
 		log.Logger.Error(err, "Failed to create odiglet metrics")
 	} else {
