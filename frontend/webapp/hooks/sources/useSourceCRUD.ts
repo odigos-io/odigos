@@ -8,16 +8,7 @@ import type { SourceConditions, SourceInstrumentInput } from '@/types';
 import { addAgentInjectionStatusToSources, addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCE_LIBRARIES, GET_SOURCES, GET_WORKLOADS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, Workload } from '@odigos/ui-kit/types';
-import {
-  type NamespaceSelectionFormData,
-  type SourceSelectionFormData,
-  useDataStreamStore,
-  useEntityStore,
-  useInstrumentStore,
-  useNotificationStore,
-  usePendingStore,
-  useSetupStore,
-} from '@odigos/ui-kit/store';
+import { type NamespaceSelectionFormData, type SourceSelectionFormData, useDataStreamStore, useEntityStore, useInstrumentStore, useNotificationStore, useSetupStore } from '@odigos/ui-kit/store';
 
 interface UseSourceCrud {
   sources: Source[];
@@ -34,7 +25,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { persistNamespaces } = useNamespace();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
-  const { addPendingItems, removePendingItems } = usePendingStore();
   const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
   const { sourcesLoading, setEntitiesLoading, sources, setEntities, addEntities, removeEntities } = useEntityStore();
   const { setFetchedAllNamespaces, setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
@@ -178,6 +168,21 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
       // !! no "fetch" and no "setInstrumentAwait(false)"
       // !! we should wait for SSE to handle that
+
+      const emptySources: Source[] = persistSourcesPayloads.sources
+        .filter((source) => source.selected)
+        .map((source) => ({
+          namespace: source.namespace,
+          name: source.name,
+          kind: source.kind,
+          selected: source.selected,
+          dataStreamNames: [source.currentStreamName],
+          otelServiceName: '',
+          containers: [],
+          conditions: [],
+        }));
+
+      addEntities(EntityTypes.Source, emptySources);
     }
   };
 
@@ -186,12 +191,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Updating source...', undefined, true);
-      addPendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
 
-      const { errors } = await mutateUpdate({ variables: { sourceId, patchSourceRequest: { ...payload, currentStreamName: selectedStreamName } } });
-
-      if (!errors?.length) notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${sourceId.name}" source`, sourceId);
-      removePendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
+      const { data } = await mutateUpdate({ variables: { sourceId, patchSourceRequest: { ...payload, currentStreamName: selectedStreamName } } });
+      if (data?.updateK8sActualSource) notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${sourceId.name}" source`, sourceId);
 
       // !! no "fetch"
       // !! we should wait for SSE to handle that

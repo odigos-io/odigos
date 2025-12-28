@@ -1,12 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
 import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
 import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
-import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
+import { type NotifyPayload, useInstrumentStore, useNotificationStore } from '@odigos/ui-kit/store';
 
 enum EventTypes {
   CONNECTED = 'CONNECTED',
@@ -21,18 +19,33 @@ enum CrdTypes {
 }
 
 export const useSSE = () => {
-  const { setPendingItems } = usePendingStore();
   const { addNotification } = useNotificationStore();
-  const { title, setStatusStore } = useStatusStore();
   const { fetchDestinations } = useDestinationCRUD();
   const { fetchSources, fetchSourceById } = useSourceCRUD();
 
-  const retryCount = useRef(0);
   const maxRetries = 10;
+  const retryCount = useRef(0);
+
+  let { current: lastModifiedEventInterval } = useRef<NodeJS.Timeout | null>(null);
+  let { current: lastModifiedEventIds } = useRef<WorkloadId[]>([]);
+  let { current: lastModifiedEventTimestamp } = useRef<number | null>(null);
 
   useEffect(() => {
     const connect = () => {
       const es = new EventSource(API.EVENTS);
+
+      es.onerror = () => {
+        es.close();
+
+        if (retryCount.current < maxRetries) {
+          retryCount.current += 1;
+          console.warn(`Disconnected from the server. Retrying connection (${retryCount.current})`);
+
+          setTimeout(() => connect(), Math.min(10000, 1000 * Math.pow(2, retryCount.current)));
+        } else {
+          console.error(`Connection lost on ${new Date().toLocaleString()}. Please reboot the application`);
+        }
+      };
 
       es.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -56,17 +69,31 @@ export const useSSE = () => {
         }
 
         // Handle specific CRD types
-        if (isConnected) {
-          // If the current status in store is API Token related, we don't want to override it with the connected message
-          if (title !== DISPLAY_TITLES.API_TOKEN) {
-            setStatusStore({ status: StatusType.Success, title: notification.title as string, message: notification.message as string });
-          }
-        } else if (isSource) {
+        if (isSource) {
           switch (notification.title) {
             case EventTypes.MODIFIED:
               if (!isAwaitingInstrumentation && notification.target) {
-                const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
-                fetchSourceById(id as WorkloadId);
+                if (lastModifiedEventInterval) clearInterval(lastModifiedEventInterval);
+                lastModifiedEventIds.push(getIdFromSseTarget(notification.target, EntityTypes.Source));
+                lastModifiedEventTimestamp = Date.now();
+
+                // if last message was over 5 seconds ago, fetch the sources (all, or if less than 10, fetch each one by id)...
+                // the interval is to run a timestamp check every 1 second - once the condition is met, the interval is cleared.
+                lastModifiedEventInterval = setInterval(() => {
+                  const timeSinceLastModified = Date.now() - (lastModifiedEventTimestamp || 0);
+
+                  if (timeSinceLastModified > 5000) {
+                    if (lastModifiedEventIds.length <= 10) {
+                      Promise.all(lastModifiedEventIds.map((id) => fetchSourceById(id)));
+                    } else {
+                      fetchSources();
+                    }
+
+                    lastModifiedEventIds = [];
+                    lastModifiedEventTimestamp = null;
+                    if (lastModifiedEventInterval) clearInterval(lastModifiedEventInterval);
+                  }
+                }, 1000);
               }
               break;
 
@@ -94,7 +121,6 @@ export const useSSE = () => {
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToDelete', 0);
                 setInstrumentCount('sourcesDeleted', 0);
-                fetchSources();
               }
               break;
 
@@ -107,40 +133,8 @@ export const useSSE = () => {
           console.warn('Unhandled SSE for CRD type:', notification.crdType);
         }
 
-        // This works for now,
-        // but in the future we might have to change this to "removePendingItems",
-        // and remove the specific pending items based on their entityType and entityId
-        setPendingItems([]);
-
         // Reset retry count on successful connection
         retryCount.current = 0;
-      };
-
-      es.onerror = () => {
-        es.close();
-
-        if (retryCount.current < maxRetries) {
-          retryCount.current += 1;
-          setStatusStore({
-            status: StatusType.Warning,
-            title: 'Disconnected',
-            message: `Disconnected from the server. Retrying connection (${retryCount.current})`,
-          });
-
-          // Retry connection with exponential backoff if below max retries
-          setTimeout(() => connect(), Math.min(10000, 1000 * Math.pow(2, retryCount.current)));
-        } else {
-          setStatusStore({
-            status: StatusType.Error,
-            title: `Connection lost on ${new Date().toLocaleString()}`,
-            message: 'Please reboot the application',
-          });
-          addNotification({
-            type: StatusType.Error,
-            title: 'Connection Error',
-            message: 'Connection to the server failed. Please reboot the application.',
-          });
-        }
       };
 
       return es;
@@ -150,5 +144,5 @@ export const useSSE = () => {
     const es = connect();
     // Clean up event source on component unmount
     return () => es.close();
-  }, [title]);
+  }, []);
 };
