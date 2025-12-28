@@ -67,7 +67,6 @@ func (m *OdigletMetrics) observeInstrumentedPods(ctx context.Context, observer o
 			observer.ObserveInt64(m.instrumentedPodsByLanguage, int64(count),
 				otelmetric.WithAttributes(
 					attribute.String(languageAttrKey, language),
-					attribute.String(typeAttrKey, "ebpf"),
 				))
 		}
 	}
@@ -79,7 +78,6 @@ func (m *OdigletMetrics) observeInstrumentedPods(ctx context.Context, observer o
 			observer.ObserveInt64(m.instrumentedPodsByLanguage, int64(count),
 				otelmetric.WithAttributes(
 					attribute.String(languageAttrKey, language),
-					attribute.String(typeAttrKey, "native"),
 				))
 		}
 	}
