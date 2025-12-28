@@ -41,15 +41,11 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(actionsv1.AddToScheme(scheme))
 
-	// since we are not modifying the return from cache, we can disable deep copy and save some memory and cpu.
-	disableDeepCopy := true
-
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	// Create cache options
 	cacheOptions := cache.Options{
-		Scheme:                       scheme,
-		ReaderFailOnMissingInformer:  true,
-		DefaultUnsafeDisableDeepCopy: &disableDeepCopy,
+		Scheme:                      scheme,
+		ReaderFailOnMissingInformer: true,
 		ByObject: map[client.Object]cache.ByObject{
 			&corev1.ConfigMap{}: {
 				Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
