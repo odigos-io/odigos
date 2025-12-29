@@ -20,7 +20,6 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	odigletmetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
-	"github.com/odigos-io/odigos/opampserver/pkg/connection"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
@@ -33,12 +32,11 @@ import (
 )
 
 type Odiglet struct {
-	clientset       *kubernetes.Clientset
-	mgr             controllerruntime.Manager
-	ebpfManager     commonInstrumentation.Manager
-	configUpdates   chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	criClient       *criwrapper.CriClient
-	connectionCache *connection.ConnectionsCache
+	clientset     *kubernetes.Clientset
+	mgr           controllerruntime.Manager
+	ebpfManager   commonInstrumentation.Manager
+	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	criClient     *criwrapper.CriClient
 }
 
 const (
@@ -96,16 +94,12 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}
 
-	// Create the connection cache for OpAMP server (shared for metrics)
-	connectionCache := connection.NewConnectionsCache()
-
 	return &Odiglet{
-		clientset:       clientset,
-		mgr:             mgr,
-		ebpfManager:     ebpfManager,
-		configUpdates:   configUpdates,
-		criClient:       &criWrapper,
-		connectionCache: connectionCache,
+		clientset:     clientset,
+		mgr:           mgr,
+		ebpfManager:   ebpfManager,
+		configUpdates: configUpdates,
+		criClient:     &criWrapper,
 	}, nil
 }
 
@@ -152,7 +146,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// start OpAmp server
 	odigosNs := env.GetCurrentNamespace()
 	g.Go(func() error {
-		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs, o.connectionCache)
+		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
 		if err != nil {
 			log.Logger.Error(err, "Failed to start opamp server")
 		}
