@@ -146,7 +146,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		return nil, fmt.Errorf("failed to create process detector: %w", err)
 	}
 
-	mgr := &manager[processGroup, configGroup, processDetails]{
+	return &manager[processGroup, configGroup, processDetails]{
 		procEvents:            procEvents,
 		detector:              detector,
 		handler:               handler,
@@ -158,8 +158,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		configUpdates:         options.ConfigUpdates,
 		metrics:               managerMetrics,
 		tracesMap:             options.TracesMap,
-	}
-	return mgr, nil
+	}, nil
 }
 
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx context.Context) {

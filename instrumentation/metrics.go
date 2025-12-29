@@ -18,7 +18,7 @@ func newManagerMetrics(meter otelmetric.Meter) (*managerMetrics, error) {
 
 	m.instrumentedProcesses, err = meter.Int64UpDownCounter(
 		"odigos.ebpf.instrumentation.manager.instrumented_processes",
-		otelmetric.WithDescription("Number of processes currently instrumented via eBPF"),
+		otelmetric.WithDescription("Number of processes currently instrumented"),
 		otelmetric.WithUnit("{process}"),
 	)
 	errs = errors.Join(errs, err)
