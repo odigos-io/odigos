@@ -18,7 +18,7 @@ enum CrdTypes {
   Destination = 'Destination',
 }
 
-const MODIFIED_DEBOUNCE_MS = 5000;
+const MODIFIED_DEBOUNCE_MS = 8000;
 
 export const useSSE = () => {
   const { fetchSources } = useSourceCRUD();
