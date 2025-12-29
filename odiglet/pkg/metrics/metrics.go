@@ -4,6 +4,7 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	workload "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	otelmetric "go.opentelemetry.io/otel/metric"
@@ -14,7 +15,7 @@ import (
 
 const (
 	otelMeterName   = "github.com/odigos.io/odigos/odiglet"
-	languageAttrKey = "language"
+	languageAttrKey = "telemetry.distro.name"
 )
 
 var meter = otel.Meter(otelMeterName)
@@ -74,13 +75,13 @@ func (m *OdigletMetrics) observeInstrumentedPods(ctx context.Context, observer o
 		}
 
 		// Get the workload owner reference
-		ownerRef := getWorkloadOwnerRef(&pod)
-		if ownerRef == nil {
+		ownerRef, err := workload.PodWorkloadObject(ctx, &pod)
+		if err != nil {
 			continue
 		}
 
 		// Get the InstrumentationConfig for this workload
-		icName := getInstrumentationConfigName(ownerRef.Kind, ownerRef.Name)
+		icName := workload.CalculateWorkloadRuntimeObjectName(ownerRef.Name, ownerRef.Kind)
 		if icName == "" {
 			continue
 		}
@@ -96,13 +97,7 @@ func (m *OdigletMetrics) observeInstrumentedPods(ctx context.Context, observer o
 				continue
 			}
 
-			// Get the language from runtime details
-			for _, runtime := range ic.Status.RuntimeDetailsByContainer {
-				if runtime.ContainerName == containerConfig.ContainerName {
-					counts[string(runtime.Language)]++
-					break
-				}
-			}
+			counts[string(containerConfig.OtelDistroName)]++
 		}
 	}
 
@@ -127,37 +122,6 @@ func getWorkloadOwnerRef(pod *corev1.Pod) *metav1.OwnerReference {
 		}
 	}
 	return nil
-}
-
-// getInstrumentationConfigName returns the name of the InstrumentationConfig for a workload
-func getInstrumentationConfigName(kind, name string) string {
-	kindLower := ""
-	switch kind {
-	case "Deployment":
-		kindLower = "deployment"
-	case "StatefulSet":
-		kindLower = "statefulset"
-	case "DaemonSet":
-		kindLower = "daemonset"
-	case "ReplicaSet":
-		kindLower = "deployment"
-		// For ReplicaSet, strip the hash suffix to get deployment name
-		if lastDash := lastIndex(name, '-'); lastDash > 0 {
-			name = name[:lastDash]
-		}
-	default:
-		return ""
-	}
-	return kindLower + "-" + name
-}
-
-func lastIndex(s string, c byte) int {
-	for i := len(s) - 1; i >= 0; i-- {
-		if s[i] == c {
-			return i
-		}
-	}
-	return -1
 }
 
 // Close unregisters the metrics callback
