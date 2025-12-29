@@ -75,6 +75,19 @@ func CopyAgentsDirectoryToHost() error {
 		}
 	}
 
+	// Create a symlink from /var/odigos/ruby-community to /var/odigos/ruby for compatibility
+	rubyCommunityPath := path.Join(k8sconsts.OdigosAgentsDirectory, "ruby-community")
+	rubyPath := path.Join(k8sconsts.OdigosAgentsDirectory, "ruby")
+
+	// Check if ruby-community directory or symlink exists, if not, create symlink
+	if _, err := os.Stat(rubyCommunityPath); os.IsNotExist(err) {
+		if err := os.Symlink(rubyPath, rubyCommunityPath); err != nil {
+			log.Logger.Error(err, "Failed to create symlink for ruby-community")
+		} else {
+			log.Logger.Info("Successfully created symlink from ruby-community to ruby")
+		}
+	}
+
 	// temporary workaround for dotnet.
 	// dotnet used to have directories containing the arch suffix (linux-glibc-arm64).
 	// this works will with virtual device that knows the arch it is running on.
