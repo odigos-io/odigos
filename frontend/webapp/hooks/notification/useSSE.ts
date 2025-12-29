@@ -18,6 +18,9 @@ enum CrdTypes {
   Destination = 'Destination',
 }
 
+const MODIFIED_DEBOUNCE_MS = 5000;
+const MAX_EVENTS_FOR_SINGLE_FETCH = 10;
+
 export const useSSE = () => {
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
@@ -26,9 +29,16 @@ export const useSSE = () => {
   const maxRetries = 10;
   const retryCount = useRef(0);
 
-  let { current: lastModifiedEventInterval } = useRef<NodeJS.Timeout | null>(null);
-  let { current: lastModifiedEventIds } = useRef<WorkloadId[]>([]);
-  let { current: lastModifiedEventTimestamp } = useRef<number | null>(null);
+  const lastModifiedEventIds = useRef<WorkloadId[]>([]);
+  const lastModifiedEventTimestamp = useRef<number | null>(null);
+  const lastModifiedEventInterval = useRef<NodeJS.Timeout | null>(null);
+
+  const resetLastModifiedEventRefs = () => {
+    lastModifiedEventIds.current = [];
+    lastModifiedEventTimestamp.current = null;
+    if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
+    lastModifiedEventInterval.current = null;
+  };
 
   useEffect(() => {
     const connect = () => {
@@ -73,25 +83,23 @@ export const useSSE = () => {
           switch (notification.title) {
             case EventTypes.MODIFIED:
               if (!isAwaitingInstrumentation && notification.target) {
-                if (lastModifiedEventInterval) clearInterval(lastModifiedEventInterval);
-                lastModifiedEventIds.push(getIdFromSseTarget(notification.target, EntityTypes.Source));
-                lastModifiedEventTimestamp = Date.now();
+                if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
+                lastModifiedEventIds.current.push(getIdFromSseTarget(notification.target, EntityTypes.Source));
+                lastModifiedEventTimestamp.current = Date.now();
 
-                // if last message was over 5 seconds ago, fetch the sources (all, or if less than 10, fetch each one by id)...
+                // if last message was over `MODIFIED_DEBOUNCE_MS` seconds ago, fetch the sources (all, or if less than `MAX_EVENTS_FOR_SINGLE_FETCH` then fetch each by id)...
                 // the interval is to run a timestamp check every 1 second - once the condition is met, the interval is cleared.
-                lastModifiedEventInterval = setInterval(() => {
-                  const timeSinceLastModified = Date.now() - (lastModifiedEventTimestamp || 0);
+                lastModifiedEventInterval.current = setInterval(async () => {
+                  const timeSinceLastModified = Date.now() - (lastModifiedEventTimestamp.current || 0);
 
-                  if (timeSinceLastModified > 5000) {
-                    if (lastModifiedEventIds.length <= 10) {
-                      Promise.all(lastModifiedEventIds.map((id) => fetchSourceById(id)));
+                  if (timeSinceLastModified > MODIFIED_DEBOUNCE_MS) {
+                    if (lastModifiedEventIds.current.length <= MAX_EVENTS_FOR_SINGLE_FETCH) {
+                      await Promise.allSettled(lastModifiedEventIds.current.map((id) => fetchSourceById(id)));
                     } else {
-                      fetchSources();
+                      await fetchSources();
                     }
 
-                    lastModifiedEventIds = [];
-                    lastModifiedEventTimestamp = null;
-                    if (lastModifiedEventInterval) clearInterval(lastModifiedEventInterval);
+                    resetLastModifiedEventRefs();
                   }
                 }, 1000);
               }
@@ -143,6 +151,9 @@ export const useSSE = () => {
     // Initialize event source connection
     const es = connect();
     // Clean up event source on component unmount
-    return () => es.close();
+    return () => {
+      es?.close();
+      resetLastModifiedEventRefs();
+    };
   }, []);
 };
