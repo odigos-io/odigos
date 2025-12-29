@@ -183,35 +183,21 @@ func isDeploymentConfigRolloutDone(dc *openshiftappsv1.DeploymentConfig) bool {
 func isArgoRolloutRolloutDone(rollout *argorolloutsv1alpha1.Rollout) bool {
 	// Yes, this name is ridiculous. The function returns whether the rollout of an Argo rollout is done.
 
-	// A paused rollout (e.g., during a canary pause step) is considered "done" for instrumentation purposes.
-	// This is because the rollout is in a stable state where all current pods are running and healthy,
-	// just waiting for user input to continue. Odigos should be able to instrument pods in this state.
-	if rollout.Status.Phase == argorolloutsv1alpha1.RolloutPhasePaused {
+	// Check phase first - it's the most reliable indicator
+	switch rollout.Status.Phase {
+	case argorolloutsv1alpha1.RolloutPhaseHealthy, argorolloutsv1alpha1.RolloutPhasePaused:
 		return true
+	case argorolloutsv1alpha1.RolloutPhaseDegraded, argorolloutsv1alpha1.RolloutPhaseProgressing:
+		return false
 	}
 
+	// Check if the spec has been observed yet
 	// ObservedGeneration in Argo Rollouts is a string, so we need to parse it
 	observedGen, err := strconv.ParseInt(rollout.Status.ObservedGeneration, 10, 64)
-	if err != nil {
-		// If we can't parse it, assume the spec hasn't been observed yet
+	if err != nil || rollout.Generation > observedGen {
 		return false
 	}
-	if rollout.Generation > observedGen {
-		// Waiting for rollout spec update to be observed
-		return false
-	}
-	if rollout.Spec.Replicas != nil && rollout.Status.UpdatedReplicas < *rollout.Spec.Replicas {
-		// Waiting for rollout to finish: updated replicas are less than desired
-		return false
-	}
-	if rollout.Status.Replicas > rollout.Status.UpdatedReplicas {
-		// Waiting for rollout to finish: old replicas are pending termination
-		return false
-	}
-	if rollout.Status.AvailableReplicas < rollout.Status.UpdatedReplicas {
-		// Waiting for rollout to finish: not all updated replicas are available
-		return false
-	}
+	// Default to true
 	return true
 }
 

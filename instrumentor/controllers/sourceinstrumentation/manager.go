@@ -16,12 +16,22 @@ import (
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
-// isExternalResourceAvailable checks if the external resource is available in the cluster
-// using the RESTMapper to avoid permission errors on cluster that don't have the resource installed
-func isExternalResourceAvailable(mgr ctrl.Manager, gvk schema.GroupVersionKind) bool {
+// TODO: deprecate this function and use k8sutils.IsResourceAvailable instead
+// isDeploymentConfigAvailable checks if the DeploymentConfig resource is available in the cluster
+// using the RESTMapper to avoid permission errors on non-OpenShift clusters
+func isDeploymentConfigAvailable(mgr ctrl.Manager) bool {
+	gvk := schema.GroupVersionKind{
+		Group:   "apps.openshift.io",
+		Version: "v1",
+		Kind:    "DeploymentConfig",
+	}
+
+	// Try to get the REST mapping for DeploymentConfig
+	// This will fail if the resource doesn't exist in the cluster
 	_, err := mgr.GetRESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version)
 	return err == nil
 }
@@ -129,7 +139,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 
 	// Only register the DeploymentConfig controller if the resource is available (OpenShift clusters)
 	// This avoids permission errors on non-OpenShift clusters where the resource doesn't exist
-	if isExternalResourceAvailable(mgr, k8sconsts.DeploymentConfigGVK) {
+	if isDeploymentConfigAvailable(mgr) {
 		err = builder.
 			ControllerManagedBy(mgr).
 			Named("sourceinstrumentation-deploymentconfig").
@@ -145,7 +155,7 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 	}
 
 	// Only register the Rollout controller if the resource is available (Argo Rollouts installed on cluster)
-	if isExternalResourceAvailable(mgr, k8sconsts.ArgoRolloutGVK) {
+	if k8sutils.IsResourceAvailable(mgr.GetRESTMapper(), k8sconsts.ArgoRolloutGVK) {
 		err = builder.
 			ControllerManagedBy(mgr).
 			Named("sourceinstrumentation-rollout").

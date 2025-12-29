@@ -152,7 +152,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "degraded state - not paused, should check other conditions",
+			name: "degraded state - pods unhealthy, rollout not done",
 			rollout: &argorolloutsv1alpha1.Rollout{
 				ObjectMeta: metav1.ObjectMeta{
 					Generation: 1,
@@ -168,7 +168,7 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 					Phase:              argorolloutsv1alpha1.RolloutPhaseDegraded,
 				},
 			},
-			expected: true, // All replicas are available, so considered done
+			expected: false, // Degraded means pods are unhealthy, rollout not complete
 		},
 	}
 

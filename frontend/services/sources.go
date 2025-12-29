@@ -104,7 +104,7 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 	})
 
 	g.Go(func() error {
-		if !kube.IsArgoRolloutsAvailable() {
+		if !kube.IsArgoRolloutAvailable {
 			rollouts = []model.K8sActualSource{}
 			return nil
 		}
@@ -422,7 +422,7 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 		}
 
 	case WorkloadKindArgoRollout:
-		if !kube.IsArgoRolloutsAvailable() {
+		if !kube.IsArgoRolloutAvailable {
 			return fmt.Errorf("argo rollouts resources are not available in this cluster")
 		}
 

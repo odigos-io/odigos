@@ -3,6 +3,7 @@ package collectorconfig
 import (
 	"fmt"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -38,7 +39,7 @@ func init() {
 				string(semconv.K8SDaemonSetNameKey),
 				string(semconv.K8SCronJobNameKey),
 				// Custom attribute for Argo Rollouts (no semconv key available)
-				consts.K8SArgoRolloutNameAttribute,
+				k8sconsts.K8SArgoRolloutNameAttribute,
 				// Custom attribute to distinguish workload types that share the same semconv key (e.g., DeploymentConfig uses k8s.deployment.name)
 				// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.
 				// Since DeploymentConfig uses k8s.deployment.name as the semconv key, we need to add this attribute to the list of attributes to be collected.

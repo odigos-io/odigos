@@ -400,7 +400,7 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindArgoRollout:
-			if !kube.IsArgoRolloutsAvailable() {
+			if !kube.IsArgoRolloutAvailable {
 				return nil, nil
 			}
 
@@ -628,7 +628,7 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 	})
 
 	g.Go(func() error {
-		if !kube.IsArgoRolloutsAvailable() {
+		if !kube.IsArgoRolloutAvailable {
 			return nil
 		}
 

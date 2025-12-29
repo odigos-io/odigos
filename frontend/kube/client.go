@@ -10,16 +10,17 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"k8s.io/client-go/restmapper"
 )
 
 var (
@@ -28,9 +29,8 @@ var (
 	deploymentConfigAvailable           bool
 	deploymentConfigAvailabilityChecked bool
 	deploymentConfigCheckMu             sync.Mutex
-	rolloutAvailable                    bool
-	rolloutAvailabilityChecked          bool
-	rolloutCheckMu                      sync.Mutex
+	IsArgoRolloutAvailable              bool
+	argoRolloutCheckOnce                sync.Once
 )
 
 func init() {
@@ -50,6 +50,7 @@ type Client struct {
 	ActionsClient  actionsv1alpha1.ActionsV1alpha1Interface
 	MetadataClient metadata.Interface
 	DynamicClient  dynamic.Interface
+	RESTMapper     meta.RESTMapper
 }
 
 func CreateClient(kubeConfig string, kContext string) (*Client, error) {
@@ -86,12 +87,25 @@ func CreateClient(kubeConfig string, kContext string) (*Client, error) {
 		return nil, err
 	}
 
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	groupResources, err := restmapper.GetAPIGroupResources(discoveryClient)
+	if err != nil {
+		return nil, err
+	}
+
+	mapper := restmapper.NewDiscoveryRESTMapper(groupResources)
+
 	return &Client{
 		Interface:      clientset,
 		OdigosClient:   odigosClient,
 		ActionsClient:  actionsClient,
 		MetadataClient: metadataClient,
 		DynamicClient:  dynamicClient,
+		RESTMapper:     mapper,
 	}, nil
 }
 
@@ -131,43 +145,10 @@ func IsDeploymentConfigAvailable() bool {
 	return true
 }
 
-// IsArgoRolloutsAvailable checks if the Argo Rollout resource is available in the cluster
-// and if we have permission to list it. This is cached after the first check to avoid repeated API calls.
-func IsArgoRolloutsAvailable() bool {
-	rolloutCheckMu.Lock()
-	defer rolloutCheckMu.Unlock()
-
-	if rolloutAvailabilityChecked {
-		return rolloutAvailable
-	}
-
-	logger := log.Log.WithName("kube.client")
-
-	gvr := schema.GroupVersionResource{
-		Group:    "argoproj.io",
-		Version:  "v1alpha1",
-		Resource: "rollouts",
-	}
-
-	listOptions := metav1.ListOptions{Limit: 0}
-	_, err := DefaultClient.DynamicClient.Resource(gvr).List(context.Background(), listOptions)
-
-	if err != nil {
-		if apierrors.IsForbidden(err) {
-			// Forbidden means the CRD exists but we lack permission - this is a problem!
-			logger.Error(err, "Argo Rollouts CRD is installed but Odigos lacks permission to access rollouts")
-		} else {
-			// Other errors (e.g., "resource not found") mean CRD is not installed - this is normal
-			logger.Info("Argo Rollouts not available in cluster", "reason", err.Error())
-		}
-		rolloutAvailable = false
-		rolloutAvailabilityChecked = true
-		return false
-	}
-
-	// Resource exists and we have permission
-	logger.V(1).Info("Argo Rollouts available in cluster")
-	rolloutAvailable = true
-	rolloutAvailabilityChecked = true
-	return true
+// InitArgoRolloutAvailability checks if the Argo Rollout resource is available in the cluster
+// and sets IsArgoRolloutAvailable. This should be called once during initialization.
+func InitArgoRolloutAvailability() {
+	argoRolloutCheckOnce.Do(func() {
+		IsArgoRolloutAvailable = k8sutils.IsResourceAvailable(DefaultClient.RESTMapper, k8sconsts.ArgoRolloutGVK)
+	})
 }
