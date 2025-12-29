@@ -25,6 +25,7 @@ func StartOpAmpServer(ctx context.Context, logger logr.Logger, mgr ctrl.Manager,
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
 	connectionCache := connection.NewConnectionsCache()
+
 	sdkConfig := sdkconfig.NewSdkConfigManager(logger, mgr, connectionCache, odigosNs)
 
 	handlers := &ConnectionHandlers{
