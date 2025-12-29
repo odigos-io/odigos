@@ -48,7 +48,7 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	response.OdigosVersion = deploymentData[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
 	clusterName := GetClusterName(ctx)
-	response.ClusterName = &clusterName
+	response.ClusterName = clusterName
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
 	if isNewInstallation {
 		response.InstallationStatus = model.InstallationStatus(NewInstallation)
@@ -59,17 +59,13 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	return response
 }
 
-func getOdigosConfigForConfigFile(ctx context.Context) (*common.OdigosConfiguration, error) {
+func GetOdigosConfiguration(ctx context.Context) (*common.OdigosConfiguration, error) {
 	ns := env.GetCurrentNamespace()
 
 	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 	if err != nil {
-		log.Printf("Error getting effective-config: %v\n", err)
-		configMap, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
-		if err != nil {
-			log.Printf("Error getting odigos-configuration: %v\n", err)
-			return nil, err
-		}
+		log.Printf("Error getting config maps: %v\n", err)
+		return nil, err
 	}
 
 	var odigosConfiguration common.OdigosConfiguration
@@ -82,7 +78,7 @@ func getOdigosConfigForConfigFile(ctx context.Context) (*common.OdigosConfigurat
 }
 
 func IsReadonlyMode(ctx context.Context) bool {
-	config, err := getOdigosConfigForConfigFile(ctx)
+	config, err := GetOdigosConfiguration(ctx)
 	if err != nil {
 		return false
 	}
@@ -90,13 +86,13 @@ func IsReadonlyMode(ctx context.Context) bool {
 	return config.UiMode == common.UiModeReadonly
 }
 
-func GetClusterName(ctx context.Context) string {
-	config, err := getOdigosConfigForConfigFile(ctx)
+func GetClusterName(ctx context.Context) *string {
+	config, err := GetOdigosConfiguration(ctx)
 	if err != nil {
-		return ""
+		return nil
 	}
 
-	return config.ClusterName
+	return &config.ClusterName
 }
 
 func isSourceCreated(ctx context.Context) bool {
