@@ -55,6 +55,22 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, configUpdateErr
 	}
 
+	// check if there are any enabled containers in the instrumentation config
+	enabledContainers := make(map[string]struct{})
+	for _, containerConfig := range instrumentationConfig.Spec.Containers {
+		if containerConfig.OtelDistroName == "" || !containerConfig.AgentEnabled {
+			continue
+		}
+		enabledContainers[containerConfig.ContainerName] = struct{}{}
+	}
+	// if no enabled containers, send un-instrumentation request
+	// note: we might miss some edge cases here: if workload has multiple containers and only some are disabled,
+	// we should ideally un-instrument only the disabled ones.
+	if len(enabledContainers) == 0 {
+		err = i.sendUnInstrumentationRequest(podWorkload)
+		return ctrl.Result{}, err
+	}
+
 	// potentially send instrumentation requests for processes that are part of the instrumented workload and support
 	// instrumentation without restart
 	instrumentationRequestErr := i.sendInstrumentationRequest(ctx, podWorkload, instrumentationConfig)
@@ -119,12 +135,9 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 		}
 	}
 
-	// if none of the containers support instrumentation without a restart, send an un-instrumentation request
-	// this condition can happen for:
-	// 1. workloads with instrumentations that do not support no-restart instrumentation (the request will be a no-op)
-	// 2. A config change might caused some of the containers to require un-instrumentation (for example adding container to the ignored containers list)
+	// if none of the containers support instrumentation without a restart, nothing to do here
 	if len(distroByContainer) == 0 {
-		return i.sendUnInstrumentationRequest(podWorkload)
+		return nil
 	}
 
 	selectedPods, err := kubecommon.WorkloadPodsOnCurrentNode(i.Client, ctx, instrumentationConfig)

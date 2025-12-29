@@ -1,0 +1,12 @@
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: my-source-proxy
+  namespace: kube-system
+  labels:
+    odigos.io/e2e: source
+spec:
+  workload:
+    name: kube-proxy
+    namespace: kube-system
+    kind: DaemonSet
