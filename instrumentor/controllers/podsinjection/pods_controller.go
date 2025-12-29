@@ -3,6 +3,7 @@ package podsinjection
 import (
 	"context"
 
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -11,8 +12,7 @@ import (
 )
 
 type PodsController struct {
-	Client client.Client
-
+	Client      client.Client
 	PodsTracker *PodsTracker
 }
 
@@ -23,7 +23,7 @@ func (r *PodsController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			err := r.handleDeletedPod(ctx, req)
-			return ctrl.Result{}, err
+			return utils.K8SUpdateErrorHandler(err)
 		}
 		return ctrl.Result{}, err
 	}
