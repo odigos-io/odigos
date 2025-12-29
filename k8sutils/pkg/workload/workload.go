@@ -8,6 +8,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -15,6 +16,7 @@ type Workload interface {
 	client.Object
 	AvailableReplicas() int32
 	PodTemplateSpec() *corev1.PodTemplateSpec
+	LabelSelector() *metav1.LabelSelector
 }
 
 // compile time check for interface implementation
@@ -37,6 +39,10 @@ func (d *DeploymentWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
 	return &d.Spec.Template
 }
 
+func (d *DeploymentWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
+}
+
 type DaemonSetWorkload struct {
 	*v1.DaemonSet
 }
@@ -47,6 +53,10 @@ func (d *DaemonSetWorkload) AvailableReplicas() int32 {
 
 func (d *DaemonSetWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
 	return &d.Spec.Template
+}
+
+func (d *DaemonSetWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
 }
 
 type StatefulSetWorkload struct {
@@ -61,8 +71,16 @@ func (s *StatefulSetWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
 	return &s.Spec.Template
 }
 
+func (s *StatefulSetWorkload) LabelSelector() *metav1.LabelSelector {
+	return s.Spec.Selector
+}
+
 type CronJobWorkloadV1 struct {
 	*batchv1.CronJob
+}
+
+func (c *CronJobWorkloadV1) LabelSelector() *metav1.LabelSelector {
+	return nil
 }
 
 type CronJobWorkloadBeta struct {
@@ -85,6 +103,10 @@ func (c *CronJobWorkloadBeta) PodTemplateSpec() *corev1.PodTemplateSpec {
 	return &c.Spec.JobTemplate.Spec.Template
 }
 
+func (c *CronJobWorkloadBeta) LabelSelector() *metav1.LabelSelector {
+	return nil
+}
+
 type DeploymentConfigWorkload struct {
 	*openshiftappsv1.DeploymentConfig
 }
@@ -95,6 +117,12 @@ func (d *DeploymentConfigWorkload) AvailableReplicas() int32 {
 
 func (d *DeploymentConfigWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
 	return d.Spec.Template
+}
+
+func (d *DeploymentConfigWorkload) LabelSelector() *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: d.Spec.Selector,
+	}
 }
 
 func ObjectToWorkload(obj client.Object) (Workload, error) {

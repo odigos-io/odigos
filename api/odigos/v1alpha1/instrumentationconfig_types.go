@@ -235,6 +235,17 @@ type RuntimeDetailsByContainer struct {
 	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
+type PodsInjectionStatus struct {
+	// number of pods where odigos agnent is injected and using the latest version and configuration.
+	NumberUpdated int32 `json:"numberUpdatedPods,omitempty"`
+
+	// number of pods that have the odigos agnet injected.
+	NumberNotUpdated int32 `json:"numberNotUpdated,omitempty"`
+
+	// number of pods that do not have the odigos agnet injected.
+	NumberNotInjected int32 `json:"numberNotInjected,omitempty"`
+}
+
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
@@ -252,6 +263,9 @@ type InstrumentationConfigStatus struct {
 	// This time recorded only after the rollout took place.
 	// This allows us to determine whether a crashing application should be rolled back or not
 	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
+
+	// counters for the injection status of the pods in this workload.
+	PodsInjectionStatus *PodsInjectionStatus `json:"podsInjectionStatus,omitempty"`
 }
 
 func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {

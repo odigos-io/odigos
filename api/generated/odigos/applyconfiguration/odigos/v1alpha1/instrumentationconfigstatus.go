@@ -30,6 +30,7 @@ type InstrumentationConfigStatusApplyConfiguration struct {
 	WorkloadRolloutHash       *string                                       `json:"workloadRolloutHash,omitempty"`
 	RollbackOccurred          *bool                                         `json:"rollbackOccurred,omitempty"`
 	InstrumentationTime       *metav1.Time                                  `json:"instrumentationTime,omitempty"`
+	PodsInjectionStatus       *PodsInjectionStatusApplyConfiguration        `json:"podsInjectionStatus,omitempty"`
 }
 
 // InstrumentationConfigStatusApplyConfiguration constructs a declarative configuration of the InstrumentationConfigStatus type for use with
@@ -85,5 +86,13 @@ func (b *InstrumentationConfigStatusApplyConfiguration) WithRollbackOccurred(val
 // If called multiple times, the InstrumentationTime field is set to the value of the last call.
 func (b *InstrumentationConfigStatusApplyConfiguration) WithInstrumentationTime(value metav1.Time) *InstrumentationConfigStatusApplyConfiguration {
 	b.InstrumentationTime = &value
+	return b
+}
+
+// WithPodsInjectionStatus sets the PodsInjectionStatus field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PodsInjectionStatus field is set to the value of the last call.
+func (b *InstrumentationConfigStatusApplyConfiguration) WithPodsInjectionStatus(value *PodsInjectionStatusApplyConfiguration) *InstrumentationConfigStatusApplyConfiguration {
+	b.PodsInjectionStatus = value
 	return b
 }

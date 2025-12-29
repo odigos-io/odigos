@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled"
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
+	"github.com/odigos-io/odigos/instrumentor/controllers/podsinjection"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -180,6 +181,11 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 	err = instrumentationconfig.SetupWithManager(mgr)
 	if err != nil {
 		return fmt.Errorf("failed to create controller for instrumentation config: %w", err)
+	}
+
+	err = podsinjection.SetupWithManager(mgr)
+	if err != nil {
+		return fmt.Errorf("failed to create controller for pod injection: %w", err)
 	}
 
 	return nil
