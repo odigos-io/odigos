@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -43,7 +42,6 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 		}
 	}
 	deploymentData := odigosDeployment.Data
-	fmt.Println("deploymentData is here", deploymentData)
 	response.Readonly = IsReadonlyMode(ctx)
 	response.PlatformType = model.ComputePlatformTypeK8s // TODO: add support for VM (or others)
 	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
