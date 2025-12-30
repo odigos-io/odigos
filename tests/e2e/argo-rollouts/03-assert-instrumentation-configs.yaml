@@ -1,0 +1,104 @@
+# Assert InstrumentationConfigs are created for Argo Rollouts
+# The naming convention is rollout-<rollout-name> (lowercase "rollout" prefix)
+
+# Python Rollout InstrumentationConfig
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: rollout-python-rollout
+  namespace: default
+  ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Rollout
+      name: python-rollout
+status:
+  conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [python-rollout]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
+  runtimeDetailsByContainer:
+    - containerName: python-rollout
+      language: python
+---
+# Node.js Rollout InstrumentationConfig
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: rollout-nodejs-rollout
+  namespace: default
+  ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Rollout
+      name: nodejs-rollout
+status:
+  conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [nodejs-rollout]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
+  runtimeDetailsByContainer:
+    - containerName: nodejs-rollout
+      language: javascript
+---
+# Java Rollout InstrumentationConfig
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: rollout-java-rollout
+  namespace: default
+  ownerReferences:
+    - apiVersion: argoproj.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Rollout
+      name: java-rollout
+status:
+  conditions:
+    - message: "workload marked for automatic instrumentation by namespace source CR 'default' in namespace 'default'"
+      reason: NamespaceSource
+      status: "True"
+      type: MarkedForInstrumentation
+    - message: "runtime detection completed successfully"
+      reason: DetectedSuccessfully
+      status: "True"
+      type: RuntimeDetection
+    - message: "agent enabled in 1 containers: [java-rollout]"
+      reason: EnabledSuccessfully
+      status: "True"
+      type: AgentEnabled
+    - message: workload rollout triggered successfully
+      reason: RolloutTriggeredSuccessfully
+      status: "True"
+      type: WorkloadRollout
+  runtimeDetailsByContainer:
+    - containerName: java-rollout
+      language: java

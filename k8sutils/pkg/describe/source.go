@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -198,6 +199,40 @@ func DescribeDeploymentConfig(ctx context.Context, kubeClient kubernetes.Interfa
 		Kind:            k8sconsts.WorkloadKindDeploymentConfig,
 		ObjectMeta:      dc.ObjectMeta,
 		PodTemplateSpec: dc.Spec.Template,
+		LabelSelector:   labelSelector,
+	}
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+}
+
+func DescribeRollout(ctx context.Context, kubeClient kubernetes.Interface, dynamicClient dynamic.Interface,
+	odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+	// Use dynamic client to fetch the Rollout
+	gvr := schema.GroupVersionResource{
+		Group:    "argoproj.io",
+		Version:  "v1alpha1",
+		Resource: "rollouts",
+	}
+
+	unstructuredDC, err := dynamicClient.Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to typed Rollout
+	var rollout argorolloutsv1alpha1.Rollout
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredDC.Object, &rollout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert unstructured to Rollout: %w", err)
+	}
+
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: rollout.Spec.Selector.MatchLabels,
+	}
+
+	workloadObj := &source.K8sSourceObject{
+		Kind:            k8sconsts.WorkloadKindArgoRollout,
+		ObjectMeta:      rollout.ObjectMeta,
+		PodTemplateSpec: &rollout.Spec.Template,
 		LabelSelector:   labelSelector,
 	}
 	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)

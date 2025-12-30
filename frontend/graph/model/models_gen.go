@@ -360,6 +360,7 @@ type GetConfigResponse struct {
 	OdigosVersion      string              `json:"odigosVersion"`
 	InstallationMethod string              `json:"installationMethod"`
 	InstallationStatus InstallationStatus  `json:"installationStatus"`
+	ClusterName        *string             `json:"clusterName,omitempty"`
 }
 
 type GetDestinationCategories struct {
@@ -1065,7 +1066,6 @@ const (
 	ActionTypeLatencySampler        ActionType = "LatencySampler"
 	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
 	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
-	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1080,13 +1080,12 @@ var AllActionType = []ActionType{
 	ActionTypeLatencySampler,
 	ActionTypeServiceNameSampler,
 	ActionTypeSpanAttributeSampler,
-	ActionTypeURLTemplatization,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeUnknownType:
 		return true
 	}
 	return false
@@ -1579,6 +1578,7 @@ const (
 	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
 	K8sResourceKindPod              K8sResourceKind = "Pod"
 	K8sResourceKindDeploymentConfig K8sResourceKind = "DeploymentConfig"
+	K8sResourceKindRollout          K8sResourceKind = "Rollout"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
@@ -1589,11 +1589,12 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindConfigMap,
 	K8sResourceKindPod,
 	K8sResourceKindDeploymentConfig,
+	K8sResourceKindRollout,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindDeploymentConfig:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout:
 		return true
 	}
 	return false

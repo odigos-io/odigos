@@ -11,6 +11,7 @@ enum K8sResourceKind {
   ConfigMap
   Pod
   DeploymentConfig
+  Rollout
 }
 
 enum ConditionStatus {
@@ -391,6 +392,7 @@ type GetConfigResponse {
   odigosVersion: String!
   installationMethod: String!
   installationStatus: InstallationStatus!
+  clusterName: String
 }
 
 input DestinationInput {

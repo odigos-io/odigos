@@ -1,0 +1,71 @@
+# Assert that Rollout pods are instrumented with Odigos device injection
+# Pods should have instrumentation.odigos.io/generic resource requests/limits
+
+# Python Rollout Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: python-rollout
+spec:
+  containers:
+    - name: python-rollout
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: '1'
+        requests:
+          instrumentation.odigos.io/generic: '1'
+status:
+  containerStatuses:
+    - name: python-rollout
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+# Node.js Rollout Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: nodejs-rollout
+spec:
+  containers:
+    - name: nodejs-rollout
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: '1'
+        requests:
+          instrumentation.odigos.io/generic: '1'
+status:
+  containerStatuses:
+    - name: nodejs-rollout
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running
+---
+# Java Rollout Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: default
+  labels:
+    app: java-rollout
+spec:
+  containers:
+    - name: java-rollout
+      resources:
+        limits:
+          instrumentation.odigos.io/generic: '1'
+        requests:
+          instrumentation.odigos.io/generic: '1'
+status:
+  containerStatuses:
+    - name: java-rollout
+      ready: true
+      restartCount: 0
+      started: true
+  phase: Running

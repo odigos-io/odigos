@@ -33,10 +33,10 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, 
 
 	OtelServiceName := serviceName
 	if serviceName == "" {
-		OtelServiceName = kd.pw.Name
+		OtelServiceName = kd.Pw.Name
 	}
 
-	resourceAttributes, err := getResourceAttributes(kd.pw, kd.pod.Name, kd.procEvent)
+	resourceAttributes, err := getResourceAttributes(kd.Pw, kd.Pod.Name, kd.ProcEvent)
 	if err != nil {
 		logger.Info("error getting resource attributes", "error", err)
 	}
@@ -51,8 +51,8 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, 
 func (ksg *k8sSettingsGetter) instrumentationSDKConfig(ctx context.Context, kd *K8sProcessDetails, lang common.ProgrammingLanguage) (*odigosv1.SdkConfig, string, error) {
 	instrumentationConfig := odigosv1.InstrumentationConfig{}
 	instrumentationConfigKey := client.ObjectKey{
-		Namespace: kd.pw.Namespace,
-		Name:      workload.CalculateWorkloadRuntimeObjectName(kd.pw.Name, kd.pw.Kind),
+		Namespace: kd.Pw.Namespace,
+		Name:      workload.CalculateWorkloadRuntimeObjectName(kd.Pw.Name, kd.Pw.Kind),
 	}
 	if err := ksg.client.Get(ctx, instrumentationConfigKey, &instrumentationConfig); err != nil {
 		// this can be valid when the instrumentation config is deleted and current pods will go down soon
