@@ -28,11 +28,12 @@ func (o InstrumentationConfigPodsInjectionPredicate) Update(e event.UpdateEvent)
 		return false
 	}
 
-	// pods rely on the agents meta hash, and when it changes, we need to re-compute the couters based on the new agents meta hash baseline.
+	// pods injection count uses the agents meta hash, and when it changes, we need to re-compute the couters to have them correct.
 	return old.Spec.AgentsMetaHash != new.Spec.AgentsMetaHash
 }
 
 func (o InstrumentationConfigPodsInjectionPredicate) Delete(e event.DeleteEvent) bool {
+	// the status is written to the ic, so if it's deleted, we have nothing to do.
 	return false
 }
 
