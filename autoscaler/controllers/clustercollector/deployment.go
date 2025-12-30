@@ -293,13 +293,6 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		)
 	}
 
-	if odigosConfiguration.HyperdxLogNormalizer != nil && *odigosConfiguration.HyperdxLogNormalizer {
-		desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
-			desiredDeployment.Spec.Template.Spec.Containers[0].Args,
-			"--feature-gates=hyperdx.log-normalizer",
-		)
-	}
-
 	err = ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
 	if err != nil {
 		return nil, err

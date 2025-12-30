@@ -102,7 +102,6 @@ const (
 	EnableDataCompressionProperty      = "enable-data-compression"
 	ResourceSizePresetProperty         = "resource-size-preset"
 	WaspEnabledProperty                = "wasp-enabled"
-	HyperdxLogNormalizerProperty       = "hyperdx-log-normalizer"
 )
 
 var (

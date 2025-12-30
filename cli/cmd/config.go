@@ -111,7 +111,6 @@ var configCmd = &cobra.Command{
 		consts.EnableDataCompressionProperty,
 		consts.ResourceSizePresetProperty,
 		consts.WaspEnabledProperty,
-		consts.HyperdxLogNormalizerProperty,
 	),
 }
 
@@ -504,10 +503,6 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	case consts.ClickhouseJsonTypeEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
 		config.ClickhouseJsonTypeEnabledProperty = &boolValue
-
-	case consts.HyperdxLogNormalizerProperty:
-		boolValue, _ := strconv.ParseBool(value[0])
-		config.HyperdxLogNormalizer = &boolValue
 
 	case consts.AllowedTestConnectionHostsProperty:
 		config.AllowedTestConnectionHosts = value
