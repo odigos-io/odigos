@@ -87,6 +87,7 @@ func initKubernetesClient(flags *Flags) error {
 	}
 
 	kube.SetDefaultClient(client)
+	kube.InitArgoRolloutAvailability()
 	return nil
 }
 

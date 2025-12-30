@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -96,4 +98,11 @@ func GetK8sClientset() (*kubernetes.Clientset, error) {
 		return nil, err
 	}
 	return clientset, nil
+}
+
+// IsResourceAvailable checks if the external resource is available in the cluster
+// using the RESTMapper to avoid permission errors on clusters that don't have the resource installed.
+func IsResourceAvailable(mapper meta.RESTMapper, gvk schema.GroupVersionKind) bool {
+	_, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	return err == nil
 }

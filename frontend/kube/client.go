@@ -4,19 +4,23 @@ import (
 	"context"
 	"sync"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	actionsv1alpha1 "github.com/odigos-io/odigos/api/generated/actions/clientset/versioned/typed/actions/v1alpha1"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	"k8s.io/client-go/restmapper"
 )
 
 var (
@@ -25,11 +29,15 @@ var (
 	deploymentConfigAvailable           bool
 	deploymentConfigAvailabilityChecked bool
 	deploymentConfigCheckMu             sync.Mutex
+	IsArgoRolloutAvailable              bool
+	argoRolloutCheckOnce                sync.Once
 )
 
 func init() {
 	// Register OpenShift types with the scheme
 	_ = openshiftappsv1.AddToScheme(Scheme)
+	// Register Argo Rollouts types with the scheme
+	_ = argorolloutsv1alpha1.AddToScheme(Scheme)
 }
 
 func SetDefaultClient(client *Client) {
@@ -42,6 +50,7 @@ type Client struct {
 	ActionsClient  actionsv1alpha1.ActionsV1alpha1Interface
 	MetadataClient metadata.Interface
 	DynamicClient  dynamic.Interface
+	RESTMapper     meta.RESTMapper
 }
 
 func CreateClient(kubeConfig string, kContext string) (*Client, error) {
@@ -78,12 +87,25 @@ func CreateClient(kubeConfig string, kContext string) (*Client, error) {
 		return nil, err
 	}
 
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	groupResources, err := restmapper.GetAPIGroupResources(discoveryClient)
+	if err != nil {
+		return nil, err
+	}
+
+	mapper := restmapper.NewDiscoveryRESTMapper(groupResources)
+
 	return &Client{
 		Interface:      clientset,
 		OdigosClient:   odigosClient,
 		ActionsClient:  actionsClient,
 		MetadataClient: metadataClient,
 		DynamicClient:  dynamicClient,
+		RESTMapper:     mapper,
 	}, nil
 }
 
@@ -121,4 +143,12 @@ func IsDeploymentConfigAvailable() bool {
 	deploymentConfigAvailable = true
 	deploymentConfigAvailabilityChecked = true
 	return true
+}
+
+// InitArgoRolloutAvailability checks if the Argo Rollout resource is available in the cluster
+// and sets IsArgoRolloutAvailable. This should be called once during initialization.
+func InitArgoRolloutAvailability() {
+	argoRolloutCheckOnce.Do(func() {
+		IsArgoRolloutAvailable = k8sutils.IsResourceAvailable(DefaultClient.RESTMapper, k8sconsts.ArgoRolloutGVK)
+	})
 }
