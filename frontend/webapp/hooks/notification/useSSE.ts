@@ -122,7 +122,7 @@ export const useSSE = () => {
               }
 
               handleEventInterval(() => {
-                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${'NaN'} sources` });
+                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: notification.message || 'Successfully created sources' });
 
                 fetchSources();
                 clearStatusMessage();
@@ -148,7 +148,7 @@ export const useSSE = () => {
               }
 
               handleEventInterval(() => {
-                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${'NaN'} sources` });
+                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: notification.message || 'Successfully deleted sources' });
 
                 fetchSources();
                 clearStatusMessage();

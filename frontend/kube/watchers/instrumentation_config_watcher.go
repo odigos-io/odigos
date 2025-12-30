@@ -25,9 +25,10 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     3 * time.Second,
+			Duration:     3 * time.Second, // 2s less than frontend MODIFIED_DEBOUNCE_MS
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.InstrumentationConfig,
+			Debounce:     true, // Reset timer on each event, send only after `Duration` seconds of silence
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Successfully created %d sources", count)
 			},
@@ -40,10 +41,10 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigModifiedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     3 * time.Second, // Match frontend MODIFIED_DEBOUNCE_MS
+			Duration:     3 * time.Second, // 2s less than frontend MODIFIED_DEBOUNCE_MS
 			Event:        sse.MessageEventModified,
 			CRDType:      consts.InstrumentationConfig,
-			Debounce:     true, // Reset timer on each event, send only after 5s of silence
+			Debounce:     true, // Reset timer on each event, send only after `Duration` seconds of silence
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Successfully updated %d sources", count)
 			},
@@ -56,9 +57,10 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 	instrumentationConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     3 * time.Second,
+			Duration:     3 * time.Second, // 2s less than frontend MODIFIED_DEBOUNCE_MS
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.InstrumentationConfig,
+			Debounce:     true, // Reset timer on each event, send only after `Duration` seconds of silence
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Successfully deleted %d sources", count)
 			},
