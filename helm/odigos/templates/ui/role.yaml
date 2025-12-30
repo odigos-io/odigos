@@ -122,3 +122,8 @@ rules:
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - delete
       {{- end }}
+  - apiGroups:
+      - ''
+    resources:
+      - pods/log
+    verbs: ["get"]

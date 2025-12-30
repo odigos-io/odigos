@@ -1,11 +1,17 @@
 package services
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"io"
+	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -187,4 +193,103 @@ func RestartPod(ctx context.Context, namespace, name string) error {
 	}
 
 	return err
+}
+
+// StreamPodLogs streams pod logs via SSE (Server-Sent Events).
+// It supports optional query parameters:
+//   - container: specific container name (defaults to first container)
+//   - follow: "true" to stream logs in real-time (defaults to "true")
+//   - tailLines: number of lines to show from the end (defaults to 100)
+//   - previous: "true" to get logs from previous terminated container
+func StreamPodLogs(c *gin.Context) {
+	namespace := c.Param("namespace")
+	podName := c.Param("name")
+	containerName := c.Query("container")
+	follow := c.DefaultQuery("follow", "true") == "true"
+	previous := c.Query("previous") == "true"
+
+	// Parse tailLines, default to 100
+	var tailLines int64 = 100
+	if tl := c.Query("tailLines"); tl != "" {
+		fmt.Sscanf(tl, "%d", &tailLines)
+	}
+
+	// If no container specified, get the first container from the pod
+	if containerName == "" {
+		pod, err := kube.DefaultClient.CoreV1().Pods(namespace).Get(c.Request.Context(), podName, metav1.GetOptions{})
+		if err != nil {
+			c.JSON(500, gin.H{"error": fmt.Sprintf("failed to get pod: %v", err)})
+			return
+		}
+		if len(pod.Spec.Containers) == 0 {
+			c.JSON(400, gin.H{"error": "pod has no containers"})
+			return
+		}
+		containerName = pod.Spec.Containers[0].Name
+	}
+
+	// Build log options
+	logOptions := &corev1.PodLogOptions{
+		Container: containerName,
+		Follow:    follow,
+		TailLines: &tailLines,
+		Previous:  previous,
+	}
+
+	// Get the log stream
+	req := kube.DefaultClient.CoreV1().Pods(namespace).GetLogs(podName, logOptions)
+	stream, err := req.Stream(c.Request.Context())
+	if err != nil {
+		c.JSON(500, gin.H{"error": fmt.Sprintf("failed to stream logs: %v", err)})
+		return
+	}
+	defer stream.Close()
+
+	target := fmt.Sprintf("namespace=%s&name=%s&container=%s", namespace, podName, containerName)
+
+	// Stream logs line by line
+	reader := bufio.NewReader(stream)
+	for {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		default:
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					if !follow {
+						// For non-follow mode, we're done when we reach EOF
+						return
+					}
+					// For follow mode, EOF means the container stopped
+					sse.SendMessageToClient(sse.SSEMessage{
+						Type:    sse.MessageTypeInfo,
+						Event:   sse.MessageEventLogEnd,
+						Data:    "Stream ended",
+						CRDType: "PodLogs",
+						Target:  target,
+					})
+					return
+				}
+				// Other error
+				sse.SendMessageToClient(sse.SSEMessage{
+					Type:    sse.MessageTypeError,
+					Event:   sse.MessageEventLogError,
+					Data:    fmt.Sprintf("Error reading logs: %v", err),
+					CRDType: "PodLogs",
+					Target:  target,
+				})
+				return
+			}
+
+			// Send the log line as an SSE event
+			sse.SendMessageToClient(sse.SSEMessage{
+				Type:    sse.MessageTypeDefault,
+				Event:   sse.MessageEventLogLine,
+				Data:    strings.TrimSuffix(line, "\n"),
+				CRDType: "PodLogs",
+				Target:  target,
+			})
+		}
+	}
 }

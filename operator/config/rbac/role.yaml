@@ -73,6 +73,7 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - pods/log
   - pods/status
   verbs:
   - get
