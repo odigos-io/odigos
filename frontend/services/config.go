@@ -42,13 +42,13 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 		}
 	}
 	deploymentData := odigosDeployment.Data
-
 	response.Readonly = IsReadonlyMode(ctx)
 	response.PlatformType = model.ComputePlatformTypeK8s // TODO: add support for VM (or others)
 	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
 	response.OdigosVersion = deploymentData[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
-
+	clusterName := GetClusterName(ctx)
+	response.ClusterName = clusterName
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
 	if isNewInstallation {
 		response.InstallationStatus = model.InstallationStatus(NewInstallation)
@@ -59,22 +59,40 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	return response
 }
 
-func IsReadonlyMode(ctx context.Context) bool {
+func GetOdigosConfiguration(ctx context.Context) (*common.OdigosConfiguration, error) {
 	ns := env.GetCurrentNamespace()
 
 	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 	if err != nil {
 		log.Printf("Error getting config maps: %v\n", err)
-		return false
+		return nil, err
 	}
 
 	var odigosConfiguration common.OdigosConfiguration
 	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
-		log.Printf("Error parsing YAML: %v\n", err)
+		log.Printf("Error parsing YAML from ConfigMap %s: %v\n", configMap.Name, err)
+		return nil, err
+	}
+
+	return &odigosConfiguration, nil
+}
+
+func IsReadonlyMode(ctx context.Context) bool {
+	config, err := GetOdigosConfiguration(ctx)
+	if err != nil {
 		return false
 	}
 
-	return odigosConfiguration.UiMode == common.UiModeReadonly
+	return config.UiMode == common.UiModeReadonly
+}
+
+func GetClusterName(ctx context.Context) *string {
+	config, err := GetOdigosConfiguration(ctx)
+	if err != nil {
+		return nil
+	}
+
+	return &config.ClusterName
 }
 
 func isSourceCreated(ctx context.Context) bool {

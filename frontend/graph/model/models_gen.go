@@ -360,6 +360,7 @@ type GetConfigResponse struct {
 	OdigosVersion      string              `json:"odigosVersion"`
 	InstallationMethod string              `json:"installationMethod"`
 	InstallationStatus InstallationStatus  `json:"installationStatus"`
+	ClusterName        *string             `json:"clusterName,omitempty"`
 }
 
 type GetDestinationCategories struct {
@@ -1065,7 +1066,6 @@ const (
 	ActionTypeLatencySampler        ActionType = "LatencySampler"
 	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
 	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
-	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1080,13 +1080,12 @@ var AllActionType = []ActionType{
 	ActionTypeLatencySampler,
 	ActionTypeServiceNameSampler,
 	ActionTypeSpanAttributeSampler,
-	ActionTypeURLTemplatization,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeUnknownType:
 		return true
 	}
 	return false
