@@ -30,8 +30,6 @@ var (
 )
 
 func GetConfig(ctx context.Context) model.GetConfigResponse {
-	var response model.GetConfigResponse
-
 	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		// assign default values (should not happen in production, but we want to be safe)
@@ -42,7 +40,7 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 		}
 	}
 
-	response = buildConfigResponse(ctx, odigosDeployment.Data)
+	response := buildConfigResponse(ctx, odigosDeployment.Data)
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
 	if isNewInstallation {
 		response.InstallationStatus = model.InstallationStatus(NewInstallation)
