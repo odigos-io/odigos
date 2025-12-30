@@ -18,19 +18,25 @@ enum CrdTypes {
   Destination = 'Destination',
 }
 
-const MODIFIED_DEBOUNCE_MS = 8000;
+const MODIFIED_DEBOUNCE_MS = 5000;
+
+// SSE event counters for debugging
+const sseEventCounts = {
+  total: 0,
+  byEvent: {} as Record<string, number>,
+  byCrd: {} as Record<string, number>,
+};
 
 export const useSSE = () => {
   const { fetchSources } = useSourceCRUD();
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
-  const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
 
   const maxRetries = 10;
   const retryCount = useRef(0);
 
-  const lastModifiedEventInterval = useRef<NodeJS.Timeout | null>(null);
   const lastModifiedEventTimestamp = useRef<number | null>(null);
+  const lastModifiedEventInterval = useRef<NodeJS.Timeout | null>(null);
 
   const clearStatusMessage = () => {
     const { priorityMessage, setStatusStore } = useStatusStore.getState();
@@ -71,11 +77,22 @@ export const useSSE = () => {
           target: data.target,
         };
 
+        // Count SSE events
+        sseEventCounts.total++;
+        const eventKey = notification.title || 'unknown';
+        const crdKey = notification.crdType || 'unknown';
+        sseEventCounts.byEvent[eventKey] = (sseEventCounts.byEvent[eventKey] || 0) + 1;
+        sseEventCounts.byCrd[crdKey] = (sseEventCounts.byCrd[crdKey] || 0) + 1;
+        console.log(`[SSE] Event #${sseEventCounts.total}: ${eventKey} (${crdKey})`, {
+          counts: { ...sseEventCounts },
+          data: notification,
+        });
+
+        const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
+
         const isConnected = [EventTypes.CONNECTED].includes(notification.crdType);
         const isSource = [CrdTypes.InstrumentationConfig].includes(notification.crdType);
         const isDestination = [CrdTypes.Destination].includes(notification.crdType);
-
-        const { isAwaitingInstrumentation, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
 
         // do not notify for: connected, modified events, or sources that are still being instrumented
         if (!isConnected && !(isSource && isAwaitingInstrumentation) && notification.title !== EventTypes.MODIFIED) {

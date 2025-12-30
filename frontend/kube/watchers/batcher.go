@@ -46,6 +46,9 @@ type EventBatcherConfig struct {
 	FailureBatchMessageFunc func(batchSize int, crd string) string
 	// Function to generate a message for a batch of successful messages
 	SuccessBatchMessageFunc func(batchSize int, crd string) string
+	// If true, reset the timer on each new event (debounce mode)
+	// If false, send batch when timer expires regardless of new events (batch mode)
+	Debounce bool
 }
 
 func NewEventBatcher(config EventBatcherConfig) *EventBatcher {
@@ -92,8 +95,12 @@ func (eb *EventBatcher) AddEvent(msgType sse.MessageType, data, target string) e
 
 	eb.batch = append(eb.batch, message)
 
-	if eb.timer == nil {
-		// A new batch timer is started once the first message is added
+	if eb.config.Debounce && eb.timer != nil {
+		// Debounce mode: reset the timer on each new event
+		eb.timer.Stop()
+		eb.timer = time.AfterFunc(eb.config.Duration, eb.sendBatch)
+	} else if eb.timer == nil {
+		// Batch mode or first event: start the timer
 		eb.timer = time.AfterFunc(eb.config.Duration, eb.sendBatch)
 	}
 
@@ -127,33 +134,41 @@ func (eb *EventBatcher) sendBatch() {
 }
 
 func (eb *EventBatcher) prepareBatchMessage() []sse.SSEMessage {
-	successCount := 0
-	failureCount := 0
+	// Use maps to track unique targets for deduplication
+	// This ensures that multiple events for the same source are counted only once
+	successTargets := make(map[string]struct{})
+	failureTargets := make(map[string]struct{})
 
 	for _, message := range eb.batch {
+		// Use target as key for deduplication, fallback to data if target is empty
+		key := message.Target
+		if key == "" {
+			key = message.Data
+		}
+
 		if message.Type == sse.MessageTypeSuccess {
-			successCount++
+			successTargets[key] = struct{}{}
 		} else if message.Type == sse.MessageTypeError {
-			failureCount++
+			failureTargets[key] = struct{}{}
 		}
 	}
 
 	var result []sse.SSEMessage
-	if successCount > 0 {
+	if len(successTargets) > 0 {
 		result = append(result, sse.SSEMessage{
 			Type:    sse.MessageTypeSuccess,
 			Event:   eb.config.Event,
-			Data:    eb.config.SuccessBatchMessageFunc(successCount, eb.config.CRDType),
+			Data:    eb.config.SuccessBatchMessageFunc(len(successTargets), eb.config.CRDType),
 			CRDType: eb.config.CRDType,
 			Target:  "",
 		})
 	}
 
-	if failureCount > 0 {
+	if len(failureTargets) > 0 {
 		result = append(result, sse.SSEMessage{
 			Type:    sse.MessageTypeError,
 			Event:   eb.config.Event,
-			Data:    eb.config.FailureBatchMessageFunc(failureCount, eb.config.CRDType),
+			Data:    eb.config.FailureBatchMessageFunc(len(failureTargets), eb.config.CRDType),
 			CRDType: eb.config.CRDType,
 			Target:  "",
 		})
