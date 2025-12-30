@@ -183,6 +183,13 @@ func isDeploymentConfigRolloutDone(dc *openshiftappsv1.DeploymentConfig) bool {
 func isArgoRolloutRolloutDone(rollout *argorolloutsv1alpha1.Rollout) bool {
 	// Yes, this name is ridiculous. The function returns whether the rollout of an Argo rollout is done.
 
+	// Check if the spec has been observed yet
+	// ObservedGeneration in Argo Rollouts is a string, so we need to parse it
+	observedGen, err := strconv.ParseInt(rollout.Status.ObservedGeneration, 10, 64)
+	if err != nil || rollout.Generation > observedGen {
+		return false
+	}
+
 	// Check phase first - it's the most reliable indicator
 	switch rollout.Status.Phase {
 	case argorolloutsv1alpha1.RolloutPhaseHealthy, argorolloutsv1alpha1.RolloutPhasePaused:
@@ -191,12 +198,6 @@ func isArgoRolloutRolloutDone(rollout *argorolloutsv1alpha1.Rollout) bool {
 		return false
 	}
 
-	// Check if the spec has been observed yet
-	// ObservedGeneration in Argo Rollouts is a string, so we need to parse it
-	observedGen, err := strconv.ParseInt(rollout.Status.ObservedGeneration, 10, 64)
-	if err != nil || rollout.Generation > observedGen {
-		return false
-	}
 	// Default to true
 	return true
 }

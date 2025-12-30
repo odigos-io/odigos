@@ -170,6 +170,25 @@ func TestIsArgoRolloutRolloutDone(t *testing.T) {
 			},
 			expected: false, // Degraded means pods are unhealthy, rollout not complete
 		},
+		{
+			name: "unknown/empty phase - defaults to done",
+			rollout: &argorolloutsv1alpha1.Rollout{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 1,
+				},
+				Spec: argorolloutsv1alpha1.RolloutSpec{
+					Replicas: int32Ptr(10),
+				},
+				Status: argorolloutsv1alpha1.RolloutStatus{
+					ObservedGeneration: "1",
+					Replicas:           10,
+					UpdatedReplicas:    10,
+					AvailableReplicas:  10,
+					Phase:              "", // Empty/unknown phase
+				},
+			},
+			expected: true, // Unknown phases default to done (safe for instrumentation)
+		},
 	}
 
 	for _, tt := range tests {

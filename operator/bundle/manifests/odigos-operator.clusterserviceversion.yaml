@@ -198,7 +198,6 @@ spec:
           resources:
           - pods
           verbs:
-          - delete
           - get
           - list
           - watch
@@ -326,8 +325,6 @@ spec:
           resources:
           - rollouts
           verbs:
-          - create
-          - delete
           - get
           - list
           - patch

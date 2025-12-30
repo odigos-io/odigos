@@ -25,7 +25,7 @@ var _ Workload = &StatefulSetWorkload{}
 var _ Workload = &CronJobWorkloadV1{}
 var _ Workload = &CronJobWorkloadBeta{}
 var _ Workload = &DeploymentConfigWorkload{}
-var _ Workload = &RolloutWorkload{}
+var _ Workload = &ArgoRolloutWorkload{}
 
 type DeploymentWorkload struct {
 	*v1.Deployment
@@ -99,15 +99,15 @@ func (d *DeploymentConfigWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
 	return d.Spec.Template
 }
 
-type RolloutWorkload struct {
+type ArgoRolloutWorkload struct {
 	*argorolloutsv1alpha1.Rollout
 }
 
-func (d *RolloutWorkload) AvailableReplicas() int32 {
+func (d *ArgoRolloutWorkload) AvailableReplicas() int32 {
 	return d.Status.AvailableReplicas
 }
 
-func (d *RolloutWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
+func (d *ArgoRolloutWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
 	return &d.Spec.Template
 }
 
@@ -126,7 +126,7 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 	case *openshiftappsv1.DeploymentConfig:
 		return &DeploymentConfigWorkload{DeploymentConfig: t}, nil
 	case *argorolloutsv1alpha1.Rollout:
-		return &RolloutWorkload{Rollout: t}, nil
+		return &ArgoRolloutWorkload{Rollout: t}, nil
 	default:
 		return nil, errors.New("unknown kind")
 	}
