@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { useConfig } from '../config';
-import { useStatusStore } from '@/store';
 import { useNamespace } from '../namespaces';
-import { NotificationIcon } from '@odigos/ui-kit/icons';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
@@ -149,9 +147,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
         alreadyNotified = true;
         notifyUser(StatusType.Default, 'Pending', 'Persisting namespaces...', undefined, true);
       }
-
-      const { priorityMessage, setStatusStore } = useStatusStore.getState();
-      if (!priorityMessage) setStatusStore({ status: StatusType.Warning, message: 'Waiting for source reconcilers...', leftIcon: NotificationIcon });
 
       await mutatePersistSources({ variables: persistSourcesPayloads });
       await persistNamespaces(persistNamespacesPayloads);

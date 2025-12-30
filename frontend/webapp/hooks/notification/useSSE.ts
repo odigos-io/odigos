@@ -4,6 +4,7 @@ import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { StatusType } from '@odigos/ui-kit/types';
 import { useDestinationCRUD } from '../destinations';
+import { NotificationIcon } from '@odigos/ui-kit/icons';
 import { type NotifyPayload, useInstrumentStore, useNotificationStore } from '@odigos/ui-kit/store';
 
 enum EventTypes {
@@ -18,55 +19,67 @@ enum CrdTypes {
   Destination = 'Destination',
 }
 
-const DEBOUNCE_MS = 5000;
+const EVENT_DEBOUNCE_MS = 5000;
 
 export const useSSE = () => {
   const { fetchSources } = useSourceCRUD();
+  const { setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
   const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
 
   const clearStatusMessage = () => {
-    const { priorityMessage, setStatusStore } = useStatusStore.getState();
+    const { priorityMessage } = useStatusStore.getState();
     if (!priorityMessage) setStatusStore({ status: StatusType.Default, message: '', leftIcon: undefined });
   };
 
   const maxRetries = 10;
   const retryCount = useRef(0);
 
-  const eventRef = useRef<{
-    interval: NodeJS.Timeout | null;
-    timestamp: number | null;
-  } | null>(null);
-
-  const resetEventInterval = () => {
-    if (eventRef.current) {
-      if (eventRef.current.interval) {
-        clearInterval(eventRef.current.interval);
-        eventRef.current.interval = null;
+  const eventsRef = useRef<
+    | {
+        [eventType in EventTypes]?: {
+          interval: NodeJS.Timeout | null;
+          timestamp: number | null;
+        };
       }
-      eventRef.current.timestamp = null;
+    | null
+  >(null);
+
+  const resetEventInterval = (eventType: EventTypes) => {
+    if (eventsRef.current && eventsRef.current[eventType]) {
+      if (eventsRef.current?.[eventType]?.interval) {
+        clearInterval(eventsRef.current[eventType]!.interval as NodeJS.Timeout);
+        eventsRef.current[eventType]!.interval = null;
+      }
+      eventsRef.current[eventType]!.timestamp = null;
     }
   };
 
-  const handleEventInterval = (successCallback: () => void) => {
-    if (!eventRef.current) {
-      eventRef.current = {
+  const handleEventInterval = (eventType: EventTypes, successCallback: () => void) => {
+    if (!eventsRef.current) {
+      eventsRef.current = {
+        [eventType]: {
+          interval: null,
+          timestamp: null,
+        },
+      };
+    } else if (!eventsRef.current[eventType]) {
+      eventsRef.current[eventType] = {
         interval: null,
         timestamp: null,
       };
     }
 
-    if (eventRef.current.interval) clearInterval(eventRef.current.interval);
-    eventRef.current.timestamp = Date.now();
+    if (eventsRef.current![eventType]!.interval) clearInterval(eventsRef.current![eventType]!.interval as NodeJS.Timeout);
+    eventsRef.current![eventType]!.timestamp = Date.now();
 
     // if last message was over `XXX` seconds ago, fetch all sources...
     // the interval runs a timestamp check every 1 second - once the condition is met, the interval is cleared.
-    eventRef.current.interval = setInterval(() => {
-      const timeSinceLastModified = Date.now() - (eventRef.current?.timestamp || 0);
-
-      if (timeSinceLastModified > DEBOUNCE_MS) {
-        resetEventInterval();
+    eventsRef.current[eventType]!.interval = setInterval(() => {
+      const timeSinceLastModified = Date.now() - eventsRef.current![eventType]!.timestamp!;
+      if (timeSinceLastModified > EVENT_DEBOUNCE_MS) {
+        resetEventInterval(eventType);
         successCallback();
       }
     }, 1000);
@@ -111,21 +124,24 @@ export const useSSE = () => {
         // Handle specific CRD types
         if (isSource) {
           const { isAwaitingInstrumentation } = useInstrumentStore.getState();
-          if (!isAwaitingInstrumentation) setInstrumentAwait(true);
+          const { priorityMessage, message } = useStatusStore.getState();
 
           switch (notification.title) {
             case EventTypes.ADDED:
-              const { sourcesToCreate, sourcesCreated } = useInstrumentStore.getState();
-              if (sourcesToCreate > 0) {
-                const totalCreated = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-                setInstrumentCount('sourcesCreated', totalCreated);
-              }
+              if (!isAwaitingInstrumentation) setInstrumentAwait(true);
 
-              handleEventInterval(() => {
-                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: notification.message || 'Successfully created sources' });
+              const statusMessage = 'Reconciling sources...';
+              if (!priorityMessage && message !== statusMessage) setStatusStore({ status: StatusType.Warning, message: statusMessage, leftIcon: NotificationIcon });
+
+              const { sourcesCreated } = useInstrumentStore.getState();
+              const totalCreated = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesCreated', totalCreated);
+
+              handleEventInterval(EventTypes.ADDED, () => {
+                if (!priorityMessage) setStatusStore({ status: StatusType.Warning, message: 'Instrumenting sources...', leftIcon: NotificationIcon });
+                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${totalCreated} sources` });
 
                 fetchSources();
-                clearStatusMessage();
 
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToCreate', 0);
@@ -134,24 +150,26 @@ export const useSSE = () => {
               break;
 
             case EventTypes.MODIFIED:
-              handleEventInterval(() => {
-                fetchSources();
-                clearStatusMessage();
-              });
+              if (!isAwaitingInstrumentation) {
+                handleEventInterval(EventTypes.MODIFIED, () => {
+                  clearStatusMessage();
+                  fetchSources();
+                });
+              }
               break;
 
             case EventTypes.DELETED:
-              const { sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
-              if (sourcesToDelete > 0) {
-                const totalDeleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-                setInstrumentCount('sourcesDeleted', totalDeleted);
-              }
+              if (!isAwaitingInstrumentation) setInstrumentAwait(true);
 
-              handleEventInterval(() => {
-                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: notification.message || 'Successfully deleted sources' });
+              const { sourcesDeleted } = useInstrumentStore.getState();
+              const totalDeleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesDeleted', totalDeleted);
+
+              handleEventInterval(EventTypes.DELETED, () => {
+                clearStatusMessage();
+                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${totalDeleted} sources` });
 
                 fetchSources();
-                clearStatusMessage();
 
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToDelete', 0);
@@ -180,7 +198,7 @@ export const useSSE = () => {
     // Clean up event source on component unmount
     return () => {
       es?.close();
-      resetEventInterval();
+      Object.values(EventTypes).forEach((eventType) => resetEventInterval(eventType));
       clearStatusMessage();
     };
   }, []);
