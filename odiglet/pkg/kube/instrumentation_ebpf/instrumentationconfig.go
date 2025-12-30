@@ -36,7 +36,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	// Fetch the InstrumentationConfig instrumentationConfig
+	// Fetch the InstrumentationConfig
 	instrumentationConfig := &odigosv1.InstrumentationConfig{}
 	err = i.Get(ctx, req.NamespacedName, instrumentationConfig)
 	if err != nil {
