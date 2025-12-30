@@ -311,6 +311,7 @@ type ComplexityRoot struct {
 	}
 
 	GetConfigResponse struct {
+		ClusterName        func(childComplexity int) int
 		InstallationMethod func(childComplexity int) int
 		InstallationStatus func(childComplexity int) int
 		OdigosVersion      func(childComplexity int) int
@@ -2148,6 +2149,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GatewayDeploymentInfo.Status(childComplexity), true
+
+	case "GetConfigResponse.clusterName":
+		if e.complexity.GetConfigResponse.ClusterName == nil {
+			break
+		}
+
+		return e.complexity.GetConfigResponse.ClusterName(childComplexity), true
 
 	case "GetConfigResponse.installationMethod":
 		if e.complexity.GetConfigResponse.InstallationMethod == nil {
@@ -14092,6 +14100,47 @@ func (ec *executionContext) fieldContext_GetConfigResponse_installationStatus(_ 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type InstallationStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GetConfigResponse_clusterName(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GetConfigResponse_clusterName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClusterName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GetConfigResponse_clusterName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GetConfigResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -27018,6 +27067,8 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 				return ec.fieldContext_GetConfigResponse_installationMethod(ctx, field)
 			case "installationStatus":
 				return ec.fieldContext_GetConfigResponse_installationStatus(ctx, field)
+			case "clusterName":
+				return ec.fieldContext_GetConfigResponse_clusterName(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GetConfigResponse", field.Name)
 		},
@@ -36636,6 +36687,8 @@ func (ec *executionContext) _GetConfigResponse(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "clusterName":
+			out.Values[i] = ec._GetConfigResponse_clusterName(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

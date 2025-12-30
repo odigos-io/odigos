@@ -391,6 +391,7 @@ type GetConfigResponse {
   odigosVersion: String!
   installationMethod: String!
   installationStatus: InstallationStatus!
+  clusterName: String
 }
 
 input DestinationInput {
