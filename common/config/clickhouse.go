@@ -21,6 +21,7 @@ const (
 	clickhouseMetricsTableHistogram    = "CLICKHOUSE_METRICS_TABLE_HISTOGRAM"
 	clickhouseMetricsTableSummary      = "CLICKHOUSE_METRICS_TABLE_SUMMARY"
 	clickhouseMetricsTableExpHistogram = "CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM"
+	hyperdxLogNormalizer               = "HYPERDX_LOG_NORMALIZER"
 )
 
 type Clickhouse struct{}
@@ -110,7 +111,15 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	}
 	if isLoggingEnabled(dest) {
 		name := "logs/clickhouse-" + dest.GetID()
-		currentConfig.Service.Pipelines[name] = Pipeline{Exporters: []string{exporterName}}
+		pipeline := Pipeline{Exporters: []string{exporterName}}
+
+		if val, ok := dest.GetConfig()[hyperdxLogNormalizer]; ok && getBooleanConfig(val, "true") {
+			processorName := "transform/hyperdx-log-normalizer-" + dest.GetID()
+			currentConfig.Processors[processorName] = HyperdxLogNormalizerProcessor
+			pipeline.Processors = []string{processorName}
+		}
+
+		currentConfig.Service.Pipelines[name] = pipeline
 		pipelineNames = append(pipelineNames, name)
 	}
 

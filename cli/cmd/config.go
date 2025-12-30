@@ -73,6 +73,7 @@ var configCmd = &cobra.Command{
 	- "%s": Enable or disable data compression before sending data to the Gateway collector. [default: false],
 	- "%s": Set the sizing configuration for the Odigos components (size_s, size_m [default], size_l).
 	- "%s": Enable wasp.
+	- "%s": Enable HyperDX log normalization processor. This parses JSON from log bodies, infers severity levels, and normalizes log attributes for better querying. [default: false]
 	`,
 		consts.TelemetryEnabledProperty,
 		consts.OpenshiftEnabledProperty,
@@ -110,6 +111,7 @@ var configCmd = &cobra.Command{
 		consts.EnableDataCompressionProperty,
 		consts.ResourceSizePresetProperty,
 		consts.WaspEnabledProperty,
+		consts.HyperdxLogNormalizerProperty,
 	),
 }
 
@@ -502,6 +504,10 @@ func setConfigProperty(ctx context.Context, client *kube.Client, config *common.
 	case consts.ClickhouseJsonTypeEnabledProperty:
 		boolValue, _ := strconv.ParseBool(value[0])
 		config.ClickhouseJsonTypeEnabledProperty = &boolValue
+
+	case consts.HyperdxLogNormalizerProperty:
+		boolValue, _ := strconv.ParseBool(value[0])
+		config.HyperdxLogNormalizer = &boolValue
 
 	case consts.AllowedTestConnectionHostsProperty:
 		config.AllowedTestConnectionHosts = value
