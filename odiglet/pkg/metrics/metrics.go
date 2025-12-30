@@ -76,7 +76,7 @@ func (m *OdigletMetrics) observeInstrumentedPods(ctx context.Context, observer o
 
 		// Get the workload owner reference
 		ownerRef, err := workload.PodWorkloadObject(ctx, &pod)
-		if err != nil {
+		if err != nil || ownerRef == nil {
 			continue
 		}
 
