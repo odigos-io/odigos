@@ -21,6 +21,20 @@ spec:
       componentProps:
         type: password
         required: true
+
+    - name: HYPERDX_LOG_NORMALIZER
+      displayName: Enable Log Normalizer
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: "Enable HyperDX log normalization processor. This parses JSON from log bodies, infers severity levels, and normalizes log attributes for better querying."
+      initialValue: true
+      renderCondition: ["SIGNALS", "INCLUDES", "logs"]
+      hideFromReadData: ["HYPERDX_LOG_NORMALIZER", "==", "false"]
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'Log Normalizer'
+          value: 'Enabled'
   note:
     type: Check
     content: |
