@@ -44,12 +44,8 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
 		}
 	}
-	config, err := GetOdigosConfiguration(ctx)
-	if err != nil {
-		log.Printf("Failed to get Config map: %v\n", err)
-	}
 
-	response = buildConfigResponse(ctx, config, odigosDeployment.Data)
+	response = buildConfigResponse(ctx, odigosDeployment.Data)
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
 	if isNewInstallation {
 		response.InstallationStatus = model.InstallationStatus(NewInstallation)
@@ -60,8 +56,12 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	return response
 }
 
-func buildConfigResponse(ctx context.Context, config *common.OdigosConfiguration, deploymentData map[string]string) model.GetConfigResponse {
+func buildConfigResponse(ctx context.Context, deploymentData map[string]string) model.GetConfigResponse {
 	var response model.GetConfigResponse
+	config, err := GetOdigosConfiguration(ctx)
+	if err != nil {
+		log.Printf("Failed to get Config map: %v\n", err)
+	}
 	response.Readonly = config.UiMode == common.UiModeReadonly
 	response.PlatformType = model.ComputePlatformTypeK8s
 	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
