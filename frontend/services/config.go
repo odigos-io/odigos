@@ -12,12 +12,9 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
@@ -68,12 +65,16 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	response.OdigosVersion = deploymentData[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
 	response.ClusterName = &config.ClusterName
-
-	isConnected, err := isCentralProxyRunning(ctx, &config.ClusterName, config)
+	isConnected, err := isCentralProxyRunning(ctx)
 	if err != nil {
-		log.Printf("Error checking if connected to central backend: %v\n", err)
+		log.Printf("Error checking if central proxt connected: %v\n", err)
 	}
-	response.IsConnectedToCentralBackend = &isConnected
+	configured := isConfiguredForCentralBackend(common.OdigosTier(response.Tier), &config.ClusterName, config)
+	if configured && isConnected {
+		response.IsConnectedToCentralBackend = &isConnected
+	} else {
+		response.IsConnectedToCentralBackend = nil
+	}
 
 	return response
 }
@@ -105,80 +106,32 @@ func IsReadonlyMode(ctx context.Context) bool {
 	return config.UiMode == common.UiModeReadonly
 }
 
-func isCentralProxyRunning(ctx context.Context, clusterName *string, config *common.OdigosConfiguration) (bool, error) {
-	ns := env.GetCurrentNamespace()
-	tier, err := utils.GetCurrentOdigosTier(ctx, ns, kube.DefaultClient.Interface.(*kubernetes.Clientset))
-	if err != nil {
-		log.Printf("Error getting current Odigos tier: %v\n", err)
-		return false, err
-	}
+func isConfiguredForCentralBackend(tier common.OdigosTier, clusterName *string, config *common.OdigosConfiguration) bool {
 	if tier != common.OnPremOdigosTier {
-		return false, nil
+		return false
 	}
 
 	if clusterName == nil || *clusterName == "" {
-		return false, nil
+		return false
 	}
 
 	if config.CentralBackendURL == "" {
-		return false, nil
+		return false
 	}
+	return true
+}
 
+func isCentralProxyRunning(ctx context.Context) (bool, error) {
+	ns := env.GetCurrentNamespace()
 	deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralProxyDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		log.Printf("Central proxy deployment not found: %v\n", err)
 		return false, nil
 	}
-
-	// Check if deployment is healthy by examining conditions and replicas
-	if !isCentralProxyDeploymentHealthy(deployment) {
+	if deployment.Status.AvailableReplicas == 0 {
 		return false, nil
 	}
-
 	return true, nil
-}
-
-func isCentralProxyDeploymentHealthy(deployment *appsv1.Deployment) bool {
-	// Check if we have at least one available replica
-	if deployment.Status.AvailableReplicas == 0 {
-		return false
-	}
-
-	// Check deployment conditions for a more robust health check
-	var availableCondition, progressingCondition *appsv1.DeploymentCondition
-	for i := range deployment.Status.Conditions {
-		condition := &deployment.Status.Conditions[i]
-		switch condition.Type {
-		case appsv1.DeploymentAvailable:
-			availableCondition = condition
-		case appsv1.DeploymentProgressing:
-			progressingCondition = condition
-		}
-	}
-
-	// Available condition must be True
-	if availableCondition == nil || availableCondition.Status != corev1.ConditionTrue {
-		return false
-	}
-
-	// Progressing condition should be True and not stuck
-	if progressingCondition != nil {
-		if progressingCondition.Status == corev1.ConditionFalse ||
-			progressingCondition.Reason == "ProgressDeadlineExceeded" {
-			return false
-		}
-	}
-
-	// Optionally check if all replicas are ready (more strict check)
-	desired := int32(1)
-	if deployment.Spec.Replicas != nil {
-		desired = *deployment.Spec.Replicas
-	}
-	if deployment.Status.ReadyReplicas < desired {
-		return false
-	}
-
-	return true
 }
 
 func isSourceCreated(ctx context.Context) bool {
