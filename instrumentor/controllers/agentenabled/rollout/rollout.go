@@ -124,13 +124,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
-		// Check for backoff both during rollout and after rollout completes (if within stability window)
-		// This handles cases where rollout is "done" but pods are still failing
 		rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
-		withinStabilityWindow := ic.Status.InstrumentationTime != nil && time.Since(ic.Status.InstrumentationTime.Time) < rollbackStabilityWindow
-		shouldCheckBackoff := (!rolloutDone || (rolloutDone && withinStabilityWindow)) && !rollbackDisabled
-
-		if shouldCheckBackoff {
+		if !rolloutDone && !rollbackDisabled {
 			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check pod backoff status")

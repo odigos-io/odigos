@@ -24,3 +24,10 @@ spec:
     device: 'instrumentation.odigos.io/generic'
     k8sAttrsViaEnvVars: true
     ldPreloadInjectionSupported: true
+  traces:
+    headSampling:
+      supported: true
+      urlPathAttributeKey: "http.target"
+      httpRequestMethodAttributeKey: "http.method"
+    headersCollection:
+      supported: true

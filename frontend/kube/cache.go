@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -16,7 +20,7 @@ var CacheClient client.Client
 
 // SetupK8sCache initializes and starts the controller runtime cache for Source resources
 // Returns the cache client for direct usage
-func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string) (client.Client, error) {
+func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, odigosNs string) (client.Client, error) {
 	// Get the Kubernetes config
 	cfg, err := config.GetConfigWithContext(kubeContext)
 	if err != nil {
@@ -31,17 +35,23 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string) (
 		}
 	}
 
-	// Create a new scheme and register the Source type
+	// Create a new scheme and register all required types
 	scheme := runtime.NewScheme()
-	if err := v1alpha1.AddToScheme(scheme); err != nil {
-		return nil, fmt.Errorf("failed to add odigos scheme: %w", err)
-	}
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(odigosv1.AddToScheme(scheme))
+	utilruntime.Must(actionsv1.AddToScheme(scheme))
 
+	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	// Create cache options
 	cacheOptions := cache.Options{
-		Scheme: scheme,
+		Scheme:                      scheme,
+		ReaderFailOnMissingInformer: true,
 		ByObject: map[client.Object]cache.ByObject{
-			&v1alpha1.Source{}: {},
+			&corev1.ConfigMap{}: {
+				Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
+			},
+			&odigosv1.Source{}:                {},
+			&odigosv1.InstrumentationConfig{}: {},
 		},
 	}
 
@@ -60,6 +70,18 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string) (
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cache client: %w", err)
+	}
+
+	// Explicitly initialize informers for all configured resource types with selectors.
+	// Controller-runtime cache uses lazy initialization - informers are created on-demand.
+	// With ReaderFailOnMissingInformer: true, we must ensure informers exist before
+	// WaitForCacheSync, otherwise cache operations will fail with "is not cached" errors.
+	// This ensures all configured informers are ready before the cache sync completes.
+	for obj, _ := range cacheOptions.ByObject {
+		_, err = k8sCache.GetInformer(ctx, obj) // just need to call it to initialize the informer
+		if err != nil {
+			return nil, fmt.Errorf("failed to get informer for %s: %w", obj.GetObjectKind().GroupVersionKind().Kind, err)
+		}
 	}
 
 	// Start the cache in a goroutine

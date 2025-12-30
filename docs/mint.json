@@ -199,7 +199,8 @@
             "pipeline/rules/codeattributes",
             "pipeline/rules/headerscollection",
             "pipeline/rules/payloadcollection",
-            "pipeline/rules/custominstrumentation"
+            "pipeline/rules/custominstrumentation",
+            "pipeline/rules/headsamplingfallbackfraction"
           ]
         },
         {
@@ -223,6 +224,7 @@
               "icon": "tag",
               "pages": [
                 "pipeline/actions/sampling/errorsampler",
+                "pipeline/actions/sampling/ignorehealthchecks",
                 "pipeline/actions/sampling/latencysampler",
                 "pipeline/actions/sampling/probabilisticsampler",
                 "pipeline/actions/sampling/servicenamesampler",
@@ -298,6 +300,7 @@
             "backends/quickwit",
             "backends/sentry",
             "backends/seq",
+            "backends/signalfx",
             "backends/signoz",
             "backends/splunk",
             "backends/splunkotlp",

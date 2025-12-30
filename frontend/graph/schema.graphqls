@@ -391,6 +391,7 @@ type GetConfigResponse {
   odigosVersion: String!
   installationMethod: String!
   installationStatus: InstallationStatus!
+  clusterName: String
 }
 
 input DestinationInput {
@@ -484,12 +485,14 @@ input K8sLabelAttributeInput {
   labelKey: String!
   attributeKey: String!
   from: K8sAttributesFrom
+  fromSources: [K8sAttributesFrom!]
 }
 
 input K8sAnnotationAttributeInput {
   annotationKey: String!
   attributeKey: String!
   from: K8sAttributesFrom
+  fromSources: [K8sAttributesFrom!]
 }
 
 input ClusterAttributeInput {
@@ -578,12 +581,14 @@ type K8sLabelAttribute {
   labelKey: String!
   attributeKey: String!
   from: K8sAttributesFrom
+  fromSources: [K8sAttributesFrom!]
 }
 
 type K8sAnnotationAttribute {
   annotationKey: String!
   attributeKey: String!
   from: K8sAttributesFrom
+  fromSources: [K8sAttributesFrom!]
 }
 
 type ClusterAttribute {
@@ -623,6 +628,7 @@ enum StringOperation {
 enum K8sAttributesFrom {
   pod
   namespace
+  node
 }
 enum NumberOperation {
   exists

@@ -1,5 +1,5 @@
 import { getWorkloadId } from '@odigos/ui-kit/functions';
-import { EntityTypes, type WorkloadId, type Source } from '@odigos/ui-kit/types';
+import { EntityTypes, type WorkloadId, type Source, type Workload } from '@odigos/ui-kit/types';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
 import type { NamespaceInstrumentInput, SourceConditions, SourceInstrumentInput } from '@/types';
 
@@ -17,6 +17,16 @@ export const addConditionToSources = ({ namespace, name, kind, conditions }: Sou
   return {
     ...sources[foundIdx],
     conditions,
+  };
+};
+
+export const addAgentInjectionStatusToSources = ({ id: { namespace, name, kind }, podsAgentInjectionStatus }: Workload, sources: Source[]): Source | null => {
+  const foundIdx = sources.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
+  if (foundIdx === -1) return null;
+
+  return {
+    ...sources[foundIdx],
+    podsAgentInjectionStatus,
   };
 };
 

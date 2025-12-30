@@ -73,6 +73,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.DestinationStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("EnvVar"):
 		return &odigosv1alpha1.EnvVarApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("HeadersCollectionConfig"):
+		return &odigosv1alpha1.HeadersCollectionConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
 		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("IdGeneratorConfig"):
@@ -127,6 +129,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SourceSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceStatus"):
 		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("UrlTemplatizationConfig"):
+		return &odigosv1alpha1.UrlTemplatizationConfigApplyConfiguration{}
 
 	}
 	return nil

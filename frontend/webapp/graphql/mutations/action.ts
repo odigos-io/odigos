@@ -18,11 +18,13 @@ export const CREATE_ACTION = gql`
           labelKey
           attributeKey
           from
+          fromSources
         }
         annotationsAttributes {
           annotationKey
           attributeKey
           from
+          fromSources
         }
         clusterAttributes {
           attributeName
@@ -87,11 +89,13 @@ export const UPDATE_ACTION = gql`
           labelKey
           attributeKey
           from
+          fromSources
         }
         annotationsAttributes {
           annotationKey
           attributeKey
           from
+          fromSources
         }
         clusterAttributes {
           attributeName

@@ -19,6 +19,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -274,6 +275,7 @@ func main() {
 	}()
 
 	logger := logr.FromSlogHandler(slog.Default().Handler())
+	ctrl.SetLogger(logger)
 	go common.StartPprofServer(ctx, logger, int(k8sconsts.DefaultPprofEndpointPort))
 
 	// Load destinations data
@@ -296,7 +298,7 @@ func main() {
 
 	// Setup Source cache - this initializes a controller-runtime cache for Source resources
 	// from all namespaces, providing fast read access without hitting the Kubernetes API
-	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext)
+	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
 	if err != nil {
 		log.Fatalf("Error setting up Source cache: %s", err)
 	}

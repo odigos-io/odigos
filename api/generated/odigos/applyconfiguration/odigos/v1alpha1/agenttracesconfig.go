@@ -20,7 +20,10 @@ package v1alpha1
 // AgentTracesConfigApplyConfiguration represents a declarative configuration of the AgentTracesConfig type for use
 // with apply.
 type AgentTracesConfigApplyConfiguration struct {
-	IdGenerator *IdGeneratorConfigApplyConfiguration `json:"idGenerator,omitempty"`
+	IdGenerator       *IdGeneratorConfigApplyConfiguration       `json:"idGenerator,omitempty"`
+	UrlTemplatization *UrlTemplatizationConfigApplyConfiguration `json:"urlTemplatization,omitempty"`
+	HeadersCollection *HeadersCollectionConfigApplyConfiguration `json:"headersCollection,omitempty"`
+	HeadSampling      *HeadSamplingConfigApplyConfiguration      `json:"headSampling,omitempty"`
 }
 
 // AgentTracesConfigApplyConfiguration constructs a declarative configuration of the AgentTracesConfig type for use with
@@ -34,5 +37,29 @@ func AgentTracesConfig() *AgentTracesConfigApplyConfiguration {
 // If called multiple times, the IdGenerator field is set to the value of the last call.
 func (b *AgentTracesConfigApplyConfiguration) WithIdGenerator(value *IdGeneratorConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
 	b.IdGenerator = value
+	return b
+}
+
+// WithUrlTemplatization sets the UrlTemplatization field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UrlTemplatization field is set to the value of the last call.
+func (b *AgentTracesConfigApplyConfiguration) WithUrlTemplatization(value *UrlTemplatizationConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
+	b.UrlTemplatization = value
+	return b
+}
+
+// WithHeadersCollection sets the HeadersCollection field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HeadersCollection field is set to the value of the last call.
+func (b *AgentTracesConfigApplyConfiguration) WithHeadersCollection(value *HeadersCollectionConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
+	b.HeadersCollection = value
+	return b
+}
+
+// WithHeadSampling sets the HeadSampling field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HeadSampling field is set to the value of the last call.
+func (b *AgentTracesConfigApplyConfiguration) WithHeadSampling(value *HeadSamplingConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
+	b.HeadSampling = value
 	return b
 }

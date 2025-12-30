@@ -360,6 +360,7 @@ type GetConfigResponse struct {
 	OdigosVersion      string              `json:"odigosVersion"`
 	InstallationMethod string              `json:"installationMethod"`
 	InstallationStatus InstallationStatus  `json:"installationStatus"`
+	ClusterName        *string             `json:"clusterName,omitempty"`
 }
 
 type GetDestinationCategories struct {
@@ -528,15 +529,17 @@ type K8sActualSource struct {
 }
 
 type K8sAnnotationAttribute struct {
-	AnnotationKey string             `json:"annotationKey"`
-	AttributeKey  string             `json:"attributeKey"`
-	From          *K8sAttributesFrom `json:"from,omitempty"`
+	AnnotationKey string              `json:"annotationKey"`
+	AttributeKey  string              `json:"attributeKey"`
+	From          *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources   []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sAnnotationAttributeInput struct {
-	AnnotationKey string             `json:"annotationKey"`
-	AttributeKey  string             `json:"attributeKey"`
-	From          *K8sAttributesFrom `json:"from,omitempty"`
+	AnnotationKey string              `json:"annotationKey"`
+	AttributeKey  string              `json:"attributeKey"`
+	From          *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources   []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sDesiredNamespaceInput struct {
@@ -549,15 +552,17 @@ type K8sDesiredSourceInput struct {
 }
 
 type K8sLabelAttribute struct {
-	LabelKey     string             `json:"labelKey"`
-	AttributeKey string             `json:"attributeKey"`
-	From         *K8sAttributesFrom `json:"from,omitempty"`
+	LabelKey     string              `json:"labelKey"`
+	AttributeKey string              `json:"attributeKey"`
+	From         *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources  []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sLabelAttributeInput struct {
-	LabelKey     string             `json:"labelKey"`
-	AttributeKey string             `json:"attributeKey"`
-	From         *K8sAttributesFrom `json:"from,omitempty"`
+	LabelKey     string              `json:"labelKey"`
+	AttributeKey string              `json:"attributeKey"`
+	From         *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources  []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sNamespaceID struct {
@@ -1482,16 +1487,18 @@ type K8sAttributesFrom string
 const (
 	K8sAttributesFromPod       K8sAttributesFrom = "pod"
 	K8sAttributesFromNamespace K8sAttributesFrom = "namespace"
+	K8sAttributesFromNode      K8sAttributesFrom = "node"
 )
 
 var AllK8sAttributesFrom = []K8sAttributesFrom{
 	K8sAttributesFromPod,
 	K8sAttributesFromNamespace,
+	K8sAttributesFromNode,
 }
 
 func (e K8sAttributesFrom) IsValid() bool {
 	switch e {
-	case K8sAttributesFromPod, K8sAttributesFromNamespace:
+	case K8sAttributesFromPod, K8sAttributesFromNamespace, K8sAttributesFromNode:
 		return true
 	}
 	return false

@@ -10,3 +10,4 @@ export * from './pipeline-collectors';
 export * from './service-map';
 export * from './source';
 export * from './tokens';
+export * from './workload';

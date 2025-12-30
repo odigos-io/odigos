@@ -57,6 +57,14 @@ rules:
       - patch
       - update
   - apiGroups:
+      - odigos.io
+    resources:
+      - actions
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - ''
     resources:
       - secrets

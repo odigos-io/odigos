@@ -165,6 +165,87 @@ spec:
                         Each enabled signal must be set with a non-nil value (even if the config content is empty).
                         nil means that the signal is disabled and should not be instrumented/collected by the agent.
                       properties:
+                        headSampling:
+                          description: |-
+                            HeadSamplingConfig is a set sampling rules.
+                            This config currently only applies to root spans.
+                            In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
+                          properties:
+                            attributesAndSamplerRules:
+                              items:
+                                description: |-
+                                  AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
+                                  If all attribute conditions evaluate to true, the AND sampler evaluates to true,
+                                  and the fraction is used to determine the sampling decision.
+                                  If any of the attribute compare samplers evaluate to false,
+                                  the fraction is not used and the rule is skipped.
+                                  An "empty" AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
+                                  and the fraction is used to determine the sampling decision.
+                                  This entity is refered to a rule in Odigos terminology for head-sampling.
+                                properties:
+                                  attributeConditions:
+                                    items:
+                                      description: '''Operand'' represents the attributes
+                                        and values that an operator acts upon in an
+                                        expression'
+                                      properties:
+                                        key:
+                                          description: attribute key (e.g. "url.path")
+                                          type: string
+                                        operator:
+                                          description: The operator to use to compare
+                                            the attribute value.
+                                          enum:
+                                          - equals
+                                          - notEquals
+                                          - endWith
+                                          - startWith
+                                          type: string
+                                        val:
+                                          description: currently only string values
+                                            are supported.
+                                          type: string
+                                      required:
+                                      - key
+                                      - val
+                                      type: object
+                                    type: array
+                                  fraction:
+                                    default: 1
+                                    description: |-
+                                      The fraction of spans to sample, in the range [0, 1].
+                                      If the fraction is 0, no spans are sampled.
+                                      If the fraction is 1, all spans are sampled.
+                                    type: number
+                                required:
+                                - attributeConditions
+                                - fraction
+                                type: object
+                              type: array
+                            fallbackFraction:
+                              default: 1
+                              description: |-
+                                Used as a fallback if all rules evaluate to false,
+                                it may be empty - in this case the default value will be 1 - all spans are sampled.
+                                it should be a float value in the range [0, 1] - the fraction of spans to sample.
+                                a value of 0 means no spans are sampled if none of the rules evaluate to true.
+                              type: number
+                          required:
+                          - fallbackFraction
+                          type: object
+                        headersCollection:
+                          description: Configuration for headers collection. If not
+                            specified, no headers will be collected.
+                          properties:
+                            httpHeaderKeys:
+                              description: |-
+                                Limit HTTP headers collection to specific header keys.
+                                if unset, no HTTP headers will be collected.
+                                HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.
+                              items:
+                                type: string
+                              type: array
+                          type: object
                         idGenerator:
                           description: |-
                             id generator configuration for the traces.
@@ -189,6 +270,19 @@ spec:
                               required:
                               - sourceId
                               type: object
+                          type: object
+                        urlTemplatization:
+                          description: A list of URL templatization configurations
+                            to be applied to the traces.
+                          properties:
+                            templatizationRules:
+                              description: Rule is the template rule to be applied
+                                to URLs
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - templatizationRules
                           type: object
                       type: object
                   required:
@@ -456,7 +550,6 @@ spec:
                             a value of 0 means no spans are sampled if none of the rules evaluate to true.
                           type: number
                       required:
-                      - attributesAndSamplerRules
                       - fallbackFraction
                       type: object
                     headersCollection:
