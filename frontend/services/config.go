@@ -41,12 +41,6 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	}
 
 	response := buildConfigResponse(ctx, odigosDeployment.Data)
-	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
-	if isNewInstallation {
-		response.InstallationStatus = model.InstallationStatus(NewInstallation)
-	} else {
-		response.InstallationStatus = model.InstallationStatus(Finished)
-	}
 
 	return response
 }
@@ -73,7 +67,12 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	} else {
 		response.IsConnectedToCentralBackend = nil
 	}
-
+	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
+	if isNewInstallation {
+		response.InstallationStatus = model.InstallationStatus(NewInstallation)
+	} else {
+		response.InstallationStatus = model.InstallationStatus(Finished)
+	}
 	return response
 }
 
