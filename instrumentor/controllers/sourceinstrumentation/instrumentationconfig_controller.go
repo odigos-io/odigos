@@ -20,11 +20,11 @@ import (
 	"context"
 	"fmt"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
-
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -81,6 +81,12 @@ func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, own
 		dc := &openshiftappsv1.DeploymentConfig{}
 		err := k8sClient.Get(ctx, key, dc)
 		return dc, err
+	}
+
+	if ownerRef.Kind == string(k8sconsts.WorkloadKindArgoRollout) {
+		rollout := &argorolloutsv1alpha1.Rollout{}
+		err := k8sClient.Get(ctx, key, rollout)
+		return rollout, err
 	}
 
 	return nil, fmt.Errorf("unsupported owner kind %s", ownerRef.Kind)

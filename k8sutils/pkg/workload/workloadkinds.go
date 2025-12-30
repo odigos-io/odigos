@@ -12,6 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
@@ -36,7 +38,7 @@ func IsValidWorkloadKind(kind k8sconsts.WorkloadKind) bool {
 	switch kind {
 	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet,
 		k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace, k8sconsts.WorkloadKindCronJob,
-		k8sconsts.WorkloadKindDeploymentConfig:
+		k8sconsts.WorkloadKindDeploymentConfig, k8sconsts.WorkloadKindArgoRollout:
 		return true
 	}
 	return false
@@ -58,6 +60,8 @@ func WorkloadKindLowerCaseFromKind(pascalCase k8sconsts.WorkloadKind) k8sconsts.
 		return k8sconsts.WorkloadKindLowerCaseJob
 	case k8sconsts.WorkloadKindDeploymentConfig:
 		return k8sconsts.WorkloadKindLowerCaseDeploymentConfig
+	case k8sconsts.WorkloadKindArgoRollout:
+		return k8sconsts.WorkloadKindLowerCaseArgoRollout
 	}
 	return ""
 }
@@ -76,6 +80,8 @@ func WorkloadKindFromLowerCase(lowerCase k8sconsts.WorkloadKindLowerCase) k8scon
 		return k8sconsts.WorkloadKindJob
 	case k8sconsts.WorkloadKindLowerCaseDeploymentConfig:
 		return k8sconsts.WorkloadKindDeploymentConfig
+	case k8sconsts.WorkloadKindLowerCaseArgoRollout:
+		return k8sconsts.WorkloadKindArgoRollout
 	}
 	return ""
 }
@@ -94,6 +100,8 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindJob
 	case string(k8sconsts.WorkloadKindLowerCaseDeploymentConfig):
 		return k8sconsts.WorkloadKindDeploymentConfig
+	case string(k8sconsts.WorkloadKindLowerCaseArgoRollout):
+		return k8sconsts.WorkloadKindArgoRollout
 	default:
 		return k8sconsts.WorkloadKind("")
 	}
@@ -126,6 +134,8 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 		return &batchv1.Job{}
 	case k8sconsts.WorkloadKindDeploymentConfig:
 		return &openshiftappsv1.DeploymentConfig{}
+	case k8sconsts.WorkloadKindArgoRollout:
+		return &argorolloutsv1alpha1.Rollout{}
 	default:
 		return nil
 	}
@@ -154,6 +164,8 @@ func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object
 		return &batchv1.JobList{}
 	case k8sconsts.WorkloadKindDeploymentConfig:
 		return &openshiftappsv1.DeploymentConfigList{}
+	case k8sconsts.WorkloadKindArgoRollout:
+		return &argorolloutsv1alpha1.RolloutList{}
 	default:
 		return nil
 	}

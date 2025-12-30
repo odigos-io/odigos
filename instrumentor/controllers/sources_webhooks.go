@@ -280,7 +280,7 @@ func (s *SourcesValidator) validateSourceFields(ctx context.Context, source *v1a
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec").Child("workload").Child("kind"),
 			source.Spec.Workload.Kind,
-			"workload kind must be one of (Deployment, DaemonSet, StatefulSet, Namespace)",
+			"workload kind must be one of (Deployment, DaemonSet, StatefulSet, Namespace, Rollout)",
 		))
 	}
 
