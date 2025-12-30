@@ -114,7 +114,7 @@ export const useSSE = () => {
           if (!isAwaitingInstrumentation) setInstrumentAwait(true);
 
           switch (notification.title) {
-            case EventTypes.MODIFIED:
+            case EventTypes.ADDED:
               const { sourcesToCreate, sourcesCreated } = useInstrumentStore.getState();
               if (sourcesToCreate > 0) {
                 const totalCreated = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
@@ -133,7 +133,7 @@ export const useSSE = () => {
               });
               break;
 
-            case EventTypes.ADDED:
+            case EventTypes.MODIFIED:
               handleEventInterval(() => {
                 fetchSources();
                 clearStatusMessage();
