@@ -20,8 +20,8 @@ package v1alpha1
 // PodsInjectionStatusApplyConfiguration represents a declarative configuration of the PodsInjectionStatus type for use
 // with apply.
 type PodsInjectionStatusApplyConfiguration struct {
-	NumberUpdated     *int32 `json:"numberUpdatedPods,omitempty"`
-	NumberNotUpdated  *int32 `json:"numberNotUpdated,omitempty"`
+	NumberUpToDate    *int32 `json:"numberUpToDatePods,omitempty"`
+	NumberOutOfDate   *int32 `json:"numberOutOfDatePods,omitempty"`
 	NumberNotInjected *int32 `json:"numberNotInjected,omitempty"`
 }
 
@@ -31,19 +31,19 @@ func PodsInjectionStatus() *PodsInjectionStatusApplyConfiguration {
 	return &PodsInjectionStatusApplyConfiguration{}
 }
 
-// WithNumberUpdated sets the NumberUpdated field in the declarative configuration to the given value
+// WithNumberUpToDate sets the NumberUpToDate field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the NumberUpdated field is set to the value of the last call.
-func (b *PodsInjectionStatusApplyConfiguration) WithNumberUpdated(value int32) *PodsInjectionStatusApplyConfiguration {
-	b.NumberUpdated = &value
+// If called multiple times, the NumberUpToDate field is set to the value of the last call.
+func (b *PodsInjectionStatusApplyConfiguration) WithNumberUpToDate(value int32) *PodsInjectionStatusApplyConfiguration {
+	b.NumberUpToDate = &value
 	return b
 }
 
-// WithNumberNotUpdated sets the NumberNotUpdated field in the declarative configuration to the given value
+// WithNumberOutOfDate sets the NumberOutOfDate field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the NumberNotUpdated field is set to the value of the last call.
-func (b *PodsInjectionStatusApplyConfiguration) WithNumberNotUpdated(value int32) *PodsInjectionStatusApplyConfiguration {
-	b.NumberNotUpdated = &value
+// If called multiple times, the NumberOutOfDate field is set to the value of the last call.
+func (b *PodsInjectionStatusApplyConfiguration) WithNumberOutOfDate(value int32) *PodsInjectionStatusApplyConfiguration {
+	b.NumberOutOfDate = &value
 	return b
 }
 

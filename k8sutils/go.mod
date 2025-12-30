@@ -3,6 +3,7 @@ module github.com/odigos-io/odigos/k8sutils
 go 1.25.0
 
 require (
+	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44

@@ -41,7 +41,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	podWorkload, err := getPodWorkloadObject(&pod)
+	podWorkload, err := workload.PodWorkloadObject(ctx, &pod)
 	if err != nil {
 		logger.Error(err, "error getting pod workload object")
 		return reconcile.Result{}, err

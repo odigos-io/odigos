@@ -121,6 +121,7 @@ const (
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
 	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonNotRequired            WorkloadRolloutReason = "NotRequired"
 	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
 )
 
@@ -236,11 +237,13 @@ type RuntimeDetailsByContainer struct {
 }
 
 type PodsInjectionStatus struct {
-	// number of pods where odigos agnent is injected and using the latest version and configuration.
-	NumberUpdated int32 `json:"numberUpdatedPods,omitempty"`
+	// number of pods where odigos agnent is injected and using the latest agent deployment setup.
+	// it includes which distro to use per container
+	NumberUpToDate int32 `json:"numberUpToDatePods,omitempty"`
 
-	// number of pods that have the odigos agnet injected.
-	NumberNotUpdated int32 `json:"numberNotUpdated,omitempty"`
+	// number of pods where odigos agent was injected at time of pod creation,
+	// but since then the agent deployment setup changed, and the agent is not using the latest setup.
+	NumberOutOfDate int32 `json:"numberOutOfDatePods,omitempty"`
 
 	// number of pods that do not have the odigos agnet injected.
 	NumberNotInjected int32 `json:"numberNotInjected,omitempty"`

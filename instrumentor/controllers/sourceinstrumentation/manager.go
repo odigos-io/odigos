@@ -13,10 +13,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/client"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
+// TODO: deprecate this function and use k8sutils.IsResourceAvailable instead
 // isDeploymentConfigAvailable checks if the DeploymentConfig resource is available in the cluster
 // using the RESTMapper to avoid permission errors on non-OpenShift clusters
 func isDeploymentConfigAvailable(mgr ctrl.Manager) bool {
@@ -142,6 +146,22 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 			For(&openshiftappsv1.DeploymentConfig{}).
 			WithEventFilter(&odigospredicate.CreationPredicate{}).
 			Complete(&DeploymentConfigReconciler{
+				Client: mgr.GetClient(),
+				Scheme: mgr.GetScheme(),
+			})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Only register the Rollout controller if the resource is available (Argo Rollouts installed on cluster)
+	if k8sutils.IsResourceAvailable(mgr.GetRESTMapper(), k8sconsts.ArgoRolloutGVK) {
+		err = builder.
+			ControllerManagedBy(mgr).
+			Named("sourceinstrumentation-rollout").
+			For(&argorolloutsv1alpha1.Rollout{}).
+			WithEventFilter(&odigospredicate.CreationPredicate{}).
+			Complete(&RolloutReconciler{
 				Client: mgr.GetClient(),
 				Scheme: mgr.GetScheme(),
 			})

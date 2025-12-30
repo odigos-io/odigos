@@ -216,6 +216,34 @@ var describeSourceDeploymentConfigCmd = &cobra.Command{
 	},
 }
 
+var describeSourceRolloutCmd = &cobra.Command{
+	Use:     "rollout <name>",
+	Short:   "Show details of a specific odigos source of type Argo Rollout",
+	Long:    `Print detailed description of a specific odigos source of type Argo Rollout, which can be used to troubleshoot issues`,
+	Aliases: []string{"rollout", "rollouts", "rollouts.argoproj.io", "rollout.argoproj.io", "rollout.app", "rollouts.apps"},
+	Args:    cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+		name := args[0]
+		ns := cmd.Flag("namespace").Value.String()
+
+		var describeText string
+		if describeRemoteFlag {
+			describeText = executeRemoteSourceDescribe(ctx, client, "rollout", ns, name)
+		} else {
+			desc, err := describe.DescribeRollout(ctx, client.Interface, client.Dynamic, client.OdigosClient, ns, name)
+			if err != nil {
+				describeText = fmt.Sprintf("Failed to describe rollout: %s", err)
+			} else {
+				describeText = describe.DescribeSourceToText(desc)
+			}
+		}
+		fmt.Println(describeText)
+	},
+}
+
 func executeRemoteOdigosDescribe(ctx context.Context, client *kube.Client, odigosNs string) string {
 	uiSvcProxyEndpoint := fmt.Sprintf("/api/v1/namespaces/%s/services/%s:%d/proxy/api/describe/odigos", odigosNs, k8sconsts.OdigosUiServiceName, k8sconsts.OdigosUiServicePort)
 	request := client.Clientset.RESTClient().Get().AbsPath(uiSvcProxyEndpoint).Do(ctx)
@@ -266,4 +294,5 @@ func init() {
 	describeSourceCmd.AddCommand(describeSourceDaemonSetCmd)
 	describeSourceCmd.AddCommand(describeSourceStatefulSetCmd)
 	describeSourceCmd.AddCommand(describeSourceDeploymentConfigCmd)
+	describeSourceCmd.AddCommand(describeSourceRolloutCmd)
 }

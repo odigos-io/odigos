@@ -3,6 +3,7 @@ package workload
 import (
 	"errors"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -26,6 +27,7 @@ var _ Workload = &StatefulSetWorkload{}
 var _ Workload = &CronJobWorkloadV1{}
 var _ Workload = &CronJobWorkloadBeta{}
 var _ Workload = &DeploymentConfigWorkload{}
+var _ Workload = &ArgoRolloutWorkload{}
 
 type DeploymentWorkload struct {
 	*v1.Deployment
@@ -125,6 +127,22 @@ func (d *DeploymentConfigWorkload) LabelSelector() *metav1.LabelSelector {
 	}
 }
 
+type ArgoRolloutWorkload struct {
+	*argorolloutsv1alpha1.Rollout
+}
+
+func (d *ArgoRolloutWorkload) AvailableReplicas() int32 {
+	return d.Status.AvailableReplicas
+}
+
+func (d *ArgoRolloutWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
+	return &d.Spec.Template
+}
+
+func (d *ArgoRolloutWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
+}
+
 func ObjectToWorkload(obj client.Object) (Workload, error) {
 	switch t := obj.(type) {
 	case *v1.Deployment:
@@ -139,6 +157,8 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 		return &CronJobWorkloadBeta{CronJob: t}, nil
 	case *openshiftappsv1.DeploymentConfig:
 		return &DeploymentConfigWorkload{DeploymentConfig: t}, nil
+	case *argorolloutsv1alpha1.Rollout:
+		return &ArgoRolloutWorkload{Rollout: t}, nil
 	default:
 		return nil, errors.New("unknown kind")
 	}

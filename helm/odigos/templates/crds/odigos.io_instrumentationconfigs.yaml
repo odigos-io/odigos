@@ -931,13 +931,16 @@ spec:
                       injected.
                     format: int32
                     type: integer
-                  numberNotUpdated:
-                    description: number of pods that have the odigos agnet injected.
+                  numberOutOfDatePods:
+                    description: |-
+                      number of pods where odigos agent was injected at time of pod creation,
+                      but since then the agent deployment setup changed, and the agent is not using the latest setup.
                     format: int32
                     type: integer
-                  numberUpdatedPods:
-                    description: number of pods where odigos agnent is injected and
-                      using the latest version and configuration.
+                  numberUpToDatePods:
+                    description: |-
+                      number of pods where odigos agnent is injected and using the latest agent deployment setup.
+                      it includes which distro to use per container
                     format: int32
                     type: integer
                 type: object

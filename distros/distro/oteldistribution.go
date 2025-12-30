@@ -117,6 +117,9 @@ type RuntimeAgent struct {
 
 	// If true, the agent supports wasp
 	WaspSupported bool `yaml:"waspSupported,omitempty"`
+
+	// If true, the instrumentation applied by this agent does not require application restart.
+	NoRestartRequired bool `yaml:"noRestartRequired,omitempty"`
 }
 
 type SpanMetrics struct {
