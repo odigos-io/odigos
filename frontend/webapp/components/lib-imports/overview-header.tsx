@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { useStatusStore } from '../../store';
+import { OdigosLogoText } from '@odigos/ui-kit/icons';
 import { FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { OtherStatusType } from '@odigos/ui-kit/types';
 import { Header, Tooltip } from '@odigos/ui-kit/components';
-import { OdigosCentralLogoText } from '@odigos/ui-kit/icons';
 import { useConfig, useDescribe, useTokenCRUD } from '@/hooks';
 import { Badge as V2Badge, Header as V2Header } from '@odigos/ui-kit/components/v2';
 import { NotificationManager, SlackInvite, SystemOverview, ToggleDarkMode } from '@odigos/ui-kit/containers';
@@ -15,7 +15,7 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   const { status, message, leftIcon } = useStatusStore();
 
   const left = useMemo(() => {
-    const arr = [<OdigosCentralLogoText key='logo' size={150} />];
+    const arr = [<OdigosLogoText key='logo' size={150} />];
 
     if (message) {
       arr.push(<V2Badge key='status' status={status} label={message} leftIcon={leftIcon} />);

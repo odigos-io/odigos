@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
+import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
-import { useDestinationCRUD } from '../destinations';
 import { StatusType } from '@odigos/ui-kit/types';
+import { useDestinationCRUD } from '../destinations';
 import { type NotifyPayload, useInstrumentStore, useNotificationStore } from '@odigos/ui-kit/store';
 
 enum EventTypes {
@@ -27,9 +28,9 @@ const sseEventCounts = {
 };
 
 export const useSSE = () => {
+  const { fetchSources } = useSourceCRUD();
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
-  const { fetchSources } = useSourceCRUD();
 
   const maxRetries = 10;
   const retryCount = useRef(0);
@@ -37,10 +38,16 @@ export const useSSE = () => {
   const lastModifiedEventTimestamp = useRef<number | null>(null);
   const lastModifiedEventInterval = useRef<NodeJS.Timeout | null>(null);
 
+  const clearStatusMessage = () => {
+    const { priorityMessage, setStatusStore } = useStatusStore.getState();
+    if (!priorityMessage) setStatusStore({ status: StatusType.Default, message: '', leftIcon: undefined });
+  };
+
   const resetLastModifiedEventRefs = () => {
-    lastModifiedEventTimestamp.current = null;
     if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
     lastModifiedEventInterval.current = null;
+    lastModifiedEventTimestamp.current = null;
+    clearStatusMessage();
   };
 
   useEffect(() => {
@@ -96,16 +103,17 @@ export const useSSE = () => {
         if (isSource) {
           switch (notification.title) {
             case EventTypes.MODIFIED:
-              if (!isAwaitingInstrumentation) {
-                if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
+              if (!isAwaitingInstrumentation && notification.target) {
                 lastModifiedEventTimestamp.current = Date.now();
 
-                // Debounce: wait for MODIFIED_DEBOUNCE_MS after the last event before fetching all sources
-                lastModifiedEventInterval.current = setInterval(async () => {
+                // if last message was over `MODIFIED_DEBOUNCE_MS` seconds ago, fetch the sources (all, or if less than `MAX_EVENTS_FOR_SINGLE_FETCH` then fetch each by id)...
+                // the interval is to run a timestamp check every 1 second - once the condition is met, the interval is cleared.
+                if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
+                lastModifiedEventInterval.current = setInterval(() => {
                   const timeSinceLastModified = Date.now() - (lastModifiedEventTimestamp.current || 0);
 
                   if (timeSinceLastModified > MODIFIED_DEBOUNCE_MS) {
-                    await fetchSources();
+                    fetchSources();
                     resetLastModifiedEventRefs();
                   }
                 }, 1000);
@@ -136,6 +144,7 @@ export const useSSE = () => {
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToDelete', 0);
                 setInstrumentCount('sourcesDeleted', 0);
+                clearStatusMessage();
               }
               break;
 
