@@ -19,7 +19,7 @@ spec:
     - type: Resource
       resource:
         name: cpu
-      targetAverageUtilization: {{ .Values.centralBackend.autoscaling.cpuTargetUtilization }}
+        targetAverageUtilization: {{ .Values.centralBackend.autoscaling.cpuTargetUtilization }}
 {{- else if and (semverCompare ">=1.23-0" $vk) (semverCompare "<1.25-0" $vk) }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
