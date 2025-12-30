@@ -9,6 +9,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type PodsController struct {
@@ -39,7 +40,11 @@ func (r *PodsController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	r.PodsTracker.SetPodWorkload(req, *pw)
+	err = r.PodsTracker.SetPodWorkload(req, *pw)
+	if err != nil {
+		logger := log.FromContext(ctx)
+		logger.Error(err, "error setting pod id to workload mapping in pods tracker", "pod", req.NamespacedName)
+	}
 
 	err = syncWorkload(ctx, r.Client, *pw)
 	if err != nil {
