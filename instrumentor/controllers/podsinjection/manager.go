@@ -14,8 +14,9 @@ type InstrumentationConfigPodsInjectionPredicate struct{}
 
 func (o InstrumentationConfigPodsInjectionPredicate) Create(e event.CreateEvent) bool {
 
-	// when an instrumentation config is created, we need to sync the pods injection numbers at creation time.
-	// this will also help in syncing the ic status when instrumentor was while pods number changed.
+	// at creation time, we need to fill the current pods injection status in the ic.
+	// if instrumentor was down or restarting, we also need to sync the pods injection number
+	// for any changes not being picked up while the controller was not able to process events.
 	return true
 }
 
@@ -27,7 +28,7 @@ func (o InstrumentationConfigPodsInjectionPredicate) Update(e event.UpdateEvent)
 		return false
 	}
 
-	// pods relay on the agents meta hash, and when it changes, we need to re-compute the couters based on the new agents meta hash baseline.
+	// pods rely on the agents meta hash, and when it changes, we need to re-compute the couters based on the new agents meta hash baseline.
 	return old.Spec.AgentsMetaHash != new.Spec.AgentsMetaHash
 }
 
