@@ -12,9 +12,11 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
@@ -49,6 +51,11 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
 	clusterName := GetClusterName(ctx)
 	response.ClusterName = clusterName
+	isConnected, err := isConnectedToCentralBackend(ctx, clusterName)
+	if err != nil {
+		log.Printf("Error checking if connected to central backend: %v\n", err)
+	}
+	response.IsConnectedToCentralBackend = &isConnected
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
 	if isNewInstallation {
 		response.InstallationStatus = model.InstallationStatus(NewInstallation)
@@ -84,6 +91,42 @@ func IsReadonlyMode(ctx context.Context) bool {
 	}
 
 	return config.UiMode == common.UiModeReadonly
+}
+
+func isConnectedToCentralBackend(ctx context.Context, clusterName *string) (bool, error) {
+	config, err := GetOdigosConfiguration(ctx)
+	if err != nil {
+		return false, nil
+	}
+
+	if clusterName == nil || *clusterName == "" {
+		return false, nil
+	}
+
+	if config.CentralBackendURL == "" {
+		return false, nil
+	}
+
+	ns := env.GetCurrentNamespace()
+	tier, err := utils.GetCurrentOdigosTier(ctx, ns, kube.DefaultClient.Interface.(*kubernetes.Clientset))
+	if err != nil {
+		log.Printf("Error getting current Odigos tier: %v\n", err)
+		return false, err
+	}
+	if tier != common.OnPremOdigosTier {
+		return false, nil
+	}
+
+	deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralProxyDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		log.Printf("Central proxy deployment not found: %v\n", err)
+		return false, nil
+	}
+	if deployment.Status.AvailableReplicas == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func GetClusterName(ctx context.Context) *string {

@@ -392,6 +392,7 @@ type GetConfigResponse {
   installationMethod: String!
   installationStatus: InstallationStatus!
   clusterName: String
+  isConnectedToCentralBackend: Boolean
 }
 
 input DestinationInput {
