@@ -2,8 +2,7 @@ import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { useSourceCRUD } from '../sources';
 import { useDestinationCRUD } from '../destinations';
-import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
-import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
+import { StatusType } from '@odigos/ui-kit/types';
 import { type NotifyPayload, useInstrumentStore, useNotificationStore } from '@odigos/ui-kit/store';
 
 enum EventTypes {
@@ -19,22 +18,26 @@ enum CrdTypes {
 }
 
 const MODIFIED_DEBOUNCE_MS = 5000;
-const MAX_EVENTS_FOR_SINGLE_FETCH = 10;
+
+// SSE event counters for debugging
+const sseEventCounts = {
+  total: 0,
+  byEvent: {} as Record<string, number>,
+  byCrd: {} as Record<string, number>,
+};
 
 export const useSSE = () => {
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
-  const { fetchSources, fetchSourceById } = useSourceCRUD();
+  const { fetchSources } = useSourceCRUD();
 
   const maxRetries = 10;
   const retryCount = useRef(0);
 
-  const lastModifiedEventIds = useRef<WorkloadId[]>([]);
   const lastModifiedEventTimestamp = useRef<number | null>(null);
   const lastModifiedEventInterval = useRef<NodeJS.Timeout | null>(null);
 
   const resetLastModifiedEventRefs = () => {
-    lastModifiedEventIds.current = [];
     lastModifiedEventTimestamp.current = null;
     if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
     lastModifiedEventInterval.current = null;
@@ -67,6 +70,17 @@ export const useSSE = () => {
           target: data.target,
         };
 
+        // Count SSE events
+        sseEventCounts.total++;
+        const eventKey = notification.title || 'unknown';
+        const crdKey = notification.crdType || 'unknown';
+        sseEventCounts.byEvent[eventKey] = (sseEventCounts.byEvent[eventKey] || 0) + 1;
+        sseEventCounts.byCrd[crdKey] = (sseEventCounts.byCrd[crdKey] || 0) + 1;
+        console.log(`[SSE] Event #${sseEventCounts.total}: ${eventKey} (${crdKey})`, {
+          counts: { ...sseEventCounts },
+          data: notification,
+        });
+
         const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
 
         const isConnected = [EventTypes.CONNECTED].includes(notification.crdType);
@@ -82,23 +96,16 @@ export const useSSE = () => {
         if (isSource) {
           switch (notification.title) {
             case EventTypes.MODIFIED:
-              if (!isAwaitingInstrumentation && notification.target) {
+              if (!isAwaitingInstrumentation) {
                 if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
-                lastModifiedEventIds.current.push(getIdFromSseTarget(notification.target, EntityTypes.Source));
                 lastModifiedEventTimestamp.current = Date.now();
 
-                // if last message was over `MODIFIED_DEBOUNCE_MS` seconds ago, fetch the sources (all, or if less than `MAX_EVENTS_FOR_SINGLE_FETCH` then fetch each by id)...
-                // the interval is to run a timestamp check every 1 second - once the condition is met, the interval is cleared.
+                // Debounce: wait for MODIFIED_DEBOUNCE_MS after the last event before fetching all sources
                 lastModifiedEventInterval.current = setInterval(async () => {
                   const timeSinceLastModified = Date.now() - (lastModifiedEventTimestamp.current || 0);
 
                   if (timeSinceLastModified > MODIFIED_DEBOUNCE_MS) {
-                    if (lastModifiedEventIds.current.length <= MAX_EVENTS_FOR_SINGLE_FETCH) {
-                      await Promise.allSettled(lastModifiedEventIds.current.map((id) => fetchSourceById(id)));
-                    } else {
-                      await fetchSources();
-                    }
-
+                    await fetchSources();
                     resetLastModifiedEventRefs();
                   }
                 }, 1000);
