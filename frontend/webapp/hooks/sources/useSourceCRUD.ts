@@ -48,6 +48,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
       setInstrumentAwait(false);
       setInstrumentCount('sourcesToCreate', 0);
       setInstrumentCount('sourcesCreated', 0);
+      setInstrumentCount('sourcesToDelete', 0);
+      setInstrumentCount('sourcesDeleted', 0);
       notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message);
     },
   });
@@ -55,15 +57,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [mutateUpdate] = useMutation<{ updateK8sActualSource: boolean }, { sourceId: WorkloadId; patchSourceRequest: SourceFormData }>(UPDATE_K8S_ACTUAL_SOURCE, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
   });
-
-  const shouldFetchSource = (allowFetchDuringLoadTrue?: boolean) => {
-    // We should not fetch if we are already fetching.
-    const { sourcesLoading } = useEntityStore.getState();
-    // We should not fetch while sources are being instrumented.
-    const { isAwaitingInstrumentation } = useInstrumentStore.getState();
-
-    return !isAwaitingInstrumentation && (!sourcesLoading || (sourcesLoading && allowFetchDuringLoadTrue));
-  };
 
   const handleInstrumentationCount = (toAddCount: number, toDeleteCount: number) => {
     const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
@@ -110,7 +103,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   const fetchSources: UseSourceCrud['fetchSources'] = async () => {
-    if (!shouldFetchSource()) return;
     setEntitiesLoading(EntityTypes.Source, true);
 
     const { error, data } = await queryAll();
@@ -129,8 +121,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   const fetchSourceById: UseSourceCrud['fetchSourceById'] = async (id, bypassPaginationLoader = false): Promise<Source | undefined> => {
-    if (!shouldFetchSource(bypassPaginationLoader)) return;
-
     const { error, data } = await queryById({ variables: { sourceId: id } });
 
     if (error) {
@@ -173,21 +163,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
       // !! no "fetch" and no "setInstrumentAwait(false)"
       // !! we should wait for SSE to handle that
-
-      const emptySources: Source[] = persistSourcesPayloads.sources
-        .filter((source) => source.selected)
-        .map((source) => ({
-          namespace: source.namespace,
-          name: source.name,
-          kind: source.kind,
-          selected: source.selected,
-          dataStreamNames: [source.currentStreamName],
-          otelServiceName: '',
-          containers: [],
-          conditions: [],
-        }));
-
-      addEntities(EntityTypes.Source, emptySources);
     }
   };
 
@@ -206,7 +181,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   useEffect(() => {
-    if (!sources.length && !sourcesLoading) fetchSources();
+    if (!sources.length && !useEntityStore.getState().sourcesLoading) fetchSources();
   }, []);
 
   return {

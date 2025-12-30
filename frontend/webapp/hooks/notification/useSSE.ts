@@ -18,36 +18,58 @@ enum CrdTypes {
   Destination = 'Destination',
 }
 
-const MODIFIED_DEBOUNCE_MS = 5000;
-
-// SSE event counters for debugging
-const sseEventCounts = {
-  total: 0,
-  byEvent: {} as Record<string, number>,
-  byCrd: {} as Record<string, number>,
-};
+const DEBOUNCE_MS = 5000;
 
 export const useSSE = () => {
   const { fetchSources } = useSourceCRUD();
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
-
-  const maxRetries = 10;
-  const retryCount = useRef(0);
-
-  const lastModifiedEventTimestamp = useRef<number | null>(null);
-  const lastModifiedEventInterval = useRef<NodeJS.Timeout | null>(null);
+  const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
 
   const clearStatusMessage = () => {
     const { priorityMessage, setStatusStore } = useStatusStore.getState();
     if (!priorityMessage) setStatusStore({ status: StatusType.Default, message: '', leftIcon: undefined });
   };
 
-  const resetLastModifiedEventRefs = () => {
-    if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
-    lastModifiedEventInterval.current = null;
-    lastModifiedEventTimestamp.current = null;
-    clearStatusMessage();
+  const maxRetries = 10;
+  const retryCount = useRef(0);
+
+  const eventRef = useRef<{
+    interval: NodeJS.Timeout | null;
+    timestamp: number | null;
+  } | null>(null);
+
+  const resetEventInterval = () => {
+    if (eventRef.current) {
+      if (eventRef.current.interval) {
+        clearInterval(eventRef.current.interval);
+        eventRef.current.interval = null;
+      }
+      eventRef.current.timestamp = null;
+    }
+  };
+
+  const handleEventInterval = (successCallback: () => void) => {
+    if (!eventRef.current) {
+      eventRef.current = {
+        interval: null,
+        timestamp: null,
+      };
+    }
+
+    if (eventRef.current.interval) clearInterval(eventRef.current.interval);
+    eventRef.current.timestamp = Date.now();
+
+    // if last message was over `XXX` seconds ago, fetch all sources...
+    // the interval runs a timestamp check every 1 second - once the condition is met, the interval is cleared.
+    eventRef.current.interval = setInterval(() => {
+      const timeSinceLastModified = Date.now() - (eventRef.current?.timestamp || 0);
+
+      if (timeSinceLastModified > DEBOUNCE_MS) {
+        resetEventInterval();
+        successCallback();
+      }
+    }, 1000);
   };
 
   useEffect(() => {
@@ -77,75 +99,64 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        // Count SSE events
-        sseEventCounts.total++;
-        const eventKey = notification.title || 'unknown';
-        const crdKey = notification.crdType || 'unknown';
-        sseEventCounts.byEvent[eventKey] = (sseEventCounts.byEvent[eventKey] || 0) + 1;
-        sseEventCounts.byCrd[crdKey] = (sseEventCounts.byCrd[crdKey] || 0) + 1;
-        console.log(`[SSE] Event #${sseEventCounts.total}: ${eventKey} (${crdKey})`, {
-          counts: { ...sseEventCounts },
-          data: notification,
-        });
-
-        const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
-
         const isConnected = [EventTypes.CONNECTED].includes(notification.crdType);
         const isSource = [CrdTypes.InstrumentationConfig].includes(notification.crdType);
         const isDestination = [CrdTypes.Destination].includes(notification.crdType);
 
-        // do not notify for: connected, modified events, or sources that are still being instrumented
-        if (!isConnected && !(isSource && isAwaitingInstrumentation) && notification.title !== EventTypes.MODIFIED) {
+        // do not notify for: connected, modified events, or sources
+        if ((notification.title || notification.message) && !isConnected && notification.title !== EventTypes.MODIFIED && !isSource) {
           addNotification(notification);
         }
 
         // Handle specific CRD types
         if (isSource) {
+          const { isAwaitingInstrumentation } = useInstrumentStore.getState();
+          if (!isAwaitingInstrumentation) setInstrumentAwait(true);
+
           switch (notification.title) {
             case EventTypes.MODIFIED:
-              if (!isAwaitingInstrumentation && notification.target) {
-                lastModifiedEventTimestamp.current = Date.now();
-
-                // if last message was over `MODIFIED_DEBOUNCE_MS` seconds ago, fetch the sources (all, or if less than `MAX_EVENTS_FOR_SINGLE_FETCH` then fetch each by id)...
-                // the interval is to run a timestamp check every 1 second - once the condition is met, the interval is cleared.
-                if (lastModifiedEventInterval.current) clearInterval(lastModifiedEventInterval.current);
-                lastModifiedEventInterval.current = setInterval(() => {
-                  const timeSinceLastModified = Date.now() - (lastModifiedEventTimestamp.current || 0);
-
-                  if (timeSinceLastModified > MODIFIED_DEBOUNCE_MS) {
-                    fetchSources();
-                    resetLastModifiedEventRefs();
-                  }
-                }, 1000);
+              const { sourcesToCreate, sourcesCreated } = useInstrumentStore.getState();
+              if (sourcesToCreate > 0) {
+                const totalCreated = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+                setInstrumentCount('sourcesCreated', totalCreated);
               }
-              break;
 
-            case EventTypes.ADDED:
-              const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-              setInstrumentCount('sourcesCreated', created);
+              handleEventInterval(() => {
+                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${'NaN'} sources` });
 
-              // If not waiting, or we're at 100%, then proceed
-              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
-                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${created} sources` });
+                fetchSources();
+                clearStatusMessage();
+
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToCreate', 0);
                 setInstrumentCount('sourcesCreated', 0);
+              });
+              break;
+
+            case EventTypes.ADDED:
+              handleEventInterval(() => {
                 fetchSources();
-              }
+                clearStatusMessage();
+              });
               break;
 
             case EventTypes.DELETED:
-              const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-              setInstrumentCount('sourcesDeleted', deleted);
+              const { sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
+              if (sourcesToDelete > 0) {
+                const totalDeleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+                setInstrumentCount('sourcesDeleted', totalDeleted);
+              }
 
-              // If not waiting, or we're at 100%, then proceed
-              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
-                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${deleted} sources` });
+              handleEventInterval(() => {
+                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${'NaN'} sources` });
+
+                fetchSources();
+                clearStatusMessage();
+
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToDelete', 0);
                 setInstrumentCount('sourcesDeleted', 0);
-                clearStatusMessage();
-              }
+              });
               break;
 
             default:
@@ -169,7 +180,8 @@ export const useSSE = () => {
     // Clean up event source on component unmount
     return () => {
       es?.close();
-      resetLastModifiedEventRefs();
+      resetEventInterval();
+      clearStatusMessage();
     };
   }, []);
 };
