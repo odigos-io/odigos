@@ -130,15 +130,16 @@ export const useSSE = () => {
             case EventTypes.ADDED:
               if (!isAwaitingInstrumentation) setInstrumentAwait(true);
 
-              const statusMessage = 'Reconciling sources...';
-              if (!priorityMessage && message !== statusMessage) setStatusStore({ status: StatusType.Warning, message: statusMessage, leftIcon: NotificationIcon });
+              const statusMessage1 = 'Creating sources, please wait a moment...';
+              if (!priorityMessage && message !== statusMessage1) setStatusStore({ status: StatusType.Warning, message: statusMessage1, leftIcon: NotificationIcon });
 
               const { sourcesCreated } = useInstrumentStore.getState();
               const totalCreated = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesCreated', totalCreated);
 
               handleEventInterval(EventTypes.ADDED, () => {
-                if (!priorityMessage) setStatusStore({ status: StatusType.Warning, message: 'Instrumenting sources...', leftIcon: NotificationIcon });
+                const statusMessage2 = 'Instrumentating sources, please wait a moment...';
+                if (!priorityMessage && message !== statusMessage2) setStatusStore({ status: StatusType.Warning, message: statusMessage2, leftIcon: NotificationIcon });
                 addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${totalCreated} sources` });
 
                 fetchSources();
