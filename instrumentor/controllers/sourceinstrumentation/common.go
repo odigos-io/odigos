@@ -8,6 +8,8 @@ import (
 	"errors"
 	"regexp"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -44,6 +46,7 @@ func syncNamespaceWorkloads(
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindCronJob,
 		k8sconsts.WorkloadKindDeploymentConfig,
+		k8sconsts.WorkloadKindArgoRollout,
 	} {
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
@@ -53,6 +56,10 @@ func syncNamespaceWorkloads(
 			// - The DeploymentConfig resource doesn't exist (NoMatchError)
 			// - RBAC permissions aren't granted (Forbidden)
 			if kind == k8sconsts.WorkloadKindDeploymentConfig && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
+				continue
+			}
+			// // Same for Argo Rollouts
+			if kind == k8sconsts.WorkloadKindArgoRollout && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
 				continue
 			}
 			// For other errors or other workload kinds, collect the error
@@ -101,6 +108,14 @@ func syncNamespaceWorkloads(
 					Name:      dc.GetName(),
 					Namespace: dc.GetNamespace(),
 					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+				})
+			}
+		case *argorolloutsv1alpha1.RolloutList:
+			for _, ar := range obj.Items {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      ar.GetName(),
+					Namespace: ar.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindArgoRollout,
 				})
 			}
 		}
@@ -197,6 +212,16 @@ func syncRegexSourceWorkloads(
 					Name:      dc.GetName(),
 					Namespace: dc.GetNamespace(),
 					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
+				})
+			}
+		}
+	case *argorolloutsv1alpha1.RolloutList:
+		for _, rollout := range obj.Items {
+			if regex.MatchString(rollout.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      rollout.GetName(),
+					Namespace: rollout.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindArgoRollout,
 				})
 			}
 		}

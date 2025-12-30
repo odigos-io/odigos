@@ -1,0 +1,40 @@
+# Assert that Argo Rollouts are deployed and ready before instrumentation
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: python-rollout
+  namespace: default
+  labels:
+    app: python-rollout
+    odigos.io/e2e: argo-rollout-test
+status:
+  replicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: nodejs-rollout
+  namespace: default
+  labels:
+    app: nodejs-rollout
+    odigos.io/e2e: argo-rollout-test
+status:
+  replicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: java-rollout
+  namespace: default
+  labels:
+    app: java-rollout
+    odigos.io/e2e: argo-rollout-test
+status:
+  replicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+

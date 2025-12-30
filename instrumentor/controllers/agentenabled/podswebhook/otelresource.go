@@ -101,6 +101,9 @@ func getWorkloadKindAttributeKey(workloadKind k8sconsts.WorkloadKind) attribute.
 	case k8sconsts.WorkloadKindDeploymentConfig:
 		// OpenShift DeploymentConfig - use Deployment key as closest analog
 		return semconv.K8SDeploymentNameKey
+	case k8sconsts.WorkloadKindArgoRollout:
+		// Argo Rollout - use custom key since there's no semconv for it
+		return attribute.Key(k8sconsts.K8SArgoRolloutNameAttribute)
 	}
 	return attribute.Key("")
 }
