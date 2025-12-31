@@ -392,7 +392,7 @@ type GetConfigResponse {
   installationMethod: String!
   installationStatus: InstallationStatus!
   clusterName: String
-  isConnectedToCentralBackend: Boolean
+  isCentralProxyRunning: Boolean
 }
 
 input DestinationInput {

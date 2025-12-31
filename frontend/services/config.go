@@ -63,9 +63,9 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	}
 	configured := isConfiguredForCentralBackend(common.OdigosTier(response.Tier), &config.ClusterName, config)
 	if configured && isConnected {
-		response.IsConnectedToCentralBackend = &isConnected
+		response.IsCentralProxyRunning = &isConnected
 	} else {
-		response.IsConnectedToCentralBackend = nil
+		response.IsCentralProxyRunning = nil
 	}
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
 	if isNewInstallation {

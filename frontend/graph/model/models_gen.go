@@ -354,14 +354,14 @@ type GatewayDeploymentInfo struct {
 }
 
 type GetConfigResponse struct {
-	Readonly                    bool                `json:"readonly"`
-	PlatformType                ComputePlatformType `json:"platformType"`
-	Tier                        Tier                `json:"tier"`
-	OdigosVersion               string              `json:"odigosVersion"`
-	InstallationMethod          string              `json:"installationMethod"`
-	InstallationStatus          InstallationStatus  `json:"installationStatus"`
-	ClusterName                 *string             `json:"clusterName,omitempty"`
-	IsConnectedToCentralBackend *bool               `json:"isConnectedToCentralBackend,omitempty"`
+	Readonly              bool                `json:"readonly"`
+	PlatformType          ComputePlatformType `json:"platformType"`
+	Tier                  Tier                `json:"tier"`
+	OdigosVersion         string              `json:"odigosVersion"`
+	InstallationMethod    string              `json:"installationMethod"`
+	InstallationStatus    InstallationStatus  `json:"installationStatus"`
+	ClusterName           *string             `json:"clusterName,omitempty"`
+	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
 }
 
 type GetDestinationCategories struct {
