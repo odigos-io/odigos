@@ -1,6 +1,7 @@
 package odigosebpfreceiver
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -385,8 +386,8 @@ func (r *ebpfReceiver) metricsReadLoop(ctx context.Context, m *ebpf.Map) error {
 func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map) error {
 	r.logger.Debug("starting metrics collection iteration")
 
-	var processKey uint32 // Key representing process ID or similar identifier
-	var innerMapID uint32 // ID of the inner map
+	var processKey [512]byte // Key representing process ID or similar identifier
+	var innerMapID uint32    // ID of the inner map
 
 	// Iterate over all entries in the hash of maps
 	iter := hashOfMaps.Iterate()
@@ -402,7 +403,7 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 	for iter.Next(&processKey, &innerMapID) {
 		innerMapsCount++
 		r.logger.Debug("found inner map",
-			zap.Uint32("process_key", processKey),
+			zap.String("process_key", string(processKey[:])),
 			zap.Uint32("inner_map_id", innerMapID))
 
 		// Get the inner map from the ID
@@ -417,7 +418,7 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 		// Process metrics from this inner map
 		if err := r.processInnerMapMetrics(ctx, innerMap, processKey); err != nil {
 			r.logger.Error("failed to process inner map metrics",
-				zap.Uint32("process_key", processKey),
+				zap.String("process_key", string(processKey[:])),
 				zap.Uint32("inner_map_id", innerMapID),
 				zap.Error(err))
 			innerMap.Close()
@@ -436,8 +437,8 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 
 // processInnerMapMetrics processes a single inner map and extracts metrics
 // each innermap represents a single process and its metrics
-func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, processKey uint32) error {
-	r.logger.Debug("processing inner map for metrics", zap.Uint32("process_key", processKey))
+func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, processKey [512]byte) error {
+	r.logger.Debug("processing inner map for metrics", zap.String("process_key", string(processKey[:])))
 
 	// Create metrics data structure
 	metrics := pmetric.NewMetrics()
@@ -623,18 +624,17 @@ func parseMetricValue(valueBytes []byte) uint64 {
 
 // addResourceAttributesFromProcessKey parses processKey and adds resource attributes
 // TODO: The delimiter character and encoding method are not yet decided
-func (r *ebpfReceiver) addResourceAttributesFromProcessKey(resourceAttrs pcommon.Map, processKey uint32) error {
+func (r *ebpfReceiver) addResourceAttributesFromProcessKey(resourceAttrs pcommon.Map, processKey [512]byte) error {
 	// TODO: Replace this with the actual encoding method used for processKey
-	// For now, assuming processKey might be converted to string and contains encoded attributes
-
-	// Placeholder: Convert processKey to string (this will need to be updated based on actual encoding)
+	// For now, converting the byte array to string
 	// This is a temporary implementation - you'll need to replace this with the actual decoding logic
-	processKeyStr := fmt.Sprintf("%d", processKey)
+	processKeyStr := string(processKey[:])
 
-	// Try to parse as encoded string if it's not just a number
-	// For now, if it's just a number, treat as process.pid
-	if len(processKeyStr) <= 10 { // Likely just a process ID number
-		resourceAttrs.PutInt("process.pid", int64(processKey))
+	// Trim null bytes from the string
+	processKeyStr = string(bytes.TrimRight([]byte(processKeyStr), "\x00"))
+
+	// If empty or very short, it might just be a process ID
+	if len(processKeyStr) == 0 {
 		return nil
 	}
 
