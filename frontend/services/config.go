@@ -59,7 +59,7 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	response.ClusterName = &config.ClusterName
 	isConnected, err := isCentralProxyRunning(ctx)
 	if err != nil {
-		log.Printf("Error checking if central proxt connected: %v\n", err)
+		log.Printf("Error checking if central proxy connected: %v\n", err)
 	}
 	configured := isConfiguredForCentralBackend(common.OdigosTier(response.Tier), &config.ClusterName, config)
 	if configured && isConnected {
