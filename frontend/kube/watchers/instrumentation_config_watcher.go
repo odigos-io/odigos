@@ -18,13 +18,14 @@ import (
 )
 
 var instrumentationConfigAddedEventBatcher *EventBatcher
+var instrumentationConfigModifiedEventBatcher *EventBatcher
 var instrumentationConfigDeletedEventBatcher *EventBatcher
 
 func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
 	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     3 * time.Second,
+			Duration:     3 * time.Second, // 2s less than frontend EVENT_DEBOUNCE_MS
 			Event:        sse.MessageEventAdded,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -36,10 +37,26 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 		},
 	)
 
+	instrumentationConfigModifiedEventBatcher = NewEventBatcher(
+		EventBatcherConfig{
+			MinBatchSize: 1,
+			Duration:     3 * time.Second, // 2s less than frontend EVENT_DEBOUNCE_MS
+			Event:        sse.MessageEventModified,
+			CRDType:      consts.InstrumentationConfig,
+			Debounce:     true, // Reset timer on each event, send only after `Duration` seconds of silence
+			SuccessBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Successfully updated %d sources", count)
+			},
+			FailureBatchMessageFunc: func(count int, crdType string) string {
+				return fmt.Sprintf("Failed to update %d sources", count)
+			},
+		},
+	)
+
 	instrumentationConfigDeletedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
-			Duration:     3 * time.Second,
+			Duration:     3 * time.Second, // 2s less than frontend EVENT_DEBOUNCE_MS
 			Event:        sse.MessageEventDeleted,
 			CRDType:      consts.InstrumentationConfig,
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
@@ -65,6 +82,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
 	defer instrumentationConfigAddedEventBatcher.Cancel()
+	defer instrumentationConfigModifiedEventBatcher.Cancel()
 	defer instrumentationConfigDeletedEventBatcher.Cancel()
 	for {
 		select {
@@ -107,19 +125,10 @@ func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationC
 		return
 	}
 
-	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", pw.Namespace, pw.Name, pw.Kind)
+	// Use source identifier as target for deduplication (same source = counted once)
+	target := fmt.Sprintf("%s/%s/%s", pw.Namespace, pw.Kind, pw.Name)
 	data := fmt.Sprintf(`Successfully updated "%s" source`, pw.Name)
-
-	// We have to ensure that the event is always an individual event - no batching.
-	// We need to do this because we have to get an event with the target ID, which is not possible with batching.
-	// We need the target ID to fetch the individual entity, instead of fetching all entities.
-	sse.SendMessageToClient(sse.SSEMessage{
-		Type:    sse.MessageTypeSuccess,
-		Event:   sse.MessageEventModified,
-		Data:    data,
-		CRDType: consts.InstrumentationConfig,
-		Target:  target,
-	})
+	instrumentationConfigModifiedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }
 
 func handleDeletedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationConfig) {

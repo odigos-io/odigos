@@ -2,11 +2,10 @@ import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
+import { StatusType } from '@odigos/ui-kit/types';
 import { useDestinationCRUD } from '../destinations';
-import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
-import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
-import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
-import { type NotifyPayload, useInstrumentStore, useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
+import { NotificationIcon } from '@odigos/ui-kit/icons';
+import { type NotifyPayload, useInstrumentStore, useNotificationStore } from '@odigos/ui-kit/store';
 
 enum EventTypes {
   CONNECTED = 'CONNECTED',
@@ -20,19 +19,85 @@ enum CrdTypes {
   Destination = 'Destination',
 }
 
-export const useSSE = () => {
-  const { setPendingItems } = usePendingStore();
-  const { addNotification } = useNotificationStore();
-  const { title, setStatusStore } = useStatusStore();
-  const { fetchDestinations } = useDestinationCRUD();
-  const { fetchSources, fetchSourceById } = useSourceCRUD();
+const EVENT_DEBOUNCE_MS = 5000;
 
-  const retryCount = useRef(0);
+export const useSSE = () => {
+  const { fetchSources } = useSourceCRUD();
+  const { setStatusStore } = useStatusStore();
+  const { addNotification } = useNotificationStore();
+  const { fetchDestinations } = useDestinationCRUD();
+  const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
+
+  const clearStatusMessage = () => {
+    const { priorityMessage } = useStatusStore.getState();
+    if (!priorityMessage) setStatusStore({ status: StatusType.Default, message: '', leftIcon: undefined });
+  };
+
   const maxRetries = 10;
+  const retryCount = useRef(0);
+
+  const eventsRef = useRef<
+    | {
+        [eventType in EventTypes]?: {
+          handler: NodeJS.Timeout | null;
+          timestamp: number | null;
+        };
+      }
+    | null
+  >(null);
+
+  const resetEventHandler = (eventType: EventTypes) => {
+    if (eventsRef.current && eventsRef.current[eventType]) {
+      if (eventsRef.current?.[eventType]?.handler) {
+        clearTimeout(eventsRef.current[eventType]!.handler as NodeJS.Timeout);
+        eventsRef.current[eventType]!.handler = null;
+      }
+      eventsRef.current[eventType]!.timestamp = null;
+    }
+  };
+
+  const handleEvent = (eventType: EventTypes, successCallback: () => void) => {
+    if (!eventsRef.current) {
+      eventsRef.current = {
+        [eventType]: {
+          handler: null,
+          timestamp: null,
+        },
+      };
+    } else if (!eventsRef.current[eventType]) {
+      eventsRef.current[eventType] = {
+        handler: null,
+        timestamp: null,
+      };
+    }
+
+    if (eventsRef.current![eventType]!.handler) clearTimeout(eventsRef.current![eventType]!.handler as NodeJS.Timeout);
+    eventsRef.current![eventType]!.timestamp = Date.now();
+
+    // if last message was over `EVENT_DEBOUNCE_MS` time ago - fetch all sources.
+    // once the condition is met, or a new event is received, the handler is cleared.
+    eventsRef.current[eventType]!.handler = setTimeout(() => {
+      resetEventHandler(eventType);
+      successCallback();
+    }, EVENT_DEBOUNCE_MS);
+  };
 
   useEffect(() => {
     const connect = () => {
       const es = new EventSource(API.EVENTS);
+
+      es.onerror = () => {
+        es.close();
+
+        if (retryCount.current < maxRetries) {
+          retryCount.current += 1;
+          console.warn(`Disconnected from the server. Retrying connection (${retryCount.current})`);
+
+          setTimeout(() => connect(), Math.min(10000, 1000 * Math.pow(2, retryCount.current)));
+        } else {
+          console.error(`Connection lost on ${new Date().toLocaleString()}. Please reboot the application`);
+        }
+      };
 
       es.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -44,58 +109,70 @@ export const useSSE = () => {
           target: data.target,
         };
 
-        const { setInstrumentAwait, isAwaitingInstrumentation, setInstrumentCount, sourcesToCreate, sourcesCreated, sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
-
         const isConnected = [EventTypes.CONNECTED].includes(notification.crdType);
         const isSource = [CrdTypes.InstrumentationConfig].includes(notification.crdType);
         const isDestination = [CrdTypes.Destination].includes(notification.crdType);
 
-        // do not notify for: connected, modified events, or sources that are still being instrumented
-        if (!isConnected && !(isSource && isAwaitingInstrumentation) && notification.title !== EventTypes.MODIFIED) {
+        // do not notify for: connected, modified events, or sources
+        if ((notification.title || notification.message) && !isConnected && notification.title !== EventTypes.MODIFIED && !isSource) {
           addNotification(notification);
         }
 
         // Handle specific CRD types
-        if (isConnected) {
-          // If the current status in store is API Token related, we don't want to override it with the connected message
-          if (title !== DISPLAY_TITLES.API_TOKEN) {
-            setStatusStore({ status: StatusType.Success, title: notification.title as string, message: notification.message as string });
-          }
-        } else if (isSource) {
+        if (isSource) {
+          const { isAwaitingInstrumentation } = useInstrumentStore.getState();
+          const { priorityMessage, message } = useStatusStore.getState();
+
           switch (notification.title) {
-            case EventTypes.MODIFIED:
-              if (!isAwaitingInstrumentation && notification.target) {
-                const id = getIdFromSseTarget(notification.target, EntityTypes.Source);
-                fetchSourceById(id as WorkloadId);
-              }
-              break;
-
             case EventTypes.ADDED:
-              const created = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-              setInstrumentCount('sourcesCreated', created);
+              if (!isAwaitingInstrumentation) setInstrumentAwait(true);
 
-              // If not waiting, or we're at 100%, then proceed
-              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && created >= sourcesToCreate)) {
-                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${created} sources` });
+              const statusMessage1 = 'Creating sources, please wait a moment...';
+              if (!priorityMessage && message !== statusMessage1) setStatusStore({ status: StatusType.Warning, message: statusMessage1, leftIcon: NotificationIcon });
+
+              const { sourcesCreated } = useInstrumentStore.getState();
+              const totalCreated = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesCreated', totalCreated);
+
+              handleEvent(EventTypes.ADDED, () => {
+                const statusMessage2 = 'Instrumenting sources, please wait a moment...';
+                if (!priorityMessage && message !== statusMessage2) setStatusStore({ status: StatusType.Warning, message: statusMessage2, leftIcon: NotificationIcon });
+                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${totalCreated} sources` });
+
+                fetchSources();
+
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToCreate', 0);
                 setInstrumentCount('sourcesCreated', 0);
-                fetchSources();
+              });
+              break;
+
+            case EventTypes.MODIFIED:
+              if (!isAwaitingInstrumentation) {
+                handleEvent(EventTypes.MODIFIED, () => {
+                  clearStatusMessage();
+                  fetchSources();
+                });
               }
               break;
 
             case EventTypes.DELETED:
-              const deleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-              setInstrumentCount('sourcesDeleted', deleted);
+              if (!isAwaitingInstrumentation) setInstrumentAwait(true);
 
-              // If not waiting, or we're at 100%, then proceed
-              if (!isAwaitingInstrumentation || (isAwaitingInstrumentation && deleted >= sourcesToDelete)) {
-                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${deleted} sources` });
+              const { sourcesDeleted } = useInstrumentStore.getState();
+              const totalDeleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              setInstrumentCount('sourcesDeleted', totalDeleted);
+
+              handleEvent(EventTypes.DELETED, () => {
+                clearStatusMessage();
+                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${totalDeleted} sources` });
+
+                fetchSources();
+
                 setInstrumentAwait(false);
                 setInstrumentCount('sourcesToDelete', 0);
                 setInstrumentCount('sourcesDeleted', 0);
-                fetchSources();
-              }
+              });
               break;
 
             default:
@@ -107,40 +184,8 @@ export const useSSE = () => {
           console.warn('Unhandled SSE for CRD type:', notification.crdType);
         }
 
-        // This works for now,
-        // but in the future we might have to change this to "removePendingItems",
-        // and remove the specific pending items based on their entityType and entityId
-        setPendingItems([]);
-
         // Reset retry count on successful connection
         retryCount.current = 0;
-      };
-
-      es.onerror = () => {
-        es.close();
-
-        if (retryCount.current < maxRetries) {
-          retryCount.current += 1;
-          setStatusStore({
-            status: StatusType.Warning,
-            title: 'Disconnected',
-            message: `Disconnected from the server. Retrying connection (${retryCount.current})`,
-          });
-
-          // Retry connection with exponential backoff if below max retries
-          setTimeout(() => connect(), Math.min(10000, 1000 * Math.pow(2, retryCount.current)));
-        } else {
-          setStatusStore({
-            status: StatusType.Error,
-            title: `Connection lost on ${new Date().toLocaleString()}`,
-            message: 'Please reboot the application',
-          });
-          addNotification({
-            type: StatusType.Error,
-            title: 'Connection Error',
-            message: 'Connection to the server failed. Please reboot the application.',
-          });
-        }
       };
 
       return es;
@@ -149,6 +194,10 @@ export const useSSE = () => {
     // Initialize event source connection
     const es = connect();
     // Clean up event source on component unmount
-    return () => es.close();
-  }, [title]);
+    return () => {
+      es?.close();
+      Object.values(EventTypes).forEach((eventType) => resetEventHandler(eventType));
+      clearStatusMessage();
+    };
+  }, []);
 };
