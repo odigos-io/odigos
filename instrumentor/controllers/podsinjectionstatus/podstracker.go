@@ -1,4 +1,4 @@
-package podsinjection
+package podsinjectionstatus
 
 import (
 	"fmt"
