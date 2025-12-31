@@ -15,7 +15,7 @@ import (
 
 const (
 	otelMeterName   = "github.com/odigos.io/odigos/odiglet"
-	languageAttrKey = "telemetry.distro.name"
+	languageAttrKey = "telemetry_distro_name"
 )
 
 var meter = otel.Meter(otelMeterName)
@@ -38,7 +38,7 @@ func NewOdigletMetrics(k8sClient client.Client) (*OdigletMetrics, error) {
 
 	var err error
 	m.instrumentedPodsByLanguage, err = meter.Int64ObservableGauge(
-		"odigos.odiglet.instrumented_pods_by_language",
+		"odigos_odiglet_instrumented_pods_by_language",
 		otelmetric.WithDescription("Number of instrumented pods per programming language"),
 		otelmetric.WithUnit("{pod}"),
 	)
