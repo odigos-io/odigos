@@ -8,6 +8,8 @@ import (
 
 	cilumebpf "github.com/cilium/ebpf"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
@@ -297,7 +299,11 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentatio
 		if err != nil {
 			m.logger.Error(err, "failed to close instrumentation")
 		}
-		m.metrics.instrumentedProcesses.Add(ctx, -1)
+		distro, err := details.pd.Distribution(ctx)
+		if err != nil {
+			m.logger.Error(err, "failed to get distribution")
+		}
+		m.metrics.instrumentedProcesses.Add(ctx, -1, metric.WithAttributes(attribute.String("telemetry_distro_name", distro.Name)))
 	}
 
 	err := m.handler.Reporter.OnExit(ctx, pid, details.pd)
