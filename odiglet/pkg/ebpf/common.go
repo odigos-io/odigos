@@ -78,19 +78,46 @@ func NewManager(
 		spec.MaxEntries = uint32(numOfPages * os.Getpagesize())
 	}
 
-	m, err := cilumebpf.NewMap(spec)
+	tracesMap, err := cilumebpf.NewMap(spec)
 	if err != nil {
 		return nil, err
 	}
 
+	// Create the metrics eBPF map - always HashOfMaps type
+	// The key for the hash of maps is a unique identifier for java process
+	// The value for the hash of maps is a pointer to a metrics map
+	metricsSpec := &cilumebpf.MapSpec{
+		Type:       cilumebpf.HashOfMaps,
+		Name:       "metrics",
+		KeySize:    512, // Size of process identifier key
+		ValueSize:  4,   // Size of inner map ID [should be 4 bytes hard coded]
+		MaxEntries: 512, // Max number of processes that can have metrics
+		// InnerMap spec should be the same as the ones created in the instrumentations.
+		InnerMap: &ebpf.MapSpec{
+			Name:       "jvm_metrics_inner_map",
+			Type:       ebpf.Hash,
+			KeySize:    4,   // uint32 metric_key_t
+			ValueSize:  40,  // struct metric_value (40 bytes - size of largest union member: histogram_value)
+			MaxEntries: 256, // MAX_METRICS
+		},
+	}
+
+	metricsMap, err := cilumebpf.NewMap(metricsSpec)
+	if err != nil {
+		tracesMap.Close() // Cleanup traces map on error
+		return nil, err
+	}
+
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
+
 		Logger:                  logger,
 		Factories:               opts.Factories,
 		Handler:                 newHandler(logger, client, opts.DistributionGetter),
 		DetectorOptions:         detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
 		ConfigUpdates:           configUpdates,
 		InstrumentationRequests: instrumentationRequests,
-		TracesMap:               m,
+		TracesMap:               tracesMap,
+		MetricsMap:              metricsMap,
 	}
 
 	// Add file open triggers from all distributions.

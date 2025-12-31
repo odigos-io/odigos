@@ -94,7 +94,7 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				odigosMetricsPipelineName: {
-					Receivers:  pipelineReceiverNames,
+					Receivers:  append(pipelineReceiverNames, odigosEbpfReceiverName),
 					Processors: metricsPipelineProcessors,
 					Exporters:  []string{clusterCollectorMetricsExporterName},
 				},

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +23,8 @@ import (
 	"github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver/internal/metadata"
 	"github.com/odigos-io/odigos/common/unixfd"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
@@ -29,10 +32,19 @@ const (
 	numOfPages = 2048
 )
 
+// ReceiverType defines the type of receiver (traces or metrics)
+type ReceiverType int
+
+const (
+	ReceiverTypeTraces ReceiverType = iota
+	ReceiverTypeMetrics
+)
+
 type ebpfReceiver struct {
-	config *Config
-	cancel context.CancelFunc
-	logger *zap.Logger
+	config       *Config
+	cancel       context.CancelFunc
+	logger       *zap.Logger
+	receiverType ReceiverType
 
 	// Pipeline consumers for forwarding telemetry data
 	nextTraces  consumer.Traces
@@ -139,7 +151,16 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 						r.logger.Info("reader stopped")
 						readerWg.Done() // Signal that this reader has stopped
 					}()
-					if err := r.readLoop(readerCtx, newMap); err != nil {
+
+					var err error
+					switch r.receiverType {
+					case ReceiverTypeTraces:
+						err = r.tracesReadLoop(readerCtx, newMap)
+					case ReceiverTypeMetrics:
+						err = r.metricsReadLoop(readerCtx, newMap)
+					}
+
+					if err != nil {
 						r.logger.Error("readLoop failed", zap.Error(err))
 					}
 				}()
@@ -160,7 +181,15 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 
 		r.logger.Info("starting FD client")
 
-		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, r.logger, func(fd int) {
+		var requestType string
+		switch r.receiverType {
+		case ReceiverTypeTraces:
+			requestType = unixfd.ReqGetTracesFD
+		case ReceiverTypeMetrics:
+			requestType = unixfd.ReqGetMetricsFD
+		}
+
+		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, requestType, r.logger, func(fd int) {
 			r.logger.Info("received new FD from odiglet", zap.Int("fd", fd))
 
 			// Convert the file descriptor into an eBPF map object
@@ -217,7 +246,7 @@ func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 	}
 }
 
-func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
+func (r *ebpfReceiver) tracesReadLoop(ctx context.Context, m *ebpf.Map) error {
 	reader, err := NewBufferReader(m, r.logger)
 	if err != nil {
 		r.logger.Error("failed to open buffer reader", zap.Error(err))
@@ -323,4 +352,339 @@ func convertResourceSpansToPdata(resourceSpans *tracepb.ResourceSpans) ptrace.Tr
 	}
 
 	return traces
+}
+
+// metricsReadLoop handles periodic collection of metrics from HashOfMaps
+func (r *ebpfReceiver) metricsReadLoop(ctx context.Context, m *ebpf.Map) error {
+	// Config should already have defaults from createDefaultConfig(), but validate just in case
+	interval := r.config.MetricsConfig.Interval
+	if interval <= 0 {
+		interval = 30 * time.Second // Fallback if somehow defaults weren't applied
+	}
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	r.logger.Info("starting metrics collection loop", zap.Duration("interval", interval))
+
+	for {
+		select {
+		case <-ctx.Done():
+			r.logger.Info("metrics collection loop stopping")
+			return nil
+		case <-ticker.C:
+			if err := r.collectMetrics(ctx, m); err != nil {
+				r.logger.Error("failed to collect metrics", zap.Error(err))
+				// Continue collecting even if one iteration fails
+			}
+		}
+	}
+}
+
+// collectMetrics iterates over the HashOfMaps and processes each inner map for metrics
+func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map) error {
+	r.logger.Debug("starting metrics collection iteration")
+
+	var processKey uint32 // Key representing process ID or similar identifier
+	var innerMapID uint32 // ID of the inner map
+
+	// Iterate over all entries in the hash of maps
+	iter := hashOfMaps.Iterate()
+	defer func() {
+		if err := iter.Err(); err != nil {
+			r.logger.Error("iterator error", zap.Error(err))
+		}
+	}()
+
+	innerMapsCount := 0
+	processedMaps := 0
+
+	for iter.Next(&processKey, &innerMapID) {
+		innerMapsCount++
+		r.logger.Debug("found inner map",
+			zap.Uint32("process_key", processKey),
+			zap.Uint32("inner_map_id", innerMapID))
+
+		// Get the inner map from the ID
+		innerMap, err := ebpf.NewMapFromID(ebpf.MapID(innerMapID))
+		if err != nil {
+			r.logger.Error("failed to get inner map",
+				zap.Uint32("inner_map_id", innerMapID),
+				zap.Error(err))
+			continue
+		}
+
+		// Process metrics from this inner map
+		if err := r.processInnerMapMetrics(ctx, innerMap, processKey); err != nil {
+			r.logger.Error("failed to process inner map metrics",
+				zap.Uint32("process_key", processKey),
+				zap.Uint32("inner_map_id", innerMapID),
+				zap.Error(err))
+			innerMap.Close()
+			continue
+		}
+
+		innerMap.Close()
+		processedMaps++
+	}
+
+	r.logger.Info("metrics collection completed",
+		zap.Int("inner_maps_found", innerMapsCount),
+		zap.Int("maps_processed", processedMaps))
+	return nil
+}
+
+// processInnerMapMetrics processes a single inner map and extracts metrics
+// each innermap represents a single process and its metrics
+func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, processKey uint32) error {
+	r.logger.Debug("processing inner map for metrics", zap.Uint32("process_key", processKey))
+
+	// Create metrics data structure
+	metrics := pmetric.NewMetrics()
+	resourceMetrics := metrics.ResourceMetrics().AppendEmpty()
+	scopeMetrics := resourceMetrics.ScopeMetrics().AppendEmpty()
+
+	// Parse and add resource attributes from processKey
+	resourceAttrs := resourceMetrics.Resource().Attributes()
+	if err := r.addResourceAttributesFromProcessKey(resourceAttrs, processKey); err != nil {
+		r.logger.Error("failed to add resource attributes from process key", zap.Error(err))
+		return err
+	}
+
+	// Iterate over inner map entries
+	var metricKey [4]byte    // key size from eBPF map spec
+	var metricValue [40]byte // value size from eBPF map spec
+
+	iter := innerMap.Iterate()
+	defer func() {
+		if err := iter.Err(); err != nil {
+			r.logger.Error("inner map iterator error", zap.Error(err))
+		}
+	}()
+
+	metricsFound := 0
+	for iter.Next(&metricKey, &metricValue) {
+		// Convert key bytes to string (assuming null-terminated)
+		keyStr := string(metricKey[:])
+		if nullIndex := strings.IndexByte(keyStr, 0); nullIndex != -1 {
+			keyStr = keyStr[:nullIndex]
+		}
+
+		// Convert value bytes to uint64 (simple case for now)
+		// TODO: Handle different value types based on your eBPF implementation
+		value := parseMetricValue(metricValue[:])
+
+		if err := r.addMetricToCollection(scopeMetrics, keyStr, value); err != nil {
+			r.logger.Error("failed to add metric",
+				zap.String("key", keyStr),
+				zap.Uint64("value", value),
+				zap.Error(err))
+			continue
+		}
+
+		metricsFound++
+		r.logger.Debug("processed metric",
+			zap.String("key", keyStr),
+			zap.Uint64("value", value))
+	}
+
+	// Forward metrics to next consumer if we have any
+	if metricsFound > 0 && r.nextMetrics != nil {
+		if err := r.nextMetrics.ConsumeMetrics(ctx, metrics); err != nil {
+			return fmt.Errorf("failed to consume metrics: %w", err)
+		}
+		r.logger.Debug("forwarded metrics to consumer",
+			zap.Int("metrics_count", metricsFound))
+	}
+
+	return nil
+}
+
+// addMetricToCollection adds a single metric to the metrics collection
+func (r *ebpfReceiver) addMetricToCollection(scopeMetrics pmetric.ScopeMetrics, keyStr string, value uint64) error {
+	// Parse the key: "metric.name%attr1=value1%attr2=value2"
+	metricName, attributes, err := r.parseMetricKey(keyStr)
+	if err != nil {
+		return fmt.Errorf("failed to parse metric key %s: %w", keyStr, err)
+	}
+
+	// Determine metric type based on metric name
+	metricType := r.determineMetricType(metricName)
+
+	// Create metric
+	metric := scopeMetrics.Metrics().AppendEmpty()
+	metric.SetName(metricName)
+	metric.SetDescription(fmt.Sprintf("eBPF metric: %s", metricName))
+
+	// Set timestamp
+	now := pcommon.NewTimestampFromTime(time.Now())
+
+	switch metricType {
+	case "counter":
+		sum := metric.SetEmptySum()
+		sum.SetIsMonotonic(true)
+		sum.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+
+		dataPoint := sum.DataPoints().AppendEmpty()
+		dataPoint.SetIntValue(int64(value))
+		dataPoint.SetTimestamp(now)
+		dataPoint.SetStartTimestamp(now)
+
+		// Add attributes
+		attrs := dataPoint.Attributes()
+		for key, val := range attributes {
+			attrs.PutStr(key, val)
+		}
+
+	case "gauge":
+		gauge := metric.SetEmptyGauge()
+		dataPoint := gauge.DataPoints().AppendEmpty()
+
+		dataPoint.SetIntValue(int64(value))
+		dataPoint.SetTimestamp(now)
+		dataPoint.SetStartTimestamp(now)
+
+		// Add attributes
+		attrs := dataPoint.Attributes()
+		for key, val := range attributes {
+			attrs.PutStr(key, val)
+		}
+
+	default:
+		return fmt.Errorf("unsupported metric type: %s", metricType)
+	}
+
+	return nil
+}
+
+func (r *ebpfReceiver) determineMetricType(metricName string) string {
+	// TODO: Implement logic based on eBPF map data or metric name patterns
+	return "counter"
+}
+
+// parseMetricKey parses a key like "jvm.threads.count%service=myapp%pod=pod123"
+// Returns: metricName, attributes map, error
+func (r *ebpfReceiver) parseMetricKey(keyStr string) (string, map[string]string, error) {
+	if keyStr == "" {
+		return "", nil, fmt.Errorf("empty key")
+	}
+
+	parts := strings.Split(keyStr, "%")
+	if len(parts) == 0 {
+		return "", nil, fmt.Errorf("invalid key format")
+	}
+
+	// First part is the metric name
+	metricName := parts[0]
+	if metricName == "" {
+		return "", nil, fmt.Errorf("empty metric name")
+	}
+
+	// Parse attributes from remaining parts
+	attributes := make(map[string]string)
+	for i := 1; i < len(parts); i++ {
+		attrPart := parts[i]
+		if attrPart == "" {
+			continue // Skip empty parts
+		}
+
+		// Split by '=' to get key=value
+		attrParts := strings.SplitN(attrPart, "=", 2)
+		if len(attrParts) != 2 {
+			r.logger.Warn("invalid attribute format, skipping",
+				zap.String("attribute", attrPart))
+			continue
+		}
+
+		attrKey := strings.TrimSpace(attrParts[0])
+		attrValue := strings.TrimSpace(attrParts[1])
+
+		if attrKey != "" && attrValue != "" {
+			attributes[attrKey] = attrValue
+		}
+	}
+
+	return metricName, attributes, nil
+}
+
+// parseMetricValue parses metric value from bytes
+// TODO: Extend this based on your actual value encoding
+func parseMetricValue(valueBytes []byte) uint64 {
+	// Simple implementation: assume first 8 bytes are uint64 in native endian
+	if len(valueBytes) >= 8 {
+		return binary.NativeEndian.Uint64(valueBytes[:8])
+	}
+	// Fallback: treat as single uint32
+	if len(valueBytes) >= 4 {
+		return uint64(binary.NativeEndian.Uint32(valueBytes[:4]))
+	}
+	return 0
+}
+
+// addResourceAttributesFromProcessKey parses processKey and adds resource attributes
+// TODO: The delimiter character and encoding method are not yet decided
+func (r *ebpfReceiver) addResourceAttributesFromProcessKey(resourceAttrs pcommon.Map, processKey uint32) error {
+	// TODO: Replace this with the actual encoding method used for processKey
+	// For now, assuming processKey might be converted to string and contains encoded attributes
+
+	// Placeholder: Convert processKey to string (this will need to be updated based on actual encoding)
+	// This is a temporary implementation - you'll need to replace this with the actual decoding logic
+	processKeyStr := fmt.Sprintf("%d", processKey)
+
+	// Try to parse as encoded string if it's not just a number
+	// For now, if it's just a number, treat as process.pid
+	if len(processKeyStr) <= 10 { // Likely just a process ID number
+		resourceAttrs.PutInt("process.pid", int64(processKey))
+		return nil
+	}
+
+	// If you have a different encoding method (e.g., the key represents an index to a string table,
+	// or it's encoded differently), replace this section
+	return r.parseResourceAttributes(resourceAttrs, processKeyStr, "|") // Using "|" as delimiter for now
+}
+
+// parseResourceAttributes parses a delimited string and adds resource attributes
+// Format: "key1=value1|key2=value2|key3=value3"
+func (r *ebpfReceiver) parseResourceAttributes(resourceAttrs pcommon.Map, attributesStr string, delimiter string) error {
+	if attributesStr == "" {
+		return fmt.Errorf("empty attributes string")
+	}
+
+	parts := strings.Split(attributesStr, delimiter)
+	if len(parts) == 0 {
+		return fmt.Errorf("no attributes found")
+	}
+
+	attributesAdded := 0
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		// Split by '=' to get key=value
+		attrParts := strings.SplitN(part, "=", 2)
+		if len(attrParts) != 2 {
+			r.logger.Warn("invalid resource attribute format, skipping",
+				zap.String("attribute", part))
+			continue
+		}
+
+		attrKey := strings.TrimSpace(attrParts[0])
+		attrValue := strings.TrimSpace(attrParts[1])
+
+		if attrKey != "" && attrValue != "" {
+			resourceAttrs.PutStr(attrKey, attrValue)
+			attributesAdded++
+			r.logger.Debug("added resource attribute",
+				zap.String("key", attrKey),
+				zap.String("value", attrValue))
+		}
+	}
+
+	if attributesAdded == 0 {
+		return fmt.Errorf("no valid attributes parsed from: %s", attributesStr)
+	}
+
+	return nil
 }
