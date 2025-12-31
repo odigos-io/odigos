@@ -8,7 +8,7 @@ spec:
   image: signalfx.svg
   signals:
     traces:
-      supported: false
+      supported: true
     metrics:
       supported: true
     logs:
