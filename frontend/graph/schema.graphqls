@@ -11,6 +11,7 @@ enum K8sResourceKind {
   ConfigMap
   Pod
   DeploymentConfig
+  Rollout
 }
 
 enum ConditionStatus {
@@ -392,6 +393,7 @@ type GetConfigResponse {
   installationMethod: String!
   installationStatus: InstallationStatus!
   clusterName: String
+  isCentralProxyRunning: Boolean
 }
 
 input DestinationInput {

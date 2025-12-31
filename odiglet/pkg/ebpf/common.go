@@ -33,8 +33,14 @@ type InstrumentationManagerOptions struct {
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
 // Instrumentation factories must be provided in order to create the instrumentation objects.
 // Detector options can be provided to configure the process detector, but if not provided, default options will be used.
-func NewManager(client client.Client, logger logr.Logger, opts InstrumentationManagerOptions, configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup],
-	appendEnvVarNames map[string]struct{}) (instrumentation.Manager, error) {
+func NewManager(
+	client client.Client,
+	logger logr.Logger,
+	opts InstrumentationManagerOptions,
+	configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup],
+	instrumentationRequests <-chan instrumentation.Request[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails],
+	appendEnvVarNames map[string]struct{},
+) (instrumentation.Manager, error) {
 	if len(opts.Factories) == 0 {
 		return nil, errors.New("instrumentation factories must be provided")
 	}
@@ -78,12 +84,13 @@ func NewManager(client client.Client, logger logr.Logger, opts InstrumentationMa
 	}
 
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
-		Logger:          logger,
-		Factories:       opts.Factories,
-		Handler:         newHandler(logger, client, opts.DistributionGetter),
-		DetectorOptions: detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
-		ConfigUpdates:   configUpdates,
-		TracesMap:       m,
+		Logger:                  logger,
+		Factories:               opts.Factories,
+		Handler:                 newHandler(logger, client, opts.DistributionGetter),
+		DetectorOptions:         detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
+		ConfigUpdates:           configUpdates,
+		InstrumentationRequests: instrumentationRequests,
+		TracesMap:               m,
 	}
 
 	// Add file open triggers from all distributions.

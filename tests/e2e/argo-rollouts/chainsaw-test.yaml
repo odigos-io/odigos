@@ -1,0 +1,114 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: argo-rollouts
+spec:
+  description: |
+    This e2e test verifies that Odigos properly instruments Argo Rollouts workloads.
+    It tests that:
+    1. Argo Rollouts are not broken by Odigos instrumentation
+    2. Rollout pods are properly instrumented with device injection
+    3. InstrumentationConfig is created with correct owner references
+    4. Rollouts remain healthy/stable after instrumentation
+  skipDelete: true
+  steps:
+    - name: Install Argo Rollouts Controller
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              # Create the argo-rollouts namespace if it doesn't exist
+              kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
+              # Install Argo Rollouts controller
+              kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+              # Wait for the controller to be ready
+              kubectl wait --for=condition=available --timeout=120s deployment/argo-rollouts -n argo-rollouts
+
+    - name: Prepare destination
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    - name: Install Argo Rollout Test Apps
+      try:
+        - apply:
+            file: 01-install-argo-rollouts-apps.yaml
+
+    - name: Install Odigos
+      try:
+        - script:
+            timeout: 4m
+            content: |
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              ../../common/verify_odigos_installation.sh odigos-test
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: Verify Node Odiglet label has been added
+      try:
+        - assert:
+            file: ../../common/assert/node-odiglet-label.yaml
+
+    - name: Assert Trace DB is up
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: Assert Argo Rollout Apps Ready
+      try:
+        - assert:
+            timeout: 3m
+            file: 02-assert-rollouts-ready.yaml
+
+    - name: Instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Add Destination
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: Odigos pipeline ready
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: Assert InstrumentationConfig Created for Rollouts
+      try:
+        - assert:
+            timeout: 3m
+            file: 03-assert-instrumentation-configs.yaml
+
+    - name: Assert Argo Rollouts Are Healthy After Instrumentation
+      try:
+        - assert:
+            timeout: 5m
+            file: 03-assert-rollouts-healthy.yaml
+
+    - name: Assert Rollout Pods Are Instrumented
+      try:
+        - assert:
+            timeout: 3m
+            file: 03-assert-pods-instrumented.yaml
+      catch:
+        - script:
+            content: |
+              echo "=== Rollout Status ==="
+              kubectl get rollouts -n default -o wide
+              echo ""
+              echo "=== Rollout Pods ==="
+              kubectl get pods -n default -l app=python-rollout -o wide
+              kubectl get pods -n default -l app=nodejs-rollout -o wide
+              kubectl get pods -n default -l app=java-rollout -o wide
+              echo ""
+              echo "=== InstrumentationConfigs ==="
+              kubectl get instrumentationconfigs -n default -o yaml
+              echo ""
+              echo "=== Describe Rollouts ==="
+              kubectl describe rollouts -n default
