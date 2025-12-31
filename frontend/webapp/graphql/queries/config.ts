@@ -10,6 +10,7 @@ export const GET_CONFIG = gql`
       installationMethod
       installationStatus
       clusterName
+      isCentralProxyRunning
     }
   }
 `;

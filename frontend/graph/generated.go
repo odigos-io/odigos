@@ -311,13 +311,14 @@ type ComplexityRoot struct {
 	}
 
 	GetConfigResponse struct {
-		ClusterName        func(childComplexity int) int
-		InstallationMethod func(childComplexity int) int
-		InstallationStatus func(childComplexity int) int
-		OdigosVersion      func(childComplexity int) int
-		PlatformType       func(childComplexity int) int
-		Readonly           func(childComplexity int) int
-		Tier               func(childComplexity int) int
+		ClusterName           func(childComplexity int) int
+		InstallationMethod    func(childComplexity int) int
+		InstallationStatus    func(childComplexity int) int
+		IsCentralProxyRunning func(childComplexity int) int
+		OdigosVersion         func(childComplexity int) int
+		PlatformType          func(childComplexity int) int
+		Readonly              func(childComplexity int) int
+		Tier                  func(childComplexity int) int
 	}
 
 	GetDestinationCategories struct {
@@ -2170,6 +2171,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GetConfigResponse.InstallationStatus(childComplexity), true
+
+	case "GetConfigResponse.isCentralProxyRunning":
+		if e.complexity.GetConfigResponse.IsCentralProxyRunning == nil {
+			break
+		}
+
+		return e.complexity.GetConfigResponse.IsCentralProxyRunning(childComplexity), true
 
 	case "GetConfigResponse.odigosVersion":
 		if e.complexity.GetConfigResponse.OdigosVersion == nil {
@@ -14141,6 +14149,47 @@ func (ec *executionContext) fieldContext_GetConfigResponse_clusterName(_ context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GetConfigResponse_isCentralProxyRunning(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GetConfigResponse_isCentralProxyRunning(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsCentralProxyRunning, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GetConfigResponse_isCentralProxyRunning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GetConfigResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -27069,6 +27118,8 @@ func (ec *executionContext) fieldContext_Query_config(_ context.Context, field g
 				return ec.fieldContext_GetConfigResponse_installationStatus(ctx, field)
 			case "clusterName":
 				return ec.fieldContext_GetConfigResponse_clusterName(ctx, field)
+			case "isCentralProxyRunning":
+				return ec.fieldContext_GetConfigResponse_isCentralProxyRunning(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GetConfigResponse", field.Name)
 		},
@@ -36689,6 +36740,8 @@ func (ec *executionContext) _GetConfigResponse(ctx context.Context, sel ast.Sele
 			}
 		case "clusterName":
 			out.Values[i] = ec._GetConfigResponse_clusterName(ctx, field, obj)
+		case "isCentralProxyRunning":
+			out.Values[i] = ec._GetConfigResponse_isCentralProxyRunning(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
