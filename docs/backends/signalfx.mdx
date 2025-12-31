@@ -32,7 +32,7 @@ icon: 'signal-stream'
 ### Configuring Destination Fields
 
 <Accordion title="Supported Signals:">
-  ❌ Traces
+  ✅ Traces
   ✅ Metrics
   ❌ Logs
 </Accordion>
@@ -85,6 +85,7 @@ There are two primary methods for configuring destinations in Odigos:
       # secretRef:
       #   name: signalfx-secret
       signals:
+      - TRACES
       - METRICS
       type: signalfx
 
