@@ -81,6 +81,7 @@ var (
 	K8SDaemonSetNameKey         = string(semconv.K8SDaemonSetNameKey)
 	K8SCronJobNameKey           = string(semconv.K8SCronJobNameKey)
 	K8SJobNameKey               = string(semconv.K8SJobNameKey)
+	K8SRolloutNameKey           = k8sconsts.K8SArgoRolloutNameAttribute // Argo Rollout custom attribute - no semconv for it
 	OdigosWorkloadKindAttribute = consts.OdigosWorkloadKindAttribute
 )
 

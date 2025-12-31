@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -38,6 +39,12 @@ const (
 	WorkloadKindDaemonSet        model.K8sResourceKind = "DaemonSet"
 	WorkloadKindCronJob          model.K8sResourceKind = "CronJob"
 	WorkloadKindDeploymentConfig model.K8sResourceKind = "DeploymentConfig"
+	// WorkloadKindArgoRollout represents Argo Rollouts workload.
+	// Note: The actual Kubernetes resource has kind "Rollout" (not "ArgoRollout"):
+	//   apiVersion: argoproj.io/v1alpha1
+	//   kind: Rollout
+	// We use "ArgoRollout" in the variable name to distinguish it from other rollout concepts.
+	WorkloadKindArgoRollout model.K8sResourceKind = "Rollout"
 )
 
 type InstanceCounts struct {
@@ -58,6 +65,7 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 		daemons       []model.K8sActualSource
 		crons         []model.K8sActualSource
 		deployConfigs []model.K8sActualSource
+		rollouts      []model.K8sActualSource
 	)
 
 	g.Go(func() error {
@@ -95,16 +103,27 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 		return err
 	})
 
+	g.Go(func() error {
+		if !kube.IsArgoRolloutAvailable {
+			rollouts = []model.K8sActualSource{}
+			return nil
+		}
+		var err error
+		rollouts, err = getRollouts(ctx, *namespace)
+		return err
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
-	items := make([]model.K8sActualSource, len(deps)+len(statefuls)+len(daemons)+len(crons)+len(deployConfigs))
+	items := make([]model.K8sActualSource, len(deps)+len(statefuls)+len(daemons)+len(crons)+len(deployConfigs)+len(rollouts))
 	copy(items, deps)
 	copy(items[len(deps):], statefuls)
 	copy(items[len(deps)+len(statefuls):], daemons)
 	copy(items[len(deps)+len(statefuls)+len(daemons):], crons)
 	copy(items[len(deps)+len(statefuls)+len(daemons)+len(crons):], deployConfigs)
+	copy(items[len(deps)+len(statefuls)+len(daemons)+len(crons)+len(deployConfigs):], rollouts)
 
 	return items, nil
 }
@@ -262,6 +281,45 @@ func getDeploymentConfigs(ctx context.Context, namespace corev1.Namespace) ([]mo
 	return response, nil
 }
 
+func getRollouts(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
+	var response []model.K8sActualSource
+
+	rolloutClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+		Group:    "argoproj.io",
+		Version:  "v1alpha1",
+		Resource: "rollouts",
+	}).Namespace(namespace.Name)
+
+	// List all Rollouts in the namespace
+	rolloutList, err := rolloutClient.List(ctx, metav1.ListOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) || apierrors.IsMethodNotSupported(err) || apierrors.IsForbidden(err) {
+			return response, nil
+		}
+		return nil, err
+	}
+
+	// Convert unstructured to typed
+	for _, rolloutUnstructured := range rolloutList.Items {
+		var rollout argorolloutsv1alpha1.Rollout
+		err := kube.Scheme.Convert(&rolloutUnstructured, &rollout, nil)
+		if err != nil {
+			// If conversion fails, skip this item
+			continue
+		}
+
+		numberOfInstances := int(rollout.Status.AvailableReplicas)
+		response = append(response, model.K8sActualSource{
+			Namespace:         rollout.Namespace,
+			Name:              rollout.Name,
+			Kind:              WorkloadKindArgoRollout,
+			NumberOfInstances: &numberOfInstances,
+		})
+	}
+
+	return response, nil
+}
+
 func RolloutRestartWorkload(ctx context.Context, namespace string, name string, kind model.K8sResourceKind) error {
 	now := time.Now().Format(time.RFC3339)
 
@@ -363,8 +421,27 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 			return fmt.Errorf("failed to update deploymentconfig: %w", err)
 		}
 
+	case WorkloadKindArgoRollout:
+		if !kube.IsArgoRolloutAvailable {
+			return fmt.Errorf("argo rollouts resources are not available in this cluster")
+		}
+
+		rolloutClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+			Group:    "argoproj.io",
+			Version:  "v1alpha1",
+			Resource: "rollouts",
+		}).Namespace(namespace)
+
+		// Argo Rollouts use spec.restartAt field for restarting, not pod template annotations
+		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
+		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, now))
+		_, err := rolloutClient.Patch(ctx, name, types.MergePatchType, rolloutPatch, metav1.PatchOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to patch rollout: %w", err)
+		}
+
 	default:
-		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, DaemonSet, CronJob or DeploymentConfig)", kind)
+		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, DaemonSet, CronJob, DeploymentConfig or Rollout)", kind)
 	}
 
 	return nil
@@ -439,6 +516,8 @@ func stringToWorkloadKind(workloadKind string) (model.K8sResourceKind, bool) {
 		return WorkloadKindDaemonSet, true
 	case "cronjob":
 		return WorkloadKindCronJob, true
+	case "rollout":
+		return WorkloadKindArgoRollout, true
 	}
 
 	return "", false
@@ -452,7 +531,7 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
-	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob, WorkloadKindDeploymentConfig:
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob, WorkloadKindDeploymentConfig, WorkloadKindArgoRollout:
 		break
 	default:
 		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
