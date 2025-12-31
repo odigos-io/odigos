@@ -43,7 +43,7 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 			Duration:     3 * time.Second, // 2s less than frontend EVENT_DEBOUNCE_MS
 			Event:        sse.MessageEventModified,
 			CRDType:      consts.InstrumentationConfig,
-			Debounce:     false, // Reset timer on each event, send only after `Duration` seconds of silence
+			Debounce:     true, // Reset timer on each event, send only after `Duration` seconds of silence
 			SuccessBatchMessageFunc: func(count int, crdType string) string {
 				return fmt.Sprintf("Successfully updated %d sources", count)
 			},

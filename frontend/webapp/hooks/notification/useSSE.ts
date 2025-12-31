@@ -39,50 +39,47 @@ export const useSSE = () => {
   const eventsRef = useRef<
     | {
         [eventType in EventTypes]?: {
-          interval: NodeJS.Timeout | null;
+          handler: NodeJS.Timeout | null;
           timestamp: number | null;
         };
       }
     | null
   >(null);
 
-  const resetEventInterval = (eventType: EventTypes) => {
+  const resetEventHandler = (eventType: EventTypes) => {
     if (eventsRef.current && eventsRef.current[eventType]) {
-      if (eventsRef.current?.[eventType]?.interval) {
-        clearInterval(eventsRef.current[eventType]!.interval as NodeJS.Timeout);
-        eventsRef.current[eventType]!.interval = null;
+      if (eventsRef.current?.[eventType]?.handler) {
+        clearTimeout(eventsRef.current[eventType]!.handler as NodeJS.Timeout);
+        eventsRef.current[eventType]!.handler = null;
       }
       eventsRef.current[eventType]!.timestamp = null;
     }
   };
 
-  const handleEventInterval = (eventType: EventTypes, successCallback: () => void) => {
+  const handleEvent = (eventType: EventTypes, successCallback: () => void) => {
     if (!eventsRef.current) {
       eventsRef.current = {
         [eventType]: {
-          interval: null,
+          handler: null,
           timestamp: null,
         },
       };
     } else if (!eventsRef.current[eventType]) {
       eventsRef.current[eventType] = {
-        interval: null,
+        handler: null,
         timestamp: null,
       };
     }
 
-    if (eventsRef.current![eventType]!.interval) clearInterval(eventsRef.current![eventType]!.interval as NodeJS.Timeout);
+    if (eventsRef.current![eventType]!.handler) clearTimeout(eventsRef.current![eventType]!.handler as NodeJS.Timeout);
     eventsRef.current![eventType]!.timestamp = Date.now();
 
-    // if last message was over `XXX` seconds ago, fetch all sources...
-    // the interval runs a timestamp check every 1 second - once the condition is met, the interval is cleared.
-    eventsRef.current[eventType]!.interval = setInterval(() => {
-      const timeSinceLastModified = Date.now() - eventsRef.current![eventType]!.timestamp!;
-      if (timeSinceLastModified > EVENT_DEBOUNCE_MS) {
-        resetEventInterval(eventType);
-        successCallback();
-      }
-    }, 1000);
+    // if last message was over `EVENT_DEBOUNCE_MS` time ago - fetch all sources.
+    // once the condition is met, or a new event is received, the handler is cleared.
+    eventsRef.current[eventType]!.handler = setTimeout(() => {
+      resetEventHandler(eventType);
+      successCallback();
+    }, EVENT_DEBOUNCE_MS);
   };
 
   useEffect(() => {
@@ -137,8 +134,8 @@ export const useSSE = () => {
               const totalCreated = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesCreated', totalCreated);
 
-              handleEventInterval(EventTypes.ADDED, () => {
-                const statusMessage2 = 'Instrumentating sources, please wait a moment...';
+              handleEvent(EventTypes.ADDED, () => {
+                const statusMessage2 = 'Instrumenting sources, please wait a moment...';
                 if (!priorityMessage && message !== statusMessage2) setStatusStore({ status: StatusType.Warning, message: statusMessage2, leftIcon: NotificationIcon });
                 addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${totalCreated} sources` });
 
@@ -152,7 +149,7 @@ export const useSSE = () => {
 
             case EventTypes.MODIFIED:
               if (!isAwaitingInstrumentation) {
-                handleEventInterval(EventTypes.MODIFIED, () => {
+                handleEvent(EventTypes.MODIFIED, () => {
                   clearStatusMessage();
                   fetchSources();
                 });
@@ -166,7 +163,7 @@ export const useSSE = () => {
               const totalDeleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
               setInstrumentCount('sourcesDeleted', totalDeleted);
 
-              handleEventInterval(EventTypes.DELETED, () => {
+              handleEvent(EventTypes.DELETED, () => {
                 clearStatusMessage();
                 addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${totalDeleted} sources` });
 
@@ -199,7 +196,7 @@ export const useSSE = () => {
     // Clean up event source on component unmount
     return () => {
       es?.close();
-      Object.values(EventTypes).forEach((eventType) => resetEventInterval(eventType));
+      Object.values(EventTypes).forEach((eventType) => resetEventHandler(eventType));
       clearStatusMessage();
     };
   }, []);
