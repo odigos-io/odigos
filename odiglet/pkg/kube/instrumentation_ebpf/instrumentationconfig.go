@@ -161,7 +161,7 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	for _, p := range selectedPods {
 		for c := range distroByContainer {
 			pcs = append(pcs, process.PodContainerUID{
-				PodUID:        string(p.UID),
+				PodUID:        workload.PodUID(&p),
 				ContainerName: c,
 			})
 		}
@@ -185,7 +185,7 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	}
 	podByUID := make(map[string]*corev1.Pod, len(selectedPods))
 	for _, p := range selectedPods {
-		podByUID[string(p.UID)] = &p
+		podByUID[workload.PodUID(&p)] = &p
 	}
 	for podContainer, pidSet := range pidsByPodContainer {
 		distribution, ok := distroByContainer[podContainer.ContainerName]
