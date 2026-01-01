@@ -167,6 +167,7 @@ service:
       - test_type/test_processor
       - odigostrafficmetrics
       receivers:
+      - odigosebpf
       - otlp/in
       - kubeletstats
       - hostmetrics

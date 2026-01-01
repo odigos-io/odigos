@@ -90,6 +90,9 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
 	TracesMap *cilumebpf.Map
+
+	// MetricsMap is the optional common eBPF map that is used to read metrics per Java process at each interval.
+	MetricsMap *cilumebpf.Map
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -127,7 +130,8 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 
 	metrics *managerMetrics
 
-	tracesMap *cilumebpf.Map
+	tracesMap  *cilumebpf.Map
+	metricsMap *cilumebpf.Map
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -177,6 +181,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		requests:              options.InstrumentationRequests,
 		metrics:               managerMetrics,
 		tracesMap:             options.TracesMap,
+		metricsMap:            options.MetricsMap,
 	}, nil
 }
 
@@ -318,8 +323,11 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 		server := &unixfd.Server{
 			SocketPath: unixfd.DefaultSocketPath,
 			Logger:     m.logger,
-			FDProvider: func() int {
+			TracesFDProvider: func() int {
 				return m.tracesMap.FD()
+			},
+			MetricsFDProvider: func() int {
+				return m.metricsMap.FD()
 			},
 		}
 
@@ -330,9 +338,10 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 			m.logger.Error(err, "unixfd server failed")
 		}
 
-		m.logger.Info("TracesMap created, FD server started",
+		m.logger.Info("eBPF maps created, FD server started",
 			"socket", unixfd.DefaultSocketPath,
-			"map_fd", m.tracesMap.FD())
+			"traces_map_fd", m.tracesMap.FD(),
+			"metrics_map_fd", m.metricsMap.FD())
 		return nil
 	})
 
@@ -427,6 +436,10 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	settings.TracesMap = ReaderMap{
 		Map:            m.tracesMap,
 		ExternalReader: true,
+	}
+
+	settings.MetricsMap = MetricsMap{
+		HashMapOfMaps: m.metricsMap,
 	}
 
 	inst, initErr := factory.CreateInstrumentation(ctx, pid, settings)

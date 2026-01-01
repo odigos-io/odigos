@@ -17,6 +17,7 @@ const (
 
 const (
 	healthCheckExtensionName            = "health_check"
+	odigosEbpfReceiverName              = "odigosebpf"
 	pprofExtensionName                  = "pprof"
 	batchProcessorName                  = "batch"
 	memoryLimiterProcessorName          = "memory_limiter"
@@ -136,6 +137,7 @@ func init() {
 				},
 			},
 		},
+		odigosEbpfReceiverName: config.GenericMap{},
 	}
 
 	commonExtensions = config.GenericMap{

@@ -22,7 +22,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const numOfPages = 2048
+const (
+	numOfPages = 2048
+
+	// JVM metrics collection uses a hash-of-maps architecture: one outer map containing multiple inner maps.
+	// Each Java process gets its own inner map to store metrics, enabling efficient per-process metric collection.
+	// eBPF Metrics Map Configuration
+	// Hash of Maps (outer map) configuration
+	ProcessKeySize    = 512 // Size of process identifier key
+	InnerMapIDSize    = 4   // Size of inner map ID (should be 4 bytes hard coded)
+	MaxProcessesCount = 512 // Max number of processes that can have metrics
+
+	// Inner Map configuration
+	MetricKeySize    = 4   // uint32 metric_key
+	MetricValueSize  = 40  // struct metric_value (40 bytes - size of largest union member: histogram_value)
+	MaxMetricsPerMap = 256 // MAX_METRICS per process
+)
 
 type InstrumentationManagerOptions struct {
 	Factories                  map[string]instrumentation.Factory
@@ -78,19 +93,46 @@ func NewManager(
 		spec.MaxEntries = uint32(numOfPages * os.Getpagesize())
 	}
 
-	m, err := cilumebpf.NewMap(spec)
+	tracesMap, err := cilumebpf.NewMap(spec)
 	if err != nil {
 		return nil, err
 	}
 
+	// Create the metrics eBPF map - always HashOfMaps type
+	// The key for the hash of maps is a unique identifier for java process
+	// The value for the hash of maps is a pointer to a metrics map
+	metricsSpec := &cilumebpf.MapSpec{
+		Type:       cilumebpf.HashOfMaps,
+		Name:       "metrics",
+		KeySize:    ProcessKeySize,
+		ValueSize:  InnerMapIDSize,
+		MaxEntries: MaxProcessesCount,
+		// InnerMap spec should be the same as the ones created in the instrumentations.
+		InnerMap: &ebpf.MapSpec{
+			Name:       "jvm_metrics_inner_map",
+			Type:       ebpf.Hash,
+			KeySize:    MetricKeySize,
+			ValueSize:  MetricValueSize,
+			MaxEntries: MaxMetricsPerMap,
+		},
+	}
+
+	metricsMap, err := cilumebpf.NewMap(metricsSpec)
+	if err != nil {
+		tracesMap.Close() // Cleanup traces map on error
+		return nil, err
+	}
+
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
+
 		Logger:                  logger,
 		Factories:               opts.Factories,
 		Handler:                 newHandler(logger, client, opts.DistributionGetter),
 		DetectorOptions:         detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
 		ConfigUpdates:           configUpdates,
 		InstrumentationRequests: instrumentationRequests,
-		TracesMap:               m,
+		TracesMap:               tracesMap,
+		MetricsMap:              metricsMap,
 	}
 
 	// Add file open triggers from all distributions.
