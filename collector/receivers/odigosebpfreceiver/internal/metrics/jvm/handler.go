@@ -26,6 +26,13 @@ const (
 	attrMemoryPoolName = "jvm.memory.pool.name"
 	attrThreadDaemon   = "jvm.thread.daemon"
 	attrThreadState    = "jvm.thread.state"
+
+	// Metric descriptions
+	DescClassLoaded   = "Number of classes loaded since JVM start"
+	DescClassUnloaded = "Number of classes unloaded since JVM start"
+	DescMemoryUsed    = "Measure of memory used after the most recent garbage collection event"
+	DescThreadCount   = "Number of executing platform threads"
+	DescGCDuration    = "Duration of JVM garbage collection actions"
 )
 
 // JVMMetricsHandler processes JVM metrics from eBPF maps and converts them to OpenTelemetry pdata format
@@ -60,7 +67,11 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 		}
 	}()
 
+	entriesFound := 0
+	metricsAdded := 0
+
 	for iter.Next(&key, &value) {
+		entriesFound++
 		metricType := key.MetricType()
 
 		switch metricType {
@@ -80,7 +91,11 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 			daemon := ThreadDaemon(key.Attr1())
 			state := ThreadState(key.Attr2())
 			h.addThreadCountMetric(scopeMetrics, value.AsGauge(), daemon, state)
+		default:
+			h.logger.Warn("Unknown metric type", zap.Uint32("type", uint32(metricType)))
 		}
+
+		metricsAdded++
 
 		// Reset counters/histogram after read (delta reporting)
 		// Don't reset gauges - they represent current state
@@ -92,17 +107,18 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 		}
 	}
 
+	h.logger.Debug("JVM metrics extraction completed",
+		zap.Int("ebpf_entries_found", entriesFound),
+		zap.Int("metrics_added", metricsAdded),
+		zap.Int("total_metrics_in_scope", scopeMetrics.Metrics().Len()))
+
 	return metrics, nil
 }
 
 func (h *JVMMetricsHandler) addClassLoadedMetric(scopeMetrics pmetric.ScopeMetrics, counter CounterValue) {
-	if counter.Count == 0 {
-		return
-	}
-
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricClassesLoaded)
-	metric.SetDescription("Number of classes loaded since JVM start")
+	metric.SetDescription(DescClassLoaded)
 	metric.SetUnit("{class}")
 
 	sum := metric.SetEmptySum()
@@ -117,13 +133,9 @@ func (h *JVMMetricsHandler) addClassLoadedMetric(scopeMetrics pmetric.ScopeMetri
 }
 
 func (h *JVMMetricsHandler) addClassUnloadedMetric(scopeMetrics pmetric.ScopeMetrics, counter CounterValue) {
-	if counter.Count == 0 {
-		return
-	}
-
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricClassesUnloaded)
-	metric.SetDescription("Number of classes unloaded since JVM start")
+	metric.SetDescription(DescClassUnloaded)
 	metric.SetUnit("{class}")
 
 	sum := metric.SetEmptySum()
@@ -138,13 +150,9 @@ func (h *JVMMetricsHandler) addClassUnloadedMetric(scopeMetrics pmetric.ScopeMet
 }
 
 func (h *JVMMetricsHandler) addMemoryUsedMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue, memType MemoryType, poolName MemoryPoolName) {
-	if gauge.Value == 0 {
-		return
-	}
-
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricMemoryUsedAfterGC)
-	metric.SetDescription("Measure of memory used after the most recent garbage collection event")
+	metric.SetDescription(DescMemoryUsed)
 	metric.SetUnit("By")
 
 	gaugeMetric := metric.SetEmptyGauge()
@@ -164,13 +172,9 @@ func (h *JVMMetricsHandler) addMemoryUsedMetric(scopeMetrics pmetric.ScopeMetric
 }
 
 func (h *JVMMetricsHandler) addThreadCountMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue, daemon ThreadDaemon, state ThreadState) {
-	if gauge.Value == 0 {
-		return
-	}
-
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricThreadCount)
-	metric.SetDescription("Number of executing platform threads")
+	metric.SetDescription(DescThreadCount)
 	metric.SetUnit("{thread}")
 
 	gaugeMetric := metric.SetEmptyGauge()
@@ -190,13 +194,9 @@ func (h *JVMMetricsHandler) addThreadCountMetric(scopeMetrics pmetric.ScopeMetri
 }
 
 func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetrics, hist HistogramValue, gcAction GCAction, gcName GCName) {
-	if hist.TotalCount == 0 {
-		return
-	}
-
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricGCDuration)
-	metric.SetDescription("Duration of JVM garbage collection actions")
+	metric.SetDescription(DescGCDuration)
 	metric.SetUnit("s")
 
 	histogramMetric := metric.SetEmptyHistogram()

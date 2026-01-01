@@ -41,7 +41,6 @@ func (r *ebpfReceiver) metricsReadLoop(ctx context.Context, m *ebpf.Map) error {
 
 // collectMetrics iterates over the HashOfMaps and processes each inner map for metrics
 func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map) error {
-	r.logger.Debug("starting metrics collection iteration")
 
 	var processKey [512]byte // Key representing process ID or similar identifier
 	var innerMapID uint32    // ID of the inner map
@@ -59,9 +58,6 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 
 	for iter.Next(&processKey, &innerMapID) {
 		innerMapsCount++
-		r.logger.Debug("found inner map",
-			zap.String("process_key", string(processKey[:])),
-			zap.Uint32("inner_map_id", innerMapID))
 
 		// Get the inner map from the ID
 		innerMap, err := ebpf.NewMapFromID(ebpf.MapID(innerMapID))
@@ -86,7 +82,7 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 		processedMaps++
 	}
 
-	r.logger.Info("metrics collection completed",
+	r.logger.Debug("metrics collection completed",
 		zap.Int("inner_maps_found", innerMapsCount),
 		zap.Int("maps_processed", processedMaps))
 	return nil
@@ -94,8 +90,8 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 
 // processInnerMapMetrics processes a single inner map and extracts metrics
 // each innermap represents a single process and its metrics
+// we're forwarding
 func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, processKey [512]byte) error {
-	r.logger.Debug("processing inner map for JVM metrics", zap.String("process_key", string(processKey[:])))
 
 	// Process with JVM handler
 	metrics, err := r.jvmHandler.ExtractJVMMetricsFromInnerMap(ctx, innerMap, processKey)
@@ -112,12 +108,11 @@ func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebp
 		}
 	}
 
-	// Forward metrics to consumer
+	// Forward metrics to consumer if consumer is not nil and there are metrics to forward
 	if r.nextMetrics != nil && metrics.ResourceMetrics().Len() > 0 {
 		if err := r.nextMetrics.ConsumeMetrics(ctx, metrics); err != nil {
 			return fmt.Errorf("failed to consume metrics: %w", err)
 		}
-		r.logger.Debug("forwarded JVM metrics to consumer")
 	}
 
 	return nil
@@ -177,18 +172,12 @@ func (r *ebpfReceiver) parseResourceAttributes(resourceAttrs pcommon.Map, attrib
 		if attrKey != "" && attrValue != "" {
 			resourceAttrs.PutStr(attrKey, attrValue)
 			attributesAdded++
-			r.logger.Debug("added resource attribute",
-				zap.String("key", attrKey),
-				zap.String("value", attrValue))
 		}
 	}
 
 	if attributesAdded == 0 {
 		return fmt.Errorf("no valid attributes parsed from: %s", attributesStr)
 	}
-
-	r.logger.Debug("successfully parsed resource attributes",
-		zap.Int("attributes_count", attributesAdded))
 
 	return nil
 }
