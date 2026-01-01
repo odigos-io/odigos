@@ -25,6 +25,8 @@ import (
 const (
 	numOfPages = 2048
 
+	// JVM metrics collection uses a hash-of-maps architecture: one outer map containing multiple inner maps.
+	// Each Java process gets its own inner map to store metrics, enabling efficient per-process metric collection.
 	// eBPF Metrics Map Configuration
 	// Hash of Maps (outer map) configuration
 	ProcessKeySize    = 512 // Size of process identifier key
