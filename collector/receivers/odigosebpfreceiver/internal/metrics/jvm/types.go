@@ -69,6 +69,19 @@ const (
 	MetricCPURecentUtilization MetricType = 42
 )
 
+// IsGauge returns true if this metric type represents a gauge (current state)
+// rather than a counter or histogram (delta/cumulative values)
+func (t MetricType) IsGauge() bool {
+	switch t {
+	case MetricMemoryUsed, MetricMemoryCommitted, MetricMemoryLimit,
+		MetricMemoryUsedAfterGC, MetricMemoryInit,
+		MetricThreadCount, MetricCPUCount, MetricCPURecentUtilization:
+		return true
+	default:
+		return false
+	}
+}
+
 // ============================================================================
 // GC Action (attr1 for GC_DURATION) - jvm.gc.action
 // ============================================================================
