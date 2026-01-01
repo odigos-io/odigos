@@ -74,11 +74,9 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 				zap.String("process_key", string(processKey[:])),
 				zap.Uint32("inner_map_id", innerMapID),
 				zap.Error(err))
-			innerMap.Close()
 			continue
 		}
 
-		innerMap.Close()
 		processedMaps++
 	}
 
