@@ -3,7 +3,6 @@ package inspectors
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/go-logr/logr"
 
@@ -103,27 +102,19 @@ func DetectLanguage(proc process.Details, containerURL string, logger logr.Logge
 		}
 	}()
 
-	fmt.Fprintf(os.Stderr, "[DEBUG] Detecting Language for process: %+v\n", proc)
-
 	// Try Quick Scan first
 	if detectedLanguage, err := runInspectionStage(procContext, containerURL, func(inspector Inspector) InspectFunc {
-		fmt.Fprintf(os.Stderr, "[DEBUG] Running Quick Scan with inspector: %+v\n", inspector)
 		return inspector.QuickScan
 	}); err != nil || detectedLanguage.Language != common.UnknownProgrammingLanguage {
-		fmt.Fprintf(os.Stderr, "[DEBUG] Quick Scan result: %+v\n", detectedLanguage)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "[DEBUG] Quick Scan error: %+v\n", err)
 			var conflict ErrLanguageDetectionConflict
 			if errors.As(err, &conflict) {
 				// If one of the languages is C++, prefer the other language and log a warning
 				if l, ok := resolveNonCpp(conflict.languages); ok {
-					fmt.Fprintf(os.Stderr, "[DEBUG] Language detection conflict includes C++; preferring non-C++ language: %+v\n", l)
 					logger.Info("Warning: language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
 					resolved := common.ProgramLanguageDetails{Language: l}
-					fmt.Fprintf(os.Stderr, "[DEBUG] Resolved language: %+v\n", resolved)
 					if inspector, ok := inspectorsByLanguage[l]; ok {
 						if vi, ok := inspector.(VersionInspector); ok {
-							fmt.Fprintf(os.Stderr, "[DEBUG] Getting Runtime Version for language: %+v\n", l)
 							resolved.RuntimeVersion = vi.GetRuntimeVersion(procContext, containerURL)
 						}
 					}

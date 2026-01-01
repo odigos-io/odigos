@@ -1,8 +1,6 @@
 package java
 
 import (
-	"fmt"
-	"os"
 	"regexp"
 
 	"github.com/odigos-io/odigos/common"
@@ -48,23 +46,18 @@ func (j *JavaInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 }
 
 func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
-	fmt.Fprintf(os.Stderr, "[DEBUG] Getting Runtime Version for Java\n")
 	javaVersion := ""
 	if value, exists := pcx.GetDetailedEnvsValue(process.JavaVersionConst); exists {
 		javaVersion = versionRegex.FindString(value)
-		fmt.Fprintf(os.Stderr, "[DEBUG] javaVersion: %s\n", javaVersion)
 	}
-	fmt.Fprintf(os.Stdout, "[DEBUG] javaVersion from JAVA_VERSION: %s\n", javaVersion)
 
-	// Prefer JAVA_VERSION to have backward compatibility
-	javaHome := j.GetJavaHome(pcx)
-	if javaHome != "" {
-		fmt.Fprintf(os.Stderr, "[DEBUG] javaHome: %s\n", javaHome)
-		subMatch := javaHomeVersionRegex.FindStringSubmatch(javaHome)
-		fmt.Fprintf(os.Stderr, "[DEBUG] subMatch: %v\n", subMatch)
-		if len(subMatch) > 1 {
-			javaVersion = subMatch[1]
-			fmt.Fprintf(os.Stderr, "[DEBUG] javaVersion: %s\n", javaVersion)
+	// Fall back to extracting version from JAVA_HOME if JAVA_VERSION not found
+	if javaVersion == "" {
+		javaHome := j.GetJavaHome(pcx)
+		if javaHome != "" {
+			if subMatch := javaHomeVersionRegex.FindStringSubmatch(javaHome); len(subMatch) > 1 {
+				javaVersion = subMatch[1]
+			}
 		}
 	}
 
@@ -72,12 +65,9 @@ func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, container
 }
 
 func (j *JavaInspector) GetJavaHome(pcx *process.ProcessContext) string {
-	fmt.Fprintf(os.Stderr, "[DEBUG] Getting Java Home\n")
 	if value, exists := pcx.GetDetailedEnvsValue(process.JavaHomeConst); exists {
-		fmt.Fprintf(os.Stderr, "[DEBUG] Java Home: %s\n", value)
 		return value
 	}
 
-	fmt.Fprintf(os.Stderr, "[DEBUG] No Java Home found\n")
 	return ""
 }
