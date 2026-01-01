@@ -48,10 +48,13 @@ func (j *JavaInspector) DeepScan(pcx *process.ProcessContext) (common.Programmin
 }
 
 func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, containerURL string) string {
+	fmt.Fprintf(os.Stderr, "[DEBUG] Getting Runtime Version for Java\n")
 	javaVersion := ""
 	if value, exists := pcx.GetDetailedEnvsValue(process.JavaVersionConst); exists {
 		javaVersion = versionRegex.FindString(value)
+		fmt.Fprintf(os.Stderr, "[DEBUG] javaVersion: %s\n", javaVersion)
 	}
+	fmt.Fprintf(os.Stdout, "[DEBUG] javaVersion from JAVA_VERSION: %s\n", javaVersion)
 
 	// Prefer JAVA_VERSION to have backward compatibility
 	javaHome := j.GetJavaHome(pcx)
