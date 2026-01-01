@@ -8,24 +8,25 @@ import (
 	"github.com/cilium/ebpf"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	semconv1_26 "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
 )
 
 const (
 	// Metric names
-	metricGCDuration        = "jvm.gc.duration"
-	metricMemoryUsedAfterGC = "jvm.memory.used_after_last_gc"
-	metricClassesLoaded     = "jvm.class.loaded"
-	metricClassesUnloaded   = "jvm.class.unloaded"
-	metricThreadCount       = "jvm.thread.count"
+	metricGCDuration        = semconv1_26.JvmGcDurationName
+	metricMemoryUsedAfterGC = semconv1_26.JvmMemoryUsedAfterLastGcName
+	metricClassesLoaded     = semconv1_26.JvmClassLoadedName
+	metricClassesUnloaded   = semconv1_26.JvmClassUnloadedName
+	metricThreadCount       = semconv1_26.JvmThreadCountName
 
 	// OTel attribute keys
-	attrGCAction       = "jvm.gc.action"
-	attrGCName         = "jvm.gc.name"
-	attrMemoryType     = "jvm.memory.type"
-	attrMemoryPoolName = "jvm.memory.pool.name"
-	attrThreadDaemon   = "jvm.thread.daemon"
-	attrThreadState    = "jvm.thread.state"
+	attrGCAction       = semconv1_26.JvmGcActionKey
+	attrGCName         = semconv1_26.JvmGcNameKey
+	attrMemoryType     = semconv1_26.JvmMemoryTypeKey
+	attrMemoryPoolName = semconv1_26.JvmMemoryPoolNameKey
+	attrThreadDaemon   = semconv1_26.JvmThreadDaemonKey
+	attrThreadState    = semconv1_26.JvmThreadStateKey
 
 	// Metric descriptions
 	DescClassLoaded   = "Number of classes loaded since JVM start"
@@ -119,7 +120,7 @@ func (h *JVMMetricsHandler) addClassLoadedMetric(scopeMetrics pmetric.ScopeMetri
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricClassesLoaded)
 	metric.SetDescription(DescClassLoaded)
-	metric.SetUnit("{class}")
+	metric.SetUnit(semconv1_26.JvmClassLoadedUnit)
 
 	sum := metric.SetEmptySum()
 	sum.SetIsMonotonic(true)
@@ -136,7 +137,7 @@ func (h *JVMMetricsHandler) addClassUnloadedMetric(scopeMetrics pmetric.ScopeMet
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricClassesUnloaded)
 	metric.SetDescription(DescClassUnloaded)
-	metric.SetUnit("{class}")
+	metric.SetUnit(semconv1_26.JvmClassUnloadedUnit)
 
 	sum := metric.SetEmptySum()
 	sum.SetIsMonotonic(true)
@@ -153,7 +154,7 @@ func (h *JVMMetricsHandler) addMemoryUsedMetric(scopeMetrics pmetric.ScopeMetric
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricMemoryUsedAfterGC)
 	metric.SetDescription(DescMemoryUsed)
-	metric.SetUnit("By")
+	metric.SetUnit(semconv1_26.JvmMemoryUsedAfterLastGcUnit)
 
 	gaugeMetric := metric.SetEmptyGauge()
 	dataPoint := gaugeMetric.DataPoints().AppendEmpty()
@@ -164,10 +165,10 @@ func (h *JVMMetricsHandler) addMemoryUsedMetric(scopeMetrics pmetric.ScopeMetric
 	// Add attributes
 	attrs := dataPoint.Attributes()
 	if memType != MemoryTypeUnknown {
-		attrs.PutStr(attrMemoryType, memType.String())
+		attrs.PutStr(string(attrMemoryType), memType.String())
 	}
 	if poolName != PoolNameUnknown {
-		attrs.PutStr(attrMemoryPoolName, poolName.String())
+		attrs.PutStr(string(attrMemoryPoolName), poolName.String())
 	}
 }
 
@@ -175,7 +176,7 @@ func (h *JVMMetricsHandler) addThreadCountMetric(scopeMetrics pmetric.ScopeMetri
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricThreadCount)
 	metric.SetDescription(DescThreadCount)
-	metric.SetUnit("{thread}")
+	metric.SetUnit(semconv1_26.JvmThreadCountUnit)
 
 	gaugeMetric := metric.SetEmptyGauge()
 	dataPoint := gaugeMetric.DataPoints().AppendEmpty()
@@ -186,10 +187,10 @@ func (h *JVMMetricsHandler) addThreadCountMetric(scopeMetrics pmetric.ScopeMetri
 	// Add attributes
 	attrs := dataPoint.Attributes()
 	if daemon != ThreadDaemonUnknown {
-		attrs.PutStr(attrThreadDaemon, daemon.String())
+		attrs.PutStr(string(attrThreadDaemon), daemon.String())
 	}
 	if state != ThreadStateUnknown {
-		attrs.PutStr(attrThreadState, state.String())
+		attrs.PutStr(string(attrThreadState), state.String())
 	}
 }
 
@@ -197,7 +198,7 @@ func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetri
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(metricGCDuration)
 	metric.SetDescription(DescGCDuration)
-	metric.SetUnit("s")
+	metric.SetUnit(semconv1_26.JvmGcDurationUnit)
 
 	histogramMetric := metric.SetEmptyHistogram()
 	histogramMetric.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
@@ -228,10 +229,10 @@ func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetri
 	// Add attributes
 	attrs := dataPoint.Attributes()
 	if gcAction != GCActionUnknown {
-		attrs.PutStr(attrGCAction, gcAction.String())
+		attrs.PutStr(string(attrGCAction), gcAction.String())
 	}
 	if gcName != GCNameUnknown {
-		attrs.PutStr(attrGCName, gcName.String())
+		attrs.PutStr(string(attrGCName), gcName.String())
 	}
 
 	h.logger.Debug("GC histogram recorded",
