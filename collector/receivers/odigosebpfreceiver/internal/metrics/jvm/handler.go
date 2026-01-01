@@ -124,6 +124,7 @@ func (h *JVMMetricsHandler) addClassLoadedMetric(scopeMetrics pmetric.ScopeMetri
 
 	sum := metric.SetEmptySum()
 	sum.SetIsMonotonic(true)
+	// Set cumulative temporality - values represent total since measurement started, not delta changes
 	sum.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 
 	dataPoint := sum.DataPoints().AppendEmpty()
@@ -141,6 +142,7 @@ func (h *JVMMetricsHandler) addClassUnloadedMetric(scopeMetrics pmetric.ScopeMet
 
 	sum := metric.SetEmptySum()
 	sum.SetIsMonotonic(true)
+	// Set cumulative temporality - values represent total since measurement started, not delta changes
 	sum.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 
 	dataPoint := sum.DataPoints().AppendEmpty()
@@ -201,6 +203,7 @@ func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetri
 	metric.SetUnit(semconv1_26.JvmGcDurationUnit)
 
 	histogramMetric := metric.SetEmptyHistogram()
+	// Set cumulative temporality - histogram represents total observations since measurement started
 	histogramMetric.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 
 	dataPoint := histogramMetric.DataPoints().AppendEmpty()
