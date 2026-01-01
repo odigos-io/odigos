@@ -168,9 +168,9 @@ service:
       - odigostrafficmetrics
       receivers:
       - otlp/in
+      - odigosebpf
       - kubeletstats
       - hostmetrics
-      - odigosebpf
     metrics/own-metrics-ui:
       exporters:
       - otlp/odigos-own-telemetry-ui
