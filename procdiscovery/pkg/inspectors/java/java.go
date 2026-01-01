@@ -54,9 +54,12 @@ func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, container
 	// Prefer JAVA_VERSION to have backward compatibility
 	javaHome := j.GetJavaHome(pcx)
 	if javaHome != "" {
+		println("javaHome", javaHome)
 		subMatch := javaHomeVersionRegex.FindStringSubmatch(javaHome)
+		println("subMatch", subMatch)
 		if len(subMatch) > 1 {
 			javaVersion = subMatch[1]
+			println("javaVersion", javaVersion)
 		}
 	}
 
