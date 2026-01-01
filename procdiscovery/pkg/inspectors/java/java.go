@@ -67,9 +67,12 @@ func (j *JavaInspector) GetRuntimeVersion(pcx *process.ProcessContext, container
 }
 
 func (j *JavaInspector) GetJavaHome(pcx *process.ProcessContext) string {
+	println("Getting Java Home")
 	if value, exists := pcx.GetDetailedEnvsValue(process.JavaHomeConst); exists {
+		println("Java Home", value)
 		return value
 	}
 
+	println("No Java Home found")
 	return ""
 }
