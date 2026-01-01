@@ -170,6 +170,7 @@ service:
       - otlp/in
       - kubeletstats
       - hostmetrics
+      - odigosebpf
     metrics/own-metrics-ui:
       exporters:
       - otlp/odigos-own-telemetry-ui
