@@ -17,7 +17,6 @@ import (
 func (r *ebpfReceiver) tracesReadLoop(ctx context.Context, m *ebpf.Map) error {
 	reader, err := NewBufferReader(m, r.logger)
 	if err != nil {
-		r.logger.Error("failed to open buffer reader", zap.Error(err))
 		return err
 	}
 	defer reader.Close()
