@@ -90,7 +90,6 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 
 // processInnerMapMetrics processes a single inner map and extracts metrics
 // each innermap represents a single process and its metrics
-// we're forwarding
 func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, processKey [512]byte) error {
 
 	// Process with JVM handler

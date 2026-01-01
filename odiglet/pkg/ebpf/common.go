@@ -22,7 +22,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const numOfPages = 2048
+const (
+	numOfPages = 2048
+
+	// eBPF Metrics Map Configuration
+	// Hash of Maps (outer map) configuration
+	ProcessKeySize    = 512 // Size of process identifier key
+	InnerMapIDSize    = 4   // Size of inner map ID (should be 4 bytes hard coded)
+	MaxProcessesCount = 512 // Max number of processes that can have metrics
+
+	// Inner Map configuration
+	MetricKeySize    = 4   // uint32 metric_key
+	MetricValueSize  = 40  // struct metric_value (40 bytes - size of largest union member: histogram_value)
+	MaxMetricsPerMap = 256 // MAX_METRICS per process
+)
 
 type InstrumentationManagerOptions struct {
 	Factories                  map[string]instrumentation.Factory
@@ -89,16 +102,16 @@ func NewManager(
 	metricsSpec := &cilumebpf.MapSpec{
 		Type:       cilumebpf.HashOfMaps,
 		Name:       "metrics",
-		KeySize:    512, // Size of process identifier key
-		ValueSize:  4,   // Size of inner map ID [should be 4 bytes hard coded]
-		MaxEntries: 512, // Max number of processes that can have metrics
+		KeySize:    ProcessKeySize,
+		ValueSize:  InnerMapIDSize,
+		MaxEntries: MaxProcessesCount,
 		// InnerMap spec should be the same as the ones created in the instrumentations.
 		InnerMap: &ebpf.MapSpec{
 			Name:       "jvm_metrics_inner_map",
 			Type:       ebpf.Hash,
-			KeySize:    4,   // uint32 metric_key_t
-			ValueSize:  40,  // struct metric_value (40 bytes - size of largest union member: histogram_value)
-			MaxEntries: 256, // MAX_METRICS
+			KeySize:    MetricKeySize,
+			ValueSize:  MetricValueSize,
+			MaxEntries: MaxMetricsPerMap,
 		},
 	}
 
