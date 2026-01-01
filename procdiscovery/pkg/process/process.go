@@ -158,7 +158,7 @@ type ProcessEnvs struct {
 }
 
 func (d *Details) GetDetailedEnvsValue(key string) (string, bool) {
-	println("================= details", d.Environments.DetailedEnvs)
+	fmt.Printf("================= details: %+v =================\n", d.Environments.DetailedEnvs)
 	value, exists := d.Environments.DetailedEnvs[key]
 	return value, exists
 }
