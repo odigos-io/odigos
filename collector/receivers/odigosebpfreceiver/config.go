@@ -4,7 +4,7 @@ import "time"
 
 type Config struct {
 	// MetricsConfig contains configuration specific to metrics collection
-	MetricsConfig MetricsConfig `mapstructure:"metrics_config"`
+	MetricsConfig MetricsConfig `mapstructure:"metrics"`
 }
 
 // MetricsConfig holds configuration for metrics collection
