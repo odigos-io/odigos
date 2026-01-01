@@ -9,20 +9,11 @@ import (
 )
 
 const (
-	odigosEbpfReceiverName                    = "odigosebpf"
 	odigosTracesLoadbalancingExporterName     = "loadbalancing/traces"
 	odigosTracesPipelineName                  = "traces"
 	odigosTracesExportingForwardConnectorName = "forward/traces-exporting"
 	odigosTracesExportingPipelineName         = "traces/exporting"
 )
-
-var staticTracesReceivers config.GenericMap
-
-func init() {
-	staticTracesReceivers = config.GenericMap{
-		odigosEbpfReceiverName: config.GenericMap{},
-	}
-}
 
 func tracesExporters(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, tracesEnabledInClusterCollector bool, loadBalancingNeeded bool) (config.GenericMap, []string) {
 
@@ -152,7 +143,6 @@ func TracesConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, mani
 
 	return config.Config{
 		Connectors: connectors,
-		Receivers:  staticTracesReceivers,
 		Exporters:  exporters,
 		Service: config.Service{
 			Pipelines: tracePipeline,

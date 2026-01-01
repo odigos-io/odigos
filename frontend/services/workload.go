@@ -583,6 +583,8 @@ func senatizeKind(kind string) (string, error) {
 		return string(model.K8sResourceKindDaemonSet), nil
 	case "deploymentconfig", "deploymentconfigs", "dc":
 		return string(model.K8sResourceKindDeploymentConfig), nil
+	case "rollout", "rollouts", "ro":
+		return string(model.K8sResourceKindRollout), nil
 	case "":
 		return "", nil
 	default:

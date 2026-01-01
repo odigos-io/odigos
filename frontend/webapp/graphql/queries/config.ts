@@ -9,6 +9,8 @@ export const GET_CONFIG = gql`
       odigosVersion
       installationMethod
       installationStatus
+      clusterName
+      isCentralProxyRunning
     }
   }
 `;
