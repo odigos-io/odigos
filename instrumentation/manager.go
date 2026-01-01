@@ -91,7 +91,7 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
 	TracesMap *cilumebpf.Map
 
-	// MetricsMap is the optional common eBPF map that will be used to send metric events from eBPF probes.
+	// MetricsMap is the optional common eBPF map that is used to read metrics per Java process at each interval.
 	MetricsMap *cilumebpf.Map
 }
 
