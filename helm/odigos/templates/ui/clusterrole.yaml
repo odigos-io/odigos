@@ -89,7 +89,6 @@ rules:
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - delete
       {{- end }}
-  # odigos.io CRDs (cluster-wide access for cross-namespace resources)
   - apiGroups:
       - odigos.io
     resources:
@@ -98,12 +97,18 @@ rules:
       - get
       - list
       - watch
-      {{- if include "odigos.ui.requiresWritePermissions" . }}
+  {{- if include "odigos.ui.requiresWritePermissions" . }}
+  - apiGroups:
+      - odigos.io
+    resources:
+      - instrumentationconfigs
+      - instrumentationinstances
+      - sources
+    verbs:
       - patch
       - create
       - delete
-      {{- end }}
-  # actions.odigos.io CRDs (cluster-wide access)
+  {{- end }}
   - apiGroups:
       - actions.odigos.io
     resources:
@@ -112,8 +117,3 @@ rules:
       - get
       - list
       - watch
-      {{- if include "odigos.ui.requiresWritePermissions" . }}
-      - patch
-      - create
-      - delete
-      {{- end }}
