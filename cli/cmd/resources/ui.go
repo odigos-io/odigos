@@ -186,17 +186,12 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 			{ // Needed to read all odigos.io CRDs in the odigos namespace
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"*"},
-				Verbs:     []string{"get", "list"},
-			},
-			{ // Needed to notify UI about changes with destinations
-				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations"},
-				Verbs:     []string{"watch"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{ // Needed to read all actions.odigos.io CRDs in the odigos namespace
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"*"},
-				Verbs:     []string{"get", "list"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{ // Needed for reading collectors related resources
 				APIGroups: []string{"apps"},
@@ -234,12 +229,12 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 			{ // Needed for CRUD on all odigos.io CRDs in the odigos namespace
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"*"},
-				Verbs:     []string{"get", "list", "create", "patch", "update", "delete"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
-			{ // Needed to notify UI about changes with destinations
+			{
 				APIGroups: []string{"odigos.io"},
-				Resources: []string{"destinations"},
-				Verbs:     []string{"watch"},
+				Resources: []string{"instrumentationrules", "destinations", "actions"},
+				Verbs:     []string{"create", "patch", "update", "delete"},
 			},
 			{ // Needed for CRUD on all actions.odigos.io CRDs in the odigos namespace
 				APIGroups: []string{"actions.odigos.io"},
@@ -351,7 +346,7 @@ func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole 
 			{ // Needed to read all actions.odigos.io CRDs cluster-wide
 				APIGroups: []string{"actions.odigos.io"},
 				Resources: []string{"*"},
-				Verbs:     []string{"get", "list"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 		}
 		if openshiftEnabled {
@@ -406,7 +401,12 @@ func NewUIClusterRole(readonly bool, openshiftEnabled bool) *rbacv1.ClusterRole 
 			{ // Needed for CRUD on all odigos.io CRDs cluster-wide
 				APIGroups: []string{"odigos.io"},
 				Resources: []string{"*"},
-				Verbs:     []string{"get", "list", "watch", "create", "patch", "delete"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs", "instrumentationinstances", "sources"},
+				Verbs:     []string{"patch", "create", "delete"},
 			},
 			{ // Needed for CRUD on all actions.odigos.io CRDs cluster-wide
 				APIGroups: []string{"actions.odigos.io"},
