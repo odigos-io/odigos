@@ -44,6 +44,7 @@ type ContainerOverview {
   # Kubernetes readiness flag from ContainerStatus.Ready.
   # Can be false even when status is "Running" (e.g., failing readiness probe).
   ready: Boolean!
+  started: Boolean!
   restarts: Int!
   startedAt: String
   resources: Resources

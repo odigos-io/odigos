@@ -249,6 +249,9 @@ jobs:
   publish-collector-linux-packages:
     if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: decide
+    permissions:
+      contents: read
+      id-token: write
     runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Extract Tag
@@ -270,11 +273,17 @@ jobs:
           fetch-depth: 0
           ref: ${{ steps.extract_tag.outputs.tag }}
 
-      - name: Install GemFury CLI
+      - name: Determine repository (staging vs prod)
+        id: determine_repo
         run: |
-          sudo bash -c "echo 'deb [trusted=yes] https://apt.fury.io/cli/ * *' > /etc/apt/sources.list.d/fury-cli.list"
-          sudo apt-get update
-          sudo apt-get install -y fury-cli
+          TAG="${{ steps.extract_tag.outputs.tag }}"
+          if [[ "$TAG" =~ -(rc|pre)[0-9]*$ ]]; then
+            echo "repository=staging" >> $GITHUB_OUTPUT
+            echo "Detected pre-release/RC tag: $TAG -> using staging repository"
+          else
+            echo "repository=odigos" >> $GITHUB_OUTPUT
+            echo "Detected release tag: $TAG -> using production repository"
+          fi
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -288,9 +297,15 @@ jobs:
           version: latest
           args: release --clean
           workdir: collector
-        env:
-          FURY_ACCOUNT: ${{ secrets.FURY_ACCOUNT }}
-          FURY_API_TOKEN: ${{ secrets.FURY_API_TOKEN }}
+
+      - name: Upload Linux packages to Artifact Registry
+        uses: odigos-io/ci-core/upload-linux-packages@v1.0.5
+        with:
+          gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          package-directory: 'collector/dist'
+          repository: ${{ steps.determine_repo.outputs.repository }}
 
       - name: Notify Slack Success
         if: always()

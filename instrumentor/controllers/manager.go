@@ -13,6 +13,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -42,6 +43,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(openshiftappsv1.AddToScheme(scheme))
+	utilruntime.Must(argorolloutsv1alpha1.AddToScheme(scheme))
 }
 
 type KubeManagerOptions struct {
@@ -135,6 +137,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&odigosv1.InstrumentationRule{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Action{}: {
+					Field: nsSelector,
+				},
 				&odigosv1.InstrumentationConfig{}: {
 					// all instrumentation configs are managed by this controller
 					// and should be pulled into the cache
@@ -183,8 +188,8 @@ func SetupWithManager(mgr manager.Manager, dp *distros.Provider, k8sVersion *ver
 }
 
 type WebhookConfig struct {
-	DistrosProvider  *distros.Provider
-	WaspMutator      func(*corev1.Pod, common.OdigosConfiguration) error
+	DistrosProvider *distros.Provider
+	WaspMutator     func(*corev1.Pod, common.OdigosConfiguration) error
 }
 
 func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
@@ -205,10 +210,10 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 	decoder := admission.NewDecoder(mgr.GetScheme())
 
 	webhook := &agentenabled.PodsWebhook{
-		Client:           mgr.GetClient(),
-		DistrosGetter:    config.DistrosProvider.Getter,
-		Decoder:          decoder,
-		WaspMutator:      config.WaspMutator,
+		Client:        mgr.GetClient(),
+		DistrosGetter: config.DistrosProvider.Getter,
+		Decoder:       decoder,
+		WaspMutator:   config.WaspMutator,
 	}
 
 	// Register directly with GetWebhookServer() since this webhook uses admission.Handler for full control.

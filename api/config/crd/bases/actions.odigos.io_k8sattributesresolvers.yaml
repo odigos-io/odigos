@@ -52,20 +52,35 @@ spec:
                   properties:
                     annotationKey:
                       description: |-
-                        The label name to be extracted from the pod.
+                        The annotation name to be extracted.
                         e.g. "kubectl.kubernetes.io/restartedAt"
                       type: string
                     attributeKey:
                       description: |-
-                        The attribute key to be used for the resource attribute created from the label.
-                        e.g. "kubectl.kubernetes.restartedAte"
+                        The attribute key to be used for the resource attribute created from the annotation.
+                        e.g. "kubectl.kubernetes.restartedAt"
                       type: string
                     from:
                       default: pod
                       description: |-
                         The source of the annotation.
                         e.g. "pod" or "namespace"
+                        Deprecated: Use FromSources instead for specifying multiple sources with precedence.
                       type: string
+                    fromSources:
+                      description: |-
+                        The sources from which to extract the annotation, in order of precedence (most specific first).
+                        When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+                        over less specific sources (e.g., namespace).
+                        If an annotation exists in multiple sources, the value from the most specific source will be used.
+                        Supported sources: "pod", "namespace", "node"
+                      items:
+                        enum:
+                        - pod
+                        - namespace
+                        - node
+                        type: string
+                      type: array
                   required:
                   - annotationKey
                   - attributeKey
@@ -117,13 +132,29 @@ spec:
                       description: |-
                         The source of the label.
                         e.g. "pod" or "namespace"
+                        Deprecated: Use FromSources instead for specifying multiple sources with precedence.
                       enum:
                       - pod
                       - namespace
+                      - node
                       type: string
+                    fromSources:
+                      description: |-
+                        The sources from which to extract the label, in order of precedence (most specific first).
+                        When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+                        over less specific sources (e.g., namespace).
+                        If a label exists in multiple sources, the value from the most specific source will be used.
+                        Supported sources: "pod", "namespace", "node"
+                      items:
+                        enum:
+                        - pod
+                        - namespace
+                        - node
+                        type: string
+                      type: array
                     labelKey:
                       description: |-
-                        The label name to be extracted from the pod.
+                        The label name to be extracted.
                         e.g. "app.kubernetes.io/name"
                       type: string
                   required:

@@ -10,7 +10,7 @@ export const useMetrics = () => {
 
   const { data } = useQuery<{ getOverviewMetrics: Metrics }>(GET_METRICS, {
     skip: !sources.length && !destinations.length,
-    pollInterval: 3000,
+    pollInterval: 10000,
   });
 
   return {

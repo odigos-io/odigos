@@ -92,6 +92,19 @@
             color: #1e40af;
             font-weight: 500;
         }
+        .workload-health-message {
+            display: block;
+            font-size: 10px;
+            color: #6b7280;
+            font-weight: 400;
+            margin-top: 2px;
+            margin-left: 18px;
+            line-height: 1.2;
+            max-width: calc(100% - 18px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .json-string {
             color: #059669;
             font-weight: 400;
@@ -349,7 +362,6 @@
         .header-row {
             display: flex;
             align-items: flex-start;
-            justify-content: space-between;
             margin-bottom: 20px;
             padding-bottom: 20px;
             border-bottom: 1px solid #e5e7eb;
@@ -360,12 +372,116 @@
         .header-left {
             display: flex;
             flex-direction: column;
-            flex: 1;
+            width: 100%;
+        }
+        .header-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+        .header-title-row h1 {
+            margin: 0;
+        }
+        .timestamp-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-section {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #374151;
+            transition: all 0.3s ease;
+        }
+        .status-section.no-results {
+            background-color: #fef3c7;
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+        .status-section.no-results .status-header h2 {
+            color: #92400e;
+        }
+        .status-section.no-results .status-header-text {
+            color: #92400e;
+            font-weight: 500;
+        }
+        .status-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .status-header-text {
+            margin-left: auto;
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 400;
+        }
+        .status-header-clear-btn {
+            background-color: transparent;
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        .status-header-clear-btn:hover {
+            background-color: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+        .status-header-clear-btn:active {
+            background-color: #e5e7eb;
+        }
+        .status-filters-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .status-filters-list li {
+            font-size: 13px;
+            color: #374151;
+            padding: 2px 0;
+        }
+        .status-toggle {
+            width: 10px;
+            height: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            color: #6b7280;
+            font-size: 8px;
+        }
+        .status-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        .status-content.expanded {
+            display: block;
+        }
+        .status-content:not(.expanded) {
+            display: none;
         }
         .status-line {
             color: #6b7280;
             font-size: 13px;
-            margin-top: 4px;
+            margin-top: 0;
             font-weight: 400;
             display: flex;
             align-items: center;
@@ -478,12 +594,6 @@
         }
         .btn:active {
             background-color: #1e40af;
-        }
-        .timestamp-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: 12px;
         }
         .timestamp {
             color: #6b7280;
@@ -621,7 +731,7 @@
         .condition-filters-container {
             display: none;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
         }
         .condition-filters-container.expanded {
             display: flex;
@@ -636,7 +746,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
-            margin-left: 8px;
+            margin-left: 4px;
         }
         .namespace-show-all-btn:hover, .workload-show-all-btn:hover, .language-show-all-btn:hover, .health-status-show-all-btn:hover {
             background-color: #f3f4f6;
@@ -662,10 +772,10 @@
         .namespace-filters-container {
             display: none;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
             max-height: 300px;
             overflow-y: auto;
-            padding: 2px 0;
+            padding: 1px 0;
         }
         .namespace-filters-container.expanded {
             display: flex;
@@ -684,13 +794,23 @@
             border-color: #2563eb;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
+        .search-message {
+            font-size: 11px;
+            color: #374151;
+            font-weight: 500;
+            padding: 6px 8px;
+            margin: 4px 0 6px 0;
+            background-color: #f3f4f6;
+            border-left: 3px solid #2563eb;
+            border-radius: 4px;
+        }
         .workload-filters-container {
             display: none;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
             max-height: 300px;
             overflow-y: auto;
-            padding: 2px 0;
+            padding: 1px 0;
         }
         .workload-filters-container.expanded {
             display: flex;
@@ -701,7 +821,7 @@
         .workload-checkbox-wrapper {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             padding: 0;
             margin-left: 0;
         }
@@ -729,10 +849,10 @@
         .language-filters-container {
             display: none;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
             max-height: 300px;
             overflow-y: auto;
-            padding: 2px 0;
+            padding: 1px 0;
         }
         .language-filters-container.expanded {
             display: flex;
@@ -740,10 +860,10 @@
         .health-status-filters-container {
             display: none;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
             max-height: 300px;
             overflow-y: auto;
-            padding: 4px 0;
+            padding: 1px 0;
         }
         .health-status-filters-container.expanded {
             display: flex;
@@ -757,7 +877,7 @@
         .language-checkbox-wrapper {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             padding: 0;
             margin-left: 0;
         }
@@ -786,12 +906,13 @@
             background-color: transparent;
             border: 1px solid #d1d5db;
             color: #6b7280;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 3px;
             font-size: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
+            margin-left: 0;
         }
         .language-only-btn:hover {
             background-color: #f3f4f6;
@@ -804,7 +925,7 @@
         .namespace-checkbox-wrapper {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             padding: 0;
             margin-left: 0;
         }
@@ -885,7 +1006,7 @@
         .health-status-checkbox-wrapper {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             padding: 0;
             margin-left: 0;
         }
@@ -916,13 +1037,13 @@
             background-color: transparent;
             border: 1px solid #d1d5db;
             color: #6b7280;
-            padding: 1px 4px;
+            padding: 1px 3px;
             border-radius: 3px;
             font-size: 9px;
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
-            margin-left: auto;
+            margin-left: 0;
         }
         .health-status-only-btn:hover {
             background-color: #f3f4f6;
@@ -1006,7 +1127,7 @@
         .condition-filter-content {
             display: none;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
             margin-left: 0;
         }
         .condition-filter-content.expanded {
@@ -1027,7 +1148,7 @@
         .condition-checkbox-wrapper {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             padding: 0;
             margin-left: 0;
         }
@@ -1079,12 +1200,13 @@
             background-color: transparent;
             border: 1px solid #d1d5db;
             color: #6b7280;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 3px;
             font-size: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
+            margin-left: 0;
         }
         .condition-only-btn:hover {
             background-color: #f3f4f6;
@@ -1098,12 +1220,13 @@
             background-color: transparent;
             border: 1px solid #d1d5db;
             color: #6b7280;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 3px;
             font-size: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
+            margin-left: 0;
         }
         .namespace-only-btn:hover, .workload-only-btn:hover {
             background-color: #f3f4f6;
@@ -1288,13 +1411,14 @@
                         <div class="namespace-filter-header-left">
                             <span class="namespace-filter-toggle" id="namespace-filter-toggle">▶</span>
                             <span class="namespace-label" id="namespace-label">Namespace</span>
+                            <button id="namespace-show-all-btn" class="namespace-show-all-btn" onclick="selectAllNamespaces(event)" style="display: none;">show all</button>
                         </div>
-                        <button id="namespace-show-all-btn" class="namespace-show-all-btn" onclick="selectAllNamespaces(event)" style="display: none;">show all</button>
                     </div>
                     <div id="namespace-filter-footer" class="namespace-filter-footer">
                         <!-- Dynamically updated -->
                     </div>
                     <input type="text" id="namespace-search-box" class="namespace-search-box" placeholder="Search namespaces..." oninput="filterNamespacesBySearch()" style="display: none;">
+                    <div id="namespace-search-message" class="search-message" style="display: none;"></div>
                     <div id="namespace-filters-container" class="namespace-filters-container">
                         <!-- Dynamically populated -->
                     </div>
@@ -1304,13 +1428,14 @@
                         <div class="workload-filter-header-left">
                             <span class="workload-filter-toggle" id="workload-filter-toggle">▶</span>
                             <span class="workload-label" id="workload-label">Workloads</span>
+                            <button id="workload-show-all-btn" class="workload-show-all-btn" onclick="selectAllWorkloads(event)" style="display: none;">show all</button>
                         </div>
-                        <button id="workload-show-all-btn" class="workload-show-all-btn" onclick="selectAllWorkloads(event)" style="display: none;">show all</button>
                     </div>
                     <div id="workload-filter-footer" class="workload-filter-footer">
                         <!-- Dynamically updated -->
                     </div>
                     <input type="text" id="workload-search-box" class="workload-search-box" placeholder="Search workloads..." oninput="filterWorkloadsBySearch()" style="display: none;">
+                    <div id="workload-search-message" class="search-message" style="display: none;"></div>
                     <div id="workload-filters-container" class="workload-filters-container">
                         <!-- Dynamically populated -->
                     </div>
@@ -1320,8 +1445,8 @@
                         <div class="language-filter-header-left">
                             <span class="language-filter-toggle" id="language-filter-toggle">▶</span>
                             <span class="language-label" id="language-label">Programming Language</span>
+                            <button id="language-show-all-btn" class="language-show-all-btn" onclick="selectAllLanguages(event)" style="display: none;">show all</button>
                         </div>
-                        <button id="language-show-all-btn" class="language-show-all-btn" onclick="selectAllLanguages(event)" style="display: none;">show all</button>
                     </div>
                     <div id="language-filter-footer" class="language-filter-footer">
                         <!-- Dynamically updated -->
@@ -1354,8 +1479,8 @@
                         <div class="health-status-filter-header-left">
                             <span class="health-status-filter-toggle" id="health-status-filter-toggle">▶</span>
                             <span class="health-status-label" id="health-status-label">Odigos Health</span>
+                            <button id="health-status-show-all-btn" class="health-status-show-all-btn" onclick="selectAllHealthStatuses(event)" style="display: none;">show all</button>
                         </div>
-                        <button id="health-status-show-all-btn" class="health-status-show-all-btn" onclick="selectAllHealthStatuses(event)" style="display: none;">show all</button>
                     </div>
                     <div id="health-status-filter-footer" class="health-status-filter-footer">
                         <!-- Dynamically updated -->
@@ -1384,8 +1509,24 @@
         <div class="main-content">
             <div class="header-row">
                 <div class="header-left">
-                    <h1>Workloads</h1>
-                    <div id="status-line" class="status-line"></div>
+                    <div class="header-title-row">
+                        <h1>Workloads</h1>
+                        <div class="timestamp-container">
+                            <span id="timestamp" class="timestamp"></span>
+                            <button class="timestamp-refresh-btn" onclick="refreshData()">Refresh</button>
+                        </div>
+                    </div>
+                    <div id="status-section" class="status-section" style="display: none;">
+                        <div class="status-header" onclick="toggleStatusSection()" style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                            <span class="status-toggle" id="status-toggle" style="width: 10px; height: 10px; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.2s ease; color: #6b7280; font-size: 8px;">▶</span>
+                            <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #111827;">Applied Filters</h2>
+                            <span id="status-header-text" class="status-header-text"></span>
+                            <button id="status-header-clear-btn" class="status-header-clear-btn" onclick="event.stopPropagation(); clearAllFilters();" style="display: none;">Clear All Filters</button>
+                        </div>
+                        <div id="status-content" class="status-content">
+                            <ul id="status-filters-list" class="status-filters-list"></ul>
+                        </div>
+                    </div>
                     <div id="overview-section" class="overview-section" style="display: none;">
                         <div class="overview-header" onclick="toggleOverview()" style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
                             <span class="overview-toggle" id="overview-toggle" style="width: 10px; height: 10px; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.2s ease; color: #6b7280; font-size: 8px;">▶</span>
@@ -1419,10 +1560,6 @@
                         </div>
                         </div>
                     </div>
-                </div>
-                <div class="timestamp-container">
-                    <span id="timestamp" class="timestamp"></span>
-                    <button class="timestamp-refresh-btn" onclick="refreshData()">Refresh</button>
                 </div>
             </div>
             <div class="container">
@@ -1811,11 +1948,15 @@
             const namespaceContainer = document.getElementById('namespace-filters-container');
             const namespaceToggle = document.getElementById('namespace-filter-toggle');
             const namespaceSearchBox = document.getElementById('namespace-search-box');
+            const namespaceSearchMessage = document.getElementById('namespace-search-message');
             if (namespaceContainer && namespaceToggle) {
                 namespaceContainer.classList.remove('expanded');
                 namespaceToggle.classList.remove('expanded');
                 if (namespaceSearchBox) {
                     namespaceSearchBox.style.display = 'none';
+                }
+                if (namespaceSearchMessage) {
+                    namespaceSearchMessage.style.display = 'none';
                 }
             }
             
@@ -1823,11 +1964,15 @@
             const workloadContainer = document.getElementById('workload-filters-container');
             const workloadToggle = document.getElementById('workload-filter-toggle');
             const workloadSearchBox = document.getElementById('workload-search-box');
+            const workloadSearchMessage = document.getElementById('workload-search-message');
             if (workloadContainer && workloadToggle) {
                 workloadContainer.classList.remove('expanded');
                 workloadToggle.classList.remove('expanded');
                 if (workloadSearchBox) {
                     workloadSearchBox.style.display = 'none';
+                }
+                if (workloadSearchMessage) {
+                    workloadSearchMessage.style.display = 'none';
                 }
             }
             
@@ -2285,21 +2430,6 @@
                     updateWorkloadLabel();
                     applyNamespaceFilter();
                 };
-                wrapper.appendChild(checkbox);
-                
-                const label = document.createElement('label');
-                label.htmlFor = `filter-namespace-${namespace}`;
-                label.className = 'namespace-checkbox-label';
-                
-                const countSpan = document.createElement('span');
-                countSpan.id = `count-namespace-${namespace}`;
-                countSpan.className = 'namespace-count';
-                countSpan.textContent = `(${count}) `;
-                label.appendChild(countSpan);
-                
-                label.appendChild(document.createTextNode(namespace));
-                
-                wrapper.appendChild(label);
                 
                     // Add "only" button
                     const onlyBtn = document.createElement('button');
@@ -2330,6 +2460,22 @@
                     };
                     wrapper.appendChild(onlyBtn);
                 
+                wrapper.appendChild(checkbox);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `filter-namespace-${namespace}`;
+                label.className = 'namespace-checkbox-label';
+                
+                const countSpan = document.createElement('span');
+                countSpan.id = `count-namespace-${namespace}`;
+                countSpan.className = 'namespace-count';
+                countSpan.textContent = `(${count}) `;
+                label.appendChild(countSpan);
+                
+                label.appendChild(document.createTextNode(namespace));
+                
+                wrapper.appendChild(label);
+                
                 filtersContainer.appendChild(wrapper);
             });
             
@@ -2353,6 +2499,10 @@
             
             const searchText = searchBox.value.toLowerCase().trim();
             const allWrappers = document.querySelectorAll('.namespace-checkbox-wrapper');
+            const messageElement = document.getElementById('namespace-search-message');
+            
+            let visibleCount = 0;
+            const totalCount = allWrappers.length;
             
             allWrappers.forEach(wrapper => {
                 const namespace = wrapper.dataset.namespace || '';
@@ -2360,15 +2510,32 @@
                 
                 if (searchText === '' || searchableText.includes(searchText)) {
                     wrapper.classList.remove('hidden');
+                    if (searchText !== '') {
+                        visibleCount++;
+                    }
                 } else {
                     wrapper.classList.add('hidden');
                 }
             });
+            
+            // Update search message
+            if (messageElement) {
+                if (searchText !== '') {
+                    if (visibleCount === 0) {
+                        messageElement.textContent = `No namespaces matched "${searchText}". Check for typos or try a different search term. Other namespaces may still be selected.`;
+                    } else {
+                        messageElement.textContent = `Showing ${visibleCount}/${totalCount} namespaces that matched the search term. Other namespaces may still be selected.`;
+                    }
+                    messageElement.style.display = 'block';
+                } else {
+                    messageElement.style.display = 'none';
+                }
+            }
         }
         
         function formatFilterFooter(selectedItems, totalCount, itemType) {
             if (selectedItems.length === totalCount && totalCount > 0) {
-                return 'no filter';
+                return '';
             }
             
             if (selectedItems.length <= 2 && selectedItems.length > 0) {
@@ -2436,6 +2603,7 @@
             const container = document.getElementById('namespace-filters-container');
             const toggle = document.getElementById('namespace-filter-toggle');
             const searchBox = document.getElementById('namespace-search-box');
+            const messageElement = document.getElementById('namespace-search-message');
             container.classList.toggle('expanded');
             toggle.classList.toggle('expanded');
             // Show/hide search box based on expanded state
@@ -2444,6 +2612,9 @@
                     searchBox.style.display = 'block';
                 } else {
                     searchBox.style.display = 'none';
+                    if (messageElement) {
+                        messageElement.style.display = 'none';
+                    }
                 }
             }
         }
@@ -2452,6 +2623,7 @@
             const container = document.getElementById('workload-filters-container');
             const toggle = document.getElementById('workload-filter-toggle');
             const searchBox = document.getElementById('workload-search-box');
+            const messageElement = document.getElementById('workload-search-message');
             container.classList.toggle('expanded');
             toggle.classList.toggle('expanded');
             // Show/hide search box based on expanded state
@@ -2460,6 +2632,9 @@
                     searchBox.style.display = 'block';
                 } else {
                     searchBox.style.display = 'none';
+                    if (messageElement) {
+                        messageElement.style.display = 'none';
+                    }
                 }
             }
         }
@@ -2671,14 +2846,6 @@
                         updateWorkloadHeaderButton();
                         applyWorkloadFilter();
                     };
-                    wrapper.appendChild(checkbox);
-                    
-                    const label = document.createElement('label');
-                    label.htmlFor = `filter-workload-${namespace}-${name}`;
-                    label.className = 'workload-checkbox-label';
-                    label.textContent = name;
-                    
-                    wrapper.appendChild(label);
                     
                     // Add "only" button
                     const onlyBtn = document.createElement('button');
@@ -2708,6 +2875,15 @@
                     };
                     wrapper.appendChild(onlyBtn);
                     
+                    wrapper.appendChild(checkbox);
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `filter-workload-${namespace}-${name}`;
+                    label.className = 'workload-checkbox-label';
+                    label.textContent = name;
+                    
+                    wrapper.appendChild(label);
+                    
                     namespaceGroup.appendChild(wrapper);
                 });
                 
@@ -2729,6 +2905,10 @@
             const searchText = searchBox.value.toLowerCase().trim();
             const allWrappers = document.querySelectorAll('.workload-checkbox-wrapper');
             const namespaceGroups = new Map(); // namespace -> {visible: count, total: count}
+            const messageElement = document.getElementById('workload-search-message');
+            
+            let visibleCount = 0;
+            const totalCount = allWrappers.length;
             
             // Filter workloads and count visible ones per namespace
             allWrappers.forEach(wrapper => {
@@ -2738,6 +2918,9 @@
                 
                 if (searchText === '' || searchableText.includes(searchText)) {
                     wrapper.classList.remove('hidden');
+                    if (searchText !== '') {
+                        visibleCount++;
+                    }
                     if (!namespaceGroups.has(namespace)) {
                         namespaceGroups.set(namespace, { visible: 0, total: 0 });
                     }
@@ -2762,6 +2945,20 @@
                     group.style.display = 'block';
                 }
             });
+            
+            // Update search message
+            if (messageElement) {
+                if (searchText !== '') {
+                    if (visibleCount === 0) {
+                        messageElement.textContent = `No workloads matched "${searchText}". Check for typos or try a different search term. Other workloads may still be selected.`;
+                    } else {
+                        messageElement.textContent = `Showing ${visibleCount}/${totalCount} workloads that matched the search term. Other workloads may still be selected.`;
+                    }
+                    messageElement.style.display = 'block';
+                } else {
+                    messageElement.style.display = 'none';
+                }
+            }
         }
         
         function getSelectedWorkloads() {
@@ -2873,21 +3070,6 @@
                     updateUrlParams();
                     applyLanguageFilter();
                 };
-                wrapper.appendChild(checkbox);
-                
-                const label = document.createElement('label');
-                label.htmlFor = `filter-language-${LANGUAGE_NOT_DETECTED}`;
-                label.className = 'language-checkbox-label';
-                
-                const countSpan = document.createElement('span');
-                countSpan.id = `count-language-${LANGUAGE_NOT_DETECTED}`;
-                countSpan.className = 'language-count';
-                countSpan.textContent = `(${notDetectedCount}) `;
-                label.appendChild(countSpan);
-                
-                label.appendChild(document.createTextNode('language not detected'));
-                
-                wrapper.appendChild(label);
                 
                 // Add "only" button
                 const onlyBtn = document.createElement('button');
@@ -2908,6 +3090,22 @@
                     applyLanguageFilter();
                 };
                 wrapper.appendChild(onlyBtn);
+                
+                wrapper.appendChild(checkbox);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `filter-language-${LANGUAGE_NOT_DETECTED}`;
+                label.className = 'language-checkbox-label';
+                
+                const countSpan = document.createElement('span');
+                countSpan.id = `count-language-${LANGUAGE_NOT_DETECTED}`;
+                countSpan.className = 'language-count';
+                countSpan.textContent = `(${notDetectedCount}) `;
+                label.appendChild(countSpan);
+                
+                label.appendChild(document.createTextNode('language not detected'));
+                
+                wrapper.appendChild(label);
                 
                 filtersContainer.appendChild(wrapper);
             }
@@ -2939,21 +3137,6 @@
                         updateUrlParams();
                         applyLanguageFilter();
                     };
-                wrapper.appendChild(checkbox);
-                
-                const label = document.createElement('label');
-                label.htmlFor = `filter-language-${language}`;
-                label.className = 'language-checkbox-label';
-                
-                const countSpan = document.createElement('span');
-                countSpan.id = `count-language-${language}`;
-                countSpan.className = 'language-count';
-                countSpan.textContent = `(${count}) `;
-                label.appendChild(countSpan);
-                
-                label.appendChild(document.createTextNode(language));
-                
-                wrapper.appendChild(label);
                 
                 // Add "only" button
                 const onlyBtn = document.createElement('button');
@@ -2976,6 +3159,22 @@
                         applyLanguageFilter();
                 };
                 wrapper.appendChild(onlyBtn);
+                
+                wrapper.appendChild(checkbox);
+                
+                const label = document.createElement('label');
+                label.htmlFor = `filter-language-${language}`;
+                label.className = 'language-checkbox-label';
+                
+                const countSpan = document.createElement('span');
+                countSpan.id = `count-language-${language}`;
+                countSpan.className = 'language-count';
+                countSpan.textContent = `(${count}) `;
+                label.appendChild(countSpan);
+                
+                label.appendChild(document.createTextNode(language));
+                
+                wrapper.appendChild(label);
                 
                 filtersContainer.appendChild(wrapper);
             });
@@ -3579,21 +3778,6 @@
                         updateUrlParams();
                         applyHealthStatusFilters();
                     };
-                    wrapper.appendChild(checkbox);
-                    
-                    const label = document.createElement('label');
-                    label.htmlFor = `filter-health-status-${status}-${key}`;
-                    label.className = 'health-status-checkbox-label';
-                    
-                    const countSpan = document.createElement('span');
-                    countSpan.id = `count-health-status-${status}-${key}`;
-                    countSpan.className = 'health-status-count';
-                    countSpan.textContent = `(${data.count}) `;
-                    label.appendChild(countSpan);
-                    
-                    label.appendChild(document.createTextNode(`${parseCamelCase(data.name)}: ${parseCamelCase(data.reasonEnum)}`));
-                    
-                    wrapper.appendChild(label);
                     
                     // Add "only" button
                     const onlyBtn = document.createElement('button');
@@ -3616,6 +3800,22 @@
                         applyHealthStatusFilters();
                     };
                     wrapper.appendChild(onlyBtn);
+                    
+                    wrapper.appendChild(checkbox);
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `filter-health-status-${status}-${key}`;
+                    label.className = 'health-status-checkbox-label';
+                    
+                    const countSpan = document.createElement('span');
+                    countSpan.id = `count-health-status-${status}-${key}`;
+                    countSpan.className = 'health-status-count';
+                    countSpan.textContent = `(${data.count}) `;
+                    label.appendChild(countSpan);
+                    
+                    label.appendChild(document.createTextNode(`${parseCamelCase(data.name)}: ${parseCamelCase(data.reasonEnum)}`));
+                    
+                    wrapper.appendChild(label);
                     
                     content.appendChild(wrapper);
                 });
@@ -4091,7 +4291,7 @@
                 footer.id = `condition-filter-count-${conditionName}`;
                 const reasonEnumMap = conditionMap.get(conditionName);
                 const totalOptions = reasonEnumMap.size;
-                footer.textContent = `no filter`;
+                footer.textContent = '';
                 filterGroup.appendChild(footer);
                 
                 // Create collapsible content
@@ -4131,6 +4331,28 @@
                         updateUrlParams();
                         applyConditionFilters();
                     };
+                    
+                    // Add "only" button
+                    const onlyBtn = document.createElement('button');
+                    onlyBtn.className = 'condition-only-btn';
+                    onlyBtn.textContent = 'only';
+                    onlyBtn.title = 'filter to show only this state';
+                    onlyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        // Uncheck all checkboxes in this condition group
+                        const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
+                        allCheckboxes.forEach(cb => {
+                            cb.checked = false;
+                        });
+                        // Check only this checkbox
+                        checkbox.checked = true;
+                        updateConditionFilterCount(conditionName);
+                        updateConditionFilterAllButton(conditionName);
+                        updateUrlParams();
+                        applyConditionFilters();
+                    };
+                    wrapper.appendChild(onlyBtn);
+                    
                     wrapper.appendChild(checkbox);
                     
                     const label = document.createElement('label');
@@ -4170,27 +4392,6 @@
                     label.appendChild(textSpan);
                     
                     wrapper.appendChild(label);
-                    
-                    // Add "only" button
-                    const onlyBtn = document.createElement('button');
-                    onlyBtn.className = 'condition-only-btn';
-                    onlyBtn.textContent = 'only';
-                    onlyBtn.title = 'filter to show only this state';
-                    onlyBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        // Uncheck all checkboxes in this condition group
-                        const allCheckboxes = document.querySelectorAll(`.condition-checkbox[data-condition-name="${conditionName}"]`);
-                        allCheckboxes.forEach(cb => {
-                            cb.checked = false;
-                        });
-                        // Check only this checkbox
-                        checkbox.checked = true;
-                        updateConditionFilterCount(conditionName);
-                        updateConditionFilterAllButton(conditionName);
-                        updateUrlParams();
-                        applyConditionFilters();
-                    };
-                    wrapper.appendChild(onlyBtn);
                     
                     filtersDiv.appendChild(wrapper);
                 });
@@ -4522,8 +4723,8 @@
         }
         
         function updateStatusLine(totalCount, filteredCount, selectedNamespaces, selectedWorkloads) {
-            const statusLine = document.getElementById('status-line');
-            if (!statusLine) return;
+            const statusSection = document.getElementById('status-section');
+            if (!statusSection) return;
             
             const activeFilters = [];
             
@@ -4627,31 +4828,67 @@
                 }
             });
             
-            // Build status text
-            let statusText = '';
+            // Update header text
+            const statusHeaderText = document.getElementById('status-header-text');
+            const statusHeaderClearBtn = document.getElementById('status-header-clear-btn');
+            const statusFiltersList = document.getElementById('status-filters-list');
+            
             if (activeFilters.length === 0) {
-                statusText = `showing all ${totalCount} kubernetes workloads in the cluster (excluding ignored namespaces)`;
+                // No filters - hide the status section
+                if (statusSection) {
+                    statusSection.style.display = 'none';
+                }
             } else {
-                statusText = `showing ${filteredCount}/${totalCount} kubernetes workloads due to the following filters: ${activeFilters.join(', ')}`;
+                // Filters active - show count in header
+                if (statusHeaderText) {
+                    if (filteredCount === 0 && totalCount > 0) {
+                        statusHeaderText.textContent = `No workloads match the applied filters (${totalCount} total in cluster)`;
+                    } else {
+                        statusHeaderText.textContent = `showing ${filteredCount}/${totalCount} workloads in the cluster`;
+                    }
+                }
+                if (statusHeaderClearBtn) {
+                    statusHeaderClearBtn.style.display = 'block';
+                }
+                
+                // Populate filters list
+                if (statusFiltersList) {
+                    statusFiltersList.innerHTML = '';
+                    activeFilters.forEach(filter => {
+                        const li = document.createElement('li');
+                        li.textContent = filter;
+                        statusFiltersList.appendChild(li);
+                    });
+                    // Add message about ignored namespaces
+                    const infoLi = document.createElement('li');
+                    infoLi.style.fontSize = '12px';
+                    infoLi.style.color = '#6b7280';
+                    infoLi.style.fontStyle = 'italic';
+                    infoLi.style.marginTop = '8px';
+                    infoLi.style.paddingTop = '8px';
+                    infoLi.style.borderTop = '1px solid #e5e7eb';
+                    infoLi.textContent = `Total: ${totalCount} kubernetes workloads in the cluster (excluding ignored namespaces)`;
+                    statusFiltersList.appendChild(infoLi);
+                }
+                // Show status section when filters are active
+                if (statusSection) {
+                    statusSection.style.display = 'block';
+                    // Add warning styling if no results match
+                    if (filteredCount === 0 && totalCount > 0) {
+                        statusSection.classList.add('no-results');
+                    } else {
+                        statusSection.classList.remove('no-results');
+                    }
+                }
             }
-            
-            // Clear existing content
-            statusLine.innerHTML = '';
-            
-            // Add status text
-            const textSpan = document.createElement('span');
-            textSpan.textContent = statusText;
-            statusLine.appendChild(textSpan);
-            
-            // Add "Clear All Filters" button if filters are active
-            if (activeFilters.length > 0) {
-                const clearBtn = document.createElement('button');
-                clearBtn.className = 'status-line-clear-btn';
-                clearBtn.textContent = 'Clear All Filters';
-                clearBtn.onclick = () => {
-                    clearAllFilters();
-                };
-                statusLine.appendChild(clearBtn);
+        }
+        
+        function toggleStatusSection() {
+            const content = document.getElementById('status-content');
+            const toggle = document.getElementById('status-toggle');
+            if (content && toggle) {
+                content.classList.toggle('expanded');
+                toggle.classList.toggle('expanded');
             }
         }
         
@@ -4775,7 +5012,88 @@
                     });
                 }
                 
+                // Sort workloads by health status (according to enum order) and then by namespace/kind/name
+                const statusOrder = {
+                    'Error': 0,
+                    'Failure': 1,
+                    'Notice': 2,
+                    'Pending': 3,
+                    'Waiting': 4,
+                    'Unsupported': 5,
+                    'Disabled': 6,
+                    'Success': 7,
+                    'Irrelevant': 8,
+                    'Unknown': 9
+                };
+                
+                filteredData.sort((a, b) => {
+                    // Get status values
+                    const statusA = a && a.workloadOdigosHealthStatus && a.workloadOdigosHealthStatus.status ? a.workloadOdigosHealthStatus.status : 'Unknown';
+                    const statusB = b && b.workloadOdigosHealthStatus && b.workloadOdigosHealthStatus.status ? b.workloadOdigosHealthStatus.status : 'Unknown';
+                    
+                    // Compare by status order
+                    const statusOrderA = statusOrder[statusA] !== undefined ? statusOrder[statusA] : statusOrder['Unknown'];
+                    const statusOrderB = statusOrder[statusB] !== undefined ? statusOrder[statusB] : statusOrder['Unknown'];
+                    
+                    if (statusOrderA !== statusOrderB) {
+                        return statusOrderA - statusOrderB;
+                    }
+                    
+                    // If statuses are equal, sort by namespace/kind/name textually
+                    const namespaceA = (a && a.id && a.id.namespace) || '';
+                    const namespaceB = (b && b.id && b.id.namespace) || '';
+                    const namespaceCompare = namespaceA.localeCompare(namespaceB);
+                    if (namespaceCompare !== 0) {
+                        return namespaceCompare;
+                    }
+                    
+                    const kindA = (a && a.id && a.id.kind) || '';
+                    const kindB = (b && b.id && b.id.kind) || '';
+                    const kindCompare = kindA.localeCompare(kindB);
+                    if (kindCompare !== 0) {
+                        return kindCompare;
+                    }
+                    
+                    const nameA = (a && a.id && a.id.name) || '';
+                    const nameB = (b && b.id && b.id.name) || '';
+                    return nameA.localeCompare(nameB);
+                });
+                
+                let currentNamespace = null;
                 filteredData.forEach((item, idx) => {
+                    const itemNamespace = (item && item.id && item.id.namespace) || '';
+                    
+                    // Add namespace indicator if namespace changed
+                    if (itemNamespace !== currentNamespace && itemNamespace) {
+                        currentNamespace = itemNamespace;
+                        
+                        const namespaceDivider = document.createElement('div');
+                        namespaceDivider.className = 'namespace-divider';
+                        namespaceDivider.style.marginTop = idx === 0 ? '0' : '16px';
+                        namespaceDivider.style.marginBottom = '8px';
+                        namespaceDivider.style.paddingLeft = '4px';
+                        namespaceDivider.style.display = 'flex';
+                        namespaceDivider.style.alignItems = 'center';
+                        namespaceDivider.style.gap = '8px';
+                        namespaceDivider.style.position = 'relative';
+                        
+                        const namespaceLabel = document.createElement('span');
+                        namespaceLabel.style.fontSize = '11px';
+                        namespaceLabel.style.fontWeight = '500';
+                        namespaceLabel.style.color = '#6b7280';
+                        namespaceLabel.textContent = `namespace: ${itemNamespace}`;
+                        
+                        const line = document.createElement('div');
+                        line.style.flex = '1';
+                        line.style.height = '1px';
+                        line.style.backgroundColor = '#e5e7eb';
+                        line.style.marginLeft = '4px';
+                        
+                        namespaceDivider.appendChild(namespaceLabel);
+                        namespaceDivider.appendChild(line);
+                        output.appendChild(namespaceDivider);
+                    }
+                    
                     const wrapper = document.createElement('div');
                     wrapper.className = 'workload-item';
                     wrapper.style.marginBottom = '16px';
@@ -4821,13 +5139,24 @@
                         label += ' ' + summary;
                     }
                     
-                    // Add pods instrumentation summary
+                    // Get pods instrumentation info for conditional styling
+                    let podsInstrumentedInfo = null;
+                    let agentInjectedStatus = null;
                     if (item && item.pods && Array.isArray(item.pods)) {
                         const totalPods = item.pods.length;
                         const instrumentedPods = item.pods.filter(pod => 
                             pod && pod.agentInjected === true
                         ).length;
-                        label += ` (${instrumentedPods}/${totalPods} pods instrumented)`;
+                        podsInstrumentedInfo = {
+                            instrumented: instrumentedPods,
+                            total: totalPods,
+                            text: ` (${instrumentedPods}/${totalPods} pods instrumented)`
+                        };
+                    }
+                    
+                    // Get agentInjected condition status for color determination
+                    if (item && item.conditions && item.conditions.agentInjected && item.conditions.agentInjected.status) {
+                        agentInjectedStatus = item.conditions.agentInjected.status;
                     }
                     
                     // Get status emoji from workloadOdigosHealthStatus
@@ -4871,6 +5200,39 @@
                     labelSpan.className = 'json-key';
                     labelSpan.textContent = label;
                     headerDiv.appendChild(labelSpan);
+                    
+                    // Add pods instrumentation summary with conditional styling
+                    if (podsInstrumentedInfo) {
+                        const podsSpan = document.createElement('span');
+                        podsSpan.textContent = podsInstrumentedInfo.text;
+                        podsSpan.style.fontSize = '11px';
+                        
+                        // Color based on agentInjected condition status (desired state or not)
+                        if (agentInjectedStatus) {
+                            // Desired states: Success, Disabled
+                            if (agentInjectedStatus === 'Success' || agentInjectedStatus === 'Disabled') {
+                                podsSpan.style.color = '#10b981'; // Green
+                            } 
+                            // Not desired states: Error, Failure, Notice, Pending, Waiting, Unsupported
+                            else if (agentInjectedStatus === 'Error' || agentInjectedStatus === 'Failure' || 
+                                     agentInjectedStatus === 'Notice' || agentInjectedStatus === 'Pending' || 
+                                     agentInjectedStatus === 'Waiting' || agentInjectedStatus === 'Unsupported') {
+                                podsSpan.style.color = '#ef4444'; // Red
+                            }
+                            // Irrelevant, Unknown - keep default color (black)
+                        }
+                        // If status not available, keep default color (black)
+                        
+                        headerDiv.appendChild(podsSpan);
+                    }
+                    
+                    // Add health status message under the title if available
+                    if (statusMessage) {
+                        const statusMessageSpan = document.createElement('span');
+                        statusMessageSpan.className = 'workload-health-message';
+                        statusMessageSpan.textContent = statusMessage;
+                        headerDiv.appendChild(statusMessageSpan);
+                    }
                     
                     // Create collapsible content div
                     const contentDiv = document.createElement('div');
@@ -6759,6 +7121,32 @@
                             nameSpan.textContent = podName;
                             podHeader.appendChild(nameSpan);
                             
+                            // Add "need restart" label if startedPostAgentMetaHashChange is false
+                            if (pod.startedPostAgentMetaHashChange === false) {
+                                const restartLabelWrapper = document.createElement('span');
+                                restartLabelWrapper.className = 'emoji-tooltip-wrapper';
+                                restartLabelWrapper.style.marginLeft = '6px';
+                                
+                                const restartLabel = document.createElement('span');
+                                restartLabel.textContent = 'need restart';
+                                restartLabel.style.fontSize = '11px';
+                                restartLabel.style.fontWeight = '500';
+                                restartLabel.style.color = '#d97706';
+                                restartLabel.style.backgroundColor = '#fffbeb';
+                                restartLabel.style.padding = '2px 6px';
+                                restartLabel.style.borderRadius = '4px';
+                                restartLabel.style.border = '1px solid #fde68a';
+                                restartLabel.style.cursor = 'help';
+                                restartLabelWrapper.appendChild(restartLabel);
+                                
+                                const restartTooltip = document.createElement('div');
+                                restartTooltip.className = 'emoji-tooltip';
+                                restartTooltip.textContent = 'This pod was created before recent instrumentation configuration changes. Changes will be applied automatically during rollout, or restart the workload manually to apply them immediately.';
+                                restartLabelWrapper.appendChild(restartTooltip);
+                                
+                                podHeader.appendChild(restartLabelWrapper);
+                            }
+                            
                             const copyBtn = document.createElement('button');
                             copyBtn.className = 'k8s-copy-btn';
                             copyBtn.textContent = 'Copy';
@@ -6776,6 +7164,44 @@
                             const podContent = document.createElement('div');
                             podContent.className = 'children';
                             podContent.style.display = 'none';
+                            
+                            // Add warning banner if startedPostAgentMetaHashChange is false
+                            if (pod.startedPostAgentMetaHashChange === false) {
+                                const warningBanner = document.createElement('div');
+                                warningBanner.style.marginBottom = '15px';
+                                warningBanner.style.padding = '12px 16px';
+                                warningBanner.style.backgroundColor = '#fffbeb';
+                                warningBanner.style.border = '1px solid #fde68a';
+                                warningBanner.style.borderRadius = '4px';
+                                warningBanner.style.display = 'flex';
+                                warningBanner.style.alignItems = 'flex-start';
+                                warningBanner.style.gap = '10px';
+                                
+                                const warningIcon = document.createElement('span');
+                                warningIcon.textContent = '⚠️';
+                                warningIcon.style.fontSize = '18px';
+                                warningIcon.style.lineHeight = '1.4';
+                                warningBanner.appendChild(warningIcon);
+                                
+                                const warningText = document.createElement('div');
+                                warningText.style.flex = '1';
+                                warningText.style.fontSize = '14px';
+                                warningText.style.color = '#92400e';
+                                warningText.style.lineHeight = '1.5';
+                                const warningTitle = document.createElement('div');
+                                warningTitle.textContent = 'Pod needs restart';
+                                warningTitle.style.fontWeight = '600';
+                                warningTitle.style.marginBottom = '4px';
+                                warningText.appendChild(warningTitle);
+                                const warningMessage = document.createElement('div');
+                                warningMessage.textContent = 'This pod was created before recent instrumentation configuration changes. Changes will be applied automatically during rollout, or restart the workload manually to apply them immediately.';
+                                warningMessage.style.fontSize = '13px';
+                                warningMessage.style.color = '#78350f';
+                                warningText.appendChild(warningMessage);
+                                warningBanner.appendChild(warningText);
+                                
+                                podContent.appendChild(warningBanner);
+                            }
                             
                             // Create info section
                             const infoSection = document.createElement('div');
@@ -7674,6 +8100,37 @@
                     
                     output.appendChild(wrapper);
                 });
+                
+                // Check if no workloads found after filtering (only show if there was data to filter)
+                if (filteredData.length === 0 && totalCount > 0) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.style.textAlign = 'center';
+                    noResultsDiv.style.padding = '60px 20px';
+                    noResultsDiv.style.color = '#6b7280';
+                    
+                    const messageDiv = document.createElement('div');
+                    messageDiv.style.fontSize = '16px';
+                    messageDiv.style.marginBottom = '16px';
+                    messageDiv.textContent = 'No workloads match the applied filters.';
+                    noResultsDiv.appendChild(messageDiv);
+                    
+                    const suggestionDiv = document.createElement('div');
+                    suggestionDiv.style.fontSize = '14px';
+                    suggestionDiv.style.marginBottom = '24px';
+                    suggestionDiv.style.color = '#9ca3af';
+                    suggestionDiv.textContent = 'Try adjusting your filters or clear them to see all workloads.';
+                    noResultsDiv.appendChild(suggestionDiv);
+                    
+                    const clearBtn = document.createElement('button');
+                    clearBtn.className = 'btn';
+                    clearBtn.textContent = 'Clear All Filters';
+                    clearBtn.onclick = () => {
+                        clearAllFilters();
+                    };
+                    noResultsDiv.appendChild(clearBtn);
+                    
+                    output.appendChild(noResultsDiv);
+                }
                 
                 // Update status line
                 updateStatusLine(totalCount, filteredData.length, selectedNamespaces, selectedWorkloads);

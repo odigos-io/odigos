@@ -57,6 +57,8 @@ spec:
             allowPrivilegeEscalation: {{ .Values.auth.securityContext.allowPrivilegeEscalation }}
           {{- end }}
           env:
+            - name: JAVA_OPTS
+              value: "{{ .Values.auth.javaOpts }}"
             - name: KEYCLOAK_ADMIN
               valueFrom:
                 secretKeyRef:
@@ -77,6 +79,28 @@ spec:
           ports:
             - containerPort: {{ .Values.auth.port }}
               name: {{ .Values.auth.portName }}
+          {{- if .Values.auth.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.auth.livenessProbe.port }}
+            initialDelaySeconds: {{ .Values.auth.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.auth.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.auth.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.auth.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.auth.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.auth.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: {{ .Values.auth.readinessProbe.port }}
+            initialDelaySeconds: {{ .Values.auth.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.auth.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.auth.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.auth.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.auth.readinessProbe.successThreshold }}
+          {{- end }}
           resources:
             {{- toYaml .Values.auth.resources | nindent 12 }}
       {{- if .Values.auth.persistence.enabled }}

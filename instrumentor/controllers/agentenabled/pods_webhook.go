@@ -336,19 +336,42 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		existingEnvNames = podswebhook.InjectOtlpHttpEndpointEnvVar(existingEnvNames, podContainerSpec)
 	}
 
+	// agent span metrics configuration
 	agentSpanMetricsEnabled := containerConfig.Metrics != nil && containerConfig.Metrics.SpanMetrics != nil
-	if agentSpanMetricsEnabled {
-		setAgentSpanMetricsAsEnvVar := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.InjectAsEnvVar
-		if setAgentSpanMetricsAsEnvVar {
-			// parse span metrics config to json
-			spanMetricsConfigJson, err := json.Marshal(containerConfig.Metrics.SpanMetrics)
-			if err != nil {
-				return false, nil, fmt.Errorf("failed to marshal span metrics config: %w", err)
-			}
-			existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_METRICS_CONFIG", string(spanMetricsConfigJson))
-			otlpHttpMetricsEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)") + "/v1/metrics"
-			podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
+	supportsAgentSpanMetrics := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.Supported
+	if agentSpanMetricsEnabled && supportsAgentSpanMetrics && distroMetadata.ConfigAsEnvVars {
+		// serialize span metrics config to json and inject as env var
+		spanMetricsConfigJson, err := json.Marshal(containerConfig.Metrics.SpanMetrics)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to marshal span metrics config: %w", err)
 		}
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_METRICS_CONFIG", string(spanMetricsConfigJson))
+		otlpHttpMetricsEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)") + "/v1/metrics"
+		podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
+	}
+
+	// URL Templatization configuration
+	urlTemplatizationEnabled := containerConfig.Traces != nil && containerConfig.Traces.UrlTemplatization != nil && len(containerConfig.Traces.UrlTemplatization.Rules) > 0
+	supportsUrlTemplatization := distroMetadata.Traces != nil && distroMetadata.Traces.UrlTemplatization != nil && distroMetadata.Traces.UrlTemplatization.Supported
+	if urlTemplatizationEnabled && supportsUrlTemplatization && distroMetadata.ConfigAsEnvVars {
+		// parse URL templatization config to json using the existing AgentTracesConfig struct
+		urlTemplatizationConfigJson, err := json.Marshal(containerConfig.Traces.UrlTemplatization)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to marshal URL templatization config: %w", err)
+		}
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_URL_TEMPLATIZATION", string(urlTemplatizationConfigJson))
+	}
+
+	// Head Sampling configuration
+	headSamplingEnabled := containerConfig.Traces != nil && containerConfig.Traces.HeadSampling != nil
+	supportsHeadSampling := distroMetadata.Traces != nil && distroMetadata.Traces.HeadSampling != nil && distroMetadata.Traces.HeadSampling.Supported
+	if headSamplingEnabled && supportsHeadSampling && distroMetadata.ConfigAsEnvVars {
+		// serialize head sampling config to json and inject as env var
+		headSamplingConfigJson, err := json.Marshal(containerConfig.Traces.HeadSampling)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to marshal head sampling config: %w", err)
+		}
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_HEAD_SAMPLING", string(headSamplingConfigJson))
 	}
 
 	volumeMounted := false

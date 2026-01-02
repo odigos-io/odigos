@@ -12,6 +12,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - patch
       {{- end }}
@@ -53,6 +54,17 @@ rules:
       {{- end }}
 {{- end }}
   - apiGroups:
+      - argoproj.io
+    resources:
+      - rollouts
+    verbs:
+      - get
+      - list
+      {{- if include "odigos.ui.requiresWritePermissions" . }}
+      - update
+      - patch
+      {{- end }}
+  - apiGroups:
       - apps
     resources:
       - replicasets
@@ -93,6 +105,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - patch
       - create

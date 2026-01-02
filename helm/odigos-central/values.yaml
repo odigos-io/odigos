@@ -75,11 +75,24 @@ redis:
   image: redis:7.4.2
   port: 6379
   portName: redis
+  # Set to ~85% of memory limit to leave headroom for Redis overhead
+  # Current: 220mb = 85% of 256Mi limit. Adjust proportionally if changing memory limits.
+  maxmemory: 220mb
+  # Eviction policy when maxmemory is reached
+  # allkeys-lru: evict least recently used keys (good default for mixed use)
+  maxmemoryPolicy: allkeys-lru
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
 
 auth:
   # Built-in Keycloak configuration
   enabled: true
-  image: quay.io/keycloak/keycloak:24.0.3
+  image: registry.odigos.io/keycloak:24.0.3
   adminUsername: admin
   port: 8080
   portName: http
@@ -108,13 +121,40 @@ auth:
     # -- Use an existing PVC by name instead of creating one
     # If set, the chart will not create a PVC and will mount this claim
     existingClaim: ''
+
   resources:
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 384Mi
     limits:
       cpu: 500m
-      memory: 1Gi
+      memory: 512Mi
+
+  # Limits Keycloak's JVM memory to a small, efficient range suitable for medium traffic
+  javaOpts: "-Xms128m -Xmx256m"
+
+  # Liveness probe settings
+  # Keycloak exposes /health/live for liveness checks
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 120
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    port: 8080
+
+  # Readiness probe settings
+  # Keycloak exposes /health/ready for readiness checks
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    port: 8080
+
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []

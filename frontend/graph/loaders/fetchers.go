@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -56,7 +57,7 @@ func timedAPICall[T any](logger logr.Logger, operation string, apiCall func() (T
 // function to get just the instrumentation configs that match the filter.
 // e.g. load only sources which are marked for instrumentation after the instrumentor reconciles it.
 // this is cheaper and faster query than to load all the sources and resolve each one.
-func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
+func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, k8sCacheClient client.Client) (map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig, error) {
 
 	// diffrentiate between a single source query and a namespace / cluster wide query.
 	if filters.SingleWorkload != nil {
@@ -65,7 +66,15 @@ func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filter
 			logger,
 			fmt.Sprintf("Get InstrumentationConfig %s/%s", filters.NamespaceString, instrumentationConfigName),
 			func() (*odigosv1.InstrumentationConfig, error) {
-				return kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).Get(ctx, instrumentationConfigName, metav1.GetOptions{})
+				var instrumentationConfig odigosv1.InstrumentationConfig
+				err := k8sCacheClient.Get(ctx, client.ObjectKey{
+					Namespace: filters.NamespaceString,
+					Name:      instrumentationConfigName,
+				}, &instrumentationConfig)
+				if err != nil {
+					return nil, err
+				}
+				return &instrumentationConfig, nil
 			},
 		)
 		if err != nil {
@@ -88,7 +97,12 @@ func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filter
 			logger,
 			formatOperationMessage("List InstrumentationConfigs", filters.NamespaceString),
 			func() (*odigosv1.InstrumentationConfigList, error) {
-				return kube.DefaultClient.OdigosClient.InstrumentationConfigs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+				var instrumentationConfigs odigosv1.InstrumentationConfigList
+				err := k8sCacheClient.List(ctx, &instrumentationConfigs, client.InNamespace(filters.NamespaceString))
+				if err != nil {
+					return nil, err
+				}
+				return &instrumentationConfigs, nil
 			},
 		)
 		if err != nil {
@@ -385,6 +399,49 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}
 			return workloadManifests, nil
 
+		case k8sconsts.WorkloadKindArgoRollout:
+			if !kube.IsArgoRolloutAvailable {
+				return nil, nil
+			}
+
+			gvr := schema.GroupVersionResource{
+				Group:    "argoproj.io",
+				Version:  "v1alpha1",
+				Resource: "rollouts",
+			}
+
+			rollout, err := timedAPICall(
+				logger,
+				fmt.Sprintf("Get Argo Rollout %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
+				func() (*argorolloutsv1alpha1.Rollout, error) {
+					unstructuredRollout, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
+					if err != nil {
+						return nil, err
+					}
+					var rollout argorolloutsv1alpha1.Rollout
+					err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredRollout.Object, &rollout)
+					return &rollout, err
+				},
+			)
+			if err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, nil
+				}
+				return nil, err
+			}
+			workloadHealthStatus := status.CalculateRolloutHealthStatus(rollout.Status)
+			workloadManifests[model.K8sWorkloadID{
+				Namespace: rollout.Namespace,
+				Kind:      model.K8sResourceKindRollout,
+				Name:      rollout.Name,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    rollout.Status.AvailableReplicas,
+				Selector:             rollout.Spec.Selector,
+				PodTemplateSpec:      &rollout.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
+			}
+			return workloadManifests, nil
+
 		default:
 			return nil, fmt.Errorf("invalid workload kind: %s", filters.SingleWorkload.WorkloadKind)
 		}
@@ -397,6 +454,7 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		daemons           = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 		crons             = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 		deploymentconfigs = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+		rollouts          = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 	)
 
 	g.Go(func() error {
@@ -569,6 +627,59 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		return nil
 	})
 
+	g.Go(func() error {
+		if !kube.IsArgoRolloutAvailable {
+			return nil
+		}
+
+		gvr := schema.GroupVersionResource{
+			Group:    "argoproj.io",
+			Version:  "v1alpha1",
+			Resource: "rollouts",
+		}
+
+		rolloutList, err := timedAPICall(
+			logger,
+			formatOperationMessage("List Argo Rollouts", filters.NamespaceString),
+			func() ([]argorolloutsv1alpha1.Rollout, error) {
+				unstructuredList, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+				if err != nil {
+					return nil, err
+				}
+
+				typedRolloutsList := make([]argorolloutsv1alpha1.Rollout, 0, len(unstructuredList.Items))
+				for _, unstructuredRollout := range unstructuredList.Items {
+					var rollout argorolloutsv1alpha1.Rollout
+					if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredRollout.Object, &rollout); err != nil {
+						logger.Error(err, "failed to convert Rollout", "name", unstructuredRollout.GetName())
+						continue
+					}
+					typedRolloutsList = append(typedRolloutsList, rollout)
+				}
+				return typedRolloutsList, nil
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		for _, rollout := range rolloutList {
+			workloadHealthStatus := status.CalculateRolloutHealthStatus(rollout.Status)
+
+			rollouts[model.K8sWorkloadID{
+				Namespace: rollout.Namespace,
+				Kind:      model.K8sResourceKindRollout,
+				Name:      rollout.Name,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas:    rollout.Status.AvailableReplicas,
+				Selector:             rollout.Spec.Selector,
+				PodTemplateSpec:      &rollout.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
+			}
+		}
+		return nil
+	})
+
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
@@ -599,6 +710,12 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range deploymentconfigs {
+		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+			continue
+		}
+		workloadManifests[id] = manifest
+	}
+	for id, manifest := range rollouts {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}

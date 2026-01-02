@@ -33,7 +33,7 @@ const (
 	ActionTransformedToProcessorType = "TransformedToProcessor"
 )
 
-// +kubebuilder:validation:Enum=ProcessorCreated;FailedToCreateProcessor;FailedToTransformToProcessor
+// +kubebuilder:validation:Enum=ProcessorCreated;FailedToCreateProcessor;FailedToTransformToProcessor;ProcessorNotRequired
 type ActionTransformedToProcessorReason string
 
 // Reasons for action condition types
@@ -44,6 +44,8 @@ const (
 	ActionTransformedToProcessorReasonFailedToCreateProcessor ActionTransformedToProcessorReason = "FailedToCreateProcessor"
 	// FailedToTransformToProcessorReason is added to the action when the transformation to processor object fails.
 	ActionTransformedToProcessorReasonFailedToTransformToProcessorReason ActionTransformedToProcessorReason = "FailedToTransformToProcessor"
+	// ActionTransformedToProcessorReasonProcessorNotRequired is added to the action when the action should not need to be transformed to a processor CR. e.g. when the action is a URL templatization action.
+	ActionTransformedToProcessorReasonProcessorNotRequired ActionTransformedToProcessorReason = "ProcessorNotRequired"
 )
 
 type ActionSpec struct {

@@ -32,9 +32,22 @@ spec:
         - name: redis
           image: {{ .Values.redis.image | quote }}
           command: ["redis-server"]
-          args: ["--port", "{{ .Values.redis.port }}"]
+          args:
+            - "--port"
+            - "{{ .Values.redis.port }}"
+            {{- if .Values.redis.maxmemory }}
+            - "--maxmemory"
+            - "{{ .Values.redis.maxmemory }}"
+            {{- end }}
+            {{- if .Values.redis.maxmemoryPolicy }}
+            - "--maxmemory-policy"
+            - "{{ .Values.redis.maxmemoryPolicy }}"
+            {{- end }}
           ports:
             - containerPort: {{ .Values.redis.port }}
               name: {{ .Values.redis.portName }}
+          {{- if .Values.redis.resources }}
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          {{- end }}
 {{- end }}
-             

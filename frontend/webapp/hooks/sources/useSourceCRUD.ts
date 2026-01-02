@@ -5,26 +5,17 @@ import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { SourceConditions, SourceInstrumentInput } from '@/types';
-import { addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
-import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCE_LIBRARIES, GET_SOURCES, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
-import {
-  type NamespaceSelectionFormData,
-  type SourceSelectionFormData,
-  useDataStreamStore,
-  useEntityStore,
-  useInstrumentStore,
-  useNotificationStore,
-  usePendingStore,
-  useSetupStore,
-} from '@odigos/ui-kit/store';
+import { addAgentInjectionStatusToSources, addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCE_LIBRARIES, GET_SOURCES, GET_WORKLOADS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, Workload } from '@odigos/ui-kit/types';
+import { type NamespaceSelectionFormData, type SourceSelectionFormData, useDataStreamStore, useEntityStore, useInstrumentStore, useNotificationStore, useSetupStore } from '@odigos/ui-kit/store';
 
 interface UseSourceCrud {
   sources: Source[];
   sourcesLoading: boolean;
   fetchSources: () => Promise<void>;
   fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<Source | undefined>;
-  fetchSourceLibraries: (req: { variables: WorkloadId }) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
+  fetchSourceLibraries: (id: WorkloadId) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
@@ -34,7 +25,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { persistNamespaces } = useNamespace();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
-  const { addPendingItems, removePendingItems } = usePendingStore();
   const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
   const { sourcesLoading, setEntitiesLoading, sources, setEntities, addEntities, removeEntities } = useEntityStore();
   const { setFetchedAllNamespaces, setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
@@ -49,12 +39,15 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [querySourceLibraries] = useLazyQuery<{ instrumentationInstanceComponents: InstrumentationInstanceComponent[] }, WorkloadId>(GET_SOURCE_LIBRARIES, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
   });
+  const [queryWorkloads] = useLazyQuery<{ workloads: Workload[] }, { filter?: WorkloadId }>(GET_WORKLOADS);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
       setInstrumentAwait(false);
       setInstrumentCount('sourcesToCreate', 0);
       setInstrumentCount('sourcesCreated', 0);
+      setInstrumentCount('sourcesToDelete', 0);
+      setInstrumentCount('sourcesDeleted', 0);
       notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message);
     },
   });
@@ -62,15 +55,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [mutateUpdate] = useMutation<{ updateK8sActualSource: boolean }, { sourceId: WorkloadId; patchSourceRequest: SourceFormData }>(UPDATE_K8S_ACTUAL_SOURCE, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message),
   });
-
-  const shouldFetchSource = (allowFetchDuringLoadTrue?: boolean) => {
-    // We should not fetch if we are already fetching.
-    const { sourcesLoading } = useEntityStore.getState();
-    // We should not fetch while sources are being instrumented.
-    const { isAwaitingInstrumentation } = useInstrumentStore.getState();
-
-    return !isAwaitingInstrumentation && (!sourcesLoading || (sourcesLoading && allowFetchDuringLoadTrue));
-  };
 
   const handleInstrumentationCount = (toAddCount: number, toDeleteCount: number) => {
     const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
@@ -98,8 +82,25 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
   };
 
+  const fetchAllAgentInjectionStatuses = async (allSources: Source[]) => {
+    const reqPayload = allSources.length === 1 ? { variables: { filter: { namespace: allSources[0].namespace, kind: allSources[0].kind, name: allSources[0].name } } } : undefined;
+
+    const { data } = await queryWorkloads(reqPayload);
+    const { workloads } = data || {};
+
+    if (workloads) {
+      const tempSources: Source[] = [];
+
+      for (const item of workloads) {
+        const updatedSource = addAgentInjectionStatusToSources(item, allSources);
+        if (updatedSource) tempSources.push(updatedSource);
+      }
+
+      addEntities(EntityTypes.Source, tempSources);
+    }
+  };
+
   const fetchSources: UseSourceCrud['fetchSources'] = async () => {
-    if (!shouldFetchSource()) return;
     setEntitiesLoading(EntityTypes.Source, true);
 
     const { error, data } = await queryAll();
@@ -110,13 +111,14 @@ export const useSourceCRUD = (): UseSourceCrud => {
     } else if (fetchedSources) {
       setEntities(EntityTypes.Source, fetchedSources);
       setEntitiesLoading(EntityTypes.Source, false);
-      if (fetchedSources.length) fetchAllConditions(fetchedSources);
+      if (fetchedSources.length) {
+        fetchAllAgentInjectionStatuses(fetchedSources);
+        fetchAllConditions(fetchedSources);
+      }
     }
   };
 
   const fetchSourceById: UseSourceCrud['fetchSourceById'] = async (id, bypassPaginationLoader = false): Promise<Source | undefined> => {
-    if (!shouldFetchSource(bypassPaginationLoader)) return;
-
     const { error, data } = await queryById({ variables: { sourceId: id } });
 
     if (error) {
@@ -124,6 +126,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     } else if (data?.computePlatform?.source) {
       const { source } = data.computePlatform;
       addEntities(EntityTypes.Source, [source]);
+      fetchAllAgentInjectionStatuses([source]);
       return source;
     }
   };
@@ -163,12 +166,9 @@ export const useSourceCRUD = (): UseSourceCrud => {
       notifyUser(StatusType.Warning, DISPLAY_TITLES.READONLY, FORM_ALERTS.READONLY_WARNING, undefined, true);
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Updating source...', undefined, true);
-      addPendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
 
-      const { errors } = await mutateUpdate({ variables: { sourceId, patchSourceRequest: { ...payload, currentStreamName: selectedStreamName } } });
-
-      if (!errors?.length) notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${sourceId.name}" source`, sourceId);
-      removePendingItems([{ entityType: EntityTypes.Source, entityId: sourceId }]);
+      const { data } = await mutateUpdate({ variables: { sourceId, patchSourceRequest: { ...payload, currentStreamName: selectedStreamName } } });
+      if (data?.updateK8sActualSource) notifyUser(StatusType.Success, Crud.Update, `Successfully updated "${sourceId.name}" source`, sourceId);
 
       // !! no "fetch"
       // !! we should wait for SSE to handle that
@@ -176,7 +176,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
   };
 
   useEffect(() => {
-    if (!sources.length && !sourcesLoading) fetchSources();
+    if (!sources.length && !useEntityStore.getState().sourcesLoading) fetchSources();
   }, []);
 
   return {
@@ -184,7 +184,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     sourcesLoading,
     fetchSources,
     fetchSourceById,
-    fetchSourceLibraries: querySourceLibraries,
+    fetchSourceLibraries: (payload: WorkloadId) => querySourceLibraries({ variables: payload }),
     persistSources,
     updateSource,
   };

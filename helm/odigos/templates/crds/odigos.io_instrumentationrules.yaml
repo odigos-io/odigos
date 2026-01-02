@@ -124,6 +124,23 @@ spec:
                 description: A boolean field allowing to temporarily disable the rule,
                   but keep it around for future use
                 type: boolean
+              headSamplingFallbackFraction:
+                description: |-
+                  Configure general fraction of traces to record if none of the rules evaluate to true.
+                  this can help in reducing very noisy and heavy traffic services.
+                  note that traces will be dropped regardless of thier attributes/errors/importance.
+                properties:
+                  fractionToKeep:
+                    default: 1
+                    description: |-
+                      The fraction of traces to keep if none of the head sampling rules evaluate to true.
+                      should be in range [0, 1]
+                      0 means no traces will be recorded (unless they matched a rule to keep)
+                      1 (default) means all traces will be recorded
+                    maximum: 1
+                    minimum: 0
+                    type: number
+                type: object
               headersCollection:
                 description: Allows to configure the collection of http headers for
                   different types of payloads.

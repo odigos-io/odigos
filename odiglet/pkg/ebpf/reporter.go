@@ -6,45 +6,19 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentation"
-	"github.com/odigos-io/odigos/instrumentation/detector"
 	instance "github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type K8sProcessDetails struct {
-	pod           *corev1.Pod
-	containerName string
-	distroName    string
-	pw            *k8sconsts.PodWorkload
-	procEvent     detector.ProcessEvent
-}
-
-func (kd K8sProcessDetails) String() string {
-	return fmt.Sprintf("Pod: %s.%s, Container: %s, Workload: %s",
-		kd.pod.Name, kd.pod.Namespace,
-		kd.containerName,
-		workload.CalculateWorkloadRuntimeObjectName(kd.pw.Name, kd.pw.Kind),
-	)
-}
-
-var _ instrumentation.ProcessDetails = K8sProcessDetails{}
-
 type k8sReporter struct {
 	client client.Client
 }
 
-type K8sConfigGroup struct {
-	Pw   k8sconsts.PodWorkload
-	Lang common.ProgrammingLanguage
-}
-
-var _ instrumentation.Reporter[K8sProcessDetails] = &k8sReporter{}
+var _ instrumentation.Reporter[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] = &k8sReporter{}
 
 type errRequiredEnvVarNotFound struct {
 	envVarName string
@@ -78,7 +52,7 @@ const (
 	InstrumentationUnhealthy InstrumentationHealth = false
 )
 
-func (r *k8sReporter) OnInit(ctx context.Context, pid int, err error, e K8sProcessDetails) error {
+func (r *k8sReporter) OnInit(ctx context.Context, pid int, err error, e *K8sProcessDetails) error {
 	if err == nil {
 		// currently we don't report on successful initialization
 		return nil
@@ -87,16 +61,16 @@ func (r *k8sReporter) OnInit(ctx context.Context, pid int, err error, e K8sProce
 	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToInitialize, err.Error(), instrumentation.Status{})
 }
 
-func (r *k8sReporter) OnLoad(ctx context.Context, pid int, err error, e K8sProcessDetails, status instrumentation.Status) error {
+func (r *k8sReporter) OnLoad(ctx context.Context, pid int, err error, e *K8sProcessDetails, status instrumentation.Status) error {
 	if err != nil {
 		return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToLoad, err.Error(), status)
 	}
 
-	msg := fmt.Sprintf("Successfully loaded eBPF probes to pod: %s container: %s", e.pod.Name, e.containerName)
+	msg := fmt.Sprintf("Successfully loaded eBPF probes to pod: %s container: %s", e.Pod.Name, e.ContainerName)
 	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationHealthy, LoadedSuccessfully, msg, status)
 }
 
-func (r *k8sReporter) OnRun(ctx context.Context, pid int, err error, e K8sProcessDetails) error {
+func (r *k8sReporter) OnRun(ctx context.Context, pid int, err error, e *K8sProcessDetails) error {
 	if err == nil {
 		// finished running successfully
 		return nil
@@ -105,20 +79,20 @@ func (r *k8sReporter) OnRun(ctx context.Context, pid int, err error, e K8sProces
 	return r.updateInstrumentationInstanceStatus(ctx, e, pid, InstrumentationUnhealthy, FailedToRun, err.Error(), instrumentation.Status{})
 }
 
-func (r *k8sReporter) OnExit(ctx context.Context, pid int, e K8sProcessDetails) error {
+func (r *k8sReporter) OnExit(ctx context.Context, pid int, e *K8sProcessDetails) error {
 	if err := r.client.Delete(ctx, &odigosv1.InstrumentationInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.InstrumentationInstanceName(e.pod.Name, pid),
-			Namespace: e.pod.Namespace,
+			Name:      instance.InstrumentationInstanceName(e.Pod.Name, pid),
+			Namespace: e.Pod.Namespace,
 		},
 	}); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("error deleting instrumentation instance for pod %s pid %d: %w", e.pod.Name, pid, err)
+		return fmt.Errorf("error deleting instrumentation instance for pod %s pid %d: %w", e.Pod.Name, pid, err)
 	}
 	return nil
 }
 
-func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, ke K8sProcessDetails, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string, status instrumentation.Status) error {
-	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(ke.pw.Name, ke.pw.Kind)
+func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, ke *K8sProcessDetails, pid int, health InstrumentationHealth, reason InstrumentationStatusReason, msg string, status instrumentation.Status) error {
+	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(ke.Pw.Name, ke.Pw.Kind)
 	healthy := bool(health)
 	components := make([]odigosv1.InstrumentationLibraryStatus, 0, len(status.Components))
 	for name, componentErr := range status.Components {
@@ -134,7 +108,7 @@ func (r *k8sReporter) updateInstrumentationInstanceStatus(ctx context.Context, k
 		}
 		components = append(components, componentStatus)
 	}
-	return instance.UpdateInstrumentationInstanceStatus(ctx, ke.pod, ke.containerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
+	return instance.UpdateInstrumentationInstanceStatus(ctx, ke.Pod, ke.ContainerName, r.client, instrumentedAppName, pid, r.client.Scheme(),
 		instance.WithHealthy(&healthy, string(reason), &msg),
 		instance.WithComponents(components),
 	)

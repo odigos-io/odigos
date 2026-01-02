@@ -41,8 +41,6 @@ export const GET_GATEWAY_PODS = gql`
     gatewayPods {
       namespace
       name
-      ready
-      started
       status
       restartsCount
       nodeName
@@ -84,8 +82,6 @@ export const GET_NODE_COLLECTOR_PODS = gql`
     odigletPods {
       namespace
       name
-      ready
-      started
       status
       restartsCount
       nodeName
@@ -108,6 +104,7 @@ export const GET_COLLECTOR_POD_INFO = gql`
         status
         stateReason
         ready
+        started
         restarts
         startedAt
         resources {

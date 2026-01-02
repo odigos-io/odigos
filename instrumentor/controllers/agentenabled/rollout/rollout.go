@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/distros"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -37,7 +39,7 @@ const requeueWaitingForWorkloadRollout = 10 * time.Second
 // and a corresponding condition is set.
 //
 // Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
-func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration) (bool, ctrl.Result, error) {
+func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration, distroProvider *distros.Provider) (bool, ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	automaticRolloutDisabled := conf.Rollout != nil && conf.Rollout.AutomaticRolloutDisabled != nil && *conf.Rollout.AutomaticRolloutDisabled
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
@@ -91,6 +93,32 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		rollbackDisabled = *conf.RollbackDisabled
 	}
 
+	// check if at least one of the distributions used by this workload requires a rollout
+	hasDistributionThatRequiresRollout := false
+	for _, containerConfig := range ic.Spec.Containers {
+		distro := distroProvider.GetDistroByName(containerConfig.OtelDistroName)
+		if distro == nil {
+			continue
+		}
+		if distro.RuntimeAgent != nil && !distro.RuntimeAgent.NoRestartRequired {
+			hasDistributionThatRequiresRollout = true
+		}
+	}
+
+	if !hasDistributionThatRequiresRollout {
+		// all distributions used by this workload do not require a restart
+		// thus, no rollout is needed
+		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+			// currently we interpret False as an error state, so we use True here to indicate a healthy state
+			// it might be confusing since rollout is not actually done, but this is the closest match given the k8s condition semantics.
+			Status:  metav1.ConditionTrue,
+			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonNotRequired),
+			Message: "The selected instrumentation distributions do not require application restart",
+		})
+		return statusChanged, ctrl.Result{}, nil
+	}
+
 	rollbackGraceTime, _ := time.ParseDuration(consts.DefaultAutoRollbackGraceTime)
 	if conf.RollbackGraceTime != "" {
 		rollbackGraceTime, err = time.ParseDuration(conf.RollbackGraceTime)
@@ -124,13 +152,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
-		// Check for backoff both during rollout and after rollout completes (if within stability window)
-		// This handles cases where rollout is "done" but pods are still failing
 		rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
-		withinStabilityWindow := ic.Status.InstrumentationTime != nil && time.Since(ic.Status.InstrumentationTime.Time) < rollbackStabilityWindow
-		shouldCheckBackoff := (!rolloutDone || (rolloutDone && withinStabilityWindow)) && !rollbackDisabled
-
-		if shouldCheckBackoff {
+		if !rolloutDone && !rollbackDisabled {
 			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check pod backoff status")
@@ -243,6 +266,11 @@ func rolloutRestartWorkload(ctx context.Context, workload client.Object, c clien
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 	case *openshiftappsv1.DeploymentConfig:
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
+	case *argorolloutsv1alpha1.Rollout:
+		// Rollouts use a different field (spec.restartAt) for restarting, so we need to patch it differently
+		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
+		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, ts.Format(time.RFC3339)))
+		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, rolloutPatch))
 	default:
 		return errors.New("unknown kind")
 	}
@@ -312,6 +340,10 @@ func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
 		// DeploymentConfig selector is map[string]string, convert to *metav1.LabelSelector
 		selector = &metav1.LabelSelector{
 			MatchLabels: o.Spec.Selector,
+		}
+	case *argorolloutsv1alpha1.Rollout:
+		selector = &metav1.LabelSelector{
+			MatchLabels: o.Spec.Selector.MatchLabels,
 		}
 	default:
 		return nil, fmt.Errorf("crashLoopBackOffDuration: unsupported workload kind %T", obj)
@@ -401,7 +433,7 @@ func podBackOffDuration(ctx context.Context, c client.Client, obj client.Object)
 func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Object) (bool, error) {
 	sel, err := instrumentedPodsSelector(obj)
 	if err != nil {
-		return false, fmt.Errorf("podBackOffDuration: invalid selector: %w", err)
+		return false, fmt.Errorf("workloadHasOdigosAgents: invalid selector: %w", err)
 	}
 
 	var pods corev1.PodList

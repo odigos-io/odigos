@@ -41,9 +41,15 @@ func (j *HyperDX) ModifyConfig(dest ExporterConfigurer, cfg *Config) ([]string, 
 
 	if isLoggingEnabled(dest) {
 		pipeName := "logs/" + uniqueUri
-		cfg.Service.Pipelines[pipeName] = Pipeline{
-			Exporters: []string{exporterName},
+		pipeline := Pipeline{Exporters: []string{exporterName}}
+
+		if val, ok := dest.GetConfig()[hyperdxLogNormalizer]; ok && getBooleanConfig(val, "true") {
+			processorName := "transform/hyperdx-log-normalizer-" + dest.GetID()
+			cfg.Processors[processorName] = HyperdxLogNormalizerProcessor
+			pipeline.Processors = []string{processorName}
 		}
+
+		cfg.Service.Pipelines[pipeName] = pipeline
 		pipelineNames = append(pipelineNames, pipeName)
 	}
 

@@ -34,8 +34,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	_ "net/http/pprof"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
@@ -90,6 +93,9 @@ func main() {
 	zapLogger = bridge.AttachToZapLogger(zapLogger)
 	logger := zapr.NewLogger(zapLogger)
 	ctrl.SetLogger(logger)
+
+	ctx := ctrl.SetupSignalHandler()
+	go common.StartPprofServer(ctx, setupLog, int(k8sconsts.DefaultPprofEndpointPort))
 
 	odigosNs := env.GetCurrentNamespace()
 	tier := env.GetOdigosTierFromEnv()
@@ -229,7 +235,7 @@ func main() {
 	}})
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

@@ -200,6 +200,7 @@ type ContainerOverview struct {
 	Status      ContainerLifecycleStatus `json:"status"`
 	StateReason *string                  `json:"stateReason,omitempty"`
 	Ready       bool                     `json:"ready"`
+	Started     bool                     `json:"started"`
 	Restarts    int                      `json:"restarts"`
 	StartedAt   *string                  `json:"startedAt,omitempty"`
 	Resources   *Resources               `json:"resources,omitempty"`
@@ -353,10 +354,14 @@ type GatewayDeploymentInfo struct {
 }
 
 type GetConfigResponse struct {
-	Readonly           bool               `json:"readonly"`
-	Tier               Tier               `json:"tier"`
-	InstallationMethod string             `json:"installationMethod"`
-	InstallationStatus InstallationStatus `json:"installationStatus"`
+	Readonly              bool                `json:"readonly"`
+	PlatformType          ComputePlatformType `json:"platformType"`
+	Tier                  Tier                `json:"tier"`
+	OdigosVersion         string              `json:"odigosVersion"`
+	InstallationMethod    string              `json:"installationMethod"`
+	InstallationStatus    InstallationStatus  `json:"installationStatus"`
+	ClusterName           *string             `json:"clusterName,omitempty"`
+	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
 }
 
 type GetDestinationCategories struct {
@@ -525,15 +530,17 @@ type K8sActualSource struct {
 }
 
 type K8sAnnotationAttribute struct {
-	AnnotationKey string             `json:"annotationKey"`
-	AttributeKey  string             `json:"attributeKey"`
-	From          *K8sAttributesFrom `json:"from,omitempty"`
+	AnnotationKey string              `json:"annotationKey"`
+	AttributeKey  string              `json:"attributeKey"`
+	From          *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources   []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sAnnotationAttributeInput struct {
-	AnnotationKey string             `json:"annotationKey"`
-	AttributeKey  string             `json:"attributeKey"`
-	From          *K8sAttributesFrom `json:"from,omitempty"`
+	AnnotationKey string              `json:"annotationKey"`
+	AttributeKey  string              `json:"attributeKey"`
+	From          *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources   []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sDesiredNamespaceInput struct {
@@ -546,15 +553,17 @@ type K8sDesiredSourceInput struct {
 }
 
 type K8sLabelAttribute struct {
-	LabelKey     string             `json:"labelKey"`
-	AttributeKey string             `json:"attributeKey"`
-	From         *K8sAttributesFrom `json:"from,omitempty"`
+	LabelKey     string              `json:"labelKey"`
+	AttributeKey string              `json:"attributeKey"`
+	From         *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources  []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sLabelAttributeInput struct {
-	LabelKey     string             `json:"labelKey"`
-	AttributeKey string             `json:"attributeKey"`
-	From         *K8sAttributesFrom `json:"from,omitempty"`
+	LabelKey     string              `json:"labelKey"`
+	AttributeKey string              `json:"attributeKey"`
+	From         *K8sAttributesFrom  `json:"from,omitempty"`
+	FromSources  []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
 type K8sNamespaceID struct {
@@ -650,14 +659,15 @@ type K8sWorkloadMarkedForInstrumentation struct {
 }
 
 type K8sWorkloadPod struct {
-	PodName                       string                     `json:"podName"`
-	NodeName                      string                     `json:"nodeName"`
-	StartTime                     string                     `json:"startTime"`
-	AgentInjected                 bool                       `json:"agentInjected"`
-	AgentInjectedStatus           *DesiredConditionStatus    `json:"agentInjectedStatus"`
-	RunningLatestWorkloadRevision *string                    `json:"runningLatestWorkloadRevision,omitempty"`
-	PodHealthStatus               *DesiredConditionStatus    `json:"podHealthStatus"`
-	Containers                    []*K8sWorkloadPodContainer `json:"containers"`
+	PodName                        string                     `json:"podName"`
+	NodeName                       string                     `json:"nodeName"`
+	StartTime                      string                     `json:"startTime"`
+	AgentInjected                  bool                       `json:"agentInjected"`
+	StartedPostAgentMetaHashChange *bool                      `json:"startedPostAgentMetaHashChange,omitempty"`
+	AgentInjectedStatus            *DesiredConditionStatus    `json:"agentInjectedStatus"`
+	RunningLatestWorkloadRevision  *string                    `json:"runningLatestWorkloadRevision,omitempty"`
+	PodHealthStatus                *DesiredConditionStatus    `json:"podHealthStatus"`
+	Containers                     []*K8sWorkloadPodContainer `json:"containers"`
 }
 
 type K8sWorkloadPodContainer struct {
@@ -874,8 +884,6 @@ type PodDetails struct {
 type PodInfo struct {
 	Namespace         string               `json:"namespace"`
 	Name              string               `json:"name"`
-	Ready             bool                 `json:"ready"`
-	Started           bool                 `json:"started"`
 	Status            string               `json:"status"`
 	RestartsCount     int                  `json:"restartsCount"`
 	NodeName          string               `json:"nodeName"`
@@ -1480,16 +1488,18 @@ type K8sAttributesFrom string
 const (
 	K8sAttributesFromPod       K8sAttributesFrom = "pod"
 	K8sAttributesFromNamespace K8sAttributesFrom = "namespace"
+	K8sAttributesFromNode      K8sAttributesFrom = "node"
 )
 
 var AllK8sAttributesFrom = []K8sAttributesFrom{
 	K8sAttributesFromPod,
 	K8sAttributesFromNamespace,
+	K8sAttributesFromNode,
 }
 
 func (e K8sAttributesFrom) IsValid() bool {
 	switch e {
-	case K8sAttributesFromPod, K8sAttributesFromNamespace:
+	case K8sAttributesFromPod, K8sAttributesFromNamespace, K8sAttributesFromNode:
 		return true
 	}
 	return false
@@ -1569,6 +1579,7 @@ const (
 	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
 	K8sResourceKindPod              K8sResourceKind = "Pod"
 	K8sResourceKindDeploymentConfig K8sResourceKind = "DeploymentConfig"
+	K8sResourceKindRollout          K8sResourceKind = "Rollout"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
@@ -1579,11 +1590,12 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindConfigMap,
 	K8sResourceKindPod,
 	K8sResourceKindDeploymentConfig,
+	K8sResourceKindRollout,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindDeploymentConfig:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout:
 		return true
 	}
 	return false

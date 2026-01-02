@@ -95,8 +95,6 @@ type CollectorPodMetrics {
 type PodInfo {
   namespace: String!
   name: String!
-  ready: Boolean!
-  started: Boolean!
   # Container status reason when pod is in waiting or terminated state (e.g., "ImagePullBackOff", "CrashLoopBackOff", "Completed"). "Running" if all containers are running normally.
   status: String!
   # Total number of container restarts across all containers in the pod

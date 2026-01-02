@@ -98,7 +98,7 @@ func enableClusterSource(cmd *cobra.Command) {
 			fmt.Printf("\033[31mERROR\033[0m Cannot get odigos namespace: %s\n", err)
 			os.Exit(1)
 		}
-		uiPod, err := kube.FindOdigosUIPod(client, ctx, ns)
+		uiPod, err := kube.FindPodWithAppLabel(client, ctx, ns, k8sconsts.UIAppLabelValue)
 		if err != nil {
 			fmt.Printf("\033[31mERROR\033[0m Cannot find odigos-ui pod: %s\n", err)
 			os.Exit(1)

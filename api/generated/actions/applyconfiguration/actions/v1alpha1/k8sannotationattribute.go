@@ -17,12 +17,17 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	actionsv1alpha1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+)
+
 // K8sAnnotationAttributeApplyConfiguration represents a declarative configuration of the K8sAnnotationAttribute type for use
 // with apply.
 type K8sAnnotationAttributeApplyConfiguration struct {
-	AnnotationKey *string `json:"annotationKey,omitempty"`
-	AttributeKey  *string `json:"attributeKey,omitempty"`
-	From          *string `json:"from,omitempty"`
+	AnnotationKey *string                              `json:"annotationKey,omitempty"`
+	AttributeKey  *string                              `json:"attributeKey,omitempty"`
+	From          *string                              `json:"from,omitempty"`
+	FromSources   []actionsv1alpha1.K8sAttributeSource `json:"fromSources,omitempty"`
 }
 
 // K8sAnnotationAttributeApplyConfiguration constructs a declarative configuration of the K8sAnnotationAttribute type for use with
@@ -52,5 +57,15 @@ func (b *K8sAnnotationAttributeApplyConfiguration) WithAttributeKey(value string
 // If called multiple times, the From field is set to the value of the last call.
 func (b *K8sAnnotationAttributeApplyConfiguration) WithFrom(value string) *K8sAnnotationAttributeApplyConfiguration {
 	b.From = &value
+	return b
+}
+
+// WithFromSources adds the given value to the FromSources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the FromSources field.
+func (b *K8sAnnotationAttributeApplyConfiguration) WithFromSources(values ...actionsv1alpha1.K8sAttributeSource) *K8sAnnotationAttributeApplyConfiguration {
+	for i := range values {
+		b.FromSources = append(b.FromSources, values[i])
+	}
 	return b
 }

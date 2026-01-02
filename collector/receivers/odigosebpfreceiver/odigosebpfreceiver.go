@@ -2,37 +2,27 @@ package odigosebpfreceiver
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/cilium/ebpf"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 
-	rtml "github.com/odigos-io/go-rtml"
-
 	"go.opentelemetry.io/collector/receiver"
-	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"go.uber.org/zap"
 	"golang.org/x/sys/unix"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver/internal/metadata"
+	"github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver/internal/metrics/jvm"
 	"github.com/odigos-io/odigos/common/unixfd"
-
-	"go.opentelemetry.io/collector/pdata/ptrace"
-)
-
-const (
-	numOfPages = 2048
 )
 
 type ebpfReceiver struct {
-	config *Config
-	cancel context.CancelFunc
-	logger *zap.Logger
+	config       *Config
+	cancel       context.CancelFunc
+	logger       *zap.Logger
+	receiverType ReceiverType
 
 	// Pipeline consumers for forwarding telemetry data
 	nextTraces  consumer.Traces
@@ -42,6 +32,9 @@ type ebpfReceiver struct {
 	// Telemetry
 	telemetry *metadata.TelemetryBuilder
 	settings  receiver.Settings
+
+	// Metrics handlers - only used for metrics receivers
+	jvmHandler *jvm.JVMMetricsHandler
 
 	wg sync.WaitGroup
 }
@@ -53,6 +46,11 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		return fmt.Errorf("failed to create telemetry builder: %w", err)
 	}
 	r.telemetry = telemetryBuilder
+
+	// Initialize metrics handlers - only for metrics receivers
+	if r.receiverType == ReceiverTypeMetrics {
+		r.jvmHandler = jvm.NewJVMMetricsHandler(r.logger)
+	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
@@ -139,7 +137,16 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 						r.logger.Info("reader stopped")
 						readerWg.Done() // Signal that this reader has stopped
 					}()
-					if err := r.readLoop(readerCtx, newMap); err != nil {
+
+					var err error
+					switch r.receiverType {
+					case ReceiverTypeTraces:
+						err = r.tracesReadLoop(readerCtx, newMap)
+					case ReceiverTypeMetrics:
+						err = r.metricsReadLoop(readerCtx, newMap)
+					}
+
+					if err != nil {
 						r.logger.Error("readLoop failed", zap.Error(err))
 					}
 				}()
@@ -160,7 +167,15 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 
 		r.logger.Info("starting FD client")
 
-		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, r.logger, func(fd int) {
+		var requestType string
+		switch r.receiverType {
+		case ReceiverTypeTraces:
+			requestType = unixfd.ReqGetTracesFD
+		case ReceiverTypeMetrics:
+			requestType = unixfd.ReqGetMetricsFD
+		}
+
+		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, requestType, r.logger, func(fd int) {
 			r.logger.Info("received new FD from odiglet", zap.Int("fd", fd))
 
 			// Convert the file descriptor into an eBPF map object
@@ -215,112 +230,4 @@ func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
 		r.logger.Info("odigos-ebpf: receiver shutdown complete")
 		return nil
 	}
-}
-
-func (r *ebpfReceiver) readLoop(ctx context.Context, m *ebpf.Map) error {
-	reader, err := NewBufferReader(m, r.logger)
-	if err != nil {
-		r.logger.Error("failed to open buffer reader", zap.Error(err))
-		return err
-	}
-	defer reader.Close()
-
-	var record BufferRecord
-
-	// Close the reader when context is cancelled to unblock ReadInto()
-	go func() {
-		<-ctx.Done()
-		reader.Close()
-	}()
-
-	// Create a proto unmarshaler for the current OpenTelemetry format
-	protoUnmarshaler := ptrace.ProtoUnmarshaler{}
-
-	for {
-		// Check memory pressure before each read attempt
-		for rtml.IsMemLimitReached() {
-			delayDuration := 20 * time.Millisecond
-
-			// Track total wait time
-			r.telemetry.EbpfMemoryPressureWaitTimeTotal.Add(ctx, delayDuration.Milliseconds())
-
-			r.logger.Debug("memory pressure detected, sleeping", zap.Duration("duration", delayDuration))
-			select {
-			case <-ctx.Done():
-				return nil
-			case <-time.After(delayDuration):
-				// Continue checking memory pressure
-			}
-		}
-
-		// Only proceed to read when memory pressure is low
-		err := reader.ReadInto(&record)
-		if err != nil {
-			if IsClosedError(err) {
-				return nil
-			}
-			r.logger.Error("error reading from buffer reader", zap.Error(err))
-			continue
-		}
-
-		if record.LostSamples != 0 {
-			// Record the lost samples metric
-			r.telemetry.EbpfLostSamples.Add(ctx, int64(record.LostSamples))
-			// Keep the log for debugging, but at debug level
-			r.logger.Debug("lost samples", zap.Int("lost", int(record.LostSamples)))
-			continue
-		}
-
-		if len(record.RawSample) < 8 {
-			continue
-		}
-
-		acceptedLength := binary.NativeEndian.Uint64(record.RawSample[:8])
-		if len(record.RawSample) < (8 + int(acceptedLength)) {
-			continue
-		}
-
-		r.telemetry.EbpfTotalBytesRead.Add(ctx, int64(len(record.RawSample)))
-
-		// Try to unmarshal as current OpenTelemetry format first
-		td, err := protoUnmarshaler.UnmarshalTraces(record.RawSample[8 : 8+acceptedLength])
-		if err != nil {
-			// Fall back to legacy format for backward compatibility
-			var span tracepb.ResourceSpans
-			err = proto.Unmarshal(record.RawSample[8:8+acceptedLength], &span)
-			if err != nil {
-				r.logger.Error("error unmarshalling span", zap.Error(err))
-				continue
-			}
-			td = convertResourceSpansToPdata(&span)
-		}
-
-		err = r.nextTraces.ConsumeTraces(ctx, td)
-		if err != nil {
-			r.logger.Error("err consuming traces", zap.Error(err))
-			continue
-		}
-	}
-}
-
-// convertResourceSpansToPdata converts a single ResourceSpans to pdata Traces.
-// This function exists to support older agents that send data in the legacy format.
-// TODO: remove this once all agents are updated to use the current format.
-func convertResourceSpansToPdata(resourceSpans *tracepb.ResourceSpans) ptrace.Traces {
-	tracesData := &tracepb.TracesData{
-		ResourceSpans: []*tracepb.ResourceSpans{resourceSpans},
-	}
-
-	data, err := proto.Marshal(tracesData)
-	if err != nil {
-		return ptrace.NewTraces()
-	}
-
-	unmarshaler := &ptrace.ProtoUnmarshaler{}
-	traces, err := unmarshaler.UnmarshalTraces(data)
-	if err != nil {
-		return ptrace.NewTraces()
-	}
-
-	return traces
 }

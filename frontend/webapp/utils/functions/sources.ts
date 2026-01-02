@@ -1,5 +1,5 @@
 import { getWorkloadId } from '@odigos/ui-kit/functions';
-import { EntityTypes, type WorkloadId, type Source } from '@odigos/ui-kit/types';
+import { EntityTypes, type WorkloadId, type Source, type Workload } from '@odigos/ui-kit/types';
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
 import type { NamespaceInstrumentInput, SourceConditions, SourceInstrumentInput } from '@/types';
 
@@ -17,6 +17,16 @@ export const addConditionToSources = ({ namespace, name, kind, conditions }: Sou
   return {
     ...sources[foundIdx],
     conditions,
+  };
+};
+
+export const addAgentInjectionStatusToSources = ({ id: { namespace, name, kind }, podsAgentInjectionStatus }: Workload, sources: Source[]): Source | null => {
+  const foundIdx = sources.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
+  if (foundIdx === -1) return null;
+
+  return {
+    ...sources[foundIdx],
+    podsAgentInjectionStatus,
   };
 };
 
@@ -47,11 +57,13 @@ export const prepareSourcePayloads = (
         // (for example - if we want to have a single page to manage all groups, then we need to override the selected)
         currentStreamName: currentStreamName || selectedStreamName,
       }));
-      const toDeleteFromStore: WorkloadId[] = [];
-      const toUpdateInStore: Source[] = [];
 
-      let toDeleteCount = 0;
+      const toAddToStore: Source[] = [];
+      const toUpdateInStore: Source[] = [];
+      const toDeleteFromStore: WorkloadId[] = [];
+
       let toAddCount = 0;
+      let toDeleteCount = 0;
 
       for (const item of mappedItems) {
         const foundExisting = existingSources.find((src) => src.namespace === ns && src.name === item.name && src.kind === item.kind);
@@ -59,6 +71,7 @@ export const prepareSourcePayloads = (
         // Check if the instrumenting-source does not exist, this confirms an expected creation of the CRD
         if (item.selected && !foundExisting) {
           toAddCount++;
+          toAddToStore.push({ ...getWorkloadId(item), dataStreamNames: [selectedStreamName] });
         }
         // Else the instrumenting-source should be updated in store to include the selected stream name
         else if (item.selected && foundExisting) {
@@ -77,8 +90,9 @@ export const prepareSourcePayloads = (
       }
 
       handleInstrumentationCount(toAddCount, toDeleteCount);
-      removeEntities(EntityTypes.Source, toDeleteFromStore);
+      addEntities(EntityTypes.Source, toAddToStore);
       addEntities(EntityTypes.Source, toUpdateInStore);
+      removeEntities(EntityTypes.Source, toDeleteFromStore);
 
       payload.sources.push(...mappedItems);
     }

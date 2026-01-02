@@ -392,11 +392,12 @@ func (r *k8sWorkloadResolver) Pods(ctx context.Context, obj *model.K8sWorkload) 
 		}
 
 		podModels = append(podModels, &model.K8sWorkloadPod{
-			PodName:             pod.PodName,
-			NodeName:            pod.PodNodeName,
-			StartTime:           pod.PodStartTime,
-			AgentInjected:       pod.AgentInjected,
-			AgentInjectedStatus: pod.AgentInjectedStatus,
+			PodName:                        pod.PodName,
+			NodeName:                       pod.PodNodeName,
+			StartTime:                      pod.PodStartTime,
+			AgentInjected:                  pod.AgentInjected,
+			StartedPostAgentMetaHashChange: pod.StartedPostAgentMetaHashChange,
+			AgentInjectedStatus:            pod.AgentInjectedStatus,
 			// TODO: RunningLatestWorkloadRevision
 			Containers:      containerModels,
 			PodHealthStatus: podHealthStatus,

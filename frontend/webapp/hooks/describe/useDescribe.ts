@@ -20,6 +20,6 @@ export const useDescribe = () => {
 
   return {
     fetchDescribeOdigos,
-    fetchDescribeSource,
+    fetchDescribeSource: (payload: WorkloadId) => fetchDescribeSource({ variables: payload }),
   };
 };

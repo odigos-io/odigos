@@ -1,0 +1,47 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Destination
+metadata:
+  type: signalfx
+  displayName: SignalFx
+  category: managed
+spec:
+  image: signalfx.svg
+  signals:
+    traces:
+      supported: true
+    metrics:
+      supported: true
+    logs:
+      supported: false
+  fields:
+    - name: SIGNALFX_ACCESS_TOKEN
+      displayName: Access Token
+      componentType: input
+      componentProps:
+        type: password
+        required: true
+        tooltip: The authentication token provided by Splunk Observability Cloud.
+      secret: true
+
+    - name: SIGNALFX_REALM
+      displayName: Realm
+      componentType: input
+      componentProps:
+        type: text
+        required: true
+        tooltip: The SignalFx realm where your data will be sent (e.g., us0, us1, eu0).
+
+    - name: SIGNALFX_CA_PEM
+      displayName: CA Certificate (PEM)
+      componentType: textarea
+      componentProps:
+        required: false
+        tooltip: Optional CA certificate in PEM format for TLS verification.
+      secret: true
+
+    - name: SIGNALFX_INSECURE_SKIP_VERIFY
+      displayName: Skip TLS Verification
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: If enabled, TLS certificate verification will be skipped. Not recommended for production.

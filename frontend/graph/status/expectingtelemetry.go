@@ -48,7 +48,7 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 				Name:       ExpectingTelemetryStatus,
 				Status:     model.DesiredStateProgressIrrelevant,
 				ReasonEnum: &reasonStr,
-				Message:    "agent injection is not enabled for this workload",
+				Message:    "agent injection is not enabled for this workload, no telemetry is expected",
 			},
 		}
 	}
@@ -61,7 +61,7 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 				Name:       ExpectingTelemetryStatus,
 				Status:     model.DesiredStateProgressPending,
 				ReasonEnum: &reasonStr,
-				Message:    "no running pods found for this workload",
+				Message:    "no running pods found for this workload, no telemetry is expected",
 			},
 		}
 	}
@@ -94,7 +94,7 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 				Name:       ExpectingTelemetryStatus,
 				Status:     model.DesiredStateProgressIrrelevant,
 				ReasonEnum: &reasonStr,
-				Message:    "no instrumented container in running state yet",
+				Message:    "no instrumented container in running state yet, telemetry is not yet expected",
 			},
 		}
 	}
@@ -107,7 +107,7 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 				Name:       ExpectingTelemetryStatus,
 				Status:     model.DesiredStateProgressWaiting,
 				ReasonEnum: &reasonStr,
-				Message:    "instrumented containers are not in ready state",
+				Message:    "instrumented containers are not in ready state, telemetry is not yet expected",
 			},
 		}
 	}
@@ -120,7 +120,7 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 				Name:       ExpectingTelemetryStatus,
 				Status:     model.DesiredStateProgressWaiting,
 				ReasonEnum: &reasonStr,
-				Message:    "agent is injected into the pods in this workload, but no telemetry data was sent yet",
+				Message:    "no telemetry data was recorded yet from this source",
 			},
 		}
 	}
@@ -132,7 +132,7 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 			Name:       ExpectingTelemetryStatus,
 			Status:     model.DesiredStateProgressSuccess,
 			ReasonEnum: &reasonStr,
-			Message:    "agent is injected into the pods in this workload, and telemetry data was sent",
+			Message:    "workload is reporting telemetry data",
 		},
 	}
 }

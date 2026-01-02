@@ -15,10 +15,8 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/computed"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
-	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -103,7 +101,7 @@ func (l *Loaders) loadInstrumentationConfigs(ctx context.Context) error {
 	if l.instrumentationConfigsFetched {
 		return nil
 	}
-	instrumentationConfigs, err := fetchInstrumentationConfigs(ctx, l.logger, l.workloadFilter)
+	instrumentationConfigs, err := fetchInstrumentationConfigs(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
 	if err != nil {
 		return err
 	}
@@ -166,6 +164,11 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		return err
 	}
 
+	automaticRolloutEnabled := true // default
+	if l.odigosConfiguration.Rollout != nil && l.odigosConfiguration.Rollout.AutomaticRolloutDisabled != nil && *l.odigosConfiguration.Rollout.AutomaticRolloutDisabled {
+		automaticRolloutEnabled = false
+	}
+
 	cachePods := make(map[model.K8sWorkloadID][]computed.CachedPod)
 	l.instrumentationConfigMutex.Lock()
 	defer l.instrumentationConfigMutex.Unlock()
@@ -176,7 +179,12 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		cachePods[sourceId] = make([]computed.CachedPod, 0, len(pods))
 		for _, pod := range pods {
 			ic := l.instrumentationConfigs[sourceId]
-			agentInjected, agentInjectedStatus := status.CalculatePodAgentInjectedStatus(pod, ic)
+			agentInjected, agentInjectedStatus := status.CalculatePodAgentInjectedStatus(pod, ic, automaticRolloutEnabled)
+			var startedPostAgentMetaHashChange *bool
+			if ic != nil && ic.Spec.AgentsMetaHashChangedTime != nil {
+				posStartTimeAfterAgentMetaHashChange := pod.CreationTimestamp.After(ic.Spec.AgentsMetaHashChangedTime.Time)
+				startedPostAgentMetaHashChange = &posStartTimeAfterAgentMetaHashChange
+			}
 			containers := make([]computed.ComputedPodContainer, 0, len(pod.Spec.Containers))
 			for _, container := range pod.Spec.Containers {
 				otelDistroName := getEnvValueFromManifest(container.Env, k8sconsts.OdigosEnvVarDistroName)
@@ -220,13 +228,14 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 				})
 			}
 			cachedPod := computed.CachedPod{
-				PodNamespace:        pod.Namespace,
-				PodName:             pod.Name,
-				PodNodeName:         pod.Spec.NodeName,
-				PodStartTime:        pod.CreationTimestamp.Format(time.RFC3339),
-				AgentInjected:       agentInjected,
-				AgentInjectedStatus: agentInjectedStatus,
-				Containers:          containers,
+				PodNamespace:                   pod.Namespace,
+				PodName:                        pod.Name,
+				PodNodeName:                    pod.Spec.NodeName,
+				PodStartTime:                   pod.CreationTimestamp.Format(time.RFC3339),
+				StartedPostAgentMetaHashChange: startedPostAgentMetaHashChange,
+				AgentInjected:                  agentInjected,
+				AgentInjectedStatus:            agentInjectedStatus,
+				Containers:                     containers,
 			}
 
 			cachePods[sourceId] = append(cachePods[sourceId], cachedPod)
@@ -258,11 +267,16 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 
 	// fetch odigos configuration for each request.
 	odigosns := env.GetCurrentNamespace()
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+	var odigosConfigurationConfigMap corev1.ConfigMap
+	err := l.k8sCacheClient.Get(ctx, client.ObjectKey{
+		Namespace: odigosns,
+		Name:      consts.OdigosEffectiveConfigName,
+	}, &odigosConfigurationConfigMap)
 	if err != nil {
 		return err
 	}
-	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &l.odigosConfiguration); err != nil {
+
+	if err := yaml.Unmarshal([]byte(odigosConfigurationConfigMap.Data[consts.OdigosConfigurationFileName]), &l.odigosConfiguration); err != nil {
 		return err
 	}
 	ignoredNamespacesMap := make(map[string]struct{})

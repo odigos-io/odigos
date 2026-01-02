@@ -539,21 +539,29 @@ var portForwardCentralCmd = &cobra.Command{
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-		backendPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralBackendAppName)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot find backend pod: %v\n", err)
-			os.Exit(1)
-		}
-		startPortForward(&wg, ctx, backendPod, client, k8sconsts.CentralBackendPort, "Backend", localAddress)
+		// Start resilient port forwarding for backend
+		kube.StartResilientPortForward(ctx, kube.ResilientPortForwardConfig{
+			WaitGroup:    &wg,
+			Client:       client,
+			LocalPort:    k8sconsts.CentralBackendPort,
+			RemotePort:   k8sconsts.CentralBackendPort,
+			LocalAddress: localAddress,
+			Namespace:    proNamespaceFlag,
+			Name:         "Backend",
+			AppLabel:     k8sconsts.CentralBackendAppName,
+		})
 
-		uiPod, err := findPodWithAppLabel(ctx, client, proNamespaceFlag, k8sconsts.CentralUIAppName)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Cannot find UI pod: %v\n", err)
-			cancel()
-			wg.Wait()
-			os.Exit(1)
-		}
-		startPortForward(&wg, ctx, uiPod, client, k8sconsts.CentralUIPort, "UI", localAddress)
+		// Start resilient port forwarding for UI
+		kube.StartResilientPortForward(ctx, kube.ResilientPortForwardConfig{
+			WaitGroup:    &wg,
+			Client:       client,
+			LocalPort:    k8sconsts.CentralUIPort,
+			RemotePort:   k8sconsts.CentralUIPort,
+			LocalAddress: localAddress,
+			Namespace:    proNamespaceFlag,
+			Name:         "UI",
+			AppLabel:     k8sconsts.CentralUIAppName,
+		})
 
 		fmt.Printf("Odigos Central UI is available at: http://%s:%s\n", localAddress, k8sconsts.CentralUIPort)
 		fmt.Printf("Odigos Central Backend is available at: http://%s:%s\n", localAddress, k8sconsts.CentralBackendPort)
@@ -564,40 +572,6 @@ var portForwardCentralCmd = &cobra.Command{
 		cancel()
 		wg.Wait()
 	},
-}
-
-func startPortForward(wg *sync.WaitGroup, ctx context.Context, pod *corev1.Pod, client *kube.Client, port string, name string, localAddress string) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		fw, err := kube.PortForwardWithContext(ctx, pod, client, port, port, localAddress)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
-			return
-		}
-		err = fw.ForwardPorts()
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m %s port-forward failed: %v\n", name, err)
-			return
-		}
-	}()
-}
-
-func findPodWithAppLabel(ctx context.Context, client *kube.Client, ns, appLabel string) (*corev1.Pod, error) {
-	pods, err := client.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("app=%s", appLabel),
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(pods.Items) != 1 {
-		return nil, fmt.Errorf("expected 1 pod for app=%s, got %d", appLabel, len(pods.Items))
-	}
-	pod := &pods.Items[0]
-	if pod.Status.Phase != corev1.PodRunning {
-		return nil, fmt.Errorf("pod %s is not running", pod.Name)
-	}
-	return pod, nil
 }
 
 func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
