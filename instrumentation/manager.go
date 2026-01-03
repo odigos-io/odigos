@@ -8,6 +8,8 @@ import (
 
 	cilumebpf "github.com/cilium/ebpf"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
@@ -364,7 +366,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentatio
 		if err != nil {
 			m.logger.Error(err, "failed to close instrumentation")
 		}
-		m.metrics.instrumentedProcesses.Add(ctx, -1)
+		distribution, _ := details.pd.Distribution(ctx)
+		metricAttributeSet := attribute.NewSet(attribute.String("odigos.distribution.name", distribution.Name))
+		m.metrics.instrumentedProcesses.Add(ctx, -1, metric.WithAttributeSet(metricAttributeSet))
 	}
 
 	err := m.handler.Reporter.OnExit(ctx, pid, details.pd)
@@ -451,9 +455,8 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		// we need to track the instrumentation even if the initialization failed.
 		// consider a reporter which writes a persistent record for a failed/successful init
 		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
-		m.startTrackInstrumentation(pid, nil, pd, processGroup, configGroup)
+		m.startTrackInstrumentation(ctx, pid, nil, pd, processGroup, configGroup)
 		m.logger.Error(err, "failed to initialize instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name)
-		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the initialize error? or the handler error? or both?
 		return initErr
 	}
@@ -468,16 +471,14 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		// consider a reporter which writes a persistent record for a failed/successful load
 		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
 		// saving the inst as nil marking the instrumentation failed to load, and is not valid to run/configure/close.
-		m.startTrackInstrumentation(pid, nil, pd, processGroup, configGroup)
+		m.startTrackInstrumentation(ctx, pid, nil, pd, processGroup, configGroup)
 		m.logger.Error(err, "failed to load instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name)
-		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the load error? or the instance write error? or both?
 		return loadErr
 	}
 
-	m.startTrackInstrumentation(pid, inst, pd, processGroup, configGroup)
+	m.startTrackInstrumentation(ctx, pid, inst, pd, processGroup, configGroup)
 	m.logger.Info("instrumentation loaded", "pid", pid, "process group details", pd)
-	m.metrics.instrumentedProcesses.Add(ctx, 1)
 
 	go func() {
 		err := inst.Run(ctx)
@@ -493,7 +494,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	return nil
 }
 
-func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumentation(pid int, inst Instrumentation, processDetails ProcessDetails, processGroup ProcessGroup, configGroup ConfigGroup) {
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumentation(ctx context.Context, pid int, inst Instrumentation, processDetails ProcessDetails, processGroup ProcessGroup, configGroup ConfigGroup) {
 	instDetails := &instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{
 		inst: inst,
 		pd:   processDetails,
@@ -514,6 +515,14 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 		m.detailsByProcessGroup[processGroup] = map[int]*instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{pid: instDetails}
 	} else {
 		m.detailsByProcessGroup[processGroup][pid] = instDetails
+	}
+
+	distribution, _ := processDetails.Distribution(ctx)
+	metricAttributeSet := attribute.NewSet(attribute.String("odigos.distribution.name", distribution.Name))
+	if inst == nil {
+		m.metrics.failedInstrumentations.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
+	} else {
+		m.metrics.instrumentedProcesses.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
 	}
 }
 
