@@ -50,6 +50,8 @@ func DescribeSource(c *gin.Context) {
 		desc, err = describe.DescribeDaemonSet(ctx, kube.DefaultClient.Interface, kube.DefaultClient.OdigosClient, ns, name)
 	case "statefulset":
 		desc, err = describe.DescribeStatefulSet(ctx, kube.DefaultClient.Interface, kube.DefaultClient.OdigosClient, ns, name)
+	case "staticpod":
+		desc, err = describe.DescribeStaticPod(ctx, kube.DefaultClient.Interface, kube.DefaultClient.OdigosClient, ns, name)
 	case "deploymentconfig":
 		desc, err = describe.DescribeDeploymentConfig(ctx, kube.DefaultClient.Interface, kube.DefaultClient.DynamicClient, kube.DefaultClient.OdigosClient, ns, name)
 	default:

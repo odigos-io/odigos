@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
@@ -124,13 +125,16 @@ func appendUniqueAttributes(existing []attribute.KeyValue, new []attribute.KeyVa
 
 func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, pe detector.ProcessEvent) ([]attribute.KeyValue, error) {
 	var errs []error
+	// we should add all the resource attributes we want regardless of the OTEL_RESOURCE_ATTRIBUTE
+	// which might be added to the target pod by our webhook or present by the user.
+	// some pods might be instrumented without restart, so we can't fully rely on the webhook to put all the values
+	// in the environment variable.
 	attrs := []attribute.KeyValue{
 		semconv.K8SNamespaceName(podWorkload.Namespace),
 		semconv.K8SPodName(podName),
+		attribute.String(consts.OdigosWorkloadKindAttribute, string(podWorkload.Kind)),
 	}
 
-	// These should be overridden by the OTEL_RESOURCE_ATTRIBUTES environment variable
-	// Pre-initialize in case the OTEL_RESOURCE_ATTRIBUTES fail to parse
 	switch podWorkload.Kind {
 	case k8sconsts.WorkloadKindDeployment:
 		attrs = append(attrs, semconv.K8SDeploymentName(podWorkload.Name))
