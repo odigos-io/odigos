@@ -4,26 +4,23 @@ sidebarTitle: "odigos profile"
 ---
 ## odigos profile
 
-Manage presets of applied profiles to your odigos installation
+This command can be used to list Odigos effective profiles
 
 ### Synopsis
 
-This command can be used to interact with the applied profiles in your odigos installation.
-
 ```
-odigos profile [flags]
+odigos profile
 ```
 
 ### Examples
 
 ```
 
-# Enable payload collection for all supported workloads and instrumentation libraries in the cluster
-odigos profile add full-payload-collection
+# List Odigos effective profiles
+odigos profile
 
-# Remove the full-payload-collection profile from the cluster
-odigos profile remove full-payload-collection
-
+# Display the profiles available for the relevant tier
+odigos profile --available
 ```
 
 ### Options
@@ -40,9 +37,3 @@ odigos profile remove full-payload-collection
       --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
   -v, --verbose               enable verbose output
 ```
-
-### SEE ALSO
-
-* [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes
-* [odigos profile add](/cli/odigos_profile_add)	 - Add a profile to the current Odigos installation
-* [odigos profile remove](/cli/odigos_profile_remove)	 - Remove a profile from the current Odigos installation
