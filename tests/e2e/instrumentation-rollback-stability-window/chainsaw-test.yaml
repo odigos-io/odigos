@@ -99,6 +99,18 @@ spec:
             timeout: 1m
             file: ../../common/assert/pipeline-ready.yaml
 
+    - name: Assert rollback grace time configured
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k rollbackGraceTime -v 3m
+
+    - name: Assert rollback stability window time configured
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k rollbackStabilityWindow -v 2m
+
     - name: Test crash demo in crashloop and still instrumented
       try:
         - assert:
