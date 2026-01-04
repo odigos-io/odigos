@@ -19,9 +19,9 @@ spec:
               # The pwd is the directory of this file, so we have to walk up to the project root to find the helm chart
               P="../../.."
               if [ "$MODE" = "cross-cloud-tests" ]; then
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7 --set nodeSelector."kubernetes\.io/os"=linux --set autoRollback.graceTime=90s
               else
-                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux
+                helm upgrade --install odigos $P/helm/odigos --create-namespace --namespace odigos-test --set image.tag=e2e-test  --set nodeSelector."kubernetes\.io/os"=linux --set autoRollback.graceTime=90s
               fi
               kubectl label namespace odigos-test odigos.io/system-object="true"
 
@@ -93,18 +93,6 @@ spec:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
-    - name: Odigos pipeline ready
-      try:
-        - assert:
-            timeout: 1m
-            file: ../../common/assert/pipeline-ready.yaml
-
-    - name: Update rollback values
-      try:
-        - script:
-            content: ../../../cli/odigos config set instrumentation-auto-rollback-grace-time 90s
-
-    # Some services restart after updating configs
     - name: Odigos pipeline ready
       try:
         - assert:
