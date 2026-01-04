@@ -56,5 +56,6 @@ rules:
       - list
       - watch
       - create
+      - delete
       - update
       - patch

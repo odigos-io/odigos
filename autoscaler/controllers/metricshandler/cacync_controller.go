@@ -44,7 +44,7 @@ func (r *CAUpdaterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	apiSvc := &apiregv1.APIService{}
 	if err := r.Client.Get(ctx, client.ObjectKey{
-		Name: "v1beta1.custom.metrics.k8s.io",
+		Name: NewAPIServiceName,
 	}, apiSvc); err != nil {
 		logger.Error(err, "Failed to get APIService")
 		return ctrl.Result{}, client.IgnoreNotFound(err)

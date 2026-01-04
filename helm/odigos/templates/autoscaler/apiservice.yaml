@@ -1,0 +1,15 @@
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1beta1.odigos-custom-metrics.k8s.io
+spec:
+  service:
+    name: odigos-autoscaler
+    namespace: {{ .Release.Namespace }}
+    port: 9443
+  group: odigos-custom-metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: false
+  caBundle: "" # Will be updated by autoscaler with actual CA bundle
+  groupPriorityMinimum: 100
+  versionPriority: 100
