@@ -147,6 +147,7 @@ func buildCollectorContainerOverview(pod *corev1.Pod, containerName string) []*m
 	cs := getContainerStatusByName(pod.Status.ContainerStatuses, containerName)
 
 	ready := false
+	started := false
 	restarts := 0
 	status := model.ContainerLifecycleStatusWaiting
 	var stateReasonPtr *string
@@ -154,6 +155,7 @@ func buildCollectorContainerOverview(pod *corev1.Pod, containerName string) []*m
 
 	if cs != nil {
 		ready = cs.Ready
+		started = cs.Started != nil && *cs.Started
 		restarts = int(cs.RestartCount)
 		if cs.State.Running != nil {
 			status = model.ContainerLifecycleStatusRunning
@@ -180,6 +182,7 @@ func buildCollectorContainerOverview(pod *corev1.Pod, containerName string) []*m
 			Status:      status,
 			StateReason: stateReasonPtr,
 			Ready:       ready,
+			Started:     started,
 			Restarts:    restarts,
 			StartedAt:   startedAtPtr,
 			Resources:   buildContainerResources(containerSpec.Resources),
