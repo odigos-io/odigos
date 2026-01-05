@@ -69,6 +69,13 @@ spec:
             limits:
               (memory != null): true
               (cpu != null): true
+          # startupProbe addition is checked by the existing availableReplicas test below
+          startupProbe:
+            httpGet:
+              path: /
+              port: 13133
+            failureThreshold: 30
+            periodSeconds: 10
 status:
   availableReplicas: 2
   readyReplicas: 2
