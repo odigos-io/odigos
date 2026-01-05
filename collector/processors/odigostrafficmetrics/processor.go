@@ -103,7 +103,7 @@ func (p *dataSizesMetricsProcessor) processMetrics(ctx context.Context, md pmetr
 		resMetrics := md.ResourceMetrics()
 		for i := 0; i < resMetrics.Len(); i++ {
 			res := resMetrics.At(i).Resource()
-			p.obsrep.OdigosMetricDataSize.Add(ctx, 
+			p.obsrep.OdigosMetricDataSize.Add(ctx,
 				int64(p.metricsSizer.ResourceMetricsSize(resMetrics.At(i)))*p.inverseSamplingFraction,
 				metric.WithAttributeSet(p.attributeSetFromResource(res)),
 			)
