@@ -25,6 +25,8 @@ spec:
           {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-backend" "Tag" $imageTag) }}
           env:
+            - name: CENTRAL_BACKEND_VERSION
+              value: "{{ .Chart.ApiVersion }}"
             - name: ODIGOS_ONPREM_TOKEN
               valueFrom:
                 secretKeyRef:
