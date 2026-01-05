@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/odigos-io/simple-demo/odigos-demo-crash:v1.0.0
+          image: ghcr.io/odigos-io/simple-demo/odigos-demo-crash:v2.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
