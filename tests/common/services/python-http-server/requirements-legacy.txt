@@ -1,4 +1,4 @@
-django==3.2.25
+django==4.2.25
 protobuf==6.30.2
 packaging
 importlib_metadata
