@@ -354,6 +354,13 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 	return err
 }
 
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) metricsAttributeSet(distribution *distro.OtelDistro) attribute.Set {
+	return attribute.NewSet(
+		semconv.TelemetryDistroName(distribution.Name),
+		semconv.TelemetrySDKLanguageKey.String(string(distribution.Language)),
+	)
+}
+
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentation(ctx context.Context, pid int) {
 	details, found := m.detailsByPid[pid]
 	if !found {
@@ -369,12 +376,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentatio
 			m.logger.Error(err, "failed to close instrumentation")
 		}
 		distribution, _ := details.pd.Distribution(ctx)
-
-		metricAttributeSet := attribute.NewSet(
-			semconv.TelemetryDistroName(distribution.Name),
-			semconv.TelemetrySDKLanguageKey.String(string(distribution.Language)),
-		)
-		m.metrics.instrumentedProcesses.Add(ctx, -1, metric.WithAttributeSet(metricAttributeSet))
+		m.metrics.instrumentedProcesses.Add(ctx, -1, metric.WithAttributeSet(m.metricsAttributeSet(distribution)))
 	}
 
 	err := m.handler.Reporter.OnExit(ctx, pid, details.pd)
@@ -531,10 +533,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 		m.detailsByProcessGroup[processGroup][pid] = instDetails
 	}
 
-	metricAttributeSet := attribute.NewSet(
-		semconv.TelemetryDistroName(distribution.Name),
-		semconv.TelemetrySDKLanguageKey.String(string(distribution.Language)),
-	)
+	metricAttributeSet := m.metricsAttributeSet(distribution)
 	if inst == nil {
 		m.metrics.failedInstrumentations.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
 	} else {
