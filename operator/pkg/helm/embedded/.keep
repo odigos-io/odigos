@@ -1,0 +1,6 @@
+# This file ensures the 'embedded' directory is always present in git.
+# The Odigos Operator uses Go's //go:embed to optionally embed packaged Helm charts.
+# During development and tests, no chart archive (*.tgz) exists yet, so this file
+# prevents Go from failing with "no matching files found".
+# In release builds, the Helm chart (odigos-<version>.tgz) is copied here by CI.
+
