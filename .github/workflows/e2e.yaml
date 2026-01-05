@@ -87,6 +87,8 @@ jobs:
           - "helm-upgrade"
           - "runtime-detection"
           - "instrumentation-lifecycle"
+          - "instrumentation-rollback"
+          - "instrumentation-rollback-stability-window"
           - "environment-variables"
           - "trace-collection"
           - "source"
