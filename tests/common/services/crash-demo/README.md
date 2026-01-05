@@ -4,7 +4,7 @@ A test service designed to simulate application issues with instrumentation for 
 
 ## Behavior
 
-1. **Initial State**: Starts successfully, serves HTTP requests on port 3000
+1. **Initial State**: Starts successfully, serves HTTP requests on port 3000 (Node.js 20.19.2)
 2. **Startup Check**: Checks for OTEL_SERVICE_NAME environment variable at startup
 3. **Immediate Crash**: If instrumentation detected at startup → crashes immediately (before serving any requests)
 4. **Rollback Testing**: Designed to trigger Odigos automatic rollback after grace period
