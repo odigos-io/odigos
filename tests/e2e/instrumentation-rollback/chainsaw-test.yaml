@@ -81,10 +81,44 @@ spec:
             content: |
               echo "Waiting for 5 seconds before checking deployment status..."
               sleep 5
-              # Wait for deployment rollout to complete first
-              kubectl rollout status deployment/otel-crash-demo --timeout=120s
-              # Then wait for pods to be ready (should be immediate after rollout completes)
-              kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=30s
+
+              # Try to wait for rollout, but don't fail if it doesn't work
+              echo "=== Attempting deployment rollout ==="
+              if ! kubectl rollout status deployment/otel-crash-demo --timeout=120s; then
+                echo "❌ Deployment rollout failed, debugging..."
+              else
+                echo "✅ Deployment rollout succeeded"
+              fi
+
+              # Try to wait for pod ready, but don't fail if it doesn't work
+              echo "=== Attempting to wait for pod ready ==="
+              if ! kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=30s; then
+                echo "❌ Pod ready condition failed, debugging..."
+              else
+                echo "✅ Pod ready condition succeeded"
+                exit 0  # Success, no need to debug
+              fi
+
+              echo "=== Debugging crash demo startup ==="
+              kubectl get pods -l app=otel-crash-demo -o wide
+
+              echo "=== Pod describe ==="
+              kubectl describe pods -l app=otel-crash-demo
+
+              echo "=== Container logs ==="
+              POD_NAME=$(kubectl get pods -l app=otel-crash-demo -o jsonpath='{.items[0].metadata.name}')
+              if [ ! -z "$POD_NAME" ]; then
+                echo "--- Previous logs ---"
+                kubectl logs $POD_NAME --previous || echo "No previous logs"
+                echo "--- Current logs ---"
+                kubectl logs $POD_NAME || echo "No current logs"
+              fi
+
+              echo "=== Events ==="
+              kubectl get events --field-selector involvedObject.kind=Pod --sort-by='.lastTimestamp' | grep otel-crash-demo || echo "No pod events"
+
+              # Exit with failure since debugging was triggered
+              exit 1
         - assert:
             file: ../../common/assert/crash-demo/crash-demo-installed.yaml
 
