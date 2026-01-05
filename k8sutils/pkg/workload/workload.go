@@ -9,7 +9,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -78,39 +77,6 @@ func (s *StaticPodWorkload) AvailableReplicas() int32 {
 
 func (s *StaticPodWorkload) PodSpec() *corev1.PodSpec {
 	return &s.Spec
-}
-
-// IsStaticPod return true whether the pod is static or not
-// https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/
-func IsStaticPod(p *corev1.Pod) bool {
-	var nodeOwner *metav1.OwnerReference
-	for _, owner := range p.OwnerReferences {
-		if owner.Kind == "Node" {
-			nodeOwner = &owner
-			break
-		}
-	}
-
-	// static pods are owned by nodes
-	if nodeOwner == nil {
-		return false
-	}
-
-	// https://kubernetes.io/docs/reference/labels-annotations-taints/#kubernetes-io-config-source
-	configSource, ok := p.Annotations["kubernetes.io/config.source"];
-	if !ok {
-		return false
-	}
-	return configSource == "file" || configSource == "http"
-}
-
-func PodUID(p *corev1.Pod) string {
-	if IsStaticPod(p) {
-		// https://kubernetes.io/docs/reference/labels-annotations-taints/#kubernetes-io-config-hash
-		return p.Annotations["kubernetes.io/config.hash"]
-	}
-
-	return string(p.UID)
 }
 
 type CronJobWorkloadV1 struct {

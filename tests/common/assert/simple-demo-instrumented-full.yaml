@@ -34,7 +34,7 @@ spec:
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: frontend
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=frontend,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=frontend,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=frontend-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=frontend,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=frontend,odigos\\.workload\\.kind=Deployment,odigos\\.workload\\.name=frontend,k8s\\.replicaset\\.name=frontend-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
       (env[?name == 'LD_PRELOAD']):
         - value: "/var/odigos/loader/loader.so"
       (env[?name == 'OTEL_TRACES_EXPORTER']):
@@ -88,7 +88,7 @@ spec:
       (env[?name == 'LD_PRELOAD']):
         - value: "/var/odigos/loader/loader.so"
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=coupon,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=coupon,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=coupon-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=coupon,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=coupon,odigos\\.workload\\.kind=Deployment,odigos\\.workload\\.name=coupon,k8s\\.replicaset\\.name=coupon-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
 status:
   containerStatuses:
     - name: coupon
@@ -134,7 +134,7 @@ spec:
       (env[?name == 'LD_PRELOAD']):
         - value: "/var/odigos/loader/loader.so"
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=inventory,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=inventory,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=inventory-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=inventory,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=inventory,odigos\\.workload\\.kind=Deployment,odigos\\.workload\\.name=inventory,k8s\\.replicaset\\.name=inventory-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
 status:
   containerStatuses:
     - name: inventory
@@ -186,7 +186,7 @@ spec:
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: pricing
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=pricing,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=pricing,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=pricing-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=pricing,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=pricing,odigos\\.workload\\.kind=Deployment,odigos\\.workload\\.name=pricing,k8s\\.replicaset\\.name=pricing-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
       (env[?name == 'CORECLR_ENABLE_PROFILING']):
         - value: '1'
       (env[?name == 'CORECLR_PROFILER']):
@@ -245,7 +245,7 @@ spec:
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: currency
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=currency,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=currency,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=currency-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=currency,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=currency,odigos\\.workload\\.kind=Deployment,odigos\\.workload\\.name=currency,k8s\\.replicaset\\.name=currency-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
       (env[?name == 'OTEL_LOGS_EXPORTER']):
         - value: none
       (env[?name == 'OTEL_METRICS_EXPORTER']):
@@ -303,7 +303,7 @@ spec:
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: geolocation
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
-        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=geolocation,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=geolocation,odigos\\.workload\\.kind=Deployment,k8s\\.replicaset\\.name=geolocation-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
+        - "(regex_match('^k8s\\.pod\\.name=\\$\\(ODIGOS_POD_NAME\\),k8s\\.container\\.name=geolocation,k8s\\.namespace\\.name=default,k8s\\.deployment\\.name=geolocation,odigos\\.workload\\.kind=Deployment,odigos\\.workload\\.name=geolocation,k8s\\.replicaset\\.name=geolocation-[A-Za-z0-9]+,k8s\\.replicaset\\.uid=[A-Za-z0-9-]+$',value))": true
       (env[?name == 'OTEL_LOGS_EXPORTER']):
         - value: none
       (env[?name == 'OTEL_METRICS_EXPORTER']):

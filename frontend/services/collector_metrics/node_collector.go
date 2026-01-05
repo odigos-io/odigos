@@ -186,26 +186,32 @@ func metricAttributesToSourceID(attrs pcommon.Map) (common.SourceID, error) {
 	var name pcommon.Value
 	var found bool
 
+	// Check for workload name by odigos custom resource attribute if present
+	if odigosWorkloadName, ok := attrs.Get(OdigosWorkloadNameAttribute); ok {
+		name, found = odigosWorkloadName, true
+	}
+
 	// Check for Odigos-specific workload kind attribute first
 	// This is needed to distinguish between workloads that share the same semconv key
 	// (e.g., DeploymentConfig uses k8s.deployment.name)
 	if odigosKind, ok := attrs.Get(OdigosWorkloadKindAttribute); ok {
 		kind = k8sconsts.WorkloadKind(odigosKind.Str())
-		switch kind {
-		case k8sconsts.WorkloadKindDeployment:
-			name, found = attrs.Get(K8SDeploymentNameKey)
-		case k8sconsts.WorkloadKindStatefulSet:
-			name, found = attrs.Get(K8SStatefulSetNameKey)
-		case k8sconsts.WorkloadKindDaemonSet:
-			name, found = attrs.Get(K8SDaemonSetNameKey)
-		case k8sconsts.WorkloadKindCronJob:
-			name, found = attrs.Get(K8SCronJobNameKey)
-		case k8sconsts.WorkloadKindJob:
-			name, found = attrs.Get(K8SJobNameKey)
-		case k8sconsts.WorkloadKindArgoRollout:
-			name, found = attrs.Get(K8SRolloutNameKey)
-		case k8sconsts.WorkloadKindStaticPod:
-			name, found = attrs.Get(K8sPodNameKey)
+
+		if !found {
+			switch kind {
+			case k8sconsts.WorkloadKindDeployment:
+				name, found = attrs.Get(K8SDeploymentNameKey)
+			case k8sconsts.WorkloadKindStatefulSet:
+				name, found = attrs.Get(K8SStatefulSetNameKey)
+			case k8sconsts.WorkloadKindDaemonSet:
+				name, found = attrs.Get(K8SDaemonSetNameKey)
+			case k8sconsts.WorkloadKindCronJob:
+				name, found = attrs.Get(K8SCronJobNameKey)
+			case k8sconsts.WorkloadKindJob:
+				name, found = attrs.Get(K8SJobNameKey)
+			case k8sconsts.WorkloadKindArgoRollout:
+				name, found = attrs.Get(K8SRolloutNameKey)
+			}
 		}
 
 		if !found {
