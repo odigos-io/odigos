@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: registry.odigos.io/otel-crash-demo:1.0.0
+          image: ghcr.io/odigos-io/simple-demo/otel-crash-demo:1.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
