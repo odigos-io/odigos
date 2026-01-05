@@ -79,7 +79,12 @@ spec:
         - script:
             timeout: 3m
             content: |
-              kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=120s
+              echo "Waiting for 5 seconds before checking deployment status..."
+              sleep 5
+              # Wait for deployment rollout to complete first
+              kubectl rollout status deployment/otel-crash-demo --timeout=120s
+              # Then wait for pods to be ready (should be immediate after rollout completes)
+              kubectl wait --for=condition=ready pod -l app=otel-crash-demo --timeout=30s
         - assert:
             file: ../../common/assert/crash-demo/crash-demo-installed.yaml
 
