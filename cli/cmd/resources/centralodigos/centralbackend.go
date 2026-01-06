@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
@@ -17,7 +16,6 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -55,20 +53,7 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 }
 
 // NewCentralBackendDeploymentConfigMap creates (or updates) a ConfigMap that tracks installation metadata for Central Backend.
-// If the ConfigMap already exists, it preserves the existing deployment ID so upgrades don't churn it.
 func NewCentralBackendDeploymentConfigMap(ctx context.Context, client *kube.Client, ns string, odigosVersion string) (*corev1.ConfigMap, error) {
-	existing, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosCentralDeploymentConfigMapName, metav1.GetOptions{})
-	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, err
-	}
-
-	deploymentID := uuid.NewString()
-	if err == nil && existing != nil && existing.Data != nil {
-		if v, ok := existing.Data[k8sconsts.OdigosCentralDeploymentConfigMapDeploymentIDKey]; ok && v != "" {
-			deploymentID = v
-		}
-	}
-
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -81,7 +66,6 @@ func NewCentralBackendDeploymentConfigMap(ctx context.Context, client *kube.Clie
 		Data: map[string]string{
 			k8sconsts.OdigosCentralDeploymentConfigMapVersionKey:            odigosVersion,
 			k8sconsts.OdigosCentralDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
-			k8sconsts.OdigosCentralDeploymentConfigMapDeploymentIDKey:       deploymentID,
 		},
 	}, nil
 }

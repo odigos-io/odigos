@@ -9,14 +9,8 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 data:
-  odigosVersion: {{ $imageTag | quote }}
+  odigosCentralVersion: {{ $imageTag | quote }}
   installationMethod: "helm"
-  {{- $cm := lookup "v1" "ConfigMap" .Release.Namespace "odigos-central-deployment" }}
-  {{- $existingID := "" }}
-  {{- if $cm }}
-    {{- $existingID = (index $cm.data "odigosCentralDeploymentID" | default "") }}
-  {{- end }}
-  odigosCentralDeploymentID: {{ default (randAlphaNum 16) $existingID | quote }}
 {{- end }}
 
 
