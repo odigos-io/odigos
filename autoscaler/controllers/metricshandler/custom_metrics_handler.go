@@ -27,7 +27,7 @@ const (
 	gatewayRejectionMetricName = "odigos_gateway_memory_limiter_rejections_total"
 
 	// Custom Metrics API constants
-	customMetricsAPIGroup     = "odigos-custom-metrics.k8s.io"
+	customMetricsAPIGroup     = "custom.metrics.k8s.io"
 	customMetricsAPIVersion   = "v1beta1"
 	customMetricsGroupVersion = customMetricsAPIGroup + "/" + customMetricsAPIVersion
 	NewAPIServiceName         = customMetricsAPIVersion + "." + customMetricsAPIGroup
@@ -196,13 +196,6 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 		return fmt.Errorf("ca.crt not found in secret %s", secret.Name)
 	}
 
-	// Clean up old APIService created by code because we are now creating it with Helm (migration)
-	// The motivation is helm to manage the APIService lifecycle.
-	// TODO remove after migration is completed
-	if err := cleanupLegacyAPIService(ctx, mgr.GetClient()); err != nil {
-		ctrl.Log.Error(err, "Failed to cleanup legacy APIService, proceeding anyway")
-	}
-
 	helmManagedAPIService := &apiregv1.APIService{}
 	err := mgr.GetClient().Get(ctx, client.ObjectKey{Name: NewAPIServiceName}, helmManagedAPIService)
 	if err != nil {
@@ -306,30 +299,4 @@ func isPodOOMKilled(pod *corev1.Pod) bool {
 	}
 
 	return false
-}
-
-// cleanupLegacyAPIService removes the old APIService created by code (migration helper)
-func cleanupLegacyAPIService(ctx context.Context, k8sClient client.Client) error {
-	legacyAPIService := &apiregv1.APIService{}
-
-	err := k8sClient.Get(ctx, client.ObjectKey{Name: legacyAPIServiceName}, legacyAPIService)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			// Already cleaned up
-			return nil
-		}
-		return fmt.Errorf("failed to get legacy APIService: %w", err)
-	}
-
-	// Delete the legacy APIService - it's always safe to delete since we use different names now
-	ctrl.Log.Info("Cleaning up legacy APIService created by old code")
-	if err := k8sClient.Delete(ctx, legacyAPIService); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil // Already deleted
-		}
-		return fmt.Errorf("failed to delete legacy APIService: %w", err)
-	}
-
-	ctrl.Log.Info("Legacy APIService cleaned up successfully")
-	return nil
 }
