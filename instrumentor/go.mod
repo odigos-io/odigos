@@ -3,6 +3,7 @@ module github.com/odigos-io/odigos/instrumentor
 go 1.25.0
 
 require (
+	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/go-logr/logr v1.4.3
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
@@ -24,7 +25,6 @@ require (
 require (
 	github.com/agoda-com/opentelemetry-logs-go v0.4.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
-	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/btree v1.1.3 // indirect

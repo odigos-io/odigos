@@ -129,3 +129,17 @@ spec:
       initialValue: otel_metrics_summary
       renderCondition: ["SIGNALS", "INCLUDES", "metrics"]
       hideFromReadData: ["SIGNALS", "EXCLUDES", "metrics"]
+
+    - name: HYPERDX_LOG_NORMALIZER
+      displayName: Enable Log Normalizer
+      componentType: checkbox
+      componentProps:
+        required: false
+        tooltip: "Enable HyperDX log normalization processor. This parses JSON from log bodies, infers severity levels, and normalizes log attributes for better querying."
+      initialValue: false
+      renderCondition: ["SIGNALS", "INCLUDES", "logs"]
+      hideFromReadData: ["HYPERDX_LOG_NORMALIZER", "==", "false"]
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'Log Normalizer'
+          value: 'Enabled'

@@ -22,15 +22,20 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
+type CentralBackendConfig struct {
+	MaxMessageSize string
+}
+
 type centralBackendResourceManager struct {
 	client        *kube.Client
 	ns            string
 	odigosVersion string
 	managerOpts   resourcemanager.ManagerOpts
+	config        CentralBackendConfig
 }
 
-func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
-	return &centralBackendResourceManager{client: client, ns: ns, odigosVersion: odigosVersion, managerOpts: managerOpts}
+func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVersion string, managerOpts resourcemanager.ManagerOpts, config CentralBackendConfig) resourcemanager.ResourceManager {
+	return &centralBackendResourceManager{client: client, ns: ns, odigosVersion: odigosVersion, managerOpts: managerOpts, config: config}
 }
 
 func (m *centralBackendResourceManager) Name() string { return k8sconsts.CentralBackendName }
@@ -42,7 +47,7 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 		NewCentralBackendServiceAccount(m.ns),
 		NewCentralBackendRole(m.ns),
 		NewCentralBackendRoleBinding(m.ns),
-		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets),
+		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets, m.config),
 		NewCentralBackendService(m.ns),
 		NewCentralBackendHPA(m.ns, m.client),
 	}, m.managerOpts)
@@ -73,6 +78,15 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 			pullRefs = append(pullRefs, corev1.LocalObjectReference{Name: n})
 		}
 	}
+
+	dynamicEnv := []corev1.EnvVar{}
+	if config.MaxMessageSize != "" {
+		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
+			Name:  "MAX_MESSAGE_SIZE",
+			Value: config.MaxMessageSize,
+		})
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -98,7 +112,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 						{
 							Name:  k8sconsts.CentralBackendAppName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								{
 									Name: k8sconsts.OdigosOnpremTokenEnvName,
 									ValueFrom: &corev1.EnvVarSource{
@@ -135,7 +149,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 									Name:  "KEYCLOAK_SECRET_NAME",
 									Value: k8sconsts.KeycloakSecretName,
 								},
-							},
+							}, dynamicEnv...),
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPURequest),

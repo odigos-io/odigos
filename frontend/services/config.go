@@ -30,8 +30,6 @@ var (
 )
 
 func GetConfig(ctx context.Context) model.GetConfigResponse {
-	var response model.GetConfigResponse
-
 	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		// assign default values (should not happen in production, but we want to be safe)
@@ -41,21 +39,40 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
 		}
 	}
-	deploymentData := odigosDeployment.Data
-	response.Readonly = IsReadonlyMode(ctx)
-	response.PlatformType = model.ComputePlatformTypeK8s // TODO: add support for VM (or others)
+
+	response := buildConfigResponse(ctx, odigosDeployment.Data)
+
+	return response
+}
+
+func buildConfigResponse(ctx context.Context, deploymentData map[string]string) model.GetConfigResponse {
+	var response model.GetConfigResponse
+	config, err := GetOdigosConfiguration(ctx)
+	if err != nil {
+		log.Printf("Failed to get Config map: %v\n", err)
+	}
+	response.Readonly = config.UiMode == common.UiModeReadonly
+	response.PlatformType = model.ComputePlatformTypeK8s
 	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
 	response.OdigosVersion = deploymentData[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
-	clusterName := GetClusterName(ctx)
-	response.ClusterName = clusterName
+	response.ClusterName = &config.ClusterName
+	isConnected, err := isCentralProxyRunning(ctx)
+	if err != nil {
+		log.Printf("Error checking if central proxy connected: %v\n", err)
+	}
+	configured := isConfiguredForCentralBackend(common.OdigosTier(response.Tier), &config.ClusterName, config)
+	if configured && isConnected {
+		response.IsCentralProxyRunning = &isConnected
+	} else {
+		response.IsCentralProxyRunning = nil
+	}
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
 	if isNewInstallation {
 		response.InstallationStatus = model.InstallationStatus(NewInstallation)
 	} else {
 		response.InstallationStatus = model.InstallationStatus(Finished)
 	}
-
 	return response
 }
 
@@ -86,13 +103,32 @@ func IsReadonlyMode(ctx context.Context) bool {
 	return config.UiMode == common.UiModeReadonly
 }
 
-func GetClusterName(ctx context.Context) *string {
-	config, err := GetOdigosConfiguration(ctx)
-	if err != nil {
-		return nil
+func isConfiguredForCentralBackend(tier common.OdigosTier, clusterName *string, config *common.OdigosConfiguration) bool {
+	if tier != common.OnPremOdigosTier {
+		return false
 	}
 
-	return &config.ClusterName
+	if clusterName == nil || *clusterName == "" {
+		return false
+	}
+
+	if config.CentralBackendURL == "" {
+		return false
+	}
+	return true
+}
+
+func isCentralProxyRunning(ctx context.Context) (bool, error) {
+	ns := env.GetCurrentNamespace()
+	deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralProxyDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		log.Printf("Central proxy deployment not found: %v\n", err)
+		return false, nil
+	}
+	if deployment.Status.AvailableReplicas == 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func isSourceCreated(ctx context.Context) bool {
