@@ -179,6 +179,14 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - apps
+  resources:
+  - deployments/scale
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - apps.openshift.io
   resources:
   - deploymentconfigs
@@ -226,6 +234,7 @@ rules:
   - jobs
   verbs:
   - create
+  - list
 - apiGroups:
   - coordination.k8s.io
   resources:

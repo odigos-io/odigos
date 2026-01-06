@@ -24,9 +24,11 @@ RUN go mod download
 # Package the helm chart and embed it in the operator
 # The chart version is set to match the ODIGOS_VERSION (without 'v' prefix)
 RUN CHART_VERSION="${ODIGOS_VERSION#v}" && \
+    echo "Packaging helm chart with version: ${CHART_VERSION}, appVersion: ${ODIGOS_VERSION}" && \
     cp -r ../helm/odigos /tmp/odigos-chart && \
-    sed -i -E "s/^version:.*/version: ${CHART_VERSION}/" /tmp/odigos-chart/Chart.yaml && \
-    sed -i -E "s/^appVersion:.*/appVersion: ${ODIGOS_VERSION}/" /tmp/odigos-chart/Chart.yaml && \
+    sed -i -E 's/^version: "0.0.0"/version: "'"${CHART_VERSION}"'"/' /tmp/odigos-chart/Chart.yaml && \
+    sed -i -E 's/^appVersion: "v0.0.0"/appVersion: "'"${ODIGOS_VERSION}"'"/' /tmp/odigos-chart/Chart.yaml && \
+    cat /tmp/odigos-chart/Chart.yaml && \
     helm package /tmp/odigos-chart -d pkg/helm/embedded/ && \
     rm -rf /tmp/odigos-chart
 

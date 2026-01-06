@@ -10,7 +10,7 @@ images:
   newName: registry.connect.redhat.com/odigos/odigos-collector-ubi9
   newTag: v1.8.7
 - name: controller
-  newName: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9
+  newName: docker.io/mikeodigos/odigos-operator
   newTag: v1.8.7
 - name: enterprise-instrumentor
   newName: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9
