@@ -17,19 +17,16 @@ limitations under the License.
 package controller
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/cli/pkg/helm"
 	"github.com/odigos-io/odigos/common"
 	operatorv1alpha1 "github.com/odigos-io/odigos/operator/api/v1alpha1"
-	"github.com/odigos-io/odigos/operator/pkg/helm"
 	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/release"
-	"helm.sh/helm/v3/pkg/storage/driver"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
@@ -37,10 +34,6 @@ import (
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-)
-
-const (
-	helmReleaseName = "odigos"
 )
 
 // relatedImageEnvVars maps helm chart component names to their corresponding
@@ -174,7 +167,7 @@ func (h *helmLogger) printSummary() {
 	h.stats = helmStats{}
 }
 
-// helmInstall performs a Helm install or upgrade of Odigos
+// helmInstall performs a Helm install or upgrade of Odigos using the shared CLI helm package
 func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1.Odigos, version string, openshiftEnabled bool, logger logr.Logger) error {
 	helmLog := newHelmLogger(logger)
 	actionConfig := new(action.Configuration)
@@ -183,11 +176,11 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 		return err
 	}
 
-	// Load the embedded chart
+	// Load the embedded chart from CLI package
 	chartVersion := strings.TrimPrefix(version, "v")
 	ch, err := helm.LoadEmbeddedChart(chartVersion)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load embedded chart: %w", err)
 	}
 
 	// Convert Odigos CR spec to Helm values
@@ -203,55 +196,22 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 		}
 	}
 
-	// Check if release exists (same approach as CLI helm-install.go)
-	get := action.NewGet(actionConfig)
-	_, getErr := get.Run(helmReleaseName)
-	if getErr != nil {
-		if errors.Is(getErr, driver.ErrReleaseNotFound) {
-			// Release does not exist → install
-			logger.Info("No existing release found, performing fresh install", "release", helmReleaseName)
-			_, err = runHelmInstall(actionConfig, ch, vals, namespace)
-			if err != nil {
-				return err
-			}
-			helmLog.printSummary()
-			logger.Info("Helm install completed", "release", helmReleaseName, "namespace", namespace, "chartVersion", ch.Metadata.Version)
-			return nil
-		}
-		return getErr // Some other error
-	}
-
-	// Release exists → upgrade
-	logger.Info("Existing release found, performing upgrade", "release", helmReleaseName)
-	_, err = runHelmUpgrade(actionConfig, ch, vals, namespace)
+	// Use shared install or upgrade logic from CLI package
+	result, err := helm.InstallOrUpgrade(actionConfig, ch, vals, namespace, helm.DefaultReleaseName, true)
 	if err != nil {
 		return err
 	}
 
 	helmLog.printSummary()
-	logger.Info("Helm upgrade completed", "release", helmReleaseName, "namespace", namespace, "chartVersion", ch.Metadata.Version)
+	if result.Installed {
+		logger.Info("Helm install completed", "release", helm.DefaultReleaseName, "namespace", namespace, "chartVersion", ch.Metadata.Version)
+	} else {
+		logger.Info("Helm upgrade completed", "release", helm.DefaultReleaseName, "namespace", namespace, "chartVersion", ch.Metadata.Version)
+	}
 	return nil
 }
 
-func runHelmInstall(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace string) (*release.Release, error) {
-	install := action.NewInstall(actionConfig)
-	install.ReleaseName = helmReleaseName
-	install.Namespace = namespace
-	install.CreateNamespace = false // Namespace already exists (it's where the Odigos CR is)
-	install.ChartPathOptions.Version = ch.Metadata.Version
-	return install.Run(ch, vals)
-}
-
-func runHelmUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace string) (*release.Release, error) {
-	upgrade := action.NewUpgrade(actionConfig)
-	upgrade.Namespace = namespace
-	upgrade.Install = false // We handle install fallback ourselves
-	upgrade.ChartPathOptions.Version = ch.Metadata.Version
-	upgrade.ResetThenReuseValues = true // Reset to chart defaults, then reuse values from the previous release
-	return upgrade.Run(helmReleaseName, ch, vals)
-}
-
-// helmUninstall performs a Helm uninstall of Odigos
+// helmUninstall performs a Helm uninstall of Odigos using the shared CLI helm package
 func helmUninstall(config *rest.Config, namespace string, logger logr.Logger) error {
 	helmLog := newHelmLogger(logger)
 	actionConfig := new(action.Configuration)
@@ -260,19 +220,20 @@ func helmUninstall(config *rest.Config, namespace string, logger logr.Logger) er
 		return err
 	}
 
-	uninstall := action.NewUninstall(actionConfig)
-	_, err := uninstall.Run(helmReleaseName)
+	// Use shared uninstall logic from CLI package
+	res, err := helm.RunUninstall(actionConfig, helm.DefaultReleaseName)
 	if err != nil {
-		// If release not found, consider it already uninstalled
-		if errors.Is(err, driver.ErrReleaseNotFound) {
-			logger.Info("Helm release not found, considering already uninstalled", "release", helmReleaseName)
-			return nil
-		}
 		return err
 	}
 
+	if res == nil {
+		// Release was not found, already uninstalled
+		logger.Info("Helm release not found, considering already uninstalled", "release", helm.DefaultReleaseName)
+		return nil
+	}
+
 	helmLog.printSummary()
-	logger.Info("Helm uninstall completed", "release", helmReleaseName, "namespace", namespace)
+	logger.Info("Helm uninstall completed", "release", helm.DefaultReleaseName, "namespace", namespace)
 	return nil
 }
 

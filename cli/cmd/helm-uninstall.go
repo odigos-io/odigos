@@ -32,16 +32,21 @@ func runHelmUninstall() error {
 		return err
 	}
 
-	uninstall := action.NewUninstall(actionConfig)
-	res, err := uninstall.Run(helm.HelmReleaseName)
+	res, err := helm.RunUninstall(actionConfig, helm.HelmReleaseName)
 	if err != nil {
 		return err
+	}
+
+	if res == nil {
+		// Release was not found, already uninstalled
+		fmt.Printf("\n🗑️  Release %q not found in namespace %q (already uninstalled)\n", helm.HelmReleaseName, helm.HelmNamespace)
+		return nil
 	}
 
 	helm.PrintSummary()
 
 	fmt.Printf("\n🗑️  Uninstalled release %q from namespace %q\n", helm.HelmReleaseName, helm.HelmNamespace)
-	if res != nil && res.Info != "" {
+	if res.Info != "" {
 		fmt.Printf("Info: %s\n", res.Info)
 	}
 	return nil

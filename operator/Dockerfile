@@ -21,7 +21,7 @@ COPY operator/ .
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
-# Package the helm chart and embed it in the operator
+# Package the helm chart and embed it in the CLI package (which operator imports)
 # The chart version is set to match the ODIGOS_VERSION (without 'v' prefix)
 RUN CHART_VERSION="${ODIGOS_VERSION#v}" && \
     echo "Packaging helm chart with version: ${CHART_VERSION}, appVersion: ${ODIGOS_VERSION}" && \
@@ -29,7 +29,7 @@ RUN CHART_VERSION="${ODIGOS_VERSION#v}" && \
     sed -i -E 's/^version: "0.0.0"/version: "'"${CHART_VERSION}"'"/' /tmp/odigos-chart/Chart.yaml && \
     sed -i -E 's/^appVersion: "v0.0.0"/appVersion: "'"${ODIGOS_VERSION}"'"/' /tmp/odigos-chart/Chart.yaml && \
     cat /tmp/odigos-chart/Chart.yaml && \
-    helm package /tmp/odigos-chart -d pkg/helm/embedded/ && \
+    helm package /tmp/odigos-chart -d ../cli/pkg/helm/embedded/ && \
     rm -rf /tmp/odigos-chart
 
 ARG LD_FLAGS
