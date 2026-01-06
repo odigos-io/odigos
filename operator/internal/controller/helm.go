@@ -203,24 +203,27 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 		}
 	}
 
-	// Check if release exists
+	// Check if release exists (same approach as CLI helm-install.go)
 	get := action.NewGet(actionConfig)
 	_, getErr := get.Run(helmReleaseName)
 	if getErr != nil {
 		if errors.Is(getErr, driver.ErrReleaseNotFound) {
 			// Release does not exist → install
-			_, err := runHelmInstall(actionConfig, ch, vals, namespace, logger)
-			if err == nil {
-				helmLog.printSummary()
-				logger.Info("Helm install completed", "release", helmReleaseName, "namespace", namespace, "chartVersion", ch.Metadata.Version)
+			logger.Info("No existing release found, performing fresh install", "release", helmReleaseName)
+			_, err = runHelmInstall(actionConfig, ch, vals, namespace)
+			if err != nil {
+				return err
 			}
-			return err
+			helmLog.printSummary()
+			logger.Info("Helm install completed", "release", helmReleaseName, "namespace", namespace, "chartVersion", ch.Metadata.Version)
+			return nil
 		}
-		return getErr
+		return getErr // Some other error
 	}
 
 	// Release exists → upgrade
-	_, err = runHelmUpgrade(actionConfig, ch, vals, namespace, logger)
+	logger.Info("Existing release found, performing upgrade", "release", helmReleaseName)
+	_, err = runHelmUpgrade(actionConfig, ch, vals, namespace)
 	if err != nil {
 		return err
 	}
@@ -230,7 +233,7 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 	return nil
 }
 
-func runHelmInstall(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace string, logger logr.Logger) (*release.Release, error) {
+func runHelmInstall(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace string) (*release.Release, error) {
 	install := action.NewInstall(actionConfig)
 	install.ReleaseName = helmReleaseName
 	install.Namespace = namespace
@@ -239,10 +242,10 @@ func runHelmInstall(actionConfig *action.Configuration, ch *chart.Chart, vals ma
 	return install.Run(ch, vals)
 }
 
-func runHelmUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace string, logger logr.Logger) (*release.Release, error) {
+func runHelmUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace string) (*release.Release, error) {
 	upgrade := action.NewUpgrade(actionConfig)
 	upgrade.Namespace = namespace
-	upgrade.Install = false // we handle install fallback ourselves
+	upgrade.Install = false // We handle install fallback ourselves
 	upgrade.ChartPathOptions.Version = ch.Metadata.Version
 	upgrade.ResetThenReuseValues = true // Reset to chart defaults, then reuse values from the previous release
 	return upgrade.Run(helmReleaseName, ch, vals)
