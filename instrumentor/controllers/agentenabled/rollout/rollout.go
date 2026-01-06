@@ -100,7 +100,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		if distro == nil {
 			continue
 		}
-		if distro.RuntimeAgent != nil && !distro.RuntimeAgent.NoRestartRequired {
+		if distro.IsRestartRequired(conf) {
 			hasDistributionThatRequiresRollout = true
 		}
 	}
