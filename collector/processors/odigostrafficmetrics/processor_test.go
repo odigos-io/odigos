@@ -14,24 +14,29 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func generateTraceData(serviceName, spanName string, resAttrs map[string]any) ptrace.Traces {
+type resSpanMock struct {
+	serviceName, spanName string
+	resAttrs              map[string]any
+}
+
+func generateTraceData(resourceSpans ...resSpanMock) ptrace.Traces {
 	td := ptrace.NewTraces()
-	rs := td.ResourceSpans().AppendEmpty()
-	if serviceName != "" {
-		rs.Resource().Attributes().FromRaw(resAttrs)
-		rs.Resource().Attributes().PutStr(string(semconv.ServiceNameKey), serviceName)
+	for _, resMock := range resourceSpans {
+		rs := td.ResourceSpans().AppendEmpty()
+		if resMock.serviceName != "" {
+			rs.Resource().Attributes().FromRaw(resMock.resAttrs)
+			rs.Resource().Attributes().PutStr(string(semconv.ServiceNameKey), resMock.serviceName)
+		}
+		span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
+		span.SetName(resMock.serviceName)
 	}
-	span := rs.ScopeSpans().AppendEmpty().Spans().AppendEmpty()
-	span.SetName(spanName)
 	return td
 }
 
 func TestProcessor_Logs(t *testing.T) {
-
 }
 
 func TestProcessor_Metrics(t *testing.T) {
-
 }
 
 func TestProcessor_Traces(t *testing.T) {
@@ -47,15 +52,29 @@ func TestProcessor_Traces(t *testing.T) {
 	set.MeterProvider = metricProvider
 
 	tmp, err := newThroughputMeasurementProcessor(set, &Config{
-		ResourceAttributesKeys: []string{"service.name", "key1"},
+		ResourceAttributesKeys: []string{"service.name", "key1_1", "key1_2", "key2_1", "key2_2"},
 		SamplingRatio:          1,
 	})
 	require.NoError(t, err)
 
-	traces := generateTraceData("service-name", "span-name", map[string]any{
-		"key1": "value1",
-		"key2": "value2",
-	})
+	traces := generateTraceData(
+		resSpanMock{
+			serviceName: "service-name1",
+			spanName:    "span-name1",
+			resAttrs: map[string]any{
+				"key1_1": "val1_1",
+				"key1_2": "val1_2",
+			},
+		},
+		resSpanMock{
+			serviceName: "service-name2",
+			spanName:    "span-name2",
+			resAttrs: map[string]any{
+				"key2_1": "val2_1",
+				"key2_2": "val2_2",
+			},
+		},
+	)
 	require.NoError(t, err)
 
 	processedTraces, err := tmp.processTraces(context.Background(), traces)
@@ -67,30 +86,56 @@ func TestProcessor_Traces(t *testing.T) {
 	var rm metricdata.ResourceMetrics
 	require.NoError(t, metricsReader.Collect(context.Background(), &rm))
 
-	var firstTraceSize int64
+	var traceSize int64
 	require.Greater(t, len(rm.ScopeMetrics), 0)
 
 	for _, sm := range rm.ScopeMetrics {
 		for _, metric := range sm.Metrics {
 			switch metric.Name {
-			case "otelcol_trace_data_size":
+			case "otelcol_odigos_trace_data_size":
 				sum := metric.Data.(metricdata.Sum[int64])
-				require.Equal(t, 1, len(sum.DataPoints))
+				require.Equal(t, 2, len(sum.DataPoints))
 
-				attrs := sum.DataPoints[0].Attributes.ToSlice()
-				for _, attr := range attrs {
-					switch attr.Key {
-					case "service.name":
-						require.Equal(t, "service-name", attr.Value.AsString())
-					case "key1":
-						require.Equal(t, "value1", attr.Value.AsString())
-					default:
-						t.Errorf("unexpected attribute key: %s", attr.Key)
+				for i := range 2 {
+					attrs := sum.DataPoints[i].Attributes.ToSlice()
+					var serviceName, key1, key2, val1, val2 string
+					for _, attr := range attrs {
+						switch attr.Key {
+						case "service.name":
+							serviceName = attr.Value.AsString()
+						case "key1_1":
+							key1 = "key1_1"
+							val1 = attr.Value.AsString()
+						case "key1_2":
+							key2 = "key1_2"
+							val2 = attr.Value.AsString()
+						case "key2_1":
+							key1 = "key2_1"
+							val1 = attr.Value.AsString()
+						case "key2_2":
+							key2 = "key2_2"
+							val2 = attr.Value.AsString()
+						default:
+							t.Errorf("unexpected attribute key: %s", attr.Key)
+						}
 					}
-				}
 
-				firstTraceSize = sum.DataPoints[0].Value
-				require.Greater(t, firstTraceSize, int64(0))
+					switch serviceName {
+					case "service-name1":
+						require.Equal(t, key1, "key1_1")
+						require.Equal(t, key2, "key1_2")
+						require.Equal(t, val1, "val1_1")
+						require.Equal(t, val2, "val1_2")
+					case "service-name2":
+						require.Equal(t, key1, "key2_1")
+						require.Equal(t, key2, "key2_2")
+						require.Equal(t, val1, "val2_1")
+						require.Equal(t, val2, "val2_2")
+					}
+
+					require.Greater(t, sum.DataPoints[i].Value, int64(0))
+					traceSize += sum.DataPoints[i].Value
+				}
 			}
 		}
 	}
@@ -102,26 +147,16 @@ func TestProcessor_Traces(t *testing.T) {
 	for _, sm := range rm.ScopeMetrics {
 		for _, metric := range sm.Metrics {
 			switch metric.Name {
-			case "otelcol_trace_data_size":
+			case "otelcol_odigos_trace_data_size":
 				sum := metric.Data.(metricdata.Sum[int64])
-				require.Equal(t, 1, len(sum.DataPoints))
-
-				attrs := sum.DataPoints[0].Attributes.ToSlice()
-				for _, attr := range attrs {
-					switch attr.Key {
-					case "service.name":
-						require.Equal(t, "service-name", attr.Value.AsString())
-					case "key1":
-						require.Equal(t, "value1", attr.Value.AsString())
-					default:
-						t.Errorf("unexpected attribute key: %s", attr.Key)
-					}
+				require.Equal(t, 2, len(sum.DataPoints))
+				secondTraceCounterVal := int64(0)
+				for i := range 2 {
+					secondTraceCounterVal += sum.DataPoints[i].Value
 				}
 
-				secondTraceCounterVal := sum.DataPoints[0].Value
-				require.Equal(t, firstTraceSize*2, secondTraceCounterVal)
+				require.Equal(t, traceSize*2, secondTraceCounterVal)
 			}
 		}
 	}
-
 }
