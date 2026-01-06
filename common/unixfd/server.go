@@ -12,11 +12,12 @@ import (
 
 // Server serves eBPF map file descriptors to clients over a Unix socket.
 // It acts as a bridge between odiglet (which creates eBPF maps) and data collection clients
-// (which need access to those maps for reading trace data).
+// (which need access to those maps for reading telemetry data).
 type Server struct {
-	SocketPath string
-	Logger     logr.Logger
-	FDProvider func() int // Function that returns the current eBPF map file descriptor
+	SocketPath        string
+	Logger            logr.Logger
+	TracesFDProvider  func() int // Function that returns the traces eBPF map file descriptor
+	MetricsFDProvider func() int // Function that returns the metrics eBPF map file descriptor
 }
 
 // Run starts the Unix domain socket server, which serves eBPF map file descriptors to connecting clients.
@@ -76,15 +77,29 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 	}
 
 	request := string(buf[:n])
-	if request != ReqGetFD {
+
+	var fd int
+	switch request {
+	case ReqGetFD, ReqGetTracesFD:
+		// Legacy "GET_FD" defaults to traces for backward compatibility
+		if s.TracesFDProvider == nil {
+			s.Logger.Error(fmt.Errorf("traces FD provider not configured"), "no traces FD provider")
+			return
+		}
+		fd = s.TracesFDProvider()
+	case ReqGetMetricsFD:
+		if s.MetricsFDProvider == nil {
+			s.Logger.Error(fmt.Errorf("metrics FD provider not configured"), "no metrics FD provider")
+			return
+		}
+		fd = s.MetricsFDProvider()
+	default:
 		s.Logger.Info("unknown request", "request", request)
 		return
 	}
 
-	// Get the current FD
-	fd := s.FDProvider()
 	if fd <= 0 {
-		s.Logger.Error(fmt.Errorf("invalid fd %d", fd), "FDProvider returned invalid fd")
+		s.Logger.Error(fmt.Errorf("invalid fd %d", fd), "FD provider returned invalid fd", "request", request)
 		return
 	}
 
@@ -94,7 +109,7 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 		return
 	}
 
-	s.Logger.Info("sent FD to client", "fd", fd)
+	s.Logger.Info("sent FD to client", "fd", fd, "request", request)
 }
 
 // sendFD sends a file descriptor over the Unix socket

@@ -13,7 +13,8 @@ const (
 
 func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) (config.GenericMap, []string) {
 	receivers := config.GenericMap{}
-	pipelineReceiverNames := []string{}
+	// For now, we are adding odigosebpfreceiver in any case if metrics enabled.
+	pipelineReceiverNames := []string{odigosEbpfReceiverName}
 
 	if metricsConfigSettings.AgentsTelemetry != nil {
 		pipelineReceiverNames = append(pipelineReceiverNames, OTLPInReceiverName)

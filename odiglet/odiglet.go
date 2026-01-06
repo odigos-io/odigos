@@ -31,15 +31,17 @@ import (
 )
 
 type Odiglet struct {
-	clientset     *kubernetes.Clientset
-	mgr           controllerruntime.Manager
-	ebpfManager   commonInstrumentation.Manager
-	configUpdates chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
-	criClient     *criwrapper.CriClient
+	clientset               *kubernetes.Clientset
+	mgr                     controllerruntime.Manager
+	ebpfManager             commonInstrumentation.Manager
+	configUpdates           chan<- commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup]
+	instrumentationRequests chan<- commonInstrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails]
+	criClient               *criwrapper.CriClient
 }
 
 const (
-	configUpdatesBufferSize = 10
+	configUpdatesBufferSize           = 10
+	instrumentationRequestsBufferSize = 50
 )
 
 // New creates a new Odiglet instance.
@@ -75,30 +77,33 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
-	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates, appendEnvVarNames)
+	instrumentationRequests := make(chan commonInstrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails], instrumentationRequestsBufferSize)
+	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates, instrumentationRequests, appendEnvVarNames)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}
 	criWrapper := criwrapper.CriClient{Logger: log.Logger}
 
 	kubeManagerOptions := kube.KubeManagerOptions{
-		Mgr:               mgr,
-		ConfigUpdates:     configUpdates,
-		CriClient:         &criWrapper,
-		AppendEnvVarNames: appendEnvVarNames,
+		Mgr:                     mgr,
+		ConfigUpdates:           configUpdates,
+		InstrumentationRequests: instrumentationRequests,
+		CriClient:               &criWrapper,
+		AppendEnvVarNames:       appendEnvVarNames,
 	}
 
-	err = kube.SetupWithManager(kubeManagerOptions)
+	err = kube.SetupWithManager(kubeManagerOptions, instrumentationMgrOpts.DistributionGetter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup controller-runtime manager %w", err)
 	}
 
 	return &Odiglet{
-		clientset:     clientset,
-		mgr:           mgr,
-		ebpfManager:   ebpfManager,
-		configUpdates: configUpdates,
-		criClient:     &criWrapper,
+		clientset:               clientset,
+		mgr:                     mgr,
+		ebpfManager:             ebpfManager,
+		configUpdates:           configUpdates,
+		instrumentationRequests: instrumentationRequests,
+		criClient:               &criWrapper,
 	}, nil
 }
 
@@ -111,6 +116,9 @@ func (o *Odiglet) Run(ctx context.Context) {
 	}
 
 	defer o.criClient.Close()
+
+	// Channel to signal when eBPF manager has exited
+	ebpfDone := make(chan struct{})
 
 	// Start pprof server
 	g.Go(func() error {
@@ -126,6 +134,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	})
 
 	g.Go(func() error {
+		defer close(ebpfDone) // Signal that eBPF manager has exited
 		err := o.ebpfManager.Run(groupCtx)
 		if err != nil {
 			log.Logger.Error(err, "Failed to run ebpf manager")
@@ -145,9 +154,28 @@ func (o *Odiglet) Run(ctx context.Context) {
 		return err
 	})
 
-	// start kube manager
+	// start kube manager - wait for eBPF manager to exit first during shutdown
 	g.Go(func() error {
-		err := o.mgr.Start(groupCtx)
+		// Create a context that will be cancelled when eBPF manager exits during shutdown
+		kubeManagerCtx, kubeManagerCancel := context.WithCancel(context.Background())
+		defer kubeManagerCancel()
+
+		// Monitor for shutdown conditions
+		go func() {
+			select {
+			case <-groupCtx.Done():
+				log.Logger.V(0).Info("Shutdown initiated, waiting for eBPF manager to exit before stopping kube manager")
+				// Group context cancelled, waiting for eBPF manager to exit before cancelling the kube manager context
+				<-ebpfDone
+				log.Logger.V(0).Info("eBPF manager exited, now stopping kube manager")
+				kubeManagerCancel()
+			case <-kubeManagerCtx.Done():
+				// Kube context already cancelled
+				return
+			}
+		}()
+
+		err := o.mgr.Start(kubeManagerCtx)
 		if err != nil {
 			log.Logger.Error(err, "error starting kube manager")
 		} else {
@@ -156,6 +184,9 @@ func (o *Odiglet) Run(ctx context.Context) {
 		// the manager is stopped, it is now safe to close the config updates channel
 		if o.configUpdates != nil {
 			close(o.configUpdates)
+		}
+		if o.instrumentationRequests != nil {
+			close(o.instrumentationRequests)
 		}
 		return err
 	})

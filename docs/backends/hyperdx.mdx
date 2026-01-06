@@ -39,6 +39,8 @@ icon: 'signal-stream'
 
 - **HYPERDX_API_KEY** `string` : HyperDX API Key.
   - This field is required
+- **HYPERDX_LOG_NORMALIZER** `boolean` : Enable Log Normalizer. Enable HyperDX log normalization processor. This parses JSON from log bodies, infers severity levels, and normalizes log attributes for better querying.
+  - This field is optional and defaults to `True`
 
 <Check>
   We handle the endpoint internally, so you don't need to provide it.

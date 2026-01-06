@@ -22,24 +22,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
+type CentralBackendConfig struct {
+	MaxMessageSize string
+}
+
 type centralBackendResourceManager struct {
 	client        *kube.Client
 	ns            string
 	odigosVersion string
 	managerOpts   resourcemanager.ManagerOpts
 	config        CentralBackendConfig
-}
-
-// CentralBackendConfig controls how the Central Backend resources are rendered/applied.
-// Historically this was part of the resource-manager wiring (m.config). It is restored to
-// keep the CLI install/upgrade logic backwards-compatible.
-type CentralBackendConfig struct {
-	// ConfigVersion is written to the system config label and is used to determine whether
-	// resources should be updated. If zero, defaults to 1.
-	ConfigVersion int
-
-	// NodeSelector, when set, is applied to the Central Backend pod spec.
-	NodeSelector map[string]string
 }
 
 func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVersion string, managerOpts resourcemanager.ManagerOpts, config CentralBackendConfig) resourcemanager.ResourceManager {
@@ -93,9 +85,14 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 		}
 	}
 
-	if config.NodeSelector == nil {
-		config.NodeSelector = make(map[string]string)
+	dynamicEnv := []corev1.EnvVar{}
+	if config.MaxMessageSize != "" {
+		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
+			Name:  "MAX_MESSAGE_SIZE",
+			Value: config.MaxMessageSize,
+		})
 	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -115,14 +112,13 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 					Labels: map[string]string{"app": k8sconsts.CentralBackendAppName},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector:       config.NodeSelector,
 					ServiceAccountName: k8sconsts.CentralBackendServiceAccountName,
 					ImagePullSecrets:   pullRefs,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.CentralBackendAppName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								{
 									Name: k8sconsts.OdigosOnpremTokenEnvName,
 									ValueFrom: &corev1.EnvVarSource{
@@ -159,7 +155,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 									Name:  "KEYCLOAK_SECRET_NAME",
 									Value: k8sconsts.KeycloakSecretName,
 								},
-							},
+							}, dynamicEnv...),
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPURequest),

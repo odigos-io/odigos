@@ -28,3 +28,7 @@ var (
 	DefaultIgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
 	DefaultIgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
 )
+
+// Custom resource attribute for Argo Rollouts workload name.
+// There is no semconv key for Argo Rollouts, so we use this custom key with argoproj prefix.
+const K8SArgoRolloutNameAttribute = "k8s.argoproj.rollout.name"
