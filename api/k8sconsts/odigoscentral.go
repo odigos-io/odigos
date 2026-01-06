@@ -32,11 +32,6 @@ const (
 )
 
 const (
-	// Odigos Central UI Deployment ConfigMap (installation metadata for upgrades/support)
-	OdigosCentralUIDeploymentConfigMapName = "odigos-central-ui-deployment"
-)
-
-const (
 	// Odigos Central Backend
 	CentralBackendAppName            = "central-backend"
 	CentralBackendName               = "central-backend"
