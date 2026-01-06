@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -30,28 +29,9 @@ func (m *centralUIResourceManager) Name() string { return k8sconsts.CentralUIApp
 
 func (m *centralUIResourceManager) InstallFromScratch(ctx context.Context) error {
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
-		NewCentralUIDeploymentConfigMap(m.ns, m.odigosVersion),
 		NewCentralUIDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralUIImage, m.odigosVersion, m.managerOpts.ImagePullSecrets),
 		NewCentralUIService(m.ns),
 	}, m.managerOpts)
-}
-
-// NewCentralUIDeploymentConfigMap creates (or updates) a ConfigMap that tracks installation metadata for Central UI.
-func NewCentralUIDeploymentConfigMap(ns string, odigosVersion string) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sconsts.OdigosCentralUIDeploymentConfigMapName,
-			Namespace: ns,
-		},
-		Data: map[string]string{
-			k8sconsts.OdigosCentralDeploymentConfigMapVersionKey:            odigosVersion,
-			k8sconsts.OdigosCentralDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
-		},
-	}
 }
 
 func NewCentralUIDeployment(ns, imagePrefix, imageName, version string, imagePullSecrets []string) *appsv1.Deployment {
