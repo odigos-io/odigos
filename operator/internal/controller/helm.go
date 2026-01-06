@@ -41,6 +41,7 @@ import (
 // These env vars contain the full image URLs for certified container images.
 var relatedImageEnvVars = map[string]string{
 	"autoscaler":              "RELATED_IMAGE_AUTOSCALER",
+	"cli":                     "RELATED_IMAGE_CLI",
 	"collector":               "RELATED_IMAGE_COLLECTOR",
 	"ui":                      "RELATED_IMAGE_FRONTEND",
 	"instrumentor":            "RELATED_IMAGE_INSTRUMENTOR",
@@ -197,7 +198,11 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 	}
 
 	// Use shared install or upgrade logic from CLI package
-	result, err := helm.InstallOrUpgrade(actionConfig, ch, vals, namespace, helm.DefaultReleaseName, true)
+	// CreateNamespace is false because the operator runs in the namespace where Odigos will be installed
+	result, err := helm.InstallOrUpgrade(actionConfig, ch, vals, namespace, helm.DefaultReleaseName, helm.InstallOrUpgradeOptions{
+		CreateNamespace:      false,
+		ResetThenReuseValues: true,
+	})
 	if err != nil {
 		return err
 	}
@@ -349,5 +354,12 @@ func getRelatedImageOverrides() map[string]interface{} {
 			images[component] = imageURL
 		}
 	}
+
+	// TODO: Remove this hardcoded fallback once CLI image is properly configured
+	// Temporarily hardcode CLI image if not set via env var
+	if _, ok := images["cli"]; !ok {
+		images["cli"] = "registry.odigos.io/odigos-cli-ubi9:v1.14.0"
+	}
+
 	return images
 }

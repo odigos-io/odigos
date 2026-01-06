@@ -23,16 +23,25 @@ type InstallOrUpgradeResult struct {
 	Installed bool // true if this was a fresh install, false if upgrade
 }
 
+// InstallOrUpgradeOptions contains options for InstallOrUpgrade
+type InstallOrUpgradeOptions struct {
+	// CreateNamespace specifies whether to create the namespace if it doesn't exist.
+	// CLI should set this to true, operator should set to false (namespace already exists).
+	CreateNamespace bool
+	// ResetThenReuseValues controls whether to reset to chart defaults then reuse values on upgrade.
+	ResetThenReuseValues bool
+}
+
 // InstallOrUpgrade performs a Helm install or upgrade of the given chart.
 // It first checks if the release exists, and performs install or upgrade accordingly.
 // This is the shared logic used by both CLI and operator.
-func InstallOrUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace, releaseName string, resetThenReuseValues bool) (*InstallOrUpgradeResult, error) {
+func InstallOrUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace, releaseName string, opts InstallOrUpgradeOptions) (*InstallOrUpgradeResult, error) {
 	get := action.NewGet(actionConfig)
 	_, getErr := get.Run(releaseName)
 	if getErr != nil {
 		if errors.Is(getErr, driver.ErrReleaseNotFound) {
 			// Release does not exist → install
-			rel, err := RunInstall(actionConfig, ch, vals, namespace, releaseName)
+			rel, err := RunInstall(actionConfig, ch, vals, namespace, releaseName, opts.CreateNamespace)
 			if err != nil {
 				return nil, err
 			}
@@ -42,7 +51,7 @@ func InstallOrUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals 
 	}
 
 	// Release exists → upgrade
-	rel, err := RunUpgrade(actionConfig, ch, vals, namespace, releaseName, resetThenReuseValues)
+	rel, err := RunUpgrade(actionConfig, ch, vals, namespace, releaseName, opts.ResetThenReuseValues)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +59,11 @@ func InstallOrUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals 
 }
 
 // RunInstall performs a fresh Helm installation
-func RunInstall(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace, releaseName string) (*release.Release, error) {
+func RunInstall(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}, namespace, releaseName string, createNamespace bool) (*release.Release, error) {
 	install := action.NewInstall(actionConfig)
 	install.ReleaseName = releaseName
 	install.Namespace = namespace
-	install.CreateNamespace = true
+	install.CreateNamespace = createNamespace
 	install.ChartPathOptions.Version = ch.Metadata.Version
 	return install.Run(ch, vals)
 }

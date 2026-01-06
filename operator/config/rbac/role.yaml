@@ -214,6 +214,7 @@ rules:
   verbs:
   - create
   - delete
+  - get
   - patch
   - update
 - apiGroups:
@@ -234,6 +235,8 @@ rules:
   - jobs
   verbs:
   - create
+  - delete
+  - get
   - list
   - watch
 - apiGroups:

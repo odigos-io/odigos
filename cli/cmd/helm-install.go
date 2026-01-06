@@ -98,7 +98,10 @@ func runInstallOrUpgrade() error {
 		return err
 	}
 
-	result, err := helm.InstallOrUpgrade(actionConfig, ch, vals, helm.HelmNamespace, helm.HelmReleaseName, helm.HelmResetThenReuseValues)
+	result, err := helm.InstallOrUpgrade(actionConfig, ch, vals, helm.HelmNamespace, helm.HelmReleaseName, helm.InstallOrUpgradeOptions{
+		CreateNamespace:      true,
+		ResetThenReuseValues: helm.HelmResetThenReuseValues,
+	})
 	if err != nil {
 		return err
 	}
