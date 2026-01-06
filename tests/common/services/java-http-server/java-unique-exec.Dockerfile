@@ -5,7 +5,7 @@ COPY pom.xml /home/app
 RUN mvn -f /home/app/pom.xml clean package
 
 # Stage 2: Prepare the runtime environment
-FROM eclipse-temurin:21
+FROM eclipse-temurin:21.0.7_6-jre-jammy
 
 # Copy the built application from the Maven build stage
 COPY --from=build /home/app/target/*.jar /app/app.jar
