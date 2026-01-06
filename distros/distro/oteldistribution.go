@@ -44,7 +44,6 @@ type StaticEnvironmentVariable struct {
 }
 
 type EnvironmentVariables struct {
-
 	// if this distribution runs an opamp client, add the environment variables that configures the server endpoint (local node)
 	OpAmpClientEnvironments bool `yaml:"opAmpClientEnvironments,omitempty"`
 
@@ -73,7 +72,6 @@ type EnvironmentVariables struct {
 // This environment variable should be patched with odigos value if it already exists in the manifest.
 // If this value is determined to arrive from Container Runtime during runtime inspection, this value should be set in manifest so not to break the application.
 type AppendOdigosEnvironmentVariable struct {
-
 	// The name of the environment variable to set or patch.
 	EnvName string `yaml:"envName"`
 
@@ -129,7 +127,6 @@ type SpanMetrics struct {
 
 // configuration for this distro's support for metrics generated from the runtime agent.
 type AgentMetrics struct {
-
 	// configuration for this distro's support for agent span metrics.
 	// these are span metrics that are generated directly in the agent,
 	// unlike span metrics calculated at collectors which miss
@@ -179,7 +176,6 @@ type Traces struct {
 // The metadata includes the tiers of the distribution, the instrumentations, and the SDKs used.
 // Multiple distributions can co-exist with the same properties but different names.
 type OtelDistro struct {
-
 	// a human-friendly name for this distribution, which can be displayed in the UI and documentation.
 	// may include spaces and special characters.
 	DisplayName string `yaml:"displayName"`
@@ -226,20 +222,4 @@ type OtelDistro struct {
 
 	// document support by this distro for trace features
 	Traces *Traces `yaml:"traces,omitempty"`
-}
-
-// IsRestartRequired returns whether the distribution requires application restart in order to be injected.
-// it does not specify whether a restart should be initiated or not, just whether it is required.
-func (d *OtelDistro) IsRestartRequired(config *common.OdigosConfiguration) bool {
-	if d == nil {
-		return false
-	}
-	if d.RuntimeAgent == nil {
-		return false
-	}
-	// currently if wasp is enabled and supported by the distribution, restart is required
-	if config.WaspEnabled != nil && *config.WaspEnabled && d.RuntimeAgent.WaspSupported {
-		return true
-	}
-	return !d.RuntimeAgent.NoRestartRequired
 }

@@ -137,7 +137,7 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 			continue
 		}
 		d := i.DistributionGetter.GetDistroByName(containerConfig.OtelDistroName)
-		if !d.IsRestartRequired(conf) {
+		if !distro.IsRestartRequired(d, conf) {
 			distroByContainer[containerConfig.ContainerName] = d
 		}
 	}
