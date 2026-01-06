@@ -24,6 +24,9 @@ func IsStaticPod(p *corev1.Pod) bool {
 	}
 
 	// https://kubernetes.io/docs/reference/labels-annotations-taints/#kubernetes-io-config-source
+	if p.Annotations == nil {
+		return false
+	}
 	configSource, ok := p.Annotations["kubernetes.io/config.source"]
 	if !ok {
 		return false
