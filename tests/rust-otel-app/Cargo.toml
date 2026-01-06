@@ -1,0 +1,19 @@
+[package]
+name = "rust-otel-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+axum = "0.7"
+opentelemetry = "0.24"
+opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.17", features = ["http-proto", "reqwest-client"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-opentelemetry = "0.25"
+tower-http = { version = "0.5", features = ["trace"] }
+
+[profile.release]
+strip = false
+

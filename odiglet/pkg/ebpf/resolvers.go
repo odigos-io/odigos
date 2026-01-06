@@ -40,7 +40,7 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 
 	distroName, found := distroNameFromProcEvent(event)
 	if !found {
-		// TODO: this is ok for migration period. Once device is removed, this should be an error
+		return nil, fmt.Errorf("distro name not reported in process event for container: %s", containerName)
 	}
 
 	podWorkload, err := workload.PodWorkloadObjectOrError(ctx, pod)
@@ -49,6 +49,9 @@ func (dr *k8sDetailsResolver) Resolve(ctx context.Context, event detector.Proces
 	}
 
 	distro := dr.distributionGetter.GetDistroByName(distroName)
+	if distro == nil {
+		return nil, fmt.Errorf("distro %s not found for container: %s", distroName, containerName)
+	}
 
 	// verify the language of the process event matches the detected language for the container
 	// for containers with multiple processes or a script that spawns other processes, the language

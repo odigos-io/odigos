@@ -1,0 +1,125 @@
+---
+title: 'Rust Support'
+sidebarTitle: 'Status'
+icon: 'rust'
+---
+
+Odigos supports Rust applications through two distribution types:
+
+- **rust-native**: For applications already instrumented with the OpenTelemetry Rust SDK
+- **rust-community**: eBPF-based automatic instrumentation (coming soon)
+
+## Current Status
+
+| Feature | Status | Distribution |
+|---------|--------|--------------|
+| Language Detection | ✅ Supported | All |
+| Native SDK Integration | ✅ Supported | `rust-native` |
+| Automatic Instrumentation | 🚧 In Development | `rust-community` |
+| Context Propagation | ✅ With SDK | `rust-native` |
+
+<Info>
+  The **rust-native** distribution is now available for Rust applications that use the OpenTelemetry Rust SDK. 
+  See the [Native SDK guide](/instrumentations/rust/native) for setup instructions.
+</Info>
+
+## Available Distributions
+
+### rust-native (Available Now)
+
+For Rust applications that are manually instrumented with the OpenTelemetry Rust SDK. Odigos injects the necessary OTLP endpoint environment variables, allowing your application to export telemetry through the Odigos pipeline.
+
+**Best for:**
+- Applications already using OpenTelemetry
+- Teams comfortable with manual instrumentation
+- Production applications requiring full control over spans
+
+[Get started with rust-native →](/instrumentations/rust/native)
+
+### rust-community (Coming Soon)
+
+eBPF-based automatic instrumentation that requires no code changes. Similar to [opentelemetry-go-instrumentation](https://github.com/open-telemetry/opentelemetry-go-instrumentation) for Go.
+
+**Planned support for:**
+- hyper HTTP server
+- axum web framework
+- tonic gRPC
+- reqwest HTTP client
+
+## Language Detection
+
+Odigos detects Rust applications by inspecting ELF binaries for `__rust_` symbols. When you enable instrumentation on a Rust workload, Odigos will:
+
+1. Correctly identify the programming language as Rust
+2. Report it in the InstrumentationConfig status
+3. Display it in the Odigos UI
+4. Apply the selected distribution (rust-native or rust-community)
+
+## Quick Start with rust-native
+
+### 1. Add Dependencies
+
+```toml
+[dependencies]
+opentelemetry = "0.24"
+opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.17", features = ["grpc-tonic"] }
+```
+
+### 2. Initialize the SDK
+
+```rust
+use opentelemetry::global;
+use opentelemetry_otlp::WithExportConfig;
+
+fn init_telemetry() -> Result<(), Box<dyn std::error::Error>> {
+    let exporter = opentelemetry_otlp::new_exporter()
+        .tonic()
+        .with_env();  // Reads OTEL_EXPORTER_OTLP_ENDPOINT from environment
+    
+    let provider = opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(exporter)
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+    
+    global::set_tracer_provider(provider);
+    Ok(())
+}
+```
+
+### 3. Enable in Odigos
+
+When configuring your workload in Odigos, select **rust-native** as the distribution. Odigos will inject the necessary environment variables automatically.
+
+[See detailed setup guide →](/instrumentations/rust/native)
+
+## Resources
+
+- [Native SDK Setup Guide](/instrumentations/rust/native)
+- [Trace Enrichment Patterns](/instrumentations/rust/enrichment)
+- [OpenTelemetry Rust SDK](https://github.com/open-telemetry/opentelemetry-rust)
+- [OpenTelemetry Rust Documentation](https://docs.rs/opentelemetry/latest/opentelemetry/)
+- [Tracing OpenTelemetry Integration](https://docs.rs/tracing-opentelemetry/latest/tracing_opentelemetry/)
+
+## Future: eBPF Auto-Instrumentation
+
+The **rust-community** distribution will bring automatic instrumentation to Rust via eBPF, similar to how Go applications are instrumented. This approach:
+
+1. **Requires no code changes** - Instrument existing binaries without recompilation
+2. **Supports stripped binaries** - Works on release builds without debug symbols
+3. **Low overhead** - eBPF-based probes add minimal latency
+
+### Planned Library Support
+
+| Library | Type | Status |
+|---------|------|--------|
+| hyper | HTTP Server | 🚧 In Progress |
+| axum | Web Framework | 🚧 In Progress |
+| tonic | gRPC | 📋 Planned |
+| reqwest | HTTP Client | 📋 Planned |
+| sqlx | Database | 📋 Planned |
+
+### Contributing
+
+We welcome contributions to the Rust eBPF instrumentation project! See the [opentelemetry-rust-instrumentation](https://github.com/open-telemetry/opentelemetry-rust-instrumentation) repository for details.
+

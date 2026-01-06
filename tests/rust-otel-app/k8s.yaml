@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-otel-app
+  namespace: rust-test
+  labels:
+    app: rust-otel-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rust-otel-app
+  template:
+    metadata:
+      labels:
+        app: rust-otel-app
+    spec:
+      containers:
+        - name: app
+          image: rust-otel-app:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-otel-app
+  namespace: rust-test
+spec:
+  selector:
+    app: rust-otel-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: rust-otel-app
+  namespace: rust-test
+spec:
+  workload:
+    name: rust-otel-app
+    namespace: rust-test
+    kind: Deployment
+
