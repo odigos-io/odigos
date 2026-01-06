@@ -23,6 +23,14 @@ const (
 )
 
 const (
+	// Odigos Central Deployment ConfigMap (installation metadata for upgrades/support)
+	OdigosCentralDeploymentConfigMapName                  = "odigos-central-deployment"
+	OdigosCentralDeploymentConfigMapVersionKey            = "odigosVersion"
+	OdigosCentralDeploymentConfigMapInstallationMethodKey = "installationMethod"
+	OdigosCentralDeploymentConfigMapDeploymentIDKey       = "odigosCentralDeploymentID"
+)
+
+const (
 	// Odigos Central Backend
 	CentralBackendAppName            = "central-backend"
 	CentralBackendName               = "central-backend"
