@@ -442,7 +442,7 @@ var centralUpgradeCmd = &cobra.Command{
 		}
 
 		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
-		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts)
+		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts, centralodigos.CentralBackendConfig{})
 		if err := resources.ApplyResourceManagers(ctx, client, []resourcemanager.ResourceManager{uiManager, backendManager}, "Upgrading"); err != nil {
 			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Central UI/Backend:")
 			fmt.Println(err)
@@ -504,6 +504,7 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 			AdminPassword:    centralAdminPassword,
 			StorageClassName: storageClassNamePtr,
 		},
+		Backend: centralodigos.CentralBackendConfig{},
 	}
 	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
 	if err := resources.ApplyResourceManagers(ctx, client, resourceManagers, "Creating"); err != nil {

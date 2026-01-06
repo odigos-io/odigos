@@ -27,10 +27,29 @@ type centralBackendResourceManager struct {
 	ns            string
 	odigosVersion string
 	managerOpts   resourcemanager.ManagerOpts
+	config        CentralBackendConfig
 }
 
-func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
-	return &centralBackendResourceManager{client: client, ns: ns, odigosVersion: odigosVersion, managerOpts: managerOpts}
+// CentralBackendConfig controls how the Central Backend resources are rendered/applied.
+// Historically this was part of the resource-manager wiring (m.config). It is restored to
+// keep the CLI install/upgrade logic backwards-compatible.
+type CentralBackendConfig struct {
+	// ConfigVersion is written to the system config label and is used to determine whether
+	// resources should be updated. If zero, defaults to 1.
+	ConfigVersion int
+
+	// NodeSelector, when set, is applied to the Central Backend pod spec.
+	NodeSelector map[string]string
+}
+
+func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVersion string, managerOpts resourcemanager.ManagerOpts, config CentralBackendConfig) resourcemanager.ResourceManager {
+	return &centralBackendResourceManager{
+		client:        client,
+		ns:            ns,
+		odigosVersion: odigosVersion,
+		managerOpts:   managerOpts,
+		config:        config,
+	}
 }
 
 func (m *centralBackendResourceManager) Name() string { return k8sconsts.CentralBackendName }
@@ -42,7 +61,7 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 		NewCentralBackendServiceAccount(m.ns),
 		NewCentralBackendRole(m.ns),
 		NewCentralBackendRoleBinding(m.ns),
-		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets),
+		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets, m.config),
 		NewCentralBackendService(m.ns),
 		NewCentralBackendHPA(m.ns, m.client),
 	}, m.managerOpts)
@@ -66,12 +85,16 @@ func NewCentralBackendDeploymentConfigMap(ns string, odigosVersion string) *core
 	}
 }
 
-func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, imagePullSecrets []string) *appsv1.Deployment {
+func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, imagePullSecrets []string, config CentralBackendConfig) *appsv1.Deployment {
 	var pullRefs []corev1.LocalObjectReference
 	for _, n := range imagePullSecrets {
 		if n != "" {
 			pullRefs = append(pullRefs, corev1.LocalObjectReference{Name: n})
 		}
+	}
+
+	if config.NodeSelector == nil {
+		config.NodeSelector = make(map[string]string)
 	}
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -92,6 +115,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 					Labels: map[string]string{"app": k8sconsts.CentralBackendAppName},
 				},
 				Spec: corev1.PodSpec{
+					NodeSelector:       config.NodeSelector,
 					ServiceAccountName: k8sconsts.CentralBackendServiceAccountName,
 					ImagePullSecrets:   pullRefs,
 					Containers: []corev1.Container{
