@@ -36,10 +36,9 @@ func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVers
 func (m *centralBackendResourceManager) Name() string { return k8sconsts.CentralBackendName }
 
 func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) error {
-	deploymentConfigCm := NewCentralBackendDeploymentConfigMap(m.ns, m.odigosVersion)
 
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
-		deploymentConfigCm,
+		NewCentralBackendDeploymentConfigMap(m.ns, m.odigosVersion),
 		NewCentralBackendServiceAccount(m.ns),
 		NewCentralBackendRole(m.ns),
 		NewCentralBackendRoleBinding(m.ns),
@@ -304,7 +303,8 @@ func NewCentralBackendHPA(ns string, client *kube.Client) kube.Object {
 		}
 	}
 
-	if parsed != nil && !parsed.LessThan(version.MustParse("1.23.0")) && parsed.LessThan(version.MustParse("1.25.0")) {
+	// parsed is guaranteed non-nil here (nil is handled by the first branch above).
+	if !parsed.LessThan(version.MustParse("1.23.0")) && parsed.LessThan(version.MustParse("1.25.0")) {
 		return &autoscalingv2beta2.HorizontalPodAutoscaler{
 			TypeMeta:   metav1.TypeMeta{APIVersion: "autoscaling/v2beta2", Kind: "HorizontalPodAutoscaler"},
 			ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.CentralBackendName, Namespace: ns},

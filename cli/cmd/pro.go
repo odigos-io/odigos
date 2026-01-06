@@ -495,15 +495,6 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 
 	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelCentralKey, createNamespace)
 
-	// Create the Central deployment ConfigMap early so it's not dependent on Redis/Keycloak/UI installation succeeding.
-	deploymentConfigCm, err := centralodigos.NewCentralBackendDeploymentConfigMap(ctx, client, ns, versionFlag)
-	if err != nil {
-		return fmt.Errorf("failed to create central deployment ConfigMap object: %w", err)
-	}
-	if err := client.ApplyResources(ctx, 1, []kube.Object{deploymentConfigCm}, managerOpts); err != nil {
-		return fmt.Errorf("failed to apply central deployment ConfigMap: %w", err)
-	}
-
 	if err := createOdigosCentralSecret(ctx, client, ns, onPremToken); err != nil {
 		return err
 	}
