@@ -69,6 +69,16 @@ func NewCentralUIDeployment(ns, imagePrefix, imageName, version string, imagePul
 						{
 							Name:  k8sconsts.CentralUI,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
+							Env: []corev1.EnvVar{
+								{
+									Name: "CURRENT_NS",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
+										},
+									},
+								},
+							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPURequest),

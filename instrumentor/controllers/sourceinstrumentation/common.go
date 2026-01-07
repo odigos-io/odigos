@@ -13,6 +13,7 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,8 +36,8 @@ func syncNamespaceWorkloads(
 	ctx context.Context,
 	k8sClient client.Client,
 	runtimeScheme *runtime.Scheme,
-	namespace string) (ctrl.Result, error) {
-
+	namespace string,
+) (ctrl.Result, error) {
 	workloadsToSync := make([]k8sconsts.PodWorkload, 0)
 	collectiveRes := ctrl.Result{}
 	var errs error
@@ -121,6 +122,26 @@ func syncNamespaceWorkloads(
 		}
 	}
 
+	// add standalone pods which can be instrumented
+	// pods that are owned by other higher-level object (e.g Deployment) should not accounted for here
+	potentialPodWorkloads := &corev1.PodList{}
+	err := k8sClient.List(ctx, potentialPodWorkloads, client.InNamespace(namespace))
+	if err != nil {
+		errs = errors.Join(errs, err)
+	} else {
+		for _, p := range potentialPodWorkloads.Items {
+			if workload.IsStaticPod(&p) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      p.Name,
+					Namespace: p.Namespace,
+					Kind:      k8sconsts.WorkloadKindStaticPod,
+				})
+			}
+			// currently we only support static pods as a valid workload to instrument
+			// once we add support for standalone pods, we could add a case here
+		}
+	}
+
 	for _, pw := range workloadsToSync {
 		res, err := syncWorkload(ctx, k8sClient, runtimeScheme, pw)
 		if err != nil {
@@ -139,8 +160,8 @@ func syncRegexSourceWorkloads(
 	ctx context.Context,
 	k8sClient client.Client,
 	runtimeScheme *runtime.Scheme,
-	source *odigosv1.Source) (ctrl.Result, error) {
-
+	source *odigosv1.Source,
+) (ctrl.Result, error) {
 	pattern := source.Spec.Workload.Name
 	namespace := source.Spec.Workload.Namespace
 	kind := source.Spec.Workload.Kind
@@ -272,8 +293,8 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		return ctrl.Result{}, err
 	}
 
-	containers := make([]odigosv1.ContainerOverride, 0, len(workloadObj.PodTemplateSpec().Spec.Containers))
-	for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
+	containers := make([]odigosv1.ContainerOverride, 0, len(workloadObj.PodSpec().Containers))
+	for _, container := range workloadObj.PodSpec().Containers {
 		// search if there is an override in the source for this container.
 		// list is expected to be short (1-5 containers, so linear search is fine)
 		var containerOverride *odigosv1.ContainerOverride
