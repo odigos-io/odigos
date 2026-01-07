@@ -16,4 +16,3 @@ spec:
   runtimeAgent:
     device: 'instrumentation.odigos.io/generic'
     k8sAttrsViaEnvVars: true
-    noRestartRequired: true

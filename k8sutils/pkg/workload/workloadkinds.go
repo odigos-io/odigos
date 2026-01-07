@@ -37,7 +37,8 @@ func IgnoreErrorKindNotSupported(err error) error {
 func IsValidWorkloadKind(kind k8sconsts.WorkloadKind) bool {
 	switch kind {
 	case k8sconsts.WorkloadKindDeployment, k8sconsts.WorkloadKindDaemonSet,
-		k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace, k8sconsts.WorkloadKindCronJob,
+		k8sconsts.WorkloadKindStatefulSet, k8sconsts.WorkloadKindNamespace,
+		k8sconsts.WorkloadKindCronJob, k8sconsts.WorkloadKindStaticPod,
 		k8sconsts.WorkloadKindDeploymentConfig, k8sconsts.WorkloadKindArgoRollout:
 		return true
 	}
@@ -54,6 +55,8 @@ func WorkloadKindLowerCaseFromKind(pascalCase k8sconsts.WorkloadKind) k8sconsts.
 		return k8sconsts.WorkloadKindLowerCaseStatefulSet
 	case k8sconsts.WorkloadKindNamespace:
 		return k8sconsts.WorkloadKindLowerCaseNamespace
+	case k8sconsts.WorkloadKindStaticPod:
+		return k8sconsts.WorkloadKindLowerCaseStaticPod
 	case k8sconsts.WorkloadKindCronJob:
 		return k8sconsts.WorkloadKindLowerCaseCronJob
 	case k8sconsts.WorkloadKindJob:
@@ -74,6 +77,10 @@ func WorkloadKindFromLowerCase(lowerCase k8sconsts.WorkloadKindLowerCase) k8scon
 		return k8sconsts.WorkloadKindDaemonSet
 	case k8sconsts.WorkloadKindLowerCaseStatefulSet:
 		return k8sconsts.WorkloadKindStatefulSet
+	case k8sconsts.WorkloadKindLowerCaseNamespace:
+		return k8sconsts.WorkloadKindNamespace
+	case k8sconsts.WorkloadKindLowerCaseStaticPod:
+		return k8sconsts.WorkloadKindStaticPod
 	case k8sconsts.WorkloadKindLowerCaseCronJob:
 		return k8sconsts.WorkloadKindCronJob
 	case k8sconsts.WorkloadKindLowerCaseJob:
@@ -94,6 +101,10 @@ func WorkloadKindFromString(kind string) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindDaemonSet
 	case string(k8sconsts.WorkloadKindLowerCaseStatefulSet):
 		return k8sconsts.WorkloadKindStatefulSet
+	case string(k8sconsts.WorkloadKindLowerCaseNamespace):
+		return k8sconsts.WorkloadKindNamespace
+	case string(k8sconsts.WorkloadKindLowerCaseStaticPod):
+		return k8sconsts.WorkloadKindStaticPod
 	case string(k8sconsts.WorkloadKindLowerCaseCronJob):
 		return k8sconsts.WorkloadKindCronJob
 	case string(k8sconsts.WorkloadKindLowerCaseJob):
@@ -119,6 +130,8 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 		return &v1.StatefulSet{}
 	case k8sconsts.WorkloadKindNamespace:
 		return &corev1.Namespace{}
+	case k8sconsts.WorkloadKindStaticPod:
+		return &corev1.Pod{}
 	case k8sconsts.WorkloadKindCronJob:
 		ver, err := utils.ClusterVersion()
 		if err != nil {
@@ -149,6 +162,8 @@ func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object
 		return &v1.DaemonSetList{}
 	case k8sconsts.WorkloadKindStatefulSet:
 		return &v1.StatefulSetList{}
+	case k8sconsts.WorkloadKindStaticPod:
+		return &corev1.PodList{}
 	case k8sconsts.WorkloadKindCronJob:
 		ver, err := utils.ClusterVersion()
 		if err != nil {
