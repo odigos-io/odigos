@@ -12,8 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const otelServiceNameEnvVarName = "OTEL_SERVICE_NAME"
-const otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
+const (
+	otelServiceNameEnvVarName        = "OTEL_SERVICE_NAME"
+	otelResourceAttributesEnvVarName = "OTEL_RESOURCE_ATTRIBUTES"
+)
 
 type resourceAttribute struct {
 	Key   attribute.Key
@@ -45,6 +47,10 @@ func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName stri
 			// use the same semconv key as other types (Deployment)
 			Key:   attribute.Key(consts.OdigosWorkloadKindAttribute),
 			Value: string(podWorkload.Kind),
+		},
+		{
+			Key:   attribute.Key(consts.OdigosWorkloadNameAttribute),
+			Value: podWorkload.Name,
 		},
 	}
 	// Get otel resource attributes for the owner reference (job/replicaset name and uid)
@@ -117,7 +123,6 @@ func getResourceAttributesEnvVarValue(ra []resourceAttribute) string {
 }
 
 func InjectOtelResourceAndServiceNameEnvVars(existingEnvNames EnvVarNamesMap, container *corev1.Container, distroName string, pw k8sconsts.PodWorkload, serviceName string, ownerReferences []metav1.OwnerReference) EnvVarNamesMap {
-
 	// OTEL_SERVICE_NAME
 	existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, otelServiceNameEnvVarName, serviceName)
 

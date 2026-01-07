@@ -44,7 +44,6 @@ type StaticEnvironmentVariable struct {
 }
 
 type EnvironmentVariables struct {
-
 	// if this distribution runs an opamp client, add the environment variables that configures the server endpoint (local node)
 	OpAmpClientEnvironments bool `yaml:"opAmpClientEnvironments,omitempty"`
 
@@ -73,7 +72,6 @@ type EnvironmentVariables struct {
 // This environment variable should be patched with odigos value if it already exists in the manifest.
 // If this value is determined to arrive from Container Runtime during runtime inspection, this value should be set in manifest so not to break the application.
 type AppendOdigosEnvironmentVariable struct {
-
 	// The name of the environment variable to set or patch.
 	EnvName string `yaml:"envName"`
 
@@ -129,7 +127,6 @@ type SpanMetrics struct {
 
 // configuration for this distro's support for metrics generated from the runtime agent.
 type AgentMetrics struct {
-
 	// configuration for this distro's support for agent span metrics.
 	// these are span metrics that are generated directly in the agent,
 	// unlike span metrics calculated at collectors which miss
@@ -179,7 +176,6 @@ type Traces struct {
 // The metadata includes the tiers of the distribution, the instrumentations, and the SDKs used.
 // Multiple distributions can co-exist with the same properties but different names.
 type OtelDistro struct {
-
 	// a human-friendly name for this distribution, which can be displayed in the UI and documentation.
 	// may include spaces and special characters.
 	DisplayName string `yaml:"displayName"`

@@ -30,6 +30,7 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/version"
@@ -87,6 +88,12 @@ func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, own
 		rollout := &argorolloutsv1alpha1.Rollout{}
 		err := k8sClient.Get(ctx, key, rollout)
 		return rollout, err
+	}
+
+	if ownerRef.Kind == "Pod" {
+		pod := &corev1.Pod{}
+		err := k8sClient.Get(ctx, key, pod)
+		return pod, err
 	}
 
 	return nil, fmt.Errorf("unsupported owner kind %s", ownerRef.Kind)
