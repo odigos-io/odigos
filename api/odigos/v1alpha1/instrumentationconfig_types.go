@@ -113,7 +113,7 @@ const (
 	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart;WorkloadNotSupporting
 type WorkloadRolloutReason string
 
 const (
@@ -123,6 +123,7 @@ const (
 	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
 	WorkloadRolloutReasonNotRequired            WorkloadRolloutReason = "NotRequired"
 	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
+	WorkloadRolloutReasonWorkloadNotSupporting  WorkloadRolloutReason = "WorkloadNotSupporting"
 )
 
 const (
