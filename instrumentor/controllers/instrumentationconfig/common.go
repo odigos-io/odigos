@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList, conf *common.OdigosConfiguration) error {
@@ -93,6 +94,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	}
 
 	ic.Spec.SdkConfigs = sdkConfigs
+
+	// populate runtime metrics in sdkConfigs based on effective config and distro support
+	populateRuntimeMetricsInSdkConfigs(ic, conf)
 
 	return nil
 }
@@ -193,6 +197,61 @@ func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLang
 		Language:                 containerLanguage,
 		DefaultPayloadCollection: &instrumentationrules.PayloadCollection{},
 	})
+}
+
+func populateRuntimeMetricsInSdkConfigs(ic *odigosv1alpha1.InstrumentationConfig, effectiveConfig *common.OdigosConfiguration) {
+	logger := log.Log.WithName("runtime-metrics")
+
+	// Check if runtime metrics are configured in effective config
+	if effectiveConfig.MetricsSources == nil ||
+		effectiveConfig.MetricsSources.AgentMetrics == nil ||
+		effectiveConfig.MetricsSources.AgentMetrics.RuntimeMetrics == nil {
+		logger.V(0).Info("No runtime metrics configuration found in effective config")
+		return
+	}
+
+	runtimeMetricsConfig := effectiveConfig.MetricsSources.AgentMetrics.RuntimeMetrics
+
+	// Add runtime metrics to every Java sdkConfig
+	for i := range ic.Spec.SdkConfigs {
+		sdkConfig := &ic.Spec.SdkConfigs[i]
+
+		// Currently we're adding the runtimeMetricConfig for all java sdkConfigs.
+		// This should be changed once we migrate this code to run in the container config where we have distro.
+		switch sdkConfig.Language {
+		case common.JavaProgrammingLanguage:
+			if runtimeMetricsConfig.Java != nil {
+				logger.V(0).Info("Adding runtime metrics to Java sdkConfig", "workload", ic.Name)
+				sdkConfig.RuntimeMetrics = &odigosv1alpha1.AgentRuntimeMetricsConfig{
+					Java: convertJavaRuntimeMetricsConfig(runtimeMetricsConfig.Java),
+				}
+			}
+		}
+	}
+}
+
+// convertJavaRuntimeMetricsConfig converts from common config to API config
+func convertJavaRuntimeMetricsConfig(commonConfig *common.MetricsSourceAgentJavaRuntimeMetricsConfiguration) *odigosv1alpha1.AgentJavaRuntimeMetricsConfig {
+	if commonConfig == nil {
+		return nil
+	}
+
+	apiConfig := &odigosv1alpha1.AgentJavaRuntimeMetricsConfig{
+		Disabled: commonConfig.Disabled,
+	}
+
+	// Convert metrics array
+	if len(commonConfig.Metrics) > 0 {
+		apiConfig.Metrics = make([]odigosv1alpha1.AgentRuntimeMetricConfig, len(commonConfig.Metrics))
+		for i, metric := range commonConfig.Metrics {
+			apiConfig.Metrics[i] = odigosv1alpha1.AgentRuntimeMetricConfig{
+				Name:     metric.Name,
+				Disabled: metric.Disabled,
+			}
+		}
+	}
+
+	return apiConfig
 }
 
 func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentations, rule2 *instrumentationrules.CustomInstrumentations) *instrumentationrules.CustomInstrumentations {

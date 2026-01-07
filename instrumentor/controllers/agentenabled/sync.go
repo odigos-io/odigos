@@ -203,9 +203,6 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 	ic.Spec.Containers = containersConfig
 
-	// populate runtime metrics in sdkConfigs based on effective config and distro support
-	populateRuntimeMetricsInSdkConfigs(ic, effectiveConfig, distroPerLanguage, distroProvider.Getter)
-
 	// after updating the container configs, we can go over them and produce a useful aggregated status for the user
 	// if any container is instrumented, we can set the status to true
 	// if all containers are not instrumented, we can set the status to false and provide a reason
@@ -789,89 +786,4 @@ func resolveContainerDistro(
 
 		return distro, nil
 	}
-}
-
-// populateRuntimeMetricsInSdkConfigs adds runtime metrics configuration to sdkConfigs
-// based on the effective configuration and distro support
-func populateRuntimeMetricsInSdkConfigs(ic *odigosv1.InstrumentationConfig, effectiveConfig *common.OdigosConfiguration, distroPerLanguage map[common.ProgrammingLanguage]string, distroGetter *distros.Getter) {
-	logger := log.Log.WithName("runtime-metrics")
-	logger.V(0).Info("populateRuntimeMetricsInSdkConfigs called", "workload", ic.Name)
-
-	// Check if runtime metrics are configured in effective config
-	if effectiveConfig.MetricsSources == nil ||
-		effectiveConfig.MetricsSources.AgentMetrics == nil ||
-		effectiveConfig.MetricsSources.AgentMetrics.RuntimeMetrics == nil {
-		logger.V(0).Info("No runtime metrics configuration found in effective config")
-		return
-	}
-
-	runtimeMetricsConfig := effectiveConfig.MetricsSources.AgentMetrics.RuntimeMetrics
-
-	// Update each sdkConfig based on its language and distro support
-	for i := range ic.Spec.SdkConfigs {
-		sdkConfig := &ic.Spec.SdkConfigs[i]
-
-		// Get the distro name for this language
-		distroName, exists := distroPerLanguage[sdkConfig.Language]
-		if !exists {
-			continue
-		}
-
-		// Get the actual distro object
-		distroForLanguage := distroGetter.GetDistroByName(distroName)
-		if distroForLanguage == nil {
-			continue
-		}
-
-		// Check if this distro supports runtime metrics
-		if distroForLanguage.AgentMetrics == nil ||
-			distroForLanguage.AgentMetrics.RuntimeMetrics == nil ||
-			!distroForLanguage.AgentMetrics.RuntimeMetrics.Supported {
-			continue
-		}
-
-		// Create runtime metrics config based on language
-		switch sdkConfig.Language {
-		case common.JavaProgrammingLanguage:
-			if runtimeMetricsConfig.Java != nil {
-				logger.V(0).Info("Adding runtime metrics to Java sdkConfig", "workload", ic.Name, "distro", distroName)
-				sdkConfig.RuntimeMetrics = &odigosv1.AgentRuntimeMetricsConfig{
-					Java: convertJavaRuntimeMetricsConfig(runtimeMetricsConfig.Java),
-				}
-			} else {
-				logger.V(0).Info("No Java runtime metrics config found")
-			}
-			// Add other languages here as needed
-			// case common.PythonProgrammingLanguage:
-			//     if runtimeMetricsConfig.Python != nil {
-			//         sdkConfig.RuntimeMetrics = &odigosv1.AgentRuntimeMetricsConfig{
-			//             Python: runtimeMetricsConfig.Python,
-			//         }
-			//     }
-		}
-	}
-}
-
-// convertJavaRuntimeMetricsConfig converts from common config to API config
-func convertJavaRuntimeMetricsConfig(commonConfig *common.MetricsSourceAgentJavaRuntimeMetricsConfiguration) *odigosv1.AgentJavaRuntimeMetricsConfig {
-	if commonConfig == nil {
-		return nil
-	}
-
-	apiConfig := &odigosv1.AgentJavaRuntimeMetricsConfig{
-		Disabled: commonConfig.Disabled,
-	}
-
-	// Convert metrics array
-	if len(commonConfig.Metrics) > 0 {
-		apiConfig.Metrics = make([]odigosv1.AgentRuntimeMetricConfig, len(commonConfig.Metrics))
-		for i, metric := range commonConfig.Metrics {
-			apiConfig.Metrics[i] = odigosv1.AgentRuntimeMetricConfig{
-				Name:     metric.Name,
-				Disabled: metric.Disabled,
-			}
-		}
-	}
-
-	return apiConfig
 }
