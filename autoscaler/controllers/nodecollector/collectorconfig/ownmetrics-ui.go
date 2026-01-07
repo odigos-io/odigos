@@ -46,6 +46,7 @@ func init() {
 				consts.OdigosWorkloadKindAttribute,
 			},
 		},
+		odigosPartialK8sAttrsProcessorName: config.GenericMap{},
 		podNameProcessorName: config.GenericMap{
 			"attributes": []config.GenericMap{{
 				"key":    string(semconv.K8SPodNameKey),
