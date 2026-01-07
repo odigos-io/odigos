@@ -49,6 +49,19 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return false, ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if pw.Kind == k8sconsts.WorkloadKindStaticPod {
+		if ic == nil {
+			return false, ctrl.Result{}, nil
+		}
+		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWorkloadNotSupporting),
+			Message: "static pods don't support restart",
+		})
+		return statusChanged, ctrl.Result{}, nil
+	}
+
 	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
 		if ic == nil {
 			return false, ctrl.Result{}, nil
@@ -253,9 +266,9 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
 // this is bases on the kubectl implementation of restarting a workload
 // https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/objectrestarter.go#L32
-func rolloutRestartWorkload(ctx context.Context, workload client.Object, c client.Client, ts time.Time) error {
+func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c client.Client, ts time.Time) error {
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, ts.Format(time.RFC3339)))
-	switch obj := workload.(type) {
+	switch obj := workloadObj.(type) {
 	case *appsv1.Deployment:
 		if obj.Spec.Paused {
 			return errors.New("can't restart paused deployment")
@@ -272,6 +285,11 @@ func rolloutRestartWorkload(ctx context.Context, workload client.Object, c clien
 		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
 		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, ts.Format(time.RFC3339)))
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, rolloutPatch))
+	case *corev1.Pod:
+		if workload.IsStaticPod(obj) {
+			return errors.New("can't restart static pods")			
+		}
+		return errors.New("currently not supporting standalone pods as workloads for rollout")
 	default:
 		return errors.New("unknown kind")
 	}

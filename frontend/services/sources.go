@@ -37,6 +37,7 @@ const (
 	WorkloadKindDeployment       model.K8sResourceKind = "Deployment"
 	WorkloadKindStatefulSet      model.K8sResourceKind = "StatefulSet"
 	WorkloadKindDaemonSet        model.K8sResourceKind = "DaemonSet"
+	WorkloadKindStaticPod        model.K8sResourceKind = "StaticPod"
 	WorkloadKindCronJob          model.K8sResourceKind = "CronJob"
 	WorkloadKindDeploymentConfig model.K8sResourceKind = "DeploymentConfig"
 	// WorkloadKindArgoRollout represents Argo Rollouts workload.
@@ -142,7 +143,6 @@ func getDeployments(ctx context.Context, namespace corev1.Namespace) ([]model.K8
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,6 @@ func getDaemonSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8s
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +185,6 @@ func getStatefulSets(ctx context.Context, namespace corev1.Namespace) ([]model.K
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -440,6 +438,9 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 			return fmt.Errorf("failed to patch rollout: %w", err)
 		}
 
+	case WorkloadKindStaticPod:
+		return errors.New("static pods can't be restarted")
+
 	default:
 		return fmt.Errorf("unsupported kind: %s (must be Deployment, StatefulSet, DaemonSet, CronJob, DeploymentConfig or Rollout)", kind)
 	}
@@ -518,6 +519,8 @@ func stringToWorkloadKind(workloadKind string) (model.K8sResourceKind, bool) {
 		return WorkloadKindCronJob, true
 	case "rollout":
 		return WorkloadKindArgoRollout, true
+	case "staticpod":
+		return WorkloadKindStaticPod, true
 	}
 
 	return "", false

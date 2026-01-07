@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
@@ -36,7 +39,7 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, 
 		OtelServiceName = kd.Pw.Name
 	}
 
-	resourceAttributes, err := getResourceAttributes(kd.Pw, kd.Pod.Name, kd.ProcEvent)
+	resourceAttributes, err := getResourceAttributes(kd.Pw, kd.Pod, kd.ProcEvent)
 	if err != nil {
 		logger.Info("error getting resource attributes", "error", err)
 	}
@@ -122,15 +125,19 @@ func appendUniqueAttributes(existing []attribute.KeyValue, new []attribute.KeyVa
 	return existing
 }
 
-func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, pe detector.ProcessEvent) ([]attribute.KeyValue, error) {
+func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, pod *corev1.Pod, pe detector.ProcessEvent) ([]attribute.KeyValue, error) {
 	var errs []error
+	// we should add all the resource attributes we want regardless of the OTEL_RESOURCE_ATTRIBUTE
+	// which might be added to the target pod by our webhook or present by the user.
+	// some pods might be instrumented without restart, so we can't fully rely on the webhook to put all the values
+	// in the environment variable.
 	attrs := []attribute.KeyValue{
 		semconv.K8SNamespaceName(podWorkload.Namespace),
-		semconv.K8SPodName(podName),
+		semconv.K8SPodName(pod.Name),
+		attribute.String(consts.OdigosWorkloadKindAttribute, string(podWorkload.Kind)),
+		attribute.String(consts.OdigosWorkloadNameAttribute, podWorkload.Name),
 	}
 
-	// These should be overridden by the OTEL_RESOURCE_ATTRIBUTES environment variable
-	// Pre-initialize in case the OTEL_RESOURCE_ATTRIBUTES fail to parse
 	switch podWorkload.Kind {
 	case k8sconsts.WorkloadKindDeployment:
 		attrs = append(attrs, semconv.K8SDeploymentName(podWorkload.Name))
@@ -142,6 +149,7 @@ func getResourceAttributes(podWorkload *k8sconsts.PodWorkload, podName string, p
 		attrs = append(attrs, semconv.K8SCronJobName(podWorkload.Name))
 	case k8sconsts.WorkloadKindJob:
 		attrs = append(attrs, semconv.K8SJobName(podWorkload.Name))
+	// pods and static pods workload already have the k8s.pod.name attribute
 	}
 
 	if pe.ExecDetails != nil {

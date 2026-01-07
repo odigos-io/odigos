@@ -100,7 +100,7 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 	headSamplingRules := []odigosv1.AttributesAndSamplerRule{}
 	if healthCheckFraction != nil {
 		healthCheckPathsHttpGet := map[string]struct{}{}
-		for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
+		for _, container := range workloadObj.PodSpec().Containers {
 			if container.Name == containerName {
 				if container.LivenessProbe != nil && container.LivenessProbe.HTTPGet != nil {
 					healthCheckPathsHttpGet[container.LivenessProbe.HTTPGet.Path] = struct{}{}

@@ -66,6 +66,11 @@ func GetWorkloadNameAndKind(ownerName, ownerKind string, pod *corev1.Pod) (strin
 		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeploymentConfig)
 	case "Job":
 		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindCronJob)
+	case "Node":
+		if IsStaticPod(pod) {
+			return pod.Name, k8sconsts.WorkloadKindStaticPod, nil
+		}
+		return "", "", errors.New("node owned pod which is not static, currently not supported as a workload")
 	default:
 		return extractInfoWithoutSuffix(ownerName, ownerKind)
 	}
