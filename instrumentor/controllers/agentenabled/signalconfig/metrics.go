@@ -37,6 +37,8 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 			"http.response.status_code",
 			"http.route",
 		}
+		// default histogram buckets in ms
+		histogramBuckets := []int{2, 4, 6, 8, 10, 50, 100, 200, 400, 800, 1000, 1400, 2000, 5000, 10000, 15000}
 		if effectiveConfig.MetricsSources.SpanMetrics != nil {
 			if effectiveConfig.MetricsSources.SpanMetrics.Interval != "" {
 				interval, err := time.ParseDuration(effectiveConfig.MetricsSources.SpanMetrics.Interval)
@@ -53,10 +55,26 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 			if effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions != nil {
 				dimensions = append(dimensions, effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions...)
 			}
+			if len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets) > 0 {
+				histogramBuckets := make([]int, len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets))
+				for i, bucket := range effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets {
+					bucketDuration, err := time.ParseDuration(bucket)
+					if err != nil {
+						return nil, &odigosv1.ContainerAgentConfig{
+							ContainerName:       containerName,
+							AgentEnabled:        false,
+							AgentEnabledReason:  odigosv1.AgentEnabledReasonInjectionConflict,
+							AgentEnabledMessage: fmt.Sprintf("failed to parse span metrics histogram bucket: %s", err),
+						}
+					}
+					histogramBuckets[i] = int(bucketDuration.Milliseconds())
+				}
+			}
 		}
 		metricsConfig.SpanMetrics = &odigosv1.AgentSpanMetricsConfig{
-			IntervalMs: intervalMs,
-			Dimensions: dimensions,
+			IntervalMs:         intervalMs,
+			HistogramBucketsMs: histogramBuckets,
+			Dimensions:         dimensions,
 		}
 	}
 
