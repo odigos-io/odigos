@@ -121,6 +121,7 @@ const (
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
 	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonNotRequired            WorkloadRolloutReason = "NotRequired"
 	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
 )
 
@@ -300,6 +301,14 @@ type UrlTemplatizationConfig struct {
 	Rules []string `json:"templatizationRules"`
 }
 
+// HeadersCollectionConfig represents configuration for HTTP headers collection.
+type HeadersCollectionConfig struct {
+	// Limit HTTP headers collection to specific header keys.
+	// if unset, no HTTP headers will be collected.
+	// HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.
+	HttpHeaderKeys []string `json:"httpHeaderKeys,omitempty"`
+}
+
 // all "traces" related configuration for an agent running on any process in a specific container.
 // The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.
 type AgentTracesConfig struct {
@@ -309,6 +318,14 @@ type AgentTracesConfig struct {
 
 	// A list of URL templatization configurations to be applied to the traces.
 	UrlTemplatization *UrlTemplatizationConfig `json:"urlTemplatization,omitempty"`
+
+	// Configuration for headers collection. If not specified, no headers will be collected.
+	HeadersCollection *HeadersCollectionConfig `json:"headersCollection,omitempty"`
+
+	// HeadSamplingConfig is a set sampling rules.
+	// This config currently only applies to root spans.
+	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
+	HeadSampling *HeadSamplingConfig `json:"headSampling,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
@@ -479,7 +496,7 @@ type AttributesAndSamplerRule struct {
 //
 // If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.
 type HeadSamplingConfig struct {
-	AttributesAndSamplerRules []AttributesAndSamplerRule `json:"attributesAndSamplerRules"`
+	AttributesAndSamplerRules []AttributesAndSamplerRule `json:"attributesAndSamplerRules,omitempty"`
 	// Used as a fallback if all rules evaluate to false,
 	// it may be empty - in this case the default value will be 1 - all spans are sampled.
 	// it should be a float value in the range [0, 1] - the fraction of spans to sample.

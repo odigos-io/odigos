@@ -117,15 +117,14 @@ type RuntimeAgent struct {
 
 	// If true, the agent supports wasp
 	WaspSupported bool `yaml:"waspSupported,omitempty"`
+
+	// If true, the instrumentation applied by this agent does not require application restart.
+	NoRestartRequired bool `yaml:"noRestartRequired,omitempty"`
 }
 
 type SpanMetrics struct {
 	// if true, the agent supports span metrics.
 	Supported bool `yaml:"supported,omitempty"`
-
-	// if true, it means that span metrics configuration should be injected
-	// to the pods as env variable.
-	InjectAsEnvVar bool `yaml:"injectAsEnvVar,omitempty"`
 }
 
 // configuration for this distro's support for metrics generated from the runtime agent.
@@ -136,6 +135,42 @@ type AgentMetrics struct {
 	// unlike span metrics calculated at collectors which miss
 	// head unsampled spans and spans dropped before reaching the collector.
 	SpanMetrics *SpanMetrics `yaml:"spanMetrics,omitempty"`
+}
+
+type HeadSampling struct {
+	// if true, the distro supports head sampling for health checks.
+	Supported bool `yaml:"supported,omitempty"`
+
+	// the attribute to check for head sampling url.path
+	// support for old semantic convention ("http.target" -> "url.path")
+	UrlPathAttributeKey string `yaml:"urlPathAttributeKey,omitempty"`
+
+	// the attribute to check for head sampling http.method
+	// support for old semantic convention ("http.method" -> "http.request.method")
+	HttpRequestMethodAttributeKey string `yaml:"httpRequestMethodAttributeKey,omitempty"`
+}
+
+type HeadersCollection struct {
+	// if true, the distro supports headers collection for health checks.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type UrlTemplatization struct {
+	// if true, the distro supports applying URL templatization rules to traces in the agent.
+	// useful when spanmetrics are calculated in the agent itself, and for head sampling to use correct route.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
+type Traces struct {
+	// if set, the distro supports head sampling based on root spans of traces.
+	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
+
+	// if set, the distro supports headers collection for http headers.
+	HeadersCollection *HeadersCollection `yaml:"headersCollection,omitempty"`
+
+	// if set, the distro supports applying URL templatization rules to traces in the agent.
+	// useful when spanmetrics are calculated in the agent itself, and for head sampling to use correct route.
+	UrlTemplatization *UrlTemplatization `yaml:"urlTemplatization,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,
@@ -180,6 +215,15 @@ type OtelDistro struct {
 	// Can be nil in case no runtime agent is required.
 	RuntimeAgent *RuntimeAgent `yaml:"runtimeAgent,omitempty"`
 
+	// if true, the distro receives it's configuration as environment variables.
+	// it means the distro does not support opamp and not configurable via ebpf.
+	// these pods will require a restart to apply the new configuration.
+	// used for java as temporary solution until we have a better way to configure the agent.
+	ConfigAsEnvVars bool `yaml:"configAsEnvVars,omitempty"`
+
 	// document support for metrics produced directly from the runtime
 	AgentMetrics *AgentMetrics `yaml:"agentMetrics,omitempty"`
+
+	// document support by this distro for trace features
+	Traces *Traces `yaml:"traces,omitempty"`
 }

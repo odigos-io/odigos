@@ -495,21 +495,21 @@ func verifyMetricsConfig(odigosConfiguration *common.OdigosConfiguration) error 
 		return nil
 	}
 
-	if odigosConfiguration.MetricsSources.OdigosOwnMetrics != nil {
+	if odigosConfiguration.MetricsSources.OdigosOwnMetrics != nil && odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval != "" {
 		_, err := time.ParseDuration(odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval)
 		if err != nil {
 			return fmt.Errorf("failed to parse odigos own metrics interval: %w", err)
 		}
 	}
 
-	if odigosConfiguration.MetricsSources.KubeletStats != nil {
+	if odigosConfiguration.MetricsSources.KubeletStats != nil && odigosConfiguration.MetricsSources.KubeletStats.Interval != "" {
 		_, err := time.ParseDuration(odigosConfiguration.MetricsSources.KubeletStats.Interval)
 		if err != nil {
 			return fmt.Errorf("failed to parse kubelet stats interval: %w", err)
 		}
 	}
 
-	if odigosConfiguration.MetricsSources.HostMetrics != nil {
+	if odigosConfiguration.MetricsSources.HostMetrics != nil && odigosConfiguration.MetricsSources.HostMetrics.Interval != "" {
 		_, err := time.ParseDuration(odigosConfiguration.MetricsSources.HostMetrics.Interval)
 		if err != nil {
 			return fmt.Errorf("failed to parse host metrics interval: %w", err)

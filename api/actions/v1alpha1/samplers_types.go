@@ -25,6 +25,7 @@ const (
 	ActionNameErrorSampler         = "ErrorSampler"
 	ActionNameServiceNameSampler   = "ServiceNameSampler"
 	ActionNameProbabilisticSampler = "ProbabilisticSampler"
+	ActionNameIgnoreHealthChecks   = "IgnoreHealthChecks"
 )
 
 type SamplersConfig struct {
@@ -44,6 +45,11 @@ type SamplersConfig struct {
 
 	// ProbabilisticSamplerSpec defines the desired state of ProbabilisticSampler
 	ProbabilisticSampler *ProbabilisticSamplerConfig `json:"probabilisticSampler,omitempty"`
+
+	// automatically sample out health checks by a set fraction.
+	// health checks are discovered based on the livenessProbe and readinessProbe in the workload spec.
+	// if set, health checks are sampled regardless of any other configuration (head sampling at agent level, before traces are pushed into the collector pipeline)
+	IgnoreHealthChecks *IgnoreHealthChecksConfig `json:"ignoreHealthChecks,omitempty"`
 }
 
 // DefaultSamplerConfig is a base config for all samplers.
@@ -96,6 +102,17 @@ type SpanAttributeSamplerConfig struct {
 type ProbabilisticSamplerConfig struct {
 	// SamplingPercentage determines the percentage (0–100) of traces to sample.
 	SamplingPercentage string `json:"sampling_percentage"`
+}
+
+type IgnoreHealthChecksConfig struct {
+	// FractionToRecord determines the percentage (0–100) of health checks traces to record.
+	// should be in range [0, 1]
+	// 0 (default) means no health checks traces will be recorded
+	// 1 means all health checks traces will be recorded
+	// +kubebuilder:default:=0
+	// +kubebuilder:validation:Minimum:=0
+	// +kubebuilder:validation:Maximum:=1
+	FractionToRecord float64 `json:"fractionToRecord,omitempty"`
 }
 
 func (ProbabilisticSamplerConfig) ProcessorType() string {

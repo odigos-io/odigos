@@ -22,6 +22,8 @@ type Settings struct {
 	InitialConfig Config
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
 	TracesMap ReaderMap
+	// MetricsMap is the optional common eBPF map that will be used to send metric events from eBPF probes.
+	MetricsMap MetricsMap
 }
 
 type ReaderMap struct {
@@ -34,6 +36,13 @@ type ReaderMap struct {
 	// meaning the instrumentation does not read from this map directly,
 	// but rather it is done by an external reader (e.g., a telemetry collector).
 	ExternalReader bool
+}
+
+// MetricsMap is used to pass the metrics eBPF map to the instrumentation.
+// It is used to send metric events from eBPF probes.
+type MetricsMap struct {
+	// HashMapOfMaps is the eBPF map that will be used to send metric events from eBPF probes.
+	HashMapOfMaps *ebpf.Map
 }
 
 // Factory is used to create an Instrumentation
