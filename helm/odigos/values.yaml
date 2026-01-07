@@ -514,15 +514,15 @@ openshift:
   # Controls whether to use OpenShift-specific settings and images.
   enabled: false
 
-  # Controls whether to use UBI9 (Universal Base Image 9) based image tags (-ubi9 suffix).
+  # Controls whether to use Red Hat certified image tags (-certified suffix).
   # By default, this is unset and will inherit the value of openshift.enabled.
-  # Set to false to explicitly disable UBI9 images even when openshift.enabled is true.
-  # Set to true to explicitly enable UBI9 images (requires openshift.enabled to also be true).
-  # Note that ubi9ImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry
+  # Set to false to explicitly disable certified images even when openshift.enabled is true.
+  # Set to true to explicitly enable certified images (requires openshift.enabled to also be true).
+  # Note that certifiedImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry
   # (registry.connect.redhat.com) which is used when openshift.enabled is true.
   # Setting this to false is useful if you are hosting images in your own registry (with imagePrefix set) but
   # still deploying on OpenShift, which requires other settings that are applied by openshift.enabled for OpenShift compatibility.
-  #ubi9ImageTags: false
+  #certifiedImageTags: false
 
 gke:
   enabled: false

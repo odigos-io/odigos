@@ -599,7 +599,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
-								// This env var is used to set the image (ubi9 or not) of the init container (odigos-agents)
+								// This env var is used to set the image (certified or not) of the init container (odigos-agents)
 								{
 									Name:  k8sconsts.OdigosInitContainerEnvVarName,
 									Value: containers.GetImageName(imagePrefix, initContainerImage, version),
