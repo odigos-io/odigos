@@ -148,6 +148,12 @@ spec:
                               items:
                                 type: string
                               type: array
+                            histogramBucketsMs:
+                              description: explicit buckets list for the histogram
+                                metrics in ms
+                              items:
+                                type: integer
+                              type: array
                             intervalMs:
                               description: |-
                                 time interval in miliseconds for flushing the span metrics.
