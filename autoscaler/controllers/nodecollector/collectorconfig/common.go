@@ -27,6 +27,7 @@ const (
 	clusterCollectorMetricsExporterName = "otlp/out-cluster-collector-metrics"
 	clusterCollectorLogsExporterName    = "otlp/out-cluster-collector-logs"
 	resourceDetectionProcessorName      = "resourcedetection"
+	odigosPartialK8sAttrsProcessorName  = "odigospartialk8sattrsprocessor"
 )
 
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
