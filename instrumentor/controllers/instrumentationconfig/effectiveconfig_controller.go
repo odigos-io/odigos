@@ -27,12 +27,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type InstrumentationConfigReconciler struct {
+type EffectiveConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *EffectiveConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	var ic odigosv1.InstrumentationConfig

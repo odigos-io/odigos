@@ -299,6 +299,36 @@ type AgentSpanMetricsConfig struct {
 	HistogramBucketsMs []int `json:"histogramBucketsMs,omitempty"`
 }
 
+// AgentRuntimeMetricConfig represents configuration for a specific runtime metric
+type AgentRuntimeMetricConfig struct {
+	// name of the runtime metric (e.g., "jvm.class.loaded")
+	Name string `json:"name"`
+
+	// whether this specific metric is disabled
+	// - nil: use default behavior [enabled]
+	// - false: explicitly enabled
+	// - true: explicitly disabled
+	Disabled *bool `json:"disabled,omitempty"`
+}
+
+// AgentJavaRuntimeMetricsConfig represents configuration for Java runtime metrics
+type AgentJavaRuntimeMetricsConfig struct {
+	// global enable/disable for all Java runtime metrics
+	// - nil: use default behavior [enabled]
+	// - false: explicitly enabled
+	// - true: explicitly disabled
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// individual metric configurations
+	Metrics []AgentRuntimeMetricConfig `json:"metrics,omitempty"`
+}
+
+// AgentRuntimeMetricsConfig represents configuration for runtime metrics across languages
+type AgentRuntimeMetricsConfig struct {
+	// configuration for Java runtime metrics
+	Java *AgentJavaRuntimeMetricsConfig `json:"java,omitempty"`
+}
+
 // UrlTemplatizationConfig represents configuration for URL templatization rules
 type UrlTemplatizationConfig struct {
 	// Rule is the template rule to be applied to URLs
@@ -341,6 +371,11 @@ type AgentMetricsConfig struct {
 	// this is most accurate as it includes any sampled spans,
 	// and is not affected if spans are dropped anywhere in the pipeline.
 	SpanMetrics *AgentSpanMetricsConfig `json:"spanMetrics,omitempty"`
+
+	// if not nil, it means agent should report runtime metrics,
+	// such as JVM metrics for Java applications.
+	// these metrics provide insights into the runtime environment performance.
+	RuntimeMetrics *AgentRuntimeMetricsConfig `json:"runtimeMetrics,omitempty"`
 }
 
 // all "logs" related configuration for an agent running on any process in a specific container.
@@ -455,6 +490,10 @@ type SdkConfig struct {
 
 	// list of the custom instrumentation probes the SDK should use.
 	CustomInstrumentations *instrumentationrules.CustomInstrumentations `json:"customInstrumentations,omitempty"`
+
+	// configuration for runtime metrics that the SDK should generate.
+	// these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
+	RuntimeMetrics *AgentRuntimeMetricsConfig `json:"runtimeMetrics,omitempty"`
 }
 
 // 'Operand' represents the attributes and values that an operator acts upon in an expression

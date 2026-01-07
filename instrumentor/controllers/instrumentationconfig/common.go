@@ -1,6 +1,8 @@
 package instrumentationconfig
 
 import (
+	"fmt"
+
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
@@ -8,11 +10,13 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error {
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList, conf *common.OdigosConfiguration) error {
 	workload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("conf", conf)
 
 	sdkConfigs := make([]odigosv1alpha1.SdkConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()

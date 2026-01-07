@@ -275,9 +275,33 @@ type MetricsSourceAgentSpanMetricsConfiguration struct {
 	Enabled bool `json:"enabled"`
 }
 
+type MetricsSourceAgentRuntimeMetricsConfiguration struct {
+	// configuration for Java runtime metrics
+	Java *MetricsSourceAgentJavaRuntimeMetricsConfiguration `json:"java,omitempty"`
+}
+
+type MetricsSourceAgentJavaRuntimeMetricsConfiguration struct {
+	// global enable/disable for all Java runtime metrics
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// individual metric configurations
+	Metrics []MetricsSourceAgentRuntimeMetricConfiguration `json:"metrics,omitempty"`
+}
+
+type MetricsSourceAgentRuntimeMetricConfiguration struct {
+	// name of the runtime metric (e.g., "jvm.class.loaded")
+	Name string `json:"name"`
+
+	// whether this specific metric is disabled
+	Disabled *bool `json:"disabled,omitempty"`
+}
+
 // +kubebuilder:object:generate=true
 type MetricsSourceAgentMetricsConfiguration struct {
 	SpanMetrics *MetricsSourceAgentSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
+
+	// configuration for runtime metrics from agents
+	RuntimeMetrics *MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
 }
 
 // AgentsInitContainerResources defines resource limits and requests for the init container

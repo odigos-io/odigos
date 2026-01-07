@@ -672,9 +672,11 @@ metricsSources:
         # Individual metric configuration - each metric can be enabled/disabled
         metrics:
           # Class loading metrics
-          - name: jvm.class.loaded
+          - name: jvm.gc.duration
             disabled: true
-          - name: jvm.class.unloaded
+          - name: jvm.memory.used
+            disabled: true
+          - name: jvm.thread.state
             disabled: true
 
 # Enable automatic Go library offsets updates.
