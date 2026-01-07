@@ -3,11 +3,13 @@ package centralodigos
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,15 +40,47 @@ func (m *keycloakResourceManager) Name() string { return k8sconsts.KeycloakResou
 
 func (m *keycloakResourceManager) InstallFromScratch(ctx context.Context) error {
 	withPvc := m.config.StorageClassName != nil && *m.config.StorageClassName != ""
+
+	// Resolve the admin password: reuse existing, use provided, or generate new
+	adminPassword, err := m.resolveAdminPassword(ctx)
+	if err != nil {
+		return err
+	}
+
+	resolvedConfig := m.config
+	resolvedConfig.AdminPassword = adminPassword
+
 	resources := []kube.Object{
-		NewKeycloakSecret(m.ns, m.config),
-		NewKeycloakDeployment(m.ns, m.config, withPvc),
+		NewKeycloakSecret(m.ns, resolvedConfig),
+		NewKeycloakDeployment(m.ns, resolvedConfig, withPvc),
 		NewKeycloakService(m.ns),
 	}
 	if withPvc {
-		resources = append(resources, NewKeycloakPVC(m.ns, m.config))
+		resources = append(resources, NewKeycloakPVC(m.ns, resolvedConfig))
 	}
 	return m.client.ApplyResources(ctx, 1, resources, m.managerOpts)
+}
+
+// resolveAdminPassword determines the admin password to use:
+// 1. If secret exists, reuse the existing password (prevents mismatch with Keycloak)
+// 2. If password was provided via flag, use it
+// 3. Otherwise, generate a random UUID as password
+func (m *keycloakResourceManager) resolveAdminPassword(ctx context.Context) (string, error) {
+	existingSecret, err := m.client.CoreV1().Secrets(m.ns).Get(ctx, k8sconsts.KeycloakSecretName, metav1.GetOptions{})
+	if err == nil {
+		if password, ok := existingSecret.Data[k8sconsts.KeycloakAdminPasswordKey]; ok {
+			return string(password), nil
+		}
+	} else if !apierrors.IsNotFound(err) {
+		return "", err
+	}
+
+	if m.config.AdminPassword != "" {
+		return m.config.AdminPassword, nil
+	}
+
+	// Generate a random password using UUID
+	return uuid.New().String(), nil
 }
 
 func NewKeycloakSecret(ns string, config AuthConfig) *corev1.Secret {
