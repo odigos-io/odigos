@@ -55,6 +55,7 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 			if effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions != nil {
 				dimensions = append(dimensions, effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions...)
 			}
+			fmt.Println("len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets)", len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets))
 			if len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets) > 0 {
 				histogramBuckets = make([]int, len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets))
 				for i, bucket := range effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets {
@@ -68,6 +69,7 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 						}
 					}
 					histogramBuckets[i] = int(bucketDuration.Milliseconds())
+					fmt.Println("histogramBuckets[i]", histogramBuckets[i], "bucket", bucket)
 				}
 			}
 		}
