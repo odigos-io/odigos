@@ -56,7 +56,7 @@ func CalculateMetricsConfig(metricsEnabled bool, effectiveConfig *common.OdigosC
 				dimensions = append(dimensions, effectiveConfig.MetricsSources.SpanMetrics.AdditionalDimensions...)
 			}
 			if len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets) > 0 {
-				histogramBuckets := make([]int, len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets))
+				histogramBuckets = make([]int, len(effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets))
 				for i, bucket := range effectiveConfig.MetricsSources.SpanMetrics.ExplicitHistogramBuckets {
 					bucketDuration, err := time.ParseDuration(bucket)
 					if err != nil {
