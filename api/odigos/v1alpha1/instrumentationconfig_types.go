@@ -294,6 +294,9 @@ type AgentSpanMetricsConfig struct {
 	// time interval in miliseconds for flushing the span metrics.
 	// defaults: 60000 (60 seconds, 1 minute)
 	IntervalMs int `json:"intervalMs,omitempty"`
+
+	// explicit buckets list for the histogram metrics in ms
+	HistogramBucketsMs []int `json:"histogramBucketsMs,omitempty"`
 }
 
 // UrlTemplatizationConfig represents configuration for URL templatization rules
