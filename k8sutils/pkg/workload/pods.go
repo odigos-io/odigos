@@ -24,6 +24,9 @@ func IsStaticPod(p *corev1.Pod) bool {
 	}
 
 	// https://kubernetes.io/docs/reference/labels-annotations-taints/#kubernetes-io-config-source
+	// This annotation is added by the kubelet to indicate where the Pod comes from.
+	// For static Pods, the annotation value could be one of file or http depending on where the Pod manifest is located.
+	// For a Pod created on the API server and then scheduled to the current node, the annotation value is api.
 	if p.Annotations == nil {
 		return false
 	}
