@@ -1,7 +1,4 @@
 {{- if (include "odigos.secretExists" .) }}
-{{- if not .Values.auth.adminPassword }}
-{{- fail "Central admin password is required. Please use --set auth.adminPassword=<your-password>" }}
-{{- end }}
 apiVersion: v1
 kind: Service
 metadata:
