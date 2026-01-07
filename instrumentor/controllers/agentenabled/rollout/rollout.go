@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/distros/distro"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -96,11 +97,11 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	// check if at least one of the distributions used by this workload requires a rollout
 	hasDistributionThatRequiresRollout := false
 	for _, containerConfig := range ic.Spec.Containers {
-		distro := distroProvider.GetDistroByName(containerConfig.OtelDistroName)
-		if distro == nil {
+		d := distroProvider.GetDistroByName(containerConfig.OtelDistroName)
+		if d == nil {
 			continue
 		}
-		if distro.RuntimeAgent != nil && !distro.RuntimeAgent.NoRestartRequired {
+		if distro.IsRestartRequired(d, conf) {
 			hasDistributionThatRequiresRollout = true
 		}
 	}
@@ -109,7 +110,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
 		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+			Type: odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			// currently we interpret False as an error state, so we use True here to indicate a healthy state
 			// it might be confusing since rollout is not actually done, but this is the closest match given the k8s condition semantics.
 			Status:  metav1.ConditionTrue,
