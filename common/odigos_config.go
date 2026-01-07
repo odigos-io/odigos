@@ -271,15 +271,18 @@ type MetricsSourceOdigosOwnMetricsConfiguration struct {
 	Interval string `json:"interval,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type MetricsSourceAgentSpanMetricsConfiguration struct {
 	Enabled bool `json:"enabled"`
 }
 
+// +kubebuilder:object:generate=true
 type MetricsSourceAgentRuntimeMetricsConfiguration struct {
 	// configuration for Java runtime metrics
 	Java *MetricsSourceAgentJavaRuntimeMetricsConfiguration `json:"java,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type MetricsSourceAgentJavaRuntimeMetricsConfiguration struct {
 	// global enable/disable for all Java runtime metrics
 	Disabled *bool `json:"disabled,omitempty"`
@@ -288,6 +291,7 @@ type MetricsSourceAgentJavaRuntimeMetricsConfiguration struct {
 	Metrics []MetricsSourceAgentRuntimeMetricConfiguration `json:"metrics,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type MetricsSourceAgentRuntimeMetricConfiguration struct {
 	// name of the runtime metric (e.g., "jvm.class.loaded")
 	Name string `json:"name"`

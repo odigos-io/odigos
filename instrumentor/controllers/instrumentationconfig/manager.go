@@ -45,12 +45,15 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	// watch effective config
+	// watch effective config for any changes OR specific runtime metrics changes
 	err = builder.
 		ControllerManagedBy(mgr).
 		Named("instrumentor-effectiveconfig-instrumentationconfig").
 		For(&corev1.ConfigMap{}).
-		WithEventFilter(utilpredicate.OdigosEffectiveConfigMapPredicate).
+		WithEventFilter(predicate.And(
+			utilpredicate.OdigosEffectiveConfigMapPredicate,
+			&instrumentorpredicate.EffectiveConfigRuntimeMetricsChangedPredicate{},
+		)).
 		Complete(&EffectiveConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

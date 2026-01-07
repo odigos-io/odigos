@@ -20,7 +20,8 @@ package v1alpha1
 // AgentMetricsConfigApplyConfiguration represents a declarative configuration of the AgentMetricsConfig type for use
 // with apply.
 type AgentMetricsConfigApplyConfiguration struct {
-	SpanMetrics *AgentSpanMetricsConfigApplyConfiguration `json:"spanMetrics,omitempty"`
+	SpanMetrics    *AgentSpanMetricsConfigApplyConfiguration    `json:"spanMetrics,omitempty"`
+	RuntimeMetrics *AgentRuntimeMetricsConfigApplyConfiguration `json:"runtimeMetrics,omitempty"`
 }
 
 // AgentMetricsConfigApplyConfiguration constructs a declarative configuration of the AgentMetricsConfig type for use with
@@ -34,5 +35,13 @@ func AgentMetricsConfig() *AgentMetricsConfigApplyConfiguration {
 // If called multiple times, the SpanMetrics field is set to the value of the last call.
 func (b *AgentMetricsConfigApplyConfiguration) WithSpanMetrics(value *AgentSpanMetricsConfigApplyConfiguration) *AgentMetricsConfigApplyConfiguration {
 	b.SpanMetrics = value
+	return b
+}
+
+// WithRuntimeMetrics sets the RuntimeMetrics field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RuntimeMetrics field is set to the value of the last call.
+func (b *AgentMetricsConfigApplyConfiguration) WithRuntimeMetrics(value *AgentRuntimeMetricsConfigApplyConfiguration) *AgentMetricsConfigApplyConfiguration {
+	b.RuntimeMetrics = value
 	return b
 }
