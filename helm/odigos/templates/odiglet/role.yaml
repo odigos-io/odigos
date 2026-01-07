@@ -6,12 +6,24 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
+# for the collector live config updates, it needs to watch the config map
   - apiGroups:
       - ''
     resources:
       - configmaps
     resourceNames:
       - odigos-data-collection
+    verbs:
+      - get
+      - list
+      - watch
+# for global configs read by the odiglet
+  - apiGroups:
+      - ''
+    resourceNames:
+      - effective-config
+    resources:
+      - configmaps
     verbs:
       - get
       - list
