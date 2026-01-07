@@ -120,7 +120,7 @@ jobs:
         run: |
           declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
           for repo in "${REPOS[@]}"; do
-            REPOS+=("${repo}-ubi9")
+            REPOS+=("${repo}-rhel-certified")
           done
 
           TAG_TO_CHECK=${{ env.TAG }}
@@ -192,10 +192,10 @@ jobs:
         run: |
           ko build --bare --tags latest --tags ${{ env.TAG }} --platform=linux/amd64,linux/arm64
 
-      - name: publish cli UBI9 image to GCR registry
+      - name: publish cli certified image to GCR registry
         working-directory: ./cli
         env:
-          KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-ubi9
+          KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-certified
           KO_CONFIG_PATH: ./.ko.yaml
           VERSION: ${{ env.TAG }}
           SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}

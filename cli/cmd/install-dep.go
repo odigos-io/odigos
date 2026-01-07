@@ -303,14 +303,14 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 	var imageReferences resourcemanager.ImageReferences
 	if openshift {
 		imageReferences = resourcemanager.ImageReferences{
-			AutoscalerImage:    k8sconsts.AutoScalerImageUBI9,
-			CollectorImage:     k8sconsts.OdigosClusterCollectorImageUBI9,
-			InitContainerImage: k8sconsts.OdigosInitContainerImageUBI9,
-			InstrumentorImage:  k8sconsts.InstrumentorImageUBI9,
-			OdigletImage:       k8sconsts.OdigletImageUBI9,
+			AutoscalerImage:    k8sconsts.AutoScalerImageCertified,
+			CollectorImage:     k8sconsts.OdigosClusterCollectorImageCertified,
+			InitContainerImage: k8sconsts.OdigosInitContainerImageCertified,
+			InstrumentorImage:  k8sconsts.InstrumentorImageCertified,
+			OdigletImage:       k8sconsts.OdigletImageCertified,
 			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
-			SchedulerImage:     k8sconsts.SchedulerImageUBI9,
-			UIImage:            k8sconsts.UIImageUBI9,
+			SchedulerImage:     k8sconsts.SchedulerImageCertified,
+			UIImage:            k8sconsts.UIImageCertified,
 		}
 	} else {
 		imageReferences = resourcemanager.ImageReferences{
@@ -327,9 +327,9 @@ func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcema
 
 	if odigosTier == common.OnPremOdigosTier {
 		if openshift {
-			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImageUBI9
-			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageUBI9
-			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImageUBI9
+			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImageCertified
+			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageCertified
+			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImageCertified
 		} else {
 			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
 			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
@@ -352,9 +352,9 @@ func CreateOdigosConfiguration(odigosTier common.OdigosTier, nodeSelector map[st
 		if imagePrefix == "" {
 			imagePrefix = k8sconsts.RedHatImagePrefix
 		}
-		odigletImage = k8sconsts.OdigletImageUBI9
-		instrumentorImage = k8sconsts.InstrumentorImageUBI9
-		autoScalerImage = k8sconsts.AutoScalerImageUBI9
+		odigletImage = k8sconsts.OdigletImageCertified
+		instrumentorImage = k8sconsts.InstrumentorImageCertified
+		autoScalerImage = k8sconsts.AutoScalerImageCertified
 	}
 
 	var parsedUserJson *common.UserInstrumentationEnvs
