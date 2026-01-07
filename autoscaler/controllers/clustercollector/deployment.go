@@ -236,6 +236,16 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 								SuccessThreshold: 1,
 								TimeoutSeconds:   5,
 							},
+							StartupProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/",
+										Port: intstr.FromInt(13133),
+									},
+								},
+								FailureThreshold: 30,
+								PeriodSeconds:    10,
+							},
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceMemory: requestMemoryQuantity,
