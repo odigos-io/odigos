@@ -112,11 +112,11 @@ jobs:
 
             DOCKERHUB_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
 
-            UBI9_SUFFIXES=("" "-ubi9")
+            IMAGE_SUFFIXES=("" "-rhel-certified")
             # Track failed copies for potential rollback
             FAILED_COPIES=()
 
-            for SUFFIX in "${UBI9_SUFFIXES[@]}"; do
+            for SUFFIX in "${IMAGE_SUFFIXES[@]}"; do
               # Process GCR images
               for IMAGE_NAME in "${GCR_IMAGE_NAMES[@]}"; do
                 REPO=${GCR_REPO}
