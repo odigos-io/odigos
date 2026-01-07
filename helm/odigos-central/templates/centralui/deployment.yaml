@@ -23,6 +23,11 @@ spec:
         - name: central-ui
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-ui" "Tag" $imageTag) }}
+          env:
+            - name: CURRENT_NS
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           resources:
             requests:
               cpu: {{ .Values.centralUI.resources.requests.cpu }}
