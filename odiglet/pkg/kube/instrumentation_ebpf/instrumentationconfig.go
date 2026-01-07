@@ -6,10 +6,12 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
+	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
@@ -49,6 +51,11 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 
+	conf, err := k8sutils.GetCurrentOdigosConfiguration(ctx, i.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// potentially send config update events to active instrumentations
 	configUpdateErr := i.sendConfigUpdates(ctx, podWorkload, instrumentationConfig)
 	if configUpdateErr != nil {
@@ -73,7 +80,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 
 	// potentially send instrumentation requests for processes that are part of the instrumented workload and support
 	// instrumentation without restart
-	instrumentationRequestErr := i.sendInstrumentationRequest(ctx, podWorkload, instrumentationConfig)
+	instrumentationRequestErr := i.sendInstrumentationRequest(ctx, podWorkload, instrumentationConfig, &conf)
 	if instrumentationRequestErr != nil {
 		return ctrl.Result{}, instrumentationRequestErr
 	}
@@ -122,7 +129,7 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 
 // sendInstrumentationRequest sends an instrumentation request for all processes that are part of the given workload
 // and run in containers that support instrumentation without a restart.
-func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context.Context, podWorkload k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig) error {
+func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context.Context, podWorkload k8sconsts.PodWorkload, instrumentationConfig *odigosv1.InstrumentationConfig, conf *common.OdigosConfiguration) error {
 	// check for distributions that support instrumentation without a restart
 	distroByContainer := make(map[string]*distro.OtelDistro)
 	for _, containerConfig := range instrumentationConfig.Spec.Containers {
@@ -130,7 +137,7 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 			continue
 		}
 		d := i.DistributionGetter.GetDistroByName(containerConfig.OtelDistroName)
-		if d != nil && d.RuntimeAgent != nil && d.RuntimeAgent.NoRestartRequired {
+		if !distro.IsRestartRequired(d, conf) {
 			distroByContainer[containerConfig.ContainerName] = d
 		}
 	}
