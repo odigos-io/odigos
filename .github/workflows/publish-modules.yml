@@ -212,9 +212,9 @@ jobs:
           push: true
           provenance: false
           tags: |
-            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
-            keyval/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
-            ghcr.io/odigos-io/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-ubi9' || '' }}:${{ env.ODIGOS_TAG }}
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-rhel-certified' || '' }}:${{ env.ODIGOS_TAG }}
+            keyval/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-rhel-certified' || '' }}:${{ env.ODIGOS_TAG }}
+            ghcr.io/odigos-io/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-rhel-certified' || '' }}:${{ env.ODIGOS_TAG }}
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
             ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
