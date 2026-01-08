@@ -2,14 +2,12 @@ package odigospartialk8sattrsprocessor
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
-	"k8s.io/client-go/rest"
 )
 
 //go:generate mdatagen metadata.yaml
@@ -33,21 +31,7 @@ func createLogsProcessor(
 	cfg component.Config,
 	nextConsumer consumer.Logs) (processor.Logs, error) {
 
-	// Get in-cluster config
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get in-cluster config: %w", err)
-	}
-
-	proc, err := newServiceNameProcessor(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create service name processor: %w", err)
-	}
-
-	// Start the informer
-	if err := proc.start(ctx); err != nil {
-		return nil, fmt.Errorf("failed to start pod metadata informer: %w", err)
-	}
+	proc := newPartialK8sAttrsProcessor()
 
 	return processorhelper.NewLogs(
 		ctx,
@@ -56,5 +40,6 @@ func createLogsProcessor(
 		nextConsumer,
 		proc.processLogs,
 		processorhelper.WithCapabilities(consumer.Capabilities{MutatesData: true}),
+		processorhelper.WithStart(proc.Start),
 	)
 }
