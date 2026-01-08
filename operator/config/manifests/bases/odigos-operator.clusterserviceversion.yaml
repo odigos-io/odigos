@@ -6,7 +6,7 @@ metadata:
       "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.8.7"}}]'
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.8.7
+    containerImage: registry.connect.redhat.com/odigos/odigos-operator-certified:v1.8.7
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"

@@ -19,8 +19,8 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.8.7
-    createdAt: "2025-12-25T12:06:56Z"
+    containerImage: registry.connect.redhat.com/odigos/odigos-operator-certified:v1.8.7
+    createdAt: "2026-01-07T15:07:34Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -32,7 +32,7 @@ metadata:
     features.operators.openshift.io/token-auth-gcp: "false"
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for
       enterprise features)
-    operators.operatorframework.io/builder: operator-sdk-v1.39.1
+    operators.operatorframework.io/builder: operator-sdk-v1.41.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
   name: odigos-operator.v1.8.7
@@ -198,6 +198,7 @@ spec:
           resources:
           - pods
           verbs:
+          - delete
           - get
           - list
           - watch
@@ -310,6 +311,14 @@ spec:
           verbs:
           - get
         - apiGroups:
+          - apps
+          resources:
+          - deployments/scale
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
           - apps.openshift.io
           resources:
           - deploymentconfigs
@@ -337,6 +346,7 @@ spec:
           verbs:
           - create
           - delete
+          - get
           - patch
           - update
         - apiGroups:
@@ -357,6 +367,10 @@ spec:
           - jobs
           verbs:
           - create
+          - delete
+          - get
+          - list
+          - watch
         - apiGroups:
           - coordination.k8s.io
           resources:
@@ -510,22 +524,22 @@ spec:
                       key: ODIGOS_VERSION
                       name: odigos-operator-odigos-version-mgk5m6d4f5
                 - name: RELATED_IMAGE_AUTOSCALER
-                  value: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.8.7
+                  value: registry.connect.redhat.com/odigos/odigos-autoscaler-certified:v1.8.7
                 - name: RELATED_IMAGE_COLLECTOR
-                  value: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.8.7
+                  value: registry.connect.redhat.com/odigos/odigos-collector-certified:v1.8.7
                 - name: RELATED_IMAGE_FRONTEND
-                  value: registry.connect.redhat.com/odigos/odigos-ui-ubi9:v1.8.7
+                  value: registry.connect.redhat.com/odigos/odigos-ui-certified:v1.8.7
                 - name: RELATED_IMAGE_INSTRUMENTOR
-                  value: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v1.8.7
+                  value: registry.connect.redhat.com/odigos/odigos-instrumentor-certified:v1.8.7
                 - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9:v1.8.7
+                  value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified:v1.8.7
                 - name: RELATED_IMAGE_ODIGLET
-                  value: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9:v1.8.7
+                  value: registry.connect.redhat.com/odigos/odigos-odiglet-certified:v1.8.7
                 - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9:v1.8.7
+                  value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified:v1.8.7
                 - name: RELATED_IMAGE_SCHEDULER
-                  value: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9:v1.8.7
-                image: registry.connect.redhat.com/odigos/odigos-certified-operator-ubi9:v1.8.7
+                  value: registry.connect.redhat.com/odigos/odigos-scheduler-certified:v1.8.7
+                image: registry.connect.redhat.com/odigos/odigos-operator-certified:v1.8.7
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -623,20 +637,20 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
-  - image: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.8.7
+  - image: registry.connect.redhat.com/odigos/odigos-autoscaler-certified:v1.8.7
     name: autoscaler
-  - image: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.8.7
+  - image: registry.connect.redhat.com/odigos/odigos-collector-certified:v1.8.7
     name: collector
-  - image: registry.connect.redhat.com/odigos/odigos-ui-ubi9:v1.8.7
+  - image: registry.connect.redhat.com/odigos/odigos-ui-certified:v1.8.7
     name: frontend
-  - image: registry.connect.redhat.com/odigos/odigos-instrumentor-ubi9:v1.8.7
+  - image: registry.connect.redhat.com/odigos/odigos-instrumentor-certified:v1.8.7
     name: instrumentor
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-ubi9:v1.8.7
+  - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified:v1.8.7
     name: enterprise-instrumentor
-  - image: registry.connect.redhat.com/odigos/odigos-odiglet-ubi9:v1.8.7
+  - image: registry.connect.redhat.com/odigos/odigos-odiglet-certified:v1.8.7
     name: odiglet
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-ubi9:v1.8.7
+  - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified:v1.8.7
     name: enterprise-odiglet
-  - image: registry.connect.redhat.com/odigos/odigos-scheduler-ubi9:v1.8.7
+  - image: registry.connect.redhat.com/odigos/odigos-scheduler-certified:v1.8.7
     name: scheduler
   version: 1.8.7

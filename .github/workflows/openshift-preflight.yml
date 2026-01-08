@@ -51,25 +51,25 @@ jobs:
       matrix:
         include:
           - service: autoscaler
-            project_id: '6792518fe676251b15d7cf9a'
+            project_id: '6942cb5d59d620da99000690'
           - service: scheduler
-            project_id: '679251fd5ffdc336cfb4c43f'
+            project_id: '6942ce31bd3ede90dfeb314d'
           - service: instrumentor
-            project_id: '679251f3a8a8d04d0d10cc07'
+            project_id: '6942cd7986fc1a9e746a28c4'
           - service: enterprise-instrumentor
-            project_id: '67c5caee54f161b7c42c5e6f'
+            project_id: '6942cd1c59d620da99000e09'
           - service: collector
-            project_id: '679252b3ea28e5acc3d38df2'
+            project_id: '6942c4c059d620da99ffe8ff'
           - service: odiglet
-            project_id: '6792517927c09edd021cddf1'
+            project_id: '6942c36030a11ca75b3b8c9c'
           - service: enterprise-odiglet
-            project_id: '679bbe1fe0ccfe3f428bae2d'
+            project_id: '6942c2073faca318740b4c96'
           - service: ui
-            project_id: '6792b077b086a666569d9935'
+            project_id: '6942c57930a11ca75b3b945b'
           - service: operator
-            project_id: '67c5cadf8d089ef3612cf861'
+            project_id: '6942c52316deaa7bf744a0db'
           - service: cli
-            project_id: '68fb9313337ca20d95499695'
+            project_id: '6942c2f81da89bd45870abaa'
     runs-on: ubuntu-latest
     steps:
       - name: Download Preflight Binary
@@ -109,10 +109,10 @@ jobs:
         run: |
           if [ "${{ env.IS_PRERELEASE }}" = "false" ]; then
             echo "Running preflight with --submit flag for stable release"
-            ./preflight-linux-amd64 check container registry.odigos.io/odigos-${{ matrix.service }}-ubi9:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-component-id ${{ matrix.project_id }} --submit
+            ./preflight-linux-amd64 check container registry-rh.odigos.io/odigos-${{ matrix.service }}-rhel-certified:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-component-id ${{ matrix.project_id }} --submit
           else
             echo "Running preflight without --submit flag for pre-release"
-            ./preflight-linux-amd64 check container registry.odigos.io/odigos-${{ matrix.service }}-ubi9:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-component-id ${{ matrix.project_id }}
+            ./preflight-linux-amd64 check container registry-rh.odigos.io/odigos-${{ matrix.service }}-rhel-certified:${{ env.TAG }} --pyxis-api-token=${{ secrets.OPENSHIFT_PYXIS_TOKEN }} --certification-component-id ${{ matrix.project_id }}
           fi
 
 

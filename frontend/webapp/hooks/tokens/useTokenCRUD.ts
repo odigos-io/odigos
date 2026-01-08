@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useConfig } from '../config';
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_TOKENS, UPDATE_API_TOKEN } from '@/graphql';
@@ -35,9 +36,11 @@ export const useTokenCRUD = () => {
     }
   };
 
+  const tokens = useMemo(() => data?.computePlatform?.apiTokens || [], [data?.computePlatform?.apiTokens?.length]);
+
   return {
     loading,
-    tokens: data?.computePlatform?.apiTokens || [],
+    tokens,
     updateToken,
   };
 };

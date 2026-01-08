@@ -112,11 +112,11 @@ jobs:
 
             DOCKERHUB_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
 
-            UBI9_SUFFIXES=("" "-ubi9")
+            IMAGE_SUFFIXES=("" "-rhel-certified")
             # Track failed copies for potential rollback
             FAILED_COPIES=()
 
-            for SUFFIX in "${UBI9_SUFFIXES[@]}"; do
+            for SUFFIX in "${IMAGE_SUFFIXES[@]}"; do
               # Process GCR images
               for IMAGE_NAME in "${GCR_IMAGE_NAMES[@]}"; do
                 REPO=${GCR_REPO}
@@ -201,4 +201,55 @@ jobs:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
           success-description: "Successfully re-tagged release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
           failure-description: "ERROR: Failed to re-tag release candidate ${{ env.RC_TAG }} to stable ${{ env.STABLE_TAG }}"
+          tag: ${{ env.STABLE_TAG }}
+  release-collector-linux-packages:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: depot-ubuntu-24.04-8
+    steps:
+      - name: Notify Slack Start
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "start releasing odigos collector as linux packages"
+          failure-description: "error during releasing of odigos collector as linux packages"
+          tag: ${{ env.STABLE_TAG }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ env.STABLE_TAG }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+          workdir: collector
+
+      - name: Upload Linux packages to Artifact Registry
+        uses: odigos-io/ci-core/upload-linux-packages@v1.0.5
+        with:
+          gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
+          gcp-workload-identity-provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          gcp-service-account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          package-directory: 'collector/dist'
+          repository: 'odigos'
+
+      - name: Notify Slack Success
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Odigos collector linux packages released successfully"
+          failure-description: "ERROR: Odigos collector linux packages release failed"
           tag: ${{ env.STABLE_TAG }}
