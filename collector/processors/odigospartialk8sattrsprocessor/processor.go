@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
 )
 
@@ -40,13 +39,13 @@ func (p *partialK8sAttrsProcessor) Start(ctx context.Context, _ component.Host) 
 
 // workloadKindToSemconvKey maps Kubernetes workload kinds to their attribute keys.
 // Note: Argo Rollout uses a custom attribute since there's no semconv key for it.
-var workloadKindToSemconvKey = map[k8sconsts.WorkloadKind]string{
-	k8sconsts.WorkloadKindDeployment:  string(semconv.K8SDeploymentNameKey),
-	k8sconsts.WorkloadKindDaemonSet:   string(semconv.K8SDaemonSetNameKey),
-	k8sconsts.WorkloadKindStatefulSet: string(semconv.K8SStatefulSetNameKey),
-	k8sconsts.WorkloadKindJob:         string(semconv.K8SJobNameKey),
-	k8sconsts.WorkloadKindCronJob:     string(semconv.K8SCronJobNameKey),
-	k8sconsts.WorkloadKindArgoRollout: k8sconsts.K8SArgoRolloutNameAttribute,
+var workloadKindToSemconvKey = map[kube.WorkloadKind]string{
+	kube.WorkloadKindDeployment:  string(semconv.K8SDeploymentNameKey),
+	kube.WorkloadKindDaemonSet:   string(semconv.K8SDaemonSetNameKey),
+	kube.WorkloadKindStatefulSet: string(semconv.K8SStatefulSetNameKey),
+	kube.WorkloadKindJob:         string(semconv.K8SJobNameKey),
+	kube.WorkloadKindCronJob:     string(semconv.K8SCronJobNameKey),
+	kube.WorkloadKindArgoRollout: kube.K8SArgoRolloutNameAttribute,
 }
 
 func (processor *partialK8sAttrsProcessor) processResource(resource pcommon.Resource) {

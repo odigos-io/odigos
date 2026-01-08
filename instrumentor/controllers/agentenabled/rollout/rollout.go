@@ -109,7 +109,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
 		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+			Type: odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			// currently we interpret False as an error state, so we use True here to indicate a healthy state
 			// it might be confusing since rollout is not actually done, but this is the closest match given the k8s condition semantics.
 			Status:  metav1.ConditionTrue,
