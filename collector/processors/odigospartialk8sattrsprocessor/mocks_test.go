@@ -3,9 +3,9 @@ package odigospartialk8sattrsprocessor
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
 )
 
 // mockKubeClient is a mock implementation of kube.Client for testing
@@ -30,7 +30,7 @@ func (m *mockKubeClient) Start(ctx context.Context) error {
 	return nil
 }
 
-func (m *mockKubeClient) AddPod(uid types.UID, workloadName string, workloadKind k8sconsts.WorkloadKind, name, namespace string) {
+func (m *mockKubeClient) AddPod(uid types.UID, workloadName string, workloadKind kube.WorkloadKind, name, namespace string) {
 	m.pods[uid] = &kube.PartialPodMetadata{
 		Name:         name,
 		Namespace:    namespace,

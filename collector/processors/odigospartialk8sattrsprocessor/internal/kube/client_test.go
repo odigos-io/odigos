@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,12 +33,12 @@ func (s *ClientTestSuite) TestPartialPodMetadataStruct() {
 		Name:         "test-pod",
 		Namespace:    "test-ns",
 		WorkloadName: "test-deployment",
-		WorkloadKind: k8sconsts.WorkloadKindDeployment,
+		WorkloadKind: WorkloadKindDeployment,
 	}
 	s.Equal("test-pod", pod.Name)
 	s.Equal("test-ns", pod.Namespace)
 	s.Equal("test-deployment", pod.WorkloadName)
-	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
+	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestGetPodMetadata_NonExistent() {
@@ -51,14 +50,14 @@ func (s *ClientTestSuite) TestGetPodMetadata_Existing() {
 	podUID := types.UID("pod-uid-123")
 	s.client.pods[podUID] = &PartialPodMetadata{
 		WorkloadName: "my-service",
-		WorkloadKind: k8sconsts.WorkloadKindDeployment,
+		WorkloadKind: WorkloadKindDeployment,
 	}
 
 	pod, found := s.client.GetPodMetadata(podUID)
 
 	s.Require().True(found)
 	s.Equal("my-service", pod.WorkloadName)
-	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
+	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodAdd_Deployment() {
@@ -84,7 +83,7 @@ func (s *ClientTestSuite) TestHandlePodAdd_Deployment() {
 	// Note: extractWorkloadInfo uses the workload package which resolves ReplicaSet to Deployment
 	// The workload name is derived from stripping the suffix from the ReplicaSet name
 	s.Equal("deployment", pod.WorkloadName)
-	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
+	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodAdd_DaemonSet() {
@@ -106,7 +105,7 @@ func (s *ClientTestSuite) TestHandlePodAdd_DaemonSet() {
 	s.Equal("daemon-pod", pod.Name)
 	s.Equal("kube-system", pod.Namespace)
 	s.Equal("my-daemonset", pod.WorkloadName)
-	s.Equal(k8sconsts.WorkloadKindDaemonSet, pod.WorkloadKind)
+	s.Equal(WorkloadKindDaemonSet, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodAdd_StatefulSet() {
@@ -128,7 +127,7 @@ func (s *ClientTestSuite) TestHandlePodAdd_StatefulSet() {
 	s.Equal("postgres-0", pod.Name)
 	s.Equal("database", pod.Namespace)
 	s.Equal("postgres", pod.WorkloadName)
-	s.Equal(k8sconsts.WorkloadKindStatefulSet, pod.WorkloadKind)
+	s.Equal(WorkloadKindStatefulSet, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodAdd_NoOwner() {
@@ -148,7 +147,7 @@ func (s *ClientTestSuite) TestHandlePodAdd_NoOwner() {
 	s.Equal("standalone-pod", pod.Name)
 	s.Equal("default", pod.Namespace)
 	s.Equal("", pod.WorkloadName)
-	s.Equal(k8sconsts.WorkloadKind(""), pod.WorkloadKind)
+	s.Equal(WorkloadKind(""), pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodUpdate() {
@@ -183,7 +182,7 @@ func (s *ClientTestSuite) TestHandlePodUpdate() {
 	s.Equal("pod-to-update-renamed", pod.Name)
 	s.Equal("updated-ns", pod.Namespace)
 	s.Equal("new-owner", pod.WorkloadName)
-	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
+	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodDelete() {
@@ -213,7 +212,7 @@ func (s *ClientTestSuite) TestHandlePodDelete() {
 	s.Equal("pod-to-delete", pod.Name)
 	s.Equal("default", pod.Namespace)
 	s.Equal("my-service", pod.WorkloadName)
-	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
+	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 // ExtractPartialMetadataTestSuite tests the extractPartialMetadata function
