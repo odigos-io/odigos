@@ -3,11 +3,12 @@ package odigospartialk8sattrsprocessor
 import (
 	"context"
 
-	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
+
+	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/metadata"
 )
 
 //go:generate mdatagen metadata.yaml

@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/stretchr/testify/suite"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
 )
 
 // ProcessorTestSuite tests the partialK8sAttrsProcessor
@@ -33,7 +34,7 @@ func TestProcessorTestSuite(t *testing.T) {
 
 func (s *ProcessorTestSuite) TestProcessResource_SetsAllAttributes() {
 	// Workload is Deployment "my-app"
-	s.mockClient.AddPod(types.UID("test-pod-uid-1"), "my-app", k8sconsts.WorkloadKindDeployment, "my-app-xyz123", "production")
+	s.mockClient.AddPod(types.UID("test-pod-uid-1"), "my-app", kube.WorkloadKindDeployment, "my-app-xyz123", "production")
 
 	resource := pcommon.NewResource()
 	resource.Attributes().PutStr("k8s.pod.uid", "test-pod-uid-1")
@@ -100,7 +101,7 @@ func (s *ProcessorTestSuite) TestProcessResource_PodWithoutWorkload() {
 }
 
 func (s *ProcessorTestSuite) TestProcessResource_ComplexWorkloadName() {
-	s.mockClient.AddPod(types.UID("frontend-api-pod-uid"), "frontend-api-v2", k8sconsts.WorkloadKindDeployment, "frontend-api-v2-abc123-xyz", "staging")
+	s.mockClient.AddPod(types.UID("frontend-api-pod-uid"), "frontend-api-v2", kube.WorkloadKindDeployment, "frontend-api-v2-abc123-xyz", "staging")
 
 	resource := pcommon.NewResource()
 	resource.Attributes().PutStr("k8s.pod.uid", "frontend-api-pod-uid")
@@ -123,7 +124,7 @@ func (s *ProcessorTestSuite) TestProcessResource_NoPodUID() {
 }
 
 func (s *ProcessorTestSuite) TestProcessLogs_SingleResource() {
-	s.mockClient.AddPod(types.UID("pod-uid-1"), "test-service", k8sconsts.WorkloadKindDeployment, "test-service-pod-abc", "default")
+	s.mockClient.AddPod(types.UID("pod-uid-1"), "test-service", kube.WorkloadKindDeployment, "test-service-pod-abc", "default")
 
 	logs := plog.NewLogs()
 	rl := logs.ResourceLogs().AppendEmpty()
@@ -144,8 +145,8 @@ func (s *ProcessorTestSuite) TestProcessLogs_SingleResource() {
 }
 
 func (s *ProcessorTestSuite) TestProcessLogs_MultipleResources() {
-	s.mockClient.AddPod(types.UID("app-a-uid"), "app-a", k8sconsts.WorkloadKindDeployment, "app-a-pod", "ns-a")
-	s.mockClient.AddPod(types.UID("app-b-uid"), "app-b", k8sconsts.WorkloadKindDaemonSet, "app-b-pod", "ns-b")
+	s.mockClient.AddPod(types.UID("app-a-uid"), "app-a", kube.WorkloadKindDeployment, "app-a-pod", "ns-a")
+	s.mockClient.AddPod(types.UID("app-b-uid"), "app-b", kube.WorkloadKindDaemonSet, "app-b-pod", "ns-b")
 
 	logs := plog.NewLogs()
 
@@ -195,7 +196,7 @@ func (s *ProcessorTestSuite) TestProcessLogs_EmptyLogs() {
 }
 
 func (s *ProcessorTestSuite) TestProcessResource_ArgoRollout() {
-	s.mockClient.AddPod(types.UID("rollout-pod-uid"), "my-rollout", k8sconsts.WorkloadKindArgoRollout, "my-rollout-pod-abc", "production")
+	s.mockClient.AddPod(types.UID("rollout-pod-uid"), "my-rollout", kube.WorkloadKindArgoRollout, "my-rollout-pod-abc", "production")
 
 	resource := pcommon.NewResource()
 	resource.Attributes().PutStr("k8s.pod.uid", "rollout-pod-uid")
@@ -208,7 +209,7 @@ func (s *ProcessorTestSuite) TestProcessResource_ArgoRollout() {
 	s.Equal("my-rollout", serviceNameAttr.AsString())
 
 	// Check k8s.argoproj.rollout.name (custom attribute for Argo Rollout)
-	rolloutAttr, exists := resource.Attributes().Get(k8sconsts.K8SArgoRolloutNameAttribute)
+	rolloutAttr, exists := resource.Attributes().Get(kube.K8SArgoRolloutNameAttribute)
 	s.Require().True(exists, "k8s.argoproj.rollout.name attribute should exist")
 	s.Equal("my-rollout", rolloutAttr.AsString())
 }

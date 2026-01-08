@@ -7,8 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -26,8 +24,8 @@ const nodeNameEnvVar = "NODE_NAME"
 type PartialPodMetadata struct {
 	Name         string
 	Namespace    string
-	WorkloadName string                 // The resolved workload name (e.g., "my-app" for a Deployment)
-	WorkloadKind k8sconsts.WorkloadKind // The resolved workload kind (e.g., "Deployment", "DaemonSet")
+	WorkloadName string       // The resolved workload name (e.g., "my-app" for a Deployment)
+	WorkloadKind WorkloadKind // The resolved workload kind (e.g., "Deployment", "DaemonSet")
 }
 
 type Client interface {
@@ -115,8 +113,8 @@ func extractPartialMetadata(obj any) *metav1.PartialObjectMetadata {
 }
 
 // extractWorkloadInfo resolves the workload name and kind from owner references.
-// Uses k8sutils/pkg/workload logic to handle ReplicaSet → Deployment/ArgoRollout resolution.
-func extractWorkloadInfo(podMeta *metav1.PartialObjectMetadata) (name string, kind k8sconsts.WorkloadKind) {
+// Handles ReplicaSet → Deployment/ArgoRollout resolution.
+func extractWorkloadInfo(podMeta *metav1.PartialObjectMetadata) (name string, kind WorkloadKind) {
 	if len(podMeta.OwnerReferences) != 1 {
 		return "", ""
 	}
@@ -130,7 +128,7 @@ func extractWorkloadInfo(podMeta *metav1.PartialObjectMetadata) (name string, ki
 		},
 	}
 
-	workloadName, workloadKind, err := workload.GetWorkloadNameAndKind(ownerRef.Name, ownerRef.Kind, pod)
+	workloadName, workloadKind, err := getWorkloadNameAndKind(ownerRef.Name, ownerRef.Kind, pod)
 	if err != nil {
 		return "", ""
 	}

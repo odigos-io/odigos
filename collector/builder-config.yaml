@@ -133,4 +133,6 @@ replaces:
   - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
   - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
   - github.com/odigos-io/odigos/common => ../../common
+  - github.com/odigos-io/odigos/api => ../../api
+  - github.com/odigos-io/odigos/k8sutils => ../../k8sutils
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
