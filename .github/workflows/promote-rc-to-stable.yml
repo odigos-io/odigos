@@ -247,14 +247,14 @@ jobs:
 
       - name: Upload Linux Packages to AWS S3
         # Only upload real releases
-        uses: odigos-io/ci-core/upload-to-s3@5d33f013afbb7d4bf0f68ef27d6c0e9fcf50fcdc
+        uses: odigos-io/ci-core/upload-to-s3@v1.0.6
         with:
           aws-role-arn: arn:aws:iam::061717858829:role/vmagent-s3
           aws-region: us-east-1
           bucket-name: odigos-releases
           agent-type: 'otelcol'
           version: ${{ env.STABLE_TAG }}
-          package-directory: 'dist'
+          package-directory: 'collector/dist'
 
       - name: Notify Slack Success
         if: always()
