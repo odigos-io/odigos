@@ -28,7 +28,7 @@ const (
 	OdigosCentralDeploymentConfigMapVersionKey            = "odigosCentralVersion"
 	OdigosCentralDeploymentConfigMapInstallationMethodKey = "installationMethod"
 	DefaultOdigosCentralNamespace                         = "odigos-central"
-	DefaultVersion                                        = "v.0.0.0"
+	DefaultVersion                                        = "v0.0.0"
 )
 
 const (
