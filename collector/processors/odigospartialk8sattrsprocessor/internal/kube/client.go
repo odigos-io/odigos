@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
+	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
+	odigosinformers "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions"
+	odigoslisters "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -42,9 +47,11 @@ type PodMetadataClient struct {
 	m           sync.RWMutex
 	deleteMut   sync.Mutex
 	deleteQueue []deleteRequest
-	// NOTE: we add pods to the cache even if we can't determine a service name
-	pods     map[types.UID]*PartialPodMetadata
-	informer cache.SharedIndexInformer
+	// pods contains metadata only for pods whose workloads have an InstrumentationConfig
+	pods                        map[types.UID]*PartialPodMetadata
+	podInformer                 cache.SharedIndexInformer
+	instrumentationConfigLister odigoslisters.InstrumentationConfigLister
+	odigosInformerFactory       odigosinformers.SharedInformerFactory
 }
 
 var podGVR = schema.GroupVersionResource{
@@ -59,8 +66,19 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 		return nil, fmt.Errorf("failed to create metadata client: %w", err)
 	}
 
+	// Create odigos client for InstrumentationConfig access
+	odigosClient, err := odigosclientset.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create odigos client: %w", err)
+	}
+
+	// Create odigos informer factory for InstrumentationConfig
+	odigosInformerFactory := odigosinformers.NewSharedInformerFactory(odigosClient, 0)
+
 	c := &PodMetadataClient{
-		pods: map[types.UID]*PartialPodMetadata{},
+		pods:                        map[types.UID]*PartialPodMetadata{},
+		odigosInformerFactory:       odigosInformerFactory,
+		instrumentationConfigLister: odigosInformerFactory.Odigos().V1alpha1().InstrumentationConfigs().Lister(),
 	}
 
 	nodeName := os.Getenv(nodeNameEnvVar)
@@ -73,9 +91,9 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 		options.FieldSelector = fields.OneTermEqualSelector("spec.nodeName", nodeName).String()
 	}
 	factory := metadatainformer.NewFilteredSharedInformerFactory(metadataClient, 0, metav1.NamespaceAll, tweakListOptions)
-	c.informer = factory.ForResource(podGVR).Informer()
+	c.podInformer = factory.ForResource(podGVR).Informer()
 
-	_, err = c.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = c.podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		// Cache functions require "any"
 		AddFunc: func(obj any) {
 			if podMeta := extractPartialMetadata(obj); podMeta != nil {
@@ -136,8 +154,19 @@ func extractWorkloadInfo(podMeta *metav1.PartialObjectMetadata) (name string, ki
 	return workloadName, workloadKind
 }
 
+func calculateInstrumentationConfigName(workloadName string, workloadKind WorkloadKind) string {
+	return strings.ToLower(string(workloadKind)) + "-" + workloadName
+}
+
 func (c *PodMetadataClient) handlePodAdd(podMeta *metav1.PartialObjectMetadata) {
 	workloadName, workloadKind := extractWorkloadInfo(podMeta)
+	if workloadName == "" || workloadKind == "" {
+		return
+	}
+
+	if !c.hasInstrumentationConfig(podMeta.Namespace, workloadName, workloadKind) {
+		return
+	}
 
 	c.m.Lock()
 	defer c.m.Unlock()
@@ -151,6 +180,22 @@ func (c *PodMetadataClient) handlePodAdd(podMeta *metav1.PartialObjectMetadata) 
 
 func (c *PodMetadataClient) handlePodUpdate(podMeta *metav1.PartialObjectMetadata) {
 	workloadName, workloadKind := extractWorkloadInfo(podMeta)
+	if workloadName == "" || workloadKind == "" {
+		// Remove from cache if workload info can't be determined
+		c.m.Lock()
+		delete(c.pods, podMeta.UID)
+		c.m.Unlock()
+		return
+	}
+
+	// Check if the workload has an InstrumentationConfig (i.e., is instrumented)
+	if !c.hasInstrumentationConfig(podMeta.Namespace, workloadName, workloadKind) {
+		// Remove from cache if workload is no longer instrumented
+		c.m.Lock()
+		delete(c.pods, podMeta.UID)
+		c.m.Unlock()
+		return
+	}
 
 	c.m.Lock()
 	defer c.m.Unlock()
@@ -160,6 +205,19 @@ func (c *PodMetadataClient) handlePodUpdate(podMeta *metav1.PartialObjectMetadat
 		WorkloadName: workloadName,
 		WorkloadKind: workloadKind,
 	}
+}
+
+// hasInstrumentationConfig checks if an InstrumentationConfig exists for the given workload
+func (c *PodMetadataClient) hasInstrumentationConfig(namespace, workloadName string, workloadKind WorkloadKind) bool {
+	icName := calculateInstrumentationConfigName(workloadName, workloadKind)
+	_, err := c.instrumentationConfigLister.InstrumentationConfigs(namespace).Get(icName)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return false
+		}
+		return false
+	}
+	return true
 }
 
 func (c *PodMetadataClient) handlePodDelete(podMeta *metav1.PartialObjectMetadata) {
@@ -176,12 +234,23 @@ func (c *PodMetadataClient) GetPodMetadata(uid types.UID) (*PartialPodMetadata, 
 }
 
 func (c *PodMetadataClient) Start(ctx context.Context) error {
-	go c.informer.Run(ctx.Done())
+	c.odigosInformerFactory.Start(ctx.Done())
+
+	go c.podInformer.Run(ctx.Done())
 
 	syncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	if !cache.WaitForCacheSync(syncCtx.Done(), c.informer.HasSynced) {
+	// Wait for InstrumentationConfig cache to sync first
+	icSynced := c.odigosInformerFactory.WaitForCacheSync(syncCtx.Done())
+	for typ, synced := range icSynced {
+		if !synced {
+			return fmt.Errorf("timed out waiting for InstrumentationConfig cache to sync: %v", typ)
+		}
+	}
+
+	// Wait for pod cache to sync
+	if !cache.WaitForCacheSync(syncCtx.Done(), c.podInformer.HasSynced) {
 		return fmt.Errorf("timed out waiting for pod metadata cache to sync")
 	}
 
