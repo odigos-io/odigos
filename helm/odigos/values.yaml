@@ -676,8 +676,6 @@ metricsSources:
             disabled: true
           - name: jvm.memory.used
             disabled: true
-          - name: jvm.thread.state
-            disabled: true
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
