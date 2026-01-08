@@ -1,16 +1,17 @@
 package odigospartialk8sattrsprocessor
 
 import (
-	"k8s.io/apimachinery/pkg/types"
+	"context"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // mockKubeClient is a mock implementation of kube.Client for testing
 type mockKubeClient struct {
 	pods    map[types.UID]*kube.PartialPodMetadata
 	started bool
-	stopped bool
 }
 
 func newMockKubeClient() *mockKubeClient {
@@ -24,21 +25,16 @@ func (m *mockKubeClient) GetPodMetadata(uid types.UID) (*kube.PartialPodMetadata
 	return pod, ok
 }
 
-func (m *mockKubeClient) Start(stopCh <-chan struct{}) error {
+func (m *mockKubeClient) Start(ctx context.Context) error {
 	m.started = true
 	return nil
 }
 
-func (m *mockKubeClient) Stop() {
-	m.stopped = true
-}
-
-func (m *mockKubeClient) AddPod(uid types.UID, serviceName, name, namespace, ownerName, ownerKind string) {
+func (m *mockKubeClient) AddPod(uid types.UID, workloadName string, workloadKind k8sconsts.WorkloadKind, name, namespace string) {
 	m.pods[uid] = &kube.PartialPodMetadata{
-		ServiceName: serviceName,
-		Name:        name,
-		Namespace:   namespace,
-		OwnerName:   ownerName,
-		OwnerKind:   ownerKind,
+		Name:         name,
+		Namespace:    namespace,
+		WorkloadName: workloadName,
+		WorkloadKind: workloadKind,
 	}
 }

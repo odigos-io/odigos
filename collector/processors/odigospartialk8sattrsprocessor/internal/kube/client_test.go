@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,17 +31,15 @@ func TestClientTestSuite(t *testing.T) {
 
 func (s *ClientTestSuite) TestPartialPodMetadataStruct() {
 	pod := &PartialPodMetadata{
-		ServiceName: "test-deployment",
-		Name:        "test-pod",
-		Namespace:   "test-ns",
-		OwnerName:   "test-deployment-abc123",
-		OwnerKind:   "ReplicaSet",
+		Name:         "test-pod",
+		Namespace:    "test-ns",
+		WorkloadName: "test-deployment",
+		WorkloadKind: k8sconsts.WorkloadKindDeployment,
 	}
-	s.Equal("test-deployment", pod.ServiceName)
 	s.Equal("test-pod", pod.Name)
 	s.Equal("test-ns", pod.Namespace)
-	s.Equal("test-deployment-abc123", pod.OwnerName)
-	s.Equal("ReplicaSet", pod.OwnerKind)
+	s.Equal("test-deployment", pod.WorkloadName)
+	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestGetPodMetadata_NonExistent() {
@@ -51,16 +50,20 @@ func (s *ClientTestSuite) TestGetPodMetadata_NonExistent() {
 func (s *ClientTestSuite) TestGetPodMetadata_Existing() {
 	podUID := types.UID("pod-uid-123")
 	s.client.pods[podUID] = &PartialPodMetadata{
-		ServiceName: "my-service",
+		WorkloadName: "my-service",
+		WorkloadKind: k8sconsts.WorkloadKindDeployment,
 	}
 
 	pod, found := s.client.GetPodMetadata(podUID)
 
 	s.Require().True(found)
-	s.Equal("my-service", pod.ServiceName)
+	s.Equal("my-service", pod.WorkloadName)
+	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
 }
 
-func (s *ClientTestSuite) TestHandlePodAdd() {
+func (s *ClientTestSuite) TestHandlePodAdd_Deployment() {
+	// Pod owned by a ReplicaSet which is owned by a Deployment
+	// The extractWorkloadInfo should resolve this to Deployment
 	podMeta := &metav1.PartialObjectMetadata{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "new-pod",
@@ -76,11 +79,76 @@ func (s *ClientTestSuite) TestHandlePodAdd() {
 
 	pod, found := s.client.GetPodMetadata(types.UID("new-pod-uid"))
 	s.Require().True(found)
-	s.Equal("deployment", pod.ServiceName) // "deployment-abc123" -> "deployment"
 	s.Equal("new-pod", pod.Name)
 	s.Equal("test-ns", pod.Namespace)
-	s.Equal("deployment-abc123", pod.OwnerName)
-	s.Equal("ReplicaSet", pod.OwnerKind)
+	// Note: extractWorkloadInfo uses the workload package which resolves ReplicaSet to Deployment
+	// The workload name is derived from stripping the suffix from the ReplicaSet name
+	s.Equal("deployment", pod.WorkloadName)
+	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
+}
+
+func (s *ClientTestSuite) TestHandlePodAdd_DaemonSet() {
+	podMeta := &metav1.PartialObjectMetadata{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "daemon-pod",
+			Namespace: "kube-system",
+			UID:       types.UID("daemon-pod-uid"),
+			OwnerReferences: []metav1.OwnerReference{
+				{Name: "my-daemonset", Kind: "DaemonSet"},
+			},
+		},
+	}
+
+	s.client.handlePodAdd(podMeta)
+
+	pod, found := s.client.GetPodMetadata(types.UID("daemon-pod-uid"))
+	s.Require().True(found)
+	s.Equal("daemon-pod", pod.Name)
+	s.Equal("kube-system", pod.Namespace)
+	s.Equal("my-daemonset", pod.WorkloadName)
+	s.Equal(k8sconsts.WorkloadKindDaemonSet, pod.WorkloadKind)
+}
+
+func (s *ClientTestSuite) TestHandlePodAdd_StatefulSet() {
+	podMeta := &metav1.PartialObjectMetadata{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "postgres-0",
+			Namespace: "database",
+			UID:       types.UID("postgres-pod-uid"),
+			OwnerReferences: []metav1.OwnerReference{
+				{Name: "postgres", Kind: "StatefulSet"},
+			},
+		},
+	}
+
+	s.client.handlePodAdd(podMeta)
+
+	pod, found := s.client.GetPodMetadata(types.UID("postgres-pod-uid"))
+	s.Require().True(found)
+	s.Equal("postgres-0", pod.Name)
+	s.Equal("database", pod.Namespace)
+	s.Equal("postgres", pod.WorkloadName)
+	s.Equal(k8sconsts.WorkloadKindStatefulSet, pod.WorkloadKind)
+}
+
+func (s *ClientTestSuite) TestHandlePodAdd_NoOwner() {
+	podMeta := &metav1.PartialObjectMetadata{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "standalone-pod",
+			Namespace:       "default",
+			UID:             types.UID("standalone-pod-uid"),
+			OwnerReferences: []metav1.OwnerReference{},
+		},
+	}
+
+	s.client.handlePodAdd(podMeta)
+
+	pod, found := s.client.GetPodMetadata(types.UID("standalone-pod-uid"))
+	s.Require().True(found)
+	s.Equal("standalone-pod", pod.Name)
+	s.Equal("default", pod.Namespace)
+	s.Equal("", pod.WorkloadName)
+	s.Equal(k8sconsts.WorkloadKind(""), pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodUpdate() {
@@ -112,11 +180,10 @@ func (s *ClientTestSuite) TestHandlePodUpdate() {
 
 	pod, found := s.client.GetPodMetadata(types.UID("update-uid"))
 	s.Require().True(found)
-	s.Equal("new-owner", pod.ServiceName) // "new-owner-xyz789" -> "new-owner"
 	s.Equal("pod-to-update-renamed", pod.Name)
 	s.Equal("updated-ns", pod.Namespace)
-	s.Equal("new-owner-xyz789", pod.OwnerName)
-	s.Equal("ReplicaSet", pod.OwnerKind)
+	s.Equal("new-owner", pod.WorkloadName)
+	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodDelete() {
@@ -143,131 +210,10 @@ func (s *ClientTestSuite) TestHandlePodDelete() {
 	// Pod should still be in cache until cleanup runs
 	pod, found := s.client.GetPodMetadata(types.UID("delete-uid"))
 	s.True(found)
-	s.Equal("my-service", pod.ServiceName)
 	s.Equal("pod-to-delete", pod.Name)
 	s.Equal("default", pod.Namespace)
-	s.Equal("my-service-abc123", pod.OwnerName)
-	s.Equal("ReplicaSet", pod.OwnerKind)
-}
-
-// ExtractServiceNameTestSuite tests the extractServiceName function
-type ExtractServiceNameTestSuite struct {
-	suite.Suite
-}
-
-func TestExtractServiceNameTestSuite(t *testing.T) {
-	suite.Run(t, new(ExtractServiceNameTestSuite))
-}
-
-func (s *ExtractServiceNameTestSuite) TestSingleOwnerWithSuffix() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "my-app-5d4b7c8f9", Kind: "ReplicaSet"},
-	}
-	s.Equal("my-app", extractServiceName(ownerRefs))
-}
-
-func (s *ExtractServiceNameTestSuite) TestMultipleHyphens() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "frontend-api-v2-abc123", Kind: "ReplicaSet"},
-	}
-	s.Equal("frontend-api-v2", extractServiceName(ownerRefs))
-}
-
-func (s *ExtractServiceNameTestSuite) TestEmptyOwnerRefs() {
-	s.Equal("", extractServiceName([]metav1.OwnerReference{}))
-}
-
-func (s *ExtractServiceNameTestSuite) TestNilOwnerRefs() {
-	s.Equal("", extractServiceName(nil))
-}
-
-func (s *ExtractServiceNameTestSuite) TestMultipleOwnerRefs() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "owner1-abc"},
-		{Name: "owner2-def"},
-	}
-	s.Equal("", extractServiceName(ownerRefs))
-}
-
-func (s *ExtractServiceNameTestSuite) TestNoHyphen() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "nohyphen", Kind: "ReplicaSet"},
-	}
-	s.Equal("", extractServiceName(ownerRefs))
-}
-
-func (s *ExtractServiceNameTestSuite) TestDaemonSetStyle() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "odiglet", Kind: "DaemonSet"},
-	}
-	s.Equal("", extractServiceName(ownerRefs))
-}
-
-// ExtractOwnerInfoTestSuite tests the extractOwnerInfo function
-type ExtractOwnerInfoTestSuite struct {
-	suite.Suite
-}
-
-func TestExtractOwnerInfoTestSuite(t *testing.T) {
-	suite.Run(t, new(ExtractOwnerInfoTestSuite))
-}
-
-func (s *ExtractOwnerInfoTestSuite) TestReplicaSet() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "my-app-5d4b7c8f9", Kind: "ReplicaSet"},
-	}
-	name, kind := extractOwnerInfo(ownerRefs)
-	s.Equal("my-app-5d4b7c8f9", name)
-	s.Equal("ReplicaSet", kind)
-}
-
-func (s *ExtractOwnerInfoTestSuite) TestDaemonSet() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "odiglet", Kind: "DaemonSet"},
-	}
-	name, kind := extractOwnerInfo(ownerRefs)
-	s.Equal("odiglet", name)
-	s.Equal("DaemonSet", kind)
-}
-
-func (s *ExtractOwnerInfoTestSuite) TestStatefulSet() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "postgres", Kind: "StatefulSet"},
-	}
-	name, kind := extractOwnerInfo(ownerRefs)
-	s.Equal("postgres", name)
-	s.Equal("StatefulSet", kind)
-}
-
-func (s *ExtractOwnerInfoTestSuite) TestJob() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "batch-job-abc123", Kind: "Job"},
-	}
-	name, kind := extractOwnerInfo(ownerRefs)
-	s.Equal("batch-job-abc123", name)
-	s.Equal("Job", kind)
-}
-
-func (s *ExtractOwnerInfoTestSuite) TestEmptyOwnerRefs() {
-	name, kind := extractOwnerInfo([]metav1.OwnerReference{})
-	s.Equal("", name)
-	s.Equal("", kind)
-}
-
-func (s *ExtractOwnerInfoTestSuite) TestNilOwnerRefs() {
-	name, kind := extractOwnerInfo(nil)
-	s.Equal("", name)
-	s.Equal("", kind)
-}
-
-func (s *ExtractOwnerInfoTestSuite) TestMultipleOwnerRefs() {
-	ownerRefs := []metav1.OwnerReference{
-		{Name: "owner1", Kind: "ReplicaSet"},
-		{Name: "owner2", Kind: "DaemonSet"},
-	}
-	name, kind := extractOwnerInfo(ownerRefs)
-	s.Equal("", name)
-	s.Equal("", kind)
+	s.Equal("my-service", pod.WorkloadName)
+	s.Equal(k8sconsts.WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 // ExtractPartialMetadataTestSuite tests the extractPartialMetadata function
@@ -333,60 +279,6 @@ func (s *ExtractPartialMetadataTestSuite) TestDeletedFinalStateUnknownWrongInner
 	}
 	result := extractPartialMetadata(input)
 	s.Nil(result)
-}
-
-// StopTestSuite tests the Stop functionality
-type StopTestSuite struct {
-	suite.Suite
-}
-
-func TestStopTestSuite(t *testing.T) {
-	suite.Run(t, new(StopTestSuite))
-}
-
-func (s *StopTestSuite) TestStopWithActiveChannel() {
-	client := &PodMetadataClient{
-		pods:   make(map[types.UID]*PartialPodMetadata),
-		stopCh: make(chan struct{}),
-	}
-
-	s.NotPanics(func() {
-		client.Stop()
-	})
-
-	// Channel should be closed
-	select {
-	case <-client.stopCh:
-		// Channel is closed, expected
-	default:
-		s.Fail("stopCh should be closed after Stop()")
-	}
-}
-
-func (s *StopTestSuite) TestStopWithNilChannel() {
-	client := &PodMetadataClient{
-		pods:   make(map[types.UID]*PartialPodMetadata),
-		stopCh: nil,
-	}
-
-	s.NotPanics(func() {
-		client.Stop()
-	})
-}
-
-func (s *StopTestSuite) TestStopIdempotent() {
-	client := &PodMetadataClient{
-		pods:   make(map[types.UID]*PartialPodMetadata),
-		stopCh: make(chan struct{}),
-	}
-
-	// First stop
-	client.Stop()
-
-	// Second stop should not panic (idempotent)
-	s.NotPanics(func() {
-		client.Stop()
-	})
 }
 
 // MiscTestSuite tests miscellaneous functionality

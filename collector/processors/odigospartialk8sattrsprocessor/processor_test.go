@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/stretchr/testify/suite"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -12,16 +13,16 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// ProcessorTestSuite tests the serviceNameProcessor
+// ProcessorTestSuite tests the partialK8sAttrsProcessor
 type ProcessorTestSuite struct {
 	suite.Suite
 	mockClient *mockKubeClient
-	processor  *serviceNameProcesser
+	processor  *partialK8sAttrsProcessor
 }
 
 func (s *ProcessorTestSuite) SetupTest() {
 	s.mockClient = newMockKubeClient()
-	s.processor = &serviceNameProcesser{
+	s.processor = &partialK8sAttrsProcessor{
 		podMetadataClient: s.mockClient,
 	}
 }
@@ -31,8 +32,8 @@ func TestProcessorTestSuite(t *testing.T) {
 }
 
 func (s *ProcessorTestSuite) TestProcessResource_SetsAllAttributes() {
-	// Owner is ReplicaSet "my-app-abc123", service name derived as "my-app"
-	s.mockClient.AddPod(types.UID("test-pod-uid-1"), "my-app", "my-app-xyz123", "production", "my-app-abc123", "ReplicaSet")
+	// Workload is Deployment "my-app"
+	s.mockClient.AddPod(types.UID("test-pod-uid-1"), "my-app", k8sconsts.WorkloadKindDeployment, "my-app-xyz123", "production")
 
 	resource := pcommon.NewResource()
 	resource.Attributes().PutStr("k8s.pod.uid", "test-pod-uid-1")
@@ -59,10 +60,10 @@ func (s *ProcessorTestSuite) TestProcessResource_SetsAllAttributes() {
 	s.Require().True(exists, "k8s.namespace.name attribute should exist")
 	s.Equal("production", nsAttr.AsString())
 
-	// Check k8s.replicaset.name (semconv for ReplicaSet owner)
-	rsAttr, exists := resource.Attributes().Get(string(semconv.K8SReplicaSetNameKey))
-	s.Require().True(exists, "k8s.replicaset.name attribute should exist")
-	s.Equal("my-app-abc123", rsAttr.AsString())
+	// Check k8s.deployment.name (semconv for Deployment workload)
+	deployAttr, exists := resource.Attributes().Get(string(semconv.K8SDeploymentNameKey))
+	s.Require().True(exists, "k8s.deployment.name attribute should exist")
+	s.Equal("my-app", deployAttr.AsString())
 }
 
 func (s *ProcessorTestSuite) TestProcessResource_PodNotInCache() {
@@ -75,30 +76,31 @@ func (s *ProcessorTestSuite) TestProcessResource_PodNotInCache() {
 	s.False(exists, "service.name attribute should not exist")
 }
 
-func (s *ProcessorTestSuite) TestProcessResource_PodWithoutServiceName() {
-	s.mockClient.AddPod(types.UID("standalone-pod-uid"), "", "standalone-pod", "default", "", "")
+func (s *ProcessorTestSuite) TestProcessResource_PodWithoutWorkload() {
+	// Pod without workload info (e.g., standalone pod)
+	s.mockClient.AddPod(types.UID("standalone-pod-uid"), "", "", "standalone-pod", "default")
 
 	resource := pcommon.NewResource()
 	resource.Attributes().PutStr("k8s.pod.uid", "standalone-pod-uid")
 
 	s.processor.processResource(resource)
 
-	// service.name should not exist
+	// service.name should not exist when workload info is empty
 	_, exists := resource.Attributes().Get(string(semconv.ServiceNameKey))
 	s.False(exists, "service.name attribute should not exist")
 
 	// But pod name and namespace should still be set
 	podNameAttr, exists := resource.Attributes().Get(string(semconv.K8SPodNameKey))
-	s.Require().True(exists, "k8s.pod.name should be set even without service name")
+	s.Require().True(exists, "k8s.pod.name should be set even without workload")
 	s.Equal("standalone-pod", podNameAttr.AsString())
 
 	nsAttr, exists := resource.Attributes().Get(string(semconv.K8SNamespaceNameKey))
-	s.Require().True(exists, "k8s.namespace.name should be set even without service name")
+	s.Require().True(exists, "k8s.namespace.name should be set even without workload")
 	s.Equal("default", nsAttr.AsString())
 }
 
-func (s *ProcessorTestSuite) TestProcessResource_ComplexServiceName() {
-	s.mockClient.AddPod(types.UID("frontend-api-pod-uid"), "frontend-api-v2", "frontend-api-v2-abc123-xyz", "staging", "frontend-api-v2-abc123", "ReplicaSet")
+func (s *ProcessorTestSuite) TestProcessResource_ComplexWorkloadName() {
+	s.mockClient.AddPod(types.UID("frontend-api-pod-uid"), "frontend-api-v2", k8sconsts.WorkloadKindDeployment, "frontend-api-v2-abc123-xyz", "staging")
 
 	resource := pcommon.NewResource()
 	resource.Attributes().PutStr("k8s.pod.uid", "frontend-api-pod-uid")
@@ -121,7 +123,7 @@ func (s *ProcessorTestSuite) TestProcessResource_NoPodUID() {
 }
 
 func (s *ProcessorTestSuite) TestProcessLogs_SingleResource() {
-	s.mockClient.AddPod(types.UID("pod-uid-1"), "test-service", "test-service-pod-abc", "default", "test-service-abc123", "ReplicaSet")
+	s.mockClient.AddPod(types.UID("pod-uid-1"), "test-service", k8sconsts.WorkloadKindDeployment, "test-service-pod-abc", "default")
 
 	logs := plog.NewLogs()
 	rl := logs.ResourceLogs().AppendEmpty()
@@ -142,8 +144,8 @@ func (s *ProcessorTestSuite) TestProcessLogs_SingleResource() {
 }
 
 func (s *ProcessorTestSuite) TestProcessLogs_MultipleResources() {
-	s.mockClient.AddPod(types.UID("app-a-uid"), "app-a", "app-a-pod", "ns-a", "app-a-abc123", "ReplicaSet")
-	s.mockClient.AddPod(types.UID("app-b-uid"), "app-b", "app-b-pod", "ns-b", "app-b", "DaemonSet")
+	s.mockClient.AddPod(types.UID("app-a-uid"), "app-a", k8sconsts.WorkloadKindDeployment, "app-a-pod", "ns-a")
+	s.mockClient.AddPod(types.UID("app-b-uid"), "app-b", k8sconsts.WorkloadKindDaemonSet, "app-b-pod", "ns-b")
 
 	logs := plog.NewLogs()
 
@@ -164,14 +166,14 @@ func (s *ProcessorTestSuite) TestProcessLogs_MultipleResources() {
 	s.Require().NoError(err)
 	s.Equal(2, resultLogs.ResourceLogs().Len())
 
-	// Check first resource - ReplicaSet
+	// Check first resource - Deployment
 	serviceNameAttr1, exists1 := resultLogs.ResourceLogs().At(0).Resource().Attributes().Get(string(semconv.ServiceNameKey))
 	s.Require().True(exists1)
 	s.Equal("app-a", serviceNameAttr1.AsString())
 
-	rsAttr1, exists1 := resultLogs.ResourceLogs().At(0).Resource().Attributes().Get(string(semconv.K8SReplicaSetNameKey))
+	deployAttr1, exists1 := resultLogs.ResourceLogs().At(0).Resource().Attributes().Get(string(semconv.K8SDeploymentNameKey))
 	s.Require().True(exists1)
-	s.Equal("app-a-abc123", rsAttr1.AsString())
+	s.Equal("app-a", deployAttr1.AsString())
 
 	// Check second resource - DaemonSet
 	serviceNameAttr2, exists2 := resultLogs.ResourceLogs().At(1).Resource().Attributes().Get(string(semconv.ServiceNameKey))
@@ -192,12 +194,21 @@ func (s *ProcessorTestSuite) TestProcessLogs_EmptyLogs() {
 	s.Equal(0, resultLogs.ResourceLogs().Len())
 }
 
-func (s *ProcessorTestSuite) TestStart() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (s *ProcessorTestSuite) TestProcessResource_ArgoRollout() {
+	s.mockClient.AddPod(types.UID("rollout-pod-uid"), "my-rollout", k8sconsts.WorkloadKindArgoRollout, "my-rollout-pod-abc", "production")
 
-	err := s.processor.start(ctx)
+	resource := pcommon.NewResource()
+	resource.Attributes().PutStr("k8s.pod.uid", "rollout-pod-uid")
 
-	s.Require().NoError(err)
-	s.True(s.mockClient.started, "client should be started")
+	s.processor.processResource(resource)
+
+	// Check service.name
+	serviceNameAttr, exists := resource.Attributes().Get(string(semconv.ServiceNameKey))
+	s.Require().True(exists, "service.name attribute should exist")
+	s.Equal("my-rollout", serviceNameAttr.AsString())
+
+	// Check k8s.argoproj.rollout.name (custom attribute for Argo Rollout)
+	rolloutAttr, exists := resource.Attributes().Get(k8sconsts.K8SArgoRolloutNameAttribute)
+	s.Require().True(exists, "k8s.argoproj.rollout.name attribute should exist")
+	s.Equal("my-rollout", rolloutAttr.AsString())
 }
