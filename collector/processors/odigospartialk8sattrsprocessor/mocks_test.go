@@ -8,6 +8,14 @@ import (
 	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
 )
 
+func init() {
+	// Override newKubeClient so that all processors created during tests
+	// use a mock client instead of trying to connect to a real Kubernetes cluster.
+	newKubeClient = func() (kube.Client, error) {
+		return newMockKubeClient(), nil
+	}
+}
+
 // mockKubeClient is a mock implementation of kube.Client for testing
 type mockKubeClient struct {
 	pods    map[types.UID]*kube.PartialPodMetadata

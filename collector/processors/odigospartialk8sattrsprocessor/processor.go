@@ -2,14 +2,12 @@ package odigospartialk8sattrsprocessor
 
 import (
 	"context"
-	"fmt"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 
 	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
 )
@@ -23,14 +21,9 @@ func newPartialK8sAttrsProcessor() *partialK8sAttrsProcessor {
 }
 
 func (p *partialK8sAttrsProcessor) Start(ctx context.Context, _ component.Host) error {
-	config, err := rest.InClusterConfig()
+	client, err := newKubeClient()
 	if err != nil {
-		return fmt.Errorf("failed to get in-cluster config: %w", err)
-	}
-
-	client, err := kube.NewMetadataClient(config)
-	if err != nil {
-		return fmt.Errorf("failed to create pod metadata client: %w", err)
+		return err
 	}
 	p.podMetadataClient = client
 
