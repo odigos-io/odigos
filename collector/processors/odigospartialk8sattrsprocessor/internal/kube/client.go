@@ -3,11 +3,15 @@ package kube
 import (
 	"context"
 	"fmt"
-	"strings"
+	"os"
 	"sync"
 	"time"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/metadata"
@@ -16,19 +20,19 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const nodeNameEnvVar = "NODE_NAME"
+
 // PartialPodMetadata contains only the metadata fields we need from a pod
 type PartialPodMetadata struct {
-	ServiceName string
-	Name        string
-	Namespace   string
-	OwnerName   string // The owner reference name (e.g., "my-app-abc123" for ReplicaSet)
-	OwnerKind   string // The owner reference kind (e.g., "ReplicaSet", "DaemonSet")
+	Name         string
+	Namespace    string
+	WorkloadName string                 // The resolved workload name (e.g., "my-app" for a Deployment)
+	WorkloadKind k8sconsts.WorkloadKind // The resolved workload kind (e.g., "Deployment", "DaemonSet")
 }
 
 type Client interface {
 	GetPodMetadata(uid types.UID) (*PartialPodMetadata, bool)
-	Start(stopCh <-chan struct{}) error
-	Stop()
+	Start(ctx context.Context) error
 }
 
 type deleteRequest struct {
@@ -43,7 +47,6 @@ type PodMetadataClient struct {
 	// NOTE: we add pods to the cache even if we can't determine a service name
 	pods     map[types.UID]*PartialPodMetadata
 	informer cache.SharedIndexInformer
-	stopCh   chan struct{}
 }
 
 var podGVR = schema.GroupVersionResource{
@@ -62,7 +65,16 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 		pods: map[types.UID]*PartialPodMetadata{},
 	}
 
-	factory := metadatainformer.NewSharedInformerFactory(metadataClient, 0)
+	nodeName := os.Getenv(nodeNameEnvVar)
+	if nodeName == "" {
+		return nil, fmt.Errorf("%s environment variable not set", nodeNameEnvVar)
+	}
+
+	// Create filtered informer factory to only watch pods on this node
+	tweakListOptions := func(options *metav1.ListOptions) {
+		options.FieldSelector = fields.OneTermEqualSelector("spec.nodeName", nodeName).String()
+	}
+	factory := metadatainformer.NewFilteredSharedInformerFactory(metadataClient, 0, metav1.NamespaceAll, tweakListOptions)
 	c.informer = factory.ForResource(podGVR).Informer()
 
 	_, err = c.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -102,53 +114,53 @@ func extractPartialMetadata(obj any) *metav1.PartialObjectMetadata {
 	return nil
 }
 
-func extractServiceName(ownerRefs []metav1.OwnerReference) string {
-	if len(ownerRefs) != 1 {
-		return ""
-	}
-	ownerName := ownerRefs[0].Name
-	// Strip the suffix (e.g., "my-app-5d4b7c8f9" -> "my-app")
-	hyphenIndex := strings.LastIndex(ownerName, "-")
-	if hyphenIndex == -1 {
-		return ""
-	}
-	return ownerName[:hyphenIndex]
-}
-
-// extractOwnerInfo extracts the owner name and kind from owner references.
-// Returns empty strings if owner info cannot be determined.
-func extractOwnerInfo(ownerRefs []metav1.OwnerReference) (name, kind string) {
-	if len(ownerRefs) != 1 {
+// extractWorkloadInfo resolves the workload name and kind from owner references.
+// Uses k8sutils/pkg/workload logic to handle ReplicaSet → Deployment/ArgoRollout resolution.
+func extractWorkloadInfo(podMeta *metav1.PartialObjectMetadata) (name string, kind k8sconsts.WorkloadKind) {
+	if len(podMeta.OwnerReferences) != 1 {
 		return "", ""
 	}
-	return ownerRefs[0].Name, ownerRefs[0].Kind
+
+	ownerRef := podMeta.OwnerReferences[0]
+
+	// Create a minimal Pod with labels for Argo Rollout detection
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: podMeta.Labels,
+		},
+	}
+
+	workloadName, workloadKind, err := workload.GetWorkloadNameAndKind(ownerRef.Name, ownerRef.Kind, pod)
+	if err != nil {
+		return "", ""
+	}
+
+	return workloadName, workloadKind
 }
 
 func (c *PodMetadataClient) handlePodAdd(podMeta *metav1.PartialObjectMetadata) {
+	workloadName, workloadKind := extractWorkloadInfo(podMeta)
+
 	c.m.Lock()
 	defer c.m.Unlock()
-	serviceName := extractServiceName(podMeta.OwnerReferences)
-	ownerName, ownerKind := extractOwnerInfo(podMeta.OwnerReferences)
 	c.pods[podMeta.UID] = &PartialPodMetadata{
-		ServiceName: serviceName,
-		Name:        podMeta.Name,
-		Namespace:   podMeta.Namespace,
-		OwnerName:   ownerName,
-		OwnerKind:   ownerKind,
+		Name:         podMeta.Name,
+		Namespace:    podMeta.Namespace,
+		WorkloadName: workloadName,
+		WorkloadKind: workloadKind,
 	}
 }
 
 func (c *PodMetadataClient) handlePodUpdate(podMeta *metav1.PartialObjectMetadata) {
+	workloadName, workloadKind := extractWorkloadInfo(podMeta)
+
 	c.m.Lock()
 	defer c.m.Unlock()
-	serviceName := extractServiceName(podMeta.OwnerReferences)
-	ownerName, ownerKind := extractOwnerInfo(podMeta.OwnerReferences)
 	c.pods[podMeta.UID] = &PartialPodMetadata{
-		ServiceName: serviceName,
-		Name:        podMeta.Name,
-		Namespace:   podMeta.Namespace,
-		OwnerName:   ownerName,
-		OwnerKind:   ownerKind,
+		Name:         podMeta.Name,
+		Namespace:    podMeta.Namespace,
+		WorkloadName: workloadName,
+		WorkloadKind: workloadKind,
 	}
 }
 
@@ -165,34 +177,15 @@ func (c *PodMetadataClient) GetPodMetadata(uid types.UID) (*PartialPodMetadata, 
 	return pod, ok
 }
 
-func (c *PodMetadataClient) Start(stopCh <-chan struct{}) error {
-	c.stopCh = make(chan struct{})
-	go c.informer.Run(c.stopCh)
+func (c *PodMetadataClient) Start(ctx context.Context) error {
+	go c.informer.Run(ctx.Done())
 
-	if stopCh != nil {
-		go func() {
-			<-stopCh
-			c.Stop()
-		}()
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	syncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	if !cache.WaitForCacheSync(ctx.Done(), c.informer.HasSynced) {
+	if !cache.WaitForCacheSync(syncCtx.Done(), c.informer.HasSynced) {
 		return fmt.Errorf("timed out waiting for pod metadata cache to sync")
 	}
 
 	return nil
-}
-
-func (c *PodMetadataClient) Stop() {
-	if c.stopCh != nil {
-		select {
-		case <-c.stopCh:
-			// Already closed
-		default:
-			close(c.stopCh)
-		}
-	}
 }
