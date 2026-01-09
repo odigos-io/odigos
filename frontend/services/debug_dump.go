@@ -3,111 +3,92 @@ package services
 import (
 	"archive/tar"
 	"compress/gzip"
-	"context"
 	"fmt"
+	"io"
 	"net/http"
-	"path"
+	"os"
+	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/version"
-	"sigs.k8s.io/yaml"
-
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/diagnose"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
-
-const odigosGroupSuffix = "odigos.io"
-
-// tarCollector wraps tar.Writer and tracks created directories
-type tarCollector struct {
-	tarWriter   *tar.Writer
-	createdDirs map[string]bool
-	dryRun      bool
-	totalSize   int64
-	fileCount   int
-}
-
-func newTarCollector(tw *tar.Writer, dryRun bool) *tarCollector {
-	return &tarCollector{
-		tarWriter:   tw,
-		createdDirs: make(map[string]bool),
-		dryRun:      dryRun,
-	}
-}
 
 // DebugDump generates a tar.gz file containing logs and YAML manifests
 // for all Odigos components running in the odigos system namespace.
 // Query params:
-//   - includeWorkloads: if "true", also include workload and pod YAMLs for each Source
-//   - workloadNamespaces: comma-separated list of namespaces to collect workloads from (only used when includeWorkloads=true, defaults to all namespaces)
+//   - includeSourceWorkloads: if "true", also include workload and pod YAMLs for each instrumented Source
+//   - sourceWorkloadNamespaces: comma-separated list of namespaces to collect source workloads from (only used when includeSourceWorkloads=true, defaults to all namespaces)
 //   - dryRun: if "true", returns JSON with estimated size instead of generating the file
 func DebugDump(c *gin.Context) {
 	ctx := c.Request.Context()
 	ns := env.GetCurrentNamespace()
-	includeWorkloads := c.Query("includeWorkloads") == "true"
+	includeSourceWorkloads := c.Query("includeSourceWorkloads") == "true"
 	dryRun := c.Query("dryRun") == "true"
 
-	// Parse workloadNamespaces - comma-separated list of namespaces to filter by
-	var workloadNamespaces []string
-	if nsParam := c.Query("workloadNamespaces"); nsParam != "" {
+	// Parse sourceWorkloadNamespaces - comma-separated list of namespaces to filter by
+	var sourceWorkloadNamespaces []string
+	if nsParam := c.Query("sourceWorkloadNamespaces"); nsParam != "" {
 		for _, n := range strings.Split(nsParam, ",") {
 			if trimmed := strings.TrimSpace(n); trimmed != "" {
-				workloadNamespaces = append(workloadNamespaces, trimmed)
+				sourceWorkloadNamespaces = append(sourceWorkloadNamespaces, trimmed)
 			}
 		}
 	}
 
-	timestamp := time.Now().Format("20060102-150405")
-	rootDir := fmt.Sprintf("odigos-debug-%s", timestamp)
+	// Configure options matching the CLI diagnose behavior
+	opts := diagnose.DefaultOptions()
+	opts.OdigosNamespace = ns
+	opts.IncludeSourceWorkloads = includeSourceWorkloads
+	opts.SourceWorkloadNamespaces = sourceWorkloadNamespaces
 
-	var tarWriter *tar.Writer
-	if !dryRun {
-		// Create gzip writer directly to response
-		gzipWriter := gzip.NewWriter(c.Writer)
-		defer gzipWriter.Close()
-
-		tarWriter = tar.NewWriter(gzipWriter)
-		defer tarWriter.Close()
-	}
-	collector := newTarCollector(tarWriter, dryRun)
-
-	if err := collectAllWorkloads(ctx, collector, rootDir, ns, includeWorkloads, workloadNamespaces); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect workloads: %v", err)})
-		return
-	}
-
-	if err := collectOdigosCRDs(ctx, collector, rootDir, ns); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect odigos CRDs: %v", err)})
-		return
-	}
-
-	if err := collectConfigMaps(ctx, collector, rootDir, ns); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect configmaps: %v", err)})
-		return
-	}
+	// Generate root directory name
+	rootDir := diagnose.GetRootDir()
 
 	if dryRun {
+		// Create dry-run collector to estimate size
+		collector := diagnose.NewDryRunCollector()
+
+		if err := diagnose.RunDiagnose(ctx, kube.DefaultClient, kube.DefaultClient.DynamicClient, kube.DefaultClient.Discovery(), collector, rootDir, opts); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to run diagnose: %v", err)})
+			return
+		}
+
+		stats := collector.GetStats()
 		c.JSON(http.StatusOK, gin.H{
-			"dryRun":             true,
-			"includeWorkloads":   includeWorkloads,
-			"workloadNamespaces": workloadNamespaces,
-			"fileCount":          collector.fileCount,
-			"totalSizeBytes":     collector.totalSize,
-			"totalSizeHuman":     formatBytes(collector.totalSize),
+			"dryRun":                   true,
+			"includeSourceWorkloads":   includeSourceWorkloads,
+			"sourceWorkloadNamespaces": sourceWorkloadNamespaces,
+			"fileCount":                stats.FileCount,
+			"totalSizeBytes":           stats.TotalSize,
+			"totalSizeHuman":           diagnose.FormatBytes(stats.TotalSize),
 		})
+		return
+	}
+
+	// Create temporary directory for collecting files (same approach as CLI)
+	mainTempDir, err := os.MkdirTemp("", "odigos-diagnose")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create temp directory: %v", err)})
+		return
+	}
+	defer os.RemoveAll(mainTempDir)
+
+	// The collector will write to mainTempDir/rootDir
+	collectorRootDir := filepath.Join(mainTempDir, rootDir)
+	if err := os.MkdirAll(collectorRootDir, os.ModePerm); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create collector root directory: %v", err)})
+		return
+	}
+
+	// Create file collector (writes to temp directory)
+	collector := diagnose.NewFileCollector()
+
+	// Run the diagnose collection
+	if err := diagnose.RunDiagnose(ctx, kube.DefaultClient, kube.DefaultClient.DynamicClient, kube.DefaultClient.Discovery(), collector, collectorRootDir, opts); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to run diagnose: %v", err)})
 		return
 	}
 
@@ -116,509 +97,57 @@ func DebugDump(c *gin.Context) {
 	c.Header("Content-Type", "application/gzip")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 
-	// Collect odigos workloads (and optionally source workloads)
-	if err := collectAllWorkloads(ctx, collector, rootDir, ns, includeWorkloads, workloadNamespaces); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect workloads: %v", err)})
-		return
-	}
-
-	// Collect Odigos CRDs dynamically
-	if err := collectOdigosCRDs(ctx, collector, rootDir, ns); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect odigos CRDs: %v", err)})
-		return
-	}
-
-	// Collect ConfigMaps from odigos namespace
-	if err := collectConfigMaps(ctx, collector, rootDir, ns); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to collect configmaps: %v", err)})
+	// Stream tar.gz directly to response
+	if err := writeTarGzToWriter(mainTempDir, c.Writer); err != nil {
+		// If we haven't started writing yet, we can send an error
+		// Otherwise the client will receive a truncated archive
 		return
 	}
 
 	c.Status(http.StatusOK)
 }
 
-// workloadTarget represents a workload to collect
-type workloadTarget struct {
-	namespace   string
-	name        string
-	kind        k8sconsts.WorkloadKind
-	dirName     string // folder name (e.g., "deployment-foo" or just "foo")
-	includeLogs bool
-}
+// writeTarGzToWriter creates a tar.gz archive from sourceDir and writes it to w
+func writeTarGzToWriter(sourceDir string, w io.Writer) error {
+	gzipWriter := gzip.NewWriter(w)
+	defer gzipWriter.Close()
 
-// collectAllWorkloads collects workloads from odigos namespace and optionally from Sources
-// workloadNamespaces filters which namespaces to collect Source workloads from (empty means all namespaces)
-func collectAllWorkloads(ctx context.Context, collector *tarCollector, rootDir, odigosNs string, includeWorkloads bool, workloadNamespaces []string) error {
-	var targets []workloadTarget
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
 
-	// Add all workloads from odigos namespace (with logs)
-	deployments, _ := kube.DefaultClient.AppsV1().Deployments(odigosNs).List(ctx, metav1.ListOptions{})
-	for _, d := range deployments.Items {
-		targets = append(targets, workloadTarget{odigosNs, d.Name, k8sconsts.WorkloadKindDeployment, fmt.Sprintf("deployment-%s", d.Name), true})
-	}
-
-	daemonsets, _ := kube.DefaultClient.AppsV1().DaemonSets(odigosNs).List(ctx, metav1.ListOptions{})
-	for _, d := range daemonsets.Items {
-		targets = append(targets, workloadTarget{odigosNs, d.Name, k8sconsts.WorkloadKindDaemonSet, fmt.Sprintf("daemonset-%s", d.Name), true})
-	}
-
-	statefulsets, _ := kube.DefaultClient.AppsV1().StatefulSets(odigosNs).List(ctx, metav1.ListOptions{})
-	for _, s := range statefulsets.Items {
-		targets = append(targets, workloadTarget{odigosNs, s.Name, k8sconsts.WorkloadKindStatefulSet, fmt.Sprintf("statefulset-%s", s.Name), true})
-	}
-
-	// Optionally add workloads from Sources (without logs)
-	if includeWorkloads {
-		// Build namespace filter set for quick lookup
-		nsFilter := make(map[string]bool)
-		for _, ns := range workloadNamespaces {
-			nsFilter[ns] = true
-		}
-
-		sourceList, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to list sources: %w", err)
-		}
-		if sourceList != nil {
-			for _, source := range sourceList.Items {
-				w := source.Spec.Workload
-				if w.Name != "" && w.Namespace != "" && w.Kind != "" && w.Kind != k8sconsts.WorkloadKindNamespace {
-					// Filter by namespace if workloadNamespaces is specified
-					if len(nsFilter) > 0 && !nsFilter[w.Namespace] {
-						continue
-					}
-					targets = append(targets, workloadTarget{w.Namespace, w.Name, w.Kind, fmt.Sprintf("%s-%s", workload.WorkloadKindLowerCaseFromKind(w.Kind), w.Name), false})
-				}
-			}
-		}
-	}
-
-	// Collect all targets
-	for _, t := range targets {
-		workloadDir := path.Join(rootDir, t.namespace, t.dirName)
-		if err := collectWorkload(ctx, collector, workloadDir, t.namespace, t.name, t.kind, t.includeLogs); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to collect workload %s: %w", t.name, err)
-		}
-	}
-
-	return nil
-}
-
-// discoverOdigosCRDs uses the discovery client to find all CRDs in groups ending with ".odigos.io"
-func discoverOdigosCRDs() []schema.GroupVersionResource {
-	var gvrs []schema.GroupVersionResource
-
-	// Get all API groups and resources
-	// Note: ServerGroupsAndResources can return partial results with errors for some groups,
-	// which is normal. We use the results we get and ignore errors.
-	_, apiResourceLists, _ := kube.DefaultClient.Discovery().ServerGroupsAndResources()
-
-	for _, resourceList := range apiResourceLists {
-		if resourceList == nil {
-			continue
-		}
-
-		// Parse the GroupVersion
-		gv, err := schema.ParseGroupVersion(resourceList.GroupVersion)
-		if err != nil {
-			continue
-		}
-
-		// Check if this group is "odigos.io" or ends with ".odigos.io" (e.g., "actions.odigos.io")
-		if gv.Group != odigosGroupSuffix && !strings.HasSuffix(gv.Group, "."+odigosGroupSuffix) {
-			continue
-		}
-
-		// Add all resources from this group
-		for _, resource := range resourceList.APIResources {
-			// Skip subresources (they contain "/")
-			if strings.Contains(resource.Name, "/") {
-				continue
-			}
-
-			gvrs = append(gvrs, schema.GroupVersionResource{
-				Group:    gv.Group,
-				Version:  gv.Version,
-				Resource: resource.Name,
-			})
-		}
-	}
-
-	return gvrs
-}
-
-// collectOdigosCRDs dynamically discovers and collects all Odigos CRDs
-func collectOdigosCRDs(ctx context.Context, collector *tarCollector, rootDir, ns string) error {
-	gvrs := discoverOdigosCRDs()
-
-	for _, gvr := range gvrs {
-		if err := collectCRD(ctx, collector, rootDir, ns, gvr); err != nil {
-			return fmt.Errorf("failed to collect CRD %s: %w", gvr.Resource, err)
-		}
-	}
-	return nil
-}
-
-// collectCRD collects a single CRD type using dynamic client
-func collectCRD(ctx context.Context, collector *tarCollector, rootDir, odigosNs string, gvr schema.GroupVersionResource) error {
-	// Use capitalized resource name as directory (e.g., "destinations" -> "Destinations")
-	dirName := capitalizeFirst(gvr.Resource)
-
-	// Try to list from all namespaces first (works for both namespaced and cluster-scoped resources)
-	list, err := kube.DefaultClient.DynamicClient.Resource(gvr).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		// If all-namespace list fails, try namespace-scoped
-		list, err = kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(odigosNs).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to list %s: %w", gvr.Resource, err)
-		}
-	}
-
-	if len(list.Items) == 0 {
-		return nil
-	}
-
-	for i := range list.Items {
-		item := &list.Items[i]
-
-		// Clean managedFields from the object
-		unstructured.RemoveNestedField(item.Object, "metadata", "managedFields")
-
-		// Determine the namespace folder - use item's namespace, or odigos namespace for cluster-scoped resources
-		itemNs := item.GetNamespace()
-		if itemNs == "" {
-			itemNs = odigosNs // cluster-scoped resources go under odigos namespace
-		}
-
-		crdDir := path.Join(rootDir, itemNs, dirName)
-		filename := fmt.Sprintf("%s.yaml", item.GetName())
-
-		// Marshal to YAML
-		yamlData, err := yaml.Marshal(item.Object)
-		if err != nil {
-			continue // Skip this item but continue with others
-		}
-
-		if err := collector.addFile(crdDir, filename, yamlData); err != nil {
-			return fmt.Errorf("failed to add CRD %s to tar: %w", item.GetName(), err)
-		}
-	}
-
-	return nil
-}
-
-// collectConfigMaps collects all ConfigMaps from the odigos namespace
-func collectConfigMaps(ctx context.Context, collector *tarCollector, rootDir, ns string) error {
-	configMaps, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to list configmaps: %w", err)
-	}
-
-	configMapDir := path.Join(rootDir, ns, "ConfigMaps")
-	for _, cm := range configMaps.Items {
-		if err := addResourceYAML(collector, configMapDir, "configmap", cm.Name, &cm); err != nil {
-			continue // Skip this item but continue with others
-		}
-	}
-
-	return nil
-}
-
-// collectWorkload collects a specific workload and its pods by kind
-func collectWorkload(ctx context.Context, collector *tarCollector, workloadDir, ns, name string, kind k8sconsts.WorkloadKind, includeLogs bool) error {
-	var selector labels.Selector
-
-	switch kind {
-	case k8sconsts.WorkloadKindDeployment:
-		obj, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
+	return filepath.Walk(sourceDir, func(file string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if err := addResourceYAML(collector, workloadDir, string(k8sconsts.WorkloadKindLowerCaseDeployment), name, obj); err != nil {
-			return err
-		}
-		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
 
-	case k8sconsts.WorkloadKindDaemonSet:
-		obj, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
+		header, err := tar.FileInfoHeader(fi, fi.Name())
 		if err != nil {
 			return err
 		}
-		if err := addResourceYAML(collector, workloadDir, string(k8sconsts.WorkloadKindLowerCaseDaemonSet), name, obj); err != nil {
-			return err
-		}
-		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
 
-	case k8sconsts.WorkloadKindStatefulSet:
-		obj, err := kube.DefaultClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
+		header.Name, err = filepath.Rel(sourceDir, file)
 		if err != nil {
 			return err
 		}
-		if err := addResourceYAML(collector, workloadDir, string(k8sconsts.WorkloadKindLowerCaseStatefulSet), name, obj); err != nil {
-			return err
-		}
-		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
 
-	case k8sconsts.WorkloadKindCronJob:
-		// CronJobs use batchv1beta1 for k8s < 1.21, batchv1 for >= 1.21
-		selector, err := collectCronJob(ctx, collector, workloadDir, ns, name)
-		if err != nil {
+		if err := tarWriter.WriteHeader(header); err != nil {
 			return err
 		}
-		if selector == nil {
+
+		if !fi.Mode().IsRegular() {
 			return nil
 		}
-		return collectPods(ctx, collector, ns, workloadDir, selector, includeLogs)
 
-	default:
-		return nil
-	}
-
-	return collectPods(ctx, collector, ns, workloadDir, selector, includeLogs)
-}
-
-// collectCronJob handles CronJob collection with version detection
-func collectCronJob(ctx context.Context, collector *tarCollector, workloadDir, ns, name string) (labels.Selector, error) {
-	ver, err := getKubeVersion()
-	if err != nil {
-		return nil, fmt.Errorf("failed to detect Kubernetes version: %w", err)
-	}
-
-	// batchv1beta1 is deprecated in k8s 1.21 and removed in 1.25
-	if ver.LessThan(version.MustParseSemantic("1.21.0")) {
-		obj, err := kube.DefaultClient.BatchV1beta1().CronJobs(ns).Get(ctx, name, metav1.GetOptions{})
+		fileContent, err := os.Open(file)
 		if err != nil {
-			return nil, err
-		}
-		if err := addResourceYAML(collector, workloadDir, string(k8sconsts.WorkloadKindLowerCaseCronJob), name, obj); err != nil {
-			return nil, err
-		}
-		if obj.Spec.JobTemplate.Spec.Selector != nil {
-			return labels.SelectorFromSet(obj.Spec.JobTemplate.Spec.Selector.MatchLabels), nil
-		}
-		return nil, nil
-	}
-
-	obj, err := kube.DefaultClient.BatchV1().CronJobs(ns).Get(ctx, name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	if err := addResourceYAML(collector, workloadDir, "cronjob", name, obj); err != nil {
-		return nil, err
-	}
-	if obj.Spec.JobTemplate.Spec.Selector != nil {
-		return labels.SelectorFromSet(obj.Spec.JobTemplate.Spec.Selector.MatchLabels), nil
-	}
-	return nil, nil
-}
-
-// collectPods collects pod YAMLs and optionally logs for pods matching selector
-func collectPods(ctx context.Context, collector *tarCollector, ns, componentDir string, selector labels.Selector, includeLogs bool) error {
-	pods, err := kube.DefaultClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{
-		LabelSelector: selector.String(),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to list pods: %w", err)
-	}
-
-	for i := range pods.Items {
-		pod := &pods.Items[i]
-		if err := addResourceYAML(collector, componentDir, "pod", pod.Name, pod); err != nil {
 			return err
 		}
-		if includeLogs {
-			if err := collectPodLogs(ctx, collector, ns, componentDir, pod); err != nil {
-				return fmt.Errorf("failed to collect pod logs: %w", err)
-			}
-		}
-	}
+		defer fileContent.Close()
 
-	return nil
-}
-
-func collectPodLogs(ctx context.Context, collector *tarCollector, ns, componentDir string, pod *corev1.Pod) error {
-	for _, container := range pod.Spec.Containers {
-		// Get current logs
-		if err := addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, false); err != nil {
-			return fmt.Errorf("failed to add container logs: %w", err)
+		if _, err := io.Copy(tarWriter, fileContent); err != nil {
+			return err
 		}
 
-		// Check if container has been restarted and get previous logs
-		for _, status := range pod.Status.ContainerStatuses {
-			if status.Name == container.Name && status.RestartCount > 0 {
-				if err := addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, true); err != nil {
-					return fmt.Errorf("failed to add container logs: %w", err)
-				}
-			}
-		}
-	}
-
-	// Also collect logs from init containers
-	for _, container := range pod.Spec.InitContainers {
-		if err := addContainerLogs(ctx, collector, ns, componentDir, pod.Name, container.Name, false); err != nil {
-			return fmt.Errorf("failed to add container logs: %w", err)
-		}
-	}
-	return nil
-}
-
-func addContainerLogs(ctx context.Context, collector *tarCollector, ns, componentDir, podName, containerName string, previous bool) error {
-	// Create filename - include container name for clarity
-	var filename string
-	if previous {
-		filename = fmt.Sprintf("pod-%s.%s.previous.logs", podName, containerName)
-	} else {
-		filename = fmt.Sprintf("pod-%s.%s.logs", podName, containerName)
-	}
-
-	req := kube.DefaultClient.CoreV1().Pods(ns).GetLogs(podName, &corev1.PodLogOptions{
-		Container: containerName,
-		Previous:  previous,
-	})
-
-	logData, err := req.Do(ctx).Raw()
-	if err != nil {
-		// Write error message to log file so user knows what happened
-		errorMsg := fmt.Sprintf("Error fetching logs: %v\n", err)
-		if err := collector.addFile(componentDir, filename, []byte(errorMsg)); err != nil {
-			return fmt.Errorf("failed to add error message to tar: %w", err)
-		}
-		return fmt.Errorf("failed to fetch logs: %w", err)
-	}
-
-	// Write logs to tar (even if empty)
-	if err := collector.addFile(componentDir, filename, logData); err != nil {
-		return fmt.Errorf("failed to add logs to tar: %w", err)
-	}
-	return nil
-}
-
-func addResourceYAML(collector *tarCollector, componentDir, resourceType, name string, obj interface{}) error {
-	// Clean the object for YAML export
-	cleanedObj := cleanObjectForExport(obj)
-
-	yamlData, err := yaml.Marshal(cleanedObj)
-	if err != nil {
-		return fmt.Errorf("failed to marshal %s %s to YAML: %w", resourceType, name, err)
-	}
-
-	filename := fmt.Sprintf("%s-%s.yaml", resourceType, name)
-	return collector.addFile(componentDir, filename, yamlData)
-}
-
-// capitalizeFirst capitalizes the first letter of a string
-func capitalizeFirst(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
-}
-
-func cleanObjectForExport(obj interface{}) interface{} {
-	// Create a copy and clean managed fields and other noisy metadata
-	switch v := obj.(type) {
-	case *appsv1.Deployment:
-		cleaned := v.DeepCopy()
-		cleaned.ManagedFields = nil
-		return cleaned
-	case *appsv1.DaemonSet:
-		cleaned := v.DeepCopy()
-		cleaned.ManagedFields = nil
-		return cleaned
-	case *appsv1.StatefulSet:
-		cleaned := v.DeepCopy()
-		cleaned.ManagedFields = nil
-		return cleaned
-	case *batchv1.CronJob:
-		cleaned := v.DeepCopy()
-		cleaned.ManagedFields = nil
-		return cleaned
-	case *batchv1beta1.CronJob:
-		cleaned := v.DeepCopy()
-		cleaned.ManagedFields = nil
-		return cleaned
-	case *corev1.Pod:
-		cleaned := v.DeepCopy()
-		cleaned.ManagedFields = nil
-		return cleaned
-	case *corev1.ConfigMap:
-		cleaned := v.DeepCopy()
-		cleaned.ManagedFields = nil
-		return cleaned
-	default:
-		return obj
-	}
-}
-
-func (c *tarCollector) addFile(dir, filename string, data []byte) error {
-	// Track size and count for dry-run mode
-	c.totalSize += int64(len(data))
-	c.fileCount++
-
-	// In dry-run mode, just count the size without writing
-	if c.dryRun {
 		return nil
-	}
-
-	// Ensure directory entries exist
-	dirs := strings.Split(dir, "/")
-	currentPath := ""
-	for _, d := range dirs {
-		if d == "" {
-			continue
-		}
-		if currentPath == "" {
-			currentPath = d
-		} else {
-			currentPath = path.Join(currentPath, d)
-		}
-
-		// Skip if directory already created
-		if c.createdDirs[currentPath] {
-			continue
-		}
-
-		// Add directory entry
-		header := &tar.Header{
-			Name:     currentPath + "/",
-			Mode:     0755,
-			Typeflag: tar.TypeDir,
-		}
-		if err := c.tarWriter.WriteHeader(header); err != nil {
-			return fmt.Errorf("failed to write directory header: %w", err)
-		}
-		c.createdDirs[currentPath] = true
-	}
-
-	// Add file
-	filePath := path.Join(dir, filename)
-	header := &tar.Header{
-		Name: filePath,
-		Mode: 0644,
-		Size: int64(len(data)),
-	}
-
-	if err := c.tarWriter.WriteHeader(header); err != nil {
-		return fmt.Errorf("failed to write file header: %w", err)
-	}
-
-	if _, err := c.tarWriter.Write(data); err != nil {
-		return fmt.Errorf("failed to write file data: %w", err)
-	}
-
-	return nil
-}
-
-// formatBytes converts bytes to a human-readable string
-func formatBytes(bytes int64) string {
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-	div, exp := int64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+	})
 }
