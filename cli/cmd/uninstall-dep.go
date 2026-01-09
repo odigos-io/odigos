@@ -237,8 +237,12 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 		return
 	}
 
-	// Calculate timeout: 10 seconds per pod
+	// Calculate timeout: 10 seconds per pod, capped at 3 minutes
 	timeout := time.Duration(numPods) * 10 * time.Second
+	maxTimeout := 3 * time.Minute
+	if timeout > maxTimeout {
+		timeout = maxTimeout
+	}
 	fmt.Printf("Waiting for %d pods to rollout without instrumentation (timeout: %v)...\n", numPods, timeout)
 
 	pollErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, timeout, true, func(innerCtx context.Context) (bool, error) {
@@ -270,8 +274,12 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
 	l := log.Print("Waiting for namespace to be deleted")
-	// Timeout: 10 seconds for 1 namespace
+	// Timeout: 10 seconds for 1 namespace, capped at 3 minutes max
 	timeout := 10 * time.Second
+	maxTimeout := 3 * time.Minute
+	if timeout > maxTimeout {
+		timeout = maxTimeout
+	}
 	pollErr := wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(innerCtx context.Context) (bool, error) {
 		_, err := client.CoreV1().Namespaces().Get(innerCtx, ns, metav1.GetOptions{})
 		if err != nil {
