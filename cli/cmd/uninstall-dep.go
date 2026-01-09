@@ -237,9 +237,9 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 		return
 	}
 
-	// Calculate timeout: 10 seconds per pod, capped at 3 minutes
+	// Calculate timeout: 10 seconds per pod, capped at 5 minutes
 	timeout := time.Duration(numPods) * 10 * time.Second
-	maxTimeout := 3 * time.Minute
+	maxTimeout := 5 * time.Minute
 	if timeout > maxTimeout {
 		timeout = maxTimeout
 	}
@@ -274,9 +274,9 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
 	l := log.Print("Waiting for namespace to be deleted")
-	// Timeout: 10 seconds for 1 namespace, capped at 3 minutes max
+	// Timeout: 10 seconds for 1 namespace, capped at 5 minutes max
 	timeout := 10 * time.Second
-	maxTimeout := 3 * time.Minute
+	maxTimeout := 5 * time.Minute
 	if timeout > maxTimeout {
 		timeout = maxTimeout
 	}
