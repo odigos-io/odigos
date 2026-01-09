@@ -270,14 +270,26 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
 	l := log.Print("Waiting for namespace to be deleted")
-	wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	// Timeout: 10 seconds for 1 namespace
+	timeout := 10 * time.Second
+	pollErr := wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(innerCtx context.Context) (bool, error) {
+		_, err := client.CoreV1().Namespaces().Get(innerCtx, ns, metav1.GetOptions{})
 		if err != nil {
 			l.Success()
 			return true, nil
 		}
 		return false, nil
 	})
+
+	if pollErr != nil {
+		if errors.Is(pollErr, context.DeadlineExceeded) {
+			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting namespace to be deleted, continuing with uninstall\n")
+		} else if errors.Is(pollErr, context.Canceled) {
+			fmt.Printf("\033[33m!\tWARN\033[0m canceled while waiting namespace to be deleted, continuing with uninstall\n")
+		} else {
+			fmt.Printf("\033[33m!\tWARN\033[0m error while waiting for namespace deletion: %s, continuing with uninstall\n", pollErr)
+		}
+	}
 }
 
 func uninstallDeployments(ctx context.Context, client *kube.Client, ns, _ string) error {
