@@ -28,7 +28,11 @@ func createTracesProcessor(
 	cfg component.Config,
 	nextConsumer consumer.Traces) (processor.Traces, error) {
 
-	proc := &DBOperationProcessor{logger: set.Logger}
+	config := cfg.(*Config)
+	proc := &DBOperationProcessor{
+		logger: set.Logger,
+		config: config,
+	}
 
 	return processorhelper.NewTraces(
 		ctx,
