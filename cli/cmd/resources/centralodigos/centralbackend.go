@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
@@ -21,37 +22,77 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
+type CentralBackendConfig struct {
+	MaxMessageSize string
+}
+
 type centralBackendResourceManager struct {
 	client        *kube.Client
 	ns            string
 	odigosVersion string
 	managerOpts   resourcemanager.ManagerOpts
+	config        CentralBackendConfig
 }
 
-func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVersion string, managerOpts resourcemanager.ManagerOpts) resourcemanager.ResourceManager {
-	return &centralBackendResourceManager{client: client, ns: ns, odigosVersion: odigosVersion, managerOpts: managerOpts}
+func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVersion string, managerOpts resourcemanager.ManagerOpts, config CentralBackendConfig) resourcemanager.ResourceManager {
+	return &centralBackendResourceManager{
+		client:        client,
+		ns:            ns,
+		odigosVersion: odigosVersion,
+		managerOpts:   managerOpts,
+		config:        config,
+	}
 }
 
 func (m *centralBackendResourceManager) Name() string { return k8sconsts.CentralBackendName }
 
 func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) error {
+
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
+		NewCentralBackendDeploymentConfigMap(m.ns, m.odigosVersion),
 		NewCentralBackendServiceAccount(m.ns),
 		NewCentralBackendRole(m.ns),
 		NewCentralBackendRoleBinding(m.ns),
-		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets),
+		NewCentralBackendDeployment(m.ns, k8sconsts.OdigosImagePrefix, m.managerOpts.ImageReferences.CentralBackendImage, m.odigosVersion, m.managerOpts.ImagePullSecrets, m.config),
 		NewCentralBackendService(m.ns),
 		NewCentralBackendHPA(m.ns, m.client),
 	}, m.managerOpts)
 }
 
-func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, imagePullSecrets []string) *appsv1.Deployment {
+// NewCentralBackendDeploymentConfigMap creates (or updates) a ConfigMap that tracks installation metadata for Central Backend.
+func NewCentralBackendDeploymentConfigMap(ns string, odigosVersion string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OdigosCentralDeploymentConfigMapName,
+			Namespace: ns,
+		},
+		Data: map[string]string{
+			k8sconsts.OdigosCentralDeploymentConfigMapVersionKey:            odigosVersion,
+			k8sconsts.OdigosCentralDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
+		},
+	}
+}
+
+func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, imagePullSecrets []string, config CentralBackendConfig) *appsv1.Deployment {
 	var pullRefs []corev1.LocalObjectReference
 	for _, n := range imagePullSecrets {
 		if n != "" {
 			pullRefs = append(pullRefs, corev1.LocalObjectReference{Name: n})
 		}
 	}
+
+	dynamicEnv := []corev1.EnvVar{}
+	if config.MaxMessageSize != "" {
+		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
+			Name:  "MAX_MESSAGE_SIZE",
+			Value: config.MaxMessageSize,
+		})
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -77,7 +118,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 						{
 							Name:  k8sconsts.CentralBackendAppName,
 							Image: containers.GetImageName(imagePrefix, imageName, version),
-							Env: []corev1.EnvVar{
+							Env: append([]corev1.EnvVar{
 								{
 									Name: k8sconsts.OdigosOnpremTokenEnvName,
 									ValueFrom: &corev1.EnvVarSource{
@@ -86,6 +127,14 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 												Name: k8sconsts.OdigosCentralSecretName,
 											},
 											Key: k8sconsts.OdigosOnpremTokenSecretKey,
+										},
+									},
+								},
+								{
+									Name: "CURRENT_NS",
+									ValueFrom: &corev1.EnvVarSource{
+										FieldRef: &corev1.ObjectFieldSelector{
+											FieldPath: "metadata.namespace",
 										},
 									},
 								},
@@ -106,7 +155,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 									Name:  "KEYCLOAK_SECRET_NAME",
 									Value: k8sconsts.KeycloakSecretName,
 								},
-							},
+							}, dynamicEnv...),
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse(k8sconsts.CentralCPURequest),
@@ -219,8 +268,6 @@ func NewCentralBackendRoleBinding(ns string) *rbacv1.RoleBinding {
 	}
 }
 
-
-
 func NewCentralBackendHPA(ns string, client *kube.Client) kube.Object {
 	minReplicas := ptrint32(1)
 	maxReplicas := int32(10)
@@ -236,7 +283,6 @@ func NewCentralBackendHPA(ns string, client *kube.Client) kube.Object {
 	// - < 1.23   → autoscaling/v2beta1 (no Behavior fields)
 	// - 1.23–1.24 → autoscaling/v2beta2 (limited Behavior support)
 	// - ≥ 1.25 or unknown → autoscaling/v2 (full Behavior)
-
 
 	if parsed == nil || !parsed.LessThan(version.MustParse("1.25.0")) {
 		return &autoscalingv2.HorizontalPodAutoscaler{
@@ -277,7 +323,8 @@ func NewCentralBackendHPA(ns string, client *kube.Client) kube.Object {
 		}
 	}
 
-	if parsed != nil && !parsed.LessThan(version.MustParse("1.23.0")) && parsed.LessThan(version.MustParse("1.25.0")) {
+	// parsed is guaranteed non-nil here (nil is handled by the first branch above).
+	if !parsed.LessThan(version.MustParse("1.23.0")) && parsed.LessThan(version.MustParse("1.25.0")) {
 		return &autoscalingv2beta2.HorizontalPodAutoscaler{
 			TypeMeta:   metav1.TypeMeta{APIVersion: "autoscaling/v2beta2", Kind: "HorizontalPodAutoscaler"},
 			ObjectMeta: metav1.ObjectMeta{Name: k8sconsts.CentralBackendName, Namespace: ns},
@@ -289,7 +336,7 @@ func NewCentralBackendHPA(ns string, client *kube.Client) kube.Object {
 					{
 						Type: autoscalingv2beta2.ResourceMetricSourceType,
 						Resource: &autoscalingv2beta2.ResourceMetricSource{
-							Name: corev1.ResourceCPU,
+							Name:   corev1.ResourceCPU,
 							Target: autoscalingv2beta2.MetricTarget{Type: autoscalingv2beta2.UtilizationMetricType, AverageUtilization: &targetUtilization},
 						},
 					},

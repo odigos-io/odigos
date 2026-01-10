@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/distros/distro"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -46,6 +47,19 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
 	if err != nil {
 		return false, ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if pw.Kind == k8sconsts.WorkloadKindStaticPod {
+		if ic == nil {
+			return false, ctrl.Result{}, nil
+		}
+		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWorkloadNotSupporting),
+			Message: "static pods don't support restart",
+		})
+		return statusChanged, ctrl.Result{}, nil
 	}
 
 	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
@@ -96,11 +110,11 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	// check if at least one of the distributions used by this workload requires a rollout
 	hasDistributionThatRequiresRollout := false
 	for _, containerConfig := range ic.Spec.Containers {
-		distro := distroProvider.GetDistroByName(containerConfig.OtelDistroName)
-		if distro == nil {
+		d := distroProvider.GetDistroByName(containerConfig.OtelDistroName)
+		if d == nil {
 			continue
 		}
-		if distro.RuntimeAgent != nil && !distro.RuntimeAgent.NoRestartRequired {
+		if distro.IsRestartRequired(d, conf) {
 			hasDistributionThatRequiresRollout = true
 		}
 	}
@@ -109,7 +123,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
 		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+			Type: odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			// currently we interpret False as an error state, so we use True here to indicate a healthy state
 			// it might be confusing since rollout is not actually done, but this is the closest match given the k8s condition semantics.
 			Status:  metav1.ConditionTrue,
@@ -252,9 +266,9 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
 // this is bases on the kubectl implementation of restarting a workload
 // https://github.com/kubernetes/kubectl/blob/master/pkg/polymorphichelpers/objectrestarter.go#L32
-func rolloutRestartWorkload(ctx context.Context, workload client.Object, c client.Client, ts time.Time) error {
+func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c client.Client, ts time.Time) error {
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, ts.Format(time.RFC3339)))
-	switch obj := workload.(type) {
+	switch obj := workloadObj.(type) {
 	case *appsv1.Deployment:
 		if obj.Spec.Paused {
 			return errors.New("can't restart paused deployment")
@@ -271,6 +285,11 @@ func rolloutRestartWorkload(ctx context.Context, workload client.Object, c clien
 		// https://github.com/argoproj/argo-rollouts/blob/cb1c33df7a2c2b1c2ed31b1ee0aa22621ef5577c/utils/replicaset/replicaset.go#L223-L232
 		rolloutPatch := []byte(fmt.Sprintf(`{"spec":{"restartAt":"%s"}}`, ts.Format(time.RFC3339)))
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, rolloutPatch))
+	case *corev1.Pod:
+		if workload.IsStaticPod(obj) {
+			return errors.New("can't restart static pods")			
+		}
+		return errors.New("currently not supporting standalone pods as workloads for rollout")
 	default:
 		return errors.New("unknown kind")
 	}

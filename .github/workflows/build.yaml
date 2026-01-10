@@ -165,6 +165,8 @@ jobs:
           push: false
           tags: operator:pr-${{ github.event.number }}
           provenance: false
+          build-args: |
+            ODIGOS_VERSION=v0.0.0-pr${{ github.event.number }}
 
   build-cli:
     runs-on: ubuntu-latest

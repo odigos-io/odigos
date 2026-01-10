@@ -16,14 +16,15 @@ import (
 type Workload interface {
 	client.Object
 	AvailableReplicas() int32
-	PodTemplateSpec() *corev1.PodTemplateSpec
 	LabelSelector() *metav1.LabelSelector
+	PodSpec() *corev1.PodSpec
 }
 
 // compile time check for interface implementation
 var _ Workload = &DeploymentWorkload{}
 var _ Workload = &DaemonSetWorkload{}
 var _ Workload = &StatefulSetWorkload{}
+var _ Workload = &StaticPodWorkload{}
 var _ Workload = &CronJobWorkloadV1{}
 var _ Workload = &CronJobWorkloadBeta{}
 var _ Workload = &DeploymentConfigWorkload{}
@@ -37,8 +38,8 @@ func (d *DeploymentWorkload) AvailableReplicas() int32 {
 	return d.Status.AvailableReplicas
 }
 
-func (d *DeploymentWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &d.Spec.Template
+func (d *DeploymentWorkload) PodSpec() *corev1.PodSpec {
+	return &d.Spec.Template.Spec
 }
 
 func (d *DeploymentWorkload) LabelSelector() *metav1.LabelSelector {
@@ -53,8 +54,8 @@ func (d *DaemonSetWorkload) AvailableReplicas() int32 {
 	return d.Status.NumberReady
 }
 
-func (d *DaemonSetWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &d.Spec.Template
+func (d *DaemonSetWorkload) PodSpec() *corev1.PodSpec {
+	return &d.Spec.Template.Spec
 }
 
 func (d *DaemonSetWorkload) LabelSelector() *metav1.LabelSelector {
@@ -69,8 +70,27 @@ func (s *StatefulSetWorkload) AvailableReplicas() int32 {
 	return s.Status.ReadyReplicas
 }
 
-func (s *StatefulSetWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &s.Spec.Template
+func (s *StatefulSetWorkload) PodSpec() *corev1.PodSpec {
+	return &s.Spec.Template.Spec
+}
+
+type StaticPodWorkload struct {
+	*corev1.Pod
+}
+
+func (s *StaticPodWorkload) AvailableReplicas() int32 {
+	if s.Status.Phase == corev1.PodRunning {
+		return 1
+	}
+	return 0
+}
+
+func (s *StaticPodWorkload) PodSpec() *corev1.PodSpec {
+	return &s.Spec
+}
+
+func (s *StaticPodWorkload) LabelSelector() *metav1.LabelSelector {
+	return nil
 }
 
 func (s *StatefulSetWorkload) LabelSelector() *metav1.LabelSelector {
@@ -93,16 +113,16 @@ func (c *CronJobWorkloadV1) AvailableReplicas() int32 {
 	return int32(len(c.Status.Active))
 }
 
-func (c *CronJobWorkloadV1) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &c.Spec.JobTemplate.Spec.Template
+func (c *CronJobWorkloadV1) PodSpec() *corev1.PodSpec {
+	return &c.Spec.JobTemplate.Spec.Template.Spec
 }
 
 func (c *CronJobWorkloadBeta) AvailableReplicas() int32 {
 	return int32(len(c.Status.Active))
 }
 
-func (c *CronJobWorkloadBeta) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &c.Spec.JobTemplate.Spec.Template
+func (c *CronJobWorkloadBeta) PodSpec() *corev1.PodSpec {
+	return &c.Spec.JobTemplate.Spec.Template.Spec
 }
 
 func (c *CronJobWorkloadBeta) LabelSelector() *metav1.LabelSelector {
@@ -117,8 +137,8 @@ func (d *DeploymentConfigWorkload) AvailableReplicas() int32 {
 	return d.Status.AvailableReplicas
 }
 
-func (d *DeploymentConfigWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return d.Spec.Template
+func (d *DeploymentConfigWorkload) PodSpec() *corev1.PodSpec {
+	return &d.Spec.Template.Spec
 }
 
 func (d *DeploymentConfigWorkload) LabelSelector() *metav1.LabelSelector {
@@ -135,8 +155,8 @@ func (d *ArgoRolloutWorkload) AvailableReplicas() int32 {
 	return d.Status.AvailableReplicas
 }
 
-func (d *ArgoRolloutWorkload) PodTemplateSpec() *corev1.PodTemplateSpec {
-	return &d.Spec.Template
+func (d *ArgoRolloutWorkload) PodSpec() *corev1.PodSpec {
+	return &d.Spec.Template.Spec
 }
 
 func (d *ArgoRolloutWorkload) LabelSelector() *metav1.LabelSelector {
@@ -151,6 +171,11 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 		return &DaemonSetWorkload{DaemonSet: t}, nil
 	case *v1.StatefulSet:
 		return &StatefulSetWorkload{StatefulSet: t}, nil
+	case *corev1.Pod:
+		if IsStaticPod(t) {
+			return &StaticPodWorkload{Pod: t}, nil
+		}
+		return nil, errors.New("currently not supporting standalone pods which are not static as workloads")
 	case *batchv1.CronJob:
 		return &CronJobWorkloadV1{CronJob: t}, nil
 	case *batchv1beta1.CronJob:

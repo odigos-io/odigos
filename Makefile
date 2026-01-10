@@ -22,7 +22,7 @@ RHEL?=false
 BUILD_DIR=.
 
 ifeq ($(RHEL),true)
-    IMG_SUFFIX=-ubi9
+    IMG_SUFFIX=-rhel-certified
 
     # If TARGET is empty, set it to rhel
     ifeq ($(strip $(TARGET)),)
@@ -162,6 +162,7 @@ push-image/%:
 	$(if $(filter true,$(PUSH_IMAGE)),--push,) \
 	$(if $(filter true,$(GCP_MARKETPLACE)),--annotation="index:com.googleapis.cloudmarketplace.product.service.name=services/odigos.endpoints.odigos-public.cloud.goog",) \
 	--build-arg SERVICE_NAME="$*" \
+	--build-arg ODIGOS_VERSION=$(TAG) \
 	--build-arg VERSION=$(TAG) \
 	--build-arg RELEASE=$(TAG) \
 	--build-arg SUMMARY="$(SUMMARY)" \
@@ -438,30 +439,30 @@ dev-backpressue-destination:
 .PHONY: push-workload-lifecycle-images
 push-workload-lifecycle-images:
 	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/unsupported-version.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/very-old-version.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-minimum-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/minimum-version.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-latest-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/latest-version.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-dockerfile-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/dockerfile-env.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-manifest-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/nodejs-http-server/manifest-env.Dockerfile tests/e2e/workload-lifecycle/services/nodejs-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/cpp-http-server:v0.0.1 -f tests/e2e/workload-lifecycle/services/cpp-http-server/Dockerfile tests/e2e/workload-lifecycle/services/cpp-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-supported-version.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-azul:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-azul.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-docker-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-supported-docker-env.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-supported-manifest-env.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-latest-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-latest-version.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-old-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-old-version.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-unique-exec:v0.0.1 -f tests/e2e/workload-lifecycle/services/java-http-server/java-unique-exec.Dockerfile tests/e2e/workload-lifecycle/services/java-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-latest-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-latest tests/e2e/workload-lifecycle/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-other-agent:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-other-agent tests/e2e/workload-lifecycle/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-alpine:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-alpine tests/e2e/workload-lifecycle/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-not-supported:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-not-supported-version tests/e2e/workload-lifecycle/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-min-version:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-http-server/Dockerfile.python-min-version tests/e2e/workload-lifecycle/services/python-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-gunicorn-server:v0.0.1 -f tests/e2e/workload-lifecycle/services/python-gunicorn-server/Dockerfile.python-gunicorn-server tests/e2e/workload-lifecycle/services/python-gunicorn-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet8-musl:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net8-musl.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet6-musl:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net6-musl.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet8-glibc:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net8-glibc.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet6-glibc:v0.0.1 -f tests/e2e/workload-lifecycle/services/dotnet-http-server/net6-glibc.Dockerfile tests/e2e/workload-lifecycle/services/dotnet-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-unsupported-version:v0.0.1 -f tests/common/services/nodejs-http-server/unsupported-version.Dockerfile tests/common/services/nodejs-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-very-old-version:v0.0.1 -f tests/common/services/nodejs-http-server/very-old-version.Dockerfile tests/common/services/nodejs-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-minimum-version:v0.0.1 -f tests/common/services/nodejs-http-server/minimum-version.Dockerfile tests/common/services/nodejs-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-latest-version:v0.0.1 -f tests/common/services/nodejs-http-server/latest-version.Dockerfile tests/common/services/nodejs-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-dockerfile-env:v0.0.1 -f tests/common/services/nodejs-http-server/dockerfile-env.Dockerfile tests/common/services/nodejs-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/nodejs-manifest-env:v0.0.1 -f tests/common/services/nodejs-http-server/manifest-env.Dockerfile tests/common/services/nodejs-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/cpp-http-server:v0.0.1 -f tests/common/services/cpp-http-server/Dockerfile tests/common/services/cpp-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-version:v0.0.1 -f tests/common/services/java-http-server/java-supported-version.Dockerfile tests/common/services/java-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-azul:v0.0.1 -f tests/common/services/java-http-server/java-azul.Dockerfile tests/common/services/java-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-docker-env:v0.0.1 -f tests/common/services/java-http-server/java-supported-docker-env.Dockerfile tests/common/services/java-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-supported-manifest-env:v0.0.1 -f tests/common/services/java-http-server/java-supported-manifest-env.Dockerfile tests/common/services/java-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-latest-version:v0.0.1 -f tests/common/services/java-http-server/java-latest-version.Dockerfile tests/common/services/java-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-old-version:v0.0.1 -f tests/common/services/java-http-server/java-old-version.Dockerfile tests/common/services/java-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/java-unique-exec:v0.0.1 -f tests/common/services/java-http-server/java-unique-exec.Dockerfile tests/common/services/java-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-latest-version:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-latest tests/common/services/python-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-other-agent:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-other-agent tests/common/services/python-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-alpine:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-alpine tests/common/services/python-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-not-supported:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-not-supported-version tests/common/services/python-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-min-version:v0.0.1 -f tests/common/services/python-http-server/Dockerfile.python-min-version tests/common/services/python-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/python-gunicorn-server:v0.0.1 -f tests/common/services/python-gunicorn-server/Dockerfile.python-gunicorn-server tests/common/services/python-gunicorn-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet8-musl:v0.0.1 -f tests/common/services/dotnet-http-server/net8-musl.Dockerfile tests/common/services/dotnet-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet6-musl:v0.0.1 -f tests/common/services/dotnet-http-server/net6-musl.Dockerfile tests/common/services/dotnet-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet8-glibc:v0.0.1 -f tests/common/services/dotnet-http-server/net8-glibc.Dockerfile tests/common/services/dotnet-http-server
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t public.ecr.aws/odigos/dotnet6-glibc:v0.0.1 -f tests/common/services/dotnet-http-server/net6-glibc.Dockerfile tests/common/services/dotnet-http-server
 
 
 # Use these to deploy Odigos into an EKS cluster

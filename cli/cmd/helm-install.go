@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -10,10 +9,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/helm"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/release"
-	"helm.sh/helm/v3/pkg/storage/driver"
 )
 
 var helmInstallCmd = &cobra.Command{
@@ -102,52 +98,18 @@ func runInstallOrUpgrade() error {
 		return err
 	}
 
-	get := action.NewGet(actionConfig)
-	_, getErr := get.Run(helm.HelmReleaseName)
-	if getErr != nil {
-		if errors.Is(getErr, driver.ErrReleaseNotFound) {
-			// Release does not exist → install
-			rel, err := runInstall(actionConfig, ch, vals)
-			if err == nil {
-				fmt.Printf("\n✅ Installed release %q in namespace %q (chart version: %s)\n",
-					rel.Name, helm.HelmNamespace, ch.Metadata.Version)
-			}
-			return err
-		}
-		return getErr // Some other error
-	}
-
-	// Release exists → upgrade
-	rel, err := runUpgrade(actionConfig, ch, vals)
+	result, err := helm.InstallOrUpgrade(actionConfig, ch, vals, helm.HelmNamespace, helm.HelmReleaseName, helm.InstallOrUpgradeOptions{
+		CreateNamespace:      true,
+		ResetThenReuseValues: helm.HelmResetThenReuseValues,
+	})
 	if err != nil {
 		return err
 	}
 
 	helm.PrintSummary()
 
-	fmt.Printf("\n✅ Upgraded release %q in namespace %q (chart version: %s)\n",
-		rel.Name, helm.HelmNamespace, ch.Metadata.Version)
+	fmt.Printf("\n✅ %s\n", helm.FormatInstallOrUpgradeMessage(result, ch.Metadata.Version))
 	return nil
-}
-
-func runUpgrade(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}) (*release.Release, error) {
-	upgrade := action.NewUpgrade(actionConfig)
-	upgrade.Namespace = helm.HelmNamespace
-	upgrade.Install = false // we handle install fallback ourselves
-	upgrade.ChartPathOptions.Version = ch.Metadata.Version
-	// This ensures defaults are reset but user-provided values are reused.
-	upgrade.ResetThenReuseValues = helm.HelmResetThenReuseValues
-
-	return upgrade.Run(helm.HelmReleaseName, ch, vals)
-}
-
-func runInstall(actionConfig *action.Configuration, ch *chart.Chart, vals map[string]interface{}) (*release.Release, error) {
-	install := action.NewInstall(actionConfig)
-	install.ReleaseName = helm.HelmReleaseName
-	install.Namespace = helm.HelmNamespace
-	install.CreateNamespace = true
-	install.ChartPathOptions.Version = ch.Metadata.Version
-	return install.Run(ch, vals)
 }
 
 func init() {

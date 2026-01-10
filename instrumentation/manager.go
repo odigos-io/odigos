@@ -8,10 +8,14 @@ import (
 
 	cilumebpf "github.com/cilium/ebpf"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/common/unixfd"
+	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 )
 
@@ -90,6 +94,9 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 
 	// TracesMap is the optional common eBPF map that will be used to send events from eBPF probes.
 	TracesMap *cilumebpf.Map
+
+	// MetricsMap is the optional common eBPF map that is used to read metrics per Java process at each interval.
+	MetricsMap *cilumebpf.Map
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -127,7 +134,8 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 
 	metrics *managerMetrics
 
-	tracesMap *cilumebpf.Map
+	tracesMap  *cilumebpf.Map
+	metricsMap *cilumebpf.Map
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -177,6 +185,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		requests:              options.InstrumentationRequests,
 		metrics:               managerMetrics,
 		tracesMap:             options.TracesMap,
+		metricsMap:            options.MetricsMap,
 	}, nil
 }
 
@@ -318,8 +327,11 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 		server := &unixfd.Server{
 			SocketPath: unixfd.DefaultSocketPath,
 			Logger:     m.logger,
-			FDProvider: func() int {
+			TracesFDProvider: func() int {
 				return m.tracesMap.FD()
+			},
+			MetricsFDProvider: func() int {
+				return m.metricsMap.FD()
 			},
 		}
 
@@ -330,15 +342,23 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 			m.logger.Error(err, "unixfd server failed")
 		}
 
-		m.logger.Info("TracesMap created, FD server started",
+		m.logger.Info("eBPF maps created, FD server started",
 			"socket", unixfd.DefaultSocketPath,
-			"map_fd", m.tracesMap.FD())
+			"traces_map_fd", m.tracesMap.FD(),
+			"metrics_map_fd", m.metricsMap.FD())
 		return nil
 	})
 
 	err := g.Wait()
 
 	return err
+}
+
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) metricsAttributeSet(distribution *distro.OtelDistro) attribute.Set {
+	return attribute.NewSet(
+		semconv.TelemetryDistroName(distribution.Name),
+		semconv.TelemetrySDKLanguageKey.String(string(distribution.Language)),
+	)
 }
 
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentation(ctx context.Context, pid int) {
@@ -355,7 +375,8 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentatio
 		if err != nil {
 			m.logger.Error(err, "failed to close instrumentation")
 		}
-		m.metrics.instrumentedProcesses.Add(ctx, -1)
+		distribution, _ := details.pd.Distribution(ctx)
+		m.metrics.instrumentedProcesses.Add(ctx, -1, metric.WithAttributeSet(m.metricsAttributeSet(distribution)))
 	}
 
 	err := m.handler.Reporter.OnExit(ctx, pid, details.pd)
@@ -429,6 +450,10 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		ExternalReader: true,
 	}
 
+	settings.MetricsMap = MetricsMap{
+		HashMapOfMaps: m.metricsMap,
+	}
+
 	inst, initErr := factory.CreateInstrumentation(ctx, pid, settings)
 	reporterErr := m.handler.Reporter.OnInit(ctx, pid, initErr, pd)
 	if reporterErr != nil {
@@ -438,9 +463,8 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		// we need to track the instrumentation even if the initialization failed.
 		// consider a reporter which writes a persistent record for a failed/successful init
 		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
-		m.startTrackInstrumentation(pid, nil, pd, processGroup, configGroup)
+		m.startTrackInstrumentation(ctx, pid, nil, pd, processGroup, configGroup, otelDistro)
 		m.logger.Error(err, "failed to initialize instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name)
-		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the initialize error? or the handler error? or both?
 		return initErr
 	}
@@ -455,16 +479,14 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		// consider a reporter which writes a persistent record for a failed/successful load
 		// we need to notify the reporter once that PID exits to clean up the resources - hence we track it.
 		// saving the inst as nil marking the instrumentation failed to load, and is not valid to run/configure/close.
-		m.startTrackInstrumentation(pid, nil, pd, processGroup, configGroup)
+		m.startTrackInstrumentation(ctx, pid, nil, pd, processGroup, configGroup, otelDistro)
 		m.logger.Error(err, "failed to load instrumentation", "language", otelDistro.Language, "distroName", otelDistro.Name)
-		m.metrics.failedInstrumentations.Add(ctx, 1)
 		// TODO: should we return here the load error? or the instance write error? or both?
 		return loadErr
 	}
 
-	m.startTrackInstrumentation(pid, inst, pd, processGroup, configGroup)
+	m.startTrackInstrumentation(ctx, pid, inst, pd, processGroup, configGroup, otelDistro)
 	m.logger.Info("instrumentation loaded", "pid", pid, "process group details", pd)
-	m.metrics.instrumentedProcesses.Add(ctx, 1)
 
 	go func() {
 		err := inst.Run(ctx)
@@ -480,7 +502,15 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	return nil
 }
 
-func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumentation(pid int, inst Instrumentation, processDetails ProcessDetails, processGroup ProcessGroup, configGroup ConfigGroup) {
+func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumentation(
+	ctx context.Context,
+	pid int,
+	inst Instrumentation,
+	processDetails ProcessDetails,
+	processGroup ProcessGroup,
+	configGroup ConfigGroup,
+	distribution *distro.OtelDistro,
+) {
 	instDetails := &instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{
 		inst: inst,
 		pd:   processDetails,
@@ -501,6 +531,13 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) startTrackInstrumen
 		m.detailsByProcessGroup[processGroup] = map[int]*instrumentationDetails[ProcessGroup, ConfigGroup, ProcessDetails]{pid: instDetails}
 	} else {
 		m.detailsByProcessGroup[processGroup][pid] = instDetails
+	}
+
+	metricAttributeSet := m.metricsAttributeSet(distribution)
+	if inst == nil {
+		m.metrics.failedInstrumentations.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
+	} else {
+		m.metrics.instrumentedProcesses.Add(ctx, 1, metric.WithAttributeSet(metricAttributeSet))
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.uber.org/zap"
@@ -12,6 +13,7 @@ import (
 
 type DBOperationProcessor struct {
 	logger *zap.Logger
+	config *Config
 }
 
 const (
@@ -29,7 +31,14 @@ func (sp *DBOperationProcessor) processTraces(ctx context.Context, td ptrace.Tra
 	resources := td.ResourceSpans()
 	// Iterate over resources
 	for r := 0; r < resources.Len(); r++ {
-		scoreSpan := resources.At(r).ScopeSpans()
+		resourceSpans := resources.At(r)
+
+		// Check if language should be excluded
+		if sp.shouldExcludeLanguage(resourceSpans.Resource().Attributes()) {
+			continue
+		}
+
+		scoreSpan := resourceSpans.ScopeSpans()
 
 		// Iterate over scopes
 		for j := 0; j < scoreSpan.Len(); j++ {
@@ -103,4 +112,32 @@ func extractFirstWord(query string) string {
 
 	// return the entire query (single-word case)
 	return query
+}
+
+// shouldExcludeLanguage checks if the resource's telemetry.sdk.language attribute
+// is in the exclude list. Returns true if the language should be excluded.
+func (sp *DBOperationProcessor) shouldExcludeLanguage(resourceAttrs pcommon.Map) bool {
+	if sp.config.Exclude == nil {
+		return false
+	}
+	if len(sp.config.Exclude.Language) == 0 {
+		return false
+	}
+
+	// Get the telemetry.sdk.language attribute from resource. must be present.
+	langAttr, found := resourceAttrs.Get(string(semconv.TelemetrySDKLanguageKey))
+	if !found {
+		return true
+	}
+
+	langValue := langAttr.AsString()
+
+	// Check if the language is in the exclude list
+	for _, excludedLang := range sp.config.Exclude.Language {
+		if langValue == excludedLang {
+			return true
+		}
+	}
+
+	return false
 }

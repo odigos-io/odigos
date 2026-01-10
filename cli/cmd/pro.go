@@ -264,6 +264,7 @@ var (
 	centralAdminUser            string
 	centralAdminPassword        string
 	centralAuthStorageClassName string
+	centralMaxMessageSize       string
 )
 
 var centralInstallCmd = &cobra.Command{
@@ -442,7 +443,10 @@ var centralUpgradeCmd = &cobra.Command{
 		}
 
 		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
-		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts)
+		backendConfig := centralodigos.CentralBackendConfig{
+			MaxMessageSize: centralMaxMessageSize,
+		}
+		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts, backendConfig)
 		if err := resources.ApplyResourceManagers(ctx, client, []resourcemanager.ResourceManager{uiManager, backendManager}, "Upgrading"); err != nil {
 			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Central UI/Backend:")
 			fmt.Println(err)
@@ -494,6 +498,7 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 	}
 
 	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelCentralKey, createNamespace)
+
 	if err := createOdigosCentralSecret(ctx, client, ns, onPremToken); err != nil {
 		return err
 	}
@@ -502,6 +507,9 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 			AdminUsername:    centralAdminUser,
 			AdminPassword:    centralAdminPassword,
 			StorageClassName: storageClassNamePtr,
+		},
+		CentralBackend: centralodigos.CentralBackendConfig{
+			MaxMessageSize: centralMaxMessageSize,
 		},
 	}
 	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
@@ -618,12 +626,13 @@ func init() {
 	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 	centralUpgradeCmd.MarkFlagRequired("version")
 	centralUpgradeCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
+	centralUpgradeCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
-	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password")
+	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password (auto-generated if not provided)")
 	centralInstallCmd.Flags().StringVar(&centralAuthStorageClassName, "central-storage-class-name", "", "StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)")
-	centralInstallCmd.MarkFlagRequired("central-admin-password")
+	centralInstallCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
 	centralCmd.AddCommand(portForwardCentralCmd)
 	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 	// migrate subcommand
