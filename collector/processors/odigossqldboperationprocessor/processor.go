@@ -125,7 +125,7 @@ func (sp *DBOperationProcessor) shouldExcludeLanguage(resourceAttrs pcommon.Map)
 	}
 
 	// Get the telemetry.sdk.language attribute from resource. must be present.
-	langAttr, found := resourceAttrs.Get("telemetry.sdk.language")
+	langAttr, found := resourceAttrs.Get(string(semconv.TelemetrySDKLanguageKey))
 	if !found {
 		return true
 	}
