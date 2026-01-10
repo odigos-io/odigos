@@ -299,15 +299,9 @@ type AgentSpanMetricsConfig struct {
 	HistogramBucketsMs []int `json:"histogramBucketsMs,omitempty"`
 }
 
-type UrlTemplatizationCustomId struct {
-	Regexp string `json:"regexp"`
-	Name   string `json:"name,omitempty"`
-}
-
 type UrlTemplatizationConfig struct {
 	// Rule is the template rule to be applied to URLs
-	Rules     []string                    `json:"templatizationRules,omitempty"`
-	CustomIds []UrlTemplatizationCustomId `json:"customIds,omitempty"`
+	Rules []string `json:"templatizationRules,omitempty"`
 }
 
 // HeadersCollectionConfig represents configuration for HTTP headers collection.

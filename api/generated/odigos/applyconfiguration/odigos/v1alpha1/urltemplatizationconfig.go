@@ -20,8 +20,7 @@ package v1alpha1
 // UrlTemplatizationConfigApplyConfiguration represents a declarative configuration of the UrlTemplatizationConfig type for use
 // with apply.
 type UrlTemplatizationConfigApplyConfiguration struct {
-	Rules     []string                                      `json:"templatizationRules,omitempty"`
-	CustomIds []UrlTemplatizationCustomIdApplyConfiguration `json:"customIds,omitempty"`
+	Rules []string `json:"templatizationRules,omitempty"`
 }
 
 // UrlTemplatizationConfigApplyConfiguration constructs a declarative configuration of the UrlTemplatizationConfig type for use with
@@ -36,19 +35,6 @@ func UrlTemplatizationConfig() *UrlTemplatizationConfigApplyConfiguration {
 func (b *UrlTemplatizationConfigApplyConfiguration) WithRules(values ...string) *UrlTemplatizationConfigApplyConfiguration {
 	for i := range values {
 		b.Rules = append(b.Rules, values[i])
-	}
-	return b
-}
-
-// WithCustomIds adds the given value to the CustomIds field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the CustomIds field.
-func (b *UrlTemplatizationConfigApplyConfiguration) WithCustomIds(values ...*UrlTemplatizationCustomIdApplyConfiguration) *UrlTemplatizationConfigApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithCustomIds")
-		}
-		b.CustomIds = append(b.CustomIds, *values[i])
 	}
 	return b
 }
