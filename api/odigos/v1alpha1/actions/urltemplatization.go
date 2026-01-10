@@ -24,6 +24,29 @@ type URLTemplatizationRule struct {
 	Notes string `json:"notes,omitempty"`
 }
 
+// allow user to define custom ids that regex that will be used to match and templatize the path segments.
+// for example: /users/client_abc -> /users/{client-id}
+// "client_abc" is not automatically templatized, but if the user defines a custom id with the regexp "^client_\w+$"
+// then the path will be templatized to /users/{client-id}.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type UrlTemplatizationCustomId struct {
+
+	// Regexp is the regular expression that will be used to match the path segments.
+	Regexp string `json:"regexp"`
+
+	// Name is what will end up in the currly braces in the templated path.
+	// for example: /users/{client-id} -> name is "client-id"
+	// if not provided, the name will be "id" by default.
+	Name string `json:"name,omitempty"`
+
+	// Document examples for observed values that caused this rule to be added.
+	Examples []string `json:"examples,omitempty"`
+
+	// free text field to write context about this custom id for future maintenance purposes. not used by the system.
+	Notes string `json:"notes,omitempty"`
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 // UrlTemplatizationRulesGroup is a group of rules that share the same target spans.
@@ -37,17 +60,10 @@ type UrlTemplatizationRulesGroup struct {
 	FilterK8sWorkloadName     string                      `json:"filterK8sWorkloadName,omitempty"`
 
 	// the rules that will be applied to the spans matching the above filters.
-	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules"`
+	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`
 
-	// if set, odigos will automatically detect k8s api endpoints and process the url path,
-	// while templating namespace names and resource names, if needed.
-	// this is equivalent to adding few templatization rules, for the variants of k8s api server endpoints.
-	// (namespaced / non-namespaced, core api group / named api group, resource list, get, subresource etc)
-	AutoDetectK8sApiObjects bool `json:"autoDetectK8sApiObjects,omitempty"`
-
-	// if set, odigos will automatically detect the elasticsearch api endpoints and templatize the urls.
-	// for example: /foo/_doc/123 -> /foo/_doc/{document-id} (index has low cardinality and not templated, but id is templated)
-	AutoDetectElasticsearchApiEndpoints bool `json:"autoDetectElasticsearchApiEndpoints,omitempty"`
+	// regexps that should be treated as ids and templatized, in addition to the default rules.
+	CustomIds []UrlTemplatizationCustomId `json:"customIds,omitempty"`
 
 	// user can add notes about this group for future maintenance purposes. not used by the system.
 	// it can record why this group was added and what endpoints it's targeting.

@@ -281,14 +281,23 @@ spec:
                           description: A list of URL templatization configurations
                             to be applied to the traces.
                           properties:
+                            customIds:
+                              items:
+                                properties:
+                                  name:
+                                    type: string
+                                  regexp:
+                                    type: string
+                                required:
+                                - regexp
+                                type: object
+                              type: array
                             templatizationRules:
                               description: Rule is the template rule to be applied
                                 to URLs
                               items:
                                 type: string
                               type: array
-                          required:
-                          - templatizationRules
                           type: object
                       type: object
                   required:
