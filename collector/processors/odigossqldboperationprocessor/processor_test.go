@@ -27,7 +27,10 @@ func generateTestTrace(dbQueryText string, dbOperationNameExists bool) ptrace.Tr
 
 func TestDBOperationProcessor_NoDbQueryText(t *testing.T) {
 	logger, _ := zap.NewDevelopment() // Enable logging in development mode
-	processor := &DBOperationProcessor{logger: logger}
+	processor := &DBOperationProcessor{
+		logger: logger,
+		config: &Config{},
+	}
 
 	// Generate trace with no db.query.text attribute
 	logger.Info("Running test: NoDbQueryText - No db.query.text attribute in span")
@@ -48,7 +51,10 @@ func TestDBOperationProcessor_NoDbQueryText(t *testing.T) {
 
 func TestDBOperationProcessor_ExistingDbOperationName(t *testing.T) {
 	logger, _ := zap.NewDevelopment() // Enable logging in development mode
-	processor := &DBOperationProcessor{logger: logger}
+	processor := &DBOperationProcessor{
+		logger: logger,
+		config: &Config{},
+	}
 
 	// Generate trace with an existing db.operation.name attribute
 	logger.Info("Running test: ExistingDbOperationName - db.operation.name already exists")
@@ -74,7 +80,10 @@ func TestDBOperationProcessor_ExistingDbOperationName(t *testing.T) {
 
 func TestDBOperationProcessor_SetDbOperationName(t *testing.T) {
 	logger, _ := zap.NewDevelopment() // Enable logging in development mode
-	processor := &DBOperationProcessor{logger: logger}
+	processor := &DBOperationProcessor{
+		logger: logger,
+		config: &Config{},
+	}
 
 	testCases := []struct {
 		query    string
