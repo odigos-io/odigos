@@ -117,6 +117,9 @@ func extractFirstWord(query string) string {
 // shouldExcludeLanguage checks if the resource's telemetry.sdk.language attribute
 // is in the exclude list. Returns true if the language should be excluded.
 func (sp *DBOperationProcessor) shouldExcludeLanguage(resourceAttrs pcommon.Map) bool {
+	if sp.config.Exclude == nil {
+		return false
+	}
 	if len(sp.config.Exclude.Language) == 0 {
 		return false
 	}
