@@ -370,6 +370,7 @@ func getEnvInjectionDecision(
 // If no filters are set in a group, it's considered global and applies to all containers.
 func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *odigosv1.UrlTemplatizationConfig {
 	var rules []string
+	participating := false
 
 	for _, action := range *agentLevelActions {
 		// Safety check: actions were already filtered to only include template actions.
@@ -379,6 +380,7 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 
 		for _, rulesGroup := range action.Spec.URLTemplatization.TemplatizationRulesGroups {
 			if templatizationRulesGroupMatchesContainer(rulesGroup, language, pw) {
+				participating = true
 				for _, rule := range rulesGroup.TemplatizationRules {
 					rules = append(rules, rule.Template)
 				}
@@ -386,7 +388,9 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 		}
 	}
 
-	if len(rules) == 0 {
+	// container can participate in templatization and have no rule.
+	// if at least one rule group matches, the container participates.
+	if !participating {
 		return nil
 	}
 
