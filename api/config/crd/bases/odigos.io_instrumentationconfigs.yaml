@@ -287,8 +287,6 @@ spec:
                               items:
                                 type: string
                               type: array
-                          required:
-                          - templatizationRules
                           type: object
                       type: object
                   required:
