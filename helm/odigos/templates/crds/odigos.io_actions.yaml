@@ -591,18 +591,41 @@ spec:
                         Filters, if set, are ANDed together, e.g. for the templatization rules to be applied, all set filters must be true.
                         If no filters are set, the rules will be applied to all spans.
                       properties:
-                        autoDetectElasticsearchApiEndpoints:
-                          description: |-
-                            if set, odigos will automatically detect the elasticsearch api endpoints and templatize the urls.
-                            for example: /foo/_doc/123 -> /foo/_doc/{document-id} (index has low cardinality and not templated, but id is templated)
-                          type: boolean
-                        autoDetectK8sApiObjects:
-                          description: |-
-                            if set, odigos will automatically detect k8s api endpoints and process the url path,
-                            while templating namespace names and resource names, if needed.
-                            this is equivalent to adding few templatization rules, for the variants of k8s api server endpoints.
-                            (namespaced / non-namespaced, core api group / named api group, resource list, get, subresource etc)
-                          type: boolean
+                        customIds:
+                          description: regexps that should be treated as ids and templatized,
+                            in addition to the default rules.
+                          items:
+                            description: |-
+                              allow user to define custom ids that regex that will be used to match and templatize the path segments.
+                              for example: /users/client_abc -> /users/{client-id}
+                              "client_abc" is not automatically templatized, but if the user defines a custom id with the regexp "^client_\w+$"
+                              then the path will be templatized to /users/{client-id}.
+                            properties:
+                              examples:
+                                description: Document examples for observed values
+                                  that caused this rule to be added.
+                                items:
+                                  type: string
+                                type: array
+                              name:
+                                description: |-
+                                  Name is what will end up in the currly braces in the templated path.
+                                  for example: /users/{client-id} -> name is "client-id"
+                                  if not provided, the name will be "id" by default.
+                                type: string
+                              notes:
+                                description: free text field to write context about
+                                  this custom id for future maintenance purposes.
+                                  not used by the system.
+                                type: string
+                              regexp:
+                                description: Regexp is the regular expression that
+                                  will be used to match the path segments.
+                                type: string
+                            required:
+                            - regexp
+                            type: object
+                          type: array
                         filterK8sNamespace:
                           type: string
                         filterK8sWorkloadKind:
@@ -661,8 +684,6 @@ spec:
                             - template
                             type: object
                           type: array
-                      required:
-                      - templatizationRules
                       type: object
                     type: array
                 required:
