@@ -14,6 +14,7 @@ const (
 	NodeVersionConst   = "NODE_VERSION"
 	PythonVersionConst = "PYTHON_VERSION"
 	JavaVersionConst   = "JAVA_VERSION"
+	JavaHomeConst      = "JAVA_HOME"
 	PhpVersionConst    = "PHP_VERSION"
 	RubyVersionConst   = "RUBY_VERSION"
 )
@@ -42,6 +43,7 @@ var LangsVersionEnvs = map[string]struct{}{
 	NodeVersionConst:   {},
 	PythonVersionConst: {},
 	JavaVersionConst:   {},
+	JavaHomeConst:      {},
 	PhpVersionConst:    {},
 	RubyVersionConst:   {},
 }
@@ -167,13 +169,13 @@ func (d *Details) GetOverwriteEnvsValue(key string) (string, bool) {
 
 // Find all processes in the system.
 // The function accepts a predicate function that can be used to filter the results.
-func FindAllProcesses(predicate func(int) bool, runtimeDetectionEnvs map[string]struct{}) ([]Details, error) {
+func FindAllProcesses(predicate func(int) bool) ([]int, error) {
 	dirs, err := os.ReadDir(procDir)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Details
+	var result []int
 	for _, di := range dirs {
 		if !di.IsDir() {
 			continue
@@ -192,8 +194,50 @@ func FindAllProcesses(predicate func(int) bool, runtimeDetectionEnvs map[string]
 			continue
 		}
 
-		details := GetPidDetails(pid, runtimeDetectionEnvs)
-		result = append(result, details)
+		result = append(result, pid)
+	}
+	return result, nil
+}
+
+// Group processes by a key returned by the predicate function.
+// The predicate function should return the key and a boolean indicating whether to include the process in the result.
+// If the boolean is false, the process will be skipped.
+// The function returns a map where the keys are the keys returned by the predicate function
+// and the values are maps of process IDs that belong to each key.
+func Group[K comparable](predicate func(int) (K, bool)) (map[K]map[int]struct{}, error) {
+	if predicate == nil {
+		return nil, errors.New("predicate must be provided for grouping")
+	}
+
+	dirs, err := os.ReadDir(procDir)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[K]map[int]struct{})
+	for _, di := range dirs {
+		if !di.IsDir() {
+			continue
+		}
+
+		dirName := di.Name()
+
+		pid, isProcessDirectory := isDirectoryPid(dirName)
+		if !isProcessDirectory {
+			continue
+		}
+
+		k, ok := predicate(pid)
+		if !ok {
+			continue
+		}
+
+		_, keyExists := result[k]
+		if !keyExists {
+			result[k] = make(map[int]struct{})
+		}
+
+		result[k][pid] = struct{}{}
 	}
 
 	return result, nil
@@ -279,8 +323,10 @@ func getRelevantEnvVars(pid int, runtimeDetectionEnvs map[string]struct{}) Proce
 		envName := envParts[0]
 		envDetectionValue := envParts[1]
 
-		if _, ok := runtimeDetectionEnvs[envName]; ok {
-			overWriteEnvsResult[envName] = envDetectionValue
+		if runtimeDetectionEnvs != nil {
+			if _, ok := runtimeDetectionEnvs[envName]; ok {
+				overWriteEnvsResult[envName] = envDetectionValue
+			}
 		}
 
 		if _, ok := LangsVersionEnvs[envName]; ok {

@@ -1,9 +1,9 @@
 import { useConfig } from '../config';
 import { useMutation } from '@apollo/client';
 import { RESTART_POD, RESTART_WORKLOADS } from '@/graphql';
+import { useNotificationStore } from '@odigos/ui-kit/store';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { useNotificationStore, usePendingStore } from '@odigos/ui-kit/store';
 import { type WorkloadId, EntityTypes, StatusType, Crud } from '@odigos/ui-kit/types';
 
 interface UseWorkloadUtils {
@@ -14,7 +14,6 @@ interface UseWorkloadUtils {
 export const useWorkloadUtils = (): UseWorkloadUtils => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
-  const { addPendingItems, removePendingItems } = usePendingStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.Source, target: id ? getSseTargetFromId(id, EntityTypes.Source) : undefined, hideFromHistory });
@@ -33,13 +32,8 @@ export const useWorkloadUtils = (): UseWorkloadUtils => {
     } else {
       notifyUser(StatusType.Default, 'Pending', 'Restarting sources...', undefined, true);
 
-      const pendingItems = sourceIds.map((sourceId) => ({ entityType: EntityTypes.Source, entityId: sourceId }));
-      addPendingItems(pendingItems);
-
-      const { errors } = await mutateRestartWorkloads({ variables: { sourceIds } });
-
-      if (!errors?.length) notifyUser(StatusType.Success, Crud.Update, `Successfully restarted ${sourceIds.length} sources`);
-      removePendingItems(pendingItems);
+      const { data } = await mutateRestartWorkloads({ variables: { sourceIds } });
+      if (data?.restartWorkloads) notifyUser(StatusType.Success, Crud.Update, `Successfully restarted ${sourceIds.length} sources`);
     }
   };
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -30,7 +31,7 @@ func PodWorkloadObjectOrError(ctx context.Context, pod *corev1.Pod) (*k8sconsts.
 // If the pod is not owned by a controller, it returns a nil workload with no error.
 func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWorkload, error) {
 	for _, owner := range pod.OwnerReferences {
-		workloadName, workloadKind, err := GetWorkloadFromOwnerReference(owner)
+		workloadName, workloadKind, err := GetWorkloadFromOwnerReference(owner, pod)
 		if err != nil {
 			if errors.Is(err, ErrKindNotSupported) {
 				continue
@@ -51,20 +52,37 @@ func PodWorkloadObject(ctx context.Context, pod *corev1.Pod) (*k8sconsts.PodWork
 
 // GetWorkloadFromOwnerReference retrieves both the workload name and workload kind
 // from the provided owner reference.
-func GetWorkloadFromOwnerReference(ownerReference metav1.OwnerReference) (workloadName string, workloadKind k8sconsts.WorkloadKind, err error) {
-	return GetWorkloadNameAndKind(ownerReference.Name, ownerReference.Kind)
+func GetWorkloadFromOwnerReference(
+	ownerReference metav1.OwnerReference, pod *corev1.Pod,
+) (workloadName string, workloadKind k8sconsts.WorkloadKind, err error) {
+	return GetWorkloadNameAndKind(ownerReference.Name, ownerReference.Kind, pod)
 }
 
-func GetWorkloadNameAndKind(ownerName, ownerKind string) (string, k8sconsts.WorkloadKind, error) {
+func GetWorkloadNameAndKind(ownerName, ownerKind string, pod *corev1.Pod) (string, k8sconsts.WorkloadKind, error) {
 	switch ownerKind {
 	case "ReplicaSet":
-		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeployment)
+		return determineReplicaSetOwner(ownerName, pod)
 	case "ReplicationController":
 		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeploymentConfig)
 	case "Job":
 		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindCronJob)
+	case "Node":
+		if IsStaticPod(pod) {
+			return pod.Name, k8sconsts.WorkloadKindStaticPod, nil
+		}
+		return "", "", errors.New("node owned pod which is not static, currently not supported as a workload")
 	default:
 		return extractInfoWithoutSuffix(ownerName, ownerKind)
+	}
+}
+
+// ReplicaSets can be created from either Deployment or (Argo) Rollout kinds, so determine which one is that
+func determineReplicaSetOwner(ownerName string, pod *corev1.Pod) (string, k8sconsts.WorkloadKind, error) {
+	// If we find a label associated with Argo rollouts, it is an Rollout kind
+	if _, ok := pod.Labels[argorolloutsv1alpha1.DefaultRolloutUniqueLabelKey]; ok {
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindArgoRollout)
+	} else { // If not, default to Deployment kind
+		return extractInfoWithSuffix(ownerName, k8sconsts.WorkloadKindDeployment)
 	}
 }
 

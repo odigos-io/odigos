@@ -113,7 +113,7 @@ const (
 	AgentEnabledReasonImagePullBackOff AgentEnabledReason = "ImagePullBackOff"
 )
 
-// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart
+// +kubebuilder:validation:Enum=RolloutTriggeredSuccessfully;FailedToPatch;PreviousRolloutOngoing;Disabled;WaitingForRestart;WorkloadNotSupporting
 type WorkloadRolloutReason string
 
 const (
@@ -121,7 +121,9 @@ const (
 	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
 	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
 	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonNotRequired            WorkloadRolloutReason = "NotRequired"
 	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
+	WorkloadRolloutReasonWorkloadNotSupporting  WorkloadRolloutReason = "WorkloadNotSupporting"
 )
 
 const (
@@ -292,12 +294,14 @@ type AgentSpanMetricsConfig struct {
 	// time interval in miliseconds for flushing the span metrics.
 	// defaults: 60000 (60 seconds, 1 minute)
 	IntervalMs int `json:"intervalMs,omitempty"`
+
+	// explicit buckets list for the histogram metrics in ms
+	HistogramBucketsMs []int `json:"histogramBucketsMs,omitempty"`
 }
 
-// UrlTemplatizationConfig represents configuration for URL templatization rules
 type UrlTemplatizationConfig struct {
 	// Rule is the template rule to be applied to URLs
-	Rules []string `json:"templatizationRules"`
+	Rules []string `json:"templatizationRules,omitempty"`
 }
 
 // HeadersCollectionConfig represents configuration for HTTP headers collection.

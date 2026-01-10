@@ -30,8 +30,6 @@ var (
 )
 
 func GetConfig(ctx context.Context) model.GetConfigResponse {
-	var response model.GetConfigResponse
-
 	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		// assign default values (should not happen in production, but we want to be safe)
@@ -41,40 +39,96 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
 		}
 	}
-	deploymentData := odigosDeployment.Data
 
-	response.Readonly = IsReadonlyMode(ctx)
-	response.PlatformType = model.ComputePlatformTypeK8s // TODO: add support for VM (or others)
+	response := buildConfigResponse(ctx, odigosDeployment.Data)
+
+	return response
+}
+
+func buildConfigResponse(ctx context.Context, deploymentData map[string]string) model.GetConfigResponse {
+	var response model.GetConfigResponse
+	config, err := GetOdigosConfiguration(ctx)
+	if err != nil {
+		log.Printf("Failed to get Config map: %v\n", err)
+	}
+	response.Readonly = config.UiMode == common.UiModeReadonly
+	response.PlatformType = model.ComputePlatformTypeK8s
 	response.Tier = model.Tier(deploymentData[k8sconsts.OdigosDeploymentConfigMapTierKey])
 	response.OdigosVersion = deploymentData[k8sconsts.OdigosDeploymentConfigMapVersionKey]
 	response.InstallationMethod = string(deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey])
-
+	response.ClusterName = &config.ClusterName
+	isConnected, err := isCentralProxyRunning(ctx)
+	if err != nil {
+		log.Printf("Error checking if central proxy connected: %v\n", err)
+	}
+	configured := isConfiguredForCentralBackend(common.OdigosTier(response.Tier), &config.ClusterName, config)
+	if configured && isConnected {
+		response.IsCentralProxyRunning = &isConnected
+	} else {
+		response.IsCentralProxyRunning = nil
+	}
 	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
 	if isNewInstallation {
 		response.InstallationStatus = model.InstallationStatus(NewInstallation)
 	} else {
 		response.InstallationStatus = model.InstallationStatus(Finished)
 	}
-
 	return response
 }
 
-func IsReadonlyMode(ctx context.Context) bool {
+func GetOdigosConfiguration(ctx context.Context) (*common.OdigosConfiguration, error) {
 	ns := env.GetCurrentNamespace()
 
 	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
 	if err != nil {
 		log.Printf("Error getting config maps: %v\n", err)
-		return false
+		return nil, err
 	}
 
 	var odigosConfiguration common.OdigosConfiguration
 	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
-		log.Printf("Error parsing YAML: %v\n", err)
+		log.Printf("Error parsing YAML from ConfigMap %s: %v\n", configMap.Name, err)
+		return nil, err
+	}
+
+	return &odigosConfiguration, nil
+}
+
+func IsReadonlyMode(ctx context.Context) bool {
+	config, err := GetOdigosConfiguration(ctx)
+	if err != nil {
 		return false
 	}
 
-	return odigosConfiguration.UiMode == common.UiModeReadonly
+	return config.UiMode == common.UiModeReadonly
+}
+
+func isConfiguredForCentralBackend(tier common.OdigosTier, clusterName *string, config *common.OdigosConfiguration) bool {
+	if tier != common.OnPremOdigosTier {
+		return false
+	}
+
+	if clusterName == nil || *clusterName == "" {
+		return false
+	}
+
+	if config.CentralBackendURL == "" {
+		return false
+	}
+	return true
+}
+
+func isCentralProxyRunning(ctx context.Context) (bool, error) {
+	ns := env.GetCurrentNamespace()
+	deployment, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, k8sconsts.CentralProxyDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		log.Printf("Central proxy deployment not found: %v\n", err)
+		return false, nil
+	}
+	if deployment.Status.AvailableReplicas == 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func isSourceCreated(ctx context.Context) bool {

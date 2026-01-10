@@ -9,6 +9,8 @@ imagePullSecrets: []
 
 centralBackend:
   # Resources and scheduling for the Central backend
+  # -- Maximum message size in bytes for gRPC messages (empty = use default)
+  # maxMessageSize: ''
   resources:
     requests:
       cpu: 100m
@@ -92,6 +94,11 @@ auth:
   enabled: true
   image: registry.odigos.io/keycloak:24.0.3
   adminUsername: admin
+  # -- Keycloak admin password for internal API access.
+  # On first install: uses this value, or auto-generates if empty.
+  # On upgrades: ignores this value and reuses the existing password from the secret
+  # to prevent mismatch with Keycloak's stored credentials.
+  adminPassword: ''
   port: 8080
   portName: http
   # Ensure volume permissions are compatible when persistence is enabled
@@ -129,7 +136,7 @@ auth:
       memory: 512Mi
 
   # Limits Keycloak's JVM memory to a small, efficient range suitable for medium traffic
-  javaOpts: "-Xms128m -Xmx256m"
+  javaOpts: '-Xms128m -Xmx256m'
 
   # Liveness probe settings
   # Keycloak exposes /health/live for liveness checks

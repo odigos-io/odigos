@@ -23,6 +23,10 @@ func kindToGql(kind string) model.K8sResourceKind {
 		return model.K8sResourceKindCronJob
 	case "deploymentconfig":
 		return model.K8sResourceKindDeploymentConfig
+	case "rollout":
+		return model.K8sResourceKindRollout
+	case "staticpod":
+		return model.K8sResourceKindStaticPod
 	}
 	return ""
 }

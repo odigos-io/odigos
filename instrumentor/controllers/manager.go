@@ -13,8 +13,10 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/instrumentationconfig"
 	"github.com/odigos-io/odigos/instrumentor/controllers/sourceinstrumentation"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,6 +44,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(openshiftappsv1.AddToScheme(scheme))
+	utilruntime.Must(argorolloutsv1alpha1.AddToScheme(scheme))
 }
 
 type KubeManagerOptions struct {
@@ -76,6 +79,9 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		strippedPod := corev1.Pod{
 			ObjectMeta: pod.ObjectMeta,
 			Status:     stripedStatus,
+		}
+		if workload.IsStaticPod(pod) {
+			strippedPod.Spec = pod.Spec
 		}
 		strippedPod.SetManagedFields(nil) // don't store managed fields in the cache
 		return &strippedPod, nil

@@ -8,9 +8,12 @@ import (
 	"errors"
 	"regexp"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,8 +36,8 @@ func syncNamespaceWorkloads(
 	ctx context.Context,
 	k8sClient client.Client,
 	runtimeScheme *runtime.Scheme,
-	namespace string) (ctrl.Result, error) {
-
+	namespace string,
+) (ctrl.Result, error) {
 	workloadsToSync := make([]k8sconsts.PodWorkload, 0)
 	collectiveRes := ctrl.Result{}
 	var errs error
@@ -44,6 +47,7 @@ func syncNamespaceWorkloads(
 		k8sconsts.WorkloadKindStatefulSet,
 		k8sconsts.WorkloadKindCronJob,
 		k8sconsts.WorkloadKindDeploymentConfig,
+		k8sconsts.WorkloadKindArgoRollout,
 	} {
 		workloadObjects := workload.ClientListObjectFromWorkloadKind(kind)
 		err := k8sClient.List(ctx, workloadObjects, client.InNamespace(namespace))
@@ -53,6 +57,10 @@ func syncNamespaceWorkloads(
 			// - The DeploymentConfig resource doesn't exist (NoMatchError)
 			// - RBAC permissions aren't granted (Forbidden)
 			if kind == k8sconsts.WorkloadKindDeploymentConfig && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
+				continue
+			}
+			// // Same for Argo Rollouts
+			if kind == k8sconsts.WorkloadKindArgoRollout && (meta.IsNoMatchError(err) || apierrors.IsForbidden(err)) {
 				continue
 			}
 			// For other errors or other workload kinds, collect the error
@@ -103,6 +111,34 @@ func syncNamespaceWorkloads(
 					Kind:      k8sconsts.WorkloadKindDeploymentConfig,
 				})
 			}
+		case *argorolloutsv1alpha1.RolloutList:
+			for _, ar := range obj.Items {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      ar.GetName(),
+					Namespace: ar.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindArgoRollout,
+				})
+			}
+		}
+	}
+
+	// add standalone pods which can be instrumented
+	// pods that are owned by other higher-level object (e.g Deployment) should not accounted for here
+	potentialPodWorkloads := &corev1.PodList{}
+	err := k8sClient.List(ctx, potentialPodWorkloads, client.InNamespace(namespace))
+	if err != nil {
+		errs = errors.Join(errs, err)
+	} else {
+		for _, p := range potentialPodWorkloads.Items {
+			if workload.IsStaticPod(&p) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      p.Name,
+					Namespace: p.Namespace,
+					Kind:      k8sconsts.WorkloadKindStaticPod,
+				})
+			}
+			// currently we only support static pods as a valid workload to instrument
+			// once we add support for standalone pods, we could add a case here
 		}
 	}
 
@@ -124,8 +160,8 @@ func syncRegexSourceWorkloads(
 	ctx context.Context,
 	k8sClient client.Client,
 	runtimeScheme *runtime.Scheme,
-	source *odigosv1.Source) (ctrl.Result, error) {
-
+	source *odigosv1.Source,
+) (ctrl.Result, error) {
 	pattern := source.Spec.Workload.Name
 	namespace := source.Spec.Workload.Namespace
 	kind := source.Spec.Workload.Kind
@@ -200,6 +236,16 @@ func syncRegexSourceWorkloads(
 				})
 			}
 		}
+	case *argorolloutsv1alpha1.RolloutList:
+		for _, rollout := range obj.Items {
+			if regex.MatchString(rollout.GetName()) {
+				workloadsToSync = append(workloadsToSync, k8sconsts.PodWorkload{
+					Name:      rollout.GetName(),
+					Namespace: rollout.GetNamespace(),
+					Kind:      k8sconsts.WorkloadKindArgoRollout,
+				})
+			}
+		}
 	}
 
 	// Sync each matching workload
@@ -247,8 +293,8 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		return ctrl.Result{}, err
 	}
 
-	containers := make([]odigosv1.ContainerOverride, 0, len(workloadObj.PodTemplateSpec().Spec.Containers))
-	for _, container := range workloadObj.PodTemplateSpec().Spec.Containers {
+	containers := make([]odigosv1.ContainerOverride, 0, len(workloadObj.PodSpec().Containers))
+	for _, container := range workloadObj.PodSpec().Containers {
 		// search if there is an override in the source for this container.
 		// list is expected to be short (1-5 containers, so linear search is fine)
 		var containerOverride *odigosv1.ContainerOverride

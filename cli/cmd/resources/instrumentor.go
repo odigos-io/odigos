@@ -256,6 +256,11 @@ func NewInstrumentorClusterRole(openshiftEnabled bool) *rbacv1.ClusterRole {
 				ResourceNames: []string{k8sconsts.InstrumentorSourceValidatingWebhookName},
 				Verbs:         []string{"update"},
 			},
+			{
+				APIGroups: []string{"argoproj.io"},
+				Resources: []string{"rollouts"},
+				Verbs:     []string{"get", "list", "watch", "patch"},
+			},
 		}, openshiftRules...),
 	}
 }
@@ -594,7 +599,7 @@ func NewInstrumentorDeployment(ns string, version string, telemetryEnabled bool,
 										},
 									},
 								},
-								// This env var is used to set the image (ubi9 or not) of the init container (odigos-agents)
+								// This env var is used to set the image (certified or not) of the init container (odigos-agents)
 								{
 									Name:  k8sconsts.OdigosInitContainerEnvVarName,
 									Value: containers.GetImageName(imagePrefix, initContainerImage, version),

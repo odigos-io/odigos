@@ -13,6 +13,17 @@ imagePullSecrets: []
 # For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
 imagePrefix:
 
+# Per-component image overrides. When set, these full image URLs take precedence over
+# the constructed image name (imagePrefix + component + tag).
+# This is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.
+# Example:
+#   images:
+#     autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
+#     collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
+# Supported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,
+#   odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents
+images: {}
+
 # namespaces list not to show in odigos ui
 # set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
 # you can add additional namespaces to ignore by adding them to the list
@@ -503,15 +514,15 @@ openshift:
   # Controls whether to use OpenShift-specific settings and images.
   enabled: false
 
-  # Controls whether to use UBI9 (Universal Base Image 9) based image tags (-ubi9 suffix).
+  # Controls whether to use Red Hat certified image tags (-certified suffix).
   # By default, this is unset and will inherit the value of openshift.enabled.
-  # Set to false to explicitly disable UBI9 images even when openshift.enabled is true.
-  # Set to true to explicitly enable UBI9 images (requires openshift.enabled to also be true).
-  # Note that ubi9ImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry
+  # Set to false to explicitly disable certified images even when openshift.enabled is true.
+  # Set to true to explicitly enable certified images (requires openshift.enabled to also be true).
+  # Note that certifiedImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry
   # (registry.connect.redhat.com) which is used when openshift.enabled is true.
   # Setting this to false is useful if you are hosting images in your own registry (with imagePrefix set) but
   # still deploying on OpenShift, which requires other settings that are applied by openshift.enabled for OpenShift compatibility.
-  #ubi9ImageTags: false
+  #certifiedImageTags: false
 
 gke:
   enabled: false

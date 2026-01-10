@@ -12,9 +12,9 @@ import (
 )
 
 // ConnectAndListen establishes a connection to the odiglet's Unix socket and retrieves a file descriptor (FD)
-// for the eBPF map used for tracing. The provided onFD callback is invoked only when a new FD is received,
+// for the specified eBPF map type. The provided onFD callback is invoked only when a new FD is received,
 // which happens if odiglet is restarted and creates a new map (resulting in a different FD).
-func ConnectAndListen(ctx context.Context, socketPath string, logger *zap.Logger, onFD func(fd int)) error {
+func ConnectAndListen(ctx context.Context, socketPath string, requestType string, logger *zap.Logger, onFD func(fd int)) error {
 	var lastFD = -1
 
 	for {
@@ -25,7 +25,7 @@ func ConnectAndListen(ctx context.Context, socketPath string, logger *zap.Logger
 		}
 
 		// Try to connect and get FD
-		fd, err := connectAndGetFD(ctx, socketPath)
+		fd, err := connectAndGetFD(ctx, socketPath, requestType)
 		if err != nil {
 			// Connection attempt failed—odiglet may be down or in the process of restarting.
 			// Retry the connection after a short delay.
@@ -57,7 +57,7 @@ func ConnectAndListen(ctx context.Context, socketPath string, logger *zap.Logger
 }
 
 // connectAndGetFD makes a single connection, gets FD, and closes connection
-func connectAndGetFD(ctx context.Context, socketPath string) (int, error) {
+func connectAndGetFD(ctx context.Context, socketPath string, requestType string) (int, error) {
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "unix", socketPath)
 	if err != nil {
@@ -68,7 +68,7 @@ func connectAndGetFD(ctx context.Context, socketPath string) (int, error) {
 	}()
 
 	// Request the FD
-	if _, err := conn.Write([]byte(ReqGetFD)); err != nil {
+	if _, err := conn.Write([]byte(requestType)); err != nil {
 		return -1, err
 	}
 

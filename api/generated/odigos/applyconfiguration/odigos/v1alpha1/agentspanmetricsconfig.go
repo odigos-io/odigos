@@ -20,8 +20,9 @@ package v1alpha1
 // AgentSpanMetricsConfigApplyConfiguration represents a declarative configuration of the AgentSpanMetricsConfig type for use
 // with apply.
 type AgentSpanMetricsConfigApplyConfiguration struct {
-	Dimensions []string `json:"dimensions,omitempty"`
-	IntervalMs *int     `json:"intervalMs,omitempty"`
+	Dimensions         []string `json:"dimensions,omitempty"`
+	IntervalMs         *int     `json:"intervalMs,omitempty"`
+	HistogramBucketsMs []int    `json:"histogramBucketsMs,omitempty"`
 }
 
 // AgentSpanMetricsConfigApplyConfiguration constructs a declarative configuration of the AgentSpanMetricsConfig type for use with
@@ -45,5 +46,15 @@ func (b *AgentSpanMetricsConfigApplyConfiguration) WithDimensions(values ...stri
 // If called multiple times, the IntervalMs field is set to the value of the last call.
 func (b *AgentSpanMetricsConfigApplyConfiguration) WithIntervalMs(value int) *AgentSpanMetricsConfigApplyConfiguration {
 	b.IntervalMs = &value
+	return b
+}
+
+// WithHistogramBucketsMs adds the given value to the HistogramBucketsMs field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the HistogramBucketsMs field.
+func (b *AgentSpanMetricsConfigApplyConfiguration) WithHistogramBucketsMs(values ...int) *AgentSpanMetricsConfigApplyConfiguration {
+	for i := range values {
+		b.HistogramBucketsMs = append(b.HistogramBucketsMs, values[i])
+	}
 	return b
 }

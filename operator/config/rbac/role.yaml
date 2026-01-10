@@ -179,10 +179,28 @@ rules:
   verbs:
   - get
 - apiGroups:
+  - apps
+  resources:
+  - deployments/scale
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - apps.openshift.io
   resources:
   - deploymentconfigs
   - deploymentconfigs/finalizers
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - argoproj.io
+  resources:
+  - rollouts
   verbs:
   - get
   - list
@@ -196,6 +214,7 @@ rules:
   verbs:
   - create
   - delete
+  - get
   - patch
   - update
 - apiGroups:
@@ -216,6 +235,10 @@ rules:
   - jobs
   verbs:
   - create
+  - delete
+  - get
+  - list
+  - watch
 - apiGroups:
   - coordination.k8s.io
   resources:

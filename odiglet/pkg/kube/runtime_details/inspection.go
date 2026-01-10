@@ -18,7 +18,8 @@ import (
 	"github.com/odigos-io/odigos/common/envOverwrite"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	kubeutils "github.com/odigos-io/odigos/odiglet/pkg/kube/utils"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
@@ -98,7 +99,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
-			processes, err := process.FindAllInContainer(string(pod.UID), container.Name, runtimeDetectionEnvs)
+			processes, err := process.FindAllInContainer(workload.PodUID(&pod), container.Name, runtimeDetectionEnvs)
 			if err != nil {
 				log.Logger.Error(err, "failed to find processes in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				return nil, err
@@ -112,7 +113,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			knownLangsByPid := make(map[int]common.ProgramLanguageDetails)
 
 			for _, proc := range processes {
-				containerURL := kubeutils.GetPodExternalURL(pod.Status.PodIP, container.Ports)
+				containerURL := kubecommon.GetPodExternalURL(pod.Status.PodIP, container.Ports)
 				langDetails, detectErr := inspectors.DetectLanguage(proc, containerURL, log.Logger)
 				if detectErr == nil && langDetails.Language != common.UnknownProgrammingLanguage {
 					knownLangsByPid[proc.ProcessID] = langDetails

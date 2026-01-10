@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -114,7 +115,8 @@ func DescribeSourceToText(analyze *source.SourceAnalyze) string {
 }
 
 func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
-	workloadObj *source.K8sSourceObject) (*source.SourceAnalyze, error) {
+	workloadObj *source.K8sSourceObject,
+) (*source.SourceAnalyze, error) {
 	resources, err := source.GetRelevantSourceResources(ctx, kubeClient, odigosClient, workloadObj)
 	if err != nil {
 		return nil, err
@@ -124,7 +126,8 @@ func DescribeSource(ctx context.Context, kubeClient kubernetes.Interface, odigos
 }
 
 func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
-	ns string, name string) (*source.SourceAnalyze, error) {
+	ns string, name string,
+) (*source.SourceAnalyze, error) {
 	deployment, err := kubeClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -139,7 +142,8 @@ func DescribeDeployment(ctx context.Context, kubeClient kubernetes.Interface, od
 }
 
 func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
-	ns string, name string) (*source.SourceAnalyze, error) {
+	ns string, name string,
+) (*source.SourceAnalyze, error) {
 	ds, err := kubeClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -154,7 +158,8 @@ func DescribeDaemonSet(ctx context.Context, kubeClient kubernetes.Interface, odi
 }
 
 func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
-	ns string, name string) (*source.SourceAnalyze, error) {
+	ns string, name string,
+) (*source.SourceAnalyze, error) {
 	ss, err := kubeClient.AppsV1().StatefulSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -168,8 +173,24 @@ func DescribeStatefulSet(ctx context.Context, kubeClient kubernetes.Interface, o
 	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
 }
 
+func DescribeStaticPod(ctx context.Context, kubeClient kubernetes.Interface, odigosClient odigosclientset.OdigosV1alpha1Interface,
+	ns string, name string,
+) (*source.SourceAnalyze, error) {
+	p, err := kubeClient.CoreV1().Pods(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	workloadObj := &source.K8sSourceObject{
+		Kind:          k8sconsts.WorkloadKindStaticPod,
+		ObjectMeta:    p.ObjectMeta,
+		LabelSelector: nil,
+	}
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+}
+
 func DescribeDeploymentConfig(ctx context.Context, kubeClient kubernetes.Interface, dynamicClient dynamic.Interface,
-	odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string) (*source.SourceAnalyze, error) {
+	odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string,
+) (*source.SourceAnalyze, error) {
 	// Use dynamic client to fetch the DeploymentConfig
 	gvr := schema.GroupVersionResource{
 		Group:    "apps.openshift.io",
@@ -198,6 +219,41 @@ func DescribeDeploymentConfig(ctx context.Context, kubeClient kubernetes.Interfa
 		Kind:            k8sconsts.WorkloadKindDeploymentConfig,
 		ObjectMeta:      dc.ObjectMeta,
 		PodTemplateSpec: dc.Spec.Template,
+		LabelSelector:   labelSelector,
+	}
+	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)
+}
+
+func DescribeRollout(ctx context.Context, kubeClient kubernetes.Interface, dynamicClient dynamic.Interface,
+	odigosClient odigosclientset.OdigosV1alpha1Interface, ns string, name string,
+) (*source.SourceAnalyze, error) {
+	// Use dynamic client to fetch the Rollout
+	gvr := schema.GroupVersionResource{
+		Group:    "argoproj.io",
+		Version:  "v1alpha1",
+		Resource: "rollouts",
+	}
+
+	unstructuredDC, err := dynamicClient.Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to typed Rollout
+	var rollout argorolloutsv1alpha1.Rollout
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredDC.Object, &rollout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert unstructured to Rollout: %w", err)
+	}
+
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: rollout.Spec.Selector.MatchLabels,
+	}
+
+	workloadObj := &source.K8sSourceObject{
+		Kind:            k8sconsts.WorkloadKindArgoRollout,
+		ObjectMeta:      rollout.ObjectMeta,
+		PodTemplateSpec: &rollout.Spec.Template,
 		LabelSelector:   labelSelector,
 	}
 	return DescribeSource(ctx, kubeClient, odigosClient, workloadObj)

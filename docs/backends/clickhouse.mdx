@@ -136,6 +136,8 @@ Important Settings:
   - This field is required and defaults to `otel_metrics_sum`
 - **CLICKHOUSE_METRICS_TABLE_SUMMARY** `string` : Metrics Table - Summary. Name of the table for storing summary metrics
   - This field is required and defaults to `otel_metrics_summary`
+- **HYPERDX_LOG_NORMALIZER** `boolean` : Enable Log Normalizer. Enable HyperDX log normalization processor. This parses JSON from log bodies, infers severity levels, and normalizes log attributes for better querying.
+  - This field is optional and defaults to `False`
 
 ### Adding Destination to Odigos
 
@@ -181,6 +183,7 @@ There are two primary methods for configuring destinations in Odigos:
         CLICKHOUSE_TRACES_TABLE: '<Traces Table (default: otel_traces)>'
         # Note: The commented fields below are optional.
         # CLICKHOUSE_USERNAME: <Username>
+        # HYPERDX_LOG_NORMALIZER: <Enable Log Normalizer>
       destinationName: clickhouse
       # Uncomment the 'secretRef' below if you are using the optional Secret.
       # secretRef:
