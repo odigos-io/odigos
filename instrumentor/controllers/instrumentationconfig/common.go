@@ -6,9 +6,10 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList) error {
+func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList, conf *common.OdigosConfiguration) error {
 	workload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
 	if err != nil {
 		return err
@@ -89,6 +90,9 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	}
 
 	ic.Spec.SdkConfigs = sdkConfigs
+
+	// populate runtime metrics in sdkConfigs based on effective config and distro support
+	populateRuntimeMetricsInSdkConfigs(ic, conf)
 
 	return nil
 }
@@ -189,6 +193,61 @@ func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLang
 		Language:                 containerLanguage,
 		DefaultPayloadCollection: &instrumentationrules.PayloadCollection{},
 	})
+}
+
+func populateRuntimeMetricsInSdkConfigs(ic *odigosv1alpha1.InstrumentationConfig, effectiveConfig *common.OdigosConfiguration) {
+	logger := log.Log.WithName("runtime-metrics")
+
+	// Check if runtime metrics are configured in effective config
+	if effectiveConfig == nil ||
+		effectiveConfig.MetricsSources == nil ||
+		effectiveConfig.MetricsSources.AgentMetrics == nil ||
+		effectiveConfig.MetricsSources.AgentMetrics.RuntimeMetrics == nil {
+		return
+	}
+
+	runtimeMetricsConfig := effectiveConfig.MetricsSources.AgentMetrics.RuntimeMetrics
+
+	// Add runtime metrics to every Java sdkConfig
+	for i := range ic.Spec.SdkConfigs {
+		sdkConfig := &ic.Spec.SdkConfigs[i]
+
+		// Currently we're adding the runtimeMetricConfig for all java sdkConfigs.
+		// This should be changed once we migrate this code to run in the container config where we have distro.
+		switch sdkConfig.Language {
+		case common.JavaProgrammingLanguage:
+			if runtimeMetricsConfig.Java != nil {
+				logger.V(0).Info("Adding runtime metrics to Java sdkConfig", "workload", ic.Name)
+				sdkConfig.RuntimeMetrics = &common.MetricsSourceAgentRuntimeMetricsConfiguration{
+					Java: convertJavaRuntimeMetricsConfig(runtimeMetricsConfig.Java),
+				}
+			}
+		}
+	}
+}
+
+// convertJavaRuntimeMetricsConfig converts from common config to API config
+func convertJavaRuntimeMetricsConfig(commonConfig *common.MetricsSourceAgentJavaRuntimeMetricsConfiguration) *common.MetricsSourceAgentJavaRuntimeMetricsConfiguration {
+	if commonConfig == nil {
+		return nil
+	}
+
+	apiConfig := &common.MetricsSourceAgentJavaRuntimeMetricsConfiguration{
+		Disabled: commonConfig.Disabled,
+	}
+
+	// Convert metrics array
+	if len(commonConfig.Metrics) > 0 {
+		apiConfig.Metrics = make([]common.MetricsSourceAgentRuntimeMetricConfiguration, len(commonConfig.Metrics))
+		for i, metric := range commonConfig.Metrics {
+			apiConfig.Metrics[i] = common.MetricsSourceAgentRuntimeMetricConfiguration{
+				Name:     metric.Name,
+				Disabled: metric.Disabled,
+			}
+		}
+	}
+
+	return apiConfig
 }
 
 func mergeCustomInstrumentations(rule1 *instrumentationrules.CustomInstrumentations, rule2 *instrumentationrules.CustomInstrumentations) *instrumentationrules.CustomInstrumentations {
