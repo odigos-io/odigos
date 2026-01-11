@@ -7,7 +7,10 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -18,9 +21,46 @@ type ClientTestSuite struct {
 }
 
 func (s *ClientTestSuite) SetupTest() {
+	// Create fake dynamic client with InstrumentationConfig objects for workloads used in tests
+	scheme := runtime.NewScheme()
+
+	// Create InstrumentationConfig objects for all workloads used in tests
+	icDeployment := &unstructured.Unstructured{}
+	icDeployment.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
+	icDeployment.SetName("deployment-deployment")
+	icDeployment.SetNamespace("test-ns")
+
+	icDaemonSet := &unstructured.Unstructured{}
+	icDaemonSet.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
+	icDaemonSet.SetName("daemonset-my-daemonset")
+	icDaemonSet.SetNamespace("kube-system")
+
+	icStatefulSet := &unstructured.Unstructured{}
+	icStatefulSet.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
+	icStatefulSet.SetName("statefulset-postgres")
+	icStatefulSet.SetNamespace("database")
+
+	icMyService := &unstructured.Unstructured{}
+	icMyService.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
+	icMyService.SetName("deployment-my-service")
+	icMyService.SetNamespace("default")
+
+	icOldOwner := &unstructured.Unstructured{}
+	icOldOwner.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
+	icOldOwner.SetName("deployment-old-owner")
+	icOldOwner.SetNamespace("default")
+
+	icNewOwner := &unstructured.Unstructured{}
+	icNewOwner.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
+	icNewOwner.SetName("deployment-new-owner")
+	icNewOwner.SetNamespace("updated-ns")
+
+	fakeDynClient := fake.NewSimpleDynamicClient(scheme, icDeployment, icDaemonSet, icStatefulSet, icMyService, icOldOwner, icNewOwner)
+
 	s.client = &PodMetadataClient{
-		pods:        make(map[types.UID]*PartialPodMetadata),
-		deleteQueue: []deleteRequest{},
+		pods:          make(map[types.UID]*PartialPodMetadata),
+		deleteQueue:   []deleteRequest{},
+		dynamicClient: fakeDynClient,
 	}
 }
 
@@ -41,12 +81,12 @@ func (s *ClientTestSuite) TestPartialPodMetadataStruct() {
 	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
-func (s *ClientTestSuite) TestGetPodMetadata_NonExistent() {
+func (s *ClientTestSuite) TestGetPodMetadataNonExistent() {
 	_, found := s.client.GetPodMetadata(types.UID("non-existent"))
 	s.False(found)
 }
 
-func (s *ClientTestSuite) TestGetPodMetadata_Existing() {
+func (s *ClientTestSuite) TestGetPodMetadataExisting() {
 	podUID := types.UID("pod-uid-123")
 	s.client.pods[podUID] = &PartialPodMetadata{
 		WorkloadName: "my-service",
@@ -60,7 +100,7 @@ func (s *ClientTestSuite) TestGetPodMetadata_Existing() {
 	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
-func (s *ClientTestSuite) TestHandlePodAdd_Deployment() {
+func (s *ClientTestSuite) TestHandlePodAddDeployment() {
 	// Pod owned by a ReplicaSet which is owned by a Deployment
 	// The extractWorkloadInfo should resolve this to Deployment
 	podMeta := &metav1.PartialObjectMetadata{
@@ -86,7 +126,7 @@ func (s *ClientTestSuite) TestHandlePodAdd_Deployment() {
 	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
-func (s *ClientTestSuite) TestHandlePodAdd_DaemonSet() {
+func (s *ClientTestSuite) TestHandlePodAddDaemonSet() {
 	podMeta := &metav1.PartialObjectMetadata{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "daemon-pod",
@@ -108,7 +148,7 @@ func (s *ClientTestSuite) TestHandlePodAdd_DaemonSet() {
 	s.Equal(WorkloadKindDaemonSet, pod.WorkloadKind)
 }
 
-func (s *ClientTestSuite) TestHandlePodAdd_StatefulSet() {
+func (s *ClientTestSuite) TestHandlePodAddStatefulSet() {
 	podMeta := &metav1.PartialObjectMetadata{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "postgres-0",
@@ -130,7 +170,7 @@ func (s *ClientTestSuite) TestHandlePodAdd_StatefulSet() {
 	s.Equal(WorkloadKindStatefulSet, pod.WorkloadKind)
 }
 
-func (s *ClientTestSuite) TestHandlePodAdd_NoOwner() {
+func (s *ClientTestSuite) TestHandlePodAddNoOwner() {
 	podMeta := &metav1.PartialObjectMetadata{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            "standalone-pod",
@@ -142,12 +182,8 @@ func (s *ClientTestSuite) TestHandlePodAdd_NoOwner() {
 
 	s.client.handlePodAdd(podMeta)
 
-	pod, found := s.client.GetPodMetadata(types.UID("standalone-pod-uid"))
-	s.Require().True(found)
-	s.Equal("standalone-pod", pod.Name)
-	s.Equal("default", pod.Namespace)
-	s.Equal("", pod.WorkloadName)
-	s.Equal(WorkloadKind(""), pod.WorkloadKind)
+	_, found := s.client.GetPodMetadata(types.UID("standalone-pod-uid"))
+	s.False(found)
 }
 
 func (s *ClientTestSuite) TestHandlePodUpdate() {
@@ -315,9 +351,18 @@ func TestConcurrencyTestSuite(t *testing.T) {
 }
 
 func (s *ConcurrencyTestSuite) TestConcurrentAccess() {
+	// Create fake dynamic client with InstrumentationConfig for concurrency test
+	scheme := runtime.NewScheme()
+	icConcurrent := &unstructured.Unstructured{}
+	icConcurrent.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
+	icConcurrent.SetName("deployment-concurrent-deployment")
+	icConcurrent.SetNamespace("default")
+	fakeDynClient := fake.NewSimpleDynamicClient(scheme, icConcurrent)
+
 	client := &PodMetadataClient{
-		pods:        make(map[types.UID]*PartialPodMetadata),
-		deleteQueue: []deleteRequest{},
+		pods:          make(map[types.UID]*PartialPodMetadata),
+		deleteQueue:   []deleteRequest{},
+		dynamicClient: fakeDynClient,
 	}
 
 	var wg sync.WaitGroup
@@ -332,6 +377,9 @@ func (s *ConcurrencyTestSuite) TestConcurrentAccess() {
 					Name:      "concurrent-pod",
 					Namespace: "default",
 					UID:       types.UID("concurrent-uid"),
+					OwnerReferences: []metav1.OwnerReference{
+						{Name: "concurrent-deployment-abc123", Kind: "ReplicaSet"},
+					},
 				},
 			}
 			client.handlePodAdd(podMeta)
@@ -355,6 +403,9 @@ func (s *ConcurrencyTestSuite) TestConcurrentAccess() {
 					Name:      "concurrent-pod-updated",
 					Namespace: "default",
 					UID:       types.UID("concurrent-uid"),
+					OwnerReferences: []metav1.OwnerReference{
+						{Name: "concurrent-deployment-abc123", Kind: "ReplicaSet"},
+					},
 				},
 			}
 			client.handlePodUpdate(podMeta)
