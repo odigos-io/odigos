@@ -37,6 +37,8 @@ func (m *centralProxyResourceManager) InstallFromScratch(ctx context.Context) er
 		NewCentralProxyServiceAccount(m.ns),
 		NewCentralProxyRoleBinding(m.ns),
 		NewCentralProxyRole(m.ns),
+		NewCentralProxyClusterRoleBinding(m.ns),
+		NewCentralProxyClusterRole(),
 		NewCentralProxyDeployment(m.ns, m.odigosVersion, m.config.ImagePrefix, m.managerOpts.ImageReferences.CentralProxyImage, m.config.NodeSelector),
 	}
 
@@ -73,7 +75,7 @@ func NewCentralProxyDeployment(ns string, version string, imagePrefix string, im
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: nodeSelector,
+					NodeSelector:       nodeSelector,
 					ServiceAccountName: k8sconsts.CentralProxyServiceAccountName,
 					Containers: []corev1.Container{
 						{
@@ -155,6 +157,75 @@ func NewCentralProxyRoleBinding(ns string) *rbacv1.RoleBinding {
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "Role",
 			Name:     k8sconsts.CentralProxyRoleName,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+}
+
+func NewCentralProxyClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRole",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sconsts.CentralProxyClusterRoleName,
+			Labels: map[string]string{
+				"odigos.io/system-object": "true",
+			},
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{""},
+				Resources: []string{"namespaces"},
+				Verbs:     []string{"list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments", "statefulsets", "daemonsets"},
+				Verbs:     []string{"list", "watch"},
+			},
+			{
+				APIGroups: []string{"batch"},
+				Resources: []string{"cronjobs"},
+				Verbs:     []string{"list", "watch"},
+			},
+			{
+				APIGroups: []string{"odigos.io"},
+				Resources: []string{"instrumentationconfigs"},
+				Verbs:     []string{"list", "watch"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+				Verbs:     []string{"get"},
+			},
+		},
+	}
+}
+
+func NewCentralProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterRoleBinding",
+			APIVersion: "rbac.authorization.k8s.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: k8sconsts.CentralProxyClusterRoleBindingName,
+			Labels: map[string]string{
+				"odigos.io/system-object": "true",
+			},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      k8sconsts.CentralProxyServiceAccountName,
+				Namespace: ns,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     k8sconsts.CentralProxyClusterRoleName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
