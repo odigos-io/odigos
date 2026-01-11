@@ -103,6 +103,7 @@ import (
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
+	odigospartialk8sattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
 	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
 )
@@ -279,6 +280,7 @@ func components() (otelcol.Factories, error) {
 		remotetapprocessor.NewFactory(),
 		odigostrafficmetrics.NewFactory(),
 		odigosurltemplateprocessor.NewFactory(),
+		odigospartialk8sattrsprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -310,6 +312,7 @@ func components() (otelcol.Factories, error) {
 	factories.ProcessorModules[remotetapprocessor.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.130.0"
 	factories.ProcessorModules[odigostrafficmetrics.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.130.0"
 	factories.ProcessorModules[odigosurltemplateprocessor.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0"
+	factories.ProcessorModules[odigospartialk8sattrsprocessor.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor v0.130.0"
 
 	factories.Connectors, err = otelcol.MakeFactoryMap[connector.Factory](
 		forwardconnector.NewFactory(),

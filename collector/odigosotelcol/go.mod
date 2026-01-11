@@ -6,6 +6,7 @@ go 1.25.0
 
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.130.0
+	github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor v0.130.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.130.0
@@ -336,7 +337,7 @@ require (
 	github.com/elastic/go-grok v0.3.1 // indirect
 	github.com/elastic/go-structform v0.0.12 // indirect
 	github.com/elastic/lunes v0.1.0 // indirect
-	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
 	github.com/expr-lang/expr v1.17.5 // indirect
@@ -452,7 +453,7 @@ require (
 	github.com/lufia/plan9stats v0.0.0-20240909124753-873cd0166683 // indirect
 	github.com/magefile/mage v1.15.0 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
-	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mdlayher/socket v0.4.1 // indirect
@@ -748,6 +749,8 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/process
 
 replace github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
 
+replace github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor => ../processors/odigospartialk8sattrsprocessor
+
 replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
 
 replace github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
@@ -755,6 +758,10 @@ replace github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector =
 replace github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
 
 replace github.com/odigos-io/odigos/common => ../../common
+
+replace github.com/odigos-io/odigos/api => ../../api
+
+replace github.com/odigos-io/odigos/k8sutils => ../../k8sutils
 
 replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
 
