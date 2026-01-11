@@ -23,7 +23,7 @@ import (
 )
 
 func TestNoRolloutObjectKeyIsMissing(t *testing.T) {
-	// Arrange
+	// Arrange: Deployment exists in IC but NOT in the cluster (client has no deployment object)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := testutil.NewMockInstrumentationConfig(deployment)
@@ -33,12 +33,12 @@ func TestNoRolloutObjectKeyIsMissing(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: No rollout triggered - workload doesn't exist in cluster
 	assertNoRollout(t, statusChanged, result, err)
 }
 
 func TestNoRolloutJobOrCronjobNoIC(t *testing.T) {
-	// Arrange
+	// Arrange: Job and CronJob workloads exist but have no InstrumentationConfig (IC is nil)
 	s := newTestSetup()
 	job := testutil.NewMockTestJob(s.ns, "test-job")
 	cronjob := testutil.NewMockTestCronJob(s.ns, "test-cronjob")
@@ -52,13 +52,13 @@ func TestNoRolloutJobOrCronjobNoIC(t *testing.T) {
 	jobStatusChanged, jobResult, jobErr := rollout.Do(s.ctx, fakeClient, ic, jobPw, s.conf, s.distroProvider)
 	cronJobStatusChanged, cronJobResult, cronJobErr := rollout.Do(s.ctx, fakeClient, ic, cronJobPw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: No rollout - Jobs/CronJobs without IC don't need rollout
 	assertNoRollout(t, jobStatusChanged, jobResult, jobErr)
 	assertNoRollout(t, cronJobStatusChanged, cronJobResult, cronJobErr)
 }
 
 func TestNoRolloutJobOrCronjobWaitingForRestart(t *testing.T) {
-	// Arrange
+	// Arrange: Job and CronJob with InstrumentationConfig - these can't be force-restarted like Deployments
 	s := newTestSetup()
 	job := testutil.NewMockTestJob(s.ns, "test-job")
 	cronjob := testutil.NewMockTestCronJob(s.ns, "test-cronjob")
@@ -73,7 +73,7 @@ func TestNoRolloutJobOrCronjobWaitingForRestart(t *testing.T) {
 	jobStatusChanged, jobResult, jobErr := rollout.Do(s.ctx, fakeClient, jobIc, jobPw, s.conf, s.distroProvider)
 	cronJobStatusChanged, cronJobResult, cronJobErr := rollout.Do(s.ctx, fakeClient, cronJobIc, cronJobPw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Status updated to "WaitingForRestart" - Jobs must trigger themselves, no requeue needed
 	assertTriggeredRolloutNoRequeue(t, jobStatusChanged, jobResult, jobErr)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart), jobIc.Status.Conditions[0].Reason)
 	assert.Equal(t, "Waiting for job to trigger by itself", jobIc.Status.Conditions[0].Message)
@@ -83,7 +83,7 @@ func TestNoRolloutJobOrCronjobWaitingForRestart(t *testing.T) {
 }
 
 func TestNoRolloutMidRolloutAlreadyComplete(t *testing.T) {
-	// Arrange
+	// Arrange: IC shows mid-rollout state but deployment has already completed rolling out (no pending replicas)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(deployment))
@@ -94,12 +94,12 @@ func TestNoRolloutMidRolloutAlreadyComplete(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: No rollout needed - workload rollout already complete
 	assertNoRollout(t, statusChanged, result, err)
 }
 
 func TestNoRolloutICNilWorkloadHasOdigosAgentsError(t *testing.T) {
-	// Arrange
+	// Arrange: Deployment with nil selector (invalid) and no IC - checking for instrumented pods will fail
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	deployment.Spec.Selector = nil // nil selector causes instrumentedPodsSelector to fail
@@ -111,12 +111,12 @@ func TestNoRolloutICNilWorkloadHasOdigosAgentsError(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Error returned - cannot determine if pods have odigos agents due to nil selector
 	assertErrorNoRollout(t, statusChanged, result, err)
 }
 
 func TestNoRolloutICNilNoOdigosAgents(t *testing.T) {
-	// Arrange
+	// Arrange: Deployment with pod that has NO odigos agent label, and IC is nil (uninstrumented workload)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
@@ -137,12 +137,12 @@ func TestNoRolloutICNilNoOdigosAgents(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: No rollout - pods don't have odigos agents, nothing to uninstrument
 	assertNoRollout(t, statusChanged, result, err)
 }
 
 func TestNoRolloutICNilAutomaticRolloutDisabled(t *testing.T) {
-	// Arrange
+	// Arrange: Pod has odigos agent label but IC is nil AND automatic rollout is disabled in config
 	s := newTestSetup()
 	automaticRolloutDisabled := true
 	s.conf.Rollout = &common.RolloutConfiguration{
@@ -168,7 +168,7 @@ func TestNoRolloutICNilAutomaticRolloutDisabled(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: No rollout - automatic rollout disabled, deployment NOT restarted even though it has agents
 	assertNoRollout(t, statusChanged, result, err)
 	// Verify deployment was NOT restarted
 	var updatedDeployment appsv1.Deployment
@@ -178,7 +178,7 @@ func TestNoRolloutICNilAutomaticRolloutDisabled(t *testing.T) {
 }
 
 func TestTriggeredRolloutWorkloadWithInstrumentedPods(t *testing.T) {
-	// Arrange
+	// Arrange: Pod has odigos agent label but IC is nil - need to uninstrument by restarting
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
@@ -199,7 +199,7 @@ func TestTriggeredRolloutWorkloadWithInstrumentedPods(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Rollout triggered - deployment restarted to remove odigos agents (restartedAt annotation added)
 	assertNoRollout(t, statusChanged, result, err)
 	var updatedDeployment appsv1.Deployment
 	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, &updatedDeployment)
@@ -208,7 +208,7 @@ func TestTriggeredRolloutWorkloadWithInstrumentedPods(t *testing.T) {
 }
 
 func TestTriggeredRolloutDistributionRequiresRollout(t *testing.T) {
-	// Arrange
+	// Arrange: IC with distribution that requires rollout (e.g. eBPF-based instrumentation)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
@@ -219,14 +219,14 @@ func TestTriggeredRolloutDistributionRequiresRollout(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Rollout triggered successfully, requeue to monitor rollout progress
 	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 	assert.Equal(t, "workload rollout triggered successfully", ic.Status.Conditions[0].Message)
 }
 
 func TestNoRolloutDistributionDoesntRequire(t *testing.T) {
-	// Arrange
+	// Arrange: IC with default distribution that doesn't require rollout (e.g., native instrumentation)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := testutil.NewMockInstrumentationConfig(deployment)
@@ -237,14 +237,14 @@ func TestNoRolloutDistributionDoesntRequire(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Status updated to "NotRequired" - distribution doesn't need app restart, no requeue
 	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonNotRequired), ic.Status.Conditions[0].Reason)
 	assert.Equal(t, "The selected instrumentation distributions do not require application restart", ic.Status.Conditions[0].Message)
 }
 
 func TestNoRolloutInvalidRollbackGraceTime(t *testing.T) {
-	// Arrange
+	// Arrange: Config has invalid RollbackGraceTime string that can't be parsed as duration
 	s := newTestSetup()
 	s.conf.RollbackGraceTime = "invalid"
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -256,12 +256,12 @@ func TestNoRolloutInvalidRollbackGraceTime(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Error returned - invalid config prevents rollout
 	assertErrorNoRollout(t, statusChanged, result, err)
 }
 
 func TestNoRolloutInvalidRollbackStabilityWindow(t *testing.T) {
-	// Arrange
+	// Arrange: Config has invalid RollbackStabilityWindow string that can't be parsed as duration
 	s := newTestSetup()
 	s.conf.RollbackStabilityWindow = "invalid"
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -273,12 +273,12 @@ func TestNoRolloutInvalidRollbackStabilityWindow(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Error returned - invalid config prevents rollout
 	assertErrorNoRollout(t, statusChanged, result, err)
 }
 
 func TestTriggeredRolloutConfigNil(t *testing.T) {
-	// Arrange
+	// Arrange: IC requires rollout and s.conf.Rollout is nil (default config allows automatic rollout)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
@@ -289,13 +289,13 @@ func TestTriggeredRolloutConfigNil(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Rollout triggered - nil config defaults to enabled, requeue to monitor
 	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
 func TestTriggeredRolloutAutomaticRolloutDisabledNil(t *testing.T) {
-	// Arrange
+	// Arrange: RolloutConfiguration exists but AutomaticRolloutDisabled is nil (defaults to enabled)
 	s := newTestSetup()
 	s.conf.Rollout = &common.RolloutConfiguration{}
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -307,13 +307,13 @@ func TestTriggeredRolloutAutomaticRolloutDisabledNil(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Rollout triggered - nil pointer defaults to enabled, requeue to monitor
 	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
 func TestTriggeredRolloutAutomaticRolloutDisabledFalse(t *testing.T) {
-	// Arrange
+	// Arrange: AutomaticRolloutDisabled explicitly set to false (rollout enabled)
 	s := newTestSetup()
 	automaticRolloutDisabled := false
 	s.conf.Rollout = &common.RolloutConfiguration{
@@ -328,13 +328,13 @@ func TestTriggeredRolloutAutomaticRolloutDisabledFalse(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Rollout triggered successfully, requeue to monitor
 	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
 func TestNoRolloutAutomaticRolloutDisabledTrue(t *testing.T) {
-	// Arrange
+	// Arrange: AutomaticRolloutDisabled explicitly set to true (rollout disabled by user)
 	s := newTestSetup()
 	automaticRolloutDisabled := true
 	s.conf.Rollout = &common.RolloutConfiguration{
@@ -349,14 +349,14 @@ func TestNoRolloutAutomaticRolloutDisabledTrue(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Status updated to "Disabled" - no rollout triggered, no requeue needed
 	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonDisabled), ic.Status.Conditions[0].Reason)
 	assert.Equal(t, "odigos automatic rollout is disabled", ic.Status.Conditions[0].Message)
 }
 
 func TestNoRolloutMidRolloutRollbackDisabled(t *testing.T) {
-	// Arrange
+	// Arrange: Mid-rollout with crashlooping pod, but RollbackDisabled=true prevents automatic rollback
 	s := newTestSetup()
 	rollbackDisabled := true
 	s.conf.RollbackDisabled = &rollbackDisabled
@@ -377,12 +377,12 @@ func TestNoRolloutMidRolloutRollbackDisabled(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert - should NOT trigger rollback because rollbackDisabled is true
+	// Assert: No rollback triggered - rollbackDisabled config prevents it despite crashlooping pod
 	assertNoRollout(t, statusChanged, result, err)
 }
 
 func TestNoRolloutMidRolloutWaitingNoBackoff(t *testing.T) {
-	// Arrange
+	// Arrange: Mid-rollout deployment with healthy running pod - no crashloop, just waiting for rollout
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(deployment))
@@ -420,14 +420,14 @@ func TestNoRolloutMidRolloutWaitingNoBackoff(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert - requeue waiting for workload rollout to complete
+	// Assert: No status change, requeue after 10s to continue monitoring rollout progress
 	assert.NoError(t, err)
 	assert.False(t, statusChanged, "expected no status change")
 	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
 }
 
 func TestTriggeredRolloutPreviousRolloutOngoing(t *testing.T) {
-	// Arrange
+	// Arrange: Deployment mid-rollout with different hash in IC status - a previous rollout is still in progress
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
 	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
@@ -440,7 +440,7 @@ func TestTriggeredRolloutPreviousRolloutOngoing(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert - status changed to PreviousRolloutOngoing, requeue
+	// Assert: Status updated to "PreviousRolloutOngoing", requeue to wait for previous rollout
 	assert.NoError(t, err)
 	assert.True(t, statusChanged, "expected status change")
 	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
@@ -448,7 +448,7 @@ func TestTriggeredRolloutPreviousRolloutOngoing(t *testing.T) {
 }
 
 func TestNoRolloutMidRolloutFailedToGetBackoffInfo(t *testing.T) {
-	// Arrange
+	// Arrange: Mid-rollout deployment with nil selector - cannot query pods to check for backoff
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
 	deployment.Spec.Selector = nil // nil selector causes instrumentedPodsSelector to fail
@@ -460,12 +460,12 @@ func TestNoRolloutMidRolloutFailedToGetBackoffInfo(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Error returned - cannot determine backoff status due to nil selector
 	assertErrorNoRollout(t, statusChanged, result, err)
 }
 
 func TestNoRolloutMidRolloutInstrumentationTimeIsNil(t *testing.T) {
-	// Arrange
+	// Arrange: Mid-rollout deployment with IC that has nil InstrumentationTime (can't calculate backoff)
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(deployment))
@@ -476,7 +476,7 @@ func TestNoRolloutMidRolloutInstrumentationTimeIsNil(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: No status change, requeue after 10s - waiting for rollout without backoff detection
 	assert.NoError(t, err)
 	assert.False(t, statusChanged, "expected no status change")
 	// requeueWaitingForWorkloadRollout is 10 seconds but not publicly exported
@@ -484,7 +484,7 @@ func TestNoRolloutMidRolloutInstrumentationTimeIsNil(t *testing.T) {
 }
 
 func TestNoRolloutMidRolloutBackoffDurationLessThanGraceTime(t *testing.T) {
-	// Arrange
+	// Arrange: Crashlooping pod started 5s ago - within rollback grace time (default 5m), not yet triggering rollback
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(deployment))
@@ -503,14 +503,14 @@ func TestNoRolloutMidRolloutBackoffDurationLessThanGraceTime(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: No rollback yet - still in grace period, requeue to check again after remaining grace time
 	assert.NoError(t, err)
 	assert.False(t, statusChanged, "expected no status change during grace period")
 	assert.True(t, result.RequeueAfter > 0, "expected requeue with remaining grace time")
 }
 
 func TestNoRolloutMidRolloutClientUpdateError(t *testing.T) {
-	// Arrange
+	// Arrange: Crashlooping pod past grace time, but client.Update() fails when trying to update IC
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(deployment))
@@ -530,12 +530,12 @@ func TestNoRolloutMidRolloutClientUpdateError(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Error returned - rollback should happen but IC update failed
 	assertErrorNoRollout(t, statusChanged, result, err)
 }
 
 func TestTriggeredRolloutMidRolloutRollbackRestartAnnotation(t *testing.T) {
-	// Arrange
+	// Arrange: Crashlooping pod for 6min (past 5min grace time) - should trigger automatic rollback
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(deployment))
@@ -554,7 +554,7 @@ func TestTriggeredRolloutMidRolloutRollbackRestartAnnotation(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Rollback triggered - IC updated, deployment gets restartedAt annotation to force restart
 	assertTriggeredRollback(t, statusChanged, result, err, ic)
 
 	// Assert deployment has restart annotation (kubectl.kubernetes.io/restartedAt)
@@ -565,7 +565,7 @@ func TestTriggeredRolloutMidRolloutRollbackRestartAnnotation(t *testing.T) {
 }
 
 func TestTriggeredRolloutMidRolloutRollbackRestartAtArgoRollout(t *testing.T) {
-	// Arrange
+	// Arrange: Argo Rollout with crashlooping pod for 6min - should trigger rollback via spec.restartAt
 	s := newTestSetup()
 	argoRollout := newMockArgoRolloutMidRollout(s.ns, "test-rollout")
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(argoRollout))
@@ -583,7 +583,7 @@ func TestTriggeredRolloutMidRolloutRollbackRestartAtArgoRollout(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert
+	// Assert: Rollback triggered - Argo Rollout uses spec.restartAt instead of annotation
 	assertTriggeredRollback(t, statusChanged, result, err, ic)
 
 	// Assert Argo Rollout has spec.restartAt set
