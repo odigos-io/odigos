@@ -251,7 +251,6 @@ func NewCentralBackendRole(ns string) *rbacv1.Role {
 		},
 	}
 }
-
 func NewCentralBackendRoleBinding(ns string) *rbacv1.RoleBinding {
 	return &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
