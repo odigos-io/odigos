@@ -169,7 +169,10 @@ func NewCentralProxyClusterRole() *rbacv1.ClusterRole {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: k8sconsts.CentralProxyRoleName,
+			Name: k8sconsts.CentralProxyClusterRoleName,
+			Labels: map[string]string{
+				"odigos.io/system-object": "true",
+			},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -208,7 +211,10 @@ func NewCentralProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: k8sconsts.CentralProxyRoleBindingName,
+			Name: k8sconsts.CentralProxyClusterRoleBindingName,
+			Labels: map[string]string{
+				"odigos.io/system-object": "true",
+			},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -219,7 +225,7 @@ func NewCentralProxyClusterRoleBinding(ns string) *rbacv1.ClusterRoleBinding {
 		},
 		RoleRef: rbacv1.RoleRef{
 			Kind:     "ClusterRole",
-			Name:     k8sconsts.CentralProxyRoleName,
+			Name:     k8sconsts.CentralProxyClusterRoleName,
 			APIGroup: "rbac.authorization.k8s.io",
 		},
 	}
