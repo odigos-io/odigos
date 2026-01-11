@@ -50,10 +50,8 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		ControllerManagedBy(mgr).
 		Named("instrumentor-effectiveconfig-instrumentationconfig").
 		For(&corev1.ConfigMap{}).
-		WithEventFilter(predicate.And(
-			utilpredicate.OdigosEffectiveConfigMapPredicate,
-			&instrumentorpredicate.EffectiveConfigRuntimeMetricsChangedPredicate{},
-		)).
+		WithEventFilter(
+			utilpredicate.OdigosEffectiveConfigMapPredicate).
 		Complete(&EffectiveConfigReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
