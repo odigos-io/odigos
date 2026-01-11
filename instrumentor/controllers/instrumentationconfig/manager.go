@@ -4,6 +4,7 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
 	utilpredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -44,5 +45,19 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	// watch effective config for any changes OR specific runtime metrics changes
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("instrumentor-effectiveconfig-instrumentationconfig").
+		For(&corev1.ConfigMap{}).
+		WithEventFilter(
+			utilpredicate.OdigosEffectiveConfigMapPredicate).
+		Complete(&EffectiveConfigReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
 	return nil
 }

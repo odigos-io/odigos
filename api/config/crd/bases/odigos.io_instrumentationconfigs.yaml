@@ -132,6 +132,37 @@ spec:
                         all "metrics" related configuration for an agent running on any process in a specific container.
                         The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
                       properties:
+                        runtimeMetrics:
+                          description: |-
+                            if not nil, it means agent should report runtime metrics,
+                            such as JVM metrics for Java applications.
+                            these metrics provide insights into the runtime environment performance.
+                          properties:
+                            java:
+                              description: configuration for Java runtime metrics
+                              properties:
+                                disabled:
+                                  description: global enable/disable for all Java
+                                    runtime metrics
+                                  type: boolean
+                                metrics:
+                                  description: individual metric configurations
+                                  items:
+                                    properties:
+                                      disabled:
+                                        description: whether this specific metric
+                                          is disabled
+                                        type: boolean
+                                      name:
+                                        description: name of the runtime metric (e.g.,
+                                          "jvm.class.loaded")
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  type: array
+                              type: object
+                          type: object
                         spanMetrics:
                           description: |-
                             if not nil, it means agent should report span metrics,
@@ -840,6 +871,35 @@ spec:
                                 If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
                               format: int64
                               type: integer
+                          type: object
+                      type: object
+                    runtimeMetrics:
+                      description: |-
+                        configuration for runtime metrics that the SDK should generate.
+                        these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
+                      properties:
+                        java:
+                          description: configuration for Java runtime metrics
+                          properties:
+                            disabled:
+                              description: global enable/disable for all Java runtime
+                                metrics
+                              type: boolean
+                            metrics:
+                              description: individual metric configurations
+                              items:
+                                properties:
+                                  disabled:
+                                    description: whether this specific metric is disabled
+                                    type: boolean
+                                  name:
+                                    description: name of the runtime metric (e.g.,
+                                      "jvm.class.loaded")
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              type: array
                           type: object
                       type: object
                     traceConfig:
