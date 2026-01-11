@@ -591,18 +591,6 @@ spec:
                         Filters, if set, are ANDed together, e.g. for the templatization rules to be applied, all set filters must be true.
                         If no filters are set, the rules will be applied to all spans.
                       properties:
-                        autoDetectElasticsearchApiEndpoints:
-                          description: |-
-                            if set, odigos will automatically detect the elasticsearch api endpoints and templatize the urls.
-                            for example: /foo/_doc/123 -> /foo/_doc/{document-id} (index has low cardinality and not templated, but id is templated)
-                          type: boolean
-                        autoDetectK8sApiObjects:
-                          description: |-
-                            if set, odigos will automatically detect k8s api endpoints and process the url path,
-                            while templating namespace names and resource names, if needed.
-                            this is equivalent to adding few templatization rules, for the variants of k8s api server endpoints.
-                            (namespaced / non-namespaced, core api group / named api group, resource list, get, subresource etc)
-                          type: boolean
                         filterK8sNamespace:
                           type: string
                         filterK8sWorkloadKind:
@@ -661,8 +649,6 @@ spec:
                             - template
                             type: object
                           type: array
-                      required:
-                      - templatizationRules
                       type: object
                     type: array
                 required:

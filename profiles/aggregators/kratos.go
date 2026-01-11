@@ -17,7 +17,7 @@ var KratosProfile = profile.Profile{
 		"copy-scope",
 		"hostname-as-podname",
 		"code-attributes",
-		"query-operation-detector",
+		// "query-operation-detector", - disabled to be run in data collection collector
 		// "small-batches", - issue is fixed in receiver. can now handle 85MB
 		"allow_concurrent_agents",
 		"reduce-span-name-cardinality",

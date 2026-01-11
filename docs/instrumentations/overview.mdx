@@ -68,4 +68,4 @@ Select a language to learn how to enrich your data with OpenTelemetry APIs:
 6. New pods are scheduled and started. Odiglet resolves the resource request by mounting the auto instrumentation code and relevant environment variables into the container.
 7. The auto instrumentation code starts the OpenTelemetry SDK and sends telemetry data to the odigos pipeline.
 
-In case of a failure to instrument a workload, Odigos will disable the instrumentation and rollback the workload, This behaviour can be disabled by running `bash odigos config set rollback-disabled true` or via the helm chart `autoRollback.disabled=false`
+In case of a failure to instrument a workload, Odigos will disable the instrumentation and rollback the workload, This behaviour can be disabled by running `bash odigos install --set autoRollback.disabled=true` or via the helm chart `autoRollback.disabled=true`

@@ -30,19 +30,17 @@ To get started with OIDC, you need to configure the Odigos UI to use an external
 
   </Step>
   <Step title="Set OIDC variables">
-    You should set the OIDC values in the `odigos-config` ConfigMap. The values can be obtained from the identity provider, after creating the OIDC application.
+    You should set the OIDC values during installation or upgrade. The values can be obtained from the identity provider, after creating the OIDC application.
     <Tabs>
       <Tab title="CLI">
-        You can use the [`odigos config set`](/cli/odigos_config_set) command.
+        You can use the `odigos install --set` command.
 
         ```bash
-        odigos config set oidc-tenant-url <value>
-        odigos config set oidc-client-id <value>
-        odigos config set oidc-client-secret <value>
+        odigos install --set ui.oidcTenantUrl=<value> --set ui.oidcClientId=<value> --set ui.oidcClientSecret=<value>
         ```
       </Tab>
       <Tab title="Helm">
-        You can use the `Helm Values` to set the OIDC variables.
+        You can set these values in your `values.yaml` file for Helm installations:
 
         ```yaml
         ui:
@@ -51,7 +49,7 @@ To get started with OIDC, you need to configure the Odigos UI to use an external
           oidcClientSecret: <value>
         ```
 
-        Alternatively, you can use the `--set` flag when installing/upgrading the Odigos Helm chart.
+        Alternatively, you can use the `--set` flag when installing/upgrading the Odigos Helm chart:
 
         ```bash
         helm repo update
@@ -62,24 +60,24 @@ To get started with OIDC, you need to configure the Odigos UI to use an external
 
   </Step>
   <Step title="Set UI remote URL (optional)">
-    If you are hosting the Odigos UI on a custom/remote URL (e.g. `https://my-odigos-ui.com`), you should set the value in the `odigos-config` ConfigMap.
+    If you are hosting the Odigos UI on a custom/remote URL (e.g. `https://my-odigos-ui.com`), you should set the value during installation or upgrade.
     <Tabs>
       <Tab title="CLI">
-        You can use the [`odigos config set`](/cli/odigos_config_set) command.
+        You can use the `odigos install --set` command.
 
         ```bash
-        odigos config set ui-remote-url <value>
+        odigos install --set ui.uiRemoteUrl=<value>
         ```
       </Tab>
       <Tab title="Helm">
-        You can use the `Helm Values` to set the UI remote URL.
+        You can set this value in your `values.yaml` file for Helm installations:
 
         ```yaml
         ui:
           uiRemoteUrl: <value>
         ```
 
-        Alternatively, you can use the `--set` flag when installing/upgrading the Odigos Helm chart.
+        Alternatively, you can use the `--set` flag when installing/upgrading the Odigos Helm chart:
 
         ```bash
         helm repo update
