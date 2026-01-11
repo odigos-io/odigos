@@ -8,15 +8,13 @@ import (
 	"sync"
 	"time"
 
-	odigosclientset "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned"
-	odigosinformers "github.com/odigos-io/odigos/api/generated/odigos/informers/externalversions"
-	odigoslisters "github.com/odigos-io/odigos/api/generated/odigos/listers/odigos/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/metadata/metadatainformer"
 	"k8s.io/client-go/rest"
@@ -48,10 +46,9 @@ type PodMetadataClient struct {
 	deleteMut   sync.Mutex
 	deleteQueue []deleteRequest
 	// pods contains metadata only for pods whose workloads have an InstrumentationConfig
-	pods                        map[types.UID]*PartialPodMetadata
-	podInformer                 cache.SharedIndexInformer
-	instrumentationConfigLister odigoslisters.InstrumentationConfigLister
-	odigosInformerFactory       odigosinformers.SharedInformerFactory
+	pods          map[types.UID]*PartialPodMetadata
+	podInformer   cache.SharedIndexInformer
+	dynamicClient dynamic.Interface
 }
 
 var podGVR = schema.GroupVersionResource{
@@ -60,25 +57,27 @@ var podGVR = schema.GroupVersionResource{
 	Resource: "pods",
 }
 
+var instrumentationConfigGVR = schema.GroupVersionResource{
+	Group:    "odigos.io",
+	Version:  "v1alpha1",
+	Resource: "instrumentationconfigs",
+}
+
 func NewMetadataClient(config *rest.Config) (Client, error) {
 	metadataClient, err := metadata.NewForConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create metadata client: %w", err)
 	}
 
-	// Create odigos client for InstrumentationConfig access
-	odigosClient, err := odigosclientset.NewForConfig(config)
+	// Create dynamic client for InstrumentationConfig access (avoids Odigos API dependency)
+	dynClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create odigos client: %w", err)
+		return nil, fmt.Errorf("failed to create dynamic client: %w", err)
 	}
 
-	// Create odigos informer factory for InstrumentationConfig
-	odigosInformerFactory := odigosinformers.NewSharedInformerFactory(odigosClient, 0)
-
 	c := &PodMetadataClient{
-		pods:                        map[types.UID]*PartialPodMetadata{},
-		odigosInformerFactory:       odigosInformerFactory,
-		instrumentationConfigLister: odigosInformerFactory.Odigos().V1alpha1().InstrumentationConfigs().Lister(),
+		pods:          map[types.UID]*PartialPodMetadata{},
+		dynamicClient: dynClient,
 	}
 
 	nodeName := os.Getenv(nodeNameEnvVar)
@@ -208,13 +207,15 @@ func (c *PodMetadataClient) handlePodUpdate(podMeta *metav1.PartialObjectMetadat
 }
 
 // hasInstrumentationConfig checks if an InstrumentationConfig exists for the given workload
+// Uses direct API query via dynamic client to avoid Odigos API dependency conflicts
 func (c *PodMetadataClient) hasInstrumentationConfig(namespace, workloadName string, workloadKind WorkloadKind) bool {
 	icName := calculateInstrumentationConfigName(workloadName, workloadKind)
-	_, err := c.instrumentationConfigLister.InstrumentationConfigs(namespace).Get(icName)
+	_, err := c.dynamicClient.Resource(instrumentationConfigGVR).Namespace(namespace).Get(context.Background(), icName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return false
 		}
+		// Log error but return false to be safe
 		return false
 	}
 	return true
@@ -234,20 +235,10 @@ func (c *PodMetadataClient) GetPodMetadata(uid types.UID) (*PartialPodMetadata, 
 }
 
 func (c *PodMetadataClient) Start(ctx context.Context) error {
-	c.odigosInformerFactory.Start(ctx.Done())
-
 	go c.podInformer.Run(ctx.Done())
 
 	syncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-
-	// Wait for InstrumentationConfig cache to sync first
-	icSynced := c.odigosInformerFactory.WaitForCacheSync(syncCtx.Done())
-	for typ, synced := range icSynced {
-		if !synced {
-			return fmt.Errorf("timed out waiting for InstrumentationConfig cache to sync: %v", typ)
-		}
-	}
 
 	// Wait for pod cache to sync
 	if !cache.WaitForCacheSync(syncCtx.Done(), c.podInformer.HasSynced) {
