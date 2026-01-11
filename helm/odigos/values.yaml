@@ -25,7 +25,7 @@ imagePrefix:
 images: {}
 
 # namespaces list not to show in odigos ui
-# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
+# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease
 # you can add additional namespaces to ignore by adding them to the list
 ignoredNamespaces:
 
@@ -490,10 +490,10 @@ centralProxy:
   tls:
     # Skip TLS certificate verification (for testing/self-signed certificates)
     skipVerify: false
-    
+
     # Secret name containing CA certificate (key: 'ca.crt')
     caSecretName: ''
-    
+
     # Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')
     clientCertSecretName: ''
 
@@ -648,7 +648,7 @@ metricsSources:
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
 
   odigosOwnMetrics:
-    
+
     ## set the interval at which odigos will scrape metrics from itself.
     ## format: duration string (15s, 1m, etc).
     ## default is 10s.
@@ -658,7 +658,7 @@ metricsSources:
 
     ## uncomment the next section to enable computing and reporting
     ## span metrics directly in agents that support it.
-    ## the configuration for agent span metrics is the same as the 
+    ## the configuration for agent span metrics is the same as the
     ## span metrics collector settings.
     ## agents have different capabilities and support different configuration options.
     # spanMetrics:
