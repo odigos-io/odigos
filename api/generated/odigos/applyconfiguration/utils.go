@@ -37,14 +37,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.ActionSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ActionStatus"):
 		return &odigosv1alpha1.ActionStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AgentJavaRuntimeMetricsConfig"):
-		return &odigosv1alpha1.AgentJavaRuntimeMetricsConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AgentMetricsConfig"):
 		return &odigosv1alpha1.AgentMetricsConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AgentRuntimeMetricConfig"):
-		return &odigosv1alpha1.AgentRuntimeMetricConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("AgentRuntimeMetricsConfig"):
-		return &odigosv1alpha1.AgentRuntimeMetricsConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AgentSpanMetricsConfig"):
 		return &odigosv1alpha1.AgentSpanMetricsConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AgentTracesConfig"):

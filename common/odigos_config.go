@@ -67,12 +67,14 @@ type CollectorNodeConfiguration struct {
 	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type OtlpExporterConfiguration struct {
 	EnableDataCompression *bool           `json:"enableDataCompression,omitempty"`
 	Timeout               string          `json:"timeout,omitempty"`
 	RetryOnFailure        *RetryOnFailure `json:"retryOnFailure,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type RetryOnFailure struct {
 	Enabled         *bool  `json:"enabled,omitempty"`
 	InitialInterval string `json:"initialInterval,omitempty"`
