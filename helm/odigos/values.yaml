@@ -25,7 +25,7 @@ imagePrefix:
 images: {}
 
 # namespaces list not to show in odigos ui
-# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
+# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease
 # you can add additional namespaces to ignore by adding them to the list
 ignoredNamespaces:
 
@@ -334,17 +334,6 @@ instrumentor:
     limits:
       cpu: 500m
       memory: 512Mi
-  # skipWebhookIssuerCreation:
-  #   - This flag controls whether the chart should skip creating an Issuer
-  #     and associated Certificate for securing the mutating webhook communication.
-  #   - Setting this to "true" will skip the creation of an Issuer and Certificate,
-  #     even if cert-manager is detected in the cluster and the required API version is available.
-  #   - In some cases, the Issuer and Certificate are necessary for the instrumentor service
-  #     to run its pod mutating webhook, which requires a signed certificate to comply with
-  #     Kubernetes' TLS requirements.
-  #   - If cert-manager is not installed or detected, no Issuer or Certificate will be created
-  #     regardless of this flag.
-  skipWebhookIssuerCreation: false
   # how to add the required environment variables for instrumentation to a container
   # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
   # pod-manifest: add the environment variables to the container manifest.

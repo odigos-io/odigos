@@ -319,6 +319,10 @@ var centralUninstallCmd = &cobra.Command{
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRolesByLabel)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central RoleBindings",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRoleBindingsByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ClusterRoles",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteClusterRolesByLabelAdapter)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ClusterRoleBindings",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteClusterRoleBindingsByLabelAdapter)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ServiceAccounts",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServiceAccountsByLabel)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Secrets",
@@ -523,6 +527,14 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 
 func deleteCentralTokenSecretAdapter(ctx context.Context, client *kube.Client, ns string, _ string) error {
 	return kube.DeleteCentralTokenSecret(ctx, client, ns)
+}
+
+func deleteClusterRolesByLabelAdapter(ctx context.Context, client *kube.Client, _ string, labelKey string) error {
+	return kube.DeleteClusterRolesByLabel(ctx, client, labelKey)
+}
+
+func deleteClusterRoleBindingsByLabelAdapter(ctx context.Context, client *kube.Client, _ string, labelKey string) error {
+	return kube.DeleteClusterRoleBindingsByLabel(ctx, client, labelKey)
 }
 
 var portForwardCentralCmd = &cobra.Command{
