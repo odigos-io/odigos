@@ -105,6 +105,58 @@ To get started with Odigos Central, you need to install the central components a
   </Step>
 </Steps>
 
+## Authentication
+
+By default, Odigos Central installs **Keycloak** and uses it as the identity provider for the Central UI.
+
+### Okta authentication (SSO via Keycloak)
+
+If your organization uses **Okta**, the recommended setup is to keep the bundled Keycloak and configure **Okta as a SAML Identity Provider in Keycloak** (Keycloak identity brokering).
+
+<Steps>
+  <Step title="Port-forward Keycloak and log into the admin console">
+    Use a separate port-forward to access Keycloak:
+
+    ```bash
+    kubectl -n odigos-central port-forward svc/keycloak 8080:8080
+    ```
+
+    Then open `http://localhost:8080` and log in with:
+    - `admin`
+    - the password you provided as `--central-admin-password` (or `auth.adminPassword` when installing via Helm)
+  </Step>
+
+  <Step title="Create an Okta SAML app integration">
+    In Okta, create a **SAML 2.0** app integration.
+
+    <Info>
+      Okta’s UI and exact fields vary. The Okta SAML app configuration needs the **Single sign-on URL (ACS URL)** and the **Audience URI (SP Entity ID)** — you’ll copy these from Keycloak in the next step.
+    </Info>
+  </Step>
+
+  <Step title="Add Okta as a SAML Identity Provider in Keycloak">
+    In the Keycloak admin console:
+
+    - Select the realm used by Odigos Central
+    - Go to **Identity providers** → **SAML v2.0**
+    - Configure the IdP details from Okta (for example: **IdP Entity ID / Issuer**, **Single Sign-On Service URL**, and the **X.509 certificate**)
+
+    <Warning>
+      Keycloak will show the **ACS URL** and **SP Entity ID** for this identity provider. Copy those into your Okta SAML app integration as:
+      - **Single sign-on URL** (ACS URL)
+      - **Audience URI (SP Entity ID)**
+    </Warning>
+  </Step>
+
+  <Step title="Verify Central UI login via Okta">
+    Open the Central UI again (via `odigos pro central ui`) and verify that login redirects you to Okta and back to Odigos Central successfully.
+  </Step>
+</Steps>
+
+<Info>
+  If you’re looking to enable OIDC for the **non-central** Odigos UI (not Odigos Central), see the dedicated OIDC documentation: [`OIDC (OpenID Connect)`](/features/oidc).
+</Info>
+
 <Warning>
   Odigos Central is an Enterprise feature and requires a valid license token. Make
   sure your `--onprem-token` is valid and has the necessary permissions.
