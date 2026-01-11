@@ -25,16 +25,17 @@ import (
 // ContainerAgentConfigApplyConfiguration represents a declarative configuration of the ContainerAgentConfig type for use
 // with apply.
 type ContainerAgentConfigApplyConfiguration struct {
-	ContainerName       *string                               `json:"containerName,omitempty"`
-	AgentEnabled        *bool                                 `json:"agentEnabled,omitempty"`
-	AgentEnabledReason  *odigosv1alpha1.AgentEnabledReason    `json:"agentEnabledReason,omitempty"`
-	AgentEnabledMessage *string                               `json:"agentEnabledMessage,omitempty"`
-	OtelDistroName      *string                               `json:"otelDistroName,omitempty"`
-	DistroParams        map[string]string                     `json:"distroParams,omitempty"`
-	EnvInjectionMethod  *common.EnvInjectionDecision          `json:"envInjectionMethod,omitempty"`
-	Traces              *AgentTracesConfigApplyConfiguration  `json:"traces,omitempty"`
-	Metrics             *AgentMetricsConfigApplyConfiguration `json:"metrics,omitempty"`
-	Logs                *odigosv1alpha1.AgentLogsConfig       `json:"logs,omitempty"`
+	ContainerName                *string                               `json:"containerName,omitempty"`
+	AgentEnabled                 *bool                                 `json:"agentEnabled,omitempty"`
+	PodManifestInjectionRequired *bool                                 `json:"podManifestInjectionRequired,omitempty"`
+	AgentEnabledReason           *odigosv1alpha1.AgentEnabledReason    `json:"agentEnabledReason,omitempty"`
+	AgentEnabledMessage          *string                               `json:"agentEnabledMessage,omitempty"`
+	OtelDistroName               *string                               `json:"otelDistroName,omitempty"`
+	DistroParams                 map[string]string                     `json:"distroParams,omitempty"`
+	EnvInjectionMethod           *common.EnvInjectionDecision          `json:"envInjectionMethod,omitempty"`
+	Traces                       *AgentTracesConfigApplyConfiguration  `json:"traces,omitempty"`
+	Metrics                      *AgentMetricsConfigApplyConfiguration `json:"metrics,omitempty"`
+	Logs                         *odigosv1alpha1.AgentLogsConfig       `json:"logs,omitempty"`
 }
 
 // ContainerAgentConfigApplyConfiguration constructs a declarative configuration of the ContainerAgentConfig type for use with
@@ -56,6 +57,14 @@ func (b *ContainerAgentConfigApplyConfiguration) WithContainerName(value string)
 // If called multiple times, the AgentEnabled field is set to the value of the last call.
 func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabled(value bool) *ContainerAgentConfigApplyConfiguration {
 	b.AgentEnabled = &value
+	return b
+}
+
+// WithPodManifestInjectionRequired sets the PodManifestInjectionRequired field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PodManifestInjectionRequired field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithPodManifestInjectionRequired(value bool) *ContainerAgentConfigApplyConfiguration {
+	b.PodManifestInjectionRequired = &value
 	return b
 }
 
