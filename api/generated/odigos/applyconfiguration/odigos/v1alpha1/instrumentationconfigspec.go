@@ -24,14 +24,15 @@ import (
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
-	ServiceName               *string                                  `json:"serviceName,omitempty"`
-	AgentInjectionEnabled     *bool                                    `json:"agentInjectionEnabled,omitempty"`
-	Containers                []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
-	ContainersOverrides       []ContainerOverrideApplyConfiguration    `json:"containersOverrides,omitempty"`
-	ContainerOverridesHash    *string                                  `json:"containerOverridesHash,omitempty"`
-	AgentsMetaHash            *string                                  `json:"agentsMetaHash,omitempty"`
-	AgentsMetaHashChangedTime *v1.Time                                 `json:"agentsMetaHashChangedTime,omitempty"`
-	SdkConfigs                []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
+	ServiceName                  *string                                  `json:"serviceName,omitempty"`
+	AgentInjectionEnabled        *bool                                    `json:"agentInjectionEnabled,omitempty"`
+	PodManifestInjectionRequired *bool                                    `json:"podManifestInjectionRequired,omitempty"`
+	Containers                   []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
+	ContainersOverrides          []ContainerOverrideApplyConfiguration    `json:"containersOverrides,omitempty"`
+	ContainerOverridesHash       *string                                  `json:"containerOverridesHash,omitempty"`
+	AgentsMetaHash               *string                                  `json:"agentsMetaHash,omitempty"`
+	AgentsMetaHashChangedTime    *v1.Time                                 `json:"agentsMetaHashChangedTime,omitempty"`
+	SdkConfigs                   []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -53,6 +54,14 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithServiceName(value stri
 // If called multiple times, the AgentInjectionEnabled field is set to the value of the last call.
 func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentInjectionEnabled(value bool) *InstrumentationConfigSpecApplyConfiguration {
 	b.AgentInjectionEnabled = &value
+	return b
+}
+
+// WithPodManifestInjectionRequired sets the PodManifestInjectionRequired field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PodManifestInjectionRequired field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithPodManifestInjectionRequired(value bool) *InstrumentationConfigSpecApplyConfiguration {
+	b.PodManifestInjectionRequired = &value
 	return b
 }
 

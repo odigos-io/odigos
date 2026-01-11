@@ -25,12 +25,12 @@ import (
 // InstrumentationConfigStatusApplyConfiguration represents a declarative configuration of the InstrumentationConfigStatus type for use
 // with apply.
 type InstrumentationConfigStatusApplyConfiguration struct {
-	RuntimeDetailsByContainer []RuntimeDetailsByContainerApplyConfiguration `json:"runtimeDetailsByContainer,omitempty"`
-	Conditions                []v1.ConditionApplyConfiguration              `json:"conditions,omitempty"`
-	WorkloadRolloutHash       *string                                       `json:"workloadRolloutHash,omitempty"`
-	RollbackOccurred          *bool                                         `json:"rollbackOccurred,omitempty"`
-	InstrumentationTime       *metav1.Time                                  `json:"instrumentationTime,omitempty"`
-	PodsInjectionStatus       *PodsInjectionStatusApplyConfiguration        `json:"podsInjectionStatus,omitempty"`
+	RuntimeDetailsByContainer   []RuntimeDetailsByContainerApplyConfiguration  `json:"runtimeDetailsByContainer,omitempty"`
+	Conditions                  []v1.ConditionApplyConfiguration               `json:"conditions,omitempty"`
+	WorkloadRolloutHash         *string                                        `json:"workloadRolloutHash,omitempty"`
+	RollbackOccurred            *bool                                          `json:"rollbackOccurred,omitempty"`
+	InstrumentationTime         *metav1.Time                                   `json:"instrumentationTime,omitempty"`
+	PodsManifestInjectionStatus *PodsManifestInjectionStatusApplyConfiguration `json:"podsManifestInjectionStatus,omitempty"`
 }
 
 // InstrumentationConfigStatusApplyConfiguration constructs a declarative configuration of the InstrumentationConfigStatus type for use with
@@ -89,10 +89,10 @@ func (b *InstrumentationConfigStatusApplyConfiguration) WithInstrumentationTime(
 	return b
 }
 
-// WithPodsInjectionStatus sets the PodsInjectionStatus field in the declarative configuration to the given value
+// WithPodsManifestInjectionStatus sets the PodsManifestInjectionStatus field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the PodsInjectionStatus field is set to the value of the last call.
-func (b *InstrumentationConfigStatusApplyConfiguration) WithPodsInjectionStatus(value *PodsInjectionStatusApplyConfiguration) *InstrumentationConfigStatusApplyConfiguration {
-	b.PodsInjectionStatus = value
+// If called multiple times, the PodsManifestInjectionStatus field is set to the value of the last call.
+func (b *InstrumentationConfigStatusApplyConfiguration) WithPodsManifestInjectionStatus(value *PodsManifestInjectionStatusApplyConfiguration) *InstrumentationConfigStatusApplyConfiguration {
+	b.PodsManifestInjectionStatus = value
 	return b
 }

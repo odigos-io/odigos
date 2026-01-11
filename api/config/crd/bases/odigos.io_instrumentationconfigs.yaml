@@ -166,6 +166,10 @@ spec:
                         The name of the otel distribution to use for this container.
                         if the name is empty, this container should not be instrumented.
                       type: string
+                    podManifestInjectionRequired:
+                      description: set to true if the agent in this container requires
+                        pod manifest injection to be enabled.
+                      type: boolean
                     traces:
                       description: |-
                         Each enabled signal must be set with a non-nil value (even if the config content is empty).
@@ -401,6 +405,11 @@ spec:
                   - containerName
                   type: object
                 type: array
+              podManifestInjectionRequired:
+                description: |-
+                  true if at least one container in this workload requires pod manifest injection
+                  to enable agent injection.
+                type: boolean
               sdkConfigs:
                 description: |-
                   Configuration for the OpenTelemetry SDKs that this workload should use.
@@ -926,27 +935,22 @@ spec:
                   This allows us to determine whether a crashing application should be rolled back or not
                 format: date-time
                 type: string
-              podsInjectionStatus:
-                description: counters for the injection status of the pods in this
-                  workload.
+              podsManifestInjectionStatus:
+                description: Represents the status of odigos MANIFEST injection to
+                  existing pods template.
                 properties:
-                  numberNotInjected:
-                    description: number of pods that do not have the odigos agnet
-                      injected.
-                    format: int32
-                    type: integer
-                  numberOutOfDatePods:
-                    description: |-
-                      number of pods where odigos agent was injected at time of pod creation,
-                      but since then the agent deployment setup changed, and the agent is not using the latest setup.
-                    format: int32
-                    type: integer
-                  numberUpToDatePods:
-                    description: |-
-                      number of pods where odigos agnent is injected and using the latest agent deployment setup.
-                      it includes which distro to use per container
-                    format: int32
-                    type: integer
+                  hasInjectedOutOfDatePods:
+                    description: if the source has any pods which are using an outdated
+                      agent deployment setup.
+                    type: boolean
+                  hasInjectedUpToDatePods:
+                    description: if the source has any pods which are using the latest
+                      agent deployment setup.
+                    type: boolean
+                  hasUninjectedPods:
+                    description: if the source has any pods which do not have the
+                      odigos agent injected.
+                    type: boolean
                 type: object
               rollbackOccurred:
                 description: Check if rollback happened to an application

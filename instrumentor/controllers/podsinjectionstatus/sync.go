@@ -48,21 +48,21 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 		return err
 	}
 
-	podsInjectionStatus := odigosv1.PodsInjectionStatus{}
+	podsManifestInjectionStatus := odigosv1.PodsManifestInjectionStatus{}
 
 	for _, pod := range pods.Items {
 		if agentHashValue, ok := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]; ok {
 			if agentHashValue == ic.Spec.AgentsMetaHash {
-				podsInjectionStatus.NumberUpToDate++
+				podsManifestInjectionStatus.HasInjectedOutOfDatePods = true
 			} else {
-				podsInjectionStatus.NumberOutOfDate++
+				podsManifestInjectionStatus.HasInjectedOutOfDatePods = true
 			}
 		} else {
-			podsInjectionStatus.NumberNotInjected++
+			podsManifestInjectionStatus.HasUninjectedPods = true
 		}
 	}
 
-	ic.Status.PodsInjectionStatus = &podsInjectionStatus
+	ic.Status.PodsManifestInjectionStatus = &podsManifestInjectionStatus
 
 	err = client.Status().Update(ctx, &ic)
 	if err != nil {
