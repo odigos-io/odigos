@@ -218,7 +218,7 @@ func populateRuntimeMetricsInSdkConfigs(ic *odigosv1alpha1.InstrumentationConfig
 		case common.JavaProgrammingLanguage:
 			if runtimeMetricsConfig.Java != nil {
 				logger.V(0).Info("Adding runtime metrics to Java sdkConfig", "workload", ic.Name)
-				sdkConfig.RuntimeMetrics = &common.MetricsSourceAgentRuntimeMetricsConfiguration{
+				sdkConfig.RuntimeMetrics = &odigosv1alpha1.AgentRuntimeMetricsConfig{
 					Java: convertJavaRuntimeMetricsConfig(runtimeMetricsConfig.Java),
 				}
 			}
@@ -227,20 +227,20 @@ func populateRuntimeMetricsInSdkConfigs(ic *odigosv1alpha1.InstrumentationConfig
 }
 
 // convertJavaRuntimeMetricsConfig converts from common config to API config
-func convertJavaRuntimeMetricsConfig(commonConfig *common.MetricsSourceAgentJavaRuntimeMetricsConfiguration) *common.MetricsSourceAgentJavaRuntimeMetricsConfiguration {
+func convertJavaRuntimeMetricsConfig(commonConfig *common.MetricsSourceAgentJavaRuntimeMetricsConfiguration) *odigosv1alpha1.AgentJavaRuntimeMetricsConfig {
 	if commonConfig == nil {
 		return nil
 	}
 
-	apiConfig := &common.MetricsSourceAgentJavaRuntimeMetricsConfiguration{
+	apiConfig := &odigosv1alpha1.AgentJavaRuntimeMetricsConfig{
 		Disabled: commonConfig.Disabled,
 	}
 
 	// Convert metrics array
 	if len(commonConfig.Metrics) > 0 {
-		apiConfig.Metrics = make([]common.MetricsSourceAgentRuntimeMetricConfiguration, len(commonConfig.Metrics))
+		apiConfig.Metrics = make([]odigosv1alpha1.AgentRuntimeMetricConfig, len(commonConfig.Metrics))
 		for i, metric := range commonConfig.Metrics {
-			apiConfig.Metrics[i] = common.MetricsSourceAgentRuntimeMetricConfiguration{
+			apiConfig.Metrics[i] = odigosv1alpha1.AgentRuntimeMetricConfig{
 				Name:     metric.Name,
 				Disabled: metric.Disabled,
 			}
