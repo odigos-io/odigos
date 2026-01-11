@@ -2,6 +2,10 @@
 FROM --platform=$BUILDPLATFORM golang:1.25 AS builder
 ARG TARGETOS
 ARG TARGETARCH
+ARG ODIGOS_VERSION
+
+# Install helm for packaging the chart
+RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 WORKDIR /go/src/github.com/odigos-io/odigos
 COPY api/ api/
@@ -9,12 +13,24 @@ COPY k8sutils/ k8sutils/
 COPY cli/ cli/
 COPY common/ common/
 COPY profiles/ profiles/
+COPY helm/ helm/
 
 WORKDIR /go/src/github.com/odigos-io/odigos/operator
 COPY operator/ .
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
+
+# Package the helm chart and embed it in the CLI package (which operator imports)
+# The chart version is set to match the ODIGOS_VERSION (without 'v' prefix)
+RUN CHART_VERSION="${ODIGOS_VERSION#v}" && \
+    echo "Packaging helm chart with version: ${CHART_VERSION}, appVersion: ${ODIGOS_VERSION}" && \
+    cp -r ../helm/odigos /tmp/odigos-chart && \
+    sed -i -E 's/^version: "0.0.0"/version: "'"${CHART_VERSION}"'"/' /tmp/odigos-chart/Chart.yaml && \
+    sed -i -E 's/^appVersion: "v0.0.0"/appVersion: "'"${ODIGOS_VERSION}"'"/' /tmp/odigos-chart/Chart.yaml && \
+    cat /tmp/odigos-chart/Chart.yaml && \
+    helm package /tmp/odigos-chart -d ../cli/pkg/helm/embedded/ && \
+    rm -rf /tmp/odigos-chart
 
 ARG LD_FLAGS
 ARG RHEL=false

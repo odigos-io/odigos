@@ -62,6 +62,11 @@ const (
 	// This is needed to distinguish between workloads that share the same semconv key
 	// (e.g., DeploymentConfig uses k8s.deployment.name)
 	OdigosWorkloadKindAttribute = "odigos.workload.kind"
+
+	// Custom attribute which specifies the odigos workload/source name.
+	// For Deployments this will be the deployment name, for StatefulSets the statefulset name, etc'
+	// See Source CRD workload field for more details.
+	OdigosWorkloadNameAttribute = "odigos.workload.name"
 )
 
 // Odigos config properties

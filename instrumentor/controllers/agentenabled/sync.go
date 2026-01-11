@@ -31,7 +31,6 @@ import (
 )
 
 type agentInjectedStatusCondition struct {
-
 	// The status represents 3 possible states for the agent injected:
 	// - True: agent is injected (e.g. instrumentation config is updated to inject the agent in webhook)
 	// - False: agent is not injected permanently (e.g. no supported agent can be injected to this workload due to unsupported runtimes, ignored containers, etc.)
@@ -199,7 +198,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, workloadObj)
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, workloadObj, pw)
 		containersConfig = append(containersConfig, currentContainerConfig)
 	}
 	ic.Spec.Containers = containersConfig
@@ -318,7 +317,6 @@ func getEnvInjectionDecision(
 	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
 	distro *distro.OtelDistro,
 ) (*common.EnvInjectionDecision, *odigosv1.ContainerAgentConfig) {
-
 	if effectiveConfig.AgentEnvVarsInjectionMethod == nil {
 		// this should never happen, as the config is reconciled with default value.
 		// it is only here as a safety net.
@@ -370,19 +368,9 @@ func getEnvInjectionDecision(
 // filterUrlTemplateRulesForContainer filters template rules to only include those relevant to the container.
 // A rule group is applied if ALL set filters match (AND logic).
 // If no filters are set in a group, it's considered global and applies to all containers.
-//
-// Currently implemented filters:
-//   - FilterProgrammingLanguage: matches if nil OR equals the container's language
-//
-// To expand filtering support, add additional checks to templatizationRulesGroupMatchesContainer
-// following the same pattern:
-//   - FilterK8sNamespace: check against the workload's namespace
-//   - FilterK8sWorkloadKind: check against the workload's kind (Deployment, StatefulSet, etc.)
-//   - FilterK8sWorkloadName: check against the workload's name
-//
-// Each new filter should only reject the group if it's explicitly set AND doesn't match.
-func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.UrlTemplatizationConfig {
+func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *odigosv1.UrlTemplatizationConfig {
 	var rules []string
+	participating := false
 
 	for _, action := range *agentLevelActions {
 		// Safety check: actions were already filtered to only include template actions.
@@ -391,7 +379,8 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 		}
 
 		for _, rulesGroup := range action.Spec.URLTemplatization.TemplatizationRulesGroups {
-			if templatizationRulesGroupMatchesContainer(rulesGroup, language) {
+			if templatizationRulesGroupMatchesContainer(rulesGroup, language, pw) {
+				participating = true
 				for _, rule := range rulesGroup.TemplatizationRules {
 					rules = append(rules, rule.Template)
 				}
@@ -399,7 +388,9 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 		}
 	}
 
-	if len(rules) == 0 {
+	// container can participate in templatization and have no rule.
+	// if at least one rule group matches, the container participates.
+	if !participating {
 		return nil
 	}
 
@@ -420,7 +411,7 @@ func filterIgnoreHealthChecksForContainer(agentLevelActions *[]odigosv1.Action, 
 
 // templatizationRulesGroupMatchesContainer checks if a rules group matches the container based on all set filters.
 // Returns true if all explicitly-set filters match (AND logic), or if no filters are set (global rule).
-func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizationRulesGroup, language common.ProgrammingLanguage) bool {
+func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizationRulesGroup, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) bool {
 	// Filter by programming language
 	if rulesGroup.FilterProgrammingLanguage != nil {
 		if *rulesGroup.FilterProgrammingLanguage != language {
@@ -428,10 +419,26 @@ func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizati
 		}
 	}
 
-	// TODO: Add additional filter checks here as needed:
-	// if rulesGroup.FilterK8sNamespace != "" && rulesGroup.FilterK8sNamespace != workloadNamespace { return false }
-	// if rulesGroup.FilterK8sWorkloadKind != nil && *rulesGroup.FilterK8sWorkloadKind != workloadKind { return false }
-	// if rulesGroup.FilterK8sWorkloadName != "" && rulesGroup.FilterK8sWorkloadName != workloadName { return false }
+	// Filter by k8s namespace
+	if rulesGroup.FilterK8sNamespace != "" {
+		if rulesGroup.FilterK8sNamespace != pw.Namespace {
+			return false
+		}
+	}
+
+	// Filter by k8s workload kind
+	if rulesGroup.FilterK8sWorkloadKind != nil {
+		if *rulesGroup.FilterK8sWorkloadKind != pw.Kind {
+			return false
+		}
+	}
+
+	// Filter by k8s workload name
+	if rulesGroup.FilterK8sWorkloadName != "" {
+		if rulesGroup.FilterK8sWorkloadName != pw.Name {
+			return false
+		}
+	}
 
 	return true
 }
@@ -448,8 +455,8 @@ func calculateContainerInstrumentationConfig(containerName string,
 	containerOverride *odigosv1.ContainerOverride,
 	agentLevelActions *[]odigosv1.Action,
 	workloadObj workload.Workload,
+	pw k8sconsts.PodWorkload,
 ) odigosv1.ContainerAgentConfig {
-
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
 	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
 	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
@@ -479,7 +486,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, runtimeDetails.Language)
+	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, runtimeDetails.Language, pw)
 	ignoreHealthChecks := filterIgnoreHealthChecksForContainer(agentLevelActions, runtimeDetails.Language)
 
 	distro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
@@ -580,7 +587,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
 			}
 		} else {
-
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        true,
@@ -606,12 +612,11 @@ func calculateContainerInstrumentationConfig(containerName string,
 		Metrics:            metricsConfig,
 		Logs:               logsConfig,
 	}
-
 }
 
 func calculateDefaultDistroPerLanguage(defaultDistros map[common.ProgrammingLanguage]string,
-	instrumentationRules *[]odigosv1.InstrumentationRule, dg *distros.Getter) map[common.ProgrammingLanguage]string {
-
+	instrumentationRules *[]odigosv1.InstrumentationRule, dg *distros.Getter,
+) map[common.ProgrammingLanguage]string {
 	distrosPerLanguage := make(map[common.ProgrammingLanguage]string, len(defaultDistros))
 	for lang, distroName := range defaultDistros {
 		distrosPerLanguage[lang] = distroName
@@ -654,7 +659,6 @@ func calculateDefaultDistroPerLanguage(defaultDistros map[common.ProgrammingLang
 // - reason: AgentInjectionReason enum value that represents the reason why we are waiting
 // - message: human-readable message that describes the reason why we are waiting
 func isReadyForInstrumentation(cg *odigosv1.CollectorsGroup, ic *odigosv1.InstrumentationConfig) (bool, odigosv1.AgentEnabledReason, string) {
-
 	// Check if the node collector is ready
 	isNodeCollectorReady, message := isNodeCollectorReady(cg)
 	if !isNodeCollectorReady {
@@ -729,7 +733,6 @@ func resolveContainerDistro(
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
 ) (*distro.OtelDistro, *odigosv1.ContainerAgentConfig) {
-
 	// check if the distro name is specifically overridden.
 	// this can happen for languages that support multiple distros,
 	// and the user want to specify a specific distro for this specific workload, and not the default one.

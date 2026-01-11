@@ -53,6 +53,7 @@ processors:
     - k8s.cronjob.name
     - k8s.argoproj.rollout.name
     - odigos.workload.kind
+    - odigos.workload.name
   resource/node-name:
     attributes:
     - action: upsert

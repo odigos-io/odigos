@@ -1575,6 +1575,7 @@ const (
 	K8sResourceKindDeployment       K8sResourceKind = "Deployment"
 	K8sResourceKindDaemonSet        K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet      K8sResourceKind = "StatefulSet"
+	K8sResourceKindStaticPod        K8sResourceKind = "StaticPod"
 	K8sResourceKindCronJob          K8sResourceKind = "CronJob"
 	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
 	K8sResourceKindPod              K8sResourceKind = "Pod"
@@ -1586,6 +1587,7 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDeployment,
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
+	K8sResourceKindStaticPod,
 	K8sResourceKindCronJob,
 	K8sResourceKindConfigMap,
 	K8sResourceKindPod,

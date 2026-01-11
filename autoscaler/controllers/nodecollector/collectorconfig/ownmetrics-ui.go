@@ -44,6 +44,7 @@ func init() {
 				// This allows the UI to distinguish between DeploymentConfig and Deployment, and construct the correct Source workload.
 				// Since DeploymentConfig uses k8s.deployment.name as the semconv key, we need to add this attribute to the list of attributes to be collected.
 				consts.OdigosWorkloadKindAttribute,
+				consts.OdigosWorkloadNameAttribute,
 			},
 		},
 		podNameProcessorName: config.GenericMap{
