@@ -198,8 +198,9 @@ func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLang
 func populateRuntimeMetricsInSdkConfigs(ic *odigosv1alpha1.InstrumentationConfig, effectiveConfig *common.OdigosConfiguration) {
 	logger := log.Log.WithName("runtime-metrics")
 
-	// Check if runtime metrics are configured in effective config
-	if effectiveConfig.MetricsSources == nil ||
+	// Check if effective config is nil or runtime metrics are configured in effective config
+	if effectiveConfig == nil ||
+		effectiveConfig.MetricsSources == nil ||
 		effectiveConfig.MetricsSources.AgentMetrics == nil ||
 		effectiveConfig.MetricsSources.AgentMetrics.RuntimeMetrics == nil {
 		logger.V(0).Info("No runtime metrics configuration found in effective config")
