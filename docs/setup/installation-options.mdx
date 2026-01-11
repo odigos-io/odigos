@@ -25,7 +25,7 @@ Any Source objects for the namespace and workloads in the namespace will still b
 
 ## Ignore Containers
 
-This option is useful for excluding specific sidecar containers from being instrumentated by odigos. 
+This option is useful for excluding specific sidecar containers from being instrumentated by odigos.
 
 Default values: `istio-proxy`
 
@@ -39,7 +39,7 @@ Default values: `istio-proxy`
      ```shell
      helm install odigos odigos/odigos --set ignoreContainer=<container1>,<container2>
      ```
-  </Tab>  
+  </Tab>
 </Tabs>
 
 
@@ -52,13 +52,9 @@ To address this, Odigos provides a configuration option to mount a custom contai
 ### Usage
 <Tabs>
   <Tab title="Odigos CLI">
-     1. During installation:
+     1. During and Post installation using set flag for the install command:
      ```shell
-     odigos install --container-runtime-socket-path <unix socket path>
-     ```
-     2. Post installation using [config set command](/cli/odigos_config):
-     ```shell
-     odigos config set custom-container-runtime-socket-path <unix socket path>
+     odigos install --set odiglet.customContainerRuntimeSocketPath=<unix socket path>
      ```
   </Tab>
   <Tab title="Helm Chart">
@@ -66,7 +62,7 @@ To address this, Odigos provides a configuration option to mount a custom contai
      ```shell
      helm install odigos odigos/odigos --set odiglet.customContainerRuntimeSocketPath=<unix socket path>
      ```
-  </Tab>  
+  </Tab>
 </Tabs>
 
 
@@ -169,7 +165,7 @@ oc expose service ui -n odigos-system
 Then get the external address for the Route with `oc get routes ui -n
 odigos-system`.
 
-**Note:** If you're deploying Odigos on OpenShift, you may need to set the route's TLS termination to Edge to load it in your browser. 
+**Note:** If you're deploying Odigos on OpenShift, you may need to set the route's TLS termination to Edge to load it in your browser.
 you will need to modify the YAML of the oc route with `spec.tls.termination: edge`
 
 Check the OpenShift documentation or run `oc expose -h` for more
