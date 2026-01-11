@@ -400,13 +400,6 @@ helm-install-central:
 api-all:
 	make -C api all
 
-.PHONY: common-all
-common-all:
-	make -C common generate
-
-.PHONY: generate-all
-generate-all: api-all common-generate
-
 .PHONY: crd-apply
 crd-apply: api-all cli-upgrade
 	@echo "Applying changes to CRDs in api directory"

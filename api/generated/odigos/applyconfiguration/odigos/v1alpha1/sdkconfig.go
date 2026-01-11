@@ -25,15 +25,15 @@ import (
 // SdkConfigApplyConfiguration represents a declarative configuration of the SdkConfig type for use
 // with apply.
 type SdkConfigApplyConfiguration struct {
-	Language                      *common.ProgrammingLanguage                           `json:"language,omitempty"`
-	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration      `json:"instrumentationLibraryConfigs,omitempty"`
-	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration                 `json:"headSamplerConfig,omitempty"`
-	DefaultPayloadCollection      *instrumentationrules.PayloadCollection               `json:"payloadCollection,omitempty"`
-	DefaultCodeAttributes         *instrumentationrules.CodeAttributes                  `json:"codeAttributes,omitempty"`
-	DefaultHeadersCollection      *instrumentationrules.HttpHeadersCollection           `json:"headersCollection,omitempty"`
-	DefaultTraceConfig            *instrumentationrules.TraceConfig                     `json:"traceConfig,omitempty"`
-	CustomInstrumentations        *instrumentationrules.CustomInstrumentations          `json:"customInstrumentations,omitempty"`
-	RuntimeMetrics                *common.MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
+	Language                      *common.ProgrammingLanguage                      `json:"language,omitempty"`
+	InstrumentationLibraryConfigs []InstrumentationLibraryConfigApplyConfiguration `json:"instrumentationLibraryConfigs,omitempty"`
+	HeadSamplingConfig            *HeadSamplingConfigApplyConfiguration            `json:"headSamplerConfig,omitempty"`
+	DefaultPayloadCollection      *instrumentationrules.PayloadCollection          `json:"payloadCollection,omitempty"`
+	DefaultCodeAttributes         *instrumentationrules.CodeAttributes             `json:"codeAttributes,omitempty"`
+	DefaultHeadersCollection      *instrumentationrules.HttpHeadersCollection      `json:"headersCollection,omitempty"`
+	DefaultTraceConfig            *instrumentationrules.TraceConfig                `json:"traceConfig,omitempty"`
+	CustomInstrumentations        *instrumentationrules.CustomInstrumentations     `json:"customInstrumentations,omitempty"`
+	RuntimeMetrics                *AgentRuntimeMetricsConfigApplyConfiguration     `json:"runtimeMetrics,omitempty"`
 }
 
 // SdkConfigApplyConfiguration constructs a declarative configuration of the SdkConfig type for use with
@@ -114,7 +114,7 @@ func (b *SdkConfigApplyConfiguration) WithCustomInstrumentations(value instrumen
 // WithRuntimeMetrics sets the RuntimeMetrics field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the RuntimeMetrics field is set to the value of the last call.
-func (b *SdkConfigApplyConfiguration) WithRuntimeMetrics(value common.MetricsSourceAgentRuntimeMetricsConfiguration) *SdkConfigApplyConfiguration {
-	b.RuntimeMetrics = &value
+func (b *SdkConfigApplyConfiguration) WithRuntimeMetrics(value *AgentRuntimeMetricsConfigApplyConfiguration) *SdkConfigApplyConfiguration {
+	b.RuntimeMetrics = value
 	return b
 }

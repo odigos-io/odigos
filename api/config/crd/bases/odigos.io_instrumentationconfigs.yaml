@@ -142,16 +142,24 @@ spec:
                               description: configuration for Java runtime metrics
                               properties:
                                 disabled:
-                                  description: global enable/disable for all Java
-                                    runtime metrics
+                                  description: |-
+                                    global enable/disable for all Java runtime metrics
+                                    - nil: use default behavior [enabled]
+                                    - false: explicitly enabled
+                                    - true: explicitly disabled
                                   type: boolean
                                 metrics:
                                   description: individual metric configurations
                                   items:
+                                    description: AgentRuntimeMetricConfig represents
+                                      configuration for a specific runtime metric
                                     properties:
                                       disabled:
-                                        description: whether this specific metric
-                                          is disabled
+                                        description: |-
+                                          whether this specific metric is disabled
+                                          - nil: use default behavior [enabled]
+                                          - false: explicitly enabled
+                                          - true: explicitly disabled
                                         type: boolean
                                       name:
                                         description: name of the runtime metric (e.g.,
@@ -884,15 +892,24 @@ spec:
                           description: configuration for Java runtime metrics
                           properties:
                             disabled:
-                              description: global enable/disable for all Java runtime
-                                metrics
+                              description: |-
+                                global enable/disable for all Java runtime metrics
+                                - nil: use default behavior [enabled]
+                                - false: explicitly enabled
+                                - true: explicitly disabled
                               type: boolean
                             metrics:
                               description: individual metric configurations
                               items:
+                                description: AgentRuntimeMetricConfig represents configuration
+                                  for a specific runtime metric
                                 properties:
                                   disabled:
-                                    description: whether this specific metric is disabled
+                                    description: |-
+                                      whether this specific metric is disabled
+                                      - nil: use default behavior [enabled]
+                                      - false: explicitly enabled
+                                      - true: explicitly disabled
                                     type: boolean
                                   name:
                                     description: name of the runtime metric (e.g.,
