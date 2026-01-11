@@ -52,7 +52,7 @@ If it is supported in the cluster, it is preferred to use over the VirtualDevice
 
 - Profile: `odigos profile add mount-method-k8s-host-path`
 
-- Odigos CLI: `odigos config set mount-method k8s-host-path`
+- Odigos CLI: `odigos install --set instrumentor.mountMethod=k8s-host-path`
 
 - Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-host-path`, or use helm cli `--set instrumentor.mountMethod=k8s-host-path` flag with helm upgrade.
 
@@ -101,7 +101,7 @@ For agents and languages that require filesystem mounts, Odigos will inject an I
 
 **Enabling InitContainer**
 
-- Odigos CLI: `odigos config set mount-method k8s-init-container`
+- Odigos CLI: `odigos install --set instrumentor.mountMethod=k8s-init-container`
 - Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-init-container`, or use helm cli `--set instrumentor.mountMethod=k8s-init-container` flag with helm upgrade.
 - Kubernetes Manifest: under the `odigos-configuration` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-init-container`.
 
