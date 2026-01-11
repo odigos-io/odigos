@@ -243,6 +243,11 @@ func NewCentralBackendRole(ns string) *rbacv1.Role {
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
 			},
+			{
+				Verbs:     []string{"get"},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
+			},
 		},
 	}
 }
