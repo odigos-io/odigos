@@ -69,6 +69,10 @@ func NewCentralBackendDeploymentConfigMap(ns string, odigosVersion string) *core
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosCentralDeploymentConfigMapName,
 			Namespace: ns,
+			Labels: map[string]string{
+				k8sconsts.OdigosSystemLabelKey:        k8sconsts.OdigosSystemLabelValue,
+				k8sconsts.OdigosSystemLabelCentralKey: k8sconsts.OdigosSystemLabelValue,
+			},
 		},
 		Data: map[string]string{
 			k8sconsts.OdigosCentralDeploymentConfigMapVersionKey:            odigosVersion,
@@ -238,6 +242,11 @@ func NewCentralBackendRole(ns string) *rbacv1.Role {
 				Verbs:     []string{"get"},
 				APIGroups: []string{""},
 				Resources: []string{"secrets"},
+			},
+			{
+				Verbs:     []string{"get"},
+				APIGroups: []string{""},
+				Resources: []string{"configmaps"},
 			},
 		},
 	}
