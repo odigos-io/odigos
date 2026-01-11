@@ -69,7 +69,7 @@ To learn more about creating custom eBPF-based instrumentations for Go applicati
 ## About Go Offsets
 
 Auto-instrumentation for Go with eBPF works by using eBPF uprobes to dynamically read variables in memory at runtime. For example,
-when instrumenting the `net/http` package Odigos is able to determine the `http.request.method` by probing the [`Method`](https://pkg.go.dev/net/http#Request) 
+when instrumenting the `net/http` package Odigos is able to determine the `http.request.method` by probing the [`Method`](https://pkg.go.dev/net/http#Request)
 field in the current `Request`.
 
 Doing so relies on knowing the exact memory location of this field. This is known as the field's "offset" (because it refers to the field's location as a
@@ -100,10 +100,16 @@ In "direct" mode, the CronJob will pull the latest Go library offsets directly f
 option consumes the fewest resources but requires that your cluster has direct internet access to this file hosted on the web. If you have
 restricted Internet egress policies, see "mirrored image updates" below.
 
-Enable automatic updates on any standard cron schedule by setting the [`odigos config set go-auto-offsets-cron`](/cli/odigos_config) option to
-any valid cron schedule. For example, enable nightly updates at midnight with `odigos config set go-auto-offsets-cron "0 0 * * *"`.
+Enable automatic updates on any standard cron schedule by setting the `goAutoOffsetsCron` option during installation or upgrade.
+For example, enable nightly updates at midnight with `odigos install --set goAutoOffsetsCron="0 0 * * *"`.
 
-To disable automatic updates, set the cron value to an empty string with `odigos config set go-auto-offsets-cron ""`.
+To disable automatic updates, set the cron value to an empty string with `odigos install --set goAutoOffsetsCron=""`.
+
+Alternatively, you can set these values in your `values.yaml` file for Helm installations:
+```yaml
+goAutoOffsetsCron: "0 0 * * *"  # Enable nightly updates at midnight
+goAutoOffsetsMode: "direct"     # Use direct mode
+```
 
 #### Mirrored image automatic updates
 
@@ -112,7 +118,7 @@ In this mode, the CronJob will run an image that contains the latest Go library 
 does not require direct Internet access from the cluster, but it does require you to mirror this image into your own registry and maintain
 the latest version on your nodes.
 
-To enable mirrored image updates, run `odigos config set go-auto-offsets-mode "image"`. Then use the `go-auto-offsets-cron` option described above to set the schedule.
+To enable mirrored image updates, run `odigos install --set goAutoOffsetsMode="image"`. Then use the `goAutoOffsetsCron` option described above to set the schedule.
 
-To disable mirrored image updates, run `odigos config set go-auto-offsets-mode "direct"` (to switch back to direct mode), or set the `go-auto-offsets-cron`
-setting to an empty string (`""`) as described above to disable automatic updates entirely.
+To disable mirrored image updates, run `odigos install --set goAutoOffsetsMode="direct"` (to switch back to direct mode), or set the `goAutoOffsetsCron` setting
+to an empty string (`""`) as described above to disable automatic updates entirely.

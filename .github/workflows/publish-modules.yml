@@ -234,6 +234,7 @@ jobs:
                 'Dockerfile' }}
           target: >-
             ${{ matrix.service == 'agents' && matrix.rhel == 'true' && 'agents-rhel' ||
+                matrix.service == 'agents' && 'agents' ||
                 matrix.rhel == 'true' && 'rhel' ||
                 '' }}
 
@@ -306,6 +307,18 @@ jobs:
           gcp-service-account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           package-directory: 'collector/dist'
           repository: ${{ steps.determine_repo.outputs.repository }}
+
+      - name: Upload Linux Packages to AWS S3
+        # Only upload real releases
+        if: ${{ steps.determine_repo.outputs.repository == 'odigos' }}
+        uses: odigos-io/ci-core/upload-to-s3@v1.0.6
+        with:
+          aws-role-arn: arn:aws:iam::061717858829:role/vmagent-s3
+          aws-region: us-east-1
+          bucket-name: odigos-releases
+          agent-type: 'otelcol'
+          version: ${{ steps.extract_tag.outputs.tag }}
+          package-directory: 'collector/dist'
 
       - name: Notify Slack Success
         if: always()
