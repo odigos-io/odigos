@@ -641,7 +641,7 @@ metricsSources:
     ## set the interval at which odigos will scrape metrics from itself.
     ## format: duration string (15s, 1m, etc).
     ## default is 10s.
-    # scrapeInterval: '10s'podsWebhookTimeoutSeconds
+    # scrapeInterval: '10s'
 
   agentMetrics:
 
