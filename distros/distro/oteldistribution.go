@@ -125,6 +125,11 @@ type SpanMetrics struct {
 	Supported bool `yaml:"supported,omitempty"`
 }
 
+type RuntimeMetrics struct {
+	// if true, the agent supports runtime metrics.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
 // configuration for this distro's support for metrics generated from the runtime agent.
 type AgentMetrics struct {
 	// configuration for this distro's support for agent span metrics.
@@ -132,6 +137,10 @@ type AgentMetrics struct {
 	// unlike span metrics calculated at collectors which miss
 	// head unsampled spans and spans dropped before reaching the collector.
 	SpanMetrics *SpanMetrics `yaml:"spanMetrics,omitempty"`
+
+	// configuration for this distro's support for agent runtime metrics.
+	// these are runtime environment metrics like JVM metrics, heap usage, etc.
+	RuntimeMetrics *RuntimeMetrics `yaml:"runtimeMetrics,omitempty"`
 }
 
 type HeadSampling struct {
