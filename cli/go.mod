@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/google/uuid v1.6.0
-	github.com/hashicorp/go-version v1.7.0
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
@@ -13,7 +12,6 @@ require (
 	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.9
-	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.19.0
 	k8s.io/api v0.34.1
 	k8s.io/apiextensions-apiserver v0.34.1
@@ -54,6 +52,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
@@ -91,6 +90,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/apiserver v0.34.1 // indirect
 	k8s.io/cli-runtime v0.34.0 // indirect
 	k8s.io/component-base v0.34.1 // indirect
