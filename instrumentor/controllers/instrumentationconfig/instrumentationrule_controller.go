@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,11 +56,16 @@ func (irc *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
+	conf, err := utils.GetCurrentOdigosConfiguration(ctx, irc.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// Apply only the valid rules to the instrumentation configs
 	instrumentationRules.Items = validRules
 	for _, ic := range instrumentationConfigs.Items {
 		currIc := ic
-		err = updateInstrumentationConfigForWorkload(&currIc, instrumentationRules)
+		err = updateInstrumentationConfigForWorkload(&currIc, instrumentationRules, &conf)
 		if err != nil {
 			logger.Error(err, "error updating instrumentation config", "workload", ic.Name)
 			continue
