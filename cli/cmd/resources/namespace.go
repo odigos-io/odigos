@@ -8,20 +8,10 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
 	"github.com/odigos-io/odigos/common/consts"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var errNoOdigosNamespaceFound = errors.New("Odigos installation is not found in any namespace")
-
-func NewNamespace(name string) *v1.Namespace {
-	return &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels.OdigosSystem,
-		},
-	}
-}
 
 func getNamespaceFromConfigMap(client *kube.Client, ctx context.Context, configMapName string) (string, error) {
 	configMap, err := client.CoreV1().ConfigMaps("").List(ctx, metav1.ListOptions{
@@ -53,7 +43,7 @@ func GetOdigosNamespace(client *kube.Client, ctx context.Context) (string, error
 	if !IsErrNoOdigosNamespaceFound(err) {
 		return "", fmt.Errorf("failed to get odigos namespace: %w", err)
 	}
-	// we need this fallback because old versions of odigos has legacy config map called "odigos-config", and 
+	// we need this fallback because old versions of odigos has legacy config map called "odigos-config", and
 	// several commands needs to get current namespace from it.
 	legacyConfigMap, err := getNamespaceFromConfigMap(client, ctx, consts.OdigosLegacyConfigName)
 	if err == nil {
