@@ -22,6 +22,7 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
@@ -31,6 +32,39 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+)
+
+var (
+	odigosCloudApiKeyFlag            string
+	odigosOnPremToken                string
+	namespaceFlag                    string
+	versionFlag                      string
+	skipWait                         bool
+	telemetryEnabled                 bool
+	openshiftEnabled                 bool
+	skipWebhookIssuerCreation        bool
+	psp                              bool
+	userInputIgnoredNamespaces       []string
+	userInputIgnoredContainers       []string
+	userInputInstallProfiles         []string
+	uiMode                           string
+	customContainerRuntimeSocketPath string
+	k8sNodeLogsDirectory             string
+	instrumentorImage                string
+	odigletImage                     string
+	autoScalerImage                  string
+	imagePrefix                      string
+	nodeSelectorFlag                 string
+	karpenterEnabled                 bool
+
+	clusterName       string
+	centralBackendURL string
+
+	userInstrumentationEnvsRaw string
+
+	autoRollbackDisabled         bool
+	autoRollbackGraceTime        string
+	autoRollbackStabilityWindows string
 )
 
 var (
@@ -584,4 +618,82 @@ func init() {
 	centralInstallCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
 	centralCmd.AddCommand(portForwardCentralCmd)
 	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
+}
+
+func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, labelScope string, create ResourceCreationFunc) {
+	l := log.Print(msg)
+	err := create(ctx, client, ns, labelScope)
+	if err != nil {
+		l.Error(err)
+	}
+
+	l.Success()
+}
+
+func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcemanager.ImageReferences {
+	var imageReferences resourcemanager.ImageReferences
+	if openshift {
+		imageReferences = resourcemanager.ImageReferences{
+			AutoscalerImage:    k8sconsts.AutoScalerImageCertified,
+			CollectorImage:     k8sconsts.OdigosClusterCollectorImageCertified,
+			InitContainerImage: k8sconsts.OdigosInitContainerImageCertified,
+			InstrumentorImage:  k8sconsts.InstrumentorImageCertified,
+			OdigletImage:       k8sconsts.OdigletImageCertified,
+			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
+			SchedulerImage:     k8sconsts.SchedulerImageCertified,
+			UIImage:            k8sconsts.UIImageCertified,
+		}
+	} else {
+		imageReferences = resourcemanager.ImageReferences{
+			AutoscalerImage:    k8sconsts.AutoScalerImageName,
+			CollectorImage:     k8sconsts.OdigosClusterCollectorImage,
+			InitContainerImage: k8sconsts.OdigosInitContainerImage,
+			InstrumentorImage:  k8sconsts.InstrumentorImage,
+			OdigletImage:       k8sconsts.OdigletImageName,
+			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
+			SchedulerImage:     k8sconsts.SchedulerImage,
+			UIImage:            k8sconsts.UIImage,
+		}
+	}
+
+	if odigosTier == common.OnPremOdigosTier {
+		if openshift {
+			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImageCertified
+			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageCertified
+			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImageCertified
+		} else {
+			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
+			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
+			imageReferences.CentralProxyImage = k8sconsts.CentralProxyImage
+			imageReferences.CentralBackendImage = k8sconsts.CentralBackendImage
+			imageReferences.CentralUIImage = k8sconsts.CentralUIImage
+			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImage
+		}
+	}
+	return imageReferences
+}
+
+type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
+
+func createNamespace(ctx context.Context, client *kube.Client, ns string, labelKey string) error {
+	_, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err == nil {
+		// Namespace already exists, nothing to do
+		return nil
+	}
+
+	if apierrors.IsNotFound(err) {
+		nsObj := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ns,
+				Labels: map[string]string{
+					labelKey: k8sconsts.OdigosSystemLabelValue,
+				},
+			},
+		}
+		_, err := client.CoreV1().Namespaces().Create(ctx, nsObj, metav1.CreateOptions{})
+		return err
+	}
+
+	return err
 }

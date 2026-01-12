@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
-	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
@@ -26,22 +25,6 @@ func ApplyResourceManagers(ctx context.Context, client *kube.Client, resourceMan
 		}
 		l.Success()
 	}
-	return nil
-}
-
-func DeleteOldOdigosSystemObjects(ctx context.Context, client *kube.Client, ns string, config *common.OdigosConfiguration) error {
-	resources := kube.GetManagedResources(ns)
-	k8sVersion := cmdcontext.K8SVersionFromContext(ctx)
-	for _, resource := range resources {
-		l := log.Print(fmt.Sprintf("Syncing %s", resource.Resource.Resource))
-		err := client.DeleteOldOdigosSystemObjects(ctx, resource, config.ConfigVersion, k8sVersion)
-		if err != nil {
-			l.Error(err)
-			os.Exit(1)
-		}
-		l.Success()
-	}
-
 	return nil
 }
 
