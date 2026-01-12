@@ -215,6 +215,7 @@ func intstrFromInt(val int) intstr.IntOrString {
 }
 
 func NewCentralBackendServiceAccount(ns string) *corev1.ServiceAccount {
+
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceAccount",
