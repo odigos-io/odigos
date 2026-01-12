@@ -12,7 +12,7 @@ require (
 	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.38.2
-	github.com/open-policy-agent/cert-controller v0.14.0
+	github.com/open-policy-agent/cert-controller v0.15.0
 	github.com/prometheus/common v0.65.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.37.0
@@ -20,9 +20,9 @@ require (
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
 	k8s.io/client-go v0.34.1
-	k8s.io/kube-aggregator v0.33.4
+	k8s.io/kube-aggregator v0.34.1
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
-	sigs.k8s.io/controller-runtime v0.22.1
+	sigs.k8s.io/controller-runtime v0.22.3
 	sigs.k8s.io/yaml v1.6.0
 )
 
