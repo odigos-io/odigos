@@ -224,6 +224,8 @@ func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, languag
 					})
 				}
 			}
+			fmt.Println("action.Spec.SpanRenamer.JavaQuartz != nil", action.Spec.SpanRenamer.JavaQuartz != nil)
+			fmt.Println("language == common.JavaProgrammingLanguage", language == common.JavaProgrammingLanguage)
 			if action.Spec.SpanRenamer.JavaQuartz != nil && language == common.JavaProgrammingLanguage {
 				// notice: there can be multiple java quarts span renamer configs,
 				// but we only take the last one.
@@ -232,6 +234,7 @@ func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, languag
 		}
 	}
 
+	fmt.Println("javaQuartzSpanRenamer == nil", javaQuartzSpanRenamer == nil)
 	if len(spanRenamerScopeConfigs) == 0 && javaQuartzSpanRenamer == nil {
 		return nil
 	}
