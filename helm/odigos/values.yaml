@@ -286,6 +286,19 @@ instrumentor:
   # this is to avoid adding a device (as resource request on a container)
   # where an odiglet might not be able to provide the device on the node and fail k8s scheduling for instrumented pods on all nodes.
   checkDeviceHealthBeforeInjection: false
+  # Resource configuration for the init container that is injected into user pods
+  # when using the k8s-init-container mount method.
+  # The init container is responsible for copying the instrumentation agents to the shared volume.
+  agentsInitContainerResources:
+    requests:
+      cpu: 300m
+      memory: 300Mi
+    limits:
+      cpu: 300m
+      memory: 300Mi
+  # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
+  # nodeSelector:
+  #   kubernetes.io/os: linux
   nodeSelector:
     kubernetes.io/os: linux
   tolerations: []

@@ -17,6 +17,13 @@ spec:
           mountPath: /var/odigos
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      resources:
+        requests:
+          cpu: 300m
+          memory: 300Mi
+        limits:
+          cpu: 300m
+          memory: 300Mi
   volumes:
     - (name != null): true
     - name: odigos-agent
@@ -68,6 +75,13 @@ spec:
           mountPath: /var/odigos
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      resources:
+        requests:
+          cpu: 300m
+          memory: 300Mi
+        limits:
+          cpu: 300m
+          memory: 300Mi
   volumes:
     - (name != null): true
     - name: odigos-agent
@@ -123,6 +137,13 @@ spec:
           mountPath: /var/odigos
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      resources:
+        requests:
+          cpu: 300m
+          memory: 300Mi
+        limits:
+          cpu: 300m
+          memory: 300Mi
   volumes:
     - (name != null): true
     - name: odigos-agent
@@ -191,6 +212,13 @@ spec:
           mountPath: /var/odigos
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      resources:
+        requests:
+          cpu: 300m
+          memory: 300Mi
+        limits:
+          cpu: 300m
+          memory: 300Mi
   volumes:
     - (name != null): true
     - name: odigos-agent
@@ -230,6 +258,13 @@ spec:
           mountPath: /var/odigos
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      resources:
+        requests:
+          cpu: 300m
+          memory: 300Mi
+        limits:
+          cpu: 300m
+          memory: 300Mi
   volumes:
     - (name != null): true
     - (name != null): true
@@ -283,6 +318,13 @@ spec:
           mountPath: /var/odigos
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      resources:
+        requests:
+          cpu: 300m
+          memory: 300Mi
+        limits:
+          cpu: 300m
+          memory: 300Mi
   volumes:
     - (name != null): true
     - name: odigos-agent
