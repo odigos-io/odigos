@@ -298,12 +298,8 @@ spec:
                                 type: object
                               type: array
                             javaQuartz:
-                              description: |-
-                                can be used to rename java quarts spans.
-                                by default the span name will be set to `{JobGroup}.{JobName}`.
-                                these are typically low cardinality values, but not always.
-                                the job group and name can be set to high cardinality values in code,
-                                in which case they need to be templated to a low cardinality value replacement.
+                              description: specific rename config for java quarts
+                                library spans.
                               properties:
                                 jobGroupTemplate:
                                   description: if set, the job group will be replaced
@@ -314,8 +310,6 @@ spec:
                                     in span names to this templated value.
                                   type: string
                               type: object
-                          required:
-                          - constantSpanNameConfigs
                           type: object
                         urlTemplatization:
                           description: A list of URL templatization configurations

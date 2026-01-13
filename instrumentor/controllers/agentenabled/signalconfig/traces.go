@@ -208,6 +208,7 @@ func limitFractionToRange(fraction float64) float64 {
 
 func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.SpanRenamerConfig {
 
+	gotRenamingConfig := false
 	spanRenamerScopeConfigs := []odigosv1.SpanRenamerScopeConfig{}
 	var javaQuartzSpanRenamer *actions.SpanRenamerJavaQuartz
 
@@ -222,20 +223,19 @@ func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, languag
 						ScopeName:        action.Spec.SpanRenamer.Generic.ScopeName,
 						ConstantSpanName: action.Spec.SpanRenamer.Generic.ConstantSpanName,
 					})
+					gotRenamingConfig = true
 				}
 			}
-			fmt.Println("action.Spec.SpanRenamer.JavaQuartz != nil", action.Spec.SpanRenamer.JavaQuartz != nil)
-			fmt.Println("language == common.JavaProgrammingLanguage", language == common.JavaProgrammingLanguage)
 			if action.Spec.SpanRenamer.JavaQuartz != nil && language == common.JavaProgrammingLanguage {
 				// notice: there can be multiple java quarts span renamer configs,
 				// but we only take the last one.
 				javaQuartzSpanRenamer = action.Spec.SpanRenamer.JavaQuartz
+				gotRenamingConfig = true
 			}
 		}
 	}
 
-	fmt.Println("javaQuartzSpanRenamer == nil", javaQuartzSpanRenamer == nil)
-	if len(spanRenamerScopeConfigs) == 0 && javaQuartzSpanRenamer == nil {
+	if !gotRenamingConfig {
 		return nil
 	}
 
