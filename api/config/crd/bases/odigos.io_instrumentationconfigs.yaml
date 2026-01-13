@@ -277,6 +277,29 @@ spec:
                               - sourceId
                               type: object
                           type: object
+                        spanRenamer:
+                          description: Configuration for span renamer.
+                          properties:
+                            spanRenamerScopeConfigs:
+                              description: list of scopes to rename and the new span
+                                name to use for them.
+                              items:
+                                properties:
+                                  scopeName:
+                                    description: the name of the opentelemetry intrumentation
+                                      scope which the renamed spans are written in.
+                                    type: string
+                                  staticSpanName:
+                                    description: if set, spans matching the above
+                                      conditions will be renamed to this static value.
+                                    type: string
+                                required:
+                                - scopeName
+                                type: object
+                              type: array
+                          required:
+                          - spanRenamerScopeConfigs
+                          type: object
                         urlTemplatization:
                           description: A list of URL templatization configurations
                             to be applied to the traces.

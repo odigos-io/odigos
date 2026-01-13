@@ -572,6 +572,60 @@ spec:
                   - METRICS
                   type: string
                 type: array
+              spanRenamer:
+                description: SpanRenamer is the config for the SpanRenamer Action.
+                properties:
+                  generic:
+                    description: |-
+                      generic span renamer config that works for any programming language and scope name.
+                      can be used as fast response to rename high-cardinality spans if they are ever created.
+                    properties:
+                      programmingLanguage:
+                        description: the programming language which the renamed spans
+                          are written in.
+                        enum:
+                        - java
+                        - python
+                        - go
+                        - dotnet
+                        - javascript
+                        - php
+                        - ruby
+                        - rust
+                        - cplusplus
+                        - mysql
+                        - nginx
+                        - redis
+                        - postgres
+                        - unknown
+                        - ignored
+                        type: string
+                      scopeName:
+                        description: the name of the opentelemetry intrumentation
+                          scope which the renamed spans are written in.
+                        type: string
+                      staticSpanName:
+                        description: if set, spans matching the above conditions will
+                          be renamed to this static value.
+                        type: string
+                    required:
+                    - programmingLanguage
+                    - scopeName
+                    type: object
+                  javaQuartz:
+                    description: java quarts span renamer config that can be used
+                      to rename java quarts spans.
+                    properties:
+                      jobGroupTemplate:
+                        description: if set, the job group will be replaced in span
+                          names to this templated value.
+                        type: string
+                      jobNameTemplate:
+                        description: if set, the job name will be replaced in span
+                          names to this templated value.
+                        type: string
+                    type: object
+                type: object
               urlTemplatization:
                 description: URLTemplatization is the config for the URLTemplatization
                   Action.
