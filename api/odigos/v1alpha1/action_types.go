@@ -81,6 +81,9 @@ type ActionSpec struct {
 
 	// URLTemplatization is the config for the URLTemplatization Action.
 	URLTemplatization *actions.URLTemplatizationConfig `json:"urlTemplatization,omitempty"`
+
+	// SpanRenamer is the config for the SpanRenamer Action.
+	SpanRenamer *actions.SpanRenamerConfig `json:"spanRenamer,omitempty"`
 }
 
 type ActionStatus struct {

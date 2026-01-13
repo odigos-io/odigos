@@ -308,6 +308,40 @@ spec:
                               - sourceId
                               type: object
                           type: object
+                        spanRenamer:
+                          description: Configuration for span renamer.
+                          properties:
+                            constantSpanNameConfigs:
+                              description: list of scopes to rename and the new constant
+                                span name to use for them.
+                              items:
+                                properties:
+                                  constantSpanName:
+                                    description: if set, spans matching the above
+                                      conditions will be renamed to this static value.
+                                    type: string
+                                  scopeName:
+                                    description: the name of the opentelemetry intrumentation
+                                      scope which the renamed spans are written in.
+                                    type: string
+                                required:
+                                - scopeName
+                                type: object
+                              type: array
+                            javaQuartz:
+                              description: specific rename config for java quarts
+                                library spans.
+                              properties:
+                                jobGroupTemplate:
+                                  description: if set, the job group will be replaced
+                                    in span names to this templated value.
+                                  type: string
+                                jobNameTemplate:
+                                  description: if set, the job name will be replaced
+                                    in span names to this templated value.
+                                  type: string
+                              type: object
+                          type: object
                         urlTemplatization:
                           description: A list of URL templatization configurations
                             to be applied to the traces.
