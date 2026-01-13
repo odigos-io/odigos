@@ -1129,6 +1129,7 @@ func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, n
 					Name:                     component.Name,
 					Type:                     typeStr,
 					Healthy:                  healthy,
+					Message:                  &component.Message,
 					LastStatusTime:           lastStatusTime,
 					NonIdentifyingAttributes: nonIdentifyingAttributes,
 				})

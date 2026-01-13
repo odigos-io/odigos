@@ -434,6 +434,7 @@ type InstrumentationInstanceComponent struct {
 	Name                     string                     `json:"name"`
 	Type                     *string                    `json:"type,omitempty"`
 	Healthy                  *bool                      `json:"healthy,omitempty"`
+	Message                  *string                    `json:"message,omitempty"`
 	LastStatusTime           *string                    `json:"lastStatusTime,omitempty"`
 	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
@@ -1575,10 +1576,10 @@ const (
 	K8sResourceKindDeployment       K8sResourceKind = "Deployment"
 	K8sResourceKindDaemonSet        K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet      K8sResourceKind = "StatefulSet"
-	K8sResourceKindStaticPod        K8sResourceKind = "StaticPod"
 	K8sResourceKindCronJob          K8sResourceKind = "CronJob"
 	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
 	K8sResourceKindPod              K8sResourceKind = "Pod"
+	K8sResourceKindStaticPod        K8sResourceKind = "StaticPod"
 	K8sResourceKindDeploymentConfig K8sResourceKind = "DeploymentConfig"
 	K8sResourceKindRollout          K8sResourceKind = "Rollout"
 )
@@ -1587,17 +1588,17 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDeployment,
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
-	K8sResourceKindStaticPod,
 	K8sResourceKindCronJob,
 	K8sResourceKindConfigMap,
 	K8sResourceKindPod,
+	K8sResourceKindStaticPod,
 	K8sResourceKindDeploymentConfig,
 	K8sResourceKindRollout,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout:
 		return true
 	}
 	return false

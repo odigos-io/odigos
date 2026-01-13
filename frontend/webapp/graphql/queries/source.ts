@@ -91,6 +91,7 @@ export const GET_SOURCE_LIBRARIES = gql`
       name
       type
       healthy
+      message
       lastStatusTime
       nonIdentifyingAttributes {
         key

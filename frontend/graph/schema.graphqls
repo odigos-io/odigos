@@ -10,6 +10,7 @@ enum K8sResourceKind {
   CronJob
   ConfigMap
   Pod
+  StaticPod
   DeploymentConfig
   Rollout
 }
@@ -864,6 +865,7 @@ type InstrumentationInstanceComponent {
   name: String!
   type: String
   healthy: Boolean
+  message: String
   lastStatusTime: String
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
