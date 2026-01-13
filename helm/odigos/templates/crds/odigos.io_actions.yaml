@@ -580,6 +580,10 @@ spec:
                       generic span renamer config that works for any programming language and scope name.
                       can be used as fast response to rename high-cardinality spans if they are ever created.
                     properties:
+                      constantSpanName:
+                        description: if set, spans matching the above conditions will
+                          be renamed to this constant value.
+                        type: string
                       programmingLanguage:
                         description: the programming language which the renamed spans
                           are written in.
@@ -604,11 +608,8 @@ spec:
                         description: the name of the opentelemetry intrumentation
                           scope which the renamed spans are written in.
                         type: string
-                      staticSpanName:
-                        description: if set, spans matching the above conditions will
-                          be renamed to this static value.
-                        type: string
                     required:
+                    - constantSpanName
                     - programmingLanguage
                     - scopeName
                     type: object

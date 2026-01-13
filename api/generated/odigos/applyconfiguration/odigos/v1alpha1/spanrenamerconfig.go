@@ -17,10 +17,15 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+)
+
 // SpanRenamerConfigApplyConfiguration represents a declarative configuration of the SpanRenamerConfig type for use
 // with apply.
 type SpanRenamerConfigApplyConfiguration struct {
-	SpanRenamerScopeConfigs []SpanRenamerScopeConfigApplyConfiguration `json:"spanRenamerScopeConfigs,omitempty"`
+	ConstantSpanNameConfigs []SpanRenamerScopeConfigApplyConfiguration `json:"constantSpanNameConfigs,omitempty"`
+	JavaQuartz              *actions.SpanRenamerJavaQuartz             `json:"javaQuartz,omitempty"`
 }
 
 // SpanRenamerConfigApplyConfiguration constructs a declarative configuration of the SpanRenamerConfig type for use with
@@ -29,15 +34,23 @@ func SpanRenamerConfig() *SpanRenamerConfigApplyConfiguration {
 	return &SpanRenamerConfigApplyConfiguration{}
 }
 
-// WithSpanRenamerScopeConfigs adds the given value to the SpanRenamerScopeConfigs field in the declarative configuration
+// WithConstantSpanNameConfigs adds the given value to the ConstantSpanNameConfigs field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the SpanRenamerScopeConfigs field.
-func (b *SpanRenamerConfigApplyConfiguration) WithSpanRenamerScopeConfigs(values ...*SpanRenamerScopeConfigApplyConfiguration) *SpanRenamerConfigApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the ConstantSpanNameConfigs field.
+func (b *SpanRenamerConfigApplyConfiguration) WithConstantSpanNameConfigs(values ...*SpanRenamerScopeConfigApplyConfiguration) *SpanRenamerConfigApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithSpanRenamerScopeConfigs")
+			panic("nil value passed to WithConstantSpanNameConfigs")
 		}
-		b.SpanRenamerScopeConfigs = append(b.SpanRenamerScopeConfigs, *values[i])
+		b.ConstantSpanNameConfigs = append(b.ConstantSpanNameConfigs, *values[i])
 	}
+	return b
+}
+
+// WithJavaQuartz sets the JavaQuartz field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the JavaQuartz field is set to the value of the last call.
+func (b *SpanRenamerConfigApplyConfiguration) WithJavaQuartz(value actions.SpanRenamerJavaQuartz) *SpanRenamerConfigApplyConfiguration {
+	b.JavaQuartz = &value
 	return b
 }

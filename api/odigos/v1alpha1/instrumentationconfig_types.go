@@ -310,12 +310,12 @@ type SpanRenamerScopeConfig struct {
 	ScopeName string `json:"scopeName"`
 
 	// if set, spans matching the above conditions will be renamed to this static value.
-	StaticSpanName string `json:"staticSpanName,omitempty"`
+	ConstantSpanName string `json:"constantSpanName,omitempty"`
 }
 
 type SpanRenamerConfig struct {
-	// list of scopes to rename and the new span name to use for them.
-	SpanRenamerScopeConfigs []SpanRenamerScopeConfig `json:"spanRenamerScopeConfigs"`
+	// list of scopes to rename and the new constant span name to use for them.
+	ConstantSpanNameConfigs []SpanRenamerScopeConfig `json:"constantSpanNameConfigs"`
 
 	JavaQuartz *actions.SpanRenamerJavaQuartz `json:"javaQuartz,omitempty"`
 }

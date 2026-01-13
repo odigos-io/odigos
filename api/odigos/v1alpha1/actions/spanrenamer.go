@@ -16,8 +16,8 @@ type SpanRenamerGeneric struct {
 	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
 	ScopeName string `json:"scopeName"`
 
-	// if set, spans matching the above conditions will be renamed to this static value.
-	StaticSpanName string `json:"staticSpanName,omitempty"`
+	// if set, spans matching the above conditions will be renamed to this constant value.
+	ConstantSpanName string `json:"constantSpanName"`
 }
 
 // can be used to rename java quarts spans.

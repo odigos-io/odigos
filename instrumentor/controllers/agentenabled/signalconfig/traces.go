@@ -212,8 +212,6 @@ func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, languag
 	var javaQuartzSpanRenamer *actions.SpanRenamerJavaQuartz
 
 	for _, action := range *agentLevelActions {
-		fmt.Println("action", action.Name)
-		fmt.Println("action.Spec.SpanRenamer", action.Spec.SpanRenamer)
 		if action.Spec.SpanRenamer != nil {
 			if action.Spec.SpanRenamer.Generic != nil {
 				if action.Spec.SpanRenamer.Generic.ProgrammingLanguage == language {
@@ -234,7 +232,7 @@ func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, languag
 		}
 	}
 
-	if len(spanRenamerScopeConfigs) == 0 || javaQuartzSpanRenamer == nil {
+	if len(spanRenamerScopeConfigs) == 0 && javaQuartzSpanRenamer == nil {
 		return nil
 	}
 

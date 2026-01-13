@@ -20,8 +20,8 @@ package v1alpha1
 // SpanRenamerScopeConfigApplyConfiguration represents a declarative configuration of the SpanRenamerScopeConfig type for use
 // with apply.
 type SpanRenamerScopeConfigApplyConfiguration struct {
-	ScopeName      *string `json:"scopeName,omitempty"`
-	StaticSpanName *string `json:"staticSpanName,omitempty"`
+	ScopeName        *string `json:"scopeName,omitempty"`
+	ConstantSpanName *string `json:"constantSpanName,omitempty"`
 }
 
 // SpanRenamerScopeConfigApplyConfiguration constructs a declarative configuration of the SpanRenamerScopeConfig type for use with
@@ -38,10 +38,10 @@ func (b *SpanRenamerScopeConfigApplyConfiguration) WithScopeName(value string) *
 	return b
 }
 
-// WithStaticSpanName sets the StaticSpanName field in the declarative configuration to the given value
+// WithConstantSpanName sets the ConstantSpanName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the StaticSpanName field is set to the value of the last call.
-func (b *SpanRenamerScopeConfigApplyConfiguration) WithStaticSpanName(value string) *SpanRenamerScopeConfigApplyConfiguration {
-	b.StaticSpanName = &value
+// If called multiple times, the ConstantSpanName field is set to the value of the last call.
+func (b *SpanRenamerScopeConfigApplyConfiguration) WithConstantSpanName(value string) *SpanRenamerScopeConfigApplyConfiguration {
+	b.ConstantSpanName = &value
 	return b
 }
