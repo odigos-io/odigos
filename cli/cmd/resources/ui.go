@@ -520,3 +520,16 @@ func NewUIResourceManager(client *kube.Client, ns string, config *common.OdigosC
 		managerOpts:   managerOpts,
 	}
 }
+
+// Pointer helper functions
+func ptrint32(i int32) *int32 {
+	return &i
+}
+
+func ptrint64(i int64) *int64 {
+	return &i
+}
+
+func ptrbool(b bool) *bool {
+	return &b
+}
