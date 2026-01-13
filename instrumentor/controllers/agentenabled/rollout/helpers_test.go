@@ -100,7 +100,10 @@ func (s *testSetup) newFakeClientWithICUpdateError(objects ...client.Object) cli
 // ****************
 // Assert helpers
 // ****************
-func assertNoRollout(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+
+// assertNoStatusChange verifies Do() returned without changing IC status.
+// Note: This does NOT check whether the workload was restarted - use assertWorkloadRestarted/assertWorkloadNotRestarted for that.
+func assertNoStatusChange(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
 	t.Helper()
 	assert.NoError(t, err)
 	assert.False(t, statusChanged, "expected no status change")
@@ -114,11 +117,30 @@ func assertTriggeredRolloutNoRequeue(t *testing.T, statusChanged bool, result re
 	assert.Equal(t, reconcile.Result{}, result)
 }
 
-func assertErrorNoRollout(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+// assertErrorNoStatusChange verifies Do() returned an error without changing IC status.
+func assertErrorNoStatusChange(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
 	t.Helper()
 	assert.Error(t, err)
 	assert.False(t, statusChanged, "expected no status change on error")
 	assert.Equal(t, reconcile.Result{}, result)
+}
+
+// assertWorkloadRestarted verifies the workload was restarted by checking for the restartedAt annotation.
+func assertWorkloadRestarted(t *testing.T, ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) {
+	t.Helper()
+	var dep appsv1.Deployment
+	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, &dep)
+	assert.NoError(t, err)
+	assert.Contains(t, dep.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt", "expected workload to be restarted (restartedAt annotation)")
+}
+
+// assertWorkloadNotRestarted verifies the workload was NOT restarted by checking absence of restartedAt annotation.
+func assertWorkloadNotRestarted(t *testing.T, ctx context.Context, c client.Client, pw k8sconsts.PodWorkload) {
+	t.Helper()
+	var dep appsv1.Deployment
+	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, &dep)
+	assert.NoError(t, err)
+	assert.NotContains(t, dep.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt", "expected workload NOT to be restarted")
 }
 
 func assertTriggeredRolloutWithRequeue(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
@@ -147,6 +169,35 @@ func newMockDeploymentMidRollout(ns *corev1.Namespace, name string) *appsv1.Depl
 	deployment.Generation = 2
 	deployment.Status.ObservedGeneration = 1
 	return deployment
+}
+
+// newMockArgoRollout creates an Argo Rollout in a stable state.
+func newMockArgoRollout(ns *corev1.Namespace, name string) *argorolloutsv1alpha1.Rollout {
+	return &argorolloutsv1alpha1.Rollout{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       name,
+			Namespace:  ns.Name,
+			Generation: 1,
+		},
+		Spec: argorolloutsv1alpha1.RolloutSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app.kubernetes.io/name": name},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "test", Image: "test"},
+					},
+				},
+			},
+		},
+		Status: argorolloutsv1alpha1.RolloutStatus{
+			ObservedGeneration: "1",
+		},
+	}
 }
 
 // newMockArgoRolloutMidRollout creates an Argo Rollout in a mid-rollout state (Generation > ObservedGeneration).

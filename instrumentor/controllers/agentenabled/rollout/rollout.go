@@ -166,7 +166,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
-		rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
+		// Uses IsWorkloadRolloutDoneFunc instead of IsWorkloadRolloutDone to allow for mocking in tests
+		rolloutDone := utils.IsWorkloadRolloutDoneFunc(workloadObj)
 		if !rolloutDone && !rollbackDisabled {
 			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
@@ -234,7 +235,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false
-	if !utils.IsWorkloadRolloutDone(workloadObj) {
+	// Uses IsWorkloadRolloutDoneFunc instead of IsWorkloadRolloutDone to allow for mocking in tests
+	if !utils.IsWorkloadRolloutDoneFunc(workloadObj) {
 		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionUnknown,
@@ -287,7 +289,7 @@ func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c cl
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, rolloutPatch))
 	case *corev1.Pod:
 		if workload.IsStaticPod(obj) {
-			return errors.New("can't restart static pods")			
+			return errors.New("can't restart static pods")
 		}
 		return errors.New("currently not supporting standalone pods as workloads for rollout")
 	default:

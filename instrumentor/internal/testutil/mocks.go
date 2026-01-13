@@ -138,6 +138,24 @@ func NewMockTestStatefulSet(ns *corev1.Namespace) *appsv1.StatefulSet {
 	}
 }
 
+func NewMockTestStaticPod(ns *corev1.Namespace, name string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns.GetName(),
+			Annotations: map[string]string{
+				"kubernetes.io/config.source": "file",
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind: "Node",
+					Name: "test-node",
+				},
+			},
+		},
+	}
+}
+
 func NewMockTestCronJob(ns *corev1.Namespace, name string) *batchv1beta1.CronJob {
 	return &batchv1beta1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{

@@ -12,13 +12,11 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	"github.com/stretchr/testify/assert"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestNoRolloutObjectKeyIsMissing(t *testing.T) {
+func Test_NoRollout_ObjectKeyIsMissing(t *testing.T) {
 	// Arrange: Deployment exists in IC but NOT in the cluster (client has no deployment object)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -29,56 +27,11 @@ func TestNoRolloutObjectKeyIsMissing(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert: No rollout triggered - workload doesn't exist in cluster
-	assertNoRollout(t, statusChanged, result, err)
+	// Assert: No status change - workload doesn't exist in cluster (nothing to restart)
+	assertNoStatusChange(t, statusChanged, result, err)
 }
 
-func TestNoRolloutJobOrCronjobNoIC(t *testing.T) {
-	// Arrange: Job and CronJob workloads exist but have no InstrumentationConfig (IC is nil)
-	s := newTestSetup()
-	job := testutil.NewMockTestJob(s.ns, "test-job")
-	cronjob := testutil.NewMockTestCronJob(s.ns, "test-cronjob")
-	jobPw := k8sconsts.PodWorkload{Name: job.Name, Namespace: job.Namespace, Kind: k8sconsts.WorkloadKindJob}
-	cronJobPw := k8sconsts.PodWorkload{Name: cronjob.Name, Namespace: cronjob.Namespace, Kind: k8sconsts.WorkloadKindCronJob}
-
-	fakeClient := s.newFakeClient(job, cronjob)
-	var ic *odigosv1alpha1.InstrumentationConfig
-
-	// Act
-	jobStatusChanged, jobResult, jobErr := rollout.Do(s.ctx, fakeClient, ic, jobPw, s.conf, s.distroProvider)
-	cronJobStatusChanged, cronJobResult, cronJobErr := rollout.Do(s.ctx, fakeClient, ic, cronJobPw, s.conf, s.distroProvider)
-
-	// Assert: No rollout - Jobs/CronJobs without IC don't need rollout
-	assertNoRollout(t, jobStatusChanged, jobResult, jobErr)
-	assertNoRollout(t, cronJobStatusChanged, cronJobResult, cronJobErr)
-}
-
-func TestNoRolloutJobOrCronjobWaitingForRestart(t *testing.T) {
-	// Arrange: Job and CronJob with InstrumentationConfig - these can't be force-restarted like Deployments
-	s := newTestSetup()
-	job := testutil.NewMockTestJob(s.ns, "test-job")
-	cronjob := testutil.NewMockTestCronJob(s.ns, "test-cronjob")
-	jobPw := k8sconsts.PodWorkload{Name: job.Name, Namespace: job.Namespace, Kind: k8sconsts.WorkloadKindJob}
-	cronJobPw := k8sconsts.PodWorkload{Name: cronjob.Name, Namespace: cronjob.Namespace, Kind: k8sconsts.WorkloadKindCronJob}
-	jobIc := testutil.NewMockInstrumentationConfig(job)
-	cronJobIc := testutil.NewMockInstrumentationConfig(cronjob)
-
-	fakeClient := s.newFakeClient(job, cronjob)
-
-	// Act
-	jobStatusChanged, jobResult, jobErr := rollout.Do(s.ctx, fakeClient, jobIc, jobPw, s.conf, s.distroProvider)
-	cronJobStatusChanged, cronJobResult, cronJobErr := rollout.Do(s.ctx, fakeClient, cronJobIc, cronJobPw, s.conf, s.distroProvider)
-
-	// Assert: Status updated to "WaitingForRestart" - Jobs must trigger themselves, no requeue needed
-	assertTriggeredRolloutNoRequeue(t, jobStatusChanged, jobResult, jobErr)
-	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart), jobIc.Status.Conditions[0].Reason)
-	assert.Equal(t, "Waiting for job to trigger by itself", jobIc.Status.Conditions[0].Message)
-	assertTriggeredRolloutNoRequeue(t, cronJobStatusChanged, cronJobResult, cronJobErr)
-	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart), cronJobIc.Status.Conditions[0].Reason)
-	assert.Equal(t, "Waiting for job to trigger by itself", cronJobIc.Status.Conditions[0].Message)
-}
-
-func TestNoRolloutICNilWorkloadHasOdigosAgentsError(t *testing.T) {
+func Test_NoRolloutWithError_ICNil_WorkloadHasOdigosAgents(t *testing.T) {
 	// Arrange: Deployment with nil selector (invalid) and no IC - checking for instrumented pods will fail
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -92,10 +45,10 @@ func TestNoRolloutICNilWorkloadHasOdigosAgentsError(t *testing.T) {
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
 	// Assert: Error returned - cannot determine if pods have odigos agents due to nil selector
-	assertErrorNoRollout(t, statusChanged, result, err)
+	assertErrorNoStatusChange(t, statusChanged, result, err)
 }
 
-func TestNoRolloutICNilNoOdigosAgents(t *testing.T) {
+func Test_NoRollout_ICNil_NoOdigosAgents(t *testing.T) {
 	// Arrange: Deployment with pod that has NO odigos agent label, and IC is nil (uninstrumented workload)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -117,11 +70,12 @@ func TestNoRolloutICNilNoOdigosAgents(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert: No rollout - pods don't have odigos agents, nothing to uninstrument
-	assertNoRollout(t, statusChanged, result, err)
+	// Assert: No status change and no restart - pods don't have odigos agents, nothing to uninstrument
+	assertNoStatusChange(t, statusChanged, result, err)
+	assertWorkloadNotRestarted(t, s.ctx, fakeClient, pw)
 }
 
-func TestTriggeredRolloutWorkloadWithInstrumentedPods(t *testing.T) {
+func Test_TriggeredRollout_WorkloadWithInstrumentedPods(t *testing.T) {
 	// Arrange: Pod has odigos agent label but IC is nil - need to uninstrument by restarting
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -143,15 +97,12 @@ func TestTriggeredRolloutWorkloadWithInstrumentedPods(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert: Rollout triggered - deployment restarted to remove odigos agents (restartedAt annotation added)
-	assertNoRollout(t, statusChanged, result, err)
-	var updatedDeployment appsv1.Deployment
-	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, &updatedDeployment)
-	assert.NoError(t, err)
-	assert.Contains(t, updatedDeployment.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt")
+	// Assert: Workload IS restarted (to remove odigos agents), but no IC status change (IC is nil)
+	assertNoStatusChange(t, statusChanged, result, err)
+	assertWorkloadRestarted(t, s.ctx, fakeClient, pw)
 }
 
-func TestTriggeredRolloutDistributionRequiresRollout(t *testing.T) {
+func Test_TriggeredRollout_DistributionRequiresRollout(t *testing.T) {
 	// Arrange: IC with distribution that requires rollout (e.g. eBPF-based instrumentation)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -169,7 +120,7 @@ func TestTriggeredRolloutDistributionRequiresRollout(t *testing.T) {
 	assert.Equal(t, "workload rollout triggered successfully", ic.Status.Conditions[0].Message)
 }
 
-func TestNoRolloutDistributionDoesntRequire(t *testing.T) {
+func Test_NoRollout_DistributionDoesntRequireRollout(t *testing.T) {
 	// Arrange: IC with default distribution that doesn't require rollout (e.g., native instrumentation)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")

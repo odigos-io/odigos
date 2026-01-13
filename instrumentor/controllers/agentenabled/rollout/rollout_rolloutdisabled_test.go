@@ -9,13 +9,11 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	"github.com/stretchr/testify/assert"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestNoRolloutICNilAutomaticRolloutDisabled(t *testing.T) {
+func Test_NoRollout_ICNil_AutomaticRolloutDisabled(t *testing.T) {
 	// Arrange: Pod has odigos agent label but IC is nil AND automatic rollout is disabled in config
 	s := newTestSetup()
 	automaticRolloutDisabled := true
@@ -42,15 +40,11 @@ func TestNoRolloutICNilAutomaticRolloutDisabled(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert: No rollout - automatic rollout disabled, deployment NOT restarted even though it has agents
-	assertNoRollout(t, statusChanged, result, err)
-	// Verify deployment was NOT restarted
-	var updatedDeployment appsv1.Deployment
-	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, &updatedDeployment)
-	assert.NoError(t, err)
-	assert.NotContains(t, updatedDeployment.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt")
+	// Assert: No status change and workload NOT restarted - automatic rollout disabled
+	assertNoStatusChange(t, statusChanged, result, err)
+	assertWorkloadNotRestarted(t, s.ctx, fakeClient, pw)
 }
-func TestNoRolloutInvalidRollbackGraceTime(t *testing.T) {
+func Test_NoRollout_InvalidRollbackGraceTime(t *testing.T) {
 	// Arrange: Config has invalid RollbackGraceTime string that can't be parsed as duration
 	s := newTestSetup()
 	s.conf.RollbackGraceTime = "invalid"
@@ -64,10 +58,10 @@ func TestNoRolloutInvalidRollbackGraceTime(t *testing.T) {
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
 	// Assert: Error returned - invalid config prevents rollout
-	assertErrorNoRollout(t, statusChanged, result, err)
+	assertErrorNoStatusChange(t, statusChanged, result, err)
 }
 
-func TestNoRolloutInvalidRollbackStabilityWindow(t *testing.T) {
+func Test_NoRollout_InvalidRollbackStabilityWindow(t *testing.T) {
 	// Arrange: Config has invalid RollbackStabilityWindow string that can't be parsed as duration
 	s := newTestSetup()
 	s.conf.RollbackStabilityWindow = "invalid"
@@ -81,10 +75,10 @@ func TestNoRolloutInvalidRollbackStabilityWindow(t *testing.T) {
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
 	// Assert: Error returned - invalid config prevents rollout
-	assertErrorNoRollout(t, statusChanged, result, err)
+	assertErrorNoStatusChange(t, statusChanged, result, err)
 }
 
-func TestTriggeredRolloutConfigNil(t *testing.T) {
+func Test_TriggeredRollout_ConfigNil(t *testing.T) {
 	// Arrange: IC requires rollout and s.conf.Rollout is nil (default config allows automatic rollout)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -101,7 +95,7 @@ func TestTriggeredRolloutConfigNil(t *testing.T) {
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
-func TestTriggeredRolloutAutomaticRolloutDisabledNil(t *testing.T) {
+func Test_TriggeredRollout_AutomaticRolloutDisabledNil(t *testing.T) {
 	// Arrange: RolloutConfiguration exists but AutomaticRolloutDisabled is nil (defaults to enabled)
 	s := newTestSetup()
 	s.conf.Rollout = &common.RolloutConfiguration{}
@@ -119,7 +113,7 @@ func TestTriggeredRolloutAutomaticRolloutDisabledNil(t *testing.T) {
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
-func TestTriggeredRolloutAutomaticRolloutDisabledFalse(t *testing.T) {
+func Test_TriggeredRollout_AutomaticRolloutDisabledFalse(t *testing.T) {
 	// Arrange: AutomaticRolloutDisabled explicitly set to false (rollout enabled)
 	s := newTestSetup()
 	automaticRolloutDisabled := false
@@ -140,7 +134,7 @@ func TestTriggeredRolloutAutomaticRolloutDisabledFalse(t *testing.T) {
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
-func TestNoRolloutAutomaticRolloutDisabledTrue(t *testing.T) {
+func Test_NoRollout_AutomaticRolloutDisabledTrue(t *testing.T) {
 	// Arrange: AutomaticRolloutDisabled explicitly set to true (rollout disabled by user)
 	s := newTestSetup()
 	automaticRolloutDisabled := true

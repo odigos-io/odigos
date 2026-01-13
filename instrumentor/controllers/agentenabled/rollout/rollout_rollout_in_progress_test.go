@@ -8,13 +8,14 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestNoRolloutMidRolloutAlreadyComplete(t *testing.T) {
+func Test_NoRollout_PodInMidRollout_AlreadyComplete(t *testing.T) {
 	// Arrange: IC shows mid-rollout state but deployment has already completed rolling out (no pending replicas)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -26,11 +27,11 @@ func TestNoRolloutMidRolloutAlreadyComplete(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert: No rollout needed - workload rollout already complete
-	assertNoRollout(t, statusChanged, result, err)
+	// Assert: No status change - workload rollout already complete
+	assertNoStatusChange(t, statusChanged, result, err)
 }
 
-func TestNoRolloutMidRolloutWaitingNoBackoff(t *testing.T) {
+func Test_NoRollout_PodInMidRollout_WaitingNoBackoff(t *testing.T) {
 	// Arrange: Mid-rollout deployment with healthy running pod - no crashloop, just waiting for rollout
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
@@ -75,7 +76,7 @@ func TestNoRolloutMidRolloutWaitingNoBackoff(t *testing.T) {
 	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
 }
 
-func TestTriggeredRolloutPreviousRolloutOngoing(t *testing.T) {
+func Test_TriggeredRollout_PodInMidRollout_PreviousRolloutOngoing(t *testing.T) {
 	// Arrange: Deployment mid-rollout with different hash in IC status - a previous rollout is still in progress
 	s := newTestSetup()
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
@@ -85,6 +86,35 @@ func TestTriggeredRolloutPreviousRolloutOngoing(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
+
+	// Act
+	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
+
+	// Assert: Status updated to "PreviousRolloutOngoing", requeue to wait for previous rollout
+	assert.NoError(t, err)
+	assert.True(t, statusChanged, "expected status change")
+	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
+	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing), ic.Status.Conditions[0].Reason)
+}
+
+func Test_TriggeredRolloutRequeue_RolloutInProgress_TriggeredExternally(t *testing.T) {
+	// Arrange: Deployment looks complete by status fields, but we mock IsWorkloadRolloutDoneFunc
+	// to return false, simulating a rollout triggered externally (e.g., kubectl rollout restart)
+	s := newTestSetup()
+	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
+	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
+	// Set a DIFFERENT hash to trigger new rollout path
+	ic.Status.WorkloadRolloutHash = "old-hash"
+	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
+
+	fakeClient := s.newFakeClient(deployment)
+
+	// Mock IsWorkloadRolloutDoneFunc to return false (rollout in progress)
+	original := utils.IsWorkloadRolloutDoneFunc
+	defer func() { utils.IsWorkloadRolloutDoneFunc = original }()
+	utils.IsWorkloadRolloutDoneFunc = func(_ metav1.Object) bool {
+		return false
+	}
 
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)

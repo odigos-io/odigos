@@ -202,6 +202,11 @@ func isArgoRolloutRolloutDone(rollout *argorolloutsv1alpha1.Rollout) bool {
 	return true
 }
 
+// IsWorkloadRolloutDoneFunc is a variable that holds the IsWorkloadRolloutDone function.
+// This allows tests to override the function for mocking purposes.
+// TODO: remove this in favor of generating mocks with mockgen. see CORE-531
+var IsWorkloadRolloutDoneFunc = IsWorkloadRolloutDone
+
 func IsWorkloadRolloutDone(obj metav1.Object) bool {
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
