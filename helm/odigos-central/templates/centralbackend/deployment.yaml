@@ -20,6 +20,29 @@ spec:
     spec:
       serviceAccountName: central-backend
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+      {{- if .Values.centralBackend.waitForKeycloak.enabled }}
+      initContainers:
+        - name: wait-for-keycloak
+          image: {{ .Values.centralBackend.waitForKeycloak.image | quote }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              start="$(date +%s)"
+              while true; do
+                if wget -q -T 2 -O /dev/null "{{ .Values.centralBackend.waitForKeycloak.url }}"; then
+                  echo "keycloak is reachable"
+                  exit 0
+                fi
+                now="$(date +%s)"
+                if [ "$((now - start))" -ge {{ .Values.centralBackend.waitForKeycloak.timeoutSeconds }} ]; then
+                  echo "timeout (60s) waiting for keycloak"
+                  exit 1
+                fi
+                echo "waiting for keycloak..."
+                sleep {{ .Values.centralBackend.waitForKeycloak.pollIntervalSeconds }}
+              done
+      {{- end }}
       containers:
         - name: central-backend
           {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}

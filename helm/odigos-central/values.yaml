@@ -11,6 +11,18 @@ centralBackend:
   # Resources and scheduling for the Central backend
   # -- Maximum message size in bytes for gRPC messages (empty = use default)
   # maxMessageSize: ''
+  # Gate central-backend startup on Keycloak readiness (initContainer).
+  # Set enabled=false to allow central-backend to start without waiting for Keycloak.
+  waitForKeycloak:
+    enabled: false
+    # -- Container image used for the wait loop (must include `sh` + `wget`)
+    image: busybox:1.36.1
+    # -- URL checked for Keycloak readiness (200/OK expected)
+    url: http://keycloak:8080/realms/master
+    # -- Max time to wait before failing the pod startup
+    timeoutSeconds: 60
+    # -- Poll interval between retries
+    pollIntervalSeconds: 2
   resources:
     requests:
       cpu: 100m

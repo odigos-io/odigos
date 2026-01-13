@@ -23,7 +23,12 @@ import (
 )
 
 type CentralBackendConfig struct {
-	MaxMessageSize string
+	MaxMessageSize  string
+	WaitForKeycloak WaitForKeycloakConfig
+}
+
+type WaitForKeycloakConfig struct {
+	Enabled bool
 }
 
 type centralBackendResourceManager struct {
@@ -97,6 +102,49 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 		})
 	}
 
+	// Keycloak is required for central-backend auth bootstrapping.
+	// Optionally gate startup with an initContainer (useful for installation ordering).
+	// Timeout is intentionally hard-coded (60s) to keep CLI behavior simple and predictable.
+	const (
+		waitForKeycloakImage         = "busybox:1.36.1"
+		waitForKeycloakTimeoutSecs   = 60
+		waitForKeycloakPollInterval  = 2
+	)
+	keycloakURL := fmt.Sprintf("http://%s:%d/realms/master", k8sconsts.KeycloakServiceName, k8sconsts.KeycloakPort)
+
+	waitForKeycloakScript := fmt.Sprintf(`#!/bin/sh
+set -eu
+
+start="$(date +%%s)"
+while true; do
+  if wget -q -T 2 -O /dev/null %q; then
+    echo "keycloak is reachable"
+    exit 0
+  fi
+
+  now="$(date +%%s)"
+  if [ "$((now - start))" -ge %d ]; then
+    echo "timeout (%ds) waiting for keycloak at %s"
+    exit 1
+  fi
+
+  echo "waiting for keycloak..."
+  sleep %d
+done
+`, keycloakURL, waitForKeycloakTimeoutSecs, waitForKeycloakTimeoutSecs, keycloakURL, waitForKeycloakPollInterval)
+
+	var initContainers []corev1.Container
+	if config.WaitForKeycloak.Enabled {
+		initContainers = []corev1.Container{
+			{
+				Name:    "wait-for-keycloak",
+				Image:   waitForKeycloakImage,
+				Command: []string{"sh", "-c"},
+				Args:    []string{waitForKeycloakScript},
+			},
+		}
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -118,6 +166,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 				Spec: corev1.PodSpec{
 					ServiceAccountName: k8sconsts.CentralBackendServiceAccountName,
 					ImagePullSecrets:   pullRefs,
+					InitContainers:     initContainers,
 					Containers: []corev1.Container{
 						{
 							Name:  k8sconsts.CentralBackendAppName,

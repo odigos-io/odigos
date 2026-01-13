@@ -294,10 +294,11 @@ var centralCmd = &cobra.Command{
 }
 
 var (
-	centralAdminUser            string
-	centralAdminPassword        string
-	centralAuthStorageClassName string
-	centralMaxMessageSize       string
+	centralAdminUser              string
+	centralAdminPassword          string
+	centralAuthStorageClassName   string
+	centralMaxMessageSize         string
+	centralWaitForKeycloakEnabled bool
 )
 
 var centralInstallCmd = &cobra.Command{
@@ -420,6 +421,9 @@ var centralUpgradeCmd = &cobra.Command{
 		uiManager := centralodigos.NewCentralUIResourceManager(client, ns, managerOpts, versionFlag)
 		backendConfig := centralodigos.CentralBackendConfig{
 			MaxMessageSize: centralMaxMessageSize,
+			WaitForKeycloak: centralodigos.WaitForKeycloakConfig{
+				Enabled: centralWaitForKeycloakEnabled,
+			},
 		}
 		backendManager := centralodigos.NewCentralBackendResourceManager(client, ns, versionFlag, managerOpts, backendConfig)
 		if err := resources.ApplyResourceManagers(ctx, client, []resourcemanager.ResourceManager{uiManager, backendManager}, "Upgrading"); err != nil {
@@ -485,6 +489,9 @@ func installCentralBackendAndUI(ctx context.Context, client *kube.Client, ns str
 		},
 		CentralBackend: centralodigos.CentralBackendConfig{
 			MaxMessageSize: centralMaxMessageSize,
+			WaitForKeycloak: centralodigos.WaitForKeycloakConfig{
+				Enabled: centralWaitForKeycloakEnabled,
+			},
 		},
 	}
 	resourceManagers := resources.CreateCentralizedManagers(client, managerOpts, ns, versionFlag, config)
@@ -610,12 +617,15 @@ func init() {
 	centralUpgradeCmd.MarkFlagRequired("version")
 	centralUpgradeCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
 	centralUpgradeCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
+	centralUpgradeCmd.Flags().BoolVar(&centralWaitForKeycloakEnabled, "wait-for-keycloak", false, "Wait for Keycloak to become reachable before starting central-backend (initContainer; fixed 60s timeout)")
 
 	// Central configuration flags
 	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
 	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password (auto-generated if not provided)")
 	centralInstallCmd.Flags().StringVar(&centralAuthStorageClassName, "central-storage-class-name", "", "StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)")
 	centralInstallCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
+	centralInstallCmd.Flags().BoolVar(&centralWaitForKeycloakEnabled, "wait-for-keycloak", false, "Wait for Keycloak to become reachable before starting central-backend (initContainer; fixed 60s timeout)")
+
 	centralCmd.AddCommand(portForwardCentralCmd)
 	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 }
