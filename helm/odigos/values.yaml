@@ -25,7 +25,7 @@ imagePrefix:
 images: {}
 
 # namespaces list not to show in odigos ui
-# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease, odigos-system
+# set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease
 # you can add additional namespaces to ignore by adding them to the list
 ignoredNamespaces:
 
@@ -334,17 +334,6 @@ instrumentor:
     limits:
       cpu: 500m
       memory: 512Mi
-  # skipWebhookIssuerCreation:
-  #   - This flag controls whether the chart should skip creating an Issuer
-  #     and associated Certificate for securing the mutating webhook communication.
-  #   - Setting this to "true" will skip the creation of an Issuer and Certificate,
-  #     even if cert-manager is detected in the cluster and the required API version is available.
-  #   - In some cases, the Issuer and Certificate are necessary for the instrumentor service
-  #     to run its pod mutating webhook, which requires a signed certificate to comply with
-  #     Kubernetes' TLS requirements.
-  #   - If cert-manager is not installed or detected, no Issuer or Certificate will be created
-  #     regardless of this flag.
-  skipWebhookIssuerCreation: false
   # how to add the required environment variables for instrumentation to a container
   # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
   # pod-manifest: add the environment variables to the container manifest.
@@ -490,10 +479,10 @@ centralProxy:
   tls:
     # Skip TLS certificate verification (for testing/self-signed certificates)
     skipVerify: false
-    
+
     # Secret name containing CA certificate (key: 'ca.crt')
     caSecretName: ''
-    
+
     # Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')
     clientCertSecretName: ''
 
@@ -648,7 +637,7 @@ metricsSources:
     # resourceMetricsKeyAttributes: ['service.name', 'k8s.pod.name']
 
   odigosOwnMetrics:
-    
+
     ## set the interval at which odigos will scrape metrics from itself.
     ## format: duration string (15s, 1m, etc).
     ## default is 10s.
@@ -658,12 +647,24 @@ metricsSources:
 
     ## uncomment the next section to enable computing and reporting
     ## span metrics directly in agents that support it.
-    ## the configuration for agent span metrics is the same as the 
+    ## the configuration for agent span metrics is the same as the
     ## span metrics collector settings.
     ## agents have different capabilities and support different configuration options.
     # spanMetrics:
     #   enabled: true
 
+    runtimeMetrics:
+      java:
+        # Global enable/disable for all JVM metrics
+        # disabled: true
+
+        # Individual metric configuration - each metric can be enabled/disabled
+        metrics:
+          # Class loading metrics
+          - name: jvm.gc.duration
+            disabled: true
+          - name: jvm.memory.used
+            disabled: true
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.

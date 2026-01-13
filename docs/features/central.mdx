@@ -78,29 +78,76 @@ To get started with Odigos Central, you need to install the central components a
 
   </Step>
   <Step title="Connect Remote Clusters">
-    To connect remote clusters to your Central deployment, you can use the `odigos config set` command to configure the central backend URL and cluster name:
+    To connect remote clusters to your Central deployment, you can configure the central backend URL and cluster name during installation or upgrade:
 
     ```bash
-    # Set the central backend URL
-    odigos config set central-backend-url <your-central-backend-url>
-
-    # Set the cluster name for identification in Central
-    odigos config set cluster-name <your-cluster-name>
+    # Set the central backend URL and cluster name
+    odigos install --set centralProxy.centralBackendURL=<your-central-backend-url> --set clusterName=<your-cluster-name>
     ```
 
     **Example:**
     ```bash
     # Configure cluster to connect to Central Backend running on port 8081
-    odigos config set central-backend-url http://central-backend.example.com:8081
-    odigos config set cluster-name production-cluster-1
+    odigos install --set centralProxy.centralBackendURL=http://central-backend.example.com:8081 --set clusterName=production-cluster-1
+    ```
+
+    Alternatively, you can set these values in your `values.yaml` file for Helm installations:
+    ```yaml
+    clusterName: "production-cluster-1"
+    centralProxy:
+      centralBackendURL: "http://central-backend.example.com:8081"
     ```
 
     <Info>
-      The `central-backend-url` should point to your Central Backend service and must include the port number. If you're using port-forward, this would be `http://localhost:8081`.
+      The `centralProxy.centralBackendURL` should point to your Central Backend service and must include the port number. If you're using port-forward, this would be `http://localhost:8081`.
     </Info>
 
   </Step>
 </Steps>
+
+## Authentication
+
+By default, Odigos Central installs **Keycloak** and uses it as the identity provider for the Central UI.
+
+### Okta authentication (SSO via Keycloak)
+
+If your organization uses **Okta**, the recommended setup is to keep the bundled Keycloak and configure **Okta as a SAML Identity Provider in Keycloak** (Keycloak identity brokering).
+
+<Steps>
+  <Step title="Create the SAML Identity Provider in the Odigos Central UI">
+    Create the SAML IdP through the **Odigos Central UI** (the same place you’d add an OIDC Identity Provider).
+
+    <Info>
+      Odigos Central will create/update the required configuration in the bundled Keycloak for you. Avoid configuring the identity provider directly in Keycloak unless you’re troubleshooting.
+    </Info>
+  </Step>
+
+  <Step title="Create an Okta SAML app integration">
+    In Okta, create a **SAML 2.0** app integration.
+
+    <Info>
+      Okta’s UI and exact fields vary. The Okta SAML app configuration needs the **Single sign-on URL (ACS URL)** and the **Audience URI (SP Entity ID)** — you’ll copy these from the SAML Identity Provider configuration in the Central UI.
+    </Info>
+  </Step>
+
+  <Step title="Configure the IdP details and copy the ACS URL / SP Entity ID">
+    In the Central UI, open the SAML Identity Provider you created and configure the IdP details from Okta (for example: **IdP Entity ID / Issuer**, **Single Sign-On Service URL**, and the **X.509 certificate**).
+
+    <Warning>
+      The Central UI will show the **ACS URL** and **SP Entity ID** for Odigos Central. Copy those into your Okta SAML app integration as:
+      - **Single sign-on URL** (ACS URL)
+      - **Audience URI (SP Entity ID)**
+    </Warning>
+  </Step>
+
+  <Step title="Verify Central UI login via Okta">
+    Open the Central UI again (via `odigos pro central ui`) and verify that login redirects you to Okta and back to Odigos Central successfully.
+  </Step>
+</Steps>
+
+<Info>
+  If you’re looking to enable OIDC for the **non-central** Odigos UI (not Odigos Central), see the dedicated OIDC documentation: [`OIDC (OpenID Connect)`](/features/oidc).
+</Info>
 
 <Warning>
   Odigos Central is an Enterprise feature and requires a valid license token. Make
