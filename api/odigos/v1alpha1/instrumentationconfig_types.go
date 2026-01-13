@@ -315,8 +315,9 @@ type SpanRenamerScopeConfig struct {
 
 type SpanRenamerConfig struct {
 	// list of scopes to rename and the new constant span name to use for them.
-	ConstantSpanNameConfigs []SpanRenamerScopeConfig `json:"constantSpanNameConfigs"`
+	ConstantSpanNameConfigs []SpanRenamerScopeConfig `json:"constantSpanNameConfigs,omitempty"`
 
+	// specific rename config for java quarts library spans.
 	JavaQuartz *actions.SpanRenamerJavaQuartz `json:"javaQuartz,omitempty"`
 }
 
