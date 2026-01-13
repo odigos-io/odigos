@@ -463,6 +463,8 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 	case common.K8sInitContainerMountMethod:
 		odigosConfiguration.AgentsInitContainerResources = getInitContainerResources(odigosConfiguration)
 		return
+	case common.K8sCsiDriverMountMethod:
+		return
 	default:
 		// any illegal value will be defaulted to host-path
 		// TODO: emit some error here and think how to handle it

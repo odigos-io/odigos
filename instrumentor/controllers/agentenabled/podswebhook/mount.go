@@ -59,3 +59,14 @@ func MountPodVolumeToEmptyDir(pod *corev1.Pod) {
 		EmptyDir: &corev1.EmptyDirVolumeSource{},
 	})
 }
+
+func MountPodVolumeToCSI(pod *corev1.Pod) {
+	mountPodVolumeIfNotExists(pod, corev1.VolumeSource{
+		CSI: &corev1.CSIVolumeSource{
+			Driver: "odigos.csi.driver",
+			VolumeAttributes: map[string]string{
+				"type": "instrumentation",
+			},
+		},
+	})
+}

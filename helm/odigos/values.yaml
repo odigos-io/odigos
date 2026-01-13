@@ -305,6 +305,7 @@ instrumentor:
   # k8s-virtual-device: default method using a virtual device
   # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
   # k8s-init-container: alternative which uses an init container to copy the agent files to the shared volume
+  # k8s-csi-driver: uses CSI driver for volume mounting
   mountMethod: ''
   # checkDeviceHealthBeforeInjection is relevant only when mountMethod is k8s-virtual-device.
   # before injecting odigos agent into a new pod, it will check that all odiglet "deviceplugin"
@@ -412,6 +413,9 @@ odiglet:
   #   limits:
   #     cpu: 500m
   #     memory: 512Mi
+
+  # Resources configuration for the deviceplugin container
+  # Relevant only when instrumentor.mountMethod is k8s-virtual-device
   deviceplugin:
     resources:
       requests:
@@ -420,6 +424,17 @@ odiglet:
       limits:
         cpu: 100m
         memory: 300Mi
+
+  # CSI driver resource configuration
+  # Only applied when instrumentor.mountMethod is "k8s-csi-driver"
+  csiDriver:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 100m
+        memory: 200Mi
 
   # noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
   # for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.

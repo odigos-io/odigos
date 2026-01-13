@@ -385,6 +385,60 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 10
 {{- end }}
+{{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
+        - name: csi-driver
+          {{- if include "odigos.secretExists" . }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
+          {{- else }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          {{- end }}
+          command:
+            - /root/odigos-csi-driver
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: csi-socket-dir
+              mountPath: /csi
+            - name: kubelet-dir
+              mountPath: /var/lib/kubelet
+              mountPropagation: Bidirectional
+            - name: registration-dir
+              mountPath: /registration
+            {{- if not .Values.odiglet.noHostPathMounts }}
+            - name: odigos
+              mountPath: /var/odigos
+            {{- end }}
+          resources:
+{{- toYaml .Values.odiglet.csiDriver.resources | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - /root/grpc_health_probe
+                - -addr=unix:///csi/csi.sock
+                - -connect-timeout=10s
+                - -rpc-timeout=10s
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - /root/grpc_health_probe
+                - -addr=unix:///csi/csi.sock
+                - -connect-timeout=10s
+                - -rpc-timeout=10s
+            initialDelaySeconds: 5
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 10
+{{- end }}
       # set hostNetwork only for k8s versions prior to v1.26 unless noHostNetwork is true
       {{- if and (semverCompare "<1.26.0" $k8sVersion) (not .Values.odiglet.noHostNetwork) }}
       hostNetwork: true
@@ -438,6 +492,21 @@ spec:
         - name: odigos
           hostPath:
             path: /var/odigos
+{{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
+        # CSI Driver volumes
+        - name: csi-socket-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/odigos.csi.driver
+            type: DirectoryOrCreate
+        - name: kubelet-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+{{- end }}
       {{- end }} # end of hostPath mounts that are not mandatory
         # needed to load eBPF tracepoints - used by runtime-detector
       {{- if .Values.odiglet.noHostPid }}
