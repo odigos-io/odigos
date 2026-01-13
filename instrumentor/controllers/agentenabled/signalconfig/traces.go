@@ -219,8 +219,8 @@ func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, languag
 					// with same or different value.
 					// currently ignored, but should be handled sometimes.
 					spanRenamerScopeConfigs = append(spanRenamerScopeConfigs, odigosv1.SpanRenamerScopeConfig{
-						ScopeName:      action.Spec.SpanRenamer.Generic.ScopeName,
-						StaticSpanName: action.Spec.SpanRenamer.Generic.StaticSpanName,
+						ScopeName:        action.Spec.SpanRenamer.Generic.ScopeName,
+						ConstantSpanName: action.Spec.SpanRenamer.Generic.ConstantSpanName,
 					})
 				}
 			}
@@ -237,7 +237,7 @@ func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, languag
 	}
 
 	return &odigosv1.SpanRenamerConfig{
-		SpanRenamerScopeConfigs: spanRenamerScopeConfigs,
+		ConstantSpanNameConfigs: spanRenamerScopeConfigs,
 		JavaQuartz:              javaQuartzSpanRenamer,
 	}
 }
