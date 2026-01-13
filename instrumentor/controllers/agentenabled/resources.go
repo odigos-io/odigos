@@ -66,7 +66,9 @@ func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigo
 		if action.Spec.Disabled {
 			continue
 		}
-		if action.Spec.URLTemplatization != nil || (action.Spec.Samplers != nil && action.Spec.Samplers.IgnoreHealthChecks != nil) {
+		if action.Spec.URLTemplatization != nil ||
+			(action.Spec.Samplers != nil && action.Spec.Samplers.IgnoreHealthChecks != nil) ||
+			action.Spec.SpanRenamer != nil {
 			agentLevelActions = append(agentLevelActions, action)
 		}
 	}

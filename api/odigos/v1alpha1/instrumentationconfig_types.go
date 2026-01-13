@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
@@ -304,6 +305,22 @@ type UrlTemplatizationConfig struct {
 	Rules []string `json:"templatizationRules,omitempty"`
 }
 
+type SpanRenamerScopeConfig struct {
+	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
+	ScopeName string `json:"scopeName"`
+
+	// if set, spans matching the above conditions will be renamed to this static value.
+	ConstantSpanName string `json:"constantSpanName,omitempty"`
+}
+
+type SpanRenamerConfig struct {
+	// list of scopes to rename and the new constant span name to use for them.
+	ConstantSpanNameConfigs []SpanRenamerScopeConfig `json:"constantSpanNameConfigs,omitempty"`
+
+	// specific rename config for java quarts library spans.
+	JavaQuartz *actions.SpanRenamerJavaQuartz `json:"javaQuartz,omitempty"`
+}
+
 // HeadersCollectionConfig represents configuration for HTTP headers collection.
 type HeadersCollectionConfig struct {
 	// Limit HTTP headers collection to specific header keys.
@@ -329,6 +346,9 @@ type AgentTracesConfig struct {
 	// This config currently only applies to root spans.
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
 	HeadSampling *HeadSamplingConfig `json:"headSampling,omitempty"`
+
+	// Configuration for span renamer.
+	SpanRenamer *SpanRenamerConfig `json:"spanRenamer,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
