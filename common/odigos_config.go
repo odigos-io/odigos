@@ -67,12 +67,14 @@ type CollectorNodeConfiguration struct {
 	OtlpExporterConfiguration *OtlpExporterConfiguration `json:"otlpExporterConfiguration,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type OtlpExporterConfiguration struct {
 	EnableDataCompression *bool           `json:"enableDataCompression,omitempty"`
 	Timeout               string          `json:"timeout,omitempty"`
 	RetryOnFailure        *RetryOnFailure `json:"retryOnFailure,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type RetryOnFailure struct {
 	Enabled         *bool  `json:"enabled,omitempty"`
 	InitialInterval string `json:"initialInterval,omitempty"`
@@ -271,13 +273,41 @@ type MetricsSourceOdigosOwnMetricsConfiguration struct {
 	Interval string `json:"interval,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type MetricsSourceAgentSpanMetricsConfiguration struct {
 	Enabled bool `json:"enabled"`
 }
 
 // +kubebuilder:object:generate=true
+type MetricsSourceAgentRuntimeMetricsConfiguration struct {
+	// configuration for Java runtime metrics
+	Java *MetricsSourceAgentJavaRuntimeMetricsConfiguration `json:"java,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceAgentJavaRuntimeMetricsConfiguration struct {
+	// global enable/disable for all Java runtime metrics
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// individual metric configurations
+	Metrics []MetricsSourceAgentRuntimeMetricConfiguration `json:"metrics,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+type MetricsSourceAgentRuntimeMetricConfiguration struct {
+	// name of the runtime metric (e.g., "jvm.class.loaded")
+	Name string `json:"name"`
+
+	// whether this specific metric is disabled
+	Disabled *bool `json:"disabled,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
 type MetricsSourceAgentMetricsConfiguration struct {
 	SpanMetrics *MetricsSourceAgentSpanMetricsConfiguration `json:"spanMetrics,omitempty"`
+
+	// configuration for runtime metrics from agents
+	RuntimeMetrics *MetricsSourceAgentRuntimeMetricsConfiguration `json:"runtimeMetrics,omitempty"`
 }
 
 // AgentsInitContainerResources defines resource limits and requests for the init container

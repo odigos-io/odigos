@@ -22,9 +22,9 @@ import (
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
+	"github.com/odigos-io/odigos/cli/pkg/log"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 
 	"github.com/spf13/cobra"
@@ -32,6 +32,39 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+)
+
+var (
+	odigosCloudApiKeyFlag            string
+	odigosOnPremToken                string
+	namespaceFlag                    string
+	versionFlag                      string
+	skipWait                         bool
+	telemetryEnabled                 bool
+	openshiftEnabled                 bool
+	skipWebhookIssuerCreation        bool
+	psp                              bool
+	userInputIgnoredNamespaces       []string
+	userInputIgnoredContainers       []string
+	userInputInstallProfiles         []string
+	uiMode                           string
+	customContainerRuntimeSocketPath string
+	k8sNodeLogsDirectory             string
+	instrumentorImage                string
+	odigletImage                     string
+	autoScalerImage                  string
+	imagePrefix                      string
+	nodeSelectorFlag                 string
+	karpenterEnabled                 bool
+
+	clusterName       string
+	centralBackendURL string
+
+	userInstrumentationEnvsRaw string
+
+	autoRollbackDisabled         bool
+	autoRollbackGraceTime        string
+	autoRollbackStabilityWindows string
 )
 
 var (
@@ -319,6 +352,10 @@ var centralUninstallCmd = &cobra.Command{
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRolesByLabel)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central RoleBindings",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRoleBindingsByLabel)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ClusterRoles",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteClusterRolesByLabelAdapter)
+		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ClusterRoleBindings",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteClusterRoleBindingsByLabelAdapter)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ServiceAccounts",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServiceAccountsByLabel)
 		createKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Secrets",
@@ -339,68 +376,6 @@ var centralUninstallCmd = &cobra.Command{
 		}
 
 		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Central uninstalled.\n")
-	},
-}
-
-var activateCmd = &cobra.Command{
-	Use:   "activate",
-	Short: "Activate the Odigos Enterprise tier from the Community Edition",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
-		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-
-		ns, err := resources.GetOdigosNamespace(client, ctx)
-		if resources.IsErrNoOdigosNamespaceFound(err) {
-			fmt.Println("\033[31mERROR\033[0m no odigos installation found in the current cluster")
-			os.Exit(1)
-		} else if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Failed to check if Odigos is already installed: %s\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Println("Starting activation of Enterprise tier from Community...")
-
-		odigosConfiguration, err := resources.GetCurrentConfig(ctx, client, ns)
-		if err != nil {
-			fmt.Printf("Error reading odigos configuration: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Since Karpenter uses a different labeling system that has no separation between OSS and enterprise,
-		// we want to avoid potential user apps from crashing in case they are scheduled on a node where the
-		// enterprise files are not yet found in the /var/odigos mount.
-		if odigosConfiguration.KarpenterEnabled != nil && *odigosConfiguration.KarpenterEnabled {
-			fmt.Println("\033[31mERROR\033[0m Activation is not supported when odigos is installed with 'KarpenterEnabled' option. uninstall odigos community and reinstall odigos with enterprise onprem token")
-			os.Exit(1)
-		}
-
-		managerOpts := resourcemanager.ManagerOpts{
-			ImageReferences: GetImageReferences(common.OnPremOdigosTier, openshiftEnabled),
-		}
-
-		cm, err := client.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
-		if err != nil {
-			fmt.Println("Odigos pro activate failed - unable to get odigos deployment ConfigMap.")
-			os.Exit(1)
-		}
-		odigosVersion := cm.Data[k8sconsts.OdigosDeploymentConfigMapVersionKey]
-		if odigosVersion == "" {
-			fmt.Println("Odigos pro activate failed - missing version info.")
-			os.Exit(1)
-		}
-
-		onPremToken := cmd.Flag("onprem-token").Value.String()
-		resourceManagers := resources.CreateResourceManagers(
-			client, ns, common.OnPremOdigosTier, &onPremToken, odigosConfiguration, odigosVersion,
-			installationmethod.K8sInstallationMethodOdigosCli, managerOpts)
-
-		err = resources.ApplyResourceManagers(ctx, client, resourceManagers, "Synching")
-		if err != nil {
-			fmt.Println("Odigos pro activate failed - unable to apply resources.")
-			os.Exit(1)
-		}
-
-		fmt.Println("Activation completed successfully. Odigos is upgraded to enterprise tier")
 	},
 }
 
@@ -525,6 +500,14 @@ func deleteCentralTokenSecretAdapter(ctx context.Context, client *kube.Client, n
 	return kube.DeleteCentralTokenSecret(ctx, client, ns)
 }
 
+func deleteClusterRolesByLabelAdapter(ctx context.Context, client *kube.Client, _ string, labelKey string) error {
+	return kube.DeleteClusterRolesByLabel(ctx, client, labelKey)
+}
+
+func deleteClusterRoleBindingsByLabelAdapter(ctx context.Context, client *kube.Client, _ string, labelKey string) error {
+	return kube.DeleteClusterRoleBindingsByLabel(ctx, client, labelKey)
+}
+
 var portForwardCentralCmd = &cobra.Command{
 	Use:   "ui",
 	Short: "Port-forward Odigos Central UI and Backend to localhost",
@@ -635,9 +618,82 @@ func init() {
 	centralInstallCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
 	centralCmd.AddCommand(portForwardCentralCmd)
 	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
-	// migrate subcommand
-	proCmd.AddCommand(activateCmd)
-	activateCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
-	activateCmd.MarkFlagRequired("onprem-token")
+}
 
+func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, labelScope string, create ResourceCreationFunc) {
+	l := log.Print(msg)
+	err := create(ctx, client, ns, labelScope)
+	if err != nil {
+		l.Error(err)
+	}
+
+	l.Success()
+}
+
+func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcemanager.ImageReferences {
+	var imageReferences resourcemanager.ImageReferences
+	if openshift {
+		imageReferences = resourcemanager.ImageReferences{
+			AutoscalerImage:    k8sconsts.AutoScalerImageCertified,
+			CollectorImage:     k8sconsts.OdigosClusterCollectorImageCertified,
+			InitContainerImage: k8sconsts.OdigosInitContainerImageCertified,
+			InstrumentorImage:  k8sconsts.InstrumentorImageCertified,
+			OdigletImage:       k8sconsts.OdigletImageCertified,
+			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
+			SchedulerImage:     k8sconsts.SchedulerImageCertified,
+			UIImage:            k8sconsts.UIImageCertified,
+		}
+	} else {
+		imageReferences = resourcemanager.ImageReferences{
+			AutoscalerImage:    k8sconsts.AutoScalerImageName,
+			CollectorImage:     k8sconsts.OdigosClusterCollectorImage,
+			InitContainerImage: k8sconsts.OdigosInitContainerImage,
+			InstrumentorImage:  k8sconsts.InstrumentorImage,
+			OdigletImage:       k8sconsts.OdigletImageName,
+			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
+			SchedulerImage:     k8sconsts.SchedulerImage,
+			UIImage:            k8sconsts.UIImage,
+		}
+	}
+
+	if odigosTier == common.OnPremOdigosTier {
+		if openshift {
+			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImageCertified
+			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageCertified
+			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImageCertified
+		} else {
+			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
+			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
+			imageReferences.CentralProxyImage = k8sconsts.CentralProxyImage
+			imageReferences.CentralBackendImage = k8sconsts.CentralBackendImage
+			imageReferences.CentralUIImage = k8sconsts.CentralUIImage
+			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImage
+		}
+	}
+	return imageReferences
+}
+
+type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
+
+func createNamespace(ctx context.Context, client *kube.Client, ns string, labelKey string) error {
+	_, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err == nil {
+		// Namespace already exists, nothing to do
+		return nil
+	}
+
+	if apierrors.IsNotFound(err) {
+		nsObj := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ns,
+				Labels: map[string]string{
+					labelKey: k8sconsts.OdigosSystemLabelValue,
+				},
+			},
+		}
+		_, err := client.CoreV1().Namespaces().Create(ctx, nsObj, metav1.CreateOptions{})
+		return err
+	}
+
+	return err
 }

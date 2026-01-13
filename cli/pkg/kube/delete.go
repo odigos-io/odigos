@@ -93,6 +93,34 @@ func DeleteSecretsByLabel(ctx context.Context, client *Client, ns string, labelK
 	return nil
 }
 
+func DeleteClusterRolesByLabel(ctx context.Context, client *Client, labelKey string) error {
+	selector := k8slabels.SelectorFromSet(map[string]string{labelKey: k8sconsts.OdigosSystemLabelValue}).String()
+	list, err := client.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return err
+	}
+	for _, item := range list.Items {
+		if e := client.RbacV1().ClusterRoles().Delete(ctx, item.Name, metav1.DeleteOptions{}); e != nil && !apierrors.IsNotFound(e) {
+			return e
+		}
+	}
+	return nil
+}
+
+func DeleteClusterRoleBindingsByLabel(ctx context.Context, client *Client, labelKey string) error {
+	selector := k8slabels.SelectorFromSet(map[string]string{labelKey: k8sconsts.OdigosSystemLabelValue}).String()
+	list, err := client.RbacV1().ClusterRoleBindings().List(ctx, metav1.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return err
+	}
+	for _, item := range list.Items {
+		if e := client.RbacV1().ClusterRoleBindings().Delete(ctx, item.Name, metav1.DeleteOptions{}); e != nil && !apierrors.IsNotFound(e) {
+			return e
+		}
+	}
+	return nil
+}
+
 func DeleteCentralTokenSecret(ctx context.Context, client *Client, ns string) error {
 	_, err := client.CoreV1().Secrets(ns).Get(ctx, k8sconsts.OdigosCentralSecretName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {

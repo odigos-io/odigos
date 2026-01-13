@@ -18,6 +18,7 @@ package instrumentationconfig
 
 import (
 	"context"
+	"errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -27,18 +28,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type InstrumentationConfigReconciler struct {
+type EffectiveConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *EffectiveConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	var ic odigosv1.InstrumentationConfig
-	err := r.Client.Get(ctx, req.NamespacedName, &ic)
+	// When effective config changes, we need to reconcile ALL InstrumentationConfig objects
+	allInstrumentationConfigs := odigosv1.InstrumentationConfigList{}
+	err := r.Client.List(ctx, &allInstrumentationConfigs)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	instrumentationRules := &odigosv1.InstrumentationRuleList{}
@@ -52,14 +54,27 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	err = updateInstrumentationConfigForWorkload(&ic, instrumentationRules, &conf)
-	if err != nil {
-		return ctrl.Result{}, err
+	// Process each InstrumentationConfig
+	var allErrs error
+	updatedCount := 0
+	for _, ic := range allInstrumentationConfigs.Items {
+		err = updateInstrumentationConfigForWorkload(&ic, instrumentationRules, &conf)
+		if err != nil {
+			allErrs = errors.Join(allErrs, err)
+			continue
+		}
+
+		err = r.Client.Update(ctx, &ic)
+		if err != nil {
+			allErrs = errors.Join(allErrs, err)
+		} else {
+			updatedCount++
+		}
 	}
 
-	err = r.Client.Update(ctx, &ic)
-	if err == nil {
-		logger.V(0).Info("Updated instrumentation config", "workload", ic.Name)
+	if updatedCount > 0 {
+		logger.V(0).Info("Updated instrumentation configs from effective config change", "count", updatedCount)
 	}
-	return utils.K8SUpdateErrorHandler(err)
+
+	return ctrl.Result{}, allErrs
 }
