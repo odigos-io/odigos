@@ -1,6 +1,11 @@
 package actions
 
-import "github.com/odigos-io/odigos/common"
+import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common"
+)
+
+const ActionSpanRenamer = "SpanRenamer"
 
 // generic span renamer config that works for any programming language and scope name.
 // can be used as fast response to rename high-cardinality spans if they are ever created.
@@ -39,4 +44,18 @@ type SpanRenamerConfig struct {
 
 	// java quarts span renamer config that can be used to rename java quarts spans.
 	JavaQuartz *SpanRenamerJavaQuartz `json:"javaQuartz,omitempty"`
+}
+
+func (SpanRenamerConfig) ProcessorType() string {
+	return "odigosspanrenamer"
+}
+
+func (SpanRenamerConfig) OrderHint() int {
+	return 1
+}
+
+func (SpanRenamerConfig) CollectorRoles() []k8sconsts.CollectorRole {
+	return []k8sconsts.CollectorRole{
+		k8sconsts.CollectorsRoleClusterGateway,
+	}
 }
