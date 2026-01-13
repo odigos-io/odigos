@@ -14,7 +14,7 @@ centralBackend:
   # Gate central-backend startup on Keycloak readiness (initContainer).
   # Set enabled=false to allow central-backend to start without waiting for Keycloak.
   waitForKeycloak:
-    enabled: false
+    enabled: true
     # -- Container image used for the wait loop (must include `sh` + `wget`)
     image: busybox:1.36.1
     # -- URL checked for Keycloak readiness (200/OK expected)

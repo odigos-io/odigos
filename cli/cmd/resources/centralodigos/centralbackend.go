@@ -106,9 +106,9 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 	// Optionally gate startup with an initContainer (useful for installation ordering).
 	// Timeout is intentionally hard-coded (60s) to keep CLI behavior simple and predictable.
 	const (
-		waitForKeycloakImage         = "busybox:1.36.1"
-		waitForKeycloakTimeoutSecs   = 60
-		waitForKeycloakPollInterval  = 2
+		waitForKeycloakImage        = "busybox:1.36.1"
+		waitForKeycloakTimeoutSecs  = 60
+		waitForKeycloakPollInterval = 2
 	)
 	keycloakURL := fmt.Sprintf("http://%s:%d/realms/master", k8sconsts.KeycloakServiceName, k8sconsts.KeycloakPort)
 
