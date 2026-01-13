@@ -452,6 +452,7 @@ input PatchSourceRequestInput {
   containerName: String
   language: String
   version: String
+  otelDistroName: String
 }
 
 input ActionInput {

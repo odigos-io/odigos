@@ -513,8 +513,9 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 			}
 		}
 		containerOverrides = append(containerOverrides, v1alpha1.ContainerOverride{
-			ContainerName: *cont,
-			RuntimeInfo:   overrideRuntimeInfo,
+			ContainerName:  *cont,
+			OtelDistroName: patchSourceRequest.OtelDistroName,
+			RuntimeInfo:    overrideRuntimeInfo,
 		})
 		// patch the source with the new container overrides
 		patchBytes, err := json.Marshal([]map[string]interface{}{

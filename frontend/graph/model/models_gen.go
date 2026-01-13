@@ -817,6 +817,7 @@ type PatchSourceRequestInput struct {
 	ContainerName     *string `json:"containerName,omitempty"`
 	Language          *string `json:"language,omitempty"`
 	Version           *string `json:"version,omitempty"`
+	OtelDistroName    *string `json:"otelDistroName,omitempty"`
 }
 
 type PayloadCollection struct {

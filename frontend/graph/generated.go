@@ -34318,7 +34318,7 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version"}
+	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version", "otelDistroName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -34360,6 +34360,13 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 				return it, err
 			}
 			it.Version = data
+		case "otelDistroName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelDistroName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OtelDistroName = data
 		}
 	}
 
