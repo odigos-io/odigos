@@ -6,6 +6,7 @@ import (
 
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -15,9 +16,11 @@ func CalculateTracesConfig(
 	tracesEnabled bool,
 	effectiveConfig *common.OdigosConfiguration,
 	containerName string,
+	programmingLanguage common.ProgrammingLanguage,
 	urlTemplatizationConfig *odigosv1.UrlTemplatizationConfig,
 	ignoreHealthChecks []actionsv1.IgnoreHealthChecksConfig,
 	irls *[]odigosv1.InstrumentationRule,
+	agentLevelActions *[]odigosv1.Action,
 	workloadObj workload.Workload,
 	distro *distro.OtelDistro) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
 
@@ -49,6 +52,7 @@ func CalculateTracesConfig(
 	tracesConfig.UrlTemplatization = urlTemplatizationConfig
 	tracesConfig.HeadersCollection = calculateHeaderCollectionConfig(distro, irls)
 	tracesConfig.HeadSampling = calculateHeadSamplingConfig(distro, workloadObj, containerName, irls, ignoreHealthChecks)
+	tracesConfig.SpanRenamer = filterSpanRenamerForContainer(agentLevelActions, programmingLanguage)
 
 	return tracesConfig, nil
 }
@@ -200,4 +204,43 @@ func limitFractionToRange(fraction float64) float64 {
 		return 1
 	}
 	return fraction
+}
+
+func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.SpanRenamerConfig {
+
+	gotRenamingConfig := false
+	spanRenamerScopeConfigs := []odigosv1.SpanRenamerScopeConfig{}
+	var javaQuartzSpanRenamer *actions.SpanRenamerJavaQuartz
+
+	for _, action := range *agentLevelActions {
+		if action.Spec.SpanRenamer != nil {
+			if action.Spec.SpanRenamer.Generic != nil {
+				if action.Spec.SpanRenamer.Generic.ProgrammingLanguage == language {
+					// there can be conflict here, where the scope name can be added multiple times
+					// with same or different value.
+					// currently ignored, but should be handled sometimes.
+					spanRenamerScopeConfigs = append(spanRenamerScopeConfigs, odigosv1.SpanRenamerScopeConfig{
+						ScopeName:        action.Spec.SpanRenamer.Generic.ScopeName,
+						ConstantSpanName: action.Spec.SpanRenamer.Generic.ConstantSpanName,
+					})
+					gotRenamingConfig = true
+				}
+			}
+			if action.Spec.SpanRenamer.JavaQuartz != nil && language == common.JavaProgrammingLanguage {
+				// notice: there can be multiple java quarts span renamer configs,
+				// but we only take the last one.
+				javaQuartzSpanRenamer = action.Spec.SpanRenamer.JavaQuartz
+				gotRenamingConfig = true
+			}
+		}
+	}
+
+	if !gotRenamingConfig {
+		return nil
+	}
+
+	return &odigosv1.SpanRenamerConfig{
+		ConstantSpanNameConfigs: spanRenamerScopeConfigs,
+		JavaQuartz:              javaQuartzSpanRenamer,
+	}
 }
