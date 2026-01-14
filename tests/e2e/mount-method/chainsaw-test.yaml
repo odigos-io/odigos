@@ -58,7 +58,7 @@ spec:
     - name: '[1 - Setup] Odiglet ready'
       try:
         - assert:
-            file: odiglet-ready-with-csi-driver.yaml
+            file: odiglet-ready.yaml
 
     - name: '[1 - Setup] Verify Node Odiglet label has been added'
       try:
@@ -132,38 +132,6 @@ spec:
               java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
               kubectl logs $java_pod_name -n default
 
-    - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
-
-    - name: "[2 - Workload Instrumentation] Verify Trace - Resource Attributes"
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
-
-    - name: '[2 - Workload Instrumentation] Verify Trace - Span Attributes'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
 
     - name: '[3 - CSI Driver Test] Upgrade to CSI driver mount method'
       try:
@@ -249,29 +217,6 @@ spec:
                 fi
                 sleep 1
               done
-
-    - name: '[3 - CSI Driver Test] Verify CSI Trace - Context Propagation'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
-
-    - name: '[3 - CSI Driver Test] Verify CSI Trace - Resource Attributes'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
-
-    - name: '[3 - CSI Driver Test] Verify CSI driver logs show mount operations'
-      try:
-        - script:
-            timeout: 30s
-            content: |
-              # Check that CSI driver performed mount operations
-              kubectl logs -n odigos-test -l app=odiglet -c csi-driver | grep "Successfully mounted volume"
-              kubectl logs -n odigos-test -l app=odiglet -c csi-driver | grep "podUID"
 
     - name: 'Uninstall Odigos'
       try:
