@@ -63,7 +63,7 @@ jobs:
 
   build-cli:
     needs: package-helm
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Determine Tag Value
         run: |
