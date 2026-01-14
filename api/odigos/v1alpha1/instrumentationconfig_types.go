@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
@@ -313,12 +313,19 @@ type SpanRenamerScopeConfig struct {
 	ConstantSpanName string `json:"constantSpanName,omitempty"`
 }
 
-type SpanRenamerConfig struct {
-	// list of scopes to rename and the new constant span name to use for them.
-	ConstantSpanNameConfigs []SpanRenamerScopeConfig `json:"constantSpanNameConfigs,omitempty"`
+type SpanRenamerScopeRules struct {
+	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
+	ScopeName string `json:"scopeName"`
 
-	// specific rename config for java quarts library spans.
-	JavaQuartz *actions.SpanRenamerJavaQuartz `json:"javaQuartz,omitempty"`
+	// list of regex replacements to be applied to the span name.
+	// all options are always tried, regardless of whether the previous options have matched or not.
+	RegexReplacements []actions.SpanRenamerRegexReplacement `json:"regexReplacements,omitempty"`
+}
+
+type SpanRenamerConfig struct {
+	// list of scope rules to be applied to the span name.
+	// all options are always tried, regardless of whether the previous options have matched or not.
+	ScopeRules []SpanRenamerScopeRules `json:"scopeRules,omitempty"`
 }
 
 // HeadersCollectionConfig represents configuration for HTTP headers collection.

@@ -311,15 +311,35 @@ spec:
                         spanRenamer:
                           description: Configuration for span renamer.
                           properties:
-                            constantSpanNameConfigs:
-                              description: list of scopes to rename and the new constant
-                                span name to use for them.
+                            scopeRules:
+                              description: |-
+                                list of scope rules to be applied to the span name.
+                                all options are always tried, regardless of whether the previous options have matched or not.
                               items:
                                 properties:
-                                  constantSpanName:
-                                    description: if set, spans matching the above
-                                      conditions will be renamed to this static value.
-                                    type: string
+                                  regexReplacements:
+                                    description: |-
+                                      list of regex replacements to be applied to the span name.
+                                      all options are always tried, regardless of whether the previous options have matched or not.
+                                    items:
+                                      description: configuration for replacing parts
+                                        of the span name with a template text based
+                                        on regular expressions.
+                                      properties:
+                                        regexpPattern:
+                                          description: regualr expression that will
+                                            be used to match the part of the span
+                                            name to be replaced.
+                                          type: string
+                                        templateText:
+                                          description: the text to be used for replacing
+                                            the matched part of the span name.
+                                          type: string
+                                      required:
+                                      - regexpPattern
+                                      - templateText
+                                      type: object
+                                    type: array
                                   scopeName:
                                     description: the name of the opentelemetry intrumentation
                                       scope which the renamed spans are written in.
@@ -328,19 +348,6 @@ spec:
                                 - scopeName
                                 type: object
                               type: array
-                            javaQuartz:
-                              description: specific rename config for java quarts
-                                library spans.
-                              properties:
-                                jobGroupTemplate:
-                                  description: if set, the job group will be replaced
-                                    in span names to this templated value.
-                                  type: string
-                                jobNameTemplate:
-                                  description: if set, the job name will be replaced
-                                    in span names to this templated value.
-                                  type: string
-                              type: object
                           type: object
                         urlTemplatization:
                           description: A list of URL templatization configurations
