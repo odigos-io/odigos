@@ -166,8 +166,8 @@ spec:
         - script:
             timeout: 2m
             content: |
-              kubectl delete pod -l app=simple-trace-db
-              kubectl wait --for=condition=Ready pod -l app=simple-trace-db --timeout=2m
+              kubectl delete pod -l app=simple-trace-db -n traces
+              kubectl wait --for=condition=Ready pod -l app=simple-trace-db -n traces --timeout=2m
 
     - name: '[3 - CSI Driver Test] Restart instrumented workloads to get CSI volumes'
       try:
