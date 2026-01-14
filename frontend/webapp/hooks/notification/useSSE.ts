@@ -23,11 +23,11 @@ const EVENT_DEBOUNCE_MS = 5000;
 
 export const useSSE = () => {
   const { fetchSources } = useSourceCRUD();
-  const { setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
+  const { setStatusStore, resetStatusStore } = useStatusStore();
 
-  const clearStatusMessage = () => setStatusStore(StatusKeys.Instrumentation, undefined);
+  const clearStatusMessage = () => resetStatusStore(StatusKeys.Instrumentation);
 
   const maxRetries = 10;
   const retryCount = useRef(0);

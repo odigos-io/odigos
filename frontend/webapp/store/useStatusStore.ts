@@ -19,6 +19,7 @@ interface StoreValues {
 
 interface StoreSetters {
   setStatusStore: (k: keyof StoreValues, v?: StatusValues) => void;
+  resetStatusStore: (k: keyof StoreValues) => void;
 }
 
 export const useStatusStore = create<StoreValues & StoreSetters>((set) => ({
@@ -27,4 +28,5 @@ export const useStatusStore = create<StoreValues & StoreSetters>((set) => ({
   [StatusKeys.Instrumentation]: undefined,
 
   setStatusStore: (k, v) => set({ [k]: v }),
+  resetStatusStore: (k) => set({ [k]: undefined }),
 }));
