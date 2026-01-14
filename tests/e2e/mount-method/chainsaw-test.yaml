@@ -178,15 +178,19 @@ spec:
               kubectl rollout restart deployment/frontend
               kubectl rollout restart deployment/inventory
               kubectl rollout restart deployment/coupon
+              kubectl rollout restart deployment/currency
               kubectl rollout restart deployment/membership
               kubectl rollout restart deployment/pricing
+              kubectl rollout restart deployment/geolocation
 
               # Wait for all to be ready
               kubectl rollout status deployment/frontend --timeout=3m
               kubectl rollout status deployment/inventory --timeout=3m
               kubectl rollout status deployment/coupon --timeout=3m
+              kubectl rollout status deployment/currency --timeout=3m
               kubectl rollout status deployment/membership --timeout=3m
               kubectl rollout status deployment/pricing --timeout=3m
+              kubectl rollout status deployment/geolocation --timeout=3m
 
     - name: '[3 - CSI Driver Test] Verify CSI volumes are mounted correctly'
       try:

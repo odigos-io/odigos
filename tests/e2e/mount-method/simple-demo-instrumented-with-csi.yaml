@@ -57,14 +57,14 @@ spec:
           name: odigos-agent
           readOnly: true
           subPath: nodejs-community
-        - mountPath: /var/odigos/loader
-          name: odigos-agent
-          readOnly: true
-          subPath: loader
         - mountPath: /var/odigos/opentelemetry-node
           name: odigos-agent
           readOnly: true
           subPath: opentelemetry-node
+        - mountPath: /var/odigos/loader
+          name: odigos-agent
+          readOnly: true
+          subPath: loader
 status:
   containerStatuses:
     - name: coupon
@@ -117,24 +117,11 @@ metadata:
 spec:
   volumes:
     - (name != null): true
-    - name: odigos-agent
-      csi:
-        driver: odigos.csi.driver
-        volumeAttributes:
-          type: instrumentation
   containers:
     - name: membership
       volumeMounts:
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-        - mountPath: /var/odigos/dotnet
-          name: odigos-agent
-          readOnly: true
-          subPath: dotnet
-        - mountPath: /var/odigos/loader
-          name: odigos-agent
-          readOnly: true
-          subPath: loader
 status:
   containerStatuses:
     - name: membership
@@ -162,14 +149,10 @@ spec:
       volumeMounts:
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-        - mountPath: /var/odigos/go
+        - mountPath: /var/odigos/dotnet
           name: odigos-agent
           readOnly: true
-          subPath: go
-        - mountPath: /var/odigos/loader
-          name: odigos-agent
-          readOnly: true
-          subPath: loader
+          subPath: dotnet
 status:
   containerStatuses:
     - name: pricing
@@ -187,6 +170,7 @@ metadata:
 spec:
   volumes:
     - (name != null): true
+    - (name != null): true
     - name: odigos-agent
       csi:
         driver: odigos.csi.driver
@@ -197,21 +181,18 @@ spec:
       volumeMounts:
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-        - mountPath: /var/odigos/nodejs-community
+        - mountPath: /var/odigos/php
           name: odigos-agent
           readOnly: true
-          subPath: nodejs-community
-        - mountPath: /var/odigos/loader
-          name: odigos-agent
-          readOnly: true
-          subPath: loader
-        - mountPath: /var/odigos/opentelemetry-node
-          name: odigos-agent
-          readOnly: true
-          subPath: opentelemetry-node
+          subPath: php
+    - name: nginx
 status:
   containerStatuses:
     - name: currency
+      ready: true
+      restartCount: 0
+      started: true
+    - name: nginx
       ready: true
       restartCount: 0
       started: true
@@ -236,18 +217,10 @@ spec:
       volumeMounts:
         - (name != null): true
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-        - mountPath: /var/odigos/nodejs-community
+        - mountPath: /var/odigos/ruby
           name: odigos-agent
           readOnly: true
-          subPath: nodejs-community
-        - mountPath: /var/odigos/loader
-          name: odigos-agent
-          readOnly: true
-          subPath: loader
-        - mountPath: /var/odigos/opentelemetry-node
-          name: odigos-agent
-          readOnly: true
-          subPath: opentelemetry-node
+          subPath: ruby
 status:
   containerStatuses:
     - name: geolocation
