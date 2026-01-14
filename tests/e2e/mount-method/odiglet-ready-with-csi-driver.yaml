@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odiglet
+  namespace: odigos-test
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: odiglet
+spec:
+  initContainers:
+    - name: init
+      image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: odigos-agents-image-pull
+      image: registry.odigos.io/odigos-agents:e2e-test
+  containers:
+    - name: odiglet
+      resources: {}
+      securityContext:
+        privileged: true
+      image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: data-collection
+      securityContext:
+        privileged: true
+      env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          (value != null): true
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: data-collection
+              divisor: "0"
+              resource: limits.cpu
+      resources:
+        requests:
+          (memory != null): true
+        limits:
+          (memory != null): true
+    - name: csi-driver
+      image: registry.odigos.io/odigos-odiglet:e2e-test
+      securityContext:
+        privileged: true
+      resources:
+        requests:
+          (memory != null): true
+        limits:
+          (memory != null): true
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
+  hostPID: true
+  nodeName: kind-control-plane
+  nodeSelector:
+    kubernetes.io/os: linux
+  serviceAccount: odiglet
+  serviceAccountName: odiglet
+status:
+  containerStatuses:
+    - name: csi-driver
+      ready: true
+      restartCount: 0
+      started: true
+    - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
+    - name: odiglet
+      ready: true
+      restartCount: 0
+      started: true
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: odiglet
+  namespace: odigos-test
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: DaemonSet
+      name: odiglet
+spec:
+  initContainers:
+    - name: init
+      image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: odigos-agents-image-pull
+      image: registry.odigos.io/odigos-agents:e2e-test
+  containers:
+    - name: odiglet
+      resources: {}
+      securityContext:
+        privileged: true
+      image: registry.odigos.io/odigos-odiglet:e2e-test
+    - name: data-collection
+      securityContext:
+        privileged: true
+      env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: GOMEMLIMIT
+          (value != null): true
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              containerName: data-collection
+              divisor: "0"
+              resource: limits.cpu
+      resources:
+        requests:
+          (memory != null): true
+        limits:
+          (memory != null): true
+    - name: csi-driver
+      image: registry.odigos.io/odigos-odiglet:e2e-test
+      securityContext:
+        privileged: true
+      resources:
+        requests:
+          (memory != null): true
+        limits:
+          (memory != null): true
+  (($values.k8sMinorVersion < `26` && hostNetwork != null) || (hostNetwork == null)): true
+  hostPID: true
+  nodeName: kind-worker
+  nodeSelector:
+    kubernetes.io/os: linux
+  serviceAccount: odiglet
+  serviceAccountName: odiglet
+status:
+  containerStatuses:
+    - name: csi-driver
+      ready: true
+      restartCount: 0
+      started: true
+    - name: data-collection
+      ready: true
+      restartCount: 0
+      started: true
+    - name: odiglet
+      ready: true
+      restartCount: 0
+      started: true
