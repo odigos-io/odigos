@@ -6,7 +6,7 @@ import (
 
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -209,27 +209,24 @@ func limitFractionToRange(fraction float64) float64 {
 func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.SpanRenamerConfig {
 
 	gotRenamingConfig := false
-	spanRenamerScopeConfigs := []odigosv1.SpanRenamerScopeConfig{}
-	var javaQuartzSpanRenamer *actions.SpanRenamerJavaQuartz
+	scopeRulesMap := map[string]odigosv1.SpanRenamerScopeRules{}
 
 	for _, action := range *agentLevelActions {
 		if action.Spec.SpanRenamer != nil {
-			if action.Spec.SpanRenamer.Generic != nil {
-				if action.Spec.SpanRenamer.Generic.ProgrammingLanguage == language {
-					// there can be conflict here, where the scope name can be added multiple times
-					// with same or different value.
-					// currently ignored, but should be handled sometimes.
-					spanRenamerScopeConfigs = append(spanRenamerScopeConfigs, odigosv1.SpanRenamerScopeConfig{
-						ScopeName:        action.Spec.SpanRenamer.Generic.ScopeName,
-						ConstantSpanName: action.Spec.SpanRenamer.Generic.ConstantSpanName,
-					})
-					gotRenamingConfig = true
-				}
+			if action.Spec.SpanRenamer.ProgrammingLanguage != language {
+				continue
 			}
-			if action.Spec.SpanRenamer.JavaQuartz != nil && language == common.JavaProgrammingLanguage {
-				// notice: there can be multiple java quarts span renamer configs,
-				// but we only take the last one.
-				javaQuartzSpanRenamer = action.Spec.SpanRenamer.JavaQuartz
+			scopeName := action.Spec.SpanRenamer.ScopeName
+			for _, scopeRule := range action.Spec.SpanRenamer.RegexReplacements {
+				if existing, ok := scopeRulesMap[scopeName]; ok {
+					existing.RegexReplacements = append(existing.RegexReplacements, scopeRule)
+					scopeRulesMap[scopeName] = existing
+				} else {
+					scopeRulesMap[scopeName] = odigosv1.SpanRenamerScopeRules{
+						ScopeName:         scopeName,
+						RegexReplacements: []actions.SpanRenamerRegexReplacement{scopeRule},
+					}
+				}
 				gotRenamingConfig = true
 			}
 		}
@@ -239,8 +236,11 @@ func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, languag
 		return nil
 	}
 
+	scopeRules := []odigosv1.SpanRenamerScopeRules{}
+	for _, scopeRule := range scopeRulesMap {
+		scopeRules = append(scopeRules, scopeRule)
+	}
 	return &odigosv1.SpanRenamerConfig{
-		ConstantSpanNameConfigs: spanRenamerScopeConfigs,
-		JavaQuartz:              javaQuartzSpanRenamer,
+		ScopeRules: scopeRules,
 	}
 }
