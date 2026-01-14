@@ -13,10 +13,12 @@ odigos pro central upgrade [flags]
 ### Options
 
 ```
-  -h, --help               help for upgrade
-  -n, --namespace string   Target namespace for Odigos Central upgrade (default "odigos-central")
-      --version string     Specify version to upgrade to
-      --yes                Confirm the upgrade without prompting
+      --central-max-message-size string   Maximum message size in bytes for gRPC messages (empty = use default)
+  -h, --help                              help for upgrade
+      --image-pull-secrets strings        Secret names for imagePullSecrets (repeat or comma-separated)
+  -n, --namespace string                  Target namespace for Odigos Central upgrade (default "odigos-central")
+      --version string                    Specify version to upgrade to
+      --yes                               Confirm the upgrade without prompting
 ```
 
 ### Options inherited from parent commands
