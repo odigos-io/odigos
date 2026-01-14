@@ -662,7 +662,7 @@ metricsSources:
         metrics:
           # Class loading metrics
           - name: jvm.gc.duration
-            disabled: false
+            disabled: true
           - name: jvm.memory.used
             disabled: true
 
