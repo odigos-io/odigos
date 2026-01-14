@@ -3,6 +3,7 @@ package instrumentation_ebpf
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -32,6 +33,22 @@ type InstrumentationConfigReconciler struct {
 	DistributionGetter      *distros.Getter
 }
 
+type requestType string
+
+const (
+	instrumentationRequestType   requestType = "instrumentation"
+	unInstrumentationRequestType requestType = "un-instrumentation"
+	configUpdateRequestType      requestType = "config update"
+)
+
+type consumerBusyError struct{ requestType }
+
+var _ error = &consumerBusyError{}
+
+func (c *consumerBusyError) Error() string {
+	return fmt.Sprintf("failed to send %s request, consumer is busy", c.requestType)
+}
+
 func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	podWorkload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name, req.Namespace)
 	if err != nil {
@@ -45,10 +62,8 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		if apierrors.IsNotFound(err) {
 			// if the instrumentationConfig is deleted, send un-instrumentation request for the workload
 			err = i.sendUnInstrumentationRequest(podWorkload)
-			return ctrl.Result{}, err
-		} else {
-			return ctrl.Result{}, err
 		}
+		return resolveErrReconcileResult(err)
 	}
 
 	conf, err := k8sutils.GetCurrentOdigosConfiguration(ctx, i.Client)
@@ -59,7 +74,7 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	// potentially send config update events to active instrumentations
 	configUpdateErr := i.sendConfigUpdates(ctx, podWorkload, instrumentationConfig)
 	if configUpdateErr != nil {
-		return ctrl.Result{}, configUpdateErr
+		return resolveErrReconcileResult(configUpdateErr)
 	}
 
 	// check if there are any enabled containers in the instrumentation config
@@ -75,17 +90,35 @@ func (i *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	// we should ideally un-instrument only the disabled ones.
 	if len(enabledContainers) == 0 {
 		err = i.sendUnInstrumentationRequest(podWorkload)
-		return ctrl.Result{}, err
+		return resolveErrReconcileResult(err)
 	}
 
 	// potentially send instrumentation requests for processes that are part of the instrumented workload and support
 	// instrumentation without restart
 	instrumentationRequestErr := i.sendInstrumentationRequest(ctx, podWorkload, instrumentationConfig, &conf)
 	if instrumentationRequestErr != nil {
-		return ctrl.Result{}, instrumentationRequestErr
+		return resolveErrReconcileResult(instrumentationRequestErr)
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// if we encounter a consumer busy error, we want to retry.
+// this can happen in bursts of events or whenever the odiglet starts, and gets a burst of
+// Create events from the controller cache.
+func resolveErrReconcileResult(err error) (ctrl.Result, error) {
+	if err == nil {
+		return ctrl.Result{}, nil
+	}
+	c := &consumerBusyError{}
+	if errors.As(err, &c) {
+		// using the Requeue option is deprecated according to controller-runtime
+		// doing this because we're not sure about the right way to achieve the right behavior with RequeueAfter.
+		// since RequeueAfter ignores the builtin rate limiting, and we want to have a rate limiting policy of limiting the number of requeues
+		// per request, to avoid requeueing forever and logging an error only once we give up.
+		return ctrl.Result{Requeue: true}, nil
+	}
+	return ctrl.Result{}, err
 }
 
 func (i *InstrumentationConfigReconciler) sendUnInstrumentationRequest(podWorkload k8sconsts.PodWorkload) error {
@@ -97,7 +130,7 @@ func (i *InstrumentationConfigReconciler) sendUnInstrumentationRequest(podWorklo
 	case i.InstrumentationRequests <- ir:
 		return nil
 	default:
-		return errors.New("failed to send un-instrumentation request, consumer is busy")
+		return &consumerBusyError{unInstrumentationRequestType}
 	}
 }
 
@@ -123,7 +156,7 @@ func (i *InstrumentationConfigReconciler) sendConfigUpdates(ctx context.Context,
 	case i.ConfigUpdates <- configUpdate:
 		return nil
 	default:
-		return errors.New("failed to send config update, consumer is busy")
+		return &consumerBusyError{configUpdateRequestType}
 	}
 }
 
@@ -218,6 +251,6 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 	case i.InstrumentationRequests <- ir:
 		return nil
 	default:
-		return errors.New("failed to send instrumentation request, consumer is busy")
+		return &consumerBusyError{instrumentationRequestType}
 	}
 }
