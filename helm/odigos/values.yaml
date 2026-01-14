@@ -661,8 +661,6 @@ metricsSources:
         # Individual metric configuration - each metric can be enabled/disabled
         metrics:
           # Class loading metrics
-          - name: jvm.gc.duration
-            disabled: true
           - name: jvm.memory.used
             disabled: true
 
