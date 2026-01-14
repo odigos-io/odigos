@@ -166,8 +166,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
-		// Uses IsWorkloadRolloutDoneFunc instead of IsWorkloadRolloutDone to allow for mocking in tests
-		rolloutDone := utils.IsWorkloadRolloutDoneFunc(workloadObj)
+		rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
 		if !rolloutDone && !rollbackDisabled {
 			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
@@ -235,8 +234,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false
-	// Uses IsWorkloadRolloutDoneFunc instead of IsWorkloadRolloutDone to allow for mocking in tests
-	if !utils.IsWorkloadRolloutDoneFunc(workloadObj) {
+	if !utils.IsWorkloadRolloutDone(workloadObj) {
 		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
 			Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 			Status:  metav1.ConditionUnknown,

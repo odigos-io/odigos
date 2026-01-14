@@ -8,7 +8,6 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -98,23 +97,24 @@ func Test_TriggeredRollout_PodInMidRollout_PreviousRolloutOngoing(t *testing.T) 
 }
 
 func Test_TriggeredRolloutRequeue_RolloutInProgress_TriggeredExternally(t *testing.T) {
-	// Arrange: Deployment looks complete by status fields, but we mock IsWorkloadRolloutDoneFunc
-	// to return false, simulating a rollout triggered externally (e.g., kubectl rollout restart)
+	// Arrange: Deployment looks complete by status fields, simulating a rollout triggered externally (e.g., kubectl rollout restart)
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
+	// Simulate an external rollout restart: status *looks* healthy (replicas ready),
+	// but the new spec hasn't been observed yet (Generation > ObservedGeneration).
+	replicas := int32(1)
+	deployment.Spec.Replicas = &replicas
+	deployment.Generation = 2
+	deployment.Status.ObservedGeneration = 1
+	deployment.Status.Replicas = replicas
+	deployment.Status.UpdatedReplicas = replicas
+	deployment.Status.AvailableReplicas = replicas
 	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
 	// Set a DIFFERENT hash to trigger new rollout path
 	ic.Status.WorkloadRolloutHash = "old-hash"
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-
-	// Mock IsWorkloadRolloutDoneFunc to return false (rollout in progress)
-	original := utils.IsWorkloadRolloutDoneFunc
-	defer func() { utils.IsWorkloadRolloutDoneFunc = original }()
-	utils.IsWorkloadRolloutDoneFunc = func(_ metav1.Object) bool {
-		return false
-	}
 
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
