@@ -51,8 +51,8 @@ spec:
               # --retry X: retry up to X times
               # --retry-delay X: wait X second between retries
               # --retry-max-time X: maximum time to spend retrying (X seconds for download)
-              curl -L -o odigos-latest.tgz --retry 5 --retry-delay 1 --retry-max-time 60 "$DOWNLOAD_URL"
-              tar -xvzf odigos-latest.tar.gz
+              curl -L -o odigos-latest-cli.tar.gz --retry 5 --retry-delay 1 --retry-max-time 60 "$DOWNLOAD_URL"
+              tar -xvzf odigos-latest-cli.tar.gz
 
               echo "🚀 Installing Odigos $IMAGE_TAG from CLI Binary..."
               ./odigos install --ns odigos-test || true
