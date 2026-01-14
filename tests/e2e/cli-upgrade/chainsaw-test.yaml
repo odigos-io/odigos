@@ -24,7 +24,7 @@ spec:
               #!/bin/bash
 
               # Define variables
-              REPO_URL="https://api.github.com/repos/odigos-io/odigos/releases/latest"
+              REPO_URL="https://api.github.com/repos/odigos-io/odigos/releases"
               ARCH=$(uname -m) # Get the system architecture
               OS=$(uname | tr '[:upper:]' '[:lower:]') # Get the OS name in lowercase
 
@@ -35,20 +35,43 @@ spec:
                   ARCH="arm64"
               fi
 
-              # Fetch the release assets from GitHub API with retry
+              # Fetch all releases from GitHub API with retry
               # --retry 5: retry up to 5 times
               # --retry-delay 1: wait 1 second between retries
               # --retry-max-time 30: maximum time to spend retrying (30 seconds)
-              ASSETS_JSON=$(curl -s --retry 5 --retry-delay 1 --retry-max-time 30 "$REPO_URL")
+              RELEASES_JSON=$(curl -s --retry 5 --retry-delay 1 --retry-max-time 30 "$REPO_URL")
 
-              # Find the download URL that matches the OS and architecture
-              DOWNLOAD_URL=$(echo "$ASSETS_JSON" | grep "browser_download_url" | grep "$OS" | grep "$ARCH" | cut -d '"' -f 4)
+              # Find the latest non-RC release by semantic version
+              # Filter out RC/prerelease/draft releases, then sort by semantic version and take the latest
+              LATEST_RELEASE_JSON=$(echo "$RELEASES_JSON" | jq -r '
+                [.[] | select(.tag_name | test("rc"; "i") | not) | select(.prerelease == false) | select(.draft == false)] |
+                sort_by(.tag_name | sub("^v"; "") | split(".") | map(tonumber)) |
+                reverse |
+                .[0]
+              ')
 
-              # Check if the download URL was found
-              if [ -z "$DOWNLOAD_URL" ]; then
-                  echo "No matching release found for OS: $OS and Architecture: $ARCH"
+              # Check if we found a valid release
+              if [ "$LATEST_RELEASE_JSON" = "null" ] || [ -z "$LATEST_RELEASE_JSON" ]; then
+                  echo "No valid non-RC release found"
                   exit 1
               fi
+
+              # Extract the tag name for logging
+              TAG_NAME=$(echo "$LATEST_RELEASE_JSON" | jq -r '.tag_name')
+              echo "Found latest non-RC release: $TAG_NAME"
+
+              # Find the download URL that matches the OS and architecture
+              DOWNLOAD_URL=$(echo "$LATEST_RELEASE_JSON" | jq -r --arg OS "$OS" --arg ARCH "$ARCH" '.assets[] | select(.name | contains($OS) and contains($ARCH)) | .browser_download_url')
+
+              # Check if the download URL was found
+              if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+                  echo "No matching release found for OS: $OS and Architecture: $ARCH"
+                  echo "Available assets for release $TAG_NAME:"
+                  echo "$LATEST_RELEASE_JSON" | jq -r '.assets[].name'
+                  exit 1
+              fi
+
+              echo "Downloading from: $DOWNLOAD_URL"
 
               # Download the matched asset with retry
               # --retry 5: retry up to 5 times
