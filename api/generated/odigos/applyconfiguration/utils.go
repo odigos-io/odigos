@@ -131,8 +131,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SpanRenamerConfig"):
 		return &odigosv1alpha1.SpanRenamerConfigApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SpanRenamerScopeConfig"):
-		return &odigosv1alpha1.SpanRenamerScopeConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SpanRenamerScopeRules"):
+		return &odigosv1alpha1.SpanRenamerScopeRulesApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("UrlTemplatizationConfig"):
 		return &odigosv1alpha1.UrlTemplatizationConfigApplyConfiguration{}
 
