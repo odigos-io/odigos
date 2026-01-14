@@ -29,6 +29,7 @@ const (
 	OdigosCentralDeploymentConfigMapName                  = "odigos-central-deployment"
 	OdigosCentralDeploymentConfigMapVersionKey            = "odigosCentralVersion"
 	OdigosCentralDeploymentConfigMapInstallationMethodKey = "installationMethod"
+	OdigosCentralDeploymentConfigMapBackendIDKey          = "centralBackendId"
 	DefaultOdigosCentralNamespace                         = "odigos-central"
 )
 

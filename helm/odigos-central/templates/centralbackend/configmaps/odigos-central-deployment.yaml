@@ -1,5 +1,12 @@
 {{- if (include "odigos.secretExists" .) }}
 {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+{{- $existingCM := lookup "v1" "ConfigMap" .Release.Namespace "odigos-central-deployment" }}
+{{- $backendID := "" }}
+{{- if and $existingCM $existingCM.data }}
+  {{- $backendID = index $existingCM.data "centralBackendId" | default (uuidv4) }}
+{{- else }}
+  {{- $backendID = uuidv4 }}
+{{- end }}
 
 apiVersion: v1
 kind: ConfigMap
@@ -11,6 +18,7 @@ metadata:
 data:
   odigosCentralVersion: {{ $imageTag | quote }}
   installationMethod: "helm"
+  centralBackendId: {{ $backendID | quote }}
 {{- end }}
 
 

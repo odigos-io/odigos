@@ -42,6 +42,11 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: KEYCLOAK_SECRET_NAME
               value: "keycloak-admin-credentials"
+            - name: CENTRALIZED_BACKEND_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: odigos-central-deployment
+                  key: centralBackendId
             {{- if .Values.centralBackend.maxMessageSize }}
             - name: MAX_MESSAGE_SIZE
               value: {{ .Values.centralBackend.maxMessageSize | quote }}

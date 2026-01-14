@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	"github.com/odigos-io/odigos/cli/pkg/containers"
@@ -47,9 +48,17 @@ func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVers
 func (m *centralBackendResourceManager) Name() string { return k8sconsts.CentralBackendName }
 
 func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) error {
+	// Try to preserve existing backend ID from previous installation
+	centralBackendID := uuid.New().String()
+	existingCM, err := m.client.CoreV1().ConfigMaps(m.ns).Get(ctx, k8sconsts.OdigosCentralDeploymentConfigMapName, metav1.GetOptions{})
+	if err == nil && existingCM.Data != nil {
+		if existingID, ok := existingCM.Data[k8sconsts.OdigosCentralDeploymentConfigMapBackendIDKey]; ok && existingID != "" {
+			centralBackendID = existingID
+		}
+	}
 
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
-		NewCentralBackendDeploymentConfigMap(m.ns, m.odigosVersion),
+		NewCentralBackendDeploymentConfigMap(m.ns, m.odigosVersion, centralBackendID),
 		NewCentralBackendServiceAccount(m.ns),
 		NewCentralBackendRole(m.ns),
 		NewCentralBackendRoleBinding(m.ns),
@@ -60,7 +69,7 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 }
 
 // NewCentralBackendDeploymentConfigMap creates (or updates) a ConfigMap that tracks installation metadata for Central Backend.
-func NewCentralBackendDeploymentConfigMap(ns string, odigosVersion string) *corev1.ConfigMap {
+func NewCentralBackendDeploymentConfigMap(ns string, odigosVersion string, centralBackendID string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -77,6 +86,7 @@ func NewCentralBackendDeploymentConfigMap(ns string, odigosVersion string) *core
 		Data: map[string]string{
 			k8sconsts.OdigosCentralDeploymentConfigMapVersionKey:            odigosVersion,
 			k8sconsts.OdigosCentralDeploymentConfigMapInstallationMethodKey: string(installationmethod.K8sInstallationMethodOdigosCli),
+			k8sconsts.OdigosCentralDeploymentConfigMapBackendIDKey:          centralBackendID,
 		},
 	}
 }
@@ -158,6 +168,17 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 								{
 									Name:  "KEYCLOAK_SECRET_NAME",
 									Value: k8sconsts.KeycloakSecretName,
+								},
+								{
+									Name: "CENTRALIZED_BACKEND_ID",
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: k8sconsts.OdigosCentralDeploymentConfigMapName,
+											},
+											Key: k8sconsts.OdigosCentralDeploymentConfigMapBackendIDKey,
+										},
+									},
 								},
 							}, dynamicEnv...),
 							Resources: corev1.ResourceRequirements{
