@@ -19,52 +19,40 @@ spec:
     - name: Install Odigos latest release from GitHub for pre upgrade setup
       try:
         - script:
-            timeout: 6m # longer timeout since the images are being pulled from dockerhub
+            timeout: 5m
             content: |
               #!/bin/bash
 
-              # Define variables
-              REPO_URL="https://api.github.com/repos/odigos-io/odigos/releases/latest"
-
-              # Fetch the release assets from GitHub API with retry
-              # --retry 5: retry up to 5 times
-              # --retry-delay 1: wait 1 second between retries
-              # --retry-max-time 30: maximum time to spend retrying (30 seconds)
-              ASSETS_JSON=$(curl -s --retry 5 --retry-delay 1 --retry-max-time 30 "$REPO_URL")
-
-              # Find the download URL for the BASE odigos helm chart 
-              CHART_DOWNLOAD_URL=$(echo "$ASSETS_JSON" \
-                | grep -E '"browser_download_url"' \
-                | grep -E 'helm-chart-odigos-[0-9]' \
-                | cut -d '"' -f 4 \
-                | head -n 1)
-
-              # Check if the download URL was found
-              if [ -z "$CHART_DOWNLOAD_URL" ]; then
-                  echo "No matching helm chart found in latest release"
-                  exit 1
-              fi
-
-              echo "Downloading Helm chart from: $CHART_DOWNLOAD_URL"
-
-              # Download the helm chart with retry
-              # --retry 5: retry up to 5 times
-              # --retry-delay 1: wait 1 second between retries
-              # --retry-max-time 60: maximum time to spend retrying (60 seconds for download)
-              curl -L -o odigos-latest-chart.tgz --retry 5 --retry-delay 1 --retry-max-time 60 "$CHART_DOWNLOAD_URL"
-
-              # Cleanup any existing installation that might be left over from previous runs
+              echo "🧼 Cleaning up any existing installation that might be left over from previous runs..."
               helm uninstall odigos -n odigos-test || true
 
-              # Install the latest version from the downloaded chart
+              echo "📦 Updating Helm repositories..."
+              helm repo add odigos https://odigos-io.github.io/odigos/
+              helm repo update
+
+              echo "🔍 Fetching latest Odigos release from Helm Chart..."
+              IMAGE_TAG=$(helm search repo odigos | awk '$1 == "odigos/odigos" {print $3}')
+              if [[ -z "$IMAGE_TAG" ]]; then
+                echo "❌ ERROR: Failed to fetch latest release, aborting..."
+              else
+                echo "✅ Successfully fetched latest Odigos release from Helm Chart: $IMAGE_TAG"
+              fi
+
+              DOWNLOAD_URL="https://github.com/odigos-io/odigos/releases/download/${IMAGE_TAG}/helm-chart-odigos-${IMAGE_TAG#v}.tgz"
+              echo "⬇️ Downloading Odigos $IMAGE_TAG from: $DOWNLOAD_URL"
+              # --retry X: retry up to X times
+              # --retry-delay X: wait X second between retries
+              # --retry-max-time X: maximum time to spend retrying (X seconds for download)
+              curl -L -o odigos-latest-chart.tgz --retry 5 --retry-delay 1 --retry-max-time 60 "$DOWNLOAD_URL"
+
+              echo "🚀 Installing Odigos $IMAGE_TAG from Helm Chart..."
               helm upgrade --install odigos ./odigos-latest-chart.tgz \
                 --create-namespace \
                 --namespace odigos-test \
                 --set nodeSelector."kubernetes\.io/os"=linux
-
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 4m
+            timeout: 1m
             file: ../../common/assert/latest-odigos-version-installed.yaml
 
     - name: Assert Trace DB is up
