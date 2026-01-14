@@ -14,7 +14,7 @@ type SpanRenamerRegexReplacement struct {
 	TemplateText string `json:"templateText"`
 
 	// regualr expression that will be used to match the part of the span name to be replaced.
-	RegexpPattern string `json:"regexpPattern"`
+	RegexPattern string `json:"regexPattern"`
 }
 
 // +kubebuilder:object:generate=true

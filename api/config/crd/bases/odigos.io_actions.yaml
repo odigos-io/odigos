@@ -603,7 +603,7 @@ spec:
                       description: configuration for replacing parts of the span name
                         with a template text based on regular expressions.
                       properties:
-                        regexpPattern:
+                        regexPattern:
                           description: regualr expression that will be used to match
                             the part of the span name to be replaced.
                           type: string
@@ -612,7 +612,7 @@ spec:
                             part of the span name.
                           type: string
                       required:
-                      - regexpPattern
+                      - regexPattern
                       - templateText
                       type: object
                     type: array
