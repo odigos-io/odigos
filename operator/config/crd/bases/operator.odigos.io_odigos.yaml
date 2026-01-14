@@ -75,6 +75,7 @@ spec:
                 - k8s-virtual-device
                 - k8s-host-path
                 - k8s-init-container
+                - k8s-csi-driver
                 type: string
               nodeSelector:
                 additionalProperties:
