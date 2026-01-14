@@ -15,7 +15,7 @@ It is recommended to use the default settings, unless you have specific requirem
 
 ## Supported Mount Methods
 
-Odigos supports 3 mount methods, which can be used depending on the user preference, cluster policies, integration with existing tools, etc.
+Odigos supports 4 mount methods, which can be used depending on the user preference, cluster policies, integration with existing tools, etc.
 
 ### 1. VirtualDevice
 
@@ -121,3 +121,47 @@ Odigos will add an InitContainer that copies the necessary files for instrumenta
 
 The InitContainer method must be enabled in the cluster and introduces a slight delay during pod initialization.
 This approach is ideal for users who prioritize avoiding hostPath or virtual device usage over startup speed.
+
+### 4. CSI Driver
+
+This is an opt-in configuration method that uses the Container Storage Interface (CSI) standard for mounting instrumentation files. It provides improved user experience over the VirtualDevice method by ensuring pods wait gracefully when the mount system isn't ready.
+
+**Enabling CSI Driver**
+
+- Odigos CLI: `odigos install --set instrumentor.mountMethod=k8s-csi-driver`
+- Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-csi-driver`, or use helm cli `--set instrumentor.mountMethod=k8s-csi-driver` flag with helm upgrade.
+- Kubernetes Manifest: under the `odigos-configuration` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-csi-driver`.
+
+#### Pod Manifest Additions
+
+For agents and languages that requires filesystem mounts, odigos webhook will add the following:
+
+- Volume to the pod spec, under the `spec.volumes` field:
+
+```yaml
+  - name: odigos-agent
+    csi:
+      driver: odigos.csi.driver
+      volumeAttributes:
+        type: instrumentation
+```
+
+- VolumeMount to the instrumented container specs, under the `spec.containers[].volumeMounts` field:
+
+```yaml
+    - mountPath: /var/odigos/{agent_sub_dir}
+      name: odigos-agent
+      readOnly: true
+      subPath: {agent_sub_dir}
+```
+
+#### Benefits
+
+- **Better User Experience**: Pods wait in "Creating" state until CSI driver is ready.
+- **Standard Compliance**: Uses Kubernetes CSI standard for storage integration.
+- **Same Functionality**: Provides identical mount behavior as the VirtualDevice method.
+
+#### Caveats
+
+- Requires CSI support in the cluster (available in Kubernetes 1.13+).
+- Like VirtualDevice, requires odiglet daemonset to be running on nodes for instrumented pods to be scheduled.
