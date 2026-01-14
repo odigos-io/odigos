@@ -659,10 +659,10 @@ metricsSources:
         # disabled: true
 
         # Individual metric configuration - each metric can be enabled/disabled
-        metrics:
-          # Class loading metrics
-          - name: jvm.memory.used
-            disabled: true
+        # metrics:
+        #   # Class loading metrics
+        #   - name: jvm.memory.used
+        #     disabled: true
 
 # Enable automatic Go library offsets updates.
 # See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
