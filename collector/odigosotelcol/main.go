@@ -9,8 +9,8 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
-	fileprovider "go.opentelemetry.io/collector/confmap/provider/fileprovider"
 	odigosk8scmprovider "go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider"
+	fileprovider "go.opentelemetry.io/collector/confmap/provider/fileprovider"
 	"go.opentelemetry.io/collector/otelcol"
 )
 
@@ -34,11 +34,12 @@ func main() {
 			},
 		},
 		ProviderModules: map[string]string{
-			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():         "go.opentelemetry.io/collector/confmap/provider/envprovider v0.130.0",
+			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/envprovider v0.130.0",
 			odigosk8scmprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.130.0",
-			fileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme():        "go.opentelemetry.io/collector/confmap/provider/fileprovider v0.130.0",
+			fileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/fileprovider v0.130.0",
+    	},
+		ConverterModules: []string{
 		},
-		ConverterModules: []string{},
 	}
 
 	if err := run(set); err != nil {
