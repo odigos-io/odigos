@@ -5,7 +5,7 @@ numpy==2.2.3
 packaging==25.0
 PyYAML==6.0.2
 requests==2.32.5
-scipy==1.15.2
+scipy==1.16.3
 svgpathtools==1.7.1
 svgwrite==1.4.3
 urllib3==2.5.0
