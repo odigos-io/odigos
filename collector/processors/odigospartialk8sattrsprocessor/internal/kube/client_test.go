@@ -7,10 +7,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -21,46 +18,9 @@ type ClientTestSuite struct {
 }
 
 func (s *ClientTestSuite) SetupTest() {
-	// Create fake dynamic client with InstrumentationConfig objects for workloads used in tests
-	scheme := runtime.NewScheme()
-
-	// Create InstrumentationConfig objects for all workloads used in tests
-	icDeployment := &unstructured.Unstructured{}
-	icDeployment.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
-	icDeployment.SetName("deployment-deployment")
-	icDeployment.SetNamespace("test-ns")
-
-	icDaemonSet := &unstructured.Unstructured{}
-	icDaemonSet.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
-	icDaemonSet.SetName("daemonset-my-daemonset")
-	icDaemonSet.SetNamespace("kube-system")
-
-	icStatefulSet := &unstructured.Unstructured{}
-	icStatefulSet.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
-	icStatefulSet.SetName("statefulset-postgres")
-	icStatefulSet.SetNamespace("database")
-
-	icMyService := &unstructured.Unstructured{}
-	icMyService.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
-	icMyService.SetName("deployment-my-service")
-	icMyService.SetNamespace("default")
-
-	icOldOwner := &unstructured.Unstructured{}
-	icOldOwner.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
-	icOldOwner.SetName("deployment-old-owner")
-	icOldOwner.SetNamespace("default")
-
-	icNewOwner := &unstructured.Unstructured{}
-	icNewOwner.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
-	icNewOwner.SetName("deployment-new-owner")
-	icNewOwner.SetNamespace("updated-ns")
-
-	fakeDynClient := fake.NewSimpleDynamicClient(scheme, icDeployment, icDaemonSet, icStatefulSet, icMyService, icOldOwner, icNewOwner)
-
 	s.client = &PodMetadataClient{
-		pods:          make(map[types.UID]*PartialPodMetadata),
-		deleteQueue:   []deleteRequest{},
-		dynamicClient: fakeDynClient,
+		pods:        make(map[types.UID]*PartialPodMetadata),
+		deleteQueue: []deleteRequest{},
 	}
 }
 
@@ -351,18 +311,9 @@ func TestConcurrencyTestSuite(t *testing.T) {
 }
 
 func (s *ConcurrencyTestSuite) TestConcurrentAccess() {
-	// Create fake dynamic client with InstrumentationConfig for concurrency test
-	scheme := runtime.NewScheme()
-	icConcurrent := &unstructured.Unstructured{}
-	icConcurrent.SetGroupVersionKind(instrumentationConfigGVR.GroupVersion().WithKind("InstrumentationConfig"))
-	icConcurrent.SetName("deployment-concurrent-deployment")
-	icConcurrent.SetNamespace("default")
-	fakeDynClient := fake.NewSimpleDynamicClient(scheme, icConcurrent)
-
 	client := &PodMetadataClient{
-		pods:          make(map[types.UID]*PartialPodMetadata),
-		deleteQueue:   []deleteRequest{},
-		dynamicClient: fakeDynClient,
+		pods:        make(map[types.UID]*PartialPodMetadata),
+		deleteQueue: []deleteRequest{},
 	}
 
 	var wg sync.WaitGroup
