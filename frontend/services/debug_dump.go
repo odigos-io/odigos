@@ -59,7 +59,7 @@ func DebugDump(c *gin.Context) {
 		// Create dry-run collector to estimate size
 		collector := diagnose.NewDryRunCollector()
 
-		if err := diagnose.RunDiagnose(ctx, kube.DefaultClient, kube.DefaultClient.DynamicClient, kube.DefaultClient.Discovery(), collector, rootDir, opts); err != nil {
+		if err := diagnose.RunDiagnose(ctx, kube.DefaultClient, kube.DefaultClient.DynamicClient, kube.DefaultClient.Discovery(), kube.DefaultClient.OdigosClient, collector, rootDir, opts); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to run diagnose: %v", err)})
 			return
 		}
@@ -97,7 +97,7 @@ func DebugDump(c *gin.Context) {
 	collector := diagnose.NewFileCollector()
 
 	// Run the diagnose collection
-	if err := diagnose.RunDiagnose(ctx, kube.DefaultClient, kube.DefaultClient.DynamicClient, kube.DefaultClient.Discovery(), collector, collectorRootDir, opts); err != nil {
+	if err := diagnose.RunDiagnose(ctx, kube.DefaultClient, kube.DefaultClient.DynamicClient, kube.DefaultClient.Discovery(), kube.DefaultClient.OdigosClient, collector, collectorRootDir, opts); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to run diagnose: %v", err)})
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -17,6 +18,7 @@ func RunDiagnose(
 	client kubernetes.Interface,
 	dynamicClient dynamic.Interface,
 	discoveryClient discovery.DiscoveryInterface,
+	odigosClient odigosv1alpha1.OdigosV1alpha1Interface,
 	collector Collector,
 	rootDir string,
 	opts Options,
@@ -35,7 +37,7 @@ func RunDiagnose(
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := FetchOdigosWorkloads(ctx, client, collector, rootDir, opts.OdigosNamespace, opts.IncludeLogs); err != nil {
+		if err := FetchOdigosWorkloads(ctx, client, dynamicClient, collector, rootDir, opts.OdigosNamespace, opts.IncludeLogs); err != nil {
 			klog.V(1).ErrorS(err, "Failed to fetch Odigos workloads")
 			errChan <- fmt.Errorf("workloads: %w", err)
 		}
@@ -97,7 +99,7 @@ func RunDiagnose(
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := FetchSourceWorkloads(ctx, client, dynamicClient, collector, rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs); err != nil {
+			if err := FetchSourceWorkloads(ctx, client, dynamicClient, odigosClient, collector, rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs); err != nil {
 				klog.V(1).ErrorS(err, "Failed to fetch source workloads")
 				errChan <- fmt.Errorf("source workloads: %w", err)
 			}
