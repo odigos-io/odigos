@@ -119,129 +119,32 @@ func collectWorkload(
 	kind k8sconsts.WorkloadKind,
 	includeLogs bool,
 ) error {
-	var selector labels.Selector
-
 	kindLower := string(workload.WorkloadKindLowerCaseFromKind(kind))
+
+	var selector labels.Selector
+	var err error
 
 	switch kind {
 	case k8sconsts.WorkloadKindDeployment:
-		obj, err := client.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
-			return err
-		}
-		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
-
+		selector, err = collectDeployment(ctx, client, collector, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindDaemonSet:
-		obj, err := client.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
-			return err
-		}
-		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
-
+		selector, err = collectDaemonSet(ctx, client, collector, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindStatefulSet:
-		obj, err := client.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
-			return err
-		}
-		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
-
+		selector, err = collectStatefulSet(ctx, client, collector, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindCronJob:
-		obj, err := client.BatchV1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
-			return err
-		}
-		if obj.Spec.JobTemplate.Spec.Selector != nil {
-			selector = labels.SelectorFromSet(obj.Spec.JobTemplate.Spec.Selector.MatchLabels)
-		}
-
+		selector, err = collectCronJob(ctx, client, collector, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindJob:
-		obj, err := client.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
-			return err
-		}
-		if obj.Spec.Selector != nil {
-			selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
-		}
-
+		selector, err = collectJob(ctx, client, collector, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindDeploymentConfig:
-		// OpenShift DeploymentConfig - use dynamic client
-		gvr := schema.GroupVersionResource{
-			Group:    "apps.openshift.io",
-			Version:  "v1",
-			Resource: "deploymentconfigs",
-		}
-		obj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		obj.SetManagedFields(nil)
-		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj.Object); err != nil {
-			return err
-		}
-		// Get selector from spec.selector
-		if spec, ok := obj.Object["spec"].(map[string]interface{}); ok {
-			if sel, ok := spec["selector"].(map[string]interface{}); ok {
-				selectorMap := make(map[string]string)
-				for k, v := range sel {
-					if vs, ok := v.(string); ok {
-						selectorMap[k] = vs
-					}
-				}
-				if len(selectorMap) > 0 {
-					selector = labels.SelectorFromSet(selectorMap)
-				}
-			}
-		}
-
+		selector, err = collectDeploymentConfig(ctx, dynamicClient, collector, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindArgoRollout:
-		// Argo Rollout - use dynamic client
-		gvr := schema.GroupVersionResource{
-			Group:    "argoproj.io",
-			Version:  "v1alpha1",
-			Resource: "rollouts",
-		}
-		obj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		obj.SetManagedFields(nil)
-		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj.Object); err != nil {
-			return err
-		}
-		// Get selector from spec.selector.matchLabels
-		if spec, ok := obj.Object["spec"].(map[string]interface{}); ok {
-			if sel, ok := spec["selector"].(map[string]interface{}); ok {
-				if matchLabels, ok := sel["matchLabels"].(map[string]interface{}); ok {
-					selectorMap := make(map[string]string)
-					for k, v := range matchLabels {
-						if vs, ok := v.(string); ok {
-							selectorMap[k] = vs
-						}
-					}
-					if len(selectorMap) > 0 {
-						selector = labels.SelectorFromSet(selectorMap)
-					}
-				}
-			}
-		}
-
+		selector, err = collectArgoRollout(ctx, dynamicClient, collector, workloadDir, namespace, name, kindLower)
 	default:
 		return workload.ErrKindNotSupported
+	}
+
+	if err != nil {
+		return err
 	}
 
 	if selector == nil {
@@ -250,6 +153,171 @@ func collectWorkload(
 
 	// Collect pods
 	return collectPods(ctx, client, collector, namespace, workloadDir, selector, includeLogs)
+}
+
+func collectDeployment(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	workloadDir, namespace, name, kindLower string,
+) (labels.Selector, error) {
+	obj, err := client.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+		return nil, err
+	}
+	return labels.SelectorFromSet(obj.Spec.Selector.MatchLabels), nil
+}
+
+func collectDaemonSet(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	workloadDir, namespace, name, kindLower string,
+) (labels.Selector, error) {
+	obj, err := client.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+		return nil, err
+	}
+	return labels.SelectorFromSet(obj.Spec.Selector.MatchLabels), nil
+}
+
+func collectStatefulSet(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	workloadDir, namespace, name, kindLower string,
+) (labels.Selector, error) {
+	obj, err := client.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+		return nil, err
+	}
+	return labels.SelectorFromSet(obj.Spec.Selector.MatchLabels), nil
+}
+
+func collectCronJob(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	workloadDir, namespace, name, kindLower string,
+) (labels.Selector, error) {
+	obj, err := client.BatchV1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+		return nil, err
+	}
+	if obj.Spec.JobTemplate.Spec.Selector != nil {
+		return labels.SelectorFromSet(obj.Spec.JobTemplate.Spec.Selector.MatchLabels), nil
+	}
+	return nil, nil
+}
+
+func collectJob(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	workloadDir, namespace, name, kindLower string,
+) (labels.Selector, error) {
+	obj, err := client.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+		return nil, err
+	}
+	if obj.Spec.Selector != nil {
+		return labels.SelectorFromSet(obj.Spec.Selector.MatchLabels), nil
+	}
+	return nil, nil
+}
+
+func collectDeploymentConfig(
+	ctx context.Context,
+	dynamicClient dynamic.Interface,
+	collector Collector,
+	workloadDir, namespace, name, kindLower string,
+) (labels.Selector, error) {
+	gvr := schema.GroupVersionResource{
+		Group:    "apps.openshift.io",
+		Version:  "v1",
+		Resource: "deploymentconfigs",
+	}
+	obj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	obj.SetManagedFields(nil)
+	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj.Object); err != nil {
+		return nil, err
+	}
+	return extractSelectorFromUnstructured(obj.Object, false), nil
+}
+
+func collectArgoRollout(
+	ctx context.Context,
+	dynamicClient dynamic.Interface,
+	collector Collector,
+	workloadDir, namespace, name, kindLower string,
+) (labels.Selector, error) {
+	gvr := schema.GroupVersionResource{
+		Group:    "argoproj.io",
+		Version:  "v1alpha1",
+		Resource: "rollouts",
+	}
+	obj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	obj.SetManagedFields(nil)
+	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj.Object); err != nil {
+		return nil, err
+	}
+	return extractSelectorFromUnstructured(obj.Object, true), nil
+}
+
+// extractSelectorFromUnstructured extracts labels selector from unstructured object.
+// If useMatchLabels is true, looks for spec.selector.matchLabels (k8s style).
+// If false, looks for spec.selector directly (OpenShift DeploymentConfig style).
+func extractSelectorFromUnstructured(obj map[string]interface{}, useMatchLabels bool) labels.Selector {
+	spec, ok := obj["spec"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	sel, ok := spec["selector"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	var labelMap map[string]interface{}
+	if useMatchLabels {
+		labelMap, ok = sel["matchLabels"].(map[string]interface{})
+		if !ok {
+			return nil
+		}
+	} else {
+		labelMap = sel
+	}
+
+	selectorMap := make(map[string]string)
+	for k, v := range labelMap {
+		if vs, ok := v.(string); ok {
+			selectorMap[k] = vs
+		}
+	}
+	if len(selectorMap) > 0 {
+		return labels.SelectorFromSet(selectorMap)
+	}
+	return nil
 }
 
 func collectPods(
