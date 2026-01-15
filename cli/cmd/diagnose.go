@@ -92,7 +92,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	}
 
 	// Run the diagnose collection
-	if err := diagnose.RunDiagnose(ctx, client.Clientset, client.Dynamic, client.Clientset.Discovery(), collector, collectorRootDir, opts); err != nil {
+	if err := diagnose.RunDiagnose(ctx, client.Clientset, client.Dynamic, client.Clientset.Discovery(), client.OdigosClient, collector, collectorRootDir, opts); err != nil {
 		klog.V(1).ErrorS(err, "Some diagnose operations had errors")
 	}
 

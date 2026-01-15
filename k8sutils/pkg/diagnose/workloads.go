@@ -17,7 +17,9 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
+	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
 // WorkloadTarget represents a workload to collect
@@ -34,6 +36,7 @@ type WorkloadTarget struct {
 func FetchOdigosWorkloads(
 	ctx context.Context,
 	client kubernetes.Interface,
+	dynamicClient dynamic.Interface,
 	collector Collector,
 	rootDir, odigosNamespace string,
 	includeLogs bool,
@@ -98,7 +101,7 @@ func FetchOdigosWorkloads(
 	for i := 0; i < len(targets); i++ {
 		t := &targets[i]
 		workloadDir := path.Join(rootDir, t.Namespace, t.DirName)
-		err := collectWorkload(ctx, client, collector, workloadDir, t.Namespace, t.Name, t.Kind, t.IncludeLogs)
+		err := collectWorkload(ctx, client, dynamicClient, collector, workloadDir, t.Namespace, t.Name, t.Kind, t.IncludeLogs)
 		if err != nil && !apierrors.IsNotFound(err) {
 			klog.V(1).ErrorS(err, "Failed to collect workload", "name", t.Name, "kind", t.Kind)
 		}
@@ -110,6 +113,7 @@ func FetchOdigosWorkloads(
 func collectWorkload(
 	ctx context.Context,
 	client kubernetes.Interface,
+	dynamicClient dynamic.Interface,
 	collector Collector,
 	workloadDir, namespace, name string,
 	kind k8sconsts.WorkloadKind,
@@ -117,13 +121,15 @@ func collectWorkload(
 ) error {
 	var selector labels.Selector
 
+	kindLower := string(workload.WorkloadKindLowerCaseFromKind(kind))
+
 	switch kind {
 	case k8sconsts.WorkloadKindDeployment:
 		obj, err := client.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		if err := addWorkloadYAML(collector, workloadDir, "deployment", name, obj); err != nil {
+		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
 			return err
 		}
 		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
@@ -133,7 +139,7 @@ func collectWorkload(
 		if err != nil {
 			return err
 		}
-		if err := addWorkloadYAML(collector, workloadDir, "daemonset", name, obj); err != nil {
+		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
 			return err
 		}
 		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
@@ -143,7 +149,7 @@ func collectWorkload(
 		if err != nil {
 			return err
 		}
-		if err := addWorkloadYAML(collector, workloadDir, "statefulset", name, obj); err != nil {
+		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
 			return err
 		}
 		selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
@@ -153,15 +159,89 @@ func collectWorkload(
 		if err != nil {
 			return err
 		}
-		if err := addWorkloadYAML(collector, workloadDir, "cronjob", name, obj); err != nil {
+		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
 			return err
 		}
 		if obj.Spec.JobTemplate.Spec.Selector != nil {
 			selector = labels.SelectorFromSet(obj.Spec.JobTemplate.Spec.Selector.MatchLabels)
 		}
 
+	case k8sconsts.WorkloadKindJob:
+		obj, err := client.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+			return err
+		}
+		if obj.Spec.Selector != nil {
+			selector = labels.SelectorFromSet(obj.Spec.Selector.MatchLabels)
+		}
+
+	case k8sconsts.WorkloadKindDeploymentConfig:
+		// OpenShift DeploymentConfig - use dynamic client
+		gvr := schema.GroupVersionResource{
+			Group:    "apps.openshift.io",
+			Version:  "v1",
+			Resource: "deploymentconfigs",
+		}
+		obj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		obj.SetManagedFields(nil)
+		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj.Object); err != nil {
+			return err
+		}
+		// Get selector from spec.selector
+		if spec, ok := obj.Object["spec"].(map[string]interface{}); ok {
+			if sel, ok := spec["selector"].(map[string]interface{}); ok {
+				selectorMap := make(map[string]string)
+				for k, v := range sel {
+					if vs, ok := v.(string); ok {
+						selectorMap[k] = vs
+					}
+				}
+				if len(selectorMap) > 0 {
+					selector = labels.SelectorFromSet(selectorMap)
+				}
+			}
+		}
+
+	case k8sconsts.WorkloadKindArgoRollout:
+		// Argo Rollout - use dynamic client
+		gvr := schema.GroupVersionResource{
+			Group:    "argoproj.io",
+			Version:  "v1alpha1",
+			Resource: "rollouts",
+		}
+		obj, err := dynamicClient.Resource(gvr).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		obj.SetManagedFields(nil)
+		if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj.Object); err != nil {
+			return err
+		}
+		// Get selector from spec.selector.matchLabels
+		if spec, ok := obj.Object["spec"].(map[string]interface{}); ok {
+			if sel, ok := spec["selector"].(map[string]interface{}); ok {
+				if matchLabels, ok := sel["matchLabels"].(map[string]interface{}); ok {
+					selectorMap := make(map[string]string)
+					for k, v := range matchLabels {
+						if vs, ok := v.(string); ok {
+							selectorMap[k] = vs
+						}
+					}
+					if len(selectorMap) > 0 {
+						selector = labels.SelectorFromSet(selectorMap)
+					}
+				}
+			}
+		}
+
 	default:
-		return nil
+		return workload.ErrKindNotSupported
 	}
 
 	if selector == nil {
@@ -244,6 +324,10 @@ func cleanObjectForExport(obj interface{}) interface{} {
 		cleaned := v.DeepCopy()
 		cleaned.ManagedFields = nil
 		return cleaned
+	case *batchv1.Job:
+		cleaned := v.DeepCopy()
+		cleaned.ManagedFields = nil
+		return cleaned
 	case *corev1.Pod:
 		cleaned := v.DeepCopy()
 		cleaned.ManagedFields = nil
@@ -263,6 +347,7 @@ func FetchSourceWorkloads(
 	ctx context.Context,
 	client kubernetes.Interface,
 	dynamicClient dynamic.Interface,
+	odigosClient odigosv1alpha1.OdigosV1alpha1Interface,
 	collector Collector,
 	rootDir string,
 	namespaceFilter []string,
@@ -278,14 +363,8 @@ func FetchSourceWorkloads(
 	}
 	filterByNamespace := len(allowedNamespaces) > 0
 
-	// List all Source CRDs
-	sourceGVR := schema.GroupVersionResource{
-		Group:    "odigos.io",
-		Version:  "v1alpha1",
-		Resource: "sources",
-	}
-
-	sourceList, err := dynamicClient.Resource(sourceGVR).List(ctx, metav1.ListOptions{})
+	// List all Source CRDs using the typed client (empty namespace = all namespaces)
+	sourceList, err := odigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to list Source CRDs: %w", err)
 	}
@@ -293,60 +372,48 @@ func FetchSourceWorkloads(
 	// Track collected workloads to avoid duplicates
 	collected := make(map[string]bool)
 
-	for _, item := range sourceList.Items {
-		spec, ok := item.Object["spec"].(map[string]interface{})
-		if !ok {
+	for i := range sourceList.Items {
+		source := &sourceList.Items[i]
+		wl := source.Spec.Workload
+
+		// Skip invalid entries
+		if wl.Kind == "" || wl.Name == "" || wl.Namespace == "" {
 			continue
 		}
 
-		workload, ok := spec["workload"].(map[string]interface{})
-		if !ok {
+		// Skip namespace-level and static pod sources (not collectable workloads)
+		if wl.Kind == k8sconsts.WorkloadKindNamespace || wl.Kind == k8sconsts.WorkloadKindStaticPod {
 			continue
 		}
 
-		name, _ := workload["name"].(string)
-		namespace, _ := workload["namespace"].(string)
-		kindStr, _ := workload["kind"].(string)
-
-		// Skip namespace-level sources (they have kind "Namespace")
-		if kindStr == "Namespace" || kindStr == "" || name == "" || namespace == "" {
+		// Skip invalid workload kinds
+		if !workload.IsValidWorkloadKind(wl.Kind) {
+			klog.V(2).InfoS("Skipping invalid workload kind", "kind", wl.Kind, "name", wl.Name)
 			continue
 		}
 
 		// Apply namespace filter if provided
-		if filterByNamespace && !allowedNamespaces[namespace] {
+		if filterByNamespace && !allowedNamespaces[wl.Namespace] {
 			continue
 		}
 
 		// Skip duplicates
-		key := fmt.Sprintf("%s/%s/%s", namespace, kindStr, name)
+		key := fmt.Sprintf("%s/%s/%s", wl.Namespace, wl.Kind, wl.Name)
 		if collected[key] {
 			continue
 		}
 		collected[key] = true
 
-		// Map string kind to WorkloadKind
-		var kind k8sconsts.WorkloadKind
-		switch kindStr {
-		case "Deployment":
-			kind = k8sconsts.WorkloadKindDeployment
-		case "DaemonSet":
-			kind = k8sconsts.WorkloadKindDaemonSet
-		case "StatefulSet":
-			kind = k8sconsts.WorkloadKindStatefulSet
-		case "CronJob":
-			kind = k8sconsts.WorkloadKindCronJob
-		default:
-			klog.V(2).InfoS("Skipping unknown workload kind", "kind", kindStr, "name", name)
-			continue
-		}
+		kindLower := workload.WorkloadKindLowerCaseFromKind(wl.Kind)
+		dirName := fmt.Sprintf("%s-%s", kindLower, wl.Name)
+		workloadDir := path.Join(rootDir, wl.Namespace, dirName)
 
-		dirName := fmt.Sprintf("%s-%s", kindStr, name)
-		workloadDir := path.Join(rootDir, namespace, dirName)
-
-		if err := collectWorkload(ctx, client, collector, workloadDir, namespace, name, kind, includeLogs); err != nil {
-			if !apierrors.IsNotFound(err) {
-				klog.V(1).ErrorS(err, "Failed to collect source workload", "namespace", namespace, "name", name, "kind", kindStr)
+		err := collectWorkload(ctx, client, dynamicClient, collector, workloadDir, wl.Namespace, wl.Name, wl.Kind, includeLogs)
+		if err != nil {
+			if workload.IsErrorKindNotSupported(err) {
+				klog.V(2).InfoS("Workload kind not supported for collection", "kind", wl.Kind, "name", wl.Name)
+			} else if !apierrors.IsNotFound(err) {
+				klog.V(1).ErrorS(err, "Failed to collect source workload", "namespace", wl.Namespace, "name", wl.Name, "kind", wl.Kind)
 			}
 		}
 	}
