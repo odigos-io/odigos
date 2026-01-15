@@ -136,6 +136,12 @@ func getSourcePods(ctx context.Context, kubeClient kubernetes.Interface, workloa
 			}
 		}
 		return pods, nil
+	} else if podLabelSelector == "" {
+		pod, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).Get(ctx, workloadObj.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return &corev1.PodList{Items: []corev1.Pod{*pod}}, nil
 	} else {
 		pods, err := kubeClient.CoreV1().Pods(workloadObj.Namespace).List(ctx, metav1.ListOptions{LabelSelector: podLabelSelector})
 		if err != nil {
