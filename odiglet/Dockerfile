@@ -97,6 +97,10 @@ WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by deviceplugin
 COPY common/ common/
 COPY k8sutils/ k8sutils/
+COPY procdiscovery/ procdiscovery/
+COPY api/ api/
+COPY distros/ distros/
+COPY instrumentation/ instrumentation/
 # Build deviceplugin binary
 WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
 COPY deviceplugin/ .
