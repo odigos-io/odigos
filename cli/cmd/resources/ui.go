@@ -203,18 +203,23 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get"},
 			},
-			{ // Needed for pod operations (restart pod)
-				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     []string{"get", "list"},
-			},
-			{ // Needed for reading Pods logs
-				APIGroups: []string{""},
-				Resources: []string{"pods/log"},
-				Verbs:     []string{"get"},
-			},
-		}
-	} else {
+		{ // Needed for pod operations (restart pod)
+			APIGroups: []string{""},
+			Resources: []string{"pods"},
+			Verbs:     []string{"get", "list"},
+		},
+		{ // Needed for reading Pods logs
+			APIGroups: []string{""},
+			Resources: []string{"pods/log"},
+			Verbs:     []string{"get"},
+		},
+		{ // Needed for debug dump (pprof profiles and metrics)
+			APIGroups: []string{""},
+			Resources: []string{"pods/proxy"},
+			Verbs:     []string{"get"},
+		},
+	}
+} else {
 		rules = []rbacv1.PolicyRule{
 			{ // Needed to read and update odigos-configuration configmap for settings
 				APIGroups: []string{""},
@@ -251,18 +256,23 @@ func NewUIRole(ns string, readonly bool) *rbacv1.Role {
 				Resources: []string{"horizontalpodautoscalers"},
 				Verbs:     []string{"get"},
 			},
-			{ // Needed for pod operations (restart pod)
-				APIGroups: []string{""},
-				Resources: []string{"pods"},
-				Verbs:     []string{"get", "list", "delete"},
-			},
-			{ // Needed for reading Pods logs
-				APIGroups: []string{""},
-				Resources: []string{"pods/log"},
-				Verbs:     []string{"get"},
-			},
-		}
+		{ // Needed for pod operations (restart pod)
+			APIGroups: []string{""},
+			Resources: []string{"pods"},
+			Verbs:     []string{"get", "list", "delete"},
+		},
+		{ // Needed for reading Pods logs
+			APIGroups: []string{""},
+			Resources: []string{"pods/log"},
+			Verbs:     []string{"get"},
+		},
+		{ // Needed for debug dump (pprof profiles and metrics)
+			APIGroups: []string{""},
+			Resources: []string{"pods/proxy"},
+			Verbs:     []string{"get"},
+		},
 	}
+}
 
 	return &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{

@@ -104,15 +104,24 @@ func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, colle
 	klog.V(2).InfoS("Fetching Odigos Profiles", "namespace", odigosNamespace)
 
 	var podsWaitGroup sync.WaitGroup
+	var totalPods int
 
 	for serviceName, service := range servicesProfilingMetadata {
 		podsToProfile, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
 			LabelSelector: service.Selector.String(),
 		})
 		if err != nil {
-			klog.V(1).ErrorS(err, "Failed to list pods for profiling", "service", serviceName)
+			fmt.Printf("  Warning: Failed to list pods for %s: %v\n", serviceName, err)
 			continue
 		}
+
+		if len(podsToProfile.Items) == 0 {
+			fmt.Printf("  No %s pods found for profiling\n", serviceName)
+			continue
+		}
+
+		totalPods += len(podsToProfile.Items)
+		fmt.Printf("  Found %d %s pod(s) for profiling\n", len(podsToProfile.Items), serviceName)
 
 		for i := 0; i < len(podsToProfile.Items); i++ {
 			pod := &podsToProfile.Items[i]
@@ -165,6 +174,11 @@ func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, colle
 	}
 
 	podsWaitGroup.Wait()
+
+	if totalPods == 0 {
+		fmt.Printf("  No pods found for profiling in namespace %s\n", odigosNamespace)
+	}
+
 	return nil
 }
 
