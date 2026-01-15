@@ -130,3 +130,10 @@ rules:
       - pods/log
     verbs:
       - get
+  # Get pod proxy for debug dump (pprof profiles and metrics)
+  - apiGroups:
+      - ''
+    resources:
+      - pods/proxy
+    verbs:
+      - get

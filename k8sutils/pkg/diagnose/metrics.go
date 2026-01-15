@@ -54,8 +54,16 @@ func collectMetricsForRole(
 		LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(collectorRole),
 	})
 	if err != nil {
+		fmt.Printf("  Warning: Failed to list %s pods: %v\n", collectorRole, err)
 		return err
 	}
+
+	if len(collectorPods.Items) == 0 {
+		fmt.Printf("  No %s pods found for metrics collection\n", collectorRole)
+		return nil
+	}
+
+	fmt.Printf("  Found %d %s pod(s) for metrics collection\n", len(collectorPods.Items), collectorRole)
 
 	var wg sync.WaitGroup
 
