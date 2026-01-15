@@ -19,14 +19,20 @@ import (
 // DebugDump generates a tar.gz file containing logs and YAML manifests
 // for all Odigos components running in the odigos system namespace.
 // Query params:
+//   - includeProfiles: if "false", skip pprof profiles (default: true)
+//   - includeMetrics: if "false", skip Prometheus metrics (default: true)
 //   - includeSourceWorkloads: if "true", also include workload and pod YAMLs for each instrumented Source
 //   - sourceWorkloadNamespaces: comma-separated list of namespaces to collect source workloads from (only used when includeSourceWorkloads=true, defaults to all namespaces)
 //   - dryRun: if "true", returns JSON with estimated size instead of generating the file
 func DebugDump(c *gin.Context) {
 	ctx := c.Request.Context()
 	ns := env.GetCurrentNamespace()
-	includeSourceWorkloads := c.Query("includeSourceWorkloads") == "true"
 	dryRun := c.Query("dryRun") == "true"
+
+	// Parse boolean options (default to true unless explicitly set to "false")
+	includeProfiles := c.Query("includeProfiles") != "false"
+	includeMetrics := c.Query("includeMetrics") != "false"
+	includeSourceWorkloads := c.Query("includeSourceWorkloads") == "true"
 
 	// Parse sourceWorkloadNamespaces - comma-separated list of namespaces to filter by
 	var sourceWorkloadNamespaces []string
@@ -41,6 +47,8 @@ func DebugDump(c *gin.Context) {
 	// Configure options matching the CLI diagnose behavior
 	opts := diagnose.DefaultOptions()
 	opts.OdigosNamespace = ns
+	opts.IncludeProfiles = includeProfiles
+	opts.IncludeMetrics = includeMetrics
 	opts.IncludeSourceWorkloads = includeSourceWorkloads
 	opts.SourceWorkloadNamespaces = sourceWorkloadNamespaces
 
@@ -59,6 +67,8 @@ func DebugDump(c *gin.Context) {
 		stats := collector.GetStats()
 		c.JSON(http.StatusOK, gin.H{
 			"dryRun":                   true,
+			"includeProfiles":          includeProfiles,
+			"includeMetrics":           includeMetrics,
 			"includeSourceWorkloads":   includeSourceWorkloads,
 			"sourceWorkloadNamespaces": sourceWorkloadNamespaces,
 			"fileCount":                stats.FileCount,
