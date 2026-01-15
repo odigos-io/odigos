@@ -8,7 +8,16 @@ import type { SourceConditions, SourceInstrumentInput } from '@/types';
 import { addAgentInjectionStatusToSources, addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCE_LIBRARIES, GET_SOURCES, GET_WORKLOADS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, Workload } from '@odigos/ui-kit/types';
-import { type NamespaceSelectionFormData, type SourceSelectionFormData, useDataStreamStore, useEntityStore, useInstrumentStore, useNotificationStore, useSetupStore } from '@odigos/ui-kit/store';
+import {
+  type NamespaceSelectionFormData,
+  type SourceSelectionFormData,
+  useDataStreamStore,
+  useEntityStore,
+  useNotificationStore,
+  useSetupStore,
+  useProgressStore,
+  ProgressKeys,
+} from '@odigos/ui-kit/store';
 
 interface UseSourceCrud {
   sources: Source[];
@@ -22,10 +31,10 @@ interface UseSourceCrud {
 
 export const useSourceCRUD = (): UseSourceCrud => {
   const { isReadonly } = useConfig();
+  const { setProgress, resetProgress } = useProgressStore();
   const { persistNamespaces } = useNamespace();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
-  const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
   const { sourcesLoading, setEntitiesLoading, sources, setEntities, addEntities, removeEntities } = useEntityStore();
   const { setFetchedAllNamespaces, setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
 
@@ -43,11 +52,8 @@ export const useSourceCRUD = (): UseSourceCrud => {
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
-      setInstrumentAwait(false);
-      setInstrumentCount('sourcesToCreate', 0);
-      setInstrumentCount('sourcesCreated', 0);
-      setInstrumentCount('sourcesToDelete', 0);
-      setInstrumentCount('sourcesDeleted', 0);
+      resetProgress(ProgressKeys.Instrumenting);
+      resetProgress(ProgressKeys.Uninstrumenting);
       notifyUser(StatusType.Error, error.name || Crud.Update, error.cause?.message || error.message);
     },
   });
@@ -57,14 +63,20 @@ export const useSourceCRUD = (): UseSourceCrud => {
   });
 
   const handleInstrumentationCount = (toAddCount: number, toDeleteCount: number) => {
-    const { sourcesToCreate, sourcesToDelete } = useInstrumentStore.getState();
+    const { progress } = useProgressStore.getState();
 
     // TODO: estimate the number of instrumentationConfigs to create for future-apps
 
-    if (toDeleteCount > 0) setInstrumentCount('sourcesToDelete', sourcesToDelete + toDeleteCount);
-    if (toAddCount > 0) setInstrumentCount('sourcesToCreate', sourcesToCreate + toAddCount);
-
-    if (toDeleteCount > 0 || toAddCount > 0) setInstrumentAwait(true);
+    if (toAddCount > 0)
+      setProgress(ProgressKeys.Instrumenting, {
+        total: (progress[ProgressKeys.Instrumenting]?.total || 0) + toAddCount,
+        current: progress[ProgressKeys.Instrumenting]?.current || 0,
+      });
+    if (toDeleteCount > 0)
+      setProgress(ProgressKeys.Uninstrumenting, {
+        total: (progress[ProgressKeys.Uninstrumenting]?.total || 0) + toDeleteCount,
+        current: progress[ProgressKeys.Uninstrumenting]?.current || 0,
+      });
   };
 
   const fetchAllConditions = async (allSources: Source[]) => {
