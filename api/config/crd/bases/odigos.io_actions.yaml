@@ -572,6 +572,58 @@ spec:
                   - METRICS
                   type: string
                 type: array
+              spanRenamer:
+                description: SpanRenamer is the config for the SpanRenamer Action.
+                properties:
+                  programmingLanguage:
+                    description: the programming language which the renamed spans
+                      are written in.
+                    enum:
+                    - java
+                    - python
+                    - go
+                    - dotnet
+                    - javascript
+                    - php
+                    - ruby
+                    - rust
+                    - cplusplus
+                    - mysql
+                    - nginx
+                    - redis
+                    - postgres
+                    - unknown
+                    - ignored
+                    type: string
+                  regexReplacements:
+                    description: |-
+                      list of regex replacements to be applied to the span name.
+                      all options are always tried, regardless of whether the previous options have matched or not.
+                    items:
+                      description: configuration for replacing parts of the span name
+                        with a template text based on regular expressions.
+                      properties:
+                        regexPattern:
+                          description: regualr expression that will be used to match
+                            the part of the span name to be replaced.
+                          type: string
+                        templateText:
+                          description: the text to be used for replacing the matched
+                            part of the span name.
+                          type: string
+                      required:
+                      - regexPattern
+                      - templateText
+                      type: object
+                    type: array
+                  scopeName:
+                    description: the name of the opentelemetry intrumentation scope
+                      which is producing the spans to be renamed.
+                    type: string
+                required:
+                - programmingLanguage
+                - scopeName
+                type: object
               urlTemplatization:
                 description: URLTemplatization is the config for the URLTemplatization
                   Action.

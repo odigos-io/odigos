@@ -43,6 +43,7 @@ var validActionConfigNames = []string{
 	actionsv1alpha1.ActionNameK8sAttributes,
 	actionsv1alpha1.ActionNameSamplers,
 	actions.ActionNameURLTemplatization,
+	actions.ActionSpanRenamer,
 }
 
 type ActionsValidator struct {
@@ -176,6 +177,10 @@ func (a *ActionsValidator) validateAction(ctx context.Context, action *v1alpha1.
 	if action.Spec.URLTemplatization != nil {
 		path := field.NewPath("spec").Child("urlTemplatization")
 		fields[path] = action.Spec.URLTemplatization
+	}
+	if action.Spec.SpanRenamer != nil {
+		path := field.NewPath("spec").Child("spanRenamer")
+		fields[path] = action.Spec.SpanRenamer
 	}
 
 	if len(fields) == 0 {

@@ -39,9 +39,11 @@ type Odiglet struct {
 	criClient               *criwrapper.CriClient
 }
 
+// channel sizes for sending events to the instrumentation manager's event loop.
+// during bursts, or start-ups we want to be able to queue events in the channels without blocking the reconciler.
 const (
-	configUpdatesBufferSize           = 10
-	instrumentationRequestsBufferSize = 50
+	configUpdatesBufferSize           = 100
+	instrumentationRequestsBufferSize = 200
 )
 
 // New creates a new Odiglet instance.

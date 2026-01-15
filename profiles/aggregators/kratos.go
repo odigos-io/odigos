@@ -26,7 +26,8 @@ var KratosProfile = profile.Profile{
 		"semconvredis",
 	},
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
-		rollbackDisabled := true
-		config.RollbackDisabled = &rollbackDisabled
+		disabled := true
+		config.RollbackDisabled = &disabled
+		config.MetricsSources.AgentMetrics.RuntimeMetrics.Java.Disabled = &disabled
 	},
 }

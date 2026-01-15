@@ -37,6 +37,7 @@ type ActionSpecApplyConfiguration struct {
 	K8sAttributes     *actionsv1alpha1.K8sAttributesConfig   `json:"k8sAttributes,omitempty"`
 	Samplers          *actionsv1alpha1.SamplersConfig        `json:"samplers,omitempty"`
 	URLTemplatization *actions.URLTemplatizationConfig       `json:"urlTemplatization,omitempty"`
+	SpanRenamer       *actions.SpanRenamerConfig             `json:"spanRenamer,omitempty"`
 }
 
 // ActionSpecApplyConfiguration constructs a declarative configuration of the ActionSpec type for use with
@@ -132,5 +133,13 @@ func (b *ActionSpecApplyConfiguration) WithSamplers(value actionsv1alpha1.Sample
 // If called multiple times, the URLTemplatization field is set to the value of the last call.
 func (b *ActionSpecApplyConfiguration) WithURLTemplatization(value actions.URLTemplatizationConfig) *ActionSpecApplyConfiguration {
 	b.URLTemplatization = &value
+	return b
+}
+
+// WithSpanRenamer sets the SpanRenamer field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SpanRenamer field is set to the value of the last call.
+func (b *ActionSpecApplyConfiguration) WithSpanRenamer(value actions.SpanRenamerConfig) *ActionSpecApplyConfiguration {
+	b.SpanRenamer = &value
 	return b
 }

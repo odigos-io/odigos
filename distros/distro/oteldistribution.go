@@ -167,6 +167,11 @@ type UrlTemplatization struct {
 	Supported bool `yaml:"supported,omitempty"`
 }
 
+type SpanRenamer struct {
+	// if true, the distro supports applying span renamer rules to traces in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
 type Traces struct {
 	// if set, the distro supports head sampling based on root spans of traces.
 	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
@@ -177,6 +182,9 @@ type Traces struct {
 	// if set, the distro supports applying URL templatization rules to traces in the agent.
 	// useful when spanmetrics are calculated in the agent itself, and for head sampling to use correct route.
 	UrlTemplatization *UrlTemplatization `yaml:"urlTemplatization,omitempty"`
+
+	// if set, the distro supports applying span renamer rules to traces in the agent.
+	SpanRenamer *SpanRenamer `yaml:"spanRenamer,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,

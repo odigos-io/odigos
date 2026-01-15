@@ -54,6 +54,7 @@ jobs:
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
             RHEL=${{ matrix.rhel }}
+            ODIGOS_VERSION=v0.0.0-pr${{ github.event.number }}
           target: >-
             ${{ matrix.service == 'agents' && matrix.rhel == 'true' && 'agents-rhel' ||
                 matrix.service == 'agents' && 'agents' ||

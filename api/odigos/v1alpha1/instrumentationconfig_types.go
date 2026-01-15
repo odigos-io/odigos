@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	actions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	v1 "k8s.io/api/core/v1"
@@ -304,6 +305,29 @@ type UrlTemplatizationConfig struct {
 	Rules []string `json:"templatizationRules,omitempty"`
 }
 
+type SpanRenamerScopeConfig struct {
+	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
+	ScopeName string `json:"scopeName"`
+
+	// if set, spans matching the above conditions will be renamed to this static value.
+	ConstantSpanName string `json:"constantSpanName,omitempty"`
+}
+
+type SpanRenamerScopeRules struct {
+	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
+	ScopeName string `json:"scopeName"`
+
+	// list of regex replacements to be applied to the span name.
+	// all options are always tried, regardless of whether the previous options have matched or not.
+	RegexReplacements []actions.SpanRenamerRegexReplacement `json:"regexReplacements,omitempty"`
+}
+
+type SpanRenamerConfig struct {
+	// list of scope rules to be applied to the span name.
+	// all options are always tried, regardless of whether the previous options have matched or not.
+	ScopeRules []SpanRenamerScopeRules `json:"scopeRules,omitempty"`
+}
+
 // HeadersCollectionConfig represents configuration for HTTP headers collection.
 type HeadersCollectionConfig struct {
 	// Limit HTTP headers collection to specific header keys.
@@ -329,6 +353,9 @@ type AgentTracesConfig struct {
 	// This config currently only applies to root spans.
 	// In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)
 	HeadSampling *HeadSamplingConfig `json:"headSampling,omitempty"`
+
+	// Configuration for span renamer.
+	SpanRenamer *SpanRenamerConfig `json:"spanRenamer,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.

@@ -287,7 +287,7 @@ func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c cl
 		return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, rolloutPatch))
 	case *corev1.Pod:
 		if workload.IsStaticPod(obj) {
-			return errors.New("can't restart static pods")			
+			return errors.New("can't restart static pods")
 		}
 		return errors.New("currently not supporting standalone pods as workloads for rollout")
 	default:
