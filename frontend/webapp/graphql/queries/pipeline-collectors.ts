@@ -46,6 +46,14 @@ export const GET_GATEWAY_PODS = gql`
       nodeName
       creationTimestamp
       image
+      collectorMetrics {
+        metricsAcceptedRps
+        metricsDroppedRps
+        exporterSuccessRps
+        exporterFailedRps
+        window
+        lastScrape
+      }
     }
   }
 `;
@@ -87,6 +95,14 @@ export const GET_NODE_COLLECTOR_PODS = gql`
       nodeName
       creationTimestamp
       image
+      collectorMetrics {
+        metricsAcceptedRps
+        metricsDroppedRps
+        exporterSuccessRps
+        exporterFailedRps
+        window
+        lastScrape
+      }
     }
   }
 `;

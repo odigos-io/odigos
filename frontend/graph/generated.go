@@ -366,6 +366,7 @@ type ComplexityRoot struct {
 	InstrumentationInstanceComponent struct {
 		Healthy                  func(childComplexity int) int
 		LastStatusTime           func(childComplexity int) int
+		Message                  func(childComplexity int) int
 		Name                     func(childComplexity int) int
 		NonIdentifyingAttributes func(childComplexity int) int
 		Type                     func(childComplexity int) int
@@ -2367,6 +2368,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InstrumentationInstanceComponent.LastStatusTime(childComplexity), true
+
+	case "InstrumentationInstanceComponent.message":
+		if e.complexity.InstrumentationInstanceComponent.Message == nil {
+			break
+		}
+
+		return e.complexity.InstrumentationInstanceComponent.Message(childComplexity), true
 
 	case "InstrumentationInstanceComponent.name":
 		if e.complexity.InstrumentationInstanceComponent.Name == nil {
@@ -15253,6 +15261,47 @@ func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_health
 	return fc, nil
 }
 
+func (ec *executionContext) _InstrumentationInstanceComponent_message(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InstrumentationInstanceComponent_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InstrumentationInstanceComponent_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InstrumentationInstanceComponent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _InstrumentationInstanceComponent_lastStatusTime(ctx context.Context, field graphql.CollectedField, obj *model.InstrumentationInstanceComponent) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_InstrumentationInstanceComponent_lastStatusTime(ctx, field)
 	if err != nil {
@@ -27617,6 +27666,8 @@ func (ec *executionContext) fieldContext_Query_instrumentationInstanceComponents
 				return ec.fieldContext_InstrumentationInstanceComponent_type(ctx, field)
 			case "healthy":
 				return ec.fieldContext_InstrumentationInstanceComponent_healthy(ctx, field)
+			case "message":
+				return ec.fieldContext_InstrumentationInstanceComponent_message(ctx, field)
 			case "lastStatusTime":
 				return ec.fieldContext_InstrumentationInstanceComponent_lastStatusTime(ctx, field)
 			case "nonIdentifyingAttributes":
@@ -34267,7 +34318,7 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version"}
+	fieldsInOrder := [...]string{"currentStreamName", "otelServiceName", "containerName", "language", "version", "otelDistroName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -34309,6 +34360,13 @@ func (ec *executionContext) unmarshalInputPatchSourceRequestInput(ctx context.Co
 				return it, err
 			}
 			it.Version = data
+		case "otelDistroName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("otelDistroName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.OtelDistroName = data
 		}
 	}
 
@@ -37086,6 +37144,8 @@ func (ec *executionContext) _InstrumentationInstanceComponent(ctx context.Contex
 			out.Values[i] = ec._InstrumentationInstanceComponent_type(ctx, field, obj)
 		case "healthy":
 			out.Values[i] = ec._InstrumentationInstanceComponent_healthy(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._InstrumentationInstanceComponent_message(ctx, field, obj)
 		case "lastStatusTime":
 			out.Values[i] = ec._InstrumentationInstanceComponent_lastStatusTime(ctx, field, obj)
 		case "nonIdentifyingAttributes":
