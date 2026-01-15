@@ -42,7 +42,8 @@ func DiscoverOdigosCRDs(discoveryClient discovery.DiscoveryInterface) []schema.G
 		}
 
 		// Add all resources from this group
-		for _, resource := range resourceList.APIResources {
+		for i := 0; i < len(resourceList.APIResources); i++ {
+			resource := &resourceList.APIResources[i]
 			// Skip subresources (they contain "/")
 			if strings.Contains(resource.Name, "/") {
 				continue
@@ -63,7 +64,13 @@ func DiscoverOdigosCRDs(discoveryClient discovery.DiscoveryInterface) []schema.G
 // CRDs are organized by namespace:
 // - Cluster-scoped CRDs go under the odigos namespace folder
 // - Namespace-scoped CRDs go under their respective namespace folders
-func FetchOdigosCRDs(ctx context.Context, dynamicClient dynamic.Interface, discoveryClient discovery.DiscoveryInterface, collector Collector, rootDir, odigosNamespace string) error {
+func FetchOdigosCRDs(
+	ctx context.Context,
+	dynamicClient dynamic.Interface,
+	discoveryClient discovery.DiscoveryInterface,
+	collector Collector,
+	rootDir, odigosNamespace string,
+) error {
 	fmt.Printf("Fetching Odigos CRDs...\n")
 	klog.V(2).InfoS("Fetching Odigos CRDs")
 
@@ -100,7 +107,13 @@ func FetchOdigosCRDs(ctx context.Context, dynamicClient dynamic.Interface, disco
 	return nil
 }
 
-func collectCRD(ctx context.Context, dynamicClient dynamic.Interface, collector Collector, rootDir, odigosNamespace string, gvr schema.GroupVersionResource) error {
+func collectCRD(
+	ctx context.Context,
+	dynamicClient dynamic.Interface,
+	collector Collector,
+	rootDir, odigosNamespace string,
+	gvr schema.GroupVersionResource,
+) error {
 	// Try to list from all namespaces first (works for both namespaced and cluster-scoped resources)
 	list, err := dynamicClient.Resource(gvr).List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -153,7 +166,7 @@ func collectCRD(ctx context.Context, dynamicClient dynamic.Interface, collector 
 
 // capitalizeFirst capitalizes the first letter of a string
 func capitalizeFirst(s string) string {
-	if len(s) == 0 {
+	if s == "" {
 		return s
 	}
 	return strings.ToUpper(s[:1]) + s[1:]

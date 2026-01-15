@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 // FetchOdigosCollectorMetrics collects Prometheus metrics from Odigos collectors
@@ -41,7 +42,14 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interfac
 	return nil
 }
 
-func collectMetricsForRole(ctx context.Context, client kubernetes.Interface, collector Collector, odigosNamespace string, metricsDir string, collectorRole k8sconsts.CollectorRole) error {
+func collectMetricsForRole(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	odigosNamespace string,
+	metricsDir string,
+	collectorRole k8sconsts.CollectorRole,
+) error {
 	collectorPods, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
 		LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(collectorRole),
 	})
@@ -51,8 +59,8 @@ func collectMetricsForRole(ctx context.Context, client kubernetes.Interface, col
 
 	var wg sync.WaitGroup
 
-	for _, collectorPod := range collectorPods.Items {
-		pod := collectorPod // capture range variable
+	for i := 0; i < len(collectorPods.Items); i++ {
+		pod := &collectorPods.Items[i]
 		wg.Add(1)
 
 		go func() {
@@ -76,13 +84,20 @@ func collectMetricsForRole(ctx context.Context, client kubernetes.Interface, col
 	return nil
 }
 
-func captureMetrics(ctx context.Context, client kubernetes.Interface, podName string, namespace string, collectorRole k8sconsts.CollectorRole) ([]byte, error) {
+func captureMetrics(
+	ctx context.Context,
+	client kubernetes.Interface,
+	podName string,
+	namespace string,
+	collectorRole k8sconsts.CollectorRole,
+) ([]byte, error) {
 	portNumber := ""
-	if collectorRole == k8sconsts.CollectorsRoleClusterGateway {
+	switch collectorRole {
+	case k8sconsts.CollectorsRoleClusterGateway:
 		portNumber = strconv.Itoa(int(k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault))
-	} else if collectorRole == k8sconsts.CollectorsRoleNodeCollector {
+	case k8sconsts.CollectorsRoleNodeCollector:
 		portNumber = strconv.Itoa(int(k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault))
-	} else {
+	default:
 		return nil, nil
 	}
 
