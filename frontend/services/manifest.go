@@ -87,6 +87,26 @@ func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKi
 		}
 		return strings.ReplaceAll(string(yb), ": |", ":"), nil
 
+	case model.K8sResourceKindDeploymentConfig:
+		dcClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
+			Group:    "apps.openshift.io",
+			Version:  "v1",
+			Resource: "deploymentconfigs",
+		}).Namespace(namespace)
+
+		dc, err := dcClient.Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+
+		dc.SetManagedFields(nil)
+
+		dcYamlBytes, err := syaml.Marshal(dc.Object)
+		if err != nil {
+			return "", err
+		}
+		return string(dcYamlBytes), nil
+
 	case model.K8sResourceKindRollout:
 		rolloutClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
 			Group:    "argoproj.io",
