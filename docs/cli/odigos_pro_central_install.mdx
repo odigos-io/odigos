@@ -13,10 +13,12 @@ odigos pro central install [flags]
 ### Options
 
 ```
-      --central-admin-password string       Central admin password
+      --central-admin-password string       Central admin password (auto-generated if not provided)
       --central-admin-user string           Central admin username (default "admin")
+      --central-max-message-size string     Maximum message size in bytes for gRPC messages (empty = use default)
       --central-storage-class-name string   StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)
   -h, --help                                help for install
+      --image-pull-secrets strings          Secret names for imagePullSecrets (repeat or comma-separated)
   -n, --namespace string                    Target namespace for Odigos Central installation (default "odigos-central")
       --onprem-token string                 On-prem token for Odigos
       --version string                      Specify version to install

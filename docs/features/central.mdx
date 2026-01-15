@@ -10,124 +10,304 @@ icon: 'folder-tree'
   Odigos team to inquire about access to the Enterprise version.
 </Note>
 
-## What does Odigos Central include?
+## Overview
 
-Odigos Central consists of three main components:
+Odigos Central is a centralized management layer for multi-cluster observability. Instead of configuring instrumentation, sampling rules, and destinations separately in each Kubernetes cluster, Odigos Central provides a **single pane of glass** to manage all your clusters from one place.
 
-- **Central UI** – A user interface for managing all connected clusters, sources, destinations, and sampling configurations.
-- **Central Backend** – The brain of the centralized system; stores configuration and communicates with remote clusters via a proxy.
-- **Central Proxy** – A lightweight service deployed in each connected (remote) cluster. It securely forwards requests from the central backend to the local Odigos services (which run without public internet access).
+### Why Use Odigos Central?
 
-## Why use Odigos Central?
+- **Unified Management** - Configure instrumentation, sampling rules, and observability pipelines across all clusters from a single UI
+- **Reduced Operational Overhead** - No need to SSH or `kubectl` into each cluster separately
+- **Centralized Access Control** - Manage user authentication and authorization with support for SSO providers like Okta
+- **Consistent Configuration** - Apply the same sampling and instrumentation rules uniformly across environments
+- **Audit and Compliance** - Single point of control for observability configuration changes
 
-If you're running multiple Kubernetes clusters, Odigos Central helps you:
+## Architecture
 
-- Manage instrumentation, sampling, and observability pipelines from one place
-- Avoid logging into each cluster separately
-- Centralize authentication and access management control
+Odigos Central consists of components deployed in a **central (management) cluster** and a lightweight proxy in each **remote cluster**.
 
-## Getting Started
+```mermaid
+flowchart TB
+    subgraph central [Central Cluster]
+        UI[Central UI<br/>Port 3000]
+        Backend[Central Backend<br/>Port 8081]
+        Redis[Redis<br/>Port 6379]
+        Keycloak[Keycloak<br/>Port 8080]
+        UI --> Backend
+        Backend --> Redis
+        Backend --> Keycloak
+    end
 
-To get started with Odigos Central, you need to install the central components and configure remote clusters to connect to them.
+    subgraph remote1 [Remote Cluster 1]
+        Proxy1[Central Proxy]
+        Odigos1[Odigos Components]
+        Proxy1 --> Odigos1
+    end
 
-<Steps>
-  <Step title="Install Odigos Central">
-    You can install Odigos Central using the CLI or Helm chart.
-    <Tabs>
-      <Tab title="CLI">
-        Use the [`odigos pro central install`](/cli/odigos_pro_central_install) command:
+    subgraph remote2 [Remote Cluster 2]
+        Proxy2[Central Proxy]
+        Odigos2[Odigos Components]
+        Proxy2 --> Odigos2
+    end
 
-        ```bash
-        odigos pro central install \
-          --onprem-token <token> \
-          --central-admin-password <password>
-        ```
+    Backend <-->|WebSocket| Proxy1
+    Backend <-->|WebSocket| Proxy2
+```
 
-        This installs:
-        - central-backend
-        - central-ui
-        - redis (for state)
-        - keycloak (as identity provider)
-      </Tab>
-      <Tab title="Helm">
-        You can use the Helm chart to install Odigos Central:
+### Components
 
-        ```bash
-        helm repo add odigos https://odigos-io.github.io/odigos/
-        helm repo update
-        helm upgrade --install odigos-central odigos/odigos-central \
-          --namespace odigos-central \
-          --create-namespace \
-          --set onPremToken=<token> \
-          --set auth.adminUsername=admin \
-          --set auth.adminPassword=<password>
-        ```
+| Component           | Description                                                                                                     |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Central UI**      | Web interface for managing all connected clusters, sources, destinations, and sampling configurations           |
+| **Central Backend** | API server that stores configuration in Redis and communicates with remote clusters via WebSocket               |                                                    |
+| **Central Proxy**   | Lightweight service deployed in each remote cluster that bridges the central backend to local Odigos components |
 
-      </Tab>
-    </Tabs>
+## Prerequisites
 
-  </Step>
-  <Step title="Access the Central UI">
-    After installation, you can access the Central UI using port-forward:
+Before installing Odigos Central, ensure you have:
+
+- **Kubernetes** version 1.19.0 or higher
+- **Odigos Enterprise license token** (contact Odigos team to obtain)
+- **Helm** 3.x (if using Helm installation method)
+- **Network connectivity** from remote clusters to the Central Backend endpoint
+
+## Installation
+
+You can install Odigos Central using the CLI or Helm chart.
+
+<Tabs>
+  <Tab title="CLI">
+    Use the `odigos pro central install` command with `--set` flags:
 
     ```bash
-    odigos pro central ui
+    odigos pro central install --set onPremToken=<token>
     ```
 
-    This will forward the Central UI to `http://localhost:3000` and the Central Backend to `http://localhost:8081`.
+    This installs:
+    - central-backend
+    - central-ui
+    - redis (for state)
+    - keycloak (as identity provider)
 
-  </Step>
-  <Step title="Connect Remote Clusters">
-    To connect remote clusters to your Central deployment, you can configure the central backend URL and cluster name during installation or upgrade:
+    ### CLI Flags
+
+    | Flag | Default | Description |
+    |------|---------|-------------|
+    | `--set onPremToken` | (required) | Your Odigos Enterprise license token |
+    | `--set centralProxy.centralBackendURL` | (optional) | URL of the central backend |
+    | `--set auth.adminPassword` | (auto-generated) | Admin password for Keycloak. If not provided, a random password is generated |
+    | `--set auth.adminUsername` | `admin` | Admin username for Keycloak |
+    | `--namespace`, `-n` | `odigos-central` | Target namespace for installation |
+    | `--version` | (current) | Specify a specific version to install |
+
+    **Example with all options:**
+    ```bash
+    odigos pro central install \
+      --set onPremToken=<token> \
+      --namespace odigos-central \
+      --version v1.0.0
+    ```
+
+  </Tab>
+  <Tab title="Helm">
+    Add the Odigos Helm repository and install:
 
     ```bash
-    # Set the central backend URL and cluster name
-    odigos install --set centralProxy.centralBackendURL=<your-central-backend-url> --set clusterName=<your-cluster-name>
+    helm repo add odigos https://odigos-io.github.io/odigos/
+    helm repo update
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --create-namespace \
+      --set onPremToken=<token>
     ```
 
-    **Example:**
+    **Example with additional options:**
     ```bash
-    # Configure cluster to connect to Central Backend running on port 8081
-    odigos install --set centralProxy.centralBackendURL=http://central-backend.example.com:8081 --set clusterName=production-cluster-1
-    ```
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --create-namespace \
+    `
 
-    Alternatively, you can set these values in your `values.yaml` file for Helm installations:
+    For production deployments, consider using a `values.yaml` file:
+
     ```yaml
-    clusterName: "production-cluster-1"
-    centralProxy:
-      centralBackendURL: "http://central-backend.example.com:8081"
+    onPremToken: "<your-token>"
+
+    auth:
+      adminUsername: admin
+      adminPassword: "<your-password>"
+      persistence:
+        enabled: true
+        size: 2Gi
+        storageClassName: "gp3"
+
+    centralBackend:
+      autoscaling:
+        enabled: true
+        minReplicas: 2
+        maxReplicas: 10
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+
+    centralUI:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
     ```
 
-    <Info>
-      The `centralProxy.centralBackendURL` should point to your Central Backend service and must include the port number. If you're using port-forward, this would be `http://localhost:8081`.
-    </Info>
+    Then install with:
+    ```bash
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --create-namespace \
+      -f values.yaml
+    ```
 
-  </Step>
-</Steps>
+  </Tab>
+</Tabs>
+
+## Accessing the Central UI
+
+After installation, access the Central UI using port-forward:
+
+```bash
+odigos pro central ui
+```
+
+This forwards:
+
+- **Central UI** to `http://localhost:3000`
+- **Central Backend** to `http://localhost:8081`
+
+### Options
+
+| Flag                | Default          | Description                                 |
+| ------------------- | ---------------- | ------------------------------------------- |
+| `--address`         | `localhost`      | Address to bind the port-forward to         |
+| `--namespace`, `-n` | `odigos-central` | Namespace where Odigos Central is installed |
+
+**Example:** To access from other machines on your network:
+
+```bash
+odigos pro central ui --address 0.0.0.0
+```
+
+## Connecting Remote Clusters
+
+Once Odigos Central is running, you need to configure your remote clusters to connect to it. This is done by installing Odigos in each remote cluster with the Central Proxy configuration.
+
+<Info>
+  Remote clusters require the same Odigos Enterprise license token as the
+  central installation.
+</Info>
+
+### Using CLI
+
+```bash
+odigos install \
+  --onprem-token <token> \
+  --set centralProxy.centralBackendURL=<your-central-backend-url> \
+  --set clusterName=<your-cluster-name>
+```
+
+**Example:**
+
+```bash
+odigos install \
+  --onprem-token <token> \
+  --set centralProxy.centralBackendURL=https://central-backend.example.com:8081 \
+  --set clusterName=production-east-1
+```
+
+### Using Helm
+
+Add the following to your remote cluster's `values.yaml`:
+
+```yaml
+clusterName: 'production-east-1'
+
+centralProxy:
+  centralBackendURL: 'https://central-backend.example.com:8081'
+```
+
+Then install:
+
+```bash
+helm upgrade --install odigos odigos/odigos \
+  --namespace odigos-system \
+  --create-namespace \
+  -f values.yaml
+```
+
+### TLS Configuration
+
+For production deployments, configure TLS for secure communication between the Central Proxy and Central Backend:
+
+```yaml
+centralProxy:
+  centralBackendURL: 'https://central-backend.example.com:8081'
+  tls:
+    # Skip certificate verification (for testing/self-signed certificates only)
+    skipVerify: false
+
+    # Secret name containing CA certificate (key: 'ca.crt')
+    caSecretName: 'central-ca-cert'
+
+    # Secret name for mTLS client certificate (keys: 'tls.crt', 'tls.key')
+    clientCertSecretName: 'central-client-cert'
+```
+
+**Create the CA certificate secret:**
+
+```bash
+kubectl create secret generic central-ca-cert \
+  --from-file=ca.crt=/path/to/ca.crt \
+  -n odigos-system
+```
+
+**Create the client certificate secret (for mTLS):**
+
+```bash
+kubectl create secret generic central-client-cert \
+  --from-file=tls.crt=/path/to/client.crt \
+  --from-file=tls.key=/path/to/client.key \
+  -n odigos-system
+```
 
 ## Authentication
 
 By default, Odigos Central installs **Keycloak** and uses it as the identity provider for the Central UI.
 
-### Okta authentication (SSO via Keycloak)
+### Okta Authentication (SSO via Keycloak)
 
 If your organization uses **Okta**, the recommended setup is to keep the bundled Keycloak and configure **Okta as a SAML Identity Provider in Keycloak** (Keycloak identity brokering).
 
 <Steps>
   <Step title="Create the SAML Identity Provider in the Odigos Central UI">
-    Create the SAML IdP through the **Odigos Central UI** (the same place you’d add an OIDC Identity Provider).
+    Create the SAML IdP through the **Odigos Central UI** (the same place you'd add an OIDC Identity Provider).
 
     <Info>
-      Odigos Central will create/update the required configuration in the bundled Keycloak for you. Avoid configuring the identity provider directly in Keycloak unless you’re troubleshooting.
+      Odigos Central will create/update the required configuration in the bundled Keycloak for you. Avoid configuring the identity provider directly in Keycloak unless you're troubleshooting.
     </Info>
+
   </Step>
 
   <Step title="Create an Okta SAML app integration">
     In Okta, create a **SAML 2.0** app integration.
 
     <Info>
-      Okta’s UI and exact fields vary. The Okta SAML app configuration needs the **Single sign-on URL (ACS URL)** and the **Audience URI (SP Entity ID)** — you’ll copy these from the SAML Identity Provider configuration in the Central UI.
+      Okta's UI and exact fields vary. The Okta SAML app configuration needs the **Single sign-on URL (ACS URL)** and the **Audience URI (SP Entity ID)** — you'll copy these from the SAML Identity Provider configuration in the Central UI.
     </Info>
+
   </Step>
 
   <Step title="Configure the IdP details and copy the ACS URL / SP Entity ID">
@@ -138,6 +318,7 @@ If your organization uses **Okta**, the recommended setup is to keep the bundled
       - **Single sign-on URL** (ACS URL)
       - **Audience URI (SP Entity ID)**
     </Warning>
+
   </Step>
 
   <Step title="Verify Central UI login via Okta">
@@ -146,10 +327,100 @@ If your organization uses **Okta**, the recommended setup is to keep the bundled
 </Steps>
 
 <Info>
-  If you’re looking to enable OIDC for the **non-central** Odigos UI (not Odigos Central), see the dedicated OIDC documentation: [`OIDC (OpenID Connect)`](/features/oidc).
+  If you're looking to enable OIDC for the **non-central** Odigos UI (not Odigos
+  Central), see the dedicated OIDC documentation: [`OIDC (OpenID
+  Connect)`](/features/oidc).
 </Info>
 
+## Upgrade
+
+To upgrade Odigos Central to a newer version:
+
+### Using CLI
+
+```bash
+odigos pro central upgrade --version <version>
+```
+
+**Options:**
+
+| Flag                         | Default          | Description                            |
+| ---------------------------- | ---------------- | -------------------------------------- |
+| `--version`                  | (required)       | Version to upgrade to (e.g., `v1.2.0`) |
+| `--namespace`, `-n`          | `odigos-central` | Target namespace                       |
+| `--yes`                      | `false`          | Skip confirmation prompt               |
+| `--image-pull-secrets`       | (existing)       | Update image pull secrets              |
+| `--central-max-message-size` | (existing)       | Update max gRPC message size           |
+
+**Example:**
+
+```bash
+odigos pro central upgrade --version v1.2.0 --yes
+```
+
+### Using Helm
+
+```bash
+helm repo update
+helm upgrade odigos-central odigos/odigos-central \
+  --namespace odigos-central \
+  --reuse-values \
+  --version <chart-version>
+```
+
+<Note>
+  When upgrading, the Keycloak admin password is preserved from the existing
+  secret to prevent credential mismatch.
+</Note>
+
+## Uninstall
+
+To completely remove Odigos Central:
+
+### Using CLI
+
+```bash
+odigos pro central uninstall
+```
+
+**Options:**
+
+| Flag                | Default          | Description              |
+| ------------------- | ---------------- | ------------------------ |
+| `--namespace`, `-n` | `odigos-central` | Target namespace         |
+| `--yes`             | `false`          | Skip confirmation prompt |
+
+**Example:**
+
+```bash
+odigos pro central uninstall --namespace odigos-central --yes
+```
+
+### Using Helm
+
+```bash
+helm uninstall odigos-central --namespace odigos-central
+kubectl delete namespace odigos-central
+```
+
 <Warning>
-  Odigos Central is an Enterprise feature and requires a valid license token. Make
-  sure your `--onprem-token` is valid and has the necessary permissions.
+  Uninstalling Odigos Central will disconnect all remote clusters. Make sure to
+  plan for this accordingly.
+</Warning>
+
+### Network Requirements
+
+Ensure the following network connectivity:
+
+| Source                 | Destination     | Port | Protocol        |
+| ---------------------- | --------------- | ---- | --------------- |
+| Users                  | Central UI      | 3000 | HTTPS           |
+| Central UI             | Central Backend | 8081 | HTTP/HTTPS      |
+| Central Backend        | Redis           | 6379 | TCP             |
+| Central Backend        | Keycloak        | 8080 | HTTP            |
+| Remote Cluster Proxies | Central Backend | 8081 | WebSocket (WSS) |
+
+<Warning>
+  Odigos Central is an Enterprise feature and requires a valid license token.
+  Make sure your `--onprem-token` is valid and has the necessary permissions.
 </Warning>
