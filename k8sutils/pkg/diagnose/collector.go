@@ -1,20 +1,17 @@
 package diagnose
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"path"
 	"sync"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 const (
@@ -161,17 +158,6 @@ func GetConfigMapsDir(rootDir, odigosNamespace string) string {
 // GetWorkloadDir returns the workload directory path under a specific namespace
 func GetWorkloadDir(rootDir, namespace, workloadDirName string) string {
 	return path.Join(rootDir, namespace, workloadDirName)
-}
-
-// Helper to get pods by label selector
-func getPodsBySelector(ctx context.Context, client kubernetes.Interface, namespace string, selector labels.Selector) ([]corev1.Pod, error) {
-	pods, err := client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: selector.String(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return pods.Items, nil
 }
 
 // FormatBytes converts bytes to a human-readable string

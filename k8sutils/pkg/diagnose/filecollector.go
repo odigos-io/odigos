@@ -37,10 +37,11 @@ func (c *FileCollector) AddFile(dir, filename string, data []byte) error {
 	}
 
 	filePath := filepath.Join(dir, filename)
-	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o666)
 	if err != nil {
 		return err
 	}
+	//nolint:errcheck // this close is deferred to the end of the function
 	defer file.Close()
 
 	if _, err := file.Write(data); err != nil {
@@ -61,14 +62,16 @@ func (c *FileCollector) AddFileGzipped(dir, filename string, reader io.Reader) e
 	}
 
 	filePath := filepath.Join(dir, filename)
-	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o666)
 	if err != nil {
 		return err
 	}
+	//nolint:errcheck // this close is deferred to the end of the function
 	defer file.Close()
 
 	// Create a gzip writer
 	gzWriter := gzip.NewWriter(file)
+	//nolint:errcheck // this close is deferred to the end of the function
 	defer gzWriter.Close()
 
 	// Read and compress in chunks
@@ -104,4 +107,3 @@ func (c *FileCollector) GetStats() CollectorStats {
 	defer c.mu.Unlock()
 	return c.stats
 }
-

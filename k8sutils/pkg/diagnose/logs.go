@@ -11,19 +11,27 @@ import (
 )
 
 // FetchWorkloadLogs fetches logs for the given pods and stores them in the workloadDir
-func FetchWorkloadLogs(ctx context.Context, client kubernetes.Interface, collector Collector, namespace, workloadDir string, pods []corev1.Pod) error {
+func FetchWorkloadLogs(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	namespace, workloadDir string,
+	pods []corev1.Pod,
+) error {
 	var wg sync.WaitGroup
 
-	for _, pod := range pods {
-		pod := pod // capture range variable
+	for i := 0; i < len(pods); i++ {
+		pod := &pods[i]
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for _, container := range pod.Spec.Containers {
+			for i := 0; i < len(pod.Spec.Containers); i++ {
+				container := &pod.Spec.Containers[i]
 				addContainerLogs(ctx, client, collector, namespace, workloadDir, pod.Name, container.Name, false)
 
 				// Check if container has been restarted and get previous logs
-				for _, status := range pod.Status.ContainerStatuses {
+				for i := 0; i < len(pod.Status.ContainerStatuses); i++ {
+					status := &pod.Status.ContainerStatuses[i]
 					if status.Name == container.Name && status.RestartCount > 0 {
 						addContainerLogs(ctx, client, collector, namespace, workloadDir, pod.Name, container.Name, true)
 					}
@@ -31,7 +39,8 @@ func FetchWorkloadLogs(ctx context.Context, client kubernetes.Interface, collect
 			}
 
 			// Also collect logs from init containers
-			for _, container := range pod.Spec.InitContainers {
+			for i := 0; i < len(pod.Spec.InitContainers); i++ {
+				container := &pod.Spec.InitContainers[i]
 				addContainerLogs(ctx, client, collector, namespace, workloadDir, pod.Name, container.Name, false)
 			}
 		}()
@@ -41,7 +50,13 @@ func FetchWorkloadLogs(ctx context.Context, client kubernetes.Interface, collect
 	return nil
 }
 
-func addContainerLogs(ctx context.Context, client kubernetes.Interface, collector Collector, namespace, componentDir, podName, containerName string, previous bool) {
+func addContainerLogs(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	namespace, componentDir, podName, containerName string,
+	previous bool,
+) {
 	var filename string
 	if previous {
 		filename = fmt.Sprintf("pod-%s.%s.previous.log.gz", podName, containerName)
@@ -63,6 +78,7 @@ func addContainerLogs(ctx context.Context, client kubernetes.Interface, collecto
 		}
 		return
 	}
+	//nolint:errcheck // this close is deferred to the end of the function
 	defer logStream.Close()
 
 	if err := collector.AddFileGzipped(componentDir, filename, logStream); err != nil {

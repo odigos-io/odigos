@@ -19,7 +19,8 @@ func FetchConfigMaps(ctx context.Context, client kubernetes.Interface, collector
 		return fmt.Errorf("failed to list configmaps: %w", err)
 	}
 
-	for _, cm := range configMaps.Items {
+	for i := 0; i < len(configMaps.Items); i++ {
+		cm := &configMaps.Items[i]
 		// Clean managedFields for cleaner output
 		cm.ManagedFields = nil
 

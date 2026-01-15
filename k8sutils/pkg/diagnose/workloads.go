@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,6 +16,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 // WorkloadTarget represents a workload to collect
@@ -30,7 +31,13 @@ type WorkloadTarget struct {
 
 // FetchOdigosWorkloads collects workloads from the Odigos namespace (deployments, daemonsets, statefulsets)
 // with their pod YAMLs and optionally logs under component folders
-func FetchOdigosWorkloads(ctx context.Context, client kubernetes.Interface, collector Collector, rootDir, odigosNamespace string, includeLogs bool) error {
+func FetchOdigosWorkloads(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	rootDir, odigosNamespace string,
+	includeLogs bool,
+) error {
 	fmt.Printf("Fetching Odigos Workloads and Logs...\n")
 	klog.V(2).InfoS("Fetching Odigos Workloads", "namespace", odigosNamespace)
 
@@ -41,7 +48,8 @@ func FetchOdigosWorkloads(ctx context.Context, client kubernetes.Interface, coll
 	if err != nil {
 		klog.V(1).ErrorS(err, "Failed to list deployments")
 	} else {
-		for _, d := range deployments.Items {
+		for i := 0; i < len(deployments.Items); i++ {
+			d := &deployments.Items[i]
 			targets = append(targets, WorkloadTarget{
 				Namespace:   odigosNamespace,
 				Name:        d.Name,
@@ -57,7 +65,8 @@ func FetchOdigosWorkloads(ctx context.Context, client kubernetes.Interface, coll
 	if err != nil {
 		klog.V(1).ErrorS(err, "Failed to list daemonsets")
 	} else {
-		for _, d := range daemonsets.Items {
+		for i := 0; i < len(daemonsets.Items); i++ {
+			d := &daemonsets.Items[i]
 			targets = append(targets, WorkloadTarget{
 				Namespace:   odigosNamespace,
 				Name:        d.Name,
@@ -73,7 +82,8 @@ func FetchOdigosWorkloads(ctx context.Context, client kubernetes.Interface, coll
 	if err != nil {
 		klog.V(1).ErrorS(err, "Failed to list statefulsets")
 	} else {
-		for _, s := range statefulsets.Items {
+		for i := 0; i < len(statefulsets.Items); i++ {
+			s := &statefulsets.Items[i]
 			targets = append(targets, WorkloadTarget{
 				Namespace:   odigosNamespace,
 				Name:        s.Name,
@@ -85,9 +95,11 @@ func FetchOdigosWorkloads(ctx context.Context, client kubernetes.Interface, coll
 	}
 
 	// Collect all targets
-	for _, t := range targets {
+	for i := 0; i < len(targets); i++ {
+		t := &targets[i]
 		workloadDir := path.Join(rootDir, t.Namespace, t.DirName)
-		if err := collectWorkload(ctx, client, collector, workloadDir, t.Namespace, t.Name, t.Kind, t.IncludeLogs); err != nil && !apierrors.IsNotFound(err) {
+		err := collectWorkload(ctx, client, collector, workloadDir, t.Namespace, t.Name, t.Kind, t.IncludeLogs)
+		if err != nil && !apierrors.IsNotFound(err) {
 			klog.V(1).ErrorS(err, "Failed to collect workload", "name", t.Name, "kind", t.Kind)
 		}
 	}
@@ -95,7 +107,14 @@ func FetchOdigosWorkloads(ctx context.Context, client kubernetes.Interface, coll
 	return nil
 }
 
-func collectWorkload(ctx context.Context, client kubernetes.Interface, collector Collector, workloadDir, namespace, name string, kind k8sconsts.WorkloadKind, includeLogs bool) error {
+func collectWorkload(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	workloadDir, namespace, name string,
+	kind k8sconsts.WorkloadKind,
+	includeLogs bool,
+) error {
 	var selector labels.Selector
 
 	switch kind {
@@ -153,7 +172,14 @@ func collectWorkload(ctx context.Context, client kubernetes.Interface, collector
 	return collectPods(ctx, client, collector, namespace, workloadDir, selector, includeLogs)
 }
 
-func collectPods(ctx context.Context, client kubernetes.Interface, collector Collector, namespace, componentDir string, selector labels.Selector, includeLogs bool) error {
+func collectPods(
+	ctx context.Context,
+	client kubernetes.Interface,
+	collector Collector,
+	namespace, componentDir string,
+	selector labels.Selector,
+	includeLogs bool,
+) error {
 	pods, err := client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: selector.String(),
 	})
@@ -233,7 +259,15 @@ func cleanObjectForExport(obj interface{}) interface{} {
 
 // FetchSourceWorkloads collects workloads that are instrumented by Odigos (user's applications)
 // It reads Source CRDs to find which workloads are instrumented and collects them
-func FetchSourceWorkloads(ctx context.Context, client kubernetes.Interface, dynamicClient dynamic.Interface, collector Collector, rootDir string, namespaceFilter []string, includeLogs bool) error {
+func FetchSourceWorkloads(
+	ctx context.Context,
+	client kubernetes.Interface,
+	dynamicClient dynamic.Interface,
+	collector Collector,
+	rootDir string,
+	namespaceFilter []string,
+	includeLogs bool,
+) error {
 	fmt.Printf("Fetching Instrumented Source Workloads...\n")
 	klog.V(2).InfoS("Fetching Source Workloads", "namespaceFilter", namespaceFilter)
 

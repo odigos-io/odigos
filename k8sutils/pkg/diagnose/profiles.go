@@ -8,12 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 // ProfileInterface defines the interface for different profile types
@@ -113,8 +114,8 @@ func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, colle
 			continue
 		}
 
-		for _, pod := range podsToProfile.Items {
-			pod := pod // capture range variable
+		for i := 0; i < len(podsToProfile.Items); i++ {
+			pod := &podsToProfile.Items[i]
 			podsWaitGroup.Add(1)
 
 			go func(pod corev1.Pod, pprofPort int32, svcName string) {
@@ -159,7 +160,7 @@ func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, colle
 				}
 
 				profileWaitGroup.Wait()
-			}(pod, service.Port, serviceName)
+			}(*pod, service.Port, serviceName)
 		}
 	}
 
@@ -167,7 +168,14 @@ func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, colle
 	return nil
 }
 
-func captureProfile(ctx context.Context, client kubernetes.Interface, podName string, pprofPort int32, namespace string, profileInterface ProfileInterface) ([]byte, error) {
+func captureProfile(
+	ctx context.Context,
+	client kubernetes.Interface,
+	podName string,
+	pprofPort int32,
+	namespace string,
+	profileInterface ProfileInterface,
+) ([]byte, error) {
 	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%d/proxy/debug/pprof%s", namespace, podName, pprofPort, profileInterface.GetUrlSuffix())
 
 	request := client.CoreV1().RESTClient().

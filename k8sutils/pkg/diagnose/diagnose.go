@@ -12,7 +12,15 @@ import (
 )
 
 // RunDiagnose collects all diagnostic data based on the provided options
-func RunDiagnose(ctx context.Context, client kubernetes.Interface, dynamicClient dynamic.Interface, discoveryClient discovery.DiscoveryInterface, collector Collector, rootDir string, opts Options) error {
+func RunDiagnose(
+	ctx context.Context,
+	client kubernetes.Interface,
+	dynamicClient dynamic.Interface,
+	discoveryClient discovery.DiscoveryInterface,
+	collector Collector,
+	rootDir string,
+	opts Options,
+) error {
 	if opts.OdigosNamespace == "" {
 		return fmt.Errorf("odigos namespace is required")
 	}
