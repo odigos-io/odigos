@@ -1,24 +1,25 @@
 ---
-title: "odigos sources disable argo-rollout"
-sidebarTitle: "odigos sources disable argo-rollout"
+title: "odigos sources disable rollout"
+sidebarTitle: "odigos sources disable rollout"
 ---
-## odigos sources disable argo-rollout
+## odigos sources disable rollout
 
-disable an Argo Rollout for Odigos instrumentation
+disable a Rollout for Odigos instrumentation
 
 ### Synopsis
 
-This command disables the provided Argo Rollout for Odigos instrumentation. It will create a Source object if one does not already exists, or update the existing one if it does.
+This command disables the provided Rollout for Odigos instrumentatin. It will create a Source object if one does not already exists, or update the existing one if it does.
 
 ```
-odigos sources disable argo-rollout [name] [flags]
+odigos sources disable rollout [name] [flags]
 ```
 
 ### Options
 
 ```
-      --dry-run   dry run
-  -h, --help      help for argo-rollout
+      --dry-run            dry run
+  -h, --help               help for rollout
+  -n, --namespace string   Kubernetes Namespace for Source (default "default")
 ```
 
 ### Options inherited from parent commands
