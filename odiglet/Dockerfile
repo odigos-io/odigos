@@ -91,6 +91,31 @@ ARG TARGETARCH
 ARG ODIGOS_LOADER_VERSION=v0.0.6
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
+######### Device Plugin builder #########
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS deviceplugin-builder
+WORKDIR /go/src/github.com/odigos-io/odigos
+# Copy local modules required by deviceplugin
+COPY common/ common/
+COPY k8sutils/ k8sutils/
+# Build deviceplugin binary
+WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
+COPY deviceplugin/ .
+ARG TARGETARCH
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
+
+######### CSI Driver builder #########
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS csi-driver-builder
+WORKDIR /go/src/github.com/odigos-io/odigos
+# Build CSI driver binary
+WORKDIR /go/src/github.com/odigos-io/odigos/csi-driver
+COPY csi-driver/ .
+ARG TARGETARCH
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -o odigos-csi-driver .
+
 ######### Odiglet builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
 WORKDIR /go/src/github.com/odigos-io/odigos
@@ -115,19 +140,6 @@ RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
 
-# Build deviceplugin binary
-WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
-COPY deviceplugin/ .
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
-
-# Build CSI driver binary
-WORKDIR /go/src/github.com/odigos-io/odigos/csi-driver
-COPY csi-driver/ .
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH go build -o odigos-csi-driver .
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
@@ -196,8 +208,8 @@ COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/od
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
-COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
-COPY --from=builder /go/src/github.com/odigos-io/odigos/csi-driver/odigos-csi-driver /root/odigos-csi-driver
+COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/csi-driver/odigos-csi-driver /root/odigos-csi-driver
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
@@ -207,8 +219,8 @@ CMD ["/root/odiglet"]
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
-COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
-COPY --from=builder /go/src/github.com/odigos-io/odigos/csi-driver/odigos-csi-driver /root/odigos-csi-driver
+COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/csi-driver/odigos-csi-driver /root/odigos-csi-driver
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
