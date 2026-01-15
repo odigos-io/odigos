@@ -48,14 +48,7 @@ func NewCentralBackendResourceManager(client *kube.Client, ns string, odigosVers
 func (m *centralBackendResourceManager) Name() string { return k8sconsts.CentralBackendName }
 
 func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) error {
-	// Try to preserve existing backend ID from previous installation
-	centralBackendID := uuid.New().String()
-	existingCM, err := m.client.CoreV1().ConfigMaps(m.ns).Get(ctx, k8sconsts.OdigosCentralDeploymentConfigMapName, metav1.GetOptions{})
-	if err == nil && existingCM.Data != nil {
-		if existingID, ok := existingCM.Data[k8sconsts.OdigosCentralDeploymentConfigMapBackendIDKey]; ok && existingID != "" {
-			centralBackendID = existingID
-		}
-	}
+	centralBackendID := m.resolveCentralBackendID(ctx)
 
 	return m.client.ApplyResources(ctx, 1, []kube.Object{
 		NewCentralBackendDeploymentConfigMap(m.ns, m.odigosVersion, centralBackendID),
@@ -66,6 +59,20 @@ func (m *centralBackendResourceManager) InstallFromScratch(ctx context.Context) 
 		NewCentralBackendService(m.ns),
 		NewCentralBackendHPA(m.ns, m.client),
 	}, m.managerOpts)
+}
+
+func (m *centralBackendResourceManager) resolveCentralBackendID(ctx context.Context) string {
+	centralBackendID := uuid.New().String()
+	existingCM, err := m.client.CoreV1().ConfigMaps(m.ns).Get(ctx, k8sconsts.OdigosCentralDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil || existingCM.Data == nil {
+		return centralBackendID
+	}
+
+	if existingID := existingCM.Data[k8sconsts.OdigosCentralDeploymentConfigMapBackendIDKey]; existingID != "" {
+		return existingID
+	}
+
+	return centralBackendID
 }
 
 // NewCentralBackendDeploymentConfigMap creates (or updates) a ConfigMap that tracks installation metadata for Central Backend.
@@ -170,7 +177,7 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 									Value: k8sconsts.KeycloakSecretName,
 								},
 								{
-									Name: "CENTRALIZED_BACKEND_ID",
+									Name: "CENTRAL_BACKEND_ID",
 									ValueFrom: &corev1.EnvVarSource{
 										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{

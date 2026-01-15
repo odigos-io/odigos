@@ -42,7 +42,7 @@ spec:
               value: "{{ .Release.Namespace }}"
             - name: KEYCLOAK_SECRET_NAME
               value: "keycloak-admin-credentials"
-            - name: CENTRALIZED_BACKEND_ID
+            - name: CENTRAL_BACKEND_ID
               valueFrom:
                 configMapKeyRef:
                   name: odigos-central-deployment

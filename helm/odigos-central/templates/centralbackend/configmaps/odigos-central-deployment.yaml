@@ -3,7 +3,7 @@
 {{- $existingCM := lookup "v1" "ConfigMap" .Release.Namespace "odigos-central-deployment" }}
 {{- $backendID := "" }}
 {{- if and $existingCM $existingCM.data }}
-  {{- $backendID = index $existingCM.data "centralBackendId" | default (uuidv4) }}
+  {{- $backendID = default (uuidv4) (index $existingCM.data "centralBackendId") }}
 {{- else }}
   {{- $backendID = uuidv4 }}
 {{- end }}
