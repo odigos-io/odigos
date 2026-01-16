@@ -47,7 +47,12 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	err = updateInstrumentationConfigForWorkload(&ic, instrumentationRules)
+	conf, err := utils.GetCurrentOdigosConfiguration(ctx, r.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	err = updateInstrumentationConfigForWorkload(&ic, instrumentationRules, &conf)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

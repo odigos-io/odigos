@@ -132,6 +132,37 @@ spec:
                         all "metrics" related configuration for an agent running on any process in a specific container.
                         The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.
                       properties:
+                        runtimeMetrics:
+                          description: |-
+                            if not nil, it means agent should report runtime metrics,
+                            such as JVM metrics for Java applications.
+                            these metrics provide insights into the runtime environment performance.
+                          properties:
+                            java:
+                              description: configuration for Java runtime metrics
+                              properties:
+                                disabled:
+                                  description: global enable/disable for all Java
+                                    runtime metrics
+                                  type: boolean
+                                metrics:
+                                  description: individual metric configurations
+                                  items:
+                                    properties:
+                                      disabled:
+                                        description: whether this specific metric
+                                          is disabled
+                                        type: boolean
+                                      name:
+                                        description: name of the runtime metric (e.g.,
+                                          "jvm.class.loaded")
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  type: array
+                              type: object
+                          type: object
                         spanMetrics:
                           description: |-
                             if not nil, it means agent should report span metrics,
@@ -280,6 +311,47 @@ spec:
                               required:
                               - sourceId
                               type: object
+                          type: object
+                        spanRenamer:
+                          description: Configuration for span renamer.
+                          properties:
+                            scopeRules:
+                              description: |-
+                                list of scope rules to be applied to the span name.
+                                all options are always tried, regardless of whether the previous options have matched or not.
+                              items:
+                                properties:
+                                  regexReplacements:
+                                    description: |-
+                                      list of regex replacements to be applied to the span name.
+                                      all options are always tried, regardless of whether the previous options have matched or not.
+                                    items:
+                                      description: configuration for replacing parts
+                                        of the span name with a template text based
+                                        on regular expressions.
+                                      properties:
+                                        regexPattern:
+                                          description: regualr expression that will
+                                            be used to match the part of the span
+                                            name to be replaced.
+                                          type: string
+                                        templateText:
+                                          description: the text to be used for replacing
+                                            the matched part of the span name.
+                                          type: string
+                                      required:
+                                      - regexPattern
+                                      - templateText
+                                      type: object
+                                    type: array
+                                  scopeName:
+                                    description: the name of the opentelemetry intrumentation
+                                      scope which the renamed spans are written in.
+                                    type: string
+                                required:
+                                - scopeName
+                                type: object
+                              type: array
                           type: object
                         urlTemplatization:
                           description: A list of URL templatization configurations
@@ -849,6 +921,35 @@ spec:
                                 If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads` config option
                               format: int64
                               type: integer
+                          type: object
+                      type: object
+                    runtimeMetrics:
+                      description: |-
+                        configuration for runtime metrics that the SDK should generate.
+                        these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.
+                      properties:
+                        java:
+                          description: configuration for Java runtime metrics
+                          properties:
+                            disabled:
+                              description: global enable/disable for all Java runtime
+                                metrics
+                              type: boolean
+                            metrics:
+                              description: individual metric configurations
+                              items:
+                                properties:
+                                  disabled:
+                                    description: whether this specific metric is disabled
+                                    type: boolean
+                                  name:
+                                    description: name of the runtime metric (e.g.,
+                                      "jvm.class.loaded")
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              type: array
                           type: object
                       type: object
                     traceConfig:

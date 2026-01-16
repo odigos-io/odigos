@@ -500,7 +500,8 @@ func calculateContainerInstrumentationConfig(containerName string,
 
 	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 
-	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, filteredTemplateRules, ignoreHealthChecks, irls, workloadObj, d)
+	// at this time, we don't populate the signals specific configs, but we will do it soon
+	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, filteredTemplateRules, ignoreHealthChecks, irls, agentLevelActions, workloadObj, d)
 	if err != nil {
 		return *err
 	}

@@ -6,6 +6,7 @@ import (
 
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -15,9 +16,11 @@ func CalculateTracesConfig(
 	tracesEnabled bool,
 	effectiveConfig *common.OdigosConfiguration,
 	containerName string,
+	programmingLanguage common.ProgrammingLanguage,
 	urlTemplatizationConfig *odigosv1.UrlTemplatizationConfig,
 	ignoreHealthChecks []actionsv1.IgnoreHealthChecksConfig,
 	irls *[]odigosv1.InstrumentationRule,
+	agentLevelActions *[]odigosv1.Action,
 	workloadObj workload.Workload,
 	distro *distro.OtelDistro) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
 
@@ -49,6 +52,7 @@ func CalculateTracesConfig(
 	tracesConfig.UrlTemplatization = urlTemplatizationConfig
 	tracesConfig.HeadersCollection = calculateHeaderCollectionConfig(distro, irls)
 	tracesConfig.HeadSampling = calculateHeadSamplingConfig(distro, workloadObj, containerName, irls, ignoreHealthChecks)
+	tracesConfig.SpanRenamer = filterSpanRenamerForContainer(agentLevelActions, programmingLanguage)
 
 	return tracesConfig, nil
 }
@@ -200,4 +204,43 @@ func limitFractionToRange(fraction float64) float64 {
 		return 1
 	}
 	return fraction
+}
+
+func filterSpanRenamerForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) *odigosv1.SpanRenamerConfig {
+
+	gotRenamingConfig := false
+	scopeRulesMap := map[string]odigosv1.SpanRenamerScopeRules{}
+
+	for _, action := range *agentLevelActions {
+		if action.Spec.SpanRenamer != nil {
+			if action.Spec.SpanRenamer.ProgrammingLanguage != language {
+				continue
+			}
+			scopeName := action.Spec.SpanRenamer.ScopeName
+			for _, scopeRule := range action.Spec.SpanRenamer.RegexReplacements {
+				if existing, ok := scopeRulesMap[scopeName]; ok {
+					existing.RegexReplacements = append(existing.RegexReplacements, scopeRule)
+					scopeRulesMap[scopeName] = existing
+				} else {
+					scopeRulesMap[scopeName] = odigosv1.SpanRenamerScopeRules{
+						ScopeName:         scopeName,
+						RegexReplacements: []actions.SpanRenamerRegexReplacement{scopeRule},
+					}
+				}
+				gotRenamingConfig = true
+			}
+		}
+	}
+
+	if !gotRenamingConfig {
+		return nil
+	}
+
+	scopeRules := []odigosv1.SpanRenamerScopeRules{}
+	for _, scopeRule := range scopeRulesMap {
+		scopeRules = append(scopeRules, scopeRule)
+	}
+	return &odigosv1.SpanRenamerConfig{
+		ScopeRules: scopeRules,
+	}
 }

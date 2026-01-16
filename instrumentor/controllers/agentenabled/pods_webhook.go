@@ -374,6 +374,18 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_HEAD_SAMPLING", string(headSamplingConfigJson))
 	}
 
+	// Span Renamer configuration
+	spanRenamerEnabled := containerConfig.Traces != nil && containerConfig.Traces.SpanRenamer != nil
+	supportsSpanRenamer := distroMetadata.Traces != nil && distroMetadata.Traces.SpanRenamer != nil && distroMetadata.Traces.SpanRenamer.Supported
+	if spanRenamerEnabled && supportsSpanRenamer && distroMetadata.ConfigAsEnvVars {
+		// serialize span renamer config to json and inject as env var
+		spanRenamerConfigJson, err := json.Marshal(containerConfig.Traces.SpanRenamer)
+		if err != nil {
+			return false, nil, fmt.Errorf("failed to marshal span renamer config: %w", err)
+		}
+		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_RENAMER", string(spanRenamerConfigJson))
+	}
+
 	volumeMounted := false
 	containerDirsToCopy := make(map[string]struct{})
 	if distroMetadata.RuntimeAgent != nil {
