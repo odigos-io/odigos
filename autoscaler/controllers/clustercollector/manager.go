@@ -7,6 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -20,12 +21,14 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 		Owns(&corev1.ConfigMap{}).  // in case the configmap is deleted or modified for any reason, this will reconcile and recreate it
 		// we assume everything in the collectorsgroup spec is the configuration for the collectors to generate.
 		// thus, we need to monitor any change to the spec which is what the generation field is for.
-		WithEventFilter(&predicate.GenerationChangedPredicate{}).
-		Complete(&CollectorsGroupReconciler{
-			Client:        mgr.GetClient(),
-			Scheme:        mgr.GetScheme(),
-			OdigosVersion: odigosVersion,
-		})
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).WithOptions(controller.Options{
+		MaxConcurrentReconciles: 5,
+	})
+	Complete(&CollectorsGroupReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		OdigosVersion: odigosVersion,
+	})
 	if err != nil {
 		return err
 	}
