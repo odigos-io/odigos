@@ -83,6 +83,13 @@ type ComplexityRoot struct {
 		ServicesNameFilters         func(childComplexity int) int
 	}
 
+	AgentsInitContainerResourcesConfig struct {
+		LimitCPUm        func(childComplexity int) int
+		LimitMemoryMiB   func(childComplexity int) int
+		RequestCPUm      func(childComplexity int) int
+		RequestMemoryMiB func(childComplexity int) int
+	}
+
 	ApiToken struct {
 		ExpiresAt func(childComplexity int) int
 		IssuedAt  func(childComplexity int) int
@@ -147,6 +154,36 @@ type ComplexityRoot struct {
 		Status            func(childComplexity int) int
 	}
 
+	CollectorGatewayConfig struct {
+		ClusterMetricsEnabled      func(childComplexity int) int
+		GoMemLimitMiB              func(childComplexity int) int
+		HTTPSProxyAddress          func(childComplexity int) int
+		LimitCPUm                  func(childComplexity int) int
+		LimitMemoryMiB             func(childComplexity int) int
+		MaxReplicas                func(childComplexity int) int
+		MemoryLimiterLimitMiB      func(childComplexity int) int
+		MemoryLimiterSpikeLimitMiB func(childComplexity int) int
+		MinReplicas                func(childComplexity int) int
+		NodeSelector               func(childComplexity int) int
+		RequestCPUm                func(childComplexity int) int
+		RequestMemoryMiB           func(childComplexity int) int
+		ServiceGraphDisabled       func(childComplexity int) int
+	}
+
+	CollectorNodeConfig struct {
+		CollectorOwnMetricsPort    func(childComplexity int) int
+		EnableDataCompression      func(childComplexity int) int
+		GoMemLimitMiB              func(childComplexity int) int
+		K8sNodeLogsDirectory       func(childComplexity int) int
+		LimitCPUm                  func(childComplexity int) int
+		LimitMemoryMiB             func(childComplexity int) int
+		MemoryLimiterLimitMiB      func(childComplexity int) int
+		MemoryLimiterSpikeLimitMiB func(childComplexity int) int
+		OtlpExporterConfiguration  func(childComplexity int) int
+		RequestCPUm                func(childComplexity int) int
+		RequestMemoryMiB           func(childComplexity int) int
+	}
+
 	CollectorPodMetrics struct {
 		ExporterFailedRps  func(childComplexity int) int
 		ExporterSuccessRps func(childComplexity int) int
@@ -175,6 +212,17 @@ type ComplexityRoot struct {
 		Reason             func(childComplexity int) int
 		Status             func(childComplexity int) int
 		Type               func(childComplexity int) int
+	}
+
+	Config struct {
+		ClusterName           func(childComplexity int) int
+		InstallationMethod    func(childComplexity int) int
+		InstallationStatus    func(childComplexity int) int
+		IsCentralProxyRunning func(childComplexity int) int
+		OdigosVersion         func(childComplexity int) int
+		PlatformType          func(childComplexity int) int
+		Readonly              func(childComplexity int) int
+		Tier                  func(childComplexity int) int
 	}
 
 	ContainerAgentConfigAnalyze struct {
@@ -281,6 +329,51 @@ type ComplexityRoot struct {
 		Value func(childComplexity int) int
 	}
 
+	EffectiveConfig struct {
+		AgentEnvVarsInjectionMethod      func(childComplexity int) int
+		AgentsInitContainerResources     func(childComplexity int) int
+		AllowConcurrentAgents            func(childComplexity int) int
+		AllowedTestConnectionHosts       func(childComplexity int) int
+		CentralBackendURL                func(childComplexity int) int
+		CheckDeviceHealthBeforeInjection func(childComplexity int) int
+		ClickhouseJSONTypeEnabled        func(childComplexity int) int
+		ClusterName                      func(childComplexity int) int
+		CollectorGateway                 func(childComplexity int) int
+		CollectorNode                    func(childComplexity int) int
+		ConfigVersion                    func(childComplexity int) int
+		CustomContainerRuntimeSocketPath func(childComplexity int) int
+		GoAutoOffsetsCron                func(childComplexity int) int
+		GoAutoOffsetsMode                func(childComplexity int) int
+		IgnoreOdigosNamespace            func(childComplexity int) int
+		IgnoredContainers                func(childComplexity int) int
+		IgnoredNamespaces                func(childComplexity int) int
+		ImagePrefix                      func(childComplexity int) int
+		ImagePullSecrets                 func(childComplexity int) int
+		KarpenterEnabled                 func(childComplexity int) int
+		MetricsSources                   func(childComplexity int) int
+		MountMethod                      func(childComplexity int) int
+		NodeSelector                     func(childComplexity int) int
+		OdigletHealthProbeBindPort       func(childComplexity int) int
+		OdigosOwnTelemetryStore          func(childComplexity int) int
+		Oidc                             func(childComplexity int) int
+		OpenshiftEnabled                 func(childComplexity int) int
+		Profiles                         func(childComplexity int) int
+		Psp                              func(childComplexity int) int
+		ResourceSizePreset               func(childComplexity int) int
+		RollbackDisabled                 func(childComplexity int) int
+		RollbackGraceTime                func(childComplexity int) int
+		RollbackStabilityWindow          func(childComplexity int) int
+		Rollout                          func(childComplexity int) int
+		SkipWebhookIssuerCreation        func(childComplexity int) int
+		TelemetryEnabled                 func(childComplexity int) int
+		TraceIDSuffix                    func(childComplexity int) int
+		UIMode                           func(childComplexity int) int
+		UIPaginationLimit                func(childComplexity int) int
+		UIRemoteURL                      func(childComplexity int) int
+		UserInstrumentationEnvs          func(childComplexity int) int
+		WaspEnabled                      func(childComplexity int) int
+	}
+
 	EntityProperty struct {
 		Explain func(childComplexity int) int
 		Name    func(childComplexity int) int
@@ -308,17 +401,6 @@ type ComplexityRoot struct {
 		Resources         func(childComplexity int) int
 		RolloutInProgress func(childComplexity int) int
 		Status            func(childComplexity int) int
-	}
-
-	GetConfigResponse struct {
-		ClusterName           func(childComplexity int) int
-		InstallationMethod    func(childComplexity int) int
-		InstallationStatus    func(childComplexity int) int
-		IsCentralProxyRunning func(childComplexity int) int
-		OdigosVersion         func(childComplexity int) int
-		PlatformType          func(childComplexity int) int
-		Readonly              func(childComplexity int) int
-		Tier                  func(childComplexity int) int
 	}
 
 	GetDestinationCategories struct {
@@ -608,9 +690,71 @@ type ComplexityRoot struct {
 		TelemetryObservedStatus func(childComplexity int) int
 	}
 
+	LanguageConfig struct {
+		Enabled func(childComplexity int) int
+		EnvVars func(childComplexity int) int
+	}
+
 	MessagingPayloadCollection struct {
 		DropPartialPayloads func(childComplexity int) int
 		MaxPayloadLength    func(childComplexity int) int
+	}
+
+	MetricsSourceAgentJavaRuntimeMetricsConfig struct {
+		Disabled func(childComplexity int) int
+		Metrics  func(childComplexity int) int
+	}
+
+	MetricsSourceAgentMetricsConfig struct {
+		RuntimeMetrics func(childComplexity int) int
+		SpanMetrics    func(childComplexity int) int
+	}
+
+	MetricsSourceAgentRuntimeMetricConfig struct {
+		Disabled func(childComplexity int) int
+		Name     func(childComplexity int) int
+	}
+
+	MetricsSourceAgentRuntimeMetricsConfig struct {
+		Java func(childComplexity int) int
+	}
+
+	MetricsSourceAgentSpanMetricsConfig struct {
+		Enabled func(childComplexity int) int
+	}
+
+	MetricsSourceConfig struct {
+		AgentMetrics     func(childComplexity int) int
+		HostMetrics      func(childComplexity int) int
+		KubeletStats     func(childComplexity int) int
+		OdigosOwnMetrics func(childComplexity int) int
+		SpanMetrics      func(childComplexity int) int
+	}
+
+	MetricsSourceHostMetricsConfig struct {
+		Disabled func(childComplexity int) int
+		Interval func(childComplexity int) int
+	}
+
+	MetricsSourceKubeletStatsConfig struct {
+		Disabled func(childComplexity int) int
+		Interval func(childComplexity int) int
+	}
+
+	MetricsSourceOdigosOwnMetricsConfig struct {
+		Interval func(childComplexity int) int
+	}
+
+	MetricsSourceSpanMetricsConfig struct {
+		AdditionalDimensions         func(childComplexity int) int
+		Disabled                     func(childComplexity int) int
+		ExcludedResourceAttributes   func(childComplexity int) int
+		HistogramBuckets             func(childComplexity int) int
+		HistogramDisabled            func(childComplexity int) int
+		IncludedProcessInDimensions  func(childComplexity int) int
+		Interval                     func(childComplexity int) int
+		MetricsExpiration            func(childComplexity int) int
+		ResourceMetricsKeyAttributes func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -683,10 +827,26 @@ type ComplexityRoot struct {
 		Tier                 func(childComplexity int) int
 	}
 
+	OdigosOwnTelemetryConfig struct {
+		MetricsStoreDisabled func(childComplexity int) int
+	}
+
+	OidcConfig struct {
+		ClientID     func(childComplexity int) int
+		ClientSecret func(childComplexity int) int
+		TenantURL    func(childComplexity int) int
+	}
+
 	OtelAgentsAnalyze struct {
 		Containers func(childComplexity int) int
 		CreateTime func(childComplexity int) int
 		Created    func(childComplexity int) int
+	}
+
+	OtlpExporterConfig struct {
+		EnableDataCompression func(childComplexity int) int
+		RetryOnFailure        func(childComplexity int) int
+		Timeout               func(childComplexity int) int
 	}
 
 	OverviewMetricsResponse struct {
@@ -760,6 +920,7 @@ type ComplexityRoot struct {
 		DescribeOdigos                    func(childComplexity int) int
 		DescribeSource                    func(childComplexity int, namespace string, kind string, name string) int
 		DestinationCategories             func(childComplexity int) int
+		EffectiveConfig                   func(childComplexity int) int
 		GatewayDeploymentInfo             func(childComplexity int) int
 		GatewayPods                       func(childComplexity int) int
 		GetOverviewMetrics                func(childComplexity int) int
@@ -791,6 +952,17 @@ type ComplexityRoot struct {
 	Resources struct {
 		Limits   func(childComplexity int) int
 		Requests func(childComplexity int) int
+	}
+
+	RetryOnFailureConfig struct {
+		Enabled         func(childComplexity int) int
+		InitialInterval func(childComplexity int) int
+		MaxElapsedTime  func(childComplexity int) int
+		MaxInterval     func(childComplexity int) int
+	}
+
+	RolloutConfig struct {
+		AutomaticRolloutDisabled func(childComplexity int) int
 	}
 
 	RuntimeInfoAnalyze struct {
@@ -888,6 +1060,10 @@ type ComplexityRoot struct {
 		StatusCode      func(childComplexity int) int
 		Succeeded       func(childComplexity int) int
 	}
+
+	UserInstrumentationEnvsConfig struct {
+		Languages func(childComplexity int) int
+	}
 }
 
 type ComputePlatformResolver interface {
@@ -955,7 +1131,6 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
-	Config(ctx context.Context) (*model.GetConfigResponse, error)
 	K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error)
 	DestinationCategories(ctx context.Context) (*model.GetDestinationCategories, error)
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
@@ -966,12 +1141,14 @@ type QueryResolver interface {
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
 	InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
-	RemoteConfig(ctx context.Context) (*model.RemoteConfig, error)
 	GatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error)
 	OdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error)
 	GatewayPods(ctx context.Context) ([]*model.PodInfo, error)
 	OdigletPods(ctx context.Context) ([]*model.PodInfo, error)
 	CollectorPod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
+	Config(ctx context.Context) (*model.Config, error)
+	RemoteConfig(ctx context.Context) (*model.RemoteConfig, error)
+	EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error)
 	Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
 }
 
@@ -1161,6 +1338,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionFields.ServicesNameFilters(childComplexity), true
+
+	case "AgentsInitContainerResourcesConfig.limitCPUm":
+		if e.complexity.AgentsInitContainerResourcesConfig.LimitCPUm == nil {
+			break
+		}
+
+		return e.complexity.AgentsInitContainerResourcesConfig.LimitCPUm(childComplexity), true
+
+	case "AgentsInitContainerResourcesConfig.limitMemoryMiB":
+		if e.complexity.AgentsInitContainerResourcesConfig.LimitMemoryMiB == nil {
+			break
+		}
+
+		return e.complexity.AgentsInitContainerResourcesConfig.LimitMemoryMiB(childComplexity), true
+
+	case "AgentsInitContainerResourcesConfig.requestCPUm":
+		if e.complexity.AgentsInitContainerResourcesConfig.RequestCPUm == nil {
+			break
+		}
+
+		return e.complexity.AgentsInitContainerResourcesConfig.RequestCPUm(childComplexity), true
+
+	case "AgentsInitContainerResourcesConfig.requestMemoryMiB":
+		if e.complexity.AgentsInitContainerResourcesConfig.RequestMemoryMiB == nil {
+			break
+		}
+
+		return e.complexity.AgentsInitContainerResourcesConfig.RequestMemoryMiB(childComplexity), true
 
 	case "ApiToken.expiresAt":
 		if e.complexity.ApiToken.ExpiresAt == nil {
@@ -1442,6 +1647,174 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CollectorDaemonSetInfo.Status(childComplexity), true
 
+	case "CollectorGatewayConfig.clusterMetricsEnabled":
+		if e.complexity.CollectorGatewayConfig.ClusterMetricsEnabled == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.ClusterMetricsEnabled(childComplexity), true
+
+	case "CollectorGatewayConfig.goMemLimitMiB":
+		if e.complexity.CollectorGatewayConfig.GoMemLimitMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.GoMemLimitMiB(childComplexity), true
+
+	case "CollectorGatewayConfig.httpsProxyAddress":
+		if e.complexity.CollectorGatewayConfig.HTTPSProxyAddress == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.HTTPSProxyAddress(childComplexity), true
+
+	case "CollectorGatewayConfig.limitCPUm":
+		if e.complexity.CollectorGatewayConfig.LimitCPUm == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.LimitCPUm(childComplexity), true
+
+	case "CollectorGatewayConfig.limitMemoryMiB":
+		if e.complexity.CollectorGatewayConfig.LimitMemoryMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.LimitMemoryMiB(childComplexity), true
+
+	case "CollectorGatewayConfig.maxReplicas":
+		if e.complexity.CollectorGatewayConfig.MaxReplicas == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.MaxReplicas(childComplexity), true
+
+	case "CollectorGatewayConfig.memoryLimiterLimitMiB":
+		if e.complexity.CollectorGatewayConfig.MemoryLimiterLimitMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.MemoryLimiterLimitMiB(childComplexity), true
+
+	case "CollectorGatewayConfig.memoryLimiterSpikeLimitMiB":
+		if e.complexity.CollectorGatewayConfig.MemoryLimiterSpikeLimitMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.MemoryLimiterSpikeLimitMiB(childComplexity), true
+
+	case "CollectorGatewayConfig.minReplicas":
+		if e.complexity.CollectorGatewayConfig.MinReplicas == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.MinReplicas(childComplexity), true
+
+	case "CollectorGatewayConfig.nodeSelector":
+		if e.complexity.CollectorGatewayConfig.NodeSelector == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.NodeSelector(childComplexity), true
+
+	case "CollectorGatewayConfig.requestCPUm":
+		if e.complexity.CollectorGatewayConfig.RequestCPUm == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.RequestCPUm(childComplexity), true
+
+	case "CollectorGatewayConfig.requestMemoryMiB":
+		if e.complexity.CollectorGatewayConfig.RequestMemoryMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.RequestMemoryMiB(childComplexity), true
+
+	case "CollectorGatewayConfig.serviceGraphDisabled":
+		if e.complexity.CollectorGatewayConfig.ServiceGraphDisabled == nil {
+			break
+		}
+
+		return e.complexity.CollectorGatewayConfig.ServiceGraphDisabled(childComplexity), true
+
+	case "CollectorNodeConfig.collectorOwnMetricsPort":
+		if e.complexity.CollectorNodeConfig.CollectorOwnMetricsPort == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.CollectorOwnMetricsPort(childComplexity), true
+
+	case "CollectorNodeConfig.enableDataCompression":
+		if e.complexity.CollectorNodeConfig.EnableDataCompression == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.EnableDataCompression(childComplexity), true
+
+	case "CollectorNodeConfig.goMemLimitMiB":
+		if e.complexity.CollectorNodeConfig.GoMemLimitMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.GoMemLimitMiB(childComplexity), true
+
+	case "CollectorNodeConfig.k8sNodeLogsDirectory":
+		if e.complexity.CollectorNodeConfig.K8sNodeLogsDirectory == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.K8sNodeLogsDirectory(childComplexity), true
+
+	case "CollectorNodeConfig.limitCPUm":
+		if e.complexity.CollectorNodeConfig.LimitCPUm == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.LimitCPUm(childComplexity), true
+
+	case "CollectorNodeConfig.limitMemoryMiB":
+		if e.complexity.CollectorNodeConfig.LimitMemoryMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.LimitMemoryMiB(childComplexity), true
+
+	case "CollectorNodeConfig.memoryLimiterLimitMiB":
+		if e.complexity.CollectorNodeConfig.MemoryLimiterLimitMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.MemoryLimiterLimitMiB(childComplexity), true
+
+	case "CollectorNodeConfig.memoryLimiterSpikeLimitMiB":
+		if e.complexity.CollectorNodeConfig.MemoryLimiterSpikeLimitMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.MemoryLimiterSpikeLimitMiB(childComplexity), true
+
+	case "CollectorNodeConfig.otlpExporterConfiguration":
+		if e.complexity.CollectorNodeConfig.OtlpExporterConfiguration == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.OtlpExporterConfiguration(childComplexity), true
+
+	case "CollectorNodeConfig.requestCPUm":
+		if e.complexity.CollectorNodeConfig.RequestCPUm == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.RequestCPUm(childComplexity), true
+
+	case "CollectorNodeConfig.requestMemoryMiB":
+		if e.complexity.CollectorNodeConfig.RequestMemoryMiB == nil {
+			break
+		}
+
+		return e.complexity.CollectorNodeConfig.RequestMemoryMiB(childComplexity), true
+
 	case "CollectorPodMetrics.exporterFailedRps":
 		if e.complexity.CollectorPodMetrics.ExporterFailedRps == nil {
 			break
@@ -1598,6 +1971,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Condition.Type(childComplexity), true
+
+	case "Config.clusterName":
+		if e.complexity.Config.ClusterName == nil {
+			break
+		}
+
+		return e.complexity.Config.ClusterName(childComplexity), true
+
+	case "Config.installationMethod":
+		if e.complexity.Config.InstallationMethod == nil {
+			break
+		}
+
+		return e.complexity.Config.InstallationMethod(childComplexity), true
+
+	case "Config.installationStatus":
+		if e.complexity.Config.InstallationStatus == nil {
+			break
+		}
+
+		return e.complexity.Config.InstallationStatus(childComplexity), true
+
+	case "Config.isCentralProxyRunning":
+		if e.complexity.Config.IsCentralProxyRunning == nil {
+			break
+		}
+
+		return e.complexity.Config.IsCentralProxyRunning(childComplexity), true
+
+	case "Config.odigosVersion":
+		if e.complexity.Config.OdigosVersion == nil {
+			break
+		}
+
+		return e.complexity.Config.OdigosVersion(childComplexity), true
+
+	case "Config.platformType":
+		if e.complexity.Config.PlatformType == nil {
+			break
+		}
+
+		return e.complexity.Config.PlatformType(childComplexity), true
+
+	case "Config.readonly":
+		if e.complexity.Config.Readonly == nil {
+			break
+		}
+
+		return e.complexity.Config.Readonly(childComplexity), true
+
+	case "Config.tier":
+		if e.complexity.Config.Tier == nil {
+			break
+		}
+
+		return e.complexity.Config.Tier(childComplexity), true
 
 	case "ContainerAgentConfigAnalyze.agentEnabled":
 		if e.complexity.ContainerAgentConfigAnalyze.AgentEnabled == nil {
@@ -2033,6 +2462,300 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DistroParam.Value(childComplexity), true
 
+	case "EffectiveConfig.agentEnvVarsInjectionMethod":
+		if e.complexity.EffectiveConfig.AgentEnvVarsInjectionMethod == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.AgentEnvVarsInjectionMethod(childComplexity), true
+
+	case "EffectiveConfig.agentsInitContainerResources":
+		if e.complexity.EffectiveConfig.AgentsInitContainerResources == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.AgentsInitContainerResources(childComplexity), true
+
+	case "EffectiveConfig.allowConcurrentAgents":
+		if e.complexity.EffectiveConfig.AllowConcurrentAgents == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.AllowConcurrentAgents(childComplexity), true
+
+	case "EffectiveConfig.allowedTestConnectionHosts":
+		if e.complexity.EffectiveConfig.AllowedTestConnectionHosts == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.AllowedTestConnectionHosts(childComplexity), true
+
+	case "EffectiveConfig.centralBackendURL":
+		if e.complexity.EffectiveConfig.CentralBackendURL == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.CentralBackendURL(childComplexity), true
+
+	case "EffectiveConfig.checkDeviceHealthBeforeInjection":
+		if e.complexity.EffectiveConfig.CheckDeviceHealthBeforeInjection == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.CheckDeviceHealthBeforeInjection(childComplexity), true
+
+	case "EffectiveConfig.clickhouseJsonTypeEnabled":
+		if e.complexity.EffectiveConfig.ClickhouseJSONTypeEnabled == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.ClickhouseJSONTypeEnabled(childComplexity), true
+
+	case "EffectiveConfig.clusterName":
+		if e.complexity.EffectiveConfig.ClusterName == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.ClusterName(childComplexity), true
+
+	case "EffectiveConfig.collectorGateway":
+		if e.complexity.EffectiveConfig.CollectorGateway == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.CollectorGateway(childComplexity), true
+
+	case "EffectiveConfig.collectorNode":
+		if e.complexity.EffectiveConfig.CollectorNode == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.CollectorNode(childComplexity), true
+
+	case "EffectiveConfig.configVersion":
+		if e.complexity.EffectiveConfig.ConfigVersion == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.ConfigVersion(childComplexity), true
+
+	case "EffectiveConfig.customContainerRuntimeSocketPath":
+		if e.complexity.EffectiveConfig.CustomContainerRuntimeSocketPath == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.CustomContainerRuntimeSocketPath(childComplexity), true
+
+	case "EffectiveConfig.goAutoOffsetsCron":
+		if e.complexity.EffectiveConfig.GoAutoOffsetsCron == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.GoAutoOffsetsCron(childComplexity), true
+
+	case "EffectiveConfig.goAutoOffsetsMode":
+		if e.complexity.EffectiveConfig.GoAutoOffsetsMode == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.GoAutoOffsetsMode(childComplexity), true
+
+	case "EffectiveConfig.ignoreOdigosNamespace":
+		if e.complexity.EffectiveConfig.IgnoreOdigosNamespace == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.IgnoreOdigosNamespace(childComplexity), true
+
+	case "EffectiveConfig.ignoredContainers":
+		if e.complexity.EffectiveConfig.IgnoredContainers == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.IgnoredContainers(childComplexity), true
+
+	case "EffectiveConfig.ignoredNamespaces":
+		if e.complexity.EffectiveConfig.IgnoredNamespaces == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.IgnoredNamespaces(childComplexity), true
+
+	case "EffectiveConfig.imagePrefix":
+		if e.complexity.EffectiveConfig.ImagePrefix == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.ImagePrefix(childComplexity), true
+
+	case "EffectiveConfig.imagePullSecrets":
+		if e.complexity.EffectiveConfig.ImagePullSecrets == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.ImagePullSecrets(childComplexity), true
+
+	case "EffectiveConfig.karpenterEnabled":
+		if e.complexity.EffectiveConfig.KarpenterEnabled == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.KarpenterEnabled(childComplexity), true
+
+	case "EffectiveConfig.metricsSources":
+		if e.complexity.EffectiveConfig.MetricsSources == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.MetricsSources(childComplexity), true
+
+	case "EffectiveConfig.mountMethod":
+		if e.complexity.EffectiveConfig.MountMethod == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.MountMethod(childComplexity), true
+
+	case "EffectiveConfig.nodeSelector":
+		if e.complexity.EffectiveConfig.NodeSelector == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.NodeSelector(childComplexity), true
+
+	case "EffectiveConfig.odigletHealthProbeBindPort":
+		if e.complexity.EffectiveConfig.OdigletHealthProbeBindPort == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.OdigletHealthProbeBindPort(childComplexity), true
+
+	case "EffectiveConfig.odigosOwnTelemetryStore":
+		if e.complexity.EffectiveConfig.OdigosOwnTelemetryStore == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.OdigosOwnTelemetryStore(childComplexity), true
+
+	case "EffectiveConfig.oidc":
+		if e.complexity.EffectiveConfig.Oidc == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.Oidc(childComplexity), true
+
+	case "EffectiveConfig.openshiftEnabled":
+		if e.complexity.EffectiveConfig.OpenshiftEnabled == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.OpenshiftEnabled(childComplexity), true
+
+	case "EffectiveConfig.profiles":
+		if e.complexity.EffectiveConfig.Profiles == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.Profiles(childComplexity), true
+
+	case "EffectiveConfig.psp":
+		if e.complexity.EffectiveConfig.Psp == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.Psp(childComplexity), true
+
+	case "EffectiveConfig.resourceSizePreset":
+		if e.complexity.EffectiveConfig.ResourceSizePreset == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.ResourceSizePreset(childComplexity), true
+
+	case "EffectiveConfig.rollbackDisabled":
+		if e.complexity.EffectiveConfig.RollbackDisabled == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.RollbackDisabled(childComplexity), true
+
+	case "EffectiveConfig.rollbackGraceTime":
+		if e.complexity.EffectiveConfig.RollbackGraceTime == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.RollbackGraceTime(childComplexity), true
+
+	case "EffectiveConfig.rollbackStabilityWindow":
+		if e.complexity.EffectiveConfig.RollbackStabilityWindow == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.RollbackStabilityWindow(childComplexity), true
+
+	case "EffectiveConfig.rollout":
+		if e.complexity.EffectiveConfig.Rollout == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.Rollout(childComplexity), true
+
+	case "EffectiveConfig.skipWebhookIssuerCreation":
+		if e.complexity.EffectiveConfig.SkipWebhookIssuerCreation == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.SkipWebhookIssuerCreation(childComplexity), true
+
+	case "EffectiveConfig.telemetryEnabled":
+		if e.complexity.EffectiveConfig.TelemetryEnabled == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.TelemetryEnabled(childComplexity), true
+
+	case "EffectiveConfig.traceIdSuffix":
+		if e.complexity.EffectiveConfig.TraceIDSuffix == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.TraceIDSuffix(childComplexity), true
+
+	case "EffectiveConfig.uiMode":
+		if e.complexity.EffectiveConfig.UIMode == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.UIMode(childComplexity), true
+
+	case "EffectiveConfig.uiPaginationLimit":
+		if e.complexity.EffectiveConfig.UIPaginationLimit == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.UIPaginationLimit(childComplexity), true
+
+	case "EffectiveConfig.uiRemoteUrl":
+		if e.complexity.EffectiveConfig.UIRemoteURL == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.UIRemoteURL(childComplexity), true
+
+	case "EffectiveConfig.userInstrumentationEnvs":
+		if e.complexity.EffectiveConfig.UserInstrumentationEnvs == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.UserInstrumentationEnvs(childComplexity), true
+
+	case "EffectiveConfig.waspEnabled":
+		if e.complexity.EffectiveConfig.WaspEnabled == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.WaspEnabled(childComplexity), true
+
 	case "EntityProperty.explain":
 		if e.complexity.EntityProperty.Explain == nil {
 			break
@@ -2151,62 +2874,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GatewayDeploymentInfo.Status(childComplexity), true
-
-	case "GetConfigResponse.clusterName":
-		if e.complexity.GetConfigResponse.ClusterName == nil {
-			break
-		}
-
-		return e.complexity.GetConfigResponse.ClusterName(childComplexity), true
-
-	case "GetConfigResponse.installationMethod":
-		if e.complexity.GetConfigResponse.InstallationMethod == nil {
-			break
-		}
-
-		return e.complexity.GetConfigResponse.InstallationMethod(childComplexity), true
-
-	case "GetConfigResponse.installationStatus":
-		if e.complexity.GetConfigResponse.InstallationStatus == nil {
-			break
-		}
-
-		return e.complexity.GetConfigResponse.InstallationStatus(childComplexity), true
-
-	case "GetConfigResponse.isCentralProxyRunning":
-		if e.complexity.GetConfigResponse.IsCentralProxyRunning == nil {
-			break
-		}
-
-		return e.complexity.GetConfigResponse.IsCentralProxyRunning(childComplexity), true
-
-	case "GetConfigResponse.odigosVersion":
-		if e.complexity.GetConfigResponse.OdigosVersion == nil {
-			break
-		}
-
-		return e.complexity.GetConfigResponse.OdigosVersion(childComplexity), true
-
-	case "GetConfigResponse.platformType":
-		if e.complexity.GetConfigResponse.PlatformType == nil {
-			break
-		}
-
-		return e.complexity.GetConfigResponse.PlatformType(childComplexity), true
-
-	case "GetConfigResponse.readonly":
-		if e.complexity.GetConfigResponse.Readonly == nil {
-			break
-		}
-
-		return e.complexity.GetConfigResponse.Readonly(childComplexity), true
-
-	case "GetConfigResponse.tier":
-		if e.complexity.GetConfigResponse.Tier == nil {
-			break
-		}
-
-		return e.complexity.GetConfigResponse.Tier(childComplexity), true
 
 	case "GetDestinationCategories.categories":
 		if e.complexity.GetDestinationCategories.Categories == nil {
@@ -3419,6 +4086,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sWorkloadTelemetryMetricsExpectingTelemetryStatus.TelemetryObservedStatus(childComplexity), true
 
+	case "LanguageConfig.enabled":
+		if e.complexity.LanguageConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.LanguageConfig.Enabled(childComplexity), true
+
+	case "LanguageConfig.envVars":
+		if e.complexity.LanguageConfig.EnvVars == nil {
+			break
+		}
+
+		return e.complexity.LanguageConfig.EnvVars(childComplexity), true
+
 	case "MessagingPayloadCollection.dropPartialPayloads":
 		if e.complexity.MessagingPayloadCollection.DropPartialPayloads == nil {
 			break
@@ -3432,6 +4113,195 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MessagingPayloadCollection.MaxPayloadLength(childComplexity), true
+
+	case "MetricsSourceAgentJavaRuntimeMetricsConfig.disabled":
+		if e.complexity.MetricsSourceAgentJavaRuntimeMetricsConfig.Disabled == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceAgentJavaRuntimeMetricsConfig.Disabled(childComplexity), true
+
+	case "MetricsSourceAgentJavaRuntimeMetricsConfig.metrics":
+		if e.complexity.MetricsSourceAgentJavaRuntimeMetricsConfig.Metrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceAgentJavaRuntimeMetricsConfig.Metrics(childComplexity), true
+
+	case "MetricsSourceAgentMetricsConfig.runtimeMetrics":
+		if e.complexity.MetricsSourceAgentMetricsConfig.RuntimeMetrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceAgentMetricsConfig.RuntimeMetrics(childComplexity), true
+
+	case "MetricsSourceAgentMetricsConfig.spanMetrics":
+		if e.complexity.MetricsSourceAgentMetricsConfig.SpanMetrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceAgentMetricsConfig.SpanMetrics(childComplexity), true
+
+	case "MetricsSourceAgentRuntimeMetricConfig.disabled":
+		if e.complexity.MetricsSourceAgentRuntimeMetricConfig.Disabled == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceAgentRuntimeMetricConfig.Disabled(childComplexity), true
+
+	case "MetricsSourceAgentRuntimeMetricConfig.name":
+		if e.complexity.MetricsSourceAgentRuntimeMetricConfig.Name == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceAgentRuntimeMetricConfig.Name(childComplexity), true
+
+	case "MetricsSourceAgentRuntimeMetricsConfig.java":
+		if e.complexity.MetricsSourceAgentRuntimeMetricsConfig.Java == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceAgentRuntimeMetricsConfig.Java(childComplexity), true
+
+	case "MetricsSourceAgentSpanMetricsConfig.enabled":
+		if e.complexity.MetricsSourceAgentSpanMetricsConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceAgentSpanMetricsConfig.Enabled(childComplexity), true
+
+	case "MetricsSourceConfig.agentMetrics":
+		if e.complexity.MetricsSourceConfig.AgentMetrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceConfig.AgentMetrics(childComplexity), true
+
+	case "MetricsSourceConfig.hostMetrics":
+		if e.complexity.MetricsSourceConfig.HostMetrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceConfig.HostMetrics(childComplexity), true
+
+	case "MetricsSourceConfig.kubeletStats":
+		if e.complexity.MetricsSourceConfig.KubeletStats == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceConfig.KubeletStats(childComplexity), true
+
+	case "MetricsSourceConfig.odigosOwnMetrics":
+		if e.complexity.MetricsSourceConfig.OdigosOwnMetrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceConfig.OdigosOwnMetrics(childComplexity), true
+
+	case "MetricsSourceConfig.spanMetrics":
+		if e.complexity.MetricsSourceConfig.SpanMetrics == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceConfig.SpanMetrics(childComplexity), true
+
+	case "MetricsSourceHostMetricsConfig.disabled":
+		if e.complexity.MetricsSourceHostMetricsConfig.Disabled == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceHostMetricsConfig.Disabled(childComplexity), true
+
+	case "MetricsSourceHostMetricsConfig.interval":
+		if e.complexity.MetricsSourceHostMetricsConfig.Interval == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceHostMetricsConfig.Interval(childComplexity), true
+
+	case "MetricsSourceKubeletStatsConfig.disabled":
+		if e.complexity.MetricsSourceKubeletStatsConfig.Disabled == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceKubeletStatsConfig.Disabled(childComplexity), true
+
+	case "MetricsSourceKubeletStatsConfig.interval":
+		if e.complexity.MetricsSourceKubeletStatsConfig.Interval == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceKubeletStatsConfig.Interval(childComplexity), true
+
+	case "MetricsSourceOdigosOwnMetricsConfig.interval":
+		if e.complexity.MetricsSourceOdigosOwnMetricsConfig.Interval == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceOdigosOwnMetricsConfig.Interval(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.additionalDimensions":
+		if e.complexity.MetricsSourceSpanMetricsConfig.AdditionalDimensions == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.AdditionalDimensions(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.disabled":
+		if e.complexity.MetricsSourceSpanMetricsConfig.Disabled == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.Disabled(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.excludedResourceAttributes":
+		if e.complexity.MetricsSourceSpanMetricsConfig.ExcludedResourceAttributes == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.ExcludedResourceAttributes(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.histogramBuckets":
+		if e.complexity.MetricsSourceSpanMetricsConfig.HistogramBuckets == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.HistogramBuckets(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.histogramDisabled":
+		if e.complexity.MetricsSourceSpanMetricsConfig.HistogramDisabled == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.HistogramDisabled(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.includedProcessInDimensions":
+		if e.complexity.MetricsSourceSpanMetricsConfig.IncludedProcessInDimensions == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.IncludedProcessInDimensions(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.interval":
+		if e.complexity.MetricsSourceSpanMetricsConfig.Interval == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.Interval(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.metricsExpiration":
+		if e.complexity.MetricsSourceSpanMetricsConfig.MetricsExpiration == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.MetricsExpiration(childComplexity), true
+
+	case "MetricsSourceSpanMetricsConfig.resourceMetricsKeyAttributes":
+		if e.complexity.MetricsSourceSpanMetricsConfig.ResourceMetricsKeyAttributes == nil {
+			break
+		}
+
+		return e.complexity.MetricsSourceSpanMetricsConfig.ResourceMetricsKeyAttributes(childComplexity), true
 
 	case "Mutation.createAction":
 		if e.complexity.Mutation.CreateAction == nil {
@@ -3871,6 +4741,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OdigosAnalyze.Tier(childComplexity), true
 
+	case "OdigosOwnTelemetryConfig.metricsStoreDisabled":
+		if e.complexity.OdigosOwnTelemetryConfig.MetricsStoreDisabled == nil {
+			break
+		}
+
+		return e.complexity.OdigosOwnTelemetryConfig.MetricsStoreDisabled(childComplexity), true
+
+	case "OidcConfig.clientId":
+		if e.complexity.OidcConfig.ClientID == nil {
+			break
+		}
+
+		return e.complexity.OidcConfig.ClientID(childComplexity), true
+
+	case "OidcConfig.clientSecret":
+		if e.complexity.OidcConfig.ClientSecret == nil {
+			break
+		}
+
+		return e.complexity.OidcConfig.ClientSecret(childComplexity), true
+
+	case "OidcConfig.tenantUrl":
+		if e.complexity.OidcConfig.TenantURL == nil {
+			break
+		}
+
+		return e.complexity.OidcConfig.TenantURL(childComplexity), true
+
 	case "OtelAgentsAnalyze.containers":
 		if e.complexity.OtelAgentsAnalyze.Containers == nil {
 			break
@@ -3891,6 +4789,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OtelAgentsAnalyze.Created(childComplexity), true
+
+	case "OtlpExporterConfig.enableDataCompression":
+		if e.complexity.OtlpExporterConfig.EnableDataCompression == nil {
+			break
+		}
+
+		return e.complexity.OtlpExporterConfig.EnableDataCompression(childComplexity), true
+
+	case "OtlpExporterConfig.retryOnFailure":
+		if e.complexity.OtlpExporterConfig.RetryOnFailure == nil {
+			break
+		}
+
+		return e.complexity.OtlpExporterConfig.RetryOnFailure(childComplexity), true
+
+	case "OtlpExporterConfig.timeout":
+		if e.complexity.OtlpExporterConfig.Timeout == nil {
+			break
+		}
+
+		return e.complexity.OtlpExporterConfig.Timeout(childComplexity), true
 
 	case "OverviewMetricsResponse.destinations":
 		if e.complexity.OverviewMetricsResponse.Destinations == nil {
@@ -4224,6 +5143,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.DestinationCategories(childComplexity), true
 
+	case "Query.effectiveConfig":
+		if e.complexity.Query.EffectiveConfig == nil {
+			break
+		}
+
+		return e.complexity.Query.EffectiveConfig(childComplexity), true
+
 	case "Query.gatewayDeploymentInfo":
 		if e.complexity.Query.GatewayDeploymentInfo == nil {
 			break
@@ -4376,6 +5302,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Resources.Requests(childComplexity), true
+
+	case "RetryOnFailureConfig.enabled":
+		if e.complexity.RetryOnFailureConfig.Enabled == nil {
+			break
+		}
+
+		return e.complexity.RetryOnFailureConfig.Enabled(childComplexity), true
+
+	case "RetryOnFailureConfig.initialInterval":
+		if e.complexity.RetryOnFailureConfig.InitialInterval == nil {
+			break
+		}
+
+		return e.complexity.RetryOnFailureConfig.InitialInterval(childComplexity), true
+
+	case "RetryOnFailureConfig.maxElapsedTime":
+		if e.complexity.RetryOnFailureConfig.MaxElapsedTime == nil {
+			break
+		}
+
+		return e.complexity.RetryOnFailureConfig.MaxElapsedTime(childComplexity), true
+
+	case "RetryOnFailureConfig.maxInterval":
+		if e.complexity.RetryOnFailureConfig.MaxInterval == nil {
+			break
+		}
+
+		return e.complexity.RetryOnFailureConfig.MaxInterval(childComplexity), true
+
+	case "RolloutConfig.automaticRolloutDisabled":
+		if e.complexity.RolloutConfig.AutomaticRolloutDisabled == nil {
+			break
+		}
+
+		return e.complexity.RolloutConfig.AutomaticRolloutDisabled(childComplexity), true
 
 	case "RuntimeInfoAnalyze.containers":
 		if e.complexity.RuntimeInfoAnalyze.Containers == nil {
@@ -4755,6 +5716,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TestConnectionResponse.Succeeded(childComplexity), true
 
+	case "UserInstrumentationEnvsConfig.languages":
+		if e.complexity.UserInstrumentationEnvsConfig.Languages == nil {
+			break
+		}
+
+		return e.complexity.UserInstrumentationEnvsConfig.Languages(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -4898,7 +5866,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "collectors.graphqls" "enum.graphqls" "pod.graphqls" "schema.graphqls" "workload.graphqls"
+//go:embed "collectors.graphqls" "configs.graphqls" "enum.graphqls" "pod.graphqls" "schema.graphqls" "workload.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -4911,6 +5879,7 @@ func sourceData(filename string) string {
 
 var sources = []*ast.Source{
 	{Name: "collectors.graphqls", Input: sourceData("collectors.graphqls"), BuiltIn: false},
+	{Name: "configs.graphqls", Input: sourceData("configs.graphqls"), BuiltIn: false},
 	{Name: "enum.graphqls", Input: sourceData("enum.graphqls"), BuiltIn: false},
 	{Name: "pod.graphqls", Input: sourceData("pod.graphqls"), BuiltIn: false},
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
@@ -7295,6 +8264,170 @@ func (ec *executionContext) fieldContext_ActionFields_attributeFilters(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _AgentsInitContainerResourcesConfig_requestCPUm(ctx context.Context, field graphql.CollectedField, obj *model.AgentsInitContainerResourcesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsInitContainerResourcesConfig_requestCPUm(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestCPUm, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_requestCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsInitContainerResourcesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentsInitContainerResourcesConfig_limitCPUm(ctx context.Context, field graphql.CollectedField, obj *model.AgentsInitContainerResourcesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsInitContainerResourcesConfig_limitCPUm(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LimitCPUm, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_limitCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsInitContainerResourcesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentsInitContainerResourcesConfig_requestMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.AgentsInitContainerResourcesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsInitContainerResourcesConfig_requestMemoryMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestMemoryMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_requestMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsInitContainerResourcesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentsInitContainerResourcesConfig_limitMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.AgentsInitContainerResourcesConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AgentsInitContainerResourcesConfig_limitMemoryMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LimitMemoryMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_limitMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentsInitContainerResourcesConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ApiToken_token(ctx context.Context, field graphql.CollectedField, obj *model.APIToken) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ApiToken_token(ctx, field)
 	if err != nil {
@@ -9143,6 +10276,998 @@ func (ec *executionContext) fieldContext_CollectorDaemonSetInfo_configMapYAML(_ 
 	return fc, nil
 }
 
+func (ec *executionContext) _CollectorGatewayConfig_minReplicas(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_minReplicas(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinReplicas, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_minReplicas(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_maxReplicas(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_maxReplicas(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxReplicas, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_maxReplicas(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_requestMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_requestMemoryMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestMemoryMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_requestMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_limitMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_limitMemoryMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LimitMemoryMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_limitMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_requestCPUm(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_requestCPUm(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestCPUm, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_requestCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_limitCPUm(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_limitCPUm(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LimitCPUm, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_limitCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_memoryLimiterLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_memoryLimiterLimitMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MemoryLimiterLimitMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_memoryLimiterLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_memoryLimiterSpikeLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_memoryLimiterSpikeLimitMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MemoryLimiterSpikeLimitMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_memoryLimiterSpikeLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_goMemLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_goMemLimitMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GoMemLimitMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_goMemLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_serviceGraphDisabled(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_serviceGraphDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ServiceGraphDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_serviceGraphDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_clusterMetricsEnabled(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_clusterMetricsEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClusterMetricsEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_clusterMetricsEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_httpsProxyAddress(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_httpsProxyAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HTTPSProxyAddress, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_httpsProxyAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorGatewayConfig_nodeSelector(ctx context.Context, field graphql.CollectedField, obj *model.CollectorGatewayConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorGatewayConfig_nodeSelector(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeSelector, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorGatewayConfig_nodeSelector(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorGatewayConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_collectorOwnMetricsPort(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_collectorOwnMetricsPort(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CollectorOwnMetricsPort, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_collectorOwnMetricsPort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_requestMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_requestMemoryMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestMemoryMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_requestMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_limitMemoryMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_limitMemoryMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LimitMemoryMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_limitMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_requestCPUm(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_requestCPUm(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RequestCPUm, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_requestCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_limitCPUm(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_limitCPUm(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LimitCPUm, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_limitCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_memoryLimiterLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_memoryLimiterLimitMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MemoryLimiterLimitMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_memoryLimiterLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_memoryLimiterSpikeLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_memoryLimiterSpikeLimitMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MemoryLimiterSpikeLimitMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_memoryLimiterSpikeLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_goMemLimitMiB(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_goMemLimitMiB(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GoMemLimitMiB, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_goMemLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_k8sNodeLogsDirectory(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_k8sNodeLogsDirectory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.K8sNodeLogsDirectory, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_k8sNodeLogsDirectory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_enableDataCompression(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_enableDataCompression(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableDataCompression, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_enableDataCompression(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CollectorNodeConfig_otlpExporterConfiguration(ctx context.Context, field graphql.CollectedField, obj *model.CollectorNodeConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CollectorNodeConfig_otlpExporterConfiguration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OtlpExporterConfiguration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OtlpExporterConfig)
+	fc.Result = res
+	return ec.marshalOOtlpExporterConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOtlpExporterConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CollectorNodeConfig_otlpExporterConfiguration(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CollectorNodeConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enableDataCompression":
+				return ec.fieldContext_OtlpExporterConfig_enableDataCompression(ctx, field)
+			case "timeout":
+				return ec.fieldContext_OtlpExporterConfig_timeout(ctx, field)
+			case "retryOnFailure":
+				return ec.fieldContext_OtlpExporterConfig_retryOnFailure(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OtlpExporterConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _CollectorPodMetrics_metricsAcceptedRps(ctx context.Context, field graphql.CollectedField, obj *model.CollectorPodMetrics) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_CollectorPodMetrics_metricsAcceptedRps(ctx, field)
 	if err != nil {
@@ -10219,6 +12344,352 @@ func (ec *executionContext) fieldContext_Condition_lastTransitionTime(_ context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_readonly(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_readonly(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Readonly, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_readonly(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_platformType(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_platformType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PlatformType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ComputePlatformType)
+	fc.Result = res
+	return ec.marshalNComputePlatformType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatformType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_platformType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ComputePlatformType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_tier(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_tier(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tier, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Tier)
+	fc.Result = res
+	return ec.marshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTier(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_tier(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Tier does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_odigosVersion(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_odigosVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OdigosVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_odigosVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_installationMethod(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_installationMethod(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InstallationMethod, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_installationMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_installationStatus(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_installationStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InstallationStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.InstallationStatus)
+	fc.Result = res
+	return ec.marshalNInstallationStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstallationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_installationStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type InstallationStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_clusterName(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_clusterName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClusterName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_clusterName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Config_isCentralProxyRunning(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_isCentralProxyRunning(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsCentralProxyRunning, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Config_isCentralProxyRunning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Config",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13109,6 +15580,1825 @@ func (ec *executionContext) fieldContext_DistroParam_value(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _EffectiveConfig_configVersion(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_configVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ConfigVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_configVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_telemetryEnabled(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_telemetryEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TelemetryEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_telemetryEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_openshiftEnabled(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_openshiftEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OpenshiftEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_openshiftEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_ignoredNamespaces(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_ignoredNamespaces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IgnoredNamespaces, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_ignoredNamespaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_ignoredContainers(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_ignoredContainers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IgnoredContainers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_ignoredContainers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_ignoreOdigosNamespace(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_ignoreOdigosNamespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IgnoreOdigosNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_ignoreOdigosNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_psp(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_psp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Psp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_psp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_imagePrefix(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_imagePrefix(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImagePrefix, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_imagePrefix(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_skipWebhookIssuerCreation(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_skipWebhookIssuerCreation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SkipWebhookIssuerCreation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_skipWebhookIssuerCreation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_collectorGateway(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_collectorGateway(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CollectorGateway, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CollectorGatewayConfig)
+	fc.Result = res
+	return ec.marshalOCollectorGatewayConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorGatewayConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_collectorGateway(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "minReplicas":
+				return ec.fieldContext_CollectorGatewayConfig_minReplicas(ctx, field)
+			case "maxReplicas":
+				return ec.fieldContext_CollectorGatewayConfig_maxReplicas(ctx, field)
+			case "requestMemoryMiB":
+				return ec.fieldContext_CollectorGatewayConfig_requestMemoryMiB(ctx, field)
+			case "limitMemoryMiB":
+				return ec.fieldContext_CollectorGatewayConfig_limitMemoryMiB(ctx, field)
+			case "requestCPUm":
+				return ec.fieldContext_CollectorGatewayConfig_requestCPUm(ctx, field)
+			case "limitCPUm":
+				return ec.fieldContext_CollectorGatewayConfig_limitCPUm(ctx, field)
+			case "memoryLimiterLimitMiB":
+				return ec.fieldContext_CollectorGatewayConfig_memoryLimiterLimitMiB(ctx, field)
+			case "memoryLimiterSpikeLimitMiB":
+				return ec.fieldContext_CollectorGatewayConfig_memoryLimiterSpikeLimitMiB(ctx, field)
+			case "goMemLimitMiB":
+				return ec.fieldContext_CollectorGatewayConfig_goMemLimitMiB(ctx, field)
+			case "serviceGraphDisabled":
+				return ec.fieldContext_CollectorGatewayConfig_serviceGraphDisabled(ctx, field)
+			case "clusterMetricsEnabled":
+				return ec.fieldContext_CollectorGatewayConfig_clusterMetricsEnabled(ctx, field)
+			case "httpsProxyAddress":
+				return ec.fieldContext_CollectorGatewayConfig_httpsProxyAddress(ctx, field)
+			case "nodeSelector":
+				return ec.fieldContext_CollectorGatewayConfig_nodeSelector(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CollectorGatewayConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_collectorNode(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_collectorNode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CollectorNode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.CollectorNodeConfig)
+	fc.Result = res
+	return ec.marshalOCollectorNodeConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorNodeConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_collectorNode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "collectorOwnMetricsPort":
+				return ec.fieldContext_CollectorNodeConfig_collectorOwnMetricsPort(ctx, field)
+			case "requestMemoryMiB":
+				return ec.fieldContext_CollectorNodeConfig_requestMemoryMiB(ctx, field)
+			case "limitMemoryMiB":
+				return ec.fieldContext_CollectorNodeConfig_limitMemoryMiB(ctx, field)
+			case "requestCPUm":
+				return ec.fieldContext_CollectorNodeConfig_requestCPUm(ctx, field)
+			case "limitCPUm":
+				return ec.fieldContext_CollectorNodeConfig_limitCPUm(ctx, field)
+			case "memoryLimiterLimitMiB":
+				return ec.fieldContext_CollectorNodeConfig_memoryLimiterLimitMiB(ctx, field)
+			case "memoryLimiterSpikeLimitMiB":
+				return ec.fieldContext_CollectorNodeConfig_memoryLimiterSpikeLimitMiB(ctx, field)
+			case "goMemLimitMiB":
+				return ec.fieldContext_CollectorNodeConfig_goMemLimitMiB(ctx, field)
+			case "k8sNodeLogsDirectory":
+				return ec.fieldContext_CollectorNodeConfig_k8sNodeLogsDirectory(ctx, field)
+			case "enableDataCompression":
+				return ec.fieldContext_CollectorNodeConfig_enableDataCompression(ctx, field)
+			case "otlpExporterConfiguration":
+				return ec.fieldContext_CollectorNodeConfig_otlpExporterConfiguration(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CollectorNodeConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_profiles(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_profiles(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Profiles, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_profiles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_allowConcurrentAgents(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_allowConcurrentAgents(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AllowConcurrentAgents, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_allowConcurrentAgents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_uiMode(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_uiMode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UIMode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UIMode)
+	fc.Result = res
+	return ec.marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_uiMode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type UiMode does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_uiPaginationLimit(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_uiPaginationLimit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UIPaginationLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_uiPaginationLimit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_uiRemoteUrl(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_uiRemoteUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UIRemoteURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_uiRemoteUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_centralBackendURL(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_centralBackendURL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CentralBackendURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_centralBackendURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_clusterName(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_clusterName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClusterName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_clusterName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_mountMethod(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_mountMethod(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MountMethod, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MountMethod)
+	fc.Result = res
+	return ec.marshalOMountMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMountMethod(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_mountMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MountMethod does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_customContainerRuntimeSocketPath(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_customContainerRuntimeSocketPath(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomContainerRuntimeSocketPath, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_customContainerRuntimeSocketPath(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_agentEnvVarsInjectionMethod(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_agentEnvVarsInjectionMethod(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentEnvVarsInjectionMethod, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.EnvInjectionMethod)
+	fc.Result = res
+	return ec.marshalOEnvInjectionMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnvInjectionMethod(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_agentEnvVarsInjectionMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type EnvInjectionMethod does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_userInstrumentationEnvs(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_userInstrumentationEnvs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserInstrumentationEnvs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserInstrumentationEnvsConfig)
+	fc.Result = res
+	return ec.marshalOUserInstrumentationEnvsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUserInstrumentationEnvsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_userInstrumentationEnvs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "languages":
+				return ec.fieldContext_UserInstrumentationEnvsConfig_languages(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserInstrumentationEnvsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_nodeSelector(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_nodeSelector(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeSelector, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_nodeSelector(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_karpenterEnabled(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_karpenterEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KarpenterEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_karpenterEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_rollout(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_rollout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rollout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RolloutConfig)
+	fc.Result = res
+	return ec.marshalORolloutConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRolloutConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_rollout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "automaticRolloutDisabled":
+				return ec.fieldContext_RolloutConfig_automaticRolloutDisabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RolloutConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_rollbackDisabled(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_rollbackDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RollbackDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_rollbackDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_rollbackGraceTime(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_rollbackGraceTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RollbackGraceTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_rollbackGraceTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_rollbackStabilityWindow(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_rollbackStabilityWindow(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RollbackStabilityWindow, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_rollbackStabilityWindow(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_oidc(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_oidc(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Oidc, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OidcConfig)
+	fc.Result = res
+	return ec.marshalOOidcConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOidcConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_oidc(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "tenantUrl":
+				return ec.fieldContext_OidcConfig_tenantUrl(ctx, field)
+			case "clientId":
+				return ec.fieldContext_OidcConfig_clientId(ctx, field)
+			case "clientSecret":
+				return ec.fieldContext_OidcConfig_clientSecret(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OidcConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_odigletHealthProbeBindPort(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_odigletHealthProbeBindPort(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OdigletHealthProbeBindPort, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_odigletHealthProbeBindPort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_goAutoOffsetsCron(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_goAutoOffsetsCron(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GoAutoOffsetsCron, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_goAutoOffsetsCron(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_goAutoOffsetsMode(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_goAutoOffsetsMode(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GoAutoOffsetsMode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_goAutoOffsetsMode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_clickhouseJsonTypeEnabled(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_clickhouseJsonTypeEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClickhouseJSONTypeEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_clickhouseJsonTypeEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_checkDeviceHealthBeforeInjection(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_checkDeviceHealthBeforeInjection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CheckDeviceHealthBeforeInjection, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_checkDeviceHealthBeforeInjection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_resourceSizePreset(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_resourceSizePreset(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceSizePreset, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_resourceSizePreset(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_waspEnabled(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_waspEnabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WaspEnabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_waspEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_metricsSources(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_metricsSources(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricsSources, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_metricsSources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "spanMetrics":
+				return ec.fieldContext_MetricsSourceConfig_spanMetrics(ctx, field)
+			case "hostMetrics":
+				return ec.fieldContext_MetricsSourceConfig_hostMetrics(ctx, field)
+			case "kubeletStats":
+				return ec.fieldContext_MetricsSourceConfig_kubeletStats(ctx, field)
+			case "odigosOwnMetrics":
+				return ec.fieldContext_MetricsSourceConfig_odigosOwnMetrics(ctx, field)
+			case "agentMetrics":
+				return ec.fieldContext_MetricsSourceConfig_agentMetrics(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_agentsInitContainerResources(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_agentsInitContainerResources(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentsInitContainerResources, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.AgentsInitContainerResourcesConfig)
+	fc.Result = res
+	return ec.marshalOAgentsInitContainerResourcesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAgentsInitContainerResourcesConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_agentsInitContainerResources(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "requestCPUm":
+				return ec.fieldContext_AgentsInitContainerResourcesConfig_requestCPUm(ctx, field)
+			case "limitCPUm":
+				return ec.fieldContext_AgentsInitContainerResourcesConfig_limitCPUm(ctx, field)
+			case "requestMemoryMiB":
+				return ec.fieldContext_AgentsInitContainerResourcesConfig_requestMemoryMiB(ctx, field)
+			case "limitMemoryMiB":
+				return ec.fieldContext_AgentsInitContainerResourcesConfig_limitMemoryMiB(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AgentsInitContainerResourcesConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_traceIdSuffix(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_traceIdSuffix(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TraceIDSuffix, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_traceIdSuffix(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_allowedTestConnectionHosts(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_allowedTestConnectionHosts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AllowedTestConnectionHosts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_allowedTestConnectionHosts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_odigosOwnTelemetryStore(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_odigosOwnTelemetryStore(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OdigosOwnTelemetryStore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosOwnTelemetryConfig)
+	fc.Result = res
+	return ec.marshalOOdigosOwnTelemetryConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosOwnTelemetryConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_odigosOwnTelemetryStore(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "metricsStoreDisabled":
+				return ec.fieldContext_OdigosOwnTelemetryConfig_metricsStoreDisabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OdigosOwnTelemetryConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_imagePullSecrets(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_imagePullSecrets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ImagePullSecrets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_imagePullSecrets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _EntityProperty_name(ctx context.Context, field graphql.CollectedField, obj *model.EntityProperty) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_EntityProperty_name(ctx, field)
 	if err != nil {
@@ -13852,352 +18142,6 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_configMapYAML(_ c
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigResponse_readonly(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigResponse_readonly(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Readonly, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigResponse_readonly(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigResponse_platformType(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigResponse_platformType(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PlatformType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.ComputePlatformType)
-	fc.Result = res
-	return ec.marshalNComputePlatformType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatformType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigResponse_platformType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ComputePlatformType does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigResponse_tier(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigResponse_tier(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tier, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.Tier)
-	fc.Result = res
-	return ec.marshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTier(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigResponse_tier(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Tier does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigResponse_odigosVersion(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigResponse_odigosVersion(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OdigosVersion, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigResponse_odigosVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigResponse_installationMethod(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigResponse_installationMethod(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InstallationMethod, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigResponse_installationMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigResponse_installationStatus(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigResponse_installationStatus(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InstallationStatus, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.InstallationStatus)
-	fc.Result = res
-	return ec.marshalNInstallationStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐInstallationStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigResponse_installationStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type InstallationStatus does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigResponse_clusterName(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigResponse_clusterName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ClusterName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigResponse_clusterName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigResponse_isCentralProxyRunning(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigResponse_isCentralProxyRunning(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsCentralProxyRunning, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigResponse_isCentralProxyRunning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -22226,6 +26170,91 @@ func (ec *executionContext) fieldContext_K8sWorkloadTelemetryMetricsExpectingTel
 	return fc, nil
 }
 
+func (ec *executionContext) _LanguageConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.LanguageConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LanguageConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LanguageConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LanguageConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LanguageConfig_envVars(ctx context.Context, field graphql.CollectedField, obj *model.LanguageConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LanguageConfig_envVars(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnvVars, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LanguageConfig_envVars(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LanguageConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MessagingPayloadCollection_maxPayloadLength(ctx context.Context, field graphql.CollectedField, obj *model.MessagingPayloadCollection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MessagingPayloadCollection_maxPayloadLength(ctx, field)
 	if err != nil {
@@ -22303,6 +26332,1181 @@ func (ec *executionContext) fieldContext_MessagingPayloadCollection_dropPartialP
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceAgentJavaRuntimeMetricsConfig_disabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentJavaRuntimeMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceAgentJavaRuntimeMetricsConfig_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceAgentJavaRuntimeMetricsConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceAgentJavaRuntimeMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceAgentJavaRuntimeMetricsConfig_metrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentJavaRuntimeMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceAgentJavaRuntimeMetricsConfig_metrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Metrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MetricsSourceAgentRuntimeMetricConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceAgentRuntimeMetricConfig2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricConfigᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceAgentJavaRuntimeMetricsConfig_metrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceAgentJavaRuntimeMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_MetricsSourceAgentRuntimeMetricConfig_name(ctx, field)
+			case "disabled":
+				return ec.fieldContext_MetricsSourceAgentRuntimeMetricConfig_disabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceAgentRuntimeMetricConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceAgentMetricsConfig_spanMetrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceAgentMetricsConfig_spanMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpanMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceAgentSpanMetricsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceAgentSpanMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentSpanMetricsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceAgentMetricsConfig_spanMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceAgentMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_MetricsSourceAgentSpanMetricsConfig_enabled(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceAgentSpanMetricsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceAgentMetricsConfig_runtimeMetrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceAgentMetricsConfig_runtimeMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceAgentRuntimeMetricsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceAgentRuntimeMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceAgentMetricsConfig_runtimeMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceAgentMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "java":
+				return ec.fieldContext_MetricsSourceAgentRuntimeMetricsConfig_java(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceAgentRuntimeMetricsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceAgentRuntimeMetricConfig_name(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentRuntimeMetricConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceAgentRuntimeMetricConfig_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceAgentRuntimeMetricConfig_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceAgentRuntimeMetricConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceAgentRuntimeMetricConfig_disabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentRuntimeMetricConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceAgentRuntimeMetricConfig_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceAgentRuntimeMetricConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceAgentRuntimeMetricConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceAgentRuntimeMetricsConfig_java(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentRuntimeMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceAgentRuntimeMetricsConfig_java(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Java, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceAgentJavaRuntimeMetricsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceAgentJavaRuntimeMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentJavaRuntimeMetricsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceAgentRuntimeMetricsConfig_java(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceAgentRuntimeMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disabled":
+				return ec.fieldContext_MetricsSourceAgentJavaRuntimeMetricsConfig_disabled(ctx, field)
+			case "metrics":
+				return ec.fieldContext_MetricsSourceAgentJavaRuntimeMetricsConfig_metrics(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceAgentJavaRuntimeMetricsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceAgentSpanMetricsConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceAgentSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceAgentSpanMetricsConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceAgentSpanMetricsConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceAgentSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceConfig_spanMetrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceConfig_spanMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpanMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceSpanMetricsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceSpanMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceSpanMetricsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceConfig_spanMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disabled":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_disabled(ctx, field)
+			case "interval":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_interval(ctx, field)
+			case "metricsExpiration":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_metricsExpiration(ctx, field)
+			case "additionalDimensions":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_additionalDimensions(ctx, field)
+			case "histogramDisabled":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_histogramDisabled(ctx, field)
+			case "histogramBuckets":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_histogramBuckets(ctx, field)
+			case "includedProcessInDimensions":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_includedProcessInDimensions(ctx, field)
+			case "excludedResourceAttributes":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_excludedResourceAttributes(ctx, field)
+			case "resourceMetricsKeyAttributes":
+				return ec.fieldContext_MetricsSourceSpanMetricsConfig_resourceMetricsKeyAttributes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceSpanMetricsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceConfig_hostMetrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceConfig_hostMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HostMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceHostMetricsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceHostMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceHostMetricsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceConfig_hostMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disabled":
+				return ec.fieldContext_MetricsSourceHostMetricsConfig_disabled(ctx, field)
+			case "interval":
+				return ec.fieldContext_MetricsSourceHostMetricsConfig_interval(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceHostMetricsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceConfig_kubeletStats(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceConfig_kubeletStats(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KubeletStats, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceKubeletStatsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceKubeletStatsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceKubeletStatsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceConfig_kubeletStats(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "disabled":
+				return ec.fieldContext_MetricsSourceKubeletStatsConfig_disabled(ctx, field)
+			case "interval":
+				return ec.fieldContext_MetricsSourceKubeletStatsConfig_interval(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceKubeletStatsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceConfig_odigosOwnMetrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceConfig_odigosOwnMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OdigosOwnMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceOdigosOwnMetricsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceOdigosOwnMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceOdigosOwnMetricsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceConfig_odigosOwnMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "interval":
+				return ec.fieldContext_MetricsSourceOdigosOwnMetricsConfig_interval(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceOdigosOwnMetricsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceConfig_agentMetrics(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceConfig_agentMetrics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AgentMetrics, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MetricsSourceAgentMetricsConfig)
+	fc.Result = res
+	return ec.marshalOMetricsSourceAgentMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentMetricsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceConfig_agentMetrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "spanMetrics":
+				return ec.fieldContext_MetricsSourceAgentMetricsConfig_spanMetrics(ctx, field)
+			case "runtimeMetrics":
+				return ec.fieldContext_MetricsSourceAgentMetricsConfig_runtimeMetrics(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MetricsSourceAgentMetricsConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceHostMetricsConfig_disabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceHostMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceHostMetricsConfig_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceHostMetricsConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceHostMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceHostMetricsConfig_interval(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceHostMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceHostMetricsConfig_interval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceHostMetricsConfig_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceHostMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceKubeletStatsConfig_disabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceKubeletStatsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceKubeletStatsConfig_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceKubeletStatsConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceKubeletStatsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceKubeletStatsConfig_interval(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceKubeletStatsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceKubeletStatsConfig_interval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceKubeletStatsConfig_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceKubeletStatsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceOdigosOwnMetricsConfig_interval(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceOdigosOwnMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceOdigosOwnMetricsConfig_interval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceOdigosOwnMetricsConfig_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceOdigosOwnMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_disabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_disabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Disabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_interval(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_interval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_metricsExpiration(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_metricsExpiration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricsExpiration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_metricsExpiration(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_additionalDimensions(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_additionalDimensions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AdditionalDimensions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_additionalDimensions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_histogramDisabled(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_histogramDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HistogramDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_histogramDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_histogramBuckets(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_histogramBuckets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HistogramBuckets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_histogramBuckets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_includedProcessInDimensions(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_includedProcessInDimensions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IncludedProcessInDimensions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_includedProcessInDimensions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_excludedResourceAttributes(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_excludedResourceAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExcludedResourceAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_excludedResourceAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig_resourceMetricsKeyAttributes(ctx context.Context, field graphql.CollectedField, obj *model.MetricsSourceSpanMetricsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MetricsSourceSpanMetricsConfig_resourceMetricsKeyAttributes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResourceMetricsKeyAttributes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_resourceMetricsKeyAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MetricsSourceSpanMetricsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -24989,6 +30193,170 @@ func (ec *executionContext) fieldContext_OdigosAnalyze_hasErrors(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _OdigosOwnTelemetryConfig_metricsStoreDisabled(ctx context.Context, field graphql.CollectedField, obj *model.OdigosOwnTelemetryConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OdigosOwnTelemetryConfig_metricsStoreDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MetricsStoreDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OdigosOwnTelemetryConfig_metricsStoreDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OdigosOwnTelemetryConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OidcConfig_tenantUrl(ctx context.Context, field graphql.CollectedField, obj *model.OidcConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OidcConfig_tenantUrl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TenantURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OidcConfig_tenantUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OidcConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OidcConfig_clientId(ctx context.Context, field graphql.CollectedField, obj *model.OidcConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OidcConfig_clientId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OidcConfig_clientId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OidcConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OidcConfig_clientSecret(ctx context.Context, field graphql.CollectedField, obj *model.OidcConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OidcConfig_clientSecret(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientSecret, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OidcConfig_clientSecret(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OidcConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _OtelAgentsAnalyze_created(ctx context.Context, field graphql.CollectedField, obj *model.OtelAgentsAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OtelAgentsAnalyze_created(ctx, field)
 	if err != nil {
@@ -25145,6 +30513,139 @@ func (ec *executionContext) fieldContext_OtelAgentsAnalyze_containers(_ context.
 				return ec.fieldContext_ContainerAgentConfigAnalyze_otelDistroName(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ContainerAgentConfigAnalyze", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OtlpExporterConfig_enableDataCompression(ctx context.Context, field graphql.CollectedField, obj *model.OtlpExporterConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OtlpExporterConfig_enableDataCompression(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EnableDataCompression, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OtlpExporterConfig_enableDataCompression(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OtlpExporterConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OtlpExporterConfig_timeout(ctx context.Context, field graphql.CollectedField, obj *model.OtlpExporterConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OtlpExporterConfig_timeout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timeout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OtlpExporterConfig_timeout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OtlpExporterConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OtlpExporterConfig_retryOnFailure(ctx context.Context, field graphql.CollectedField, obj *model.OtlpExporterConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OtlpExporterConfig_retryOnFailure(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RetryOnFailure, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RetryOnFailureConfig)
+	fc.Result = res
+	return ec.marshalORetryOnFailureConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRetryOnFailureConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OtlpExporterConfig_retryOnFailure(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OtlpExporterConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "enabled":
+				return ec.fieldContext_RetryOnFailureConfig_enabled(ctx, field)
+			case "initialInterval":
+				return ec.fieldContext_RetryOnFailureConfig_initialInterval(ctx, field)
+			case "maxInterval":
+				return ec.fieldContext_RetryOnFailureConfig_maxInterval(ctx, field)
+			case "maxElapsedTime":
+				return ec.fieldContext_RetryOnFailureConfig_maxElapsedTime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RetryOnFailureConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -27117,65 +32618,6 @@ func (ec *executionContext) fieldContext_Query_computePlatform(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_config(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_config(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Config(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.GetConfigResponse)
-	fc.Result = res
-	return ec.marshalOGetConfigResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGetConfigResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_config(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "readonly":
-				return ec.fieldContext_GetConfigResponse_readonly(ctx, field)
-			case "platformType":
-				return ec.fieldContext_GetConfigResponse_platformType(ctx, field)
-			case "tier":
-				return ec.fieldContext_GetConfigResponse_tier(ctx, field)
-			case "odigosVersion":
-				return ec.fieldContext_GetConfigResponse_odigosVersion(ctx, field)
-			case "installationMethod":
-				return ec.fieldContext_GetConfigResponse_installationMethod(ctx, field)
-			case "installationStatus":
-				return ec.fieldContext_GetConfigResponse_installationStatus(ctx, field)
-			case "clusterName":
-				return ec.fieldContext_GetConfigResponse_clusterName(ctx, field)
-			case "isCentralProxyRunning":
-				return ec.fieldContext_GetConfigResponse_isCentralProxyRunning(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type GetConfigResponse", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_k8sManifest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_k8sManifest(ctx, field)
 	if err != nil {
@@ -27777,51 +33219,6 @@ func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_remoteConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_remoteConfig(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RemoteConfig(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.RemoteConfig)
-	fc.Result = res
-	return ec.marshalORemoteConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfig(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_remoteConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "rollout":
-				return ec.fieldContext_RemoteConfig_rollout(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type RemoteConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_gatewayDeploymentInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_gatewayDeploymentInfo(ctx, field)
 	if err != nil {
@@ -28135,6 +33532,237 @@ func (ec *executionContext) fieldContext_Query_collectorPod(ctx context.Context,
 	if fc.Args, err = ec.field_Query_collectorPod_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_config(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Config(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Config)
+	fc.Result = res
+	return ec.marshalOConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_config(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "readonly":
+				return ec.fieldContext_Config_readonly(ctx, field)
+			case "platformType":
+				return ec.fieldContext_Config_platformType(ctx, field)
+			case "tier":
+				return ec.fieldContext_Config_tier(ctx, field)
+			case "odigosVersion":
+				return ec.fieldContext_Config_odigosVersion(ctx, field)
+			case "installationMethod":
+				return ec.fieldContext_Config_installationMethod(ctx, field)
+			case "installationStatus":
+				return ec.fieldContext_Config_installationStatus(ctx, field)
+			case "clusterName":
+				return ec.fieldContext_Config_clusterName(ctx, field)
+			case "isCentralProxyRunning":
+				return ec.fieldContext_Config_isCentralProxyRunning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Config", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_remoteConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_remoteConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RemoteConfig(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.RemoteConfig)
+	fc.Result = res
+	return ec.marshalORemoteConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_remoteConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "rollout":
+				return ec.fieldContext_RemoteConfig_rollout(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RemoteConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_effectiveConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_effectiveConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EffectiveConfig(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.EffectiveConfig)
+	fc.Result = res
+	return ec.marshalOEffectiveConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEffectiveConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "configVersion":
+				return ec.fieldContext_EffectiveConfig_configVersion(ctx, field)
+			case "telemetryEnabled":
+				return ec.fieldContext_EffectiveConfig_telemetryEnabled(ctx, field)
+			case "openshiftEnabled":
+				return ec.fieldContext_EffectiveConfig_openshiftEnabled(ctx, field)
+			case "ignoredNamespaces":
+				return ec.fieldContext_EffectiveConfig_ignoredNamespaces(ctx, field)
+			case "ignoredContainers":
+				return ec.fieldContext_EffectiveConfig_ignoredContainers(ctx, field)
+			case "ignoreOdigosNamespace":
+				return ec.fieldContext_EffectiveConfig_ignoreOdigosNamespace(ctx, field)
+			case "psp":
+				return ec.fieldContext_EffectiveConfig_psp(ctx, field)
+			case "imagePrefix":
+				return ec.fieldContext_EffectiveConfig_imagePrefix(ctx, field)
+			case "skipWebhookIssuerCreation":
+				return ec.fieldContext_EffectiveConfig_skipWebhookIssuerCreation(ctx, field)
+			case "collectorGateway":
+				return ec.fieldContext_EffectiveConfig_collectorGateway(ctx, field)
+			case "collectorNode":
+				return ec.fieldContext_EffectiveConfig_collectorNode(ctx, field)
+			case "profiles":
+				return ec.fieldContext_EffectiveConfig_profiles(ctx, field)
+			case "allowConcurrentAgents":
+				return ec.fieldContext_EffectiveConfig_allowConcurrentAgents(ctx, field)
+			case "uiMode":
+				return ec.fieldContext_EffectiveConfig_uiMode(ctx, field)
+			case "uiPaginationLimit":
+				return ec.fieldContext_EffectiveConfig_uiPaginationLimit(ctx, field)
+			case "uiRemoteUrl":
+				return ec.fieldContext_EffectiveConfig_uiRemoteUrl(ctx, field)
+			case "centralBackendURL":
+				return ec.fieldContext_EffectiveConfig_centralBackendURL(ctx, field)
+			case "clusterName":
+				return ec.fieldContext_EffectiveConfig_clusterName(ctx, field)
+			case "mountMethod":
+				return ec.fieldContext_EffectiveConfig_mountMethod(ctx, field)
+			case "customContainerRuntimeSocketPath":
+				return ec.fieldContext_EffectiveConfig_customContainerRuntimeSocketPath(ctx, field)
+			case "agentEnvVarsInjectionMethod":
+				return ec.fieldContext_EffectiveConfig_agentEnvVarsInjectionMethod(ctx, field)
+			case "userInstrumentationEnvs":
+				return ec.fieldContext_EffectiveConfig_userInstrumentationEnvs(ctx, field)
+			case "nodeSelector":
+				return ec.fieldContext_EffectiveConfig_nodeSelector(ctx, field)
+			case "karpenterEnabled":
+				return ec.fieldContext_EffectiveConfig_karpenterEnabled(ctx, field)
+			case "rollout":
+				return ec.fieldContext_EffectiveConfig_rollout(ctx, field)
+			case "rollbackDisabled":
+				return ec.fieldContext_EffectiveConfig_rollbackDisabled(ctx, field)
+			case "rollbackGraceTime":
+				return ec.fieldContext_EffectiveConfig_rollbackGraceTime(ctx, field)
+			case "rollbackStabilityWindow":
+				return ec.fieldContext_EffectiveConfig_rollbackStabilityWindow(ctx, field)
+			case "oidc":
+				return ec.fieldContext_EffectiveConfig_oidc(ctx, field)
+			case "odigletHealthProbeBindPort":
+				return ec.fieldContext_EffectiveConfig_odigletHealthProbeBindPort(ctx, field)
+			case "goAutoOffsetsCron":
+				return ec.fieldContext_EffectiveConfig_goAutoOffsetsCron(ctx, field)
+			case "goAutoOffsetsMode":
+				return ec.fieldContext_EffectiveConfig_goAutoOffsetsMode(ctx, field)
+			case "clickhouseJsonTypeEnabled":
+				return ec.fieldContext_EffectiveConfig_clickhouseJsonTypeEnabled(ctx, field)
+			case "checkDeviceHealthBeforeInjection":
+				return ec.fieldContext_EffectiveConfig_checkDeviceHealthBeforeInjection(ctx, field)
+			case "resourceSizePreset":
+				return ec.fieldContext_EffectiveConfig_resourceSizePreset(ctx, field)
+			case "waspEnabled":
+				return ec.fieldContext_EffectiveConfig_waspEnabled(ctx, field)
+			case "metricsSources":
+				return ec.fieldContext_EffectiveConfig_metricsSources(ctx, field)
+			case "agentsInitContainerResources":
+				return ec.fieldContext_EffectiveConfig_agentsInitContainerResources(ctx, field)
+			case "traceIdSuffix":
+				return ec.fieldContext_EffectiveConfig_traceIdSuffix(ctx, field)
+			case "allowedTestConnectionHosts":
+				return ec.fieldContext_EffectiveConfig_allowedTestConnectionHosts(ctx, field)
+			case "odigosOwnTelemetryStore":
+				return ec.fieldContext_EffectiveConfig_odigosOwnTelemetryStore(ctx, field)
+			case "imagePullSecrets":
+				return ec.fieldContext_EffectiveConfig_imagePullSecrets(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EffectiveConfig", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -28596,6 +34224,211 @@ func (ec *executionContext) fieldContext_Resources_limits(_ context.Context, fie
 				return ec.fieldContext_ResourceAmounts_memory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ResourceAmounts", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RetryOnFailureConfig_enabled(ctx context.Context, field graphql.CollectedField, obj *model.RetryOnFailureConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RetryOnFailureConfig_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RetryOnFailureConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RetryOnFailureConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RetryOnFailureConfig_initialInterval(ctx context.Context, field graphql.CollectedField, obj *model.RetryOnFailureConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RetryOnFailureConfig_initialInterval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InitialInterval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RetryOnFailureConfig_initialInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RetryOnFailureConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RetryOnFailureConfig_maxInterval(ctx context.Context, field graphql.CollectedField, obj *model.RetryOnFailureConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RetryOnFailureConfig_maxInterval(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxInterval, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RetryOnFailureConfig_maxInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RetryOnFailureConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RetryOnFailureConfig_maxElapsedTime(ctx context.Context, field graphql.CollectedField, obj *model.RetryOnFailureConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RetryOnFailureConfig_maxElapsedTime(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxElapsedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RetryOnFailureConfig_maxElapsedTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RetryOnFailureConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RolloutConfig_automaticRolloutDisabled(ctx context.Context, field graphql.CollectedField, obj *model.RolloutConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RolloutConfig_automaticRolloutDisabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AutomaticRolloutDisabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RolloutConfig_automaticRolloutDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RolloutConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -31090,6 +36923,47 @@ func (ec *executionContext) _TestConnectionResponse_reason(ctx context.Context, 
 func (ec *executionContext) fieldContext_TestConnectionResponse_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TestConnectionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserInstrumentationEnvsConfig_languages(ctx context.Context, field graphql.CollectedField, obj *model.UserInstrumentationEnvsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserInstrumentationEnvsConfig_languages(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Languages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserInstrumentationEnvsConfig_languages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserInstrumentationEnvsConfig",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -34922,6 +40796,48 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var agentsInitContainerResourcesConfigImplementors = []string{"AgentsInitContainerResourcesConfig"}
+
+func (ec *executionContext) _AgentsInitContainerResourcesConfig(ctx context.Context, sel ast.SelectionSet, obj *model.AgentsInitContainerResourcesConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, agentsInitContainerResourcesConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AgentsInitContainerResourcesConfig")
+		case "requestCPUm":
+			out.Values[i] = ec._AgentsInitContainerResourcesConfig_requestCPUm(ctx, field, obj)
+		case "limitCPUm":
+			out.Values[i] = ec._AgentsInitContainerResourcesConfig_limitCPUm(ctx, field, obj)
+		case "requestMemoryMiB":
+			out.Values[i] = ec._AgentsInitContainerResourcesConfig_requestMemoryMiB(ctx, field, obj)
+		case "limitMemoryMiB":
+			out.Values[i] = ec._AgentsInitContainerResourcesConfig_limitMemoryMiB(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var apiTokenImplementors = []string{"ApiToken"}
 
 func (ec *executionContext) _ApiToken(ctx context.Context, sel ast.SelectionSet, obj *model.APIToken) graphql.Marshaler {
@@ -35311,6 +41227,122 @@ func (ec *executionContext) _CollectorDaemonSetInfo(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var collectorGatewayConfigImplementors = []string{"CollectorGatewayConfig"}
+
+func (ec *executionContext) _CollectorGatewayConfig(ctx context.Context, sel ast.SelectionSet, obj *model.CollectorGatewayConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, collectorGatewayConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CollectorGatewayConfig")
+		case "minReplicas":
+			out.Values[i] = ec._CollectorGatewayConfig_minReplicas(ctx, field, obj)
+		case "maxReplicas":
+			out.Values[i] = ec._CollectorGatewayConfig_maxReplicas(ctx, field, obj)
+		case "requestMemoryMiB":
+			out.Values[i] = ec._CollectorGatewayConfig_requestMemoryMiB(ctx, field, obj)
+		case "limitMemoryMiB":
+			out.Values[i] = ec._CollectorGatewayConfig_limitMemoryMiB(ctx, field, obj)
+		case "requestCPUm":
+			out.Values[i] = ec._CollectorGatewayConfig_requestCPUm(ctx, field, obj)
+		case "limitCPUm":
+			out.Values[i] = ec._CollectorGatewayConfig_limitCPUm(ctx, field, obj)
+		case "memoryLimiterLimitMiB":
+			out.Values[i] = ec._CollectorGatewayConfig_memoryLimiterLimitMiB(ctx, field, obj)
+		case "memoryLimiterSpikeLimitMiB":
+			out.Values[i] = ec._CollectorGatewayConfig_memoryLimiterSpikeLimitMiB(ctx, field, obj)
+		case "goMemLimitMiB":
+			out.Values[i] = ec._CollectorGatewayConfig_goMemLimitMiB(ctx, field, obj)
+		case "serviceGraphDisabled":
+			out.Values[i] = ec._CollectorGatewayConfig_serviceGraphDisabled(ctx, field, obj)
+		case "clusterMetricsEnabled":
+			out.Values[i] = ec._CollectorGatewayConfig_clusterMetricsEnabled(ctx, field, obj)
+		case "httpsProxyAddress":
+			out.Values[i] = ec._CollectorGatewayConfig_httpsProxyAddress(ctx, field, obj)
+		case "nodeSelector":
+			out.Values[i] = ec._CollectorGatewayConfig_nodeSelector(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var collectorNodeConfigImplementors = []string{"CollectorNodeConfig"}
+
+func (ec *executionContext) _CollectorNodeConfig(ctx context.Context, sel ast.SelectionSet, obj *model.CollectorNodeConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, collectorNodeConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CollectorNodeConfig")
+		case "collectorOwnMetricsPort":
+			out.Values[i] = ec._CollectorNodeConfig_collectorOwnMetricsPort(ctx, field, obj)
+		case "requestMemoryMiB":
+			out.Values[i] = ec._CollectorNodeConfig_requestMemoryMiB(ctx, field, obj)
+		case "limitMemoryMiB":
+			out.Values[i] = ec._CollectorNodeConfig_limitMemoryMiB(ctx, field, obj)
+		case "requestCPUm":
+			out.Values[i] = ec._CollectorNodeConfig_requestCPUm(ctx, field, obj)
+		case "limitCPUm":
+			out.Values[i] = ec._CollectorNodeConfig_limitCPUm(ctx, field, obj)
+		case "memoryLimiterLimitMiB":
+			out.Values[i] = ec._CollectorNodeConfig_memoryLimiterLimitMiB(ctx, field, obj)
+		case "memoryLimiterSpikeLimitMiB":
+			out.Values[i] = ec._CollectorNodeConfig_memoryLimiterSpikeLimitMiB(ctx, field, obj)
+		case "goMemLimitMiB":
+			out.Values[i] = ec._CollectorNodeConfig_goMemLimitMiB(ctx, field, obj)
+		case "k8sNodeLogsDirectory":
+			out.Values[i] = ec._CollectorNodeConfig_k8sNodeLogsDirectory(ctx, field, obj)
+		case "enableDataCompression":
+			out.Values[i] = ec._CollectorNodeConfig_enableDataCompression(ctx, field, obj)
+		case "otlpExporterConfiguration":
+			out.Values[i] = ec._CollectorNodeConfig_otlpExporterConfiguration(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -35782,6 +41814,74 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Condition_message(ctx, field, obj)
 		case "lastTransitionTime":
 			out.Values[i] = ec._Condition_lastTransitionTime(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var configImplementors = []string{"Config"}
+
+func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, obj *model.Config) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Config")
+		case "readonly":
+			out.Values[i] = ec._Config_readonly(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "platformType":
+			out.Values[i] = ec._Config_platformType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tier":
+			out.Values[i] = ec._Config_tier(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "odigosVersion":
+			out.Values[i] = ec._Config_odigosVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "installationMethod":
+			out.Values[i] = ec._Config_installationMethod(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "installationStatus":
+			out.Values[i] = ec._Config_installationStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clusterName":
+			out.Values[i] = ec._Config_clusterName(ctx, field, obj)
+		case "isCentralProxyRunning":
+			out.Values[i] = ec._Config_isCentralProxyRunning(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36552,6 +42652,127 @@ func (ec *executionContext) _DistroParam(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var effectiveConfigImplementors = []string{"EffectiveConfig"}
+
+func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.SelectionSet, obj *model.EffectiveConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, effectiveConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EffectiveConfig")
+		case "configVersion":
+			out.Values[i] = ec._EffectiveConfig_configVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "telemetryEnabled":
+			out.Values[i] = ec._EffectiveConfig_telemetryEnabled(ctx, field, obj)
+		case "openshiftEnabled":
+			out.Values[i] = ec._EffectiveConfig_openshiftEnabled(ctx, field, obj)
+		case "ignoredNamespaces":
+			out.Values[i] = ec._EffectiveConfig_ignoredNamespaces(ctx, field, obj)
+		case "ignoredContainers":
+			out.Values[i] = ec._EffectiveConfig_ignoredContainers(ctx, field, obj)
+		case "ignoreOdigosNamespace":
+			out.Values[i] = ec._EffectiveConfig_ignoreOdigosNamespace(ctx, field, obj)
+		case "psp":
+			out.Values[i] = ec._EffectiveConfig_psp(ctx, field, obj)
+		case "imagePrefix":
+			out.Values[i] = ec._EffectiveConfig_imagePrefix(ctx, field, obj)
+		case "skipWebhookIssuerCreation":
+			out.Values[i] = ec._EffectiveConfig_skipWebhookIssuerCreation(ctx, field, obj)
+		case "collectorGateway":
+			out.Values[i] = ec._EffectiveConfig_collectorGateway(ctx, field, obj)
+		case "collectorNode":
+			out.Values[i] = ec._EffectiveConfig_collectorNode(ctx, field, obj)
+		case "profiles":
+			out.Values[i] = ec._EffectiveConfig_profiles(ctx, field, obj)
+		case "allowConcurrentAgents":
+			out.Values[i] = ec._EffectiveConfig_allowConcurrentAgents(ctx, field, obj)
+		case "uiMode":
+			out.Values[i] = ec._EffectiveConfig_uiMode(ctx, field, obj)
+		case "uiPaginationLimit":
+			out.Values[i] = ec._EffectiveConfig_uiPaginationLimit(ctx, field, obj)
+		case "uiRemoteUrl":
+			out.Values[i] = ec._EffectiveConfig_uiRemoteUrl(ctx, field, obj)
+		case "centralBackendURL":
+			out.Values[i] = ec._EffectiveConfig_centralBackendURL(ctx, field, obj)
+		case "clusterName":
+			out.Values[i] = ec._EffectiveConfig_clusterName(ctx, field, obj)
+		case "mountMethod":
+			out.Values[i] = ec._EffectiveConfig_mountMethod(ctx, field, obj)
+		case "customContainerRuntimeSocketPath":
+			out.Values[i] = ec._EffectiveConfig_customContainerRuntimeSocketPath(ctx, field, obj)
+		case "agentEnvVarsInjectionMethod":
+			out.Values[i] = ec._EffectiveConfig_agentEnvVarsInjectionMethod(ctx, field, obj)
+		case "userInstrumentationEnvs":
+			out.Values[i] = ec._EffectiveConfig_userInstrumentationEnvs(ctx, field, obj)
+		case "nodeSelector":
+			out.Values[i] = ec._EffectiveConfig_nodeSelector(ctx, field, obj)
+		case "karpenterEnabled":
+			out.Values[i] = ec._EffectiveConfig_karpenterEnabled(ctx, field, obj)
+		case "rollout":
+			out.Values[i] = ec._EffectiveConfig_rollout(ctx, field, obj)
+		case "rollbackDisabled":
+			out.Values[i] = ec._EffectiveConfig_rollbackDisabled(ctx, field, obj)
+		case "rollbackGraceTime":
+			out.Values[i] = ec._EffectiveConfig_rollbackGraceTime(ctx, field, obj)
+		case "rollbackStabilityWindow":
+			out.Values[i] = ec._EffectiveConfig_rollbackStabilityWindow(ctx, field, obj)
+		case "oidc":
+			out.Values[i] = ec._EffectiveConfig_oidc(ctx, field, obj)
+		case "odigletHealthProbeBindPort":
+			out.Values[i] = ec._EffectiveConfig_odigletHealthProbeBindPort(ctx, field, obj)
+		case "goAutoOffsetsCron":
+			out.Values[i] = ec._EffectiveConfig_goAutoOffsetsCron(ctx, field, obj)
+		case "goAutoOffsetsMode":
+			out.Values[i] = ec._EffectiveConfig_goAutoOffsetsMode(ctx, field, obj)
+		case "clickhouseJsonTypeEnabled":
+			out.Values[i] = ec._EffectiveConfig_clickhouseJsonTypeEnabled(ctx, field, obj)
+		case "checkDeviceHealthBeforeInjection":
+			out.Values[i] = ec._EffectiveConfig_checkDeviceHealthBeforeInjection(ctx, field, obj)
+		case "resourceSizePreset":
+			out.Values[i] = ec._EffectiveConfig_resourceSizePreset(ctx, field, obj)
+		case "waspEnabled":
+			out.Values[i] = ec._EffectiveConfig_waspEnabled(ctx, field, obj)
+		case "metricsSources":
+			out.Values[i] = ec._EffectiveConfig_metricsSources(ctx, field, obj)
+		case "agentsInitContainerResources":
+			out.Values[i] = ec._EffectiveConfig_agentsInitContainerResources(ctx, field, obj)
+		case "traceIdSuffix":
+			out.Values[i] = ec._EffectiveConfig_traceIdSuffix(ctx, field, obj)
+		case "allowedTestConnectionHosts":
+			out.Values[i] = ec._EffectiveConfig_allowedTestConnectionHosts(ctx, field, obj)
+		case "odigosOwnTelemetryStore":
+			out.Values[i] = ec._EffectiveConfig_odigosOwnTelemetryStore(ctx, field, obj)
+		case "imagePullSecrets":
+			out.Values[i] = ec._EffectiveConfig_imagePullSecrets(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var entityPropertyImplementors = []string{"EntityProperty"}
 
 func (ec *executionContext) _EntityProperty(ctx context.Context, sel ast.SelectionSet, obj *model.EntityProperty) graphql.Marshaler {
@@ -36732,74 +42953,6 @@ func (ec *executionContext) _GatewayDeploymentInfo(ctx context.Context, sel ast.
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var getConfigResponseImplementors = []string{"GetConfigResponse"}
-
-func (ec *executionContext) _GetConfigResponse(ctx context.Context, sel ast.SelectionSet, obj *model.GetConfigResponse) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, getConfigResponseImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("GetConfigResponse")
-		case "readonly":
-			out.Values[i] = ec._GetConfigResponse_readonly(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "platformType":
-			out.Values[i] = ec._GetConfigResponse_platformType(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "tier":
-			out.Values[i] = ec._GetConfigResponse_tier(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "odigosVersion":
-			out.Values[i] = ec._GetConfigResponse_odigosVersion(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "installationMethod":
-			out.Values[i] = ec._GetConfigResponse_installationMethod(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "installationStatus":
-			out.Values[i] = ec._GetConfigResponse_installationStatus(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "clusterName":
-			out.Values[i] = ec._GetConfigResponse_clusterName(ctx, field, obj)
-		case "isCentralProxyRunning":
-			out.Values[i] = ec._GetConfigResponse_isCentralProxyRunning(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39241,6 +45394,47 @@ func (ec *executionContext) _K8sWorkloadTelemetryMetricsExpectingTelemetryStatus
 	return out
 }
 
+var languageConfigImplementors = []string{"LanguageConfig"}
+
+func (ec *executionContext) _LanguageConfig(ctx context.Context, sel ast.SelectionSet, obj *model.LanguageConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, languageConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LanguageConfig")
+		case "enabled":
+			out.Values[i] = ec._LanguageConfig_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "envVars":
+			out.Values[i] = ec._LanguageConfig_envVars(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var messagingPayloadCollectionImplementors = []string{"MessagingPayloadCollection"}
 
 func (ec *executionContext) _MessagingPayloadCollection(ctx context.Context, sel ast.SelectionSet, obj *model.MessagingPayloadCollection) graphql.Marshaler {
@@ -39256,6 +45450,406 @@ func (ec *executionContext) _MessagingPayloadCollection(ctx context.Context, sel
 			out.Values[i] = ec._MessagingPayloadCollection_maxPayloadLength(ctx, field, obj)
 		case "dropPartialPayloads":
 			out.Values[i] = ec._MessagingPayloadCollection_dropPartialPayloads(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceAgentJavaRuntimeMetricsConfigImplementors = []string{"MetricsSourceAgentJavaRuntimeMetricsConfig"}
+
+func (ec *executionContext) _MetricsSourceAgentJavaRuntimeMetricsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceAgentJavaRuntimeMetricsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceAgentJavaRuntimeMetricsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceAgentJavaRuntimeMetricsConfig")
+		case "disabled":
+			out.Values[i] = ec._MetricsSourceAgentJavaRuntimeMetricsConfig_disabled(ctx, field, obj)
+		case "metrics":
+			out.Values[i] = ec._MetricsSourceAgentJavaRuntimeMetricsConfig_metrics(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceAgentMetricsConfigImplementors = []string{"MetricsSourceAgentMetricsConfig"}
+
+func (ec *executionContext) _MetricsSourceAgentMetricsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceAgentMetricsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceAgentMetricsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceAgentMetricsConfig")
+		case "spanMetrics":
+			out.Values[i] = ec._MetricsSourceAgentMetricsConfig_spanMetrics(ctx, field, obj)
+		case "runtimeMetrics":
+			out.Values[i] = ec._MetricsSourceAgentMetricsConfig_runtimeMetrics(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceAgentRuntimeMetricConfigImplementors = []string{"MetricsSourceAgentRuntimeMetricConfig"}
+
+func (ec *executionContext) _MetricsSourceAgentRuntimeMetricConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceAgentRuntimeMetricConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceAgentRuntimeMetricConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceAgentRuntimeMetricConfig")
+		case "name":
+			out.Values[i] = ec._MetricsSourceAgentRuntimeMetricConfig_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "disabled":
+			out.Values[i] = ec._MetricsSourceAgentRuntimeMetricConfig_disabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceAgentRuntimeMetricsConfigImplementors = []string{"MetricsSourceAgentRuntimeMetricsConfig"}
+
+func (ec *executionContext) _MetricsSourceAgentRuntimeMetricsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceAgentRuntimeMetricsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceAgentRuntimeMetricsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceAgentRuntimeMetricsConfig")
+		case "java":
+			out.Values[i] = ec._MetricsSourceAgentRuntimeMetricsConfig_java(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceAgentSpanMetricsConfigImplementors = []string{"MetricsSourceAgentSpanMetricsConfig"}
+
+func (ec *executionContext) _MetricsSourceAgentSpanMetricsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceAgentSpanMetricsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceAgentSpanMetricsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceAgentSpanMetricsConfig")
+		case "enabled":
+			out.Values[i] = ec._MetricsSourceAgentSpanMetricsConfig_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceConfigImplementors = []string{"MetricsSourceConfig"}
+
+func (ec *executionContext) _MetricsSourceConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceConfig")
+		case "spanMetrics":
+			out.Values[i] = ec._MetricsSourceConfig_spanMetrics(ctx, field, obj)
+		case "hostMetrics":
+			out.Values[i] = ec._MetricsSourceConfig_hostMetrics(ctx, field, obj)
+		case "kubeletStats":
+			out.Values[i] = ec._MetricsSourceConfig_kubeletStats(ctx, field, obj)
+		case "odigosOwnMetrics":
+			out.Values[i] = ec._MetricsSourceConfig_odigosOwnMetrics(ctx, field, obj)
+		case "agentMetrics":
+			out.Values[i] = ec._MetricsSourceConfig_agentMetrics(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceHostMetricsConfigImplementors = []string{"MetricsSourceHostMetricsConfig"}
+
+func (ec *executionContext) _MetricsSourceHostMetricsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceHostMetricsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceHostMetricsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceHostMetricsConfig")
+		case "disabled":
+			out.Values[i] = ec._MetricsSourceHostMetricsConfig_disabled(ctx, field, obj)
+		case "interval":
+			out.Values[i] = ec._MetricsSourceHostMetricsConfig_interval(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceKubeletStatsConfigImplementors = []string{"MetricsSourceKubeletStatsConfig"}
+
+func (ec *executionContext) _MetricsSourceKubeletStatsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceKubeletStatsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceKubeletStatsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceKubeletStatsConfig")
+		case "disabled":
+			out.Values[i] = ec._MetricsSourceKubeletStatsConfig_disabled(ctx, field, obj)
+		case "interval":
+			out.Values[i] = ec._MetricsSourceKubeletStatsConfig_interval(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceOdigosOwnMetricsConfigImplementors = []string{"MetricsSourceOdigosOwnMetricsConfig"}
+
+func (ec *executionContext) _MetricsSourceOdigosOwnMetricsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceOdigosOwnMetricsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceOdigosOwnMetricsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceOdigosOwnMetricsConfig")
+		case "interval":
+			out.Values[i] = ec._MetricsSourceOdigosOwnMetricsConfig_interval(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var metricsSourceSpanMetricsConfigImplementors = []string{"MetricsSourceSpanMetricsConfig"}
+
+func (ec *executionContext) _MetricsSourceSpanMetricsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.MetricsSourceSpanMetricsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, metricsSourceSpanMetricsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MetricsSourceSpanMetricsConfig")
+		case "disabled":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_disabled(ctx, field, obj)
+		case "interval":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_interval(ctx, field, obj)
+		case "metricsExpiration":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_metricsExpiration(ctx, field, obj)
+		case "additionalDimensions":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_additionalDimensions(ctx, field, obj)
+		case "histogramDisabled":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_histogramDisabled(ctx, field, obj)
+		case "histogramBuckets":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_histogramBuckets(ctx, field, obj)
+		case "includedProcessInDimensions":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_includedProcessInDimensions(ctx, field, obj)
+		case "excludedResourceAttributes":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_excludedResourceAttributes(ctx, field, obj)
+		case "resourceMetricsKeyAttributes":
+			out.Values[i] = ec._MetricsSourceSpanMetricsConfig_resourceMetricsKeyAttributes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39790,6 +46384,82 @@ func (ec *executionContext) _OdigosAnalyze(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var odigosOwnTelemetryConfigImplementors = []string{"OdigosOwnTelemetryConfig"}
+
+func (ec *executionContext) _OdigosOwnTelemetryConfig(ctx context.Context, sel ast.SelectionSet, obj *model.OdigosOwnTelemetryConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, odigosOwnTelemetryConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OdigosOwnTelemetryConfig")
+		case "metricsStoreDisabled":
+			out.Values[i] = ec._OdigosOwnTelemetryConfig_metricsStoreDisabled(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var oidcConfigImplementors = []string{"OidcConfig"}
+
+func (ec *executionContext) _OidcConfig(ctx context.Context, sel ast.SelectionSet, obj *model.OidcConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, oidcConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OidcConfig")
+		case "tenantUrl":
+			out.Values[i] = ec._OidcConfig_tenantUrl(ctx, field, obj)
+		case "clientId":
+			out.Values[i] = ec._OidcConfig_clientId(ctx, field, obj)
+		case "clientSecret":
+			out.Values[i] = ec._OidcConfig_clientSecret(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var otelAgentsAnalyzeImplementors = []string{"OtelAgentsAnalyze"}
 
 func (ec *executionContext) _OtelAgentsAnalyze(ctx context.Context, sel ast.SelectionSet, obj *model.OtelAgentsAnalyze) graphql.Marshaler {
@@ -39813,6 +46483,46 @@ func (ec *executionContext) _OtelAgentsAnalyze(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var otlpExporterConfigImplementors = []string{"OtlpExporterConfig"}
+
+func (ec *executionContext) _OtlpExporterConfig(ctx context.Context, sel ast.SelectionSet, obj *model.OtlpExporterConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, otlpExporterConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OtlpExporterConfig")
+		case "enableDataCompression":
+			out.Values[i] = ec._OtlpExporterConfig_enableDataCompression(ctx, field, obj)
+		case "timeout":
+			out.Values[i] = ec._OtlpExporterConfig_timeout(ctx, field, obj)
+		case "retryOnFailure":
+			out.Values[i] = ec._OtlpExporterConfig_retryOnFailure(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -40298,25 +47008,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "config":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_config(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "k8sManifest":
 			field := field
 
@@ -40534,25 +47225,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "remoteConfig":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_remoteConfig(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "gatewayDeploymentInfo":
 			field := field
 
@@ -40654,6 +47326,63 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "config":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_config(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "remoteConfig":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_remoteConfig(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "effectiveConfig":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_effectiveConfig(ctx, field)
 				return res
 			}
 
@@ -40841,6 +47570,84 @@ func (ec *executionContext) _Resources(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Resources_requests(ctx, field, obj)
 		case "limits":
 			out.Values[i] = ec._Resources_limits(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var retryOnFailureConfigImplementors = []string{"RetryOnFailureConfig"}
+
+func (ec *executionContext) _RetryOnFailureConfig(ctx context.Context, sel ast.SelectionSet, obj *model.RetryOnFailureConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, retryOnFailureConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RetryOnFailureConfig")
+		case "enabled":
+			out.Values[i] = ec._RetryOnFailureConfig_enabled(ctx, field, obj)
+		case "initialInterval":
+			out.Values[i] = ec._RetryOnFailureConfig_initialInterval(ctx, field, obj)
+		case "maxInterval":
+			out.Values[i] = ec._RetryOnFailureConfig_maxInterval(ctx, field, obj)
+		case "maxElapsedTime":
+			out.Values[i] = ec._RetryOnFailureConfig_maxElapsedTime(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var rolloutConfigImplementors = []string{"RolloutConfig"}
+
+func (ec *executionContext) _RolloutConfig(ctx context.Context, sel ast.SelectionSet, obj *model.RolloutConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rolloutConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RolloutConfig")
+		case "automaticRolloutDisabled":
+			out.Values[i] = ec._RolloutConfig_automaticRolloutDisabled(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -41572,6 +48379,42 @@ func (ec *executionContext) _TestConnectionResponse(ctx context.Context, sel ast
 			out.Values[i] = ec._TestConnectionResponse_message(ctx, field, obj)
 		case "reason":
 			out.Values[i] = ec._TestConnectionResponse_reason(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var userInstrumentationEnvsConfigImplementors = []string{"UserInstrumentationEnvsConfig"}
+
+func (ec *executionContext) _UserInstrumentationEnvsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.UserInstrumentationEnvsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userInstrumentationEnvsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserInstrumentationEnvsConfig")
+		case "languages":
+			out.Values[i] = ec._UserInstrumentationEnvsConfig_languages(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -43835,6 +50678,16 @@ func (ec *executionContext) marshalNK8sWorkloadTelemetryMetricsExpectingTelemetr
 	return ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMetricsSourceAgentRuntimeMetricConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceAgentRuntimeMetricConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MetricsSourceAgentRuntimeMetricConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNNodeCollectorAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNodeCollectorAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.NodeCollectorAnalyze) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -45009,6 +51862,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) marshalOAgentsInitContainerResourcesConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAgentsInitContainerResourcesConfig(ctx context.Context, sel ast.SelectionSet, v *model.AgentsInitContainerResourcesConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AgentsInitContainerResourcesConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOApiToken2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐAPIToken(ctx context.Context, sel ast.SelectionSet, v *model.APIToken) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -45137,6 +51997,20 @@ func (ec *executionContext) unmarshalOCodeAttributesInput2ᚖgithubᚗcomᚋodig
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalOCollectorGatewayConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorGatewayConfig(ctx context.Context, sel ast.SelectionSet, v *model.CollectorGatewayConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CollectorGatewayConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOCollectorNodeConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorNodeConfig(ctx context.Context, sel ast.SelectionSet, v *model.CollectorNodeConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CollectorNodeConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOCollectorPodMetrics2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCollectorPodMetrics(ctx context.Context, sel ast.SelectionSet, v *model.CollectorPodMetrics) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -45246,6 +52120,13 @@ func (ec *executionContext) marshalOCondition2ᚖgithubᚗcomᚋodigosᚑioᚋod
 	return ec._Condition(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConfig(ctx context.Context, sel ast.SelectionSet, v *model.Config) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Config(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOCustomInstrumentations2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐCustomInstrumentations(ctx context.Context, sel ast.SelectionSet, v *model.CustomInstrumentations) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -45330,11 +52211,34 @@ func (ec *executionContext) marshalODistroParam2ᚕᚖgithubᚗcomᚋodigosᚑio
 	return ret
 }
 
+func (ec *executionContext) marshalOEffectiveConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEffectiveConfig(ctx context.Context, sel ast.SelectionSet, v *model.EffectiveConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EffectiveConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOEntityProperty2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEntityProperty(ctx context.Context, sel ast.SelectionSet, v *model.EntityProperty) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._EntityProperty(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOEnvInjectionMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnvInjectionMethod(ctx context.Context, v any) (*model.EnvInjectionMethod, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.EnvInjectionMethod)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOEnvInjectionMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnvInjectionMethod(ctx context.Context, sel ast.SelectionSet, v *model.EnvInjectionMethod) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOEnvVar2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnvVarᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvVar) graphql.Marshaler {
@@ -45382,13 +52286,6 @@ func (ec *executionContext) marshalOEnvVar2ᚕᚖgithubᚗcomᚋodigosᚑioᚋod
 	}
 
 	return ret
-}
-
-func (ec *executionContext) marshalOGetConfigResponse2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGetConfigResponse(ctx context.Context, sel ast.SelectionSet, v *model.GetConfigResponse) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._GetConfigResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOGetDestinationCategories2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGetDestinationCategories(ctx context.Context, sel ast.SelectionSet, v *model.GetDestinationCategories) graphql.Marshaler {
@@ -46314,6 +53211,132 @@ func (ec *executionContext) unmarshalOMessagingPayloadCollectionInput2ᚖgithub�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalOMetricsSourceAgentJavaRuntimeMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentJavaRuntimeMetricsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceAgentJavaRuntimeMetricsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceAgentJavaRuntimeMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetricsSourceAgentMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentMetricsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceAgentMetricsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceAgentMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetricsSourceAgentRuntimeMetricConfig2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MetricsSourceAgentRuntimeMetricConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMetricsSourceAgentRuntimeMetricConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricConfig(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOMetricsSourceAgentRuntimeMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceAgentRuntimeMetricsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceAgentRuntimeMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetricsSourceAgentSpanMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentSpanMetricsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceAgentSpanMetricsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceAgentSpanMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetricsSourceConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetricsSourceHostMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceHostMetricsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceHostMetricsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceHostMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetricsSourceKubeletStatsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceKubeletStatsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceKubeletStatsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceKubeletStatsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetricsSourceOdigosOwnMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceOdigosOwnMetricsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceOdigosOwnMetricsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceOdigosOwnMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMetricsSourceSpanMetricsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceSpanMetricsConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceSpanMetricsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MetricsSourceSpanMetricsConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMountMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMountMethod(ctx context.Context, v any) (*model.MountMethod, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.MountMethod)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMountMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMountMethod(ctx context.Context, sel ast.SelectionSet, v *model.MountMethod) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) marshalONumberCondition2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐNumberCondition(ctx context.Context, sel ast.SelectionSet, v *model.NumberCondition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -46327,6 +53350,27 @@ func (ec *executionContext) unmarshalONumberConditionInput2ᚖgithubᚗcomᚋodi
 	}
 	res, err := ec.unmarshalInputNumberConditionInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOOdigosOwnTelemetryConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosOwnTelemetryConfig(ctx context.Context, sel ast.SelectionSet, v *model.OdigosOwnTelemetryConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OdigosOwnTelemetryConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOOidcConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOidcConfig(ctx context.Context, sel ast.SelectionSet, v *model.OidcConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OidcConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOOtlpExporterConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOtlpExporterConfig(ctx context.Context, sel ast.SelectionSet, v *model.OtlpExporterConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OtlpExporterConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPayloadCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPayloadCollection(ctx context.Context, sel ast.SelectionSet, v *model.PayloadCollection) graphql.Marshaler {
@@ -46556,6 +53600,20 @@ func (ec *executionContext) marshalOResources2ᚖgithubᚗcomᚋodigosᚑioᚋod
 		return graphql.Null
 	}
 	return ec._Resources(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORetryOnFailureConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRetryOnFailureConfig(ctx context.Context, sel ast.SelectionSet, v *model.RetryOnFailureConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RetryOnFailureConfig(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORolloutConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRolloutConfig(ctx context.Context, sel ast.SelectionSet, v *model.RolloutConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RolloutConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOServiceNameFilter2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐServiceNameFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ServiceNameFilter) graphql.Marshaler {
@@ -46846,6 +53904,29 @@ func (ec *executionContext) unmarshalOStringConditionInput2ᚖgithubᚗcomᚋodi
 	}
 	res, err := ec.unmarshalInputStringConditionInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx context.Context, v any) (*model.UIMode, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.UIMode)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx context.Context, sel ast.SelectionSet, v *model.UIMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) marshalOUserInstrumentationEnvsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUserInstrumentationEnvsConfig(ctx context.Context, sel ast.SelectionSet, v *model.UserInstrumentationEnvsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._UserInstrumentationEnvsConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOWorkloadFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadFilter(ctx context.Context, v any) (*model.WorkloadFilter, error) {
