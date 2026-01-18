@@ -29,7 +29,7 @@ var (
 	ErrorIsReadonly = errors.New("cannot execute this mutation in readonly mode")
 )
 
-func GetConfig(ctx context.Context) model.GetConfigResponse {
+func GetConfig(ctx context.Context) model.Config {
 	odigosDeployment, err := kube.DefaultClient.CoreV1().ConfigMaps(env.GetCurrentNamespace()).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		// assign default values (should not happen in production, but we want to be safe)
@@ -45,8 +45,8 @@ func GetConfig(ctx context.Context) model.GetConfigResponse {
 	return response
 }
 
-func buildConfigResponse(ctx context.Context, deploymentData map[string]string) model.GetConfigResponse {
-	var response model.GetConfigResponse
+func buildConfigResponse(ctx context.Context, deploymentData map[string]string) model.Config {
+	var response model.Config
 	config, err := GetOdigosConfiguration(ctx)
 	if err != nil {
 		log.Printf("Failed to get Config map: %v\n", err)
