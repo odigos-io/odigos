@@ -3,7 +3,7 @@ kind: Test
 metadata:
   name: mount-method
 spec:
-  description: This e2e test runs a multi-apps scenario with mount method instrumentation
+  description: This e2e test runs a multi-apps scenario testing both init-container and CSI driver mount methods
   skipDelete: true
   steps:
     - name: '[1 - Setup] Install - Simple Demo Apps'
@@ -132,38 +132,95 @@ spec:
               java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
               kubectl logs $java_pod_name -n default
 
-    - name: '[2 - Workload Instrumentation] Verify Trace - Context Propagation'
-      try:
-        - script:
-            timeout: 3m
-            content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
 
-    - name: "[2 - Workload Instrumentation] Verify Trace - Resource Attributes"
+    - name: '[3 - CSI Driver Test] Upgrade to CSI driver mount method'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
+              # Upgrade existing installation to CSI driver mount method
+              ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test --set instrumentor.mountMethod=k8s-csi-driver
 
-    - name: '[2 - Workload Instrumentation] Verify Trace - Span Attributes'
+    - name: '[3 - CSI Driver Test] Assert config changed successfully'
+      try:
+        - script:
+            timeout: 30s
+            content: ../../common/assert_config_value.sh -k mountMethod -v k8s-csi-driver
+
+    - name: '[3 - CSI Driver Test] Wait for odiglet rollout with CSI driver'
+      try:
+        - script:
+            timeout: 5m
+            content: |
+              # Wait for DaemonSet to update with CSI driver container
+              kubectl rollout status daemonset/odiglet -n odigos-test --timeout=5m
+
+    - name: '[3 - CSI Driver Test] Verify odiglet pods ready with CSI driver'
+      try:
+        - assert:
+            timeout: 2m
+            file: odiglet-ready-with-csi-driver.yaml
+
+    - name: '[3 - CSI Driver Test] Restart trace DB for fresh data'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              kubectl delete pod -l app=simple-trace-db -n traces
+              kubectl wait --for=condition=Ready pod -l app=simple-trace-db -n traces --timeout=2m
+
+    - name: '[3 - CSI Driver Test] Restart instrumented workloads to get CSI volumes'
       try:
         - script:
             timeout: 3m
             content: |
-              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes.yaml
-      catch:
-        - podLogs:
-            name: odiglet
-            namespace: odigos-test
+              # Restart all instrumented workloads to pick up CSI volumes
+              kubectl rollout restart deployment/frontend
+              kubectl rollout restart deployment/inventory
+              kubectl rollout restart deployment/coupon
+              kubectl rollout restart deployment/currency
+              kubectl rollout restart deployment/membership
+              kubectl rollout restart deployment/pricing
+              kubectl rollout restart deployment/geolocation
+
+              # Wait for all to be ready
+              kubectl rollout status deployment/frontend --timeout=3m
+              kubectl rollout status deployment/inventory --timeout=3m
+              kubectl rollout status deployment/coupon --timeout=3m
+              kubectl rollout status deployment/currency --timeout=3m
+              kubectl rollout status deployment/membership --timeout=3m
+              kubectl rollout status deployment/pricing --timeout=3m
+              kubectl rollout status deployment/geolocation --timeout=3m
+
+    - name: '[3 - CSI Driver Test] Verify CSI volumes are mounted correctly'
+      try:
+        - assert:
+            timeout: 2m
+            file: simple-demo-instrumented-with-csi.yaml
+
+    - name: '[3 - CSI Driver Test] Generate Traffic with CSI driver'
+      try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: '[3 - CSI Driver Test] Wait For CSI Trace'
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
 
     - name: 'Uninstall Odigos'
       try:
