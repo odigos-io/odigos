@@ -50,7 +50,7 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 
 	// Use embedded chart if available (default odigos/odigos and no override)
 	if HelmChart == k8sconsts.DefaultHelmChart && HelmChartVersion == "" {
-		ch, err := LoadEmbeddedChart(version)
+		ch, err := LoadEmbeddedChart(version, "odigos")
 		if err == nil {
 			fmt.Printf("📦 Using embedded chart %s (chart version: %s)\n", ch.Metadata.Name, ch.Metadata.Version)
 
