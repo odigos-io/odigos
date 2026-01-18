@@ -24,30 +24,6 @@ imagePrefix:
 #   odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents
 images: {}
 
-# Priority Classes Configuration [disabled by default]
-# Create PriorityClass resources for better pod scheduling control under resource pressure
-priorityClasses:
-  # Whether to create PriorityClass resources (set to false to disable)
-  create: false
-
-  # Define the priority classes to create
-  # Odigos introduces 3 priority levels: high (critical components), medium (standard components), low (non-critical)
-  # You can adjust these values and names to fit your existing cluster priority classes and policies
-  # Components can reference these classes or use your own existing priority classes
-  classes:
-    high:
-      name: "odigos-high"
-      value: 100000
-      description: "High priority for critical Odigos observability components (instrumentor, scheduler, autoscaler)"
-    medium:
-      name: "odigos-medium"
-      value: 50000
-      description: "Medium priority for standard Odigos components (centralProxy - for enterprise tier)"
-    low:
-      name: "odigos-low"
-      value: 10000
-      description: "Low priority for non-critical Odigos components (ui)"
-
 # namespaces list not to show in odigos ui
 # set by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease
 # you can add additional namespaces to ignore by adding them to the list
@@ -268,8 +244,8 @@ autoscaler:
     limits:
       cpu: 500m
       memory: 512Mi
-  # Priority class name. To use odigos classes, set priorityClasses.create: true. Or use existing classes.
-  # priorityClassName: 'odigos-medium'
+  # Priority class name. Set to use your existing cluster priority classes.
+  # priorityClassName: ''
 
 scheduler:
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -284,8 +260,8 @@ scheduler:
     limits:
       cpu: 500m
       memory: 512Mi
-  # Priority class name. To use odigos classes, set priorityClasses.create: true. Or use existing classes.
-  # priorityClassName: 'odigos-medium'
+  # Priority class name. Set to use your existing cluster priority classes.
+  # priorityClassName: ''
 
 ui:
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -300,8 +276,8 @@ ui:
     limits:
       cpu: 500m
       memory: 512Mi
-  # Priority class name. To use odigos classes, set priorityClasses.create: true. Or use existing classes.
-  # priorityClassName: 'odigos-low'
+  # Priority class name. Set to use your existing cluster priority classes.
+  # priorityClassName: ''
 
   # uiMode: 'default' or 'readonly'
   #  - This flag controls whether the UI should be in read-only mode.
@@ -365,8 +341,8 @@ instrumentor:
     limits:
       cpu: 500m
       memory: 512Mi
-  # Priority class name. To use odigos classes, set priorityClasses.create: true. Or use existing classes.
-  # priorityClassName: 'odigos-high'
+  # Priority class name. Set to use your existing cluster priority classes.
+  # priorityClassName: ''
   # how to add the required environment variables for instrumentation to a container
   # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
   # pod-manifest: add the environment variables to the container manifest.
@@ -526,8 +502,8 @@ centralProxy:
   #   kubernetes.io/os: linux
   tolerations: []
   affinity: {}
-  # Priority class name. To use odigos classes, set priorityClasses.create: true. Or use existing classes.
-  # priorityClassName: 'odigos-medium'
+  # Priority class name. Set to use your existing cluster priority classes.
+  # priorityClassName: ''
 
 # Pod Security Policy
 psp:
