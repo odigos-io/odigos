@@ -3,6 +3,7 @@ package graph
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -135,12 +136,13 @@ func RemoteConfigToModel(config *common.OdigosConfiguration) *model.RemoteConfig
 			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
 		}
 	}
+
 	return result
 }
 
-func EffectiveConfigToModel(config *common.OdigosConfiguration) *model.EffectiveConfig {
+func EffectiveConfigToModel(config *common.OdigosConfiguration) (*model.EffectiveConfig, error) {
 	if config == nil {
-		return nil
+		return nil, nil
 	}
 
 	result := &model.EffectiveConfig{
@@ -149,7 +151,21 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration) *model.Effective
 		IgnoredContainers: config.IgnoredContainers,
 	}
 
-	// Boolean values
+	setEffectiveConfigBooleans(result, config)
+	setEffectiveConfigStrings(result, config)
+	setEffectiveConfigInts(result, config)
+	setEffectiveConfigArrays(result, config)
+	setEffectiveConfigEnums(result, config)
+
+	if err := setEffectiveConfigNestedStructs(result, config); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func setEffectiveConfigBooleans(result *model.EffectiveConfig, config *common.OdigosConfiguration) {
+	// Non-pointer booleans (require local var to take address)
 	telemetryEnabled := config.TelemetryEnabled
 	result.TelemetryEnabled = &telemetryEnabled
 
@@ -162,7 +178,7 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration) *model.Effective
 	skipWebhookIssuerCreation := config.SkipWebhookIssuerCreation
 	result.SkipWebhookIssuerCreation = &skipWebhookIssuerCreation
 
-	// Pointer booleans
+	// Pointer booleans (direct assignment)
 	result.IgnoreOdigosNamespace = config.IgnoreOdigosNamespace
 	result.AllowConcurrentAgents = config.AllowConcurrentAgents
 	result.KarpenterEnabled = config.KarpenterEnabled
@@ -170,8 +186,9 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration) *model.Effective
 	result.ClickhouseJSONTypeEnabled = config.ClickhouseJsonTypeEnabledProperty
 	result.CheckDeviceHealthBeforeInjection = config.CheckDeviceHealthBeforeInjection
 	result.WaspEnabled = config.WaspEnabled
+}
 
-	// String values (only set if non-empty)
+func setEffectiveConfigStrings(result *model.EffectiveConfig, config *common.OdigosConfiguration) {
 	if config.ImagePrefix != "" {
 		result.ImagePrefix = &config.ImagePrefix
 	}
@@ -205,20 +222,21 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration) *model.Effective
 	if config.TraceIdSuffix != "" {
 		result.TraceIDSuffix = &config.TraceIdSuffix
 	}
+}
 
-	// Int values (only set if non-zero)
+func setEffectiveConfigInts(result *model.EffectiveConfig, config *common.OdigosConfiguration) {
 	if config.UiPaginationLimit != 0 {
 		result.UIPaginationLimit = &config.UiPaginationLimit
 	}
 	if config.OdigletHealthProbeBindPort != 0 {
 		result.OdigletHealthProbeBindPort = &config.OdigletHealthProbeBindPort
 	}
+}
 
-	// String arrays
+func setEffectiveConfigArrays(result *model.EffectiveConfig, config *common.OdigosConfiguration) {
 	result.AllowedTestConnectionHosts = config.AllowedTestConnectionHosts
 	result.ImagePullSecrets = config.ImagePullSecrets
 
-	// Profiles (convert ProfileName to string)
 	if len(config.Profiles) > 0 {
 		profiles := make([]string, len(config.Profiles))
 		for i, p := range config.Profiles {
@@ -226,97 +244,111 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration) *model.Effective
 		}
 		result.Profiles = profiles
 	}
+}
 
-	// UiMode
+func setEffectiveConfigEnums(result *model.EffectiveConfig, config *common.OdigosConfiguration) {
 	if config.UiMode != "" {
 		uiMode := convertUiModeToModel(config.UiMode)
 		result.UIMode = &uiMode
 	}
 
-	// MountMethod
 	if config.MountMethod != nil {
 		mountMethod := convertMountMethodToModel(*config.MountMethod)
 		result.MountMethod = &mountMethod
 	}
 
-	// AgentEnvVarsInjectionMethod
 	if config.AgentEnvVarsInjectionMethod != nil {
 		injectionMethod := convertEnvInjectionMethodToModel(*config.AgentEnvVarsInjectionMethod)
 		result.AgentEnvVarsInjectionMethod = &injectionMethod
 	}
+}
 
+func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *common.OdigosConfiguration) error {
 	// NodeSelector (convert map to JSON string)
 	if len(config.NodeSelector) > 0 {
-		nodeSelectorJSON, _ := json.Marshal(config.NodeSelector)
+		nodeSelectorJSON, err := json.Marshal(config.NodeSelector)
+		if err != nil {
+			return fmt.Errorf("failed to marshal nodeSelector: %w", err)
+		}
 		nodeSelectorStr := string(nodeSelectorJSON)
 		result.NodeSelector = &nodeSelectorStr
 	}
 
-	// CollectorGateway
 	if config.CollectorGateway != nil {
-		result.CollectorGateway = convertCollectorGatewayToModel(config.CollectorGateway)
+		collectorGateway, err := convertCollectorGatewayToModel(config.CollectorGateway)
+		if err != nil {
+			return err
+		}
+		result.CollectorGateway = collectorGateway
 	}
 
-	// CollectorNode
 	if config.CollectorNode != nil {
 		result.CollectorNode = convertCollectorNodeToModel(config.CollectorNode)
 	}
 
-	// Rollout
 	if config.Rollout != nil {
 		result.Rollout = &model.RolloutConfig{
 			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
 		}
 	}
 
-	// Oidc
 	if config.Oidc != nil {
-		result.Oidc = &model.OidcConfig{}
-		if config.Oidc.TenantUrl != "" {
-			result.Oidc.TenantURL = &config.Oidc.TenantUrl
-		}
-		if config.Oidc.ClientId != "" {
-			result.Oidc.ClientID = &config.Oidc.ClientId
-		}
-		if config.Oidc.ClientSecret != "" {
-			result.Oidc.ClientSecret = &config.Oidc.ClientSecret
-		}
+		result.Oidc = convertOidcToModel(config.Oidc)
 	}
 
-	// UserInstrumentationEnvs
 	if config.UserInstrumentationEnvs != nil {
-		result.UserInstrumentationEnvs = convertUserInstrumentationEnvsToModel(config.UserInstrumentationEnvs)
+		userInstrumentationEnvs, err := convertUserInstrumentationEnvsToModel(config.UserInstrumentationEnvs)
+		if err != nil {
+			return err
+		}
+		result.UserInstrumentationEnvs = userInstrumentationEnvs
 	}
 
-	// MetricsSources
 	if config.MetricsSources != nil {
 		result.MetricsSources = convertMetricsSourcesToModel(config.MetricsSources)
 	}
 
-	// AgentsInitContainerResources
 	if config.AgentsInitContainerResources != nil {
-		result.AgentsInitContainerResources = &model.AgentsInitContainerResourcesConfig{}
-		if config.AgentsInitContainerResources.RequestCPUm != 0 {
-			result.AgentsInitContainerResources.RequestCPUm = &config.AgentsInitContainerResources.RequestCPUm
-		}
-		if config.AgentsInitContainerResources.LimitCPUm != 0 {
-			result.AgentsInitContainerResources.LimitCPUm = &config.AgentsInitContainerResources.LimitCPUm
-		}
-		if config.AgentsInitContainerResources.RequestMemoryMiB != 0 {
-			result.AgentsInitContainerResources.RequestMemoryMiB = &config.AgentsInitContainerResources.RequestMemoryMiB
-		}
-		if config.AgentsInitContainerResources.LimitMemoryMiB != 0 {
-			result.AgentsInitContainerResources.LimitMemoryMiB = &config.AgentsInitContainerResources.LimitMemoryMiB
-		}
+		result.AgentsInitContainerResources = convertAgentsInitContainerResourcesToModel(config.AgentsInitContainerResources)
 	}
 
-	// OdigosOwnTelemetryStore
 	if config.OdigosOwnTelemetryStore != nil {
 		result.OdigosOwnTelemetryStore = &model.OdigosOwnTelemetryConfig{
 			MetricsStoreDisabled: config.OdigosOwnTelemetryStore.MetricsStoreDisabled,
 		}
 	}
 
+	return nil
+}
+
+func convertOidcToModel(oidc *common.OidcConfiguration) *model.OidcConfig {
+	result := &model.OidcConfig{}
+	if oidc.TenantUrl != "" {
+		result.TenantURL = &oidc.TenantUrl
+	}
+	if oidc.ClientId != "" {
+		result.ClientID = &oidc.ClientId
+	}
+	if oidc.ClientSecret != "" {
+		result.ClientSecret = &oidc.ClientSecret
+	}
+	return result
+}
+
+func convertAgentsInitContainerResourcesToModel(resources *common.AgentsInitContainerResources) *model.AgentsInitContainerResourcesConfig {
+	result := &model.AgentsInitContainerResourcesConfig{}
+	if resources.RequestCPUm != 0 {
+		result.RequestCPUm = &resources.RequestCPUm
+	}
+	if resources.LimitCPUm != 0 {
+		result.LimitCPUm = &resources.LimitCPUm
+	}
+	if resources.RequestMemoryMiB != 0 {
+		result.RequestMemoryMiB = &resources.RequestMemoryMiB
+	}
+	if resources.LimitMemoryMiB != 0 {
+		result.LimitMemoryMiB = &resources.LimitMemoryMiB
+	}
 	return result
 }
 
@@ -351,9 +383,9 @@ func convertEnvInjectionMethodToModel(method common.EnvInjectionMethod) model.En
 	}
 }
 
-func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration) *model.CollectorGatewayConfig {
+func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration) (*model.CollectorGatewayConfig, error) {
 	if gw == nil {
-		return nil
+		return nil, nil
 	}
 
 	result := &model.CollectorGatewayConfig{}
@@ -390,12 +422,15 @@ func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration) *m
 	result.HTTPSProxyAddress = gw.HttpsProxyAddress
 
 	if gw.NodeSelector != nil && len(*gw.NodeSelector) > 0 {
-		nodeSelectorJSON, _ := json.Marshal(*gw.NodeSelector)
+		nodeSelectorJSON, err := json.Marshal(*gw.NodeSelector)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal collectorGateway.nodeSelector: %w", err)
+		}
 		nodeSelectorStr := string(nodeSelectorJSON)
 		result.NodeSelector = &nodeSelectorStr
 	}
 
-	return result
+	return result, nil
 }
 
 func convertCollectorNodeToModel(node *common.CollectorNodeConfiguration) *model.CollectorNodeConfig {
@@ -473,20 +508,23 @@ func convertOtlpExporterToModel(otlp *common.OtlpExporterConfiguration) *model.O
 	return result
 }
 
-func convertUserInstrumentationEnvsToModel(envs *common.UserInstrumentationEnvs) *model.UserInstrumentationEnvsConfig {
+func convertUserInstrumentationEnvsToModel(envs *common.UserInstrumentationEnvs) (*model.UserInstrumentationEnvsConfig, error) {
 	if envs == nil {
-		return nil
+		return nil, nil
 	}
 
 	result := &model.UserInstrumentationEnvsConfig{}
 
 	if len(envs.Languages) > 0 {
-		languagesJSON, _ := json.Marshal(envs.Languages)
+		languagesJSON, err := json.Marshal(envs.Languages)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal userInstrumentationEnvs.languages: %w", err)
+		}
 		languagesStr := string(languagesJSON)
 		result.Languages = &languagesStr
 	}
 
-	return result
+	return result, nil
 }
 
 func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration) *model.MetricsSourceConfig {

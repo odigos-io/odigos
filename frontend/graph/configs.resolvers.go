@@ -51,5 +51,5 @@ func (r *queryResolver) EffectiveConfig(ctx context.Context) (*model.EffectiveCo
 	if err != nil {
 		return nil, err
 	}
-	return EffectiveConfigToModel(config), nil
+	return EffectiveConfigToModel(config)
 }
