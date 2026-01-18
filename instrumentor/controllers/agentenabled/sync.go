@@ -193,7 +193,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
-	podManifestInjectionRequired := false
+	podManifestInjectionOptional := true
 
 	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
@@ -201,10 +201,14 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		containerOverride := ic.GetOverridesForContainer(containerName)
 		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, workloadObj, pw)
 		containersConfig = append(containersConfig, currentContainerConfig)
-		podManifestInjectionRequired = podManifestInjectionRequired || currentContainerConfig.PodManifestInjectionRequired
+		// if at least one container has agent enabled, and pod manifest injection is required,
+		// then the overall pod manifest injection is required.
+		if currentContainerConfig.AgentEnabled && !currentContainerConfig.PodManifestInjectionOptional {
+			podManifestInjectionOptional = false
+		}
 	}
 	ic.Spec.Containers = containersConfig
-	ic.Spec.PodManifestInjectionRequired = podManifestInjectionRequired
+	ic.Spec.PodManifestInjectionOptional = podManifestInjectionOptional
 
 	// after updating the container configs, we can go over them and produce a useful aggregated status for the user
 	// if any container is instrumented, we can set the status to true
@@ -595,7 +599,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:                containerName,
 				AgentEnabled:                 true,
-				PodManifestInjectionRequired: podManifestInjectionRequired,
+				PodManifestInjectionOptional: !podManifestInjectionRequired,
 				AgentEnabledReason:           odigosv1.AgentEnabledReasonEnabledSuccessfully,
 				AgentEnabledMessage:          fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:               distroName,
@@ -611,7 +615,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	return odigosv1.ContainerAgentConfig{
 		ContainerName:                containerName,
 		AgentEnabled:                 true,
-		PodManifestInjectionRequired: podManifestInjectionRequired,
+		PodManifestInjectionOptional: !podManifestInjectionRequired,
 		OtelDistroName:               distroName,
 		DistroParams:                 distroParameters,
 		EnvInjectionMethod:           envInjectionDecision,
