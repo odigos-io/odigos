@@ -39,6 +39,9 @@ spec:
               app.kubernetes.io/name: odigos-autoscaler
       {{- end }}
       {{- end }}
+      {{- if .Values.autoscaler.priorityClassName }}
+      priorityClassName: {{ .Values.autoscaler.priorityClassName }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081
