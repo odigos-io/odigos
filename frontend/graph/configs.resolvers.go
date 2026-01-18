@@ -13,7 +13,7 @@ import (
 )
 
 // UpdateRemoteConfig is the resolver for the updateRemoteConfig field.
-func (r *mutationResolver) UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (*model.RemoteConfig, error) {
+func (r *mutationResolver) UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (bool, error) {
 	remoteConfig := &common.OdigosConfiguration{}
 	if config.Rollout != nil {
 		remoteConfig.Rollout = &common.RolloutConfiguration{
@@ -21,12 +21,12 @@ func (r *mutationResolver) UpdateRemoteConfig(ctx context.Context, config model.
 		}
 	}
 
-	updated, err := services.UpdateRemoteConfig(ctx, remoteConfig)
+	_, err := services.UpdateRemoteConfig(ctx, remoteConfig)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	return RemoteConfigToModel(updated), nil
+	return true, nil
 }
 
 // Config is the resolver for the config field.

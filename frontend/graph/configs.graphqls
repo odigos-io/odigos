@@ -11,26 +11,6 @@ type Config {
   isCentralProxyRunning: Boolean
 }
 
-# Remote configuration managed by central-backend
-# These settings take precedence over Helm values and persist through upgrades
-
-type RemoteConfigRollout {
-  automaticRolloutDisabled: Boolean
-}
-type RemoteConfig {
-  rollout: RemoteConfigRollout
-  # Future fields:
-  # ignoredNamespaces: [String]
-  # ignoredContainers: [String]
-}
-
-input RemoteConfigRolloutInput {
-  automaticRolloutDisabled: Boolean
-}
-input RemoteConfigInput {
-  rollout: RemoteConfigRolloutInput
-}
-
 # Effective configuration, reflects the actual values applied to the cluster
 
 enum UiMode {
@@ -225,12 +205,32 @@ type EffectiveConfig {
   imagePullSecrets: [String!]
 }
 
+# Remote configuration managed by central-backend
+# These settings take precedence over Helm values and persist through upgrades
+
+type RemoteConfigRollout {
+  automaticRolloutDisabled: Boolean
+}
+type RemoteConfig {
+  rollout: RemoteConfigRollout
+}
+
+input RemoteConfigRolloutInput {
+  automaticRolloutDisabled: Boolean
+}
+input RemoteConfigInput {
+  rollout: RemoteConfigRolloutInput
+}
+
 extend type Query {
+  # key information about the cluster and the installation (self-defined config for UI control and usage)
   config: Config
+  # odigos-remote-config ConfigMap managed by central-backend (deprecated, will be removed in the future)
   remoteConfig: RemoteConfig
+  # effective-config ConfigMap, reflects the actual values applied to the cluster (by odigos-configuration, odigos-remote-config, etc.)
   effectiveConfig: EffectiveConfig
 }
 
 extend type Mutation {
-  updateRemoteConfig(config: RemoteConfigInput!): RemoteConfig
+  updateRemoteConfig(config: RemoteConfigInput!): Boolean!
 }

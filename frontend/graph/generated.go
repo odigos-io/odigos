@@ -1126,7 +1126,7 @@ type MutationResolver interface {
 	DeleteDataStream(ctx context.Context, id string) (bool, error)
 	RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error)
 	DeleteCentralProxy(ctx context.Context) (bool, error)
-	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (*model.RemoteConfig, error)
+	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (bool, error)
 	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 }
 type QueryResolver interface {
@@ -28752,11 +28752,14 @@ func (ec *executionContext) _Mutation_updateRemoteConfig(ctx context.Context, fi
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.RemoteConfig)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalORemoteConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfig(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_updateRemoteConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -28766,11 +28769,7 @@ func (ec *executionContext) fieldContext_Mutation_updateRemoteConfig(ctx context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "rollout":
-				return ec.fieldContext_RemoteConfig_rollout(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type RemoteConfig", field.Name)
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	defer func() {
@@ -46036,6 +46035,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateRemoteConfig(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "restartPod":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_restartPod(ctx, field)
