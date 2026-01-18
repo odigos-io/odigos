@@ -146,7 +146,7 @@ func (s *ClientTestSuite) TestHandlePodAddNoOwner() {
 	s.False(found)
 }
 
-func (s *ClientTestSuite) TestHandlePodUpdate() {
+func (s *ClientTestSuite) TestHandlePodAdd() {
 	// Add initial pod
 	initialPodMeta := &metav1.PartialObjectMetadata{
 		ObjectMeta: metav1.ObjectMeta{
@@ -171,7 +171,7 @@ func (s *ClientTestSuite) TestHandlePodUpdate() {
 			},
 		},
 	}
-	s.client.handlePodUpdate(updatedPodMeta)
+	s.client.handlePodAdd(updatedPodMeta)
 
 	pod, found := s.client.GetPodMetadata(types.UID("update-uid"))
 	s.Require().True(found)
@@ -301,6 +301,138 @@ func (s *MiscTestSuite) TestClientInterface() {
 	var _ Client = (*PodMetadataClient)(nil)
 }
 
+// ProcessDeleteQueueTestSuite tests the processDeleteQueue function
+type ProcessDeleteQueueTestSuite struct {
+	suite.Suite
+	client *PodMetadataClient
+}
+
+func TestProcessDeleteQueueTestSuite(t *testing.T) {
+	suite.Run(t, new(ProcessDeleteQueueTestSuite))
+}
+
+func (s *ProcessDeleteQueueTestSuite) SetupTest() {
+	s.client = &PodMetadataClient{
+		pods:        make(map[types.UID]*PartialPodMetadata),
+		deleteQueue: []deleteRequest{},
+	}
+}
+
+func (s *ProcessDeleteQueueTestSuite) TestProcessDeleteQueueRemovesOldItems() {
+	// Add a pod to the cache
+	podUID := types.UID("old-pod-uid")
+	s.client.pods[podUID] = &PartialPodMetadata{
+		Name:         "old-pod",
+		Namespace:    "default",
+		WorkloadName: "my-service",
+		WorkloadKind: WorkloadKindDeployment,
+	}
+
+	// Add a delete request older than the deletion delay
+	s.client.deleteQueue = []deleteRequest{
+		{podUID: podUID, timestamp: time.Now().Add(-podDeletionDelay - time.Second)},
+	}
+
+	s.client.processDeleteQueue()
+
+	// Pod should be removed from cache
+	_, found := s.client.GetPodMetadata(podUID)
+	s.False(found)
+
+	// Queue should be empty
+	s.Empty(s.client.deleteQueue)
+}
+
+func (s *ProcessDeleteQueueTestSuite) TestProcessDeleteQueueKeepsRecentItems() {
+	// Add a pod to the cache
+	podUID := types.UID("recent-pod-uid")
+	s.client.pods[podUID] = &PartialPodMetadata{
+		Name:         "recent-pod",
+		Namespace:    "default",
+		WorkloadName: "my-service",
+		WorkloadKind: WorkloadKindDeployment,
+	}
+
+	// Add a delete request newer than the deletion delay
+	s.client.deleteQueue = []deleteRequest{
+		{podUID: podUID, timestamp: time.Now()},
+	}
+
+	s.client.processDeleteQueue()
+
+	// Pod should still be in cache
+	pod, found := s.client.GetPodMetadata(podUID)
+	s.True(found)
+	s.Equal("recent-pod", pod.Name)
+
+	// Queue should still have the item
+	s.Len(s.client.deleteQueue, 1)
+}
+
+func (s *ProcessDeleteQueueTestSuite) TestProcessDeleteQueueMixedItems() {
+	// Add pods to the cache
+	oldPodUID := types.UID("old-pod-uid")
+	recentPodUID := types.UID("recent-pod-uid")
+
+	s.client.pods[oldPodUID] = &PartialPodMetadata{
+		Name:         "old-pod",
+		Namespace:    "default",
+		WorkloadName: "old-service",
+		WorkloadKind: WorkloadKindDeployment,
+	}
+	s.client.pods[recentPodUID] = &PartialPodMetadata{
+		Name:         "recent-pod",
+		Namespace:    "default",
+		WorkloadName: "recent-service",
+		WorkloadKind: WorkloadKindDeployment,
+	}
+
+	// Add delete requests with different timestamps
+	s.client.deleteQueue = []deleteRequest{
+		{podUID: oldPodUID, timestamp: time.Now().Add(-podDeletionDelay - time.Second)},
+		{podUID: recentPodUID, timestamp: time.Now()},
+	}
+
+	s.client.processDeleteQueue()
+
+	// Old pod should be removed
+	_, foundOld := s.client.GetPodMetadata(oldPodUID)
+	s.False(foundOld)
+
+	// Recent pod should still be in cache
+	pod, foundRecent := s.client.GetPodMetadata(recentPodUID)
+	s.True(foundRecent)
+	s.Equal("recent-pod", pod.Name)
+
+	// Queue should only have the recent item
+	s.Len(s.client.deleteQueue, 1)
+	s.Equal(recentPodUID, s.client.deleteQueue[0].podUID)
+}
+
+func (s *ProcessDeleteQueueTestSuite) TestProcessDeleteQueueEmptyQueue() {
+	// Add a pod to the cache
+	podUID := types.UID("pod-uid")
+	s.client.pods[podUID] = &PartialPodMetadata{
+		Name:         "pod",
+		Namespace:    "default",
+		WorkloadName: "my-service",
+		WorkloadKind: WorkloadKindDeployment,
+	}
+
+	// Empty queue
+	s.client.deleteQueue = []deleteRequest{}
+
+	s.client.processDeleteQueue()
+
+	// Pod should still be in cache
+	pod, found := s.client.GetPodMetadata(podUID)
+	s.True(found)
+	s.Equal("pod", pod.Name)
+
+	// Queue should still be empty
+	s.Empty(s.client.deleteQueue)
+}
+
 // ConcurrencyTestSuite tests concurrent access
 type ConcurrencyTestSuite struct {
 	suite.Suite
@@ -359,11 +491,64 @@ func (s *ConcurrencyTestSuite) TestConcurrentAccess() {
 					},
 				},
 			}
-			client.handlePodUpdate(podMeta)
+			client.handlePodAdd(podMeta)
 		}
 	}()
 
 	// Wait for all goroutines to complete
+	wg.Wait()
+
+	// If we got here without deadlock or race condition panic, the test passes
+}
+
+func (s *ConcurrencyTestSuite) TestConcurrentDeleteQueueAccess() {
+	client := &PodMetadataClient{
+		pods:        make(map[types.UID]*PartialPodMetadata),
+		deleteQueue: []deleteRequest{},
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	// Adder goroutine - adds pods
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			podMeta := &metav1.PartialObjectMetadata{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "concurrent-delete-pod",
+					Namespace: "default",
+					UID:       types.UID("concurrent-delete-uid"),
+					OwnerReferences: []metav1.OwnerReference{
+						{Name: "concurrent-deployment-abc123", Kind: "ReplicaSet"},
+					},
+				},
+			}
+			client.handlePodAdd(podMeta)
+		}
+	}()
+
+	// Delete goroutine - queues deletes
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			podMeta := &metav1.PartialObjectMetadata{
+				ObjectMeta: metav1.ObjectMeta{
+					UID: types.UID("concurrent-delete-uid"),
+				},
+			}
+			client.handlePodDelete(podMeta)
+		}
+	}()
+
+	// Process goroutine - processes delete queue
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			client.processDeleteQueue()
+		}
+	}()
+
 	wg.Wait()
 
 	// If we got here without deadlock or race condition panic, the test passes

@@ -18,7 +18,11 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const nodeNameEnvVar = "NODE_NAME"
+const (
+	nodeNameEnvVar                = "NODE_NAME"
+	podDeletionDelay              = 30 * time.Second
+	podDeleteQueueProcessInterval = 10 * time.Second
+)
 
 // PartialPodMetadata contains only the metadata fields we need from a pod
 type PartialPodMetadata struct {
@@ -39,8 +43,8 @@ type deleteRequest struct {
 }
 
 type PodMetadataClient struct {
-	m           sync.RWMutex
-	deleteMut   sync.Mutex
+	addMutex    sync.RWMutex
+	deleteMutex sync.Mutex
 	deleteQueue []deleteRequest
 	pods        map[types.UID]*PartialPodMetadata
 	podInformer cache.SharedIndexInformer
@@ -132,28 +136,8 @@ func (c *PodMetadataClient) handlePodAdd(podMeta *metav1.PartialObjectMetadata) 
 		return
 	}
 
-	c.m.Lock()
-	defer c.m.Unlock()
-	c.pods[podMeta.UID] = &PartialPodMetadata{
-		Name:         podMeta.Name,
-		Namespace:    podMeta.Namespace,
-		WorkloadName: workloadName,
-		WorkloadKind: workloadKind,
-	}
-}
-
-func (c *PodMetadataClient) handlePodUpdate(podMeta *metav1.PartialObjectMetadata) {
-	workloadName, workloadKind := extractWorkloadInfo(podMeta)
-	if workloadName == "" || workloadKind == "" {
-		// Remove from cache if workload info can't be determined
-		c.m.Lock()
-		delete(c.pods, podMeta.UID)
-		c.m.Unlock()
-		return
-	}
-
-	c.m.Lock()
-	defer c.m.Unlock()
+	c.addMutex.Lock()
+	defer c.addMutex.Unlock()
 	c.pods[podMeta.UID] = &PartialPodMetadata{
 		Name:         podMeta.Name,
 		Namespace:    podMeta.Namespace,
@@ -163,14 +147,14 @@ func (c *PodMetadataClient) handlePodUpdate(podMeta *metav1.PartialObjectMetadat
 }
 
 func (c *PodMetadataClient) handlePodDelete(podMeta *metav1.PartialObjectMetadata) {
-	c.m.Lock()
-	defer c.m.Unlock()
+	c.deleteMutex.Lock()
+	defer c.deleteMutex.Unlock()
 	c.deleteQueue = append(c.deleteQueue, deleteRequest{podUID: podMeta.UID, timestamp: time.Now()})
 }
 
 func (c *PodMetadataClient) GetPodMetadata(uid types.UID) (*PartialPodMetadata, bool) {
-	c.m.RLock()
-	defer c.m.RUnlock()
+	c.addMutex.RLock()
+	defer c.addMutex.RUnlock()
 	pod, ok := c.pods[uid]
 	return pod, ok
 }
@@ -186,5 +170,49 @@ func (c *PodMetadataClient) Start(ctx context.Context) error {
 		return fmt.Errorf("timed out waiting for pod metadata cache to sync")
 	}
 
+	go c.runDeleteQueueProcessor(ctx)
+
 	return nil
+}
+
+// Goroutine to process the delete queue and delete pods from the cache after the deletion delay.
+func (c *PodMetadataClient) runDeleteQueueProcessor(ctx context.Context) {
+	ticker := time.NewTicker(podDeleteQueueProcessInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			c.processDeleteQueue()
+		}
+	}
+}
+
+func (c *PodMetadataClient) processDeleteQueue() {
+	c.deleteMutex.Lock()
+
+	now := time.Now()
+	var toDelete []types.UID
+	remaining := c.deleteQueue[:0]
+
+	for _, request := range c.deleteQueue {
+		if now.Sub(request.timestamp) >= podDeletionDelay {
+			toDelete = append(toDelete, request.podUID)
+		} else {
+			remaining = append(remaining, request)
+		}
+	}
+
+	c.deleteQueue = remaining
+	c.deleteMutex.Unlock()
+
+	if len(toDelete) > 0 {
+		c.addMutex.Lock()
+		for _, uid := range toDelete {
+			delete(c.pods, uid)
+		}
+		c.addMutex.Unlock()
+	}
 }

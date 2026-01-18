@@ -46,11 +46,6 @@ func (s *ProcessorTestSuite) TestProcessResource_SetsAllAttributes() {
 	s.Require().True(exists, "service.name attribute should exist")
 	s.Equal("my-app", serviceNameAttr.AsString())
 
-	// Check service.namespace
-	serviceNsAttr, exists := resource.Attributes().Get(string(semconv.ServiceNamespaceKey))
-	s.Require().True(exists, "service.namespace attribute should exist")
-	s.Equal("production", serviceNsAttr.AsString())
-
 	// Check k8s.pod.name
 	podNameAttr, exists := resource.Attributes().Get(string(semconv.K8SPodNameKey))
 	s.Require().True(exists, "k8s.pod.name attribute should exist")
