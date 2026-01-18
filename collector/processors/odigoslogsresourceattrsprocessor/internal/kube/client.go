@@ -81,11 +81,6 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 				c.handlePodAdd(podMeta)
 			}
 		},
-		UpdateFunc: func(oldObj, newObj any) {
-			if podMeta := extractPartialMetadata(newObj); podMeta != nil {
-				c.handlePodUpdate(podMeta)
-			}
-		},
 		DeleteFunc: func(obj any) {
 			if podMeta := extractPartialMetadata(obj); podMeta != nil {
 				c.handlePodDelete(podMeta)
@@ -114,25 +109,21 @@ func extractPartialMetadata(obj any) *metav1.PartialObjectMetadata {
 // extractWorkloadInfo resolves the workload name and kind from owner references.
 // Handles ReplicaSet → Deployment/ArgoRollout resolution.
 func extractWorkloadInfo(podMeta *metav1.PartialObjectMetadata) (name string, kind WorkloadKind) {
-	if len(podMeta.OwnerReferences) != 1 {
-		return "", ""
+	for _, ownerRef := range podMeta.OwnerReferences {
+		// Create a minimal Pod with labels for Argo Rollout detection
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: podMeta.Labels,
+			},
+		}
+
+		workloadName, workloadKind, err := getWorkloadNameAndKind(ownerRef.Name, ownerRef.Kind, pod)
+		if err == nil {
+			return workloadName, workloadKind
+		}
 	}
 
-	ownerRef := podMeta.OwnerReferences[0]
-
-	// Create a minimal Pod with labels for Argo Rollout detection
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: podMeta.Labels,
-		},
-	}
-
-	workloadName, workloadKind, err := getWorkloadNameAndKind(ownerRef.Name, ownerRef.Kind, pod)
-	if err != nil {
-		return "", ""
-	}
-
-	return workloadName, workloadKind
+	return "", ""
 }
 
 func (c *PodMetadataClient) handlePodAdd(podMeta *metav1.PartialObjectMetadata) {

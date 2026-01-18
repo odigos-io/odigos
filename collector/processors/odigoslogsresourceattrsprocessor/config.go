@@ -1,4 +1,4 @@
-package odigospartialk8sattrsprocessor
+package odigoslogsresourceattrsprocessor
 
 import (
 	"go.opentelemetry.io/collector/component"

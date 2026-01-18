@@ -1,4 +1,4 @@
-package odigospartialk8sattrsprocessor
+package odigoslogsresourceattrsprocessor
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
 
-	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/metadata"
+	"github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor/internal/metadata"
 )
 
 //go:generate mdatagen metadata.yaml

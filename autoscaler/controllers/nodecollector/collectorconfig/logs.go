@@ -70,7 +70,7 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manife
 		memoryLimiterProcessorName,
 		nodeNameProcessorName,
 		resourceDetectionProcessorName,
-		odigosPartialK8sAttrsProcessorName,
+		odigosLogsResourceAttrsProcessorName,
 	}, manifestProcessorNames...)
 	// append odigos traffic metrics processor last (after manifest processors)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)

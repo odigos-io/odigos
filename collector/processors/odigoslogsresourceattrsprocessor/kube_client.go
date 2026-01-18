@@ -1,11 +1,11 @@
-package odigospartialk8sattrsprocessor
+package odigoslogsresourceattrsprocessor
 
 import (
 	"fmt"
 
 	"k8s.io/client-go/rest"
 
-	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
+	"github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor/internal/kube"
 )
 
 // newKubeClient is a factory function that creates a kube.Client.

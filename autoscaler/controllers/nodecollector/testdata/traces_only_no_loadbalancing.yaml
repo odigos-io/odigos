@@ -34,7 +34,7 @@ processors:
     check_interval: 500ms
     limit_mib: 0
     spike_limit_mib: 0
-  odigospartialk8sattrsprocessor: {}
+  odigoslogsresourceattrsprocessor: {}
   odigostrafficmetrics:
     res_attributes_keys:
     - service.name

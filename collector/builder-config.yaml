@@ -89,7 +89,7 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.130.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.130.0
   - gomod: github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0
-  - gomod: github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor v0.130.0
+  - gomod: github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.130.0
 
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.130.0
@@ -128,11 +128,9 @@ replaces:
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter => ../exporters/mockdestinationexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
   - github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
-  - github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor => ../processors/odigospartialk8sattrsprocessor
+  - github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor => ../processors/odigoslogsresourceattrsprocessor
   - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
   - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
   - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
   - github.com/odigos-io/odigos/common => ../../common
-  - github.com/odigos-io/odigos/api => ../../api
-  - github.com/odigos-io/odigos/k8sutils => ../../k8sutils
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc

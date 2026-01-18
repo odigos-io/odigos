@@ -1,4 +1,4 @@
-module github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor
+module github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor
 
 go 1.23.0
 

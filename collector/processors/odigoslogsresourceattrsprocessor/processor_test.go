@@ -1,4 +1,4 @@
-package odigospartialk8sattrsprocessor
+package odigoslogsresourceattrsprocessor
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
+	"github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor/internal/kube"
 )
 
 // ProcessorTestSuite tests the partialK8sAttrsProcessor

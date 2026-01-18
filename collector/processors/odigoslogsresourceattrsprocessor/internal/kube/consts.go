@@ -11,6 +11,7 @@ const (
 	WorkloadKindJob              WorkloadKind = "Job"
 	WorkloadKindDeploymentConfig WorkloadKind = "DeploymentConfig"
 	WorkloadKindArgoRollout      WorkloadKind = "Rollout"
+	WorkloadKindStaticPod        WorkloadKind = "StaticPod"
 )
 
 // K8SArgoRolloutNameAttribute is the attribute key for Argo Rollout name

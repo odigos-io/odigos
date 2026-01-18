@@ -6,7 +6,7 @@ go 1.25.0
 
 require (
 	github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.130.0
-	github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor v0.130.0
+	github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor v0.130.0
 	github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0
 	github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.130.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.130.0
@@ -749,7 +749,7 @@ replace github.com/open-telemetry/opentelemetry-collector-contrib/odigos/process
 
 replace github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
 
-replace github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor => ../processors/odigospartialk8sattrsprocessor
+replace github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor => ../processors/odigoslogsresourceattrsprocessor
 
 replace go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
 
@@ -758,10 +758,6 @@ replace github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector =
 replace github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
 
 replace github.com/odigos-io/odigos/common => ../../common
-
-replace github.com/odigos-io/odigos/api => ../../api
-
-replace github.com/odigos-io/odigos/k8sutils => ../../k8sutils
 
 replace go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
 

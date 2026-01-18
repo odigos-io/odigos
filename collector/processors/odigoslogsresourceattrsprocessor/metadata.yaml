@@ -1,4 +1,4 @@
-type: odigospartialk8sattrsprocessor
+type: odigoslogsresourceattrsprocessor
 status:
   class: processor
   stability:

@@ -1,4 +1,4 @@
-package odigospartialk8sattrsprocessor
+package odigoslogsresourceattrsprocessor
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/odigos-io/odigos/collector/processor/odigospartialk8sattrsprocessor/internal/kube"
+	"github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor/internal/kube"
 )
 
 type partialK8sAttrsProcessor struct {
@@ -33,12 +33,14 @@ func (p *partialK8sAttrsProcessor) Start(ctx context.Context, _ component.Host) 
 // workloadKindToSemconvKey maps Kubernetes workload kinds to their attribute keys.
 // Note: Argo Rollout uses a custom attribute since there's no semconv key for it.
 var workloadKindToSemconvKey = map[kube.WorkloadKind]string{
-	kube.WorkloadKindDeployment:  string(semconv.K8SDeploymentNameKey),
-	kube.WorkloadKindDaemonSet:   string(semconv.K8SDaemonSetNameKey),
-	kube.WorkloadKindStatefulSet: string(semconv.K8SStatefulSetNameKey),
-	kube.WorkloadKindJob:         string(semconv.K8SJobNameKey),
-	kube.WorkloadKindCronJob:     string(semconv.K8SCronJobNameKey),
-	kube.WorkloadKindArgoRollout: kube.K8SArgoRolloutNameAttribute,
+	kube.WorkloadKindDeployment:       string(semconv.K8SDeploymentNameKey),
+	kube.WorkloadKindDaemonSet:        string(semconv.K8SDaemonSetNameKey),
+	kube.WorkloadKindStatefulSet:      string(semconv.K8SStatefulSetNameKey),
+	kube.WorkloadKindJob:              string(semconv.K8SJobNameKey),
+	kube.WorkloadKindCronJob:          string(semconv.K8SCronJobNameKey),
+	kube.WorkloadKindDeploymentConfig: string(semconv.K8SDeploymentNameKey),
+	kube.WorkloadKindArgoRollout:      kube.K8SArgoRolloutNameAttribute,
+	kube.WorkloadKindStaticPod:        string(semconv.K8SPodNameKey),
 }
 
 func (processor *partialK8sAttrsProcessor) processResource(resource pcommon.Resource) {
@@ -70,7 +72,6 @@ func (processor *partialK8sAttrsProcessor) processResource(resource pcommon.Reso
 		}
 
 		attrs.PutStr(string(semconv.ServiceNameKey), podMeta.WorkloadName)
-		attrs.PutStr(string(semconv.ServiceNamespaceKey), podMeta.Namespace)
 	}
 }
 
