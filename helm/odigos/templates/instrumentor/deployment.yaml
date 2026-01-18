@@ -47,6 +47,9 @@ spec:
                   matchLabels:
                     app.kubernetes.io/name: odigos-instrumentor
                 topologyKey: "kubernetes.io/hostname"
+      {{- if .Values.instrumentor.priorityClassName }}
+      priorityClassName: {{ .Values.instrumentor.priorityClassName }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081
