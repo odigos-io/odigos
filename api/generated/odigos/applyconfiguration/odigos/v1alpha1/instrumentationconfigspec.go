@@ -26,7 +26,7 @@ import (
 type InstrumentationConfigSpecApplyConfiguration struct {
 	ServiceName                  *string                                  `json:"serviceName,omitempty"`
 	AgentInjectionEnabled        *bool                                    `json:"agentInjectionEnabled,omitempty"`
-	PodManifestInjectionRequired *bool                                    `json:"podManifestInjectionRequired,omitempty"`
+	PodManifestInjectionOptional *bool                                    `json:"podManifestInjectionOptional,omitempty"`
 	Containers                   []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
 	ContainersOverrides          []ContainerOverrideApplyConfiguration    `json:"containersOverrides,omitempty"`
 	ContainerOverridesHash       *string                                  `json:"containerOverridesHash,omitempty"`
@@ -57,11 +57,11 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithAgentInjectionEnabled(
 	return b
 }
 
-// WithPodManifestInjectionRequired sets the PodManifestInjectionRequired field in the declarative configuration to the given value
+// WithPodManifestInjectionOptional sets the PodManifestInjectionOptional field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the PodManifestInjectionRequired field is set to the value of the last call.
-func (b *InstrumentationConfigSpecApplyConfiguration) WithPodManifestInjectionRequired(value bool) *InstrumentationConfigSpecApplyConfiguration {
-	b.PodManifestInjectionRequired = &value
+// If called multiple times, the PodManifestInjectionOptional field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithPodManifestInjectionOptional(value bool) *InstrumentationConfigSpecApplyConfiguration {
+	b.PodManifestInjectionOptional = &value
 	return b
 }
 

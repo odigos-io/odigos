@@ -162,7 +162,7 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 		if containerConfig.OtelDistroName == "" || !containerConfig.AgentEnabled {
 			continue
 		}
-		if containerConfig.PodManifestInjectionRequired {
+		if !containerConfig.PodManifestInjectionOptional {
 			// if the container requires pod manifest injection, we don't need to send an instrumentation request.
 			// instrumentation will be handled by various mechanisms for pods with agent injected in the manifest.
 			continue

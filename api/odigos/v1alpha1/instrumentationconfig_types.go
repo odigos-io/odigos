@@ -411,8 +411,8 @@ type ContainerAgentConfig struct {
 	// can be left empty if reason is self-explanatory.
 	AgentEnabledMessage string `json:"agentEnabledMessage,omitempty"`
 
-	// set to true if the agent in this container requires pod manifest injection to be enabled.
-	PodManifestInjectionRequired bool `json:"podManifestInjectionRequired,omitempty"`
+	// set to true if the agent used in this container can be injected without pod manifest changes.
+	PodManifestInjectionOptional bool `json:"podManifestInjectionOptional,omitempty"`
 
 	// The name of the otel distribution to use for this container.
 	// if the name is empty, this container should not be instrumented.
@@ -444,9 +444,10 @@ type InstrumentationConfigSpec struct {
 	// determines if odigos should inject agents to pods of this workload.
 	AgentInjectionEnabled bool `json:"agentInjectionEnabled"`
 
-	// true if at least one container in this workload requires pod manifest injection
-	// to enable agent injection.
-	PodManifestInjectionRequired bool `json:"podManifestInjectionRequired,omitempty"`
+	// true if all containers with agent injection enabled in this source
+	// can be enabled without pod manifest changes.
+	// if false, at least one container requires pod manifest changes to enable agent injection.
+	PodManifestInjectionOptional bool `json:"podManifestInjectionOptional,omitempty"`
 
 	// configuration for each instrumented container in the workload
 	Containers []ContainerAgentConfig `json:"containers,omitempty"`

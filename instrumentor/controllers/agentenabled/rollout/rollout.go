@@ -108,7 +108,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 
 	// if at least one of the distributions used by this workload requires a rollout
 	// as pre-computed and stored in the instrumentaation config spec by the agentenabled controller
-	if !ic.Spec.PodManifestInjectionRequired {
+	if ic.Spec.PodManifestInjectionOptional {
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
 		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{

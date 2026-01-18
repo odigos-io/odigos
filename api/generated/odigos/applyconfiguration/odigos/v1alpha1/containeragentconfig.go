@@ -29,7 +29,7 @@ type ContainerAgentConfigApplyConfiguration struct {
 	AgentEnabled                 *bool                                 `json:"agentEnabled,omitempty"`
 	AgentEnabledReason           *odigosv1alpha1.AgentEnabledReason    `json:"agentEnabledReason,omitempty"`
 	AgentEnabledMessage          *string                               `json:"agentEnabledMessage,omitempty"`
-	PodManifestInjectionRequired *bool                                 `json:"podManifestInjectionRequired,omitempty"`
+	PodManifestInjectionOptional *bool                                 `json:"podManifestInjectionOptional,omitempty"`
 	OtelDistroName               *string                               `json:"otelDistroName,omitempty"`
 	DistroParams                 map[string]string                     `json:"distroParams,omitempty"`
 	EnvInjectionMethod           *common.EnvInjectionDecision          `json:"envInjectionMethod,omitempty"`
@@ -76,11 +76,11 @@ func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabledMessage(value s
 	return b
 }
 
-// WithPodManifestInjectionRequired sets the PodManifestInjectionRequired field in the declarative configuration to the given value
+// WithPodManifestInjectionOptional sets the PodManifestInjectionOptional field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the PodManifestInjectionRequired field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithPodManifestInjectionRequired(value bool) *ContainerAgentConfigApplyConfiguration {
-	b.PodManifestInjectionRequired = &value
+// If called multiple times, the PodManifestInjectionOptional field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithPodManifestInjectionOptional(value bool) *ContainerAgentConfigApplyConfiguration {
+	b.PodManifestInjectionOptional = &value
 	return b
 }
 

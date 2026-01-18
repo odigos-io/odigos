@@ -197,9 +197,9 @@ spec:
                         The name of the otel distribution to use for this container.
                         if the name is empty, this container should not be instrumented.
                       type: string
-                    podManifestInjectionRequired:
-                      description: set to true if the agent in this container requires
-                        pod manifest injection to be enabled.
+                    podManifestInjectionOptional:
+                      description: set to true if the agent used in this container
+                        can be injected without pod manifest changes.
                       type: boolean
                     traces:
                       description: |-
@@ -477,10 +477,11 @@ spec:
                   - containerName
                   type: object
                 type: array
-              podManifestInjectionRequired:
+              podManifestInjectionOptional:
                 description: |-
-                  true if at least one container in this workload requires pod manifest injection
-                  to enable agent injection.
+                  true if all containers with agent injection enabled in this source
+                  can be enabled without pod manifest changes.
+                  if false, at least one container requires pod manifest changes to enable agent injection.
                 type: boolean
               sdkConfigs:
                 description: |-
