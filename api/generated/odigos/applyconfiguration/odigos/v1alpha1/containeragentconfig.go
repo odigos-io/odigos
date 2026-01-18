@@ -27,9 +27,9 @@ import (
 type ContainerAgentConfigApplyConfiguration struct {
 	ContainerName                *string                               `json:"containerName,omitempty"`
 	AgentEnabled                 *bool                                 `json:"agentEnabled,omitempty"`
-	PodManifestInjectionRequired *bool                                 `json:"podManifestInjectionRequired,omitempty"`
 	AgentEnabledReason           *odigosv1alpha1.AgentEnabledReason    `json:"agentEnabledReason,omitempty"`
 	AgentEnabledMessage          *string                               `json:"agentEnabledMessage,omitempty"`
+	PodManifestInjectionRequired *bool                                 `json:"podManifestInjectionRequired,omitempty"`
 	OtelDistroName               *string                               `json:"otelDistroName,omitempty"`
 	DistroParams                 map[string]string                     `json:"distroParams,omitempty"`
 	EnvInjectionMethod           *common.EnvInjectionDecision          `json:"envInjectionMethod,omitempty"`
@@ -60,14 +60,6 @@ func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabled(value bool) *C
 	return b
 }
 
-// WithPodManifestInjectionRequired sets the PodManifestInjectionRequired field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the PodManifestInjectionRequired field is set to the value of the last call.
-func (b *ContainerAgentConfigApplyConfiguration) WithPodManifestInjectionRequired(value bool) *ContainerAgentConfigApplyConfiguration {
-	b.PodManifestInjectionRequired = &value
-	return b
-}
-
 // WithAgentEnabledReason sets the AgentEnabledReason field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the AgentEnabledReason field is set to the value of the last call.
@@ -81,6 +73,14 @@ func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabledReason(value od
 // If called multiple times, the AgentEnabledMessage field is set to the value of the last call.
 func (b *ContainerAgentConfigApplyConfiguration) WithAgentEnabledMessage(value string) *ContainerAgentConfigApplyConfiguration {
 	b.AgentEnabledMessage = &value
+	return b
+}
+
+// WithPodManifestInjectionRequired sets the PodManifestInjectionRequired field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PodManifestInjectionRequired field is set to the value of the last call.
+func (b *ContainerAgentConfigApplyConfiguration) WithPodManifestInjectionRequired(value bool) *ContainerAgentConfigApplyConfiguration {
+	b.PodManifestInjectionRequired = &value
 	return b
 }
 

@@ -404,15 +404,15 @@ type ContainerAgentConfig struct {
 	// boolean flag to indicate if the agent should be enabled for this container.
 	AgentEnabled bool `json:"agentEnabled"`
 
-	// set to true if the agent in this container requires pod manifest injection to be enabled.
-	PodManifestInjectionRequired bool `json:"podManifestInjectionRequired,omitempty"`
-
 	// An enum reason for the agent injection decision.
 	AgentEnabledReason AgentEnabledReason `json:"agentEnabledReason,omitempty"`
 
 	// free text message to provide more information about the instrumentation decision.
 	// can be left empty if reason is self-explanatory.
 	AgentEnabledMessage string `json:"agentEnabledMessage,omitempty"`
+
+	// set to true if the agent in this container requires pod manifest injection to be enabled.
+	PodManifestInjectionRequired bool `json:"podManifestInjectionRequired,omitempty"`
 
 	// The name of the otel distribution to use for this container.
 	// if the name is empty, this container should not be instrumented.
