@@ -193,7 +193,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
-	podManifestInjectionOptional := true
+	podManifestInjectionOptional := ic.Spec.AgentInjectionEnabled // default to true if agent injection is enabled
 
 	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
