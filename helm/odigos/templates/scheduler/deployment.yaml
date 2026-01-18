@@ -38,6 +38,9 @@ spec:
               app.kubernetes.io/name: odigos-scheduler
         {{- end }}
       {{- end }}
+      {{- if .Values.scheduler.priorityClassName }}
+      priorityClassName: {{ .Values.scheduler.priorityClassName }}
+      {{- end }}
       containers:
       - args:
           - --health-probe-bind-address=:8081

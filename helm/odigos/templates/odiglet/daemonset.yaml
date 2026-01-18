@@ -393,7 +393,9 @@ spec:
       hostPID: true
       {{- end }}
       dnsPolicy: ClusterFirstWithHostNet
-      priorityClassName: system-node-critical
+      {{- if .Values.odiglet.priorityClassName }}
+      priorityClassName: {{ .Values.odiglet.priorityClassName }}
+      {{- end }}
       serviceAccountName: odiglet
       volumes:
         {{- if $collectLogs }}
