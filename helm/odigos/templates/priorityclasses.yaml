@@ -1,0 +1,16 @@
+{{- if .Values.priorityClasses.create }}
+{{- range $key, $class := .Values.priorityClasses.classes }}
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ $class.name }}
+  labels:
+    app.kubernetes.io/name: odigos-priorityclasses
+    app.kubernetes.io/component: priorityclass
+    odigos.io/system-object: "true"
+value: {{ $class.value }}
+globalDefault: false
+description: {{ $class.description | quote }}
+{{- end }}
+{{- end }}
