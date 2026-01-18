@@ -10,6 +10,7 @@ enum K8sResourceKind {
   CronJob
   ConfigMap
   Pod
+  StaticPod
   DeploymentConfig
   Rollout
 }
@@ -451,6 +452,7 @@ input PatchSourceRequestInput {
   containerName: String
   language: String
   version: String
+  otelDistroName: String
 }
 
 input ActionInput {
@@ -864,6 +866,7 @@ type InstrumentationInstanceComponent {
   name: String!
   type: String
   healthy: Boolean
+  message: String
   lastStatusTime: String
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }

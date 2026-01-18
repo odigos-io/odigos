@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
-import { useStatusStore } from '@/store';
 import { useSourceCRUD } from '../sources';
 import { StatusType } from '@odigos/ui-kit/types';
+import { StatusKeys, useStatusStore } from '@/store';
 import { useDestinationCRUD } from '../destinations';
 import { NotificationIcon } from '@odigos/ui-kit/icons';
-import { type NotifyPayload, useInstrumentStore, useNotificationStore } from '@odigos/ui-kit/store';
+import { type NotifyPayload, useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
 
 enum EventTypes {
   CONNECTED = 'CONNECTED',
@@ -23,15 +23,11 @@ const EVENT_DEBOUNCE_MS = 5000;
 
 export const useSSE = () => {
   const { fetchSources } = useSourceCRUD();
-  const { setStatusStore } = useStatusStore();
   const { addNotification } = useNotificationStore();
   const { fetchDestinations } = useDestinationCRUD();
-  const { setInstrumentAwait, setInstrumentCount } = useInstrumentStore();
+  const { setStatusStore, resetStatusStore } = useStatusStore();
 
-  const clearStatusMessage = () => {
-    const { priorityMessage } = useStatusStore.getState();
-    if (!priorityMessage) setStatusStore({ status: StatusType.Default, message: '', leftIcon: undefined });
-  };
+  const clearStatusMessage = () => resetStatusStore(StatusKeys.Instrumentation);
 
   const maxRetries = 10;
   const retryCount = useRef(0);
@@ -120,36 +116,24 @@ export const useSSE = () => {
 
         // Handle specific CRD types
         if (isSource) {
-          const { isAwaitingInstrumentation } = useInstrumentStore.getState();
-          const { priorityMessage, message } = useStatusStore.getState();
-
           switch (notification.title) {
             case EventTypes.ADDED:
-              if (!isAwaitingInstrumentation) setInstrumentAwait(true);
+              setStatusStore(StatusKeys.Instrumentation, { status: StatusType.Warning, label: 'Creating sources, please wait a moment...', leftIcon: NotificationIcon });
 
-              const statusMessage1 = 'Creating sources, please wait a moment...';
-              if (!priorityMessage && message !== statusMessage1) setStatusStore({ status: StatusType.Warning, message: statusMessage1, leftIcon: NotificationIcon });
-
-              const { sourcesToCreate, sourcesCreated } = useInstrumentStore.getState();
-              const totalCreated = sourcesCreated + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-              if (sourcesToCreate < totalCreated) setInstrumentCount('sourcesToCreate', totalCreated + 1);
-              setInstrumentCount('sourcesCreated', totalCreated);
+              const newCreated = Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              useProgressStore.getState().addProgress(ProgressKeys.Instrumenting, newCreated);
 
               handleEvent(EventTypes.ADDED, () => {
-                const statusMessage2 = 'Instrumenting sources, please wait a moment...';
-                if (!priorityMessage && message !== statusMessage2) setStatusStore({ status: StatusType.Warning, message: statusMessage2, leftIcon: NotificationIcon });
-                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${totalCreated} sources` });
-
-                fetchSources();
-
-                setInstrumentAwait(false);
-                setInstrumentCount('sourcesToCreate', 0);
-                setInstrumentCount('sourcesCreated', 0);
+                const { progress, resetProgress } = useProgressStore.getState();
+                addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${progress[ProgressKeys.Instrumenting]?.total} sources` });
+                setStatusStore(StatusKeys.Instrumentation, { status: StatusType.Warning, label: 'Instrumenting sources, please wait a moment...', leftIcon: NotificationIcon });
+                resetProgress(ProgressKeys.Instrumenting);
               });
               break;
 
             case EventTypes.MODIFIED:
-              if (!isAwaitingInstrumentation) {
+              const { progress } = useProgressStore.getState();
+              if (!progress[ProgressKeys.Instrumenting] && !progress[ProgressKeys.Uninstrumenting]) {
                 handleEvent(EventTypes.MODIFIED, () => {
                   clearStatusMessage();
                   fetchSources();
@@ -158,22 +142,16 @@ export const useSSE = () => {
               break;
 
             case EventTypes.DELETED:
-              if (!isAwaitingInstrumentation) setInstrumentAwait(true);
-
-              const { sourcesToDelete, sourcesDeleted } = useInstrumentStore.getState();
-              const totalDeleted = sourcesDeleted + Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
-              if (sourcesToDelete < totalDeleted) setInstrumentCount('sourcesToDelete', totalDeleted + 1);
-              setInstrumentCount('sourcesDeleted', totalDeleted);
+              const newDeleted = Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              useProgressStore.getState().addProgress(ProgressKeys.Uninstrumenting, newDeleted);
 
               handleEvent(EventTypes.DELETED, () => {
+                const { progress, resetProgress } = useProgressStore.getState();
+                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${progress[ProgressKeys.Uninstrumenting]?.total} sources` });
+                resetProgress(ProgressKeys.Uninstrumenting);
                 clearStatusMessage();
-                addNotification({ type: StatusType.Success, title: EventTypes.DELETED, message: `Successfully deleted ${totalDeleted} sources` });
 
                 fetchSources();
-
-                setInstrumentAwait(false);
-                setInstrumentCount('sourcesToDelete', 0);
-                setInstrumentCount('sourcesDeleted', 0);
               });
               break;
 

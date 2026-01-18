@@ -85,6 +85,10 @@ module "eks" {
       min_size     = var.node_count
       max_size     = var.node_count
       desired_size = var.node_count
+
+      tags = {
+        AlwaysOn = "true"
+      }
     }
   }
 }

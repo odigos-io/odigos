@@ -3,6 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-victoriametrics-config
+  namespace: {{ .Release.Namespace }}
 data:
   scrape.yml: |
     scrape_configs:

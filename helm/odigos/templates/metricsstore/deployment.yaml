@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: odigos-victoriametrics
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:

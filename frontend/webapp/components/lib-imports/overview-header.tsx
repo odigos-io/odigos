@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { useStatusStore } from '../../store';
 import { OdigosLogoText } from '@odigos/ui-kit/icons';
 import { FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { OtherStatusType } from '@odigos/ui-kit/types';
+import { StatusKeys, useStatusStore } from '../../store';
 import { Header, Tooltip } from '@odigos/ui-kit/components';
 import { useConfig, useDescribe, useTokenCRUD } from '@/hooks';
 import { Badge as V2Badge, Header as V2Header } from '@odigos/ui-kit/components/v2';
@@ -12,13 +12,34 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   const { isReadonly } = useConfig();
   const { fetchDescribeOdigos } = useDescribe();
   const { tokens, updateToken } = useTokenCRUD();
-  const { status, message, leftIcon } = useStatusStore();
+
+  const tokenStatus = useStatusStore((state) => state[StatusKeys.Token]);
+  const backendStatus = useStatusStore((state) => state[StatusKeys.Backend]);
+  const instrumentationStatus = useStatusStore((state) => state[StatusKeys.Instrumentation]);
 
   const left = useMemo(() => {
     const arr = [<OdigosLogoText key='logo' size={150} />];
 
-    if (message) {
-      arr.push(<V2Badge key='status' status={status} label={message} leftIcon={leftIcon} />);
+    if (tokenStatus) {
+      arr.push(
+        <Tooltip key='token-status' text={tokenStatus.tooltip}>
+          <V2Badge {...tokenStatus} />
+        </Tooltip>,
+      );
+    }
+    if (backendStatus) {
+      arr.push(
+        <Tooltip key='backend-status' text={backendStatus.tooltip}>
+          <V2Badge {...backendStatus} />
+        </Tooltip>,
+      );
+    }
+    if (instrumentationStatus) {
+      arr.push(
+        <Tooltip key='instrumentation-status' text={instrumentationStatus.tooltip}>
+          <V2Badge {...instrumentationStatus} />
+        </Tooltip>,
+      );
     }
     if (isReadonly) {
       arr.push(
@@ -29,7 +50,7 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
     }
 
     return arr;
-  }, [v2, message, leftIcon, status, isReadonly]);
+  }, [v2, tokenStatus?.label, backendStatus?.label, instrumentationStatus?.label, isReadonly]);
 
   const right = useMemo(() => {
     const arr = [<NotificationManager key='notification-manager' />];

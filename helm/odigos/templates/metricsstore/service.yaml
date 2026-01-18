@@ -3,6 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: odigos-victoriametrics
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: odigos-victoriametrics
 spec:

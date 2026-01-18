@@ -27,6 +27,10 @@ func GetSourceDescription(ctx context.Context, namespace string, kind string, na
 		desc, err = describe.DescribeStatefulSet(ctx, kube.DefaultClient.Interface, kube.DefaultClient.OdigosClient, namespace, name)
 	case "DeploymentConfig":
 		desc, err = describe.DescribeDeploymentConfig(ctx, kube.DefaultClient.Interface, kube.DefaultClient.DynamicClient, kube.DefaultClient.OdigosClient, namespace, name)
+	case "StaticPod":
+		desc, err = describe.DescribeStaticPod(ctx, kube.DefaultClient.Interface, kube.DefaultClient.OdigosClient, namespace, name)
+	case "Rollout":
+		desc, err = describe.DescribeRollout(ctx, kube.DefaultClient.Interface, kube.DefaultClient.DynamicClient, kube.DefaultClient.OdigosClient, namespace, name)
 	default:
 		return nil, fmt.Errorf("kind %s is not supported", kind)
 	}

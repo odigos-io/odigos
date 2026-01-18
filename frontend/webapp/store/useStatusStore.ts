@@ -1,22 +1,32 @@
 import { create } from 'zustand';
-import { type SVG, StatusType } from '@odigos/ui-kit/types';
+import { BadgeProps } from '@odigos/ui-kit/components/v2';
+
+export enum StatusKeys {
+  Token = 'token',
+  Backend = 'backend',
+  Instrumentation = 'instrumentation',
+}
+
+export interface StatusValues extends BadgeProps {
+  tooltip?: string;
+}
 
 interface StoreValues {
-  status: StatusType;
-  message: string;
-  priorityMessage?: boolean;
-  leftIcon?: SVG;
+  [StatusKeys.Token]?: StatusValues;
+  [StatusKeys.Backend]?: StatusValues;
+  [StatusKeys.Instrumentation]?: StatusValues;
 }
 
 interface StoreSetters {
-  setStatusStore: (s: StoreValues) => void;
+  setStatusStore: (k: keyof StoreValues, v?: StatusValues) => void;
+  resetStatusStore: (k: keyof StoreValues) => void;
 }
 
 export const useStatusStore = create<StoreValues & StoreSetters>((set) => ({
-  status: StatusType.Default,
-  message: '',
-  priorityMessage: false,
-  leftIcon: undefined,
+  [StatusKeys.Token]: undefined,
+  [StatusKeys.Backend]: undefined,
+  [StatusKeys.Instrumentation]: undefined,
 
-  setStatusStore: (s) => set(s),
+  setStatusStore: (k, v) => set({ [k]: v }),
+  resetStatusStore: (k) => set({ [k]: undefined }),
 }));

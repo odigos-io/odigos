@@ -27,6 +27,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/version"
@@ -395,7 +396,7 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 
 		// Convert to typed
 		var dc openshiftappsv1.DeploymentConfig
-		err = kube.Scheme.Convert(dcUnstructured, &dc, nil)
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(dcUnstructured.Object, &dc)
 		if err != nil {
 			return fmt.Errorf("failed to convert deploymentconfig: %w", err)
 		}
@@ -406,8 +407,7 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 		dc.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
 
 		// Convert back to unstructured
-		var dcUnstructuredUpdated map[string]interface{}
-		err = kube.Scheme.Convert(&dc, &dcUnstructuredUpdated, nil)
+		dcUnstructuredUpdated, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&dc)
 		if err != nil {
 			return fmt.Errorf("failed to convert deploymentconfig back to unstructured: %w", err)
 		}
