@@ -100,9 +100,9 @@ func RunDiagnose(
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-		err := FetchSourceWorkloads(
-			ctx, client, dynamicClient, odigosClient, builder,
-			rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs)
+			err := FetchSourceWorkloads(
+				ctx, client, dynamicClient, odigosClient, builder,
+				rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs)
 			if err != nil {
 				klog.V(1).ErrorS(err, "Failed to fetch source workloads")
 				errChan <- fmt.Errorf("source workloads: %w", err)
