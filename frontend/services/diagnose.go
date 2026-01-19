@@ -24,6 +24,11 @@ var (
 )
 
 // DiagnoseGraphQL is the GraphQL resolver for diagnose
+// This is similar to the CLI diagnose command. It collects Odigos component
+// logs, CRDs, profiles, metrics, configmaps, and source workloads.
+// It can be run in dry-run mode to estimate the size of the output.
+// If not in dry-run mode, it creates a tar.gz archive of the output and returns a download URL.
+// The output is written to a temporary directory and then archived into a tar.gz file.
 func DiagnoseGraphQL(
 	ctx context.Context,
 	input *model.DiagnoseInput,

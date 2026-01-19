@@ -1,15 +1,19 @@
 package diagnose
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io"
+	"os"
 	"path"
+	"path/filepath"
 	"sync"
 	"time"
 
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
@@ -129,6 +133,104 @@ func (b *DryRunBuilder) GetStats() BuilderStats {
 	return b.stats
 }
 
+// FileBuilder writes diagnose data to the local filesystem.
+// This is used by the CLI and frontend for collecting data to a temporary directory
+// before creating the final tar.gz archive.
+type FileBuilder struct {
+	mu    sync.Mutex
+	stats BuilderStats
+}
+
+// NewBuilder creates a new Builder for writing diagnose output to files
+func NewBuilder() *FileBuilder {
+	return &FileBuilder{}
+}
+
+// AddFile writes a file to the filesystem
+func (b *FileBuilder) AddFile(dir, filename string, data []byte) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.stats.TotalSize += int64(len(data))
+	b.stats.FileCount++
+
+	// Ensure directory exists
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+
+	filePath := filepath.Join(dir, filename)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o666)
+	if err != nil {
+		return err
+	}
+	//nolint:errcheck // this close is deferred to the end of the function
+	defer file.Close()
+
+	if _, err := file.Write(data); err != nil {
+		return err
+	}
+
+	return file.Sync()
+}
+
+// AddFileGzipped writes a gzip-compressed file to the filesystem
+func (b *FileBuilder) AddFileGzipped(dir, filename string, reader io.Reader) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	// Ensure directory exists
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+
+	filePath := filepath.Join(dir, filename)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o666)
+	if err != nil {
+		return err
+	}
+	//nolint:errcheck // this close is deferred to the end of the function
+	defer file.Close()
+
+	// Create a gzip writer
+	gzWriter := gzip.NewWriter(file)
+	//nolint:errcheck // this close is deferred to the end of the function
+	defer gzWriter.Close()
+
+	// Read and compress in chunks
+	buffer := make([]byte, logBufferSize)
+	var totalWritten int64
+	for {
+		n, err := reader.Read(buffer)
+		if n > 0 {
+			written, writeErr := gzWriter.Write(buffer[:n])
+			if writeErr != nil {
+				klog.V(1).ErrorS(writeErr, "Failed to write to gzip", "filePath", filePath)
+				return writeErr
+			}
+			totalWritten += int64(written)
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	b.stats.TotalSize += totalWritten
+	b.stats.FileCount++
+
+	return nil
+}
+
+// GetStats returns build statistics
+func (b *FileBuilder) GetStats() BuilderStats {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.stats
+}
+
 // GetRootDir returns the root directory name for the diagnose output
 func GetRootDir() string {
 	timestamp := time.Now().Format("02012006150405")
@@ -173,4 +275,3 @@ func FormatBytes(bytes int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
-
