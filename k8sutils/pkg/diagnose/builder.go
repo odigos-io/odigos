@@ -104,9 +104,6 @@ func (b *DryRunBuilder) AddFile(dir, filename string, data []byte) error {
 
 // AddFileGzipped tracks the estimated compressed size without writing
 func (b *DryRunBuilder) AddFileGzipped(dir, filename string, reader io.Reader) error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
 	// Read to count bytes (we can't know compressed size without actually compressing)
 	buffer := make([]byte, logBufferSize)
 	var totalRead int64
@@ -120,9 +117,13 @@ func (b *DryRunBuilder) AddFileGzipped(dir, filename string, reader io.Reader) e
 			return err
 		}
 	}
-	// Estimate compressed size as ~30% of original (rough gzip estimate for text)
-	b.stats.TotalSize += totalRead * 30 / 100
+
+	// Only lock for stats update
+	b.mu.Lock()
+	b.stats.TotalSize += totalRead * 30 / 100 // Estimate compressed size as ~30% of original
 	b.stats.FileCount++
+	b.mu.Unlock()
+
 	return nil
 }
 
@@ -148,12 +149,6 @@ func NewBuilder() *FileBuilder {
 
 // AddFile writes a file to the filesystem
 func (b *FileBuilder) AddFile(dir, filename string, data []byte) error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	b.stats.TotalSize += int64(len(data))
-	b.stats.FileCount++
-
 	// Ensure directory exists
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return err
@@ -171,14 +166,21 @@ func (b *FileBuilder) AddFile(dir, filename string, data []byte) error {
 		return err
 	}
 
-	return file.Sync()
+	if err := file.Sync(); err != nil {
+		return err
+	}
+
+	// Only lock for stats update
+	b.mu.Lock()
+	b.stats.TotalSize += int64(len(data))
+	b.stats.FileCount++
+	b.mu.Unlock()
+
+	return nil
 }
 
 // AddFileGzipped writes a gzip-compressed file to the filesystem
 func (b *FileBuilder) AddFileGzipped(dir, filename string, reader io.Reader) error {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
 	// Ensure directory exists
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return err
@@ -218,8 +220,11 @@ func (b *FileBuilder) AddFileGzipped(dir, filename string, reader io.Reader) err
 		}
 	}
 
+	// Only lock for stats update
+	b.mu.Lock()
 	b.stats.TotalSize += totalWritten
 	b.stats.FileCount++
+	b.mu.Unlock()
 
 	return nil
 }
