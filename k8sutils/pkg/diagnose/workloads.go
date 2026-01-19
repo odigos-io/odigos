@@ -80,23 +80,6 @@ func FetchOdigosWorkloads(
 		}
 	}
 
-	// Collect StatefulSets
-	statefulsets, err := client.AppsV1().StatefulSets(odigosNamespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		klog.V(1).ErrorS(err, "Failed to list statefulsets")
-	} else {
-		for i := 0; i < len(statefulsets.Items); i++ {
-			s := &statefulsets.Items[i]
-			targets = append(targets, WorkloadTarget{
-				Namespace:   odigosNamespace,
-				Name:        s.Name,
-				Kind:        k8sconsts.WorkloadKindStatefulSet,
-				DirName:     fmt.Sprintf("statefulset-%s", s.Name),
-				IncludeLogs: includeLogs,
-			})
-		}
-	}
-
 	// Collect all targets
 	for i := 0; i < len(targets); i++ {
 		t := &targets[i]
