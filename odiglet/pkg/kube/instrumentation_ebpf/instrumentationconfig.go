@@ -163,8 +163,8 @@ func (i *InstrumentationConfigReconciler) sendInstrumentationRequest(ctx context
 			continue
 		}
 		if !containerConfig.PodManifestInjectionOptional {
-			// if the container requires pod manifest injection, we don't need to send an instrumentation request.
-			// instrumentation will be handled by various mechanisms for pods with agent injected in the manifest.
+			// if pod manifest injection is not optional, the instrumentation will be triggered by a processes execution event and we can't instrument it here without a restart.
+			// if the manifest injection is optional, we can send an instrumentation request here and have it instrumented without a restart.
 			continue
 		}
 		d := i.DistributionGetter.GetDistroByName(containerConfig.OtelDistroName)
