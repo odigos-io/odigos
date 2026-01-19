@@ -10,26 +10,27 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// FileCollector writes data to the local filesystem.
-// This is used by the CLI for collecting data to a temporary directory
+// Builder writes diagnose data to the local filesystem.
+// This is used by the CLI and frontend for collecting data to a temporary directory
 // before creating the final tar.gz archive.
-type FileCollector struct {
+// Note: This implements the diagnose.Builder interface.
+type builder struct {
 	mu    sync.Mutex
-	stats CollectorStats
+	stats BuilderStats
 }
 
-// NewFileCollector creates a new FileCollector
-func NewFileCollector() *FileCollector {
-	return &FileCollector{}
+// NewBuilder creates a new Builder for writing diagnose output to files
+func NewBuilder() *builder {
+	return &builder{}
 }
 
 // AddFile writes a file to the filesystem
-func (c *FileCollector) AddFile(dir, filename string, data []byte) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (b *builder) AddFile(dir, filename string, data []byte) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
-	c.stats.TotalSize += int64(len(data))
-	c.stats.FileCount++
+	b.stats.TotalSize += int64(len(data))
+	b.stats.FileCount++
 
 	// Ensure directory exists
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -52,9 +53,9 @@ func (c *FileCollector) AddFile(dir, filename string, data []byte) error {
 }
 
 // AddFileGzipped writes a gzip-compressed file to the filesystem
-func (c *FileCollector) AddFileGzipped(dir, filename string, reader io.Reader) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (b *builder) AddFileGzipped(dir, filename string, reader io.Reader) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
 	// Ensure directory exists
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -95,15 +96,15 @@ func (c *FileCollector) AddFileGzipped(dir, filename string, reader io.Reader) e
 		}
 	}
 
-	c.stats.TotalSize += totalWritten
-	c.stats.FileCount++
+	b.stats.TotalSize += totalWritten
+	b.stats.FileCount++
 
 	return nil
 }
 
-// GetStats returns collection statistics
-func (c *FileCollector) GetStats() CollectorStats {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.stats
+// GetStats returns build statistics
+func (b *builder) GetStats() BuilderStats {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.stats
 }

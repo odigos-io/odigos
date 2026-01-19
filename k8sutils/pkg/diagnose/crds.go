@@ -68,7 +68,7 @@ func FetchOdigosCRDs(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,
 	discoveryClient discovery.DiscoveryInterface,
-	collector Collector,
+	builder Builder,
 	rootDir, odigosNamespace string,
 ) error {
 	fmt.Printf("Fetching Odigos CRDs...\n")
@@ -84,7 +84,7 @@ func FetchOdigosCRDs(
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := collectCRD(ctx, dynamicClient, collector, rootDir, odigosNamespace, gvr); err != nil {
+			if err := collectCRD(ctx, dynamicClient, builder, rootDir, odigosNamespace, gvr); err != nil {
 				klog.V(1).ErrorS(err, "Failed to collect CRD", "resource", gvr.Resource)
 				errChan <- err
 			}
@@ -110,7 +110,7 @@ func FetchOdigosCRDs(
 func collectCRD(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,
-	collector Collector,
+	builder Builder,
 	rootDir, odigosNamespace string,
 	gvr schema.GroupVersionResource,
 ) error {
@@ -156,7 +156,7 @@ func collectCRD(
 		}
 
 		filename := fmt.Sprintf("%s.yaml", item.GetName())
-		if err := collector.AddFile(crdTypeDir, filename, yamlData); err != nil {
+		if err := builder.AddFile(crdTypeDir, filename, yamlData); err != nil {
 			return fmt.Errorf("failed to add CRD %s to collection: %w", item.GetName(), err)
 		}
 	}
@@ -174,12 +174,12 @@ func capitalizeFirst(s string) string {
 
 // FetchDestinations collects destination CRDs specifically
 // This is kept for backward compatibility with the CLI approach
-func FetchDestinations(ctx context.Context, dynamicClient dynamic.Interface, collector Collector, rootDir, odigosNamespace string) error {
+func FetchDestinations(ctx context.Context, dynamicClient dynamic.Interface, builder Builder, rootDir, odigosNamespace string) error {
 	gvr := schema.GroupVersionResource{
 		Group:    odigosGroupName,
 		Version:  "v1alpha1",
 		Resource: "destinations",
 	}
 
-	return collectCRD(ctx, dynamicClient, collector, rootDir, odigosNamespace, gvr)
+	return collectCRD(ctx, dynamicClient, builder, rootDir, odigosNamespace, gvr)
 }

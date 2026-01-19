@@ -11,7 +11,7 @@ import (
 )
 
 // FetchConfigMaps collects all ConfigMaps from the Odigos namespace
-func FetchConfigMaps(ctx context.Context, client kubernetes.Interface, collector Collector, configMapDir, odigosNamespace string) error {
+func FetchConfigMaps(ctx context.Context, client kubernetes.Interface, builder Builder, configMapDir, odigosNamespace string) error {
 	klog.V(2).InfoS("Fetching ConfigMaps", "namespace", odigosNamespace)
 
 	configMaps, err := client.CoreV1().ConfigMaps(odigosNamespace).List(ctx, metav1.ListOptions{})
@@ -31,7 +31,7 @@ func FetchConfigMaps(ctx context.Context, client kubernetes.Interface, collector
 		}
 
 		filename := fmt.Sprintf("configmap-%s.yaml", cm.Name)
-		if err := collector.AddFile(configMapDir, filename, yamlData); err != nil {
+		if err := builder.AddFile(configMapDir, filename, yamlData); err != nil {
 			klog.V(1).ErrorS(err, "Failed to save ConfigMap", "name", cm.Name)
 			continue
 		}

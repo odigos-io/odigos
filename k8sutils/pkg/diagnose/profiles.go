@@ -99,7 +99,7 @@ var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 }
 
 // FetchOdigosProfiles collects pprof profiles from Odigos components
-func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, collector Collector, profileDir, odigosNamespace string) error {
+func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, builder Builder, profileDir, odigosNamespace string) error {
 	fmt.Printf("Fetching Odigos Profiles...\n")
 	klog.V(2).InfoS("Fetching Odigos Profiles", "namespace", odigosNamespace)
 
@@ -145,7 +145,7 @@ func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, colle
 						for attempt := 1; attempt <= maxRetries; attempt++ {
 							data, err := captureProfile(ctx, client, pod.Name, pprofPort, odigosNamespace, profileFunc)
 							if err == nil {
-								if err := collector.AddFile(nodeProfileDir, profileFunc.GetFileName(), data); err != nil {
+								if err := builder.AddFile(nodeProfileDir, profileFunc.GetFileName(), data); err != nil {
 									klog.V(1).ErrorS(err, "Failed to save profile", "podName", pod.Name, "profileType", profileFunc.GetFileName())
 								}
 								break

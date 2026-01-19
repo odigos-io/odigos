@@ -29,19 +29,19 @@ type DiagnoseClient interface {
 	GetDiscoveryClient() discovery.DiscoveryInterface
 }
 
-// Collector is an interface for collecting diagnose data.
+// Builder is an interface for building diagnose output.
 // It can be implemented for different output targets (file system, HTTP stream, etc.)
-type Collector interface {
-	// AddFile adds a file to the collection
+type Builder interface {
+	// AddFile adds a file to the output
 	AddFile(dir, filename string, data []byte) error
-	// AddFileGzipped adds a gzip-compressed file to the collection
+	// AddFileGzipped adds a gzip-compressed file to the output
 	AddFileGzipped(dir, filename string, reader io.Reader) error
-	// GetStats returns collection statistics
-	GetStats() CollectorStats
+	// GetStats returns build statistics
+	GetStats() BuilderStats
 }
 
-// CollectorStats holds statistics about the collection
-type CollectorStats struct {
+// BuilderStats holds statistics about the diagnose output
+type BuilderStats struct {
 	TotalSize int64
 	FileCount int
 }
@@ -77,31 +77,31 @@ func DefaultOptions() Options {
 	}
 }
 
-// DryRunCollector only tracks stats without writing any data.
-// This is used for estimating the size before actual collection.
-type DryRunCollector struct {
+// DryRunBuilder only tracks stats without writing any data.
+// This is used for estimating the size before actual output.
+type DryRunBuilder struct {
 	mu    sync.Mutex
-	stats CollectorStats
+	stats BuilderStats
 }
 
-// NewDryRunCollector creates a new DryRunCollector
-func NewDryRunCollector() *DryRunCollector {
-	return &DryRunCollector{}
+// NewDryRunBuilder creates a new DryRunBuilder
+func NewDryRunBuilder() *DryRunBuilder {
+	return &DryRunBuilder{}
 }
 
 // AddFile tracks the file size without writing
-func (c *DryRunCollector) AddFile(dir, filename string, data []byte) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.stats.TotalSize += int64(len(data))
-	c.stats.FileCount++
+func (b *DryRunBuilder) AddFile(dir, filename string, data []byte) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.stats.TotalSize += int64(len(data))
+	b.stats.FileCount++
 	return nil
 }
 
 // AddFileGzipped tracks the estimated compressed size without writing
-func (c *DryRunCollector) AddFileGzipped(dir, filename string, reader io.Reader) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (b *DryRunBuilder) AddFileGzipped(dir, filename string, reader io.Reader) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
 	// Read to count bytes (we can't know compressed size without actually compressing)
 	buffer := make([]byte, logBufferSize)
@@ -117,16 +117,16 @@ func (c *DryRunCollector) AddFileGzipped(dir, filename string, reader io.Reader)
 		}
 	}
 	// Estimate compressed size as ~30% of original (rough gzip estimate for text)
-	c.stats.TotalSize += totalRead * 30 / 100
-	c.stats.FileCount++
+	b.stats.TotalSize += totalRead * 30 / 100
+	b.stats.FileCount++
 	return nil
 }
 
-// GetStats returns collection statistics
-func (c *DryRunCollector) GetStats() CollectorStats {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.stats
+// GetStats returns build statistics
+func (b *DryRunBuilder) GetStats() BuilderStats {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.stats
 }
 
 // GetRootDir returns the root directory name for the diagnose output
@@ -173,3 +173,4 @@ func FormatBytes(bytes int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
+

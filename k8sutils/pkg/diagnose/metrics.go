@@ -16,7 +16,7 @@ import (
 )
 
 // FetchOdigosCollectorMetrics collects Prometheus metrics from Odigos collectors
-func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interface, collector Collector, metricsDir, odigosNamespace string) error {
+func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interface, builder Builder, metricsDir, odigosNamespace string) error {
 	fmt.Printf("Fetching Odigos Collectors Metrics...\n")
 	klog.V(2).InfoS("Fetching Odigos Collector Metrics", "namespace", odigosNamespace)
 
@@ -25,7 +25,7 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interfac
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := collectMetricsForRole(ctx, client, collector, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleClusterGateway); err != nil {
+		if err := collectMetricsForRole(ctx, client, builder, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleClusterGateway); err != nil {
 			klog.V(1).ErrorS(err, "Failed to get metrics data", "collectorRole", k8sconsts.CollectorsRoleClusterGateway)
 		}
 	}()
@@ -33,7 +33,7 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interfac
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := collectMetricsForRole(ctx, client, collector, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleNodeCollector); err != nil {
+		if err := collectMetricsForRole(ctx, client, builder, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleNodeCollector); err != nil {
 			klog.V(1).ErrorS(err, "Failed to get metrics data", "collectorRole", k8sconsts.CollectorsRoleNodeCollector)
 		}
 	}()
@@ -45,7 +45,7 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interfac
 func collectMetricsForRole(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	odigosNamespace string,
 	metricsDir string,
 	collectorRole k8sconsts.CollectorRole,
@@ -82,7 +82,7 @@ func collectMetricsForRole(
 			}
 
 			filename := pod.Name
-			if err := collector.AddFile(metricsDir, filename, data); err != nil {
+			if err := builder.AddFile(metricsDir, filename, data); err != nil {
 				klog.V(1).ErrorS(err, "Failed to save metrics", "podName", pod.Name)
 			}
 		}()

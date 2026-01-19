@@ -65,14 +65,14 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	}
 	defer os.RemoveAll(mainTempDir)
 
-	// The collector will write to mainTempDir/rootDir
-	collectorRootDir := filepath.Join(mainTempDir, rootDir)
-	if err := os.MkdirAll(collectorRootDir, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create collector root directory: %w", err)
+	// The builder will write to mainTempDir/rootDir
+	builderRootDir := filepath.Join(mainTempDir, rootDir)
+	if err := os.MkdirAll(builderRootDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create builder root directory: %w", err)
 	}
 
-	// Create the file collector
-	collector := diagnose.NewFileCollector()
+	// Create the diagnose builder
+	builder := diagnose.NewBuilder()
 
 	// Determine if source workloads should be collected:
 	// - If --source-workload-namespaces is provided, collect from those namespaces
@@ -92,7 +92,7 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 	}
 
 	// Run the diagnose collection
-	if err := diagnose.RunDiagnose(ctx, client.Clientset, client.Dynamic, client.Clientset.Discovery(), client.OdigosClient, collector, collectorRootDir, opts); err != nil {
+	if err := diagnose.RunDiagnose(ctx, client.Clientset, client.Dynamic, client.Clientset.Discovery(), client.OdigosClient, builder, builderRootDir, opts); err != nil {
 		klog.V(1).ErrorS(err, "Some diagnose operations had errors")
 	}
 

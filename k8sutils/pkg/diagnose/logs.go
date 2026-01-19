@@ -14,7 +14,7 @@ import (
 func FetchWorkloadLogs(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	namespace, workloadDir string,
 	pods []corev1.Pod,
 ) error {
@@ -27,13 +27,13 @@ func FetchWorkloadLogs(
 			defer wg.Done()
 			for i := 0; i < len(pod.Spec.Containers); i++ {
 				container := &pod.Spec.Containers[i]
-				addContainerLogs(ctx, client, collector, namespace, workloadDir, pod.Name, container.Name, false)
+				addContainerLogs(ctx, client, builder, namespace, workloadDir, pod.Name, container.Name, false)
 
 				// Check if container has been restarted and get previous logs
 				for i := 0; i < len(pod.Status.ContainerStatuses); i++ {
 					status := &pod.Status.ContainerStatuses[i]
 					if status.Name == container.Name && status.RestartCount > 0 {
-						addContainerLogs(ctx, client, collector, namespace, workloadDir, pod.Name, container.Name, true)
+						addContainerLogs(ctx, client, builder, namespace, workloadDir, pod.Name, container.Name, true)
 					}
 				}
 			}
@@ -41,7 +41,7 @@ func FetchWorkloadLogs(
 			// Also collect logs from init containers
 			for i := 0; i < len(pod.Spec.InitContainers); i++ {
 				container := &pod.Spec.InitContainers[i]
-				addContainerLogs(ctx, client, collector, namespace, workloadDir, pod.Name, container.Name, false)
+				addContainerLogs(ctx, client, builder, namespace, workloadDir, pod.Name, container.Name, false)
 			}
 		}()
 	}
@@ -53,7 +53,7 @@ func FetchWorkloadLogs(
 func addContainerLogs(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	namespace, componentDir, podName, containerName string,
 	previous bool,
 ) {
@@ -73,7 +73,7 @@ func addContainerLogs(
 	if err != nil {
 		// Write error message to log file so user knows what happened
 		errorMsg := fmt.Sprintf("Error fetching logs: %v\n", err)
-		if writeErr := collector.AddFile(componentDir, filename, []byte(errorMsg)); writeErr != nil {
+		if writeErr := builder.AddFile(componentDir, filename, []byte(errorMsg)); writeErr != nil {
 			klog.V(1).ErrorS(writeErr, "Failed to write error message", "podName", podName)
 		}
 		return
@@ -81,7 +81,7 @@ func addContainerLogs(
 	//nolint:errcheck // this close is deferred to the end of the function
 	defer logStream.Close()
 
-	if err := collector.AddFileGzipped(componentDir, filename, logStream); err != nil {
+	if err := builder.AddFileGzipped(componentDir, filename, logStream); err != nil {
 		klog.V(1).ErrorS(err, "Failed to add container logs", "podName", podName, "containerName", containerName)
 	}
 }

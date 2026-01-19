@@ -20,7 +20,7 @@ func RunDiagnose(
 	dynamicClient dynamic.Interface,
 	discoveryClient discovery.DiscoveryInterface,
 	odigosClient odigosv1alpha1.OdigosV1alpha1Interface,
-	collector Collector,
+	builder Builder,
 	rootDir string,
 	opts Options,
 ) error {
@@ -38,7 +38,7 @@ func RunDiagnose(
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := FetchOdigosWorkloads(ctx, client, dynamicClient, collector, rootDir, opts.OdigosNamespace, opts.IncludeLogs); err != nil {
+		if err := FetchOdigosWorkloads(ctx, client, dynamicClient, builder, rootDir, opts.OdigosNamespace, opts.IncludeLogs); err != nil {
 			klog.V(1).ErrorS(err, "Failed to fetch Odigos workloads")
 			errChan <- fmt.Errorf("workloads: %w", err)
 		}
@@ -49,7 +49,7 @@ func RunDiagnose(
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := FetchOdigosCRDs(ctx, dynamicClient, discoveryClient, collector, rootDir, opts.OdigosNamespace); err != nil {
+			if err := FetchOdigosCRDs(ctx, dynamicClient, discoveryClient, builder, rootDir, opts.OdigosNamespace); err != nil {
 				klog.V(1).ErrorS(err, "Failed to fetch Odigos CRDs")
 				errChan <- fmt.Errorf("crds: %w", err)
 			}
@@ -62,7 +62,7 @@ func RunDiagnose(
 		go func() {
 			defer wg.Done()
 			profileDir := GetProfileDir(rootDir, opts.OdigosNamespace)
-			if err := FetchOdigosProfiles(ctx, client, collector, profileDir, opts.OdigosNamespace); err != nil {
+			if err := FetchOdigosProfiles(ctx, client, builder, profileDir, opts.OdigosNamespace); err != nil {
 				klog.V(1).ErrorS(err, "Failed to fetch Odigos profiles")
 				errChan <- fmt.Errorf("profiles: %w", err)
 			}
@@ -75,7 +75,7 @@ func RunDiagnose(
 		go func() {
 			defer wg.Done()
 			metricsDir := GetMetricsDir(rootDir, opts.OdigosNamespace)
-			if err := FetchOdigosCollectorMetrics(ctx, client, collector, metricsDir, opts.OdigosNamespace); err != nil {
+			if err := FetchOdigosCollectorMetrics(ctx, client, builder, metricsDir, opts.OdigosNamespace); err != nil {
 				klog.V(1).ErrorS(err, "Failed to fetch Odigos metrics")
 				errChan <- fmt.Errorf("metrics: %w", err)
 			}
@@ -88,7 +88,7 @@ func RunDiagnose(
 		go func() {
 			defer wg.Done()
 			configMapDir := GetConfigMapsDir(rootDir, opts.OdigosNamespace)
-			if err := FetchConfigMaps(ctx, client, collector, configMapDir, opts.OdigosNamespace); err != nil {
+			if err := FetchConfigMaps(ctx, client, builder, configMapDir, opts.OdigosNamespace); err != nil {
 				klog.V(1).ErrorS(err, "Failed to fetch ConfigMaps")
 				errChan <- fmt.Errorf("configmaps: %w", err)
 			}
@@ -100,9 +100,9 @@ func RunDiagnose(
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := FetchSourceWorkloads(
-				ctx, client, dynamicClient, odigosClient, collector,
-				rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs)
+		err := FetchSourceWorkloads(
+			ctx, client, dynamicClient, odigosClient, builder,
+			rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs)
 			if err != nil {
 				klog.V(1).ErrorS(err, "Failed to fetch source workloads")
 				errChan <- fmt.Errorf("source workloads: %w", err)
@@ -126,7 +126,7 @@ func RunDiagnose(
 		}
 	}
 
-	stats := collector.GetStats()
+	stats := builder.GetStats()
 	klog.V(1).InfoS("Diagnose collection completed",
 		"fileCount", stats.FileCount,
 		"totalSize", FormatBytes(stats.TotalSize))

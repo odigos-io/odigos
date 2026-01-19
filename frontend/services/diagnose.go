@@ -19,8 +19,8 @@ import (
 
 // Single diagnose output - replaced on each new request
 var (
-	diagnoseTempDir  string
-	diagnoseLock     sync.RWMutex
+	diagnoseTempDir string
+	diagnoseLock    sync.RWMutex
 )
 
 // DiagnoseGraphQL is the GraphQL resolver for diagnose
@@ -64,8 +64,8 @@ func DiagnoseGraphQL(
 	isDryRun := dryRun != nil && *dryRun
 
 	if isDryRun {
-		// Create dry-run collector to estimate size
-		collector := diagnose.NewDryRunCollector()
+		// Create dry-run builder to estimate size
+		builder := diagnose.NewDryRunBuilder()
 
 		if err := diagnose.RunDiagnose(
 			ctx,
@@ -73,14 +73,14 @@ func DiagnoseGraphQL(
 			kube.DefaultClient.DynamicClient,
 			kube.DefaultClient.Discovery(),
 			kube.DefaultClient.OdigosClient,
-			collector,
+			builder,
 			rootDir,
 			opts,
 		); err != nil {
 			return nil, fmt.Errorf("failed to run diagnose: %w", err)
 		}
 
-		stats := collector.GetStats()
+		stats := builder.GetStats()
 		return &model.DiagnoseResponse{
 			Stats: &model.DiagnoseStats{
 				FileCount:      int(stats.FileCount),
@@ -109,15 +109,15 @@ func DiagnoseGraphQL(
 	diagnoseTempDir = mainTempDir
 	diagnoseLock.Unlock()
 
-	// The collector will write to mainTempDir/rootDir
-	collectorRootDir := filepath.Join(mainTempDir, rootDir)
-	if err := os.MkdirAll(collectorRootDir, os.ModePerm); err != nil {
+	// The builder will write to mainTempDir/rootDir
+	builderRootDir := filepath.Join(mainTempDir, rootDir)
+	if err := os.MkdirAll(builderRootDir, os.ModePerm); err != nil {
 		os.RemoveAll(mainTempDir)
-		return nil, fmt.Errorf("failed to create collector root directory: %w", err)
+		return nil, fmt.Errorf("failed to create builder root directory: %w", err)
 	}
 
-	// Create file collector (writes to temp directory)
-	collector := diagnose.NewFileCollector()
+	// Create diagnose builder (writes to temp directory)
+	builder := diagnose.NewBuilder()
 
 	// Run the diagnose collection
 	if err := diagnose.RunDiagnose(
@@ -126,8 +126,8 @@ func DiagnoseGraphQL(
 		kube.DefaultClient.DynamicClient,
 		kube.DefaultClient.Discovery(),
 		kube.DefaultClient.OdigosClient,
-		collector,
-		collectorRootDir,
+		builder,
+		builderRootDir,
 		opts,
 	); err != nil {
 		os.RemoveAll(mainTempDir)

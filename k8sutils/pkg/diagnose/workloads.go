@@ -37,7 +37,7 @@ func FetchOdigosWorkloads(
 	ctx context.Context,
 	client kubernetes.Interface,
 	dynamicClient dynamic.Interface,
-	collector Collector,
+	builder Builder,
 	rootDir, odigosNamespace string,
 	includeLogs bool,
 ) error {
@@ -101,7 +101,7 @@ func FetchOdigosWorkloads(
 	for i := 0; i < len(targets); i++ {
 		t := &targets[i]
 		workloadDir := path.Join(rootDir, t.Namespace, t.DirName)
-		err := collectWorkload(ctx, client, dynamicClient, collector, workloadDir, t.Namespace, t.Name, t.Kind, t.IncludeLogs)
+		err := collectWorkload(ctx, client, dynamicClient, builder, workloadDir, t.Namespace, t.Name, t.Kind, t.IncludeLogs)
 		if err != nil && !apierrors.IsNotFound(err) {
 			klog.V(1).ErrorS(err, "Failed to collect workload", "name", t.Name, "kind", t.Kind)
 		}
@@ -114,7 +114,7 @@ func collectWorkload(
 	ctx context.Context,
 	client kubernetes.Interface,
 	dynamicClient dynamic.Interface,
-	collector Collector,
+	builder Builder,
 	workloadDir, namespace, name string,
 	kind k8sconsts.WorkloadKind,
 	includeLogs bool,
@@ -126,19 +126,19 @@ func collectWorkload(
 
 	switch kind {
 	case k8sconsts.WorkloadKindDeployment:
-		selector, err = collectDeployment(ctx, client, collector, workloadDir, namespace, name, kindLower)
+		selector, err = collectDeployment(ctx, client, builder, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindDaemonSet:
-		selector, err = collectDaemonSet(ctx, client, collector, workloadDir, namespace, name, kindLower)
+		selector, err = collectDaemonSet(ctx, client, builder, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindStatefulSet:
-		selector, err = collectStatefulSet(ctx, client, collector, workloadDir, namespace, name, kindLower)
+		selector, err = collectStatefulSet(ctx, client, builder, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindCronJob:
-		selector, err = collectCronJob(ctx, client, collector, workloadDir, namespace, name, kindLower)
+		selector, err = collectCronJob(ctx, client, builder, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindJob:
-		selector, err = collectJob(ctx, client, collector, workloadDir, namespace, name, kindLower)
+		selector, err = collectJob(ctx, client, builder, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindDeploymentConfig:
-		selector, err = collectDeploymentConfig(ctx, dynamicClient, collector, workloadDir, namespace, name, kindLower)
+		selector, err = collectDeploymentConfig(ctx, dynamicClient, builder, workloadDir, namespace, name, kindLower)
 	case k8sconsts.WorkloadKindArgoRollout:
-		selector, err = collectArgoRollout(ctx, dynamicClient, collector, workloadDir, namespace, name, kindLower)
+		selector, err = collectArgoRollout(ctx, dynamicClient, builder, workloadDir, namespace, name, kindLower)
 	default:
 		return workload.ErrKindNotSupported
 	}
@@ -152,20 +152,20 @@ func collectWorkload(
 	}
 
 	// Collect pods
-	return collectPods(ctx, client, collector, namespace, workloadDir, selector, includeLogs)
+	return collectPods(ctx, client, builder, namespace, workloadDir, selector, includeLogs)
 }
 
 func collectDeployment(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	workloadDir, namespace, name, kindLower string,
 ) (labels.Selector, error) {
 	obj, err := client.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+	if err := addWorkloadYAML(builder, workloadDir, kindLower, name, obj); err != nil {
 		return nil, err
 	}
 	return labels.SelectorFromSet(obj.Spec.Selector.MatchLabels), nil
@@ -174,14 +174,14 @@ func collectDeployment(
 func collectDaemonSet(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	workloadDir, namespace, name, kindLower string,
 ) (labels.Selector, error) {
 	obj, err := client.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+	if err := addWorkloadYAML(builder, workloadDir, kindLower, name, obj); err != nil {
 		return nil, err
 	}
 	return labels.SelectorFromSet(obj.Spec.Selector.MatchLabels), nil
@@ -190,14 +190,14 @@ func collectDaemonSet(
 func collectStatefulSet(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	workloadDir, namespace, name, kindLower string,
 ) (labels.Selector, error) {
 	obj, err := client.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+	if err := addWorkloadYAML(builder, workloadDir, kindLower, name, obj); err != nil {
 		return nil, err
 	}
 	return labels.SelectorFromSet(obj.Spec.Selector.MatchLabels), nil
@@ -206,14 +206,14 @@ func collectStatefulSet(
 func collectCronJob(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	workloadDir, namespace, name, kindLower string,
 ) (labels.Selector, error) {
 	obj, err := client.BatchV1().CronJobs(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+	if err := addWorkloadYAML(builder, workloadDir, kindLower, name, obj); err != nil {
 		return nil, err
 	}
 	if obj.Spec.JobTemplate.Spec.Selector != nil {
@@ -225,14 +225,14 @@ func collectCronJob(
 func collectJob(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	workloadDir, namespace, name, kindLower string,
 ) (labels.Selector, error) {
 	obj, err := client.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj); err != nil {
+	if err := addWorkloadYAML(builder, workloadDir, kindLower, name, obj); err != nil {
 		return nil, err
 	}
 	if obj.Spec.Selector != nil {
@@ -244,7 +244,7 @@ func collectJob(
 func collectDeploymentConfig(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,
-	collector Collector,
+	builder Builder,
 	workloadDir, namespace, name, kindLower string,
 ) (labels.Selector, error) {
 	gvr := schema.GroupVersionResource{
@@ -257,7 +257,7 @@ func collectDeploymentConfig(
 		return nil, err
 	}
 	obj.SetManagedFields(nil)
-	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj.Object); err != nil {
+	if err := addWorkloadYAML(builder, workloadDir, kindLower, name, obj.Object); err != nil {
 		return nil, err
 	}
 	return extractSelectorFromUnstructured(obj.Object, false), nil
@@ -266,7 +266,7 @@ func collectDeploymentConfig(
 func collectArgoRollout(
 	ctx context.Context,
 	dynamicClient dynamic.Interface,
-	collector Collector,
+	builder Builder,
 	workloadDir, namespace, name, kindLower string,
 ) (labels.Selector, error) {
 	gvr := schema.GroupVersionResource{
@@ -279,7 +279,7 @@ func collectArgoRollout(
 		return nil, err
 	}
 	obj.SetManagedFields(nil)
-	if err := addWorkloadYAML(collector, workloadDir, kindLower, name, obj.Object); err != nil {
+	if err := addWorkloadYAML(builder, workloadDir, kindLower, name, obj.Object); err != nil {
 		return nil, err
 	}
 	return extractSelectorFromUnstructured(obj.Object, true), nil
@@ -323,7 +323,7 @@ func extractSelectorFromUnstructured(obj map[string]interface{}, useMatchLabels 
 func collectPods(
 	ctx context.Context,
 	client kubernetes.Interface,
-	collector Collector,
+	builder Builder,
 	namespace, componentDir string,
 	selector labels.Selector,
 	includeLogs bool,
@@ -337,11 +337,11 @@ func collectPods(
 
 	for i := range pods.Items {
 		pod := &pods.Items[i]
-		if err := addPodYAML(collector, componentDir, pod); err != nil {
+		if err := addPodYAML(builder, componentDir, pod); err != nil {
 			klog.V(1).ErrorS(err, "Failed to add pod YAML", "pod", pod.Name)
 		}
 		if includeLogs {
-			if err := FetchWorkloadLogs(ctx, client, collector, namespace, componentDir, []corev1.Pod{*pod}); err != nil {
+			if err := FetchWorkloadLogs(ctx, client, builder, namespace, componentDir, []corev1.Pod{*pod}); err != nil {
 				klog.V(1).ErrorS(err, "Failed to collect pod logs", "pod", pod.Name)
 			}
 		}
@@ -350,7 +350,7 @@ func collectPods(
 	return nil
 }
 
-func addWorkloadYAML(collector Collector, componentDir, resourceType, name string, obj interface{}) error {
+func addWorkloadYAML(builder Builder, componentDir, resourceType, name string, obj interface{}) error {
 	cleanedObj := cleanObjectForExport(obj)
 	yamlData, err := yaml.Marshal(cleanedObj)
 	if err != nil {
@@ -358,10 +358,10 @@ func addWorkloadYAML(collector Collector, componentDir, resourceType, name strin
 	}
 
 	filename := fmt.Sprintf("%s-%s.yaml", resourceType, name)
-	return collector.AddFile(componentDir, filename, yamlData)
+	return builder.AddFile(componentDir, filename, yamlData)
 }
 
-func addPodYAML(collector Collector, componentDir string, pod *corev1.Pod) error {
+func addPodYAML(builder Builder, componentDir string, pod *corev1.Pod) error {
 	cleanedPod := pod.DeepCopy()
 	cleanedPod.ManagedFields = nil
 
@@ -371,7 +371,7 @@ func addPodYAML(collector Collector, componentDir string, pod *corev1.Pod) error
 	}
 
 	filename := fmt.Sprintf("pod-%s.yaml", pod.Name)
-	return collector.AddFile(componentDir, filename, yamlData)
+	return builder.AddFile(componentDir, filename, yamlData)
 }
 
 func cleanObjectForExport(obj interface{}) interface{} {
@@ -416,7 +416,7 @@ func FetchSourceWorkloads(
 	client kubernetes.Interface,
 	dynamicClient dynamic.Interface,
 	odigosClient odigosv1alpha1.OdigosV1alpha1Interface,
-	collector Collector,
+	builder Builder,
 	rootDir string,
 	namespaceFilter []string,
 	includeLogs bool,
@@ -476,7 +476,7 @@ func FetchSourceWorkloads(
 		dirName := fmt.Sprintf("%s-%s", kindLower, wl.Name)
 		workloadDir := path.Join(rootDir, wl.Namespace, dirName)
 
-		err := collectWorkload(ctx, client, dynamicClient, collector, workloadDir, wl.Namespace, wl.Name, wl.Kind, includeLogs)
+		err := collectWorkload(ctx, client, dynamicClient, builder, workloadDir, wl.Namespace, wl.Name, wl.Kind, includeLogs)
 		if err != nil {
 			if workload.IsErrorKindNotSupported(err) {
 				klog.V(2).InfoS("Workload kind not supported for collection", "kind", wl.Kind, "name", wl.Name)
