@@ -584,7 +584,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	podManifestInjectionRequired := distro.IsRestartRequired(d, effectiveConfig)
+	podManifestInjectionOptional := !distro.IsRestartRequired(d, effectiveConfig)
 
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
@@ -599,7 +599,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:                containerName,
 				AgentEnabled:                 true,
-				PodManifestInjectionOptional: !podManifestInjectionRequired,
+				PodManifestInjectionOptional: podManifestInjectionOptional,
 				AgentEnabledReason:           odigosv1.AgentEnabledReasonEnabledSuccessfully,
 				AgentEnabledMessage:          fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
 				OtelDistroName:               distroName,
@@ -615,7 +615,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	return odigosv1.ContainerAgentConfig{
 		ContainerName:                containerName,
 		AgentEnabled:                 true,
-		PodManifestInjectionOptional: !podManifestInjectionRequired,
+		PodManifestInjectionOptional: podManifestInjectionOptional,
 		OtelDistroName:               distroName,
 		DistroParams:                 distroParameters,
 		EnvInjectionMethod:           envInjectionDecision,
