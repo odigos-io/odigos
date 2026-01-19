@@ -26,17 +26,33 @@ spec:
               echo "🧼 Cleaning up any existing installation that might be left over from previous runs..."
               ./odigos uninstall || true
 
-              echo "📦 Updating Helm repositories..."
-              helm repo add odigos https://odigos-io.github.io/odigos/
-              helm repo update
+              # If LATEST_RELEASE_TAG is not set (running locally), compute it from Helm
+              if [[ -z "$LATEST_RELEASE_TAG" ]]; then
+                echo "🔍 LATEST_RELEASE_TAG not set, fetching from Helm..."
 
-              echo "🔍 Fetching latest Odigos release from Helm Chart..."
-              IMAGE_TAG=$(helm search repo odigos | awk '$1 == "odigos/odigos" {print $3}')
-              if [[ -z "$IMAGE_TAG" ]]; then
-                echo "❌ ERROR: Failed to fetch latest release, aborting..."
-              else
-                echo "✅ Successfully fetched latest Odigos release from Helm Chart: $IMAGE_TAG"
+                echo "📦 Updating Helm repositories..."
+                helm repo add odigos https://odigos-io.github.io/odigos/ || true
+                helm repo update
+
+                # Determine the branch to get version prefix
+                BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+                if [[ "$BRANCH" == releases/* ]]; then
+                  # Extract version prefix (e.g., "1.14" from "releases/v1.14.0")
+                  VERSION_PREFIX=$(echo "$BRANCH" | sed -E 's|releases/v([0-9]+\.[0-9]+)\..*|\1|')
+                  echo "Release branch detected, looking for v${VERSION_PREFIX}.* in Helm"
+                  LATEST_RELEASE_TAG=$(helm search repo odigos/odigos --versions | awk -v prefix="^v${VERSION_PREFIX}\\\\." '$1 == "odigos/odigos" && $3 ~ prefix {print $3; exit}')
+                else
+                  echo "Non-release branch, using latest Helm chart version"
+                  LATEST_RELEASE_TAG=$(helm search repo odigos/odigos | awk '$1 == "odigos/odigos" {print $3}')
+                fi
               fi
+
+              if [[ -z "$LATEST_RELEASE_TAG" ]]; then
+                echo "❌ ERROR: Failed to determine LATEST_RELEASE_TAG, aborting..."
+                exit 1
+              fi
+              echo "✅ Using latest Odigos release tag: $LATEST_RELEASE_TAG"
 
               OS=$(uname | tr '[:upper:]' '[:lower:]') # Get the OS name in lowercase
               ARCH=$(uname -m) # Get the system architecture, then convert match GitHub naming conventions
@@ -46,15 +62,15 @@ spec:
                   ARCH="arm64"
               fi
 
-              DOWNLOAD_URL="https://github.com/odigos-io/odigos/releases/download/${IMAGE_TAG}/cli_${IMAGE_TAG#v}_${OS}_${ARCH}.tar.gz"
-              echo "⬇️ Downloading Odigos $IMAGE_TAG from: $DOWNLOAD_URL"
+              DOWNLOAD_URL="https://github.com/odigos-io/odigos/releases/download/${LATEST_RELEASE_TAG}/cli_${LATEST_RELEASE_TAG#v}_${OS}_${ARCH}.tar.gz"
+              echo "⬇️ Downloading Odigos $LATEST_RELEASE_TAG from: $DOWNLOAD_URL"
               # --retry X: retry up to X times
               # --retry-delay X: wait X second between retries
               # --retry-max-time X: maximum time to spend retrying (X seconds for download)
               curl -L -o odigos-latest-cli.tar.gz --retry 5 --retry-delay 1 --retry-max-time 60 "$DOWNLOAD_URL"
               tar -xvzf odigos-latest-cli.tar.gz
 
-              echo "🚀 Installing Odigos $IMAGE_TAG from CLI Binary..."
+              echo "🚀 Installing Odigos $LATEST_RELEASE_TAG from CLI Binary..."
               ./odigos install --ns odigos-test || true
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
