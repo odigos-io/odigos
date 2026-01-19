@@ -15,7 +15,10 @@ const (
 
 // Helm constants
 const (
-	DefaultHelmChart   = "odigos/odigos"
-	OdigosHelmRepoName = "odigos"
-	OdigosHelmRepoURL  = "https://odigos-io.github.io/odigos/"
+	DefaultHelmChart          = "odigos/odigos"
+	OdigosHelmRepoName        = "odigos"
+	OdigosHelmRepoURL         = "https://odigos-io.github.io/odigos/"
+	DefaultCentralHelmChart   = "odigos/odigos-central"
+	OdigosCentralHelmRepoName = "odigos-central"
+	OdigosCentralHelmRepoURL  = "https://odigos-io.github.io/odigos-central/"
 )

@@ -93,7 +93,7 @@ func runInstallOrUpgrade() error {
 		return err
 	}
 
-	ch, vals, err := helm.PrepareChartAndValues(settings)
+	ch, vals, err := helm.PrepareChartAndValues(settings, "odigos")
 	if err != nil {
 		return err
 	}

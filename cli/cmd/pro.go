@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/signal"
-	"regexp"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -17,9 +18,8 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
-	"github.com/odigos-io/odigos/cli/cmd/resources/resourcemanager"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
-	"github.com/odigos-io/odigos/cli/pkg/confirm"
+	"github.com/odigos-io/odigos/cli/pkg/helm"
 	clihelm "github.com/odigos-io/odigos/cli/pkg/helm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/log"
@@ -28,9 +28,9 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 
 	"github.com/spf13/cobra"
-	helmaction "helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/cli"
 	helmcli "helm.sh/helm/v3/pkg/cli"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -44,9 +44,36 @@ var (
 	fromFile                string
 	centralImagePullSecrets []string
 	versionFlag             string
-)
 
-var centralVersionRegex = regexp.MustCompile(`^v\d+\.\d+\.\d+(?:-(?:pre|rc)\d+)?$`)
+	// Helm-like flags for `odigos pro central` (mirrors `odigos install`)
+	centralHelmReleaseName          string
+	centralHelmChart                string
+	centralHelmValuesFile           string
+	centralHelmSetArgs              []string
+	centralHelmResetThenReuseValues = true
+
+	// Backward-compat flags (previous central installer scripts)
+	centralImagePrefixFlag  string
+	centralUIModeFlag       string
+	centralBackendURLFlag   string
+	centralNodeSelectorFlag string
+
+	// Accepted for compatibility; not used by the `odigos-central` chart today.
+	centralSkipWait                  bool
+	centralTelemetryEnabled          bool
+	centralOpenshiftEnabled          bool
+	centralSkipWebhookIssuerCreation bool
+	centralPSPEnabled                bool
+	centralIgnoredNamespaces         []string
+	centralIgnoredContainers         []string
+	centralInstallProfiles           []string
+	centralRuntimeSocketPath         string
+	centralK8sNodeLogsDirectory      string
+	centralInstrumentorImage         string
+	centralOdigletImage              string
+	centralAutoScalerImage           string
+	centralKarpenterEnabled          bool
+)
 
 var proCmd = &cobra.Command{
 	Use:   "pro",
@@ -273,183 +300,181 @@ var (
 var centralInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Odigos Central backend and UI components",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
-		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-
-		onPremToken := cmd.Flag("onprem-token").Value.String()
-		var storageClassNamePtr *string
-		if cmd.Flags().Changed("central-storage-class-name") {
-			storageClassNamePtr = &centralAuthStorageClassName
-		}
-		if err := installOrUpgradeCentralWithHelm(ctx, client, proNamespaceFlag, versionFlag, onPremToken, storageClassNamePtr); err != nil {
-			fmt.Println("\033[31mERROR\033[0m Failed to install Odigos Central:")
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	},
+	RunE:  runCentralInstallOrUpgradeWithLegacyCheck,
+	Example: `
+# Install Odigos Central
+odigos pro central install
+`,
 }
 
 var centralUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Uninstall Odigos Central backend and UI components",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
-		client := cmdcontext.KubeClientFromContextOrExit(ctx)
-
-		ns, err := cmd.Flags().GetString("namespace")
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
-			os.Exit(1)
-		}
-
-		if !cmd.Flag("yes").Changed {
-			fmt.Printf("About to uninstall Odigos Central from namespace %s\n", ns)
-			confirmed, err := confirm.Ask("Are you sure?")
-			if err != nil || !confirmed {
-				fmt.Println("Aborting uninstall")
-				return
-			}
-		}
-
-		fmt.Println("Starting Odigos Central uninstallation (Helm)...")
-		if err := uninstallCentralWithHelm(ns); err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Failed to uninstall Odigos Central with Helm: %s\n", err)
-			os.Exit(1)
-		}
-
-		hasCentralLabel, err := kube.NamespaceHasLabel(ctx, client, ns, k8sconsts.OdigosSystemLabelCentralKey)
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Failed to check if namespace %s has Odigos Central label: %s\n", ns, err)
-			os.Exit(1)
-		}
-		if hasCentralLabel {
-			createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
-				client, ns, k8sconsts.OdigosSystemLabelCentralKey, uninstallNamespace)
-			waitForNamespaceDeletion(ctx, client, ns)
-		}
-
-		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Central uninstalled.\n")
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runCentralHelmUninstall(cmd)
 	},
+	Example: `
+# Uninstall Odigos Central
+odigos pro central uninstall
+`,
 }
 
 var centralUpgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Upgrade Odigos Central UI in the central namespace",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
-		client := cmdcontext.KubeClientFromContextOrExit(ctx)
+	RunE:  runCentralInstallOrUpgradeWithLegacyCheck,
+	Example: `
+# Upgrade Odigos
+odigos pro central upgrade
 
-		ns, err := cmd.Flags().GetString("namespace")
-		if err != nil {
-			fmt.Printf("\033[31mERROR\033[0m Failed to read namespace flag: %s\n", err)
-			os.Exit(1)
+# Upgrade Odigos with custom values
+odigos pro central upgrade --set collectorGateway.maxReplicas=10
+
+# Reset all values to chart defaults (opt out of reuse)
+odigos pro central upgrade --reset-then-reuse-values=false
+`,
+}
+
+func runCentralHelmUninstall(cmd *cobra.Command) error {
+	ns := proNamespaceFlag
+	if ns == "" {
+		ns = consts.DefaultOdigosCentralNamespace
+	}
+	releaseName := centralHelmReleaseName
+	if releaseName == "" {
+		releaseName = clihelm.DefaultCentralReleaseName
+	}
+
+	fmt.Printf("🗑️  Starting uninstall of release %q from namespace %q...\n", releaseName, ns)
+
+	settings := cli.New()
+	actionConfig := new(action.Configuration)
+
+	if err := actionConfig.Init(settings.RESTClientGetter(), ns, "secret", helm.CustomUninstallLogger); err != nil {
+		return err
+	}
+
+	res, err := helm.RunUninstall(actionConfig, releaseName)
+	if err != nil {
+		return err
+	}
+
+	if res == nil {
+		// Release was not found, already uninstalled
+		fmt.Printf("\n🗑️  Release %q not found in namespace %q (already uninstalled)\n", releaseName, ns)
+		return nil
+	}
+
+	helm.PrintSummary()
+
+	fmt.Printf("\n🗑️  Uninstalled release %q from namespace %q\n", releaseName, ns)
+	if res.Info != "" {
+		fmt.Printf("Info: %s\n", res.Info)
+	}
+
+	client := cmdcontext.KubeClientFromContextOrExit(cmd.Context())
+	_ = client.CoreV1().Namespaces().Delete(cmd.Context(), ns, metav1.DeleteOptions{})
+	waitForNamespaceDeletion(cmd.Context(), client, ns)
+	return nil
+}
+
+func runCentralInstallOrUpgrade() error {
+	ns := proNamespaceFlag
+	if ns == "" {
+		ns = consts.DefaultOdigosCentralNamespace
+	}
+	helm.HelmNamespace = ns
+	if centralHelmReleaseName != "" {
+		helm.HelmReleaseName = centralHelmReleaseName
+	} else {
+		helm.HelmReleaseName = clihelm.DefaultCentralReleaseName
+	}
+	if centralHelmChart != "" {
+		helm.HelmChart = centralHelmChart
+	} else {
+		helm.HelmChart = k8sconsts.DefaultCentralHelmChart
+	}
+	helm.HelmValuesFile = centralHelmValuesFile
+	helm.HelmSetArgs = centralHelmSetArgs
+	helm.HelmChartVersion = versionFlag
+	helm.HelmResetThenReuseValues = centralHelmResetThenReuseValues
+
+	settings := helmcli.New()
+	actionConfig := new(action.Configuration)
+
+	if err := actionConfig.Init(settings.RESTClientGetter(), helm.HelmNamespace, "secret", helm.CustomInstallLogger); err != nil {
+		return err
+	}
+
+	ch, vals, err := helm.PrepareCentralChartAndValues(settings, "odigos-central")
+
+	if err != nil {
+		return err
+	}
+
+	result, err := helm.InstallOrUpgrade(actionConfig, ch, vals, helm.HelmNamespace, helm.HelmReleaseName, helm.InstallOrUpgradeOptions{
+		CreateNamespace:      true,
+		ResetThenReuseValues: helm.HelmResetThenReuseValues,
+	})
+	if err != nil {
+		return err
+	}
+
+	helm.PrintSummary()
+
+	fmt.Printf("\n✅ %s\n", helm.FormatInstallOrUpgradeMessage(result, ch.Metadata.Version))
+	return nil
+}
+
+func runCentralInstallOrUpgradeWithLegacyCheck(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+	kubeClient := cmdcontext.KubeClientFromContextOrExit(ctx)
+
+	if helm.HelmNamespace == "" {
+		helm.HelmNamespace = proNamespaceFlag
+		if helm.HelmNamespace == "" {
+			helm.HelmNamespace = consts.DefaultOdigosCentralNamespace
 		}
+	}
 
-		if !cmd.Flag("yes").Changed {
-			fmt.Printf("About to upgrade Odigos Central UI in namespace %s to version %s\n", ns, versionFlag)
-			confirmed, err := confirm.Ask("Are you sure?")
-			if err != nil || !confirmed {
-				fmt.Println("Aborting upgrade")
-				return
+	// Central chart gates most resources on onPremToken; keep supporting --onprem-token
+	// by mapping it into Helm's --set layer.
+	if t, _ := cmd.Flags().GetString("onprem-token"); t != "" {
+		has := false
+		for _, s := range centralHelmSetArgs {
+			if strings.HasPrefix(s, "onPremToken=") {
+				has = true
+				break
 			}
 		}
-
-		if !centralVersionRegex.MatchString(versionFlag) {
-			fmt.Printf("\033[31mERROR\033[0m Invalid --version value %q. Expected formats: vX.Y.Z, vX.Y.Z-preN, or vX.Y.Z-rcN\n", versionFlag)
-			os.Exit(1)
+		if !has {
+			centralHelmSetArgs = append(centralHelmSetArgs, "onPremToken="+t)
 		}
-
-		// Helm upgrade behaves like install+upgrade (same semantics as `odigos install`).
-		// If the Helm release does not exist yet, user must provide --onprem-token to perform a fresh install.
-		onPremToken, _ := cmd.Flags().GetString("onprem-token")
-		var storageClassNamePtr *string
-		if cmd.Flags().Changed("central-storage-class-name") {
-			storageClassNamePtr = &centralAuthStorageClassName
-		}
-		if err := installOrUpgradeCentralWithHelm(ctx, client, ns, versionFlag, onPremToken, storageClassNamePtr); err != nil {
-			fmt.Println("\033[31mERROR\033[0m Failed to upgrade Odigos Central with Helm:")
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		fmt.Printf("\n\u001B[32mSUCCESS:\u001B[0m Odigos Central upgraded to %s.\n", versionFlag)
-	},
-}
-
-func installOrUpgradeCentralWithHelm(ctx context.Context, client *kube.Client, ns string, version string, onPremToken string, storageClassNamePtr *string) error {
-	// Keep existing behavior: create/label namespace before install so we can delete it on uninstall.
-	createKubeResourceWithLogging(ctx, fmt.Sprintf("> Ensuring namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelCentralKey, createNamespace)
-
-	settings := helmcli.New()
-	settings.KubeConfig = kubeConfig
-	settings.KubeContext = kubeContext
-
-	actionConfig := new(helmaction.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), ns, "secret", clihelm.CustomInstallLogger); err != nil {
-		return err
 	}
 
-	// If the release does not exist, we need a token (or an existing secret) to render the chart
-	// because the chart gates most resources on the token secret.
-	exists, err := clihelm.ReleaseExists(actionConfig, clihelm.DefaultCentralReleaseName)
+	isLegacy, err := helm.IsLegacyInstallation(ctx, kubeClient.Clientset.CoreV1(), helm.HelmNamespace)
 	if err != nil {
 		return err
 	}
-	if !exists && onPremToken == "" {
-		// Allow a first Helm install if the token secret already exists (chart will reuse it via lookup).
-		_, secErr := client.CoreV1().Secrets(ns).Get(ctx, "odigos-central", metav1.GetOptions{})
-		if secErr != nil && apierrors.IsNotFound(secErr) {
-			return fmt.Errorf("odigos central is not installed in namespace %q; provide --onprem-token to perform a fresh install", ns)
-		}
-		if secErr != nil && !apierrors.IsNotFound(secErr) {
-			return secErr
-		}
+	if isLegacy {
+		msg := fmt.Sprintf(`
+⚠️  Detected that Odigos was originally installed using an older CLI-based method (without Helm) in namespace "%s".
+
+The current version of the Odigos CLI installs and upgrades Odigos using Helm under the hood,
+and cannot automatically upgrade installations created with the legacy method.
+
+👉  To proceed, please do one of the following:
+   • Run 'odigos uninstall-deprecated' to remove the old installation, then reinstall using 'odigos install'
+   • Or continue using 'odigos upgrade-deprecated' until you are ready to migrate
+
+`, helm.HelmNamespace)
+
+		fmt.Printf("%s\n", msg)
+		os.Exit(1)
+		return nil
 	}
 
-	ch, valuesMap, err := clihelm.PrepareCentralChartAndValues(settings, version, clihelm.CentralValues{
-		OnPremToken:          onPremToken,
-		AdminUsername:        centralAdminUser,
-		AdminPassword:        centralAdminPassword,
-		KeycloakStorageClass: storageClassNamePtr,
-		MaxMessageSize:       centralMaxMessageSize,
-		ImageTag:             version,
-		ImagePullSecrets:     centralImagePullSecrets,
-	})
-	if err != nil {
-		return err
-	}
-
-	result, err := clihelm.InstallOrUpgrade(actionConfig, ch, valuesMap, ns, clihelm.DefaultCentralReleaseName, clihelm.InstallOrUpgradeOptions{
-		CreateNamespace:      true,
-		ResetThenReuseValues: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	clihelm.PrintSummary()
-	fmt.Printf("\n✅ %s\n", clihelm.FormatInstallOrUpgradeMessage(result, ch.Metadata.Version))
-	return nil
-}
-
-func uninstallCentralWithHelm(ns string) error {
-	settings := helmcli.New()
-	// Honor CLI flags like --kubeconfig/--kube-context.
-	settings.KubeConfig = kubeConfig
-	settings.KubeContext = kubeContext
-
-	actionConfig := new(helmaction.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), ns, "secret", clihelm.CustomUninstallLogger); err != nil {
-		return err
-	}
-
-	_, err := clihelm.RunUninstall(actionConfig, clihelm.DefaultCentralReleaseName)
-	if err != nil {
-		return err
-	}
-
-	clihelm.PrintSummary()
-	return nil
+	return runCentralInstallOrUpgrade()
 }
 
 var portForwardCentralCmd = &cobra.Command{
@@ -537,7 +562,6 @@ func init() {
 	centralCmd.AddCommand(centralInstallCmd)
 	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
-	centralInstallCmd.MarkFlagRequired("onprem-token")
 	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 	centralInstallCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
 
@@ -561,6 +585,45 @@ func init() {
 	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password (auto-generated if not provided)")
 	centralInstallCmd.Flags().StringVar(&centralAuthStorageClassName, "central-storage-class-name", "", "StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)")
 	centralInstallCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
+
+	// Helm-style flags for `odigos pro central` (same shape as `odigos install`)
+	for _, c := range []*cobra.Command{centralInstallCmd, centralUpgradeCmd} {
+		c.Flags().StringVar(&centralHelmReleaseName, "release-name", clihelm.DefaultCentralReleaseName, "Helm release name")
+		c.Flags().StringVar(&centralHelmChart, "chart", k8sconsts.DefaultCentralHelmChart, "Helm chart to install (repo/name, local path, or URL)")
+		c.Flags().StringVarP(&centralHelmValuesFile, "values", "f", "", "Path to a custom values.yaml file")
+		c.Flags().StringSliceVar(&centralHelmSetArgs, "set", []string{}, "Set values on the command line (key=value)")
+		c.Flags().BoolVar(
+			&centralHelmResetThenReuseValues,
+			"reset-then-reuse-values",
+			true,
+			"Reset to chart defaults, then reuse values from the previous release (default: true).",
+		)
+	}
+	centralUninstallCmd.Flags().StringVar(&centralHelmReleaseName, "release-name", clihelm.DefaultCentralReleaseName, "Helm release name")
+
+	// Backward-compat flags (mapped where possible; otherwise ignored with a warning).
+	for _, c := range []*cobra.Command{centralInstallCmd, centralUpgradeCmd} {
+		c.Flags().StringVar(&centralImagePrefixFlag, "image-prefix", "", "Image registry/prefix override for Odigos Central images")
+		c.Flags().StringVar(&centralUIModeFlag, "ui-mode", "", "Central UI mode (maps to centralUI.uiMode)")
+		c.Flags().StringVar(&centralBackendURLFlag, "central-backend-url", "", "Override Central backend URL (maps to centralUI.centralBackendURL)")
+		c.Flags().StringVar(&centralNodeSelectorFlag, "node-selector", "", "Node selector for central components (key=value[,key=value...])")
+
+		c.Flags().BoolVar(&centralSkipWait, "skip-wait", false, "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().BoolVar(&centralTelemetryEnabled, "telemetry-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().BoolVar(&centralOpenshiftEnabled, "openshift-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().BoolVar(&centralSkipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().BoolVar(&centralPSPEnabled, "psp", false, "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().StringSliceVar(&centralIgnoredNamespaces, "ignored-namespaces", nil, "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().StringSliceVar(&centralIgnoredContainers, "ignored-containers", nil, "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().StringSliceVar(&centralInstallProfiles, "profiles", nil, "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().StringVar(&centralRuntimeSocketPath, "custom-container-runtime-socket-path", "", "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().StringVar(&centralK8sNodeLogsDirectory, "k8s-node-logs-directory", "", "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().StringVar(&centralInstrumentorImage, "instrumentor-image", "", "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().StringVar(&centralOdigletImage, "odiglet-image", "", "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().StringVar(&centralAutoScalerImage, "autoscaler-image", "", "Compatibility flag (ignored for Helm-based Central)")
+		c.Flags().BoolVar(&centralKarpenterEnabled, "karpenter-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
+	}
+
 	centralCmd.AddCommand(portForwardCentralCmd)
 	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 }
@@ -575,70 +638,4 @@ func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube
 	l.Success()
 }
 
-func GetImageReferences(odigosTier common.OdigosTier, openshift bool) resourcemanager.ImageReferences {
-	var imageReferences resourcemanager.ImageReferences
-	if openshift {
-		imageReferences = resourcemanager.ImageReferences{
-			AutoscalerImage:    k8sconsts.AutoScalerImageCertified,
-			CollectorImage:     k8sconsts.OdigosClusterCollectorImageCertified,
-			InitContainerImage: k8sconsts.OdigosInitContainerImageCertified,
-			InstrumentorImage:  k8sconsts.InstrumentorImageCertified,
-			OdigletImage:       k8sconsts.OdigletImageCertified,
-			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
-			SchedulerImage:     k8sconsts.SchedulerImageCertified,
-			UIImage:            k8sconsts.UIImageCertified,
-		}
-	} else {
-		imageReferences = resourcemanager.ImageReferences{
-			AutoscalerImage:    k8sconsts.AutoScalerImageName,
-			CollectorImage:     k8sconsts.OdigosClusterCollectorImage,
-			InitContainerImage: k8sconsts.OdigosInitContainerImage,
-			InstrumentorImage:  k8sconsts.InstrumentorImage,
-			OdigletImage:       k8sconsts.OdigletImageName,
-			KeyvalProxyImage:   k8sconsts.KeyvalProxyImage,
-			SchedulerImage:     k8sconsts.SchedulerImage,
-			UIImage:            k8sconsts.UIImage,
-		}
-	}
-
-	if odigosTier == common.OnPremOdigosTier {
-		if openshift {
-			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImageCertified
-			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageCertified
-			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImageCertified
-		} else {
-			imageReferences.InstrumentorImage = k8sconsts.InstrumentorEnterpriseImage
-			imageReferences.OdigletImage = k8sconsts.OdigletEnterpriseImageName
-			imageReferences.CentralProxyImage = k8sconsts.CentralProxyImage
-			imageReferences.CentralBackendImage = k8sconsts.CentralBackendImage
-			imageReferences.CentralUIImage = k8sconsts.CentralUIImage
-			imageReferences.InitContainerImage = k8sconsts.OdigosInitContainerEnterpriseImage
-		}
-	}
-	return imageReferences
-}
-
 type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error
-
-func createNamespace(ctx context.Context, client *kube.Client, ns string, labelKey string) error {
-	_, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
-	if err == nil {
-		// Namespace already exists, nothing to do
-		return nil
-	}
-
-	if apierrors.IsNotFound(err) {
-		nsObj := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ns,
-				Labels: map[string]string{
-					labelKey: k8sconsts.OdigosSystemLabelValue,
-				},
-			},
-		}
-		_, err := client.CoreV1().Namespaces().Create(ctx, nsObj, metav1.CreateOptions{})
-		return err
-	}
-
-	return err
-}
