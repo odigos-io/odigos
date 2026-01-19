@@ -66,6 +66,13 @@ type ActionInput struct {
 	Fields   *ActionFieldsInput `json:"fields"`
 }
 
+type AgentsInitContainerResourcesConfig struct {
+	RequestCPUm      *int `json:"requestCPUm,omitempty"`
+	LimitCPUm        *int `json:"limitCPUm,omitempty"`
+	RequestMemoryMiB *int `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB   *int `json:"limitMemoryMiB,omitempty"`
+}
+
 type APIToken struct {
 	Token     string `json:"token"`
 	Name      string `json:"name"`
@@ -156,6 +163,36 @@ type CollectorDaemonSetInfo struct {
 	ConfigMapYaml     string                `json:"configMapYAML"`
 }
 
+type CollectorGatewayConfig struct {
+	MinReplicas                *int    `json:"minReplicas,omitempty"`
+	MaxReplicas                *int    `json:"maxReplicas,omitempty"`
+	RequestMemoryMiB           *int    `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int    `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int    `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int    `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int    `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int    `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int    `json:"goMemLimitMiB,omitempty"`
+	ServiceGraphDisabled       *bool   `json:"serviceGraphDisabled,omitempty"`
+	ClusterMetricsEnabled      *bool   `json:"clusterMetricsEnabled,omitempty"`
+	HTTPSProxyAddress          *string `json:"httpsProxyAddress,omitempty"`
+	NodeSelector               *string `json:"nodeSelector,omitempty"`
+}
+
+type CollectorNodeConfig struct {
+	CollectorOwnMetricsPort    *int                `json:"collectorOwnMetricsPort,omitempty"`
+	RequestMemoryMiB           *int                `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *int                `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *int                `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *int                `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *int                `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *int                `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *int                `json:"goMemLimitMiB,omitempty"`
+	K8sNodeLogsDirectory       *string             `json:"k8sNodeLogsDirectory,omitempty"`
+	EnableDataCompression      *bool               `json:"enableDataCompression,omitempty"`
+	OtlpExporterConfiguration  *OtlpExporterConfig `json:"otlpExporterConfiguration,omitempty"`
+}
+
 type CollectorPodMetrics struct {
 	MetricsAcceptedRps float64 `json:"metricsAcceptedRps"`
 	MetricsDroppedRps  float64 `json:"metricsDroppedRps"`
@@ -184,6 +221,17 @@ type Condition struct {
 	Reason             *string         `json:"reason,omitempty"`
 	Message            *string         `json:"message,omitempty"`
 	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
+}
+
+type Config struct {
+	Readonly              bool                `json:"readonly"`
+	PlatformType          ComputePlatformType `json:"platformType"`
+	Tier                  Tier                `json:"tier"`
+	OdigosVersion         string              `json:"odigosVersion"`
+	InstallationMethod    string              `json:"installationMethod"`
+	InstallationStatus    InstallationStatus  `json:"installationStatus"`
+	ClusterName           *string             `json:"clusterName,omitempty"`
+	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
 }
 
 type ContainerAgentConfigAnalyze struct {
@@ -313,6 +361,51 @@ type DistroParam struct {
 	Value string `json:"value"`
 }
 
+type EffectiveConfig struct {
+	ConfigVersion                    int                                 `json:"configVersion"`
+	TelemetryEnabled                 *bool                               `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled                 *bool                               `json:"openshiftEnabled,omitempty"`
+	IgnoredNamespaces                []string                            `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                []string                            `json:"ignoredContainers,omitempty"`
+	IgnoreOdigosNamespace            *bool                               `json:"ignoreOdigosNamespace,omitempty"`
+	Psp                              *bool                               `json:"psp,omitempty"`
+	ImagePrefix                      *string                             `json:"imagePrefix,omitempty"`
+	SkipWebhookIssuerCreation        *bool                               `json:"skipWebhookIssuerCreation,omitempty"`
+	CollectorGateway                 *CollectorGatewayConfig             `json:"collectorGateway,omitempty"`
+	CollectorNode                    *CollectorNodeConfig                `json:"collectorNode,omitempty"`
+	Profiles                         []string                            `json:"profiles,omitempty"`
+	AllowConcurrentAgents            *bool                               `json:"allowConcurrentAgents,omitempty"`
+	UIMode                           *UIMode                             `json:"uiMode,omitempty"`
+	UIPaginationLimit                *int                                `json:"uiPaginationLimit,omitempty"`
+	UIRemoteURL                      *string                             `json:"uiRemoteUrl,omitempty"`
+	CentralBackendURL                *string                             `json:"centralBackendURL,omitempty"`
+	ClusterName                      *string                             `json:"clusterName,omitempty"`
+	MountMethod                      *MountMethod                        `json:"mountMethod,omitempty"`
+	CustomContainerRuntimeSocketPath *string                             `json:"customContainerRuntimeSocketPath,omitempty"`
+	AgentEnvVarsInjectionMethod      *EnvInjectionMethod                 `json:"agentEnvVarsInjectionMethod,omitempty"`
+	UserInstrumentationEnvs          *UserInstrumentationEnvsConfig      `json:"userInstrumentationEnvs,omitempty"`
+	NodeSelector                     *string                             `json:"nodeSelector,omitempty"`
+	KarpenterEnabled                 *bool                               `json:"karpenterEnabled,omitempty"`
+	Rollout                          *RolloutConfig                      `json:"rollout,omitempty"`
+	RollbackDisabled                 *bool                               `json:"rollbackDisabled,omitempty"`
+	RollbackGraceTime                *string                             `json:"rollbackGraceTime,omitempty"`
+	RollbackStabilityWindow          *string                             `json:"rollbackStabilityWindow,omitempty"`
+	Oidc                             *OidcConfig                         `json:"oidc,omitempty"`
+	OdigletHealthProbeBindPort       *int                                `json:"odigletHealthProbeBindPort,omitempty"`
+	GoAutoOffsetsCron                *string                             `json:"goAutoOffsetsCron,omitempty"`
+	GoAutoOffsetsMode                *string                             `json:"goAutoOffsetsMode,omitempty"`
+	ClickhouseJSONTypeEnabled        *bool                               `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool                               `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset               *string                             `json:"resourceSizePreset,omitempty"`
+	WaspEnabled                      *bool                               `json:"waspEnabled,omitempty"`
+	MetricsSources                   *MetricsSourceConfig                `json:"metricsSources,omitempty"`
+	AgentsInitContainerResources     *AgentsInitContainerResourcesConfig `json:"agentsInitContainerResources,omitempty"`
+	TraceIDSuffix                    *string                             `json:"traceIdSuffix,omitempty"`
+	AllowedTestConnectionHosts       []string                            `json:"allowedTestConnectionHosts,omitempty"`
+	OdigosOwnTelemetryStore          *OdigosOwnTelemetryConfig           `json:"odigosOwnTelemetryStore,omitempty"`
+	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
+}
+
 type EntityProperty struct {
 	Name    string  `json:"name"`
 	Value   string  `json:"value"`
@@ -351,17 +444,6 @@ type GatewayDeploymentInfo struct {
 	RolloutInProgress bool                         `json:"rolloutInProgress"`
 	ManifestYaml      string                       `json:"manifestYAML"`
 	ConfigMapYaml     string                       `json:"configMapYAML"`
-}
-
-type GetConfigResponse struct {
-	Readonly              bool                `json:"readonly"`
-	PlatformType          ComputePlatformType `json:"platformType"`
-	Tier                  Tier                `json:"tier"`
-	OdigosVersion         string              `json:"odigosVersion"`
-	InstallationMethod    string              `json:"installationMethod"`
-	InstallationStatus    InstallationStatus  `json:"installationStatus"`
-	ClusterName           *string             `json:"clusterName,omitempty"`
-	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
 }
 
 type GetDestinationCategories struct {
@@ -434,6 +516,7 @@ type InstrumentationInstanceComponent struct {
 	Name                     string                     `json:"name"`
 	Type                     *string                    `json:"type,omitempty"`
 	Healthy                  *bool                      `json:"healthy,omitempty"`
+	Message                  *string                    `json:"message,omitempty"`
 	LastStatusTime           *string                    `json:"lastStatusTime,omitempty"`
 	NonIdentifyingAttributes []*NonIdentifyingAttribute `json:"nonIdentifyingAttributes"`
 }
@@ -736,6 +819,11 @@ type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus struct {
 	TelemetryObservedStatus *DesiredConditionStatus `json:"telemetryObservedStatus"`
 }
 
+type LanguageConfig struct {
+	Enabled bool    `json:"enabled"`
+	EnvVars *string `json:"envVars,omitempty"`
+}
+
 type MessagingPayloadCollection struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
@@ -744,6 +832,63 @@ type MessagingPayloadCollection struct {
 type MessagingPayloadCollectionInput struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
+}
+
+type MetricsSourceAgentJavaRuntimeMetricsConfig struct {
+	Disabled *bool                                    `json:"disabled,omitempty"`
+	Metrics  []*MetricsSourceAgentRuntimeMetricConfig `json:"metrics,omitempty"`
+}
+
+type MetricsSourceAgentMetricsConfig struct {
+	SpanMetrics    *MetricsSourceAgentSpanMetricsConfig    `json:"spanMetrics,omitempty"`
+	RuntimeMetrics *MetricsSourceAgentRuntimeMetricsConfig `json:"runtimeMetrics,omitempty"`
+}
+
+type MetricsSourceAgentRuntimeMetricConfig struct {
+	Name     string `json:"name"`
+	Disabled *bool  `json:"disabled,omitempty"`
+}
+
+type MetricsSourceAgentRuntimeMetricsConfig struct {
+	Java *MetricsSourceAgentJavaRuntimeMetricsConfig `json:"java,omitempty"`
+}
+
+type MetricsSourceAgentSpanMetricsConfig struct {
+	Enabled bool `json:"enabled"`
+}
+
+type MetricsSourceConfig struct {
+	SpanMetrics      *MetricsSourceSpanMetricsConfig      `json:"spanMetrics,omitempty"`
+	HostMetrics      *MetricsSourceHostMetricsConfig      `json:"hostMetrics,omitempty"`
+	KubeletStats     *MetricsSourceKubeletStatsConfig     `json:"kubeletStats,omitempty"`
+	OdigosOwnMetrics *MetricsSourceOdigosOwnMetricsConfig `json:"odigosOwnMetrics,omitempty"`
+	AgentMetrics     *MetricsSourceAgentMetricsConfig     `json:"agentMetrics,omitempty"`
+}
+
+type MetricsSourceHostMetricsConfig struct {
+	Disabled *bool   `json:"disabled,omitempty"`
+	Interval *string `json:"interval,omitempty"`
+}
+
+type MetricsSourceKubeletStatsConfig struct {
+	Disabled *bool   `json:"disabled,omitempty"`
+	Interval *string `json:"interval,omitempty"`
+}
+
+type MetricsSourceOdigosOwnMetricsConfig struct {
+	Interval *string `json:"interval,omitempty"`
+}
+
+type MetricsSourceSpanMetricsConfig struct {
+	Disabled                     *bool    `json:"disabled,omitempty"`
+	Interval                     *string  `json:"interval,omitempty"`
+	MetricsExpiration            *string  `json:"metricsExpiration,omitempty"`
+	AdditionalDimensions         []string `json:"additionalDimensions,omitempty"`
+	HistogramDisabled            *bool    `json:"histogramDisabled,omitempty"`
+	HistogramBuckets             []string `json:"histogramBuckets,omitempty"`
+	IncludedProcessInDimensions  *bool    `json:"includedProcessInDimensions,omitempty"`
+	ExcludedResourceAttributes   []string `json:"excludedResourceAttributes,omitempty"`
+	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
 }
 
 type Mutation struct {
@@ -799,10 +944,26 @@ type OdigosAnalyze struct {
 	HasErrors            bool                     `json:"hasErrors"`
 }
 
+type OdigosOwnTelemetryConfig struct {
+	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
+}
+
+type OidcConfig struct {
+	TenantURL    *string `json:"tenantUrl,omitempty"`
+	ClientID     *string `json:"clientId,omitempty"`
+	ClientSecret *string `json:"clientSecret,omitempty"`
+}
+
 type OtelAgentsAnalyze struct {
 	Created    *EntityProperty                `json:"created"`
 	CreateTime *EntityProperty                `json:"createTime,omitempty"`
 	Containers []*ContainerAgentConfigAnalyze `json:"containers"`
+}
+
+type OtlpExporterConfig struct {
+	EnableDataCompression *bool                 `json:"enableDataCompression,omitempty"`
+	Timeout               *string               `json:"timeout,omitempty"`
+	RetryOnFailure        *RetryOnFailureConfig `json:"retryOnFailure,omitempty"`
 }
 
 type OverviewMetricsResponse struct {
@@ -816,6 +977,7 @@ type PatchSourceRequestInput struct {
 	ContainerName     *string `json:"containerName,omitempty"`
 	Language          *string `json:"language,omitempty"`
 	Version           *string `json:"version,omitempty"`
+	OtelDistroName    *string `json:"otelDistroName,omitempty"`
 }
 
 type PayloadCollection struct {
@@ -933,6 +1095,17 @@ type Resources struct {
 	Limits   *ResourceAmounts `json:"limits,omitempty"`
 }
 
+type RetryOnFailureConfig struct {
+	Enabled         *bool   `json:"enabled,omitempty"`
+	InitialInterval *string `json:"initialInterval,omitempty"`
+	MaxInterval     *string `json:"maxInterval,omitempty"`
+	MaxElapsedTime  *string `json:"maxElapsedTime,omitempty"`
+}
+
+type RolloutConfig struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+}
+
 type RuntimeInfoAnalyze struct {
 	Generation *EntityProperty                `json:"generation"`
 	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
@@ -1045,6 +1218,10 @@ type TestConnectionResponse struct {
 	DestinationType *string `json:"destinationType,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Reason          *string `json:"reason,omitempty"`
+}
+
+type UserInstrumentationEnvsConfig struct {
+	Languages *string `json:"languages,omitempty"`
 }
 
 type WorkloadFilter struct {
@@ -1340,6 +1517,49 @@ func (e DesiredStateProgress) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type EnvInjectionMethod string
+
+const (
+	EnvInjectionMethodLoader                      EnvInjectionMethod = "loader"
+	EnvInjectionMethodPodManifest                 EnvInjectionMethod = "pod_manifest"
+	EnvInjectionMethodLoaderFallbackToPodManifest EnvInjectionMethod = "loader_fallback_to_pod_manifest"
+)
+
+var AllEnvInjectionMethod = []EnvInjectionMethod{
+	EnvInjectionMethodLoader,
+	EnvInjectionMethodPodManifest,
+	EnvInjectionMethodLoaderFallbackToPodManifest,
+}
+
+func (e EnvInjectionMethod) IsValid() bool {
+	switch e {
+	case EnvInjectionMethodLoader, EnvInjectionMethodPodManifest, EnvInjectionMethodLoaderFallbackToPodManifest:
+		return true
+	}
+	return false
+}
+
+func (e EnvInjectionMethod) String() string {
+	return string(e)
+}
+
+func (e *EnvInjectionMethod) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EnvInjectionMethod(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EnvInjectionMethod", str)
+	}
+	return nil
+}
+
+func (e EnvInjectionMethod) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type InstallationStatus string
 
 const (
@@ -1575,10 +1795,10 @@ const (
 	K8sResourceKindDeployment       K8sResourceKind = "Deployment"
 	K8sResourceKindDaemonSet        K8sResourceKind = "DaemonSet"
 	K8sResourceKindStatefulSet      K8sResourceKind = "StatefulSet"
-	K8sResourceKindStaticPod        K8sResourceKind = "StaticPod"
 	K8sResourceKindCronJob          K8sResourceKind = "CronJob"
 	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
 	K8sResourceKindPod              K8sResourceKind = "Pod"
+	K8sResourceKindStaticPod        K8sResourceKind = "StaticPod"
 	K8sResourceKindDeploymentConfig K8sResourceKind = "DeploymentConfig"
 	K8sResourceKindRollout          K8sResourceKind = "Rollout"
 )
@@ -1587,17 +1807,17 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindDeployment,
 	K8sResourceKindDaemonSet,
 	K8sResourceKindStatefulSet,
-	K8sResourceKindStaticPod,
 	K8sResourceKindCronJob,
 	K8sResourceKindConfigMap,
 	K8sResourceKindPod,
+	K8sResourceKindStaticPod,
 	K8sResourceKindDeploymentConfig,
 	K8sResourceKindRollout,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout:
 		return true
 	}
 	return false
@@ -1662,6 +1882,49 @@ func (e *ManifestFormat) UnmarshalGQL(v any) error {
 }
 
 func (e ManifestFormat) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MountMethod string
+
+const (
+	MountMethodK8sVirtualDevice MountMethod = "k8s_virtual_device"
+	MountMethodK8sHostPath      MountMethod = "k8s_host_path"
+	MountMethodK8sInitContainer MountMethod = "k8s_init_container"
+)
+
+var AllMountMethod = []MountMethod{
+	MountMethodK8sVirtualDevice,
+	MountMethodK8sHostPath,
+	MountMethodK8sInitContainer,
+}
+
+func (e MountMethod) IsValid() bool {
+	switch e {
+	case MountMethodK8sVirtualDevice, MountMethodK8sHostPath, MountMethodK8sInitContainer:
+		return true
+	}
+	return false
+}
+
+func (e MountMethod) String() string {
+	return string(e)
+}
+
+func (e *MountMethod) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MountMethod(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MountMethod", str)
+	}
+	return nil
+}
+
+func (e MountMethod) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -2044,6 +2307,47 @@ func (e *Tier) UnmarshalGQL(v any) error {
 }
 
 func (e Tier) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UIMode string
+
+const (
+	UIModeDefault  UIMode = "default"
+	UIModeReadonly UIMode = "readonly"
+)
+
+var AllUIMode = []UIMode{
+	UIModeDefault,
+	UIModeReadonly,
+}
+
+func (e UIMode) IsValid() bool {
+	switch e {
+	case UIModeDefault, UIModeReadonly:
+		return true
+	}
+	return false
+}
+
+func (e UIMode) String() string {
+	return string(e)
+}
+
+func (e *UIMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UIMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UiMode", str)
+	}
+	return nil
+}
+
+func (e UIMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

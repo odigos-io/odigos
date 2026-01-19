@@ -10,6 +10,7 @@ enum K8sResourceKind {
   CronJob
   ConfigMap
   Pod
+  StaticPod
   DeploymentConfig
   Rollout
 }
@@ -385,17 +386,6 @@ type Destination {
   conditions: [Condition!]
 }
 
-type GetConfigResponse {
-  readonly: Boolean!
-  platformType: ComputePlatformType!
-  tier: Tier!
-  odigosVersion: String!
-  installationMethod: String!
-  installationStatus: InstallationStatus!
-  clusterName: String
-  isCentralProxyRunning: Boolean
-}
-
 input DestinationInput {
   name: String!
   type: String!
@@ -451,6 +441,7 @@ input PatchSourceRequestInput {
   containerName: String
   language: String
   version: String
+  otelDistroName: String
 }
 
 input ActionInput {
@@ -864,34 +855,13 @@ type InstrumentationInstanceComponent {
   name: String!
   type: String
   healthy: Boolean
+  message: String
   lastStatusTime: String
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
-# Remote configuration managed by central-backend
-# These settings take precedence over Helm values and persist through upgrades
-type RemoteConfig {
-  rollout: RemoteConfigRollout
-  # Future fields:
-  # ignoredNamespaces: [String]
-  # ignoredContainers: [String]
-}
-
-type RemoteConfigRollout {
-  automaticRolloutDisabled: Boolean
-}
-
-input RemoteConfigInput {
-  rollout: RemoteConfigRolloutInput
-}
-
-input RemoteConfigRolloutInput {
-  automaticRolloutDisabled: Boolean
-}
-
 type Query {
   computePlatform: ComputePlatform
-  config: GetConfigResponse
 
   # return the raw YAML manifest for a k8s resource
   k8sManifest(
@@ -925,9 +895,6 @@ type Query {
 
   # get all sources that match the filter
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
-
-  # remote configuration (managed by central-backend and persisted in the odigos-remote-config ConfigMap)
-  remoteConfig: RemoteConfig
 }
 
 type Mutation {
@@ -968,7 +935,4 @@ type Mutation {
 
   # enterprise: remove the central-proxy from this cluster
   deleteCentralProxy: Boolean!
-
-  # remote configuration (managed by central-backend and persisted in the odigos-remote-config ConfigMap)
-  updateRemoteConfig(config: RemoteConfigInput!): RemoteConfig
 }

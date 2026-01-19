@@ -513,8 +513,9 @@ func (r *mutationResolver) UpdateK8sActualSource(ctx context.Context, sourceID m
 			}
 		}
 		containerOverrides = append(containerOverrides, v1alpha1.ContainerOverride{
-			ContainerName: *cont,
-			RuntimeInfo:   overrideRuntimeInfo,
+			ContainerName:  *cont,
+			OtelDistroName: patchSourceRequest.OtelDistroName,
+			RuntimeInfo:    overrideRuntimeInfo,
 		})
 		// patch the source with the new container overrides
 		patchBytes, err := json.Marshal([]map[string]interface{}{
@@ -934,35 +935,11 @@ func (r *mutationResolver) DeleteCentralProxy(ctx context.Context) (bool, error)
 	return services.DeleteCentralProxy(ctx)
 }
 
-// UpdateRemoteConfig is the resolver for the updateRemoteConfig field.
-func (r *mutationResolver) UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (*model.RemoteConfig, error) {
-	remoteConfig := &common.OdigosConfiguration{}
-	if config.Rollout != nil {
-		remoteConfig.Rollout = &common.RolloutConfiguration{
-			AutomaticRolloutDisabled: config.Rollout.AutomaticRolloutDisabled,
-		}
-	}
-
-	updated, err := services.UpdateRemoteConfig(ctx, remoteConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return RemoteConfigToModel(updated), nil
-}
-
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
 		ComputePlatformType: model.ComputePlatformTypeK8s,
 	}, nil
-}
-
-// Config is the resolver for the config field.
-func (r *queryResolver) Config(ctx context.Context) (*model.GetConfigResponse, error) {
-	config := services.GetConfig(ctx)
-
-	return &config, nil
 }
 
 // K8sManifest is the resolver for the k8sManifest field.
@@ -1129,6 +1106,7 @@ func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, n
 					Name:                     component.Name,
 					Type:                     typeStr,
 					Healthy:                  healthy,
+					Message:                  &component.Message,
 					LastStatusTime:           lastStatusTime,
 					NonIdentifyingAttributes: nonIdentifyingAttributes,
 				})
@@ -1153,15 +1131,6 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 		})
 	}
 	return sources, nil
-}
-
-// RemoteConfig is the resolver for the remoteConfig field.
-func (r *queryResolver) RemoteConfig(ctx context.Context) (*model.RemoteConfig, error) {
-	config, err := services.GetRemoteConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return RemoteConfigToModel(config), nil
 }
 
 // ComputePlatform returns ComputePlatformResolver implementation.
