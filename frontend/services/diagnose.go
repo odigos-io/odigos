@@ -11,17 +11,16 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/diagnose"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
 
-// In-memory storage for generated diagnose outputs
+// Single diagnose output - replaced on each new request
 var (
-	diagnoseStore     = make(map[string]string) // downloadID -> tempDirPath
-	diagnoseStoreLock sync.RWMutex
+	diagnoseTempDir  string
+	diagnoseLock     sync.RWMutex
 )
 
 // DiagnoseGraphQL is the GraphQL resolver for diagnose
@@ -95,11 +94,20 @@ func DiagnoseGraphQL(
 		}, nil
 	}
 
+	// Clean up any existing diagnose temp directory
+	diagnoseLock.Lock()
+	if diagnoseTempDir != "" {
+		os.RemoveAll(diagnoseTempDir)
+	}
+
 	// Create temporary directory for collecting files
 	mainTempDir, err := os.MkdirTemp("", "odigos-diagnose")
 	if err != nil {
+		diagnoseLock.Unlock()
 		return nil, fmt.Errorf("failed to create temp directory: %w", err)
 	}
+	diagnoseTempDir = mainTempDir
+	diagnoseLock.Unlock()
 
 	// The collector will write to mainTempDir/rootDir
 	collectorRootDir := filepath.Join(mainTempDir, rootDir)
@@ -129,13 +137,7 @@ func DiagnoseGraphQL(
 	// Get file stats
 	fileCount, totalSize := countFilesAndSize(mainTempDir)
 
-	// Generate a unique download ID and store the temp directory
-	downloadID := uuid.New().String()
-	diagnoseStoreLock.Lock()
-	diagnoseStore[downloadID] = mainTempDir
-	diagnoseStoreLock.Unlock()
-
-	downloadURL := fmt.Sprintf("/diagnose/download/%s", downloadID)
+	downloadURL := "/diagnose/download"
 
 	return &model.DiagnoseResponse{
 		Stats: &model.DiagnoseStats{
@@ -151,24 +153,16 @@ func DiagnoseGraphQL(
 	}, nil
 }
 
-// DiagnoseDownload handles the download of a previously generated diagnose output
+// DiagnoseDownload handles the download of the current diagnose output
 func DiagnoseDownload(c *gin.Context) {
-	downloadID := c.Param("id")
+	diagnoseLock.RLock()
+	tempDir := diagnoseTempDir
+	diagnoseLock.RUnlock()
 
-	diagnoseStoreLock.RLock()
-	tempDir, exists := diagnoseStore[downloadID]
-	diagnoseStoreLock.RUnlock()
-
-	if !exists {
-		c.JSON(404, gin.H{"error": "Download not found or expired"})
+	if tempDir == "" {
+		c.JSON(404, gin.H{"error": "No diagnose output available. Run diagnose query first."})
 		return
 	}
-
-	// Remove from store and clean up after download
-	diagnoseStoreLock.Lock()
-	delete(diagnoseStore, downloadID)
-	diagnoseStoreLock.Unlock()
-	defer os.RemoveAll(tempDir)
 
 	// Get the root dir name from temp directory
 	entries, err := os.ReadDir(tempDir)
@@ -252,4 +246,3 @@ func writeTarGzToWriter(sourceDir string, w io.Writer) error {
 		return nil
 	})
 }
-

@@ -256,7 +256,7 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	})
 
 	// Diagnose download endpoint (used by GraphQL diagnose query)
-	r.GET("/diagnose/download/:id", services.DiagnoseDownload)
+	r.GET("/diagnose/download", services.DiagnoseDownload)
 
 	return r, nil
 }
