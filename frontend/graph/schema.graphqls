@@ -875,15 +875,13 @@ type DiagnoseStats {
 }
 
 type DiagnoseResponse {
-  # Stats about the diagnose output (always included)
+  # Stats about the diagnose output
   stats: DiagnoseStats!
   # Options used for the diagnose
   includeProfiles: Boolean!
   includeMetrics: Boolean!
   includeSourceWorkloads: Boolean!
   sourceWorkloadNamespaces: [String!]!
-  # Download URL for the generated tar.gz file (only present if not dry run)
-  downloadUrl: String
 }
 
 type Query {

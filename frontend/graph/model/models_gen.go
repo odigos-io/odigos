@@ -369,7 +369,6 @@ type DiagnoseResponse struct {
 	IncludeMetrics           bool           `json:"includeMetrics"`
 	IncludeSourceWorkloads   bool           `json:"includeSourceWorkloads"`
 	SourceWorkloadNamespaces []string       `json:"sourceWorkloadNamespaces"`
-	DownloadURL              *string        `json:"downloadUrl,omitempty"`
 }
 
 type DiagnoseStats struct {

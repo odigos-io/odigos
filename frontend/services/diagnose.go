@@ -142,8 +142,6 @@ func DiagnoseGraphQL(
 	// Get file stats
 	fileCount, totalSize := countFilesAndSize(mainTempDir)
 
-	downloadURL := "/diagnose/download"
-
 	return &model.DiagnoseResponse{
 		Stats: &model.DiagnoseStats{
 			FileCount:      fileCount,
@@ -154,7 +152,6 @@ func DiagnoseGraphQL(
 		IncludeMetrics:           includeMetrics,
 		IncludeSourceWorkloads:   includeSourceWorkloads,
 		SourceWorkloadNamespaces: sourceWorkloadNamespaces,
-		DownloadURL:              &downloadURL,
 	}, nil
 }
 
