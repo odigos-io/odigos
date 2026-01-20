@@ -53,6 +53,57 @@ spec:
         tooltip: "The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before"
       initialValue: otel
 
+    - name: CLICKHOUSE_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Secure connection'
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'TLS'
+          value: 'Encrypted'
+        - condition: 'false'
+          title: 'TLS'
+          value: 'Unencrypted'
+    - name: CLICKHOUSE_CA_PEM
+      displayName: Certificate Authority
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
+      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+      hideFromReadData: ['true']
+    - name: CLICKHOUSE_CERT_PEM
+      displayName: Client Certificate
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'Client TLS certificate in PEM format for mTLS authentication'
+      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+      hideFromReadData: ['true']
+    - name: CLICKHOUSE_KEY_PEM
+      displayName: Client Private Key
+      componentType: textarea
+      secret: true
+      componentProps:
+        required: false
+        placeholder: '-----BEGIN PRIVATE KEY-----'
+        tooltip: 'Client TLS private key in PEM format for mTLS authentication'
+      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+      hideFromReadData: ['true']
+    - name: CLICKHOUSE_INSECURE_SKIP_VERIFY
+      displayName: Insecure Skip Verify
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Skip TLS certificate verification'
+      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+
     - name: CLICKHOUSE_TRACES_TABLE
       displayName: Traces Table
       componentType: input
