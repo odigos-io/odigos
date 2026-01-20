@@ -14,6 +14,11 @@ const (
 	clickhousePassword                 = "${CLICKHOUSE_PASSWORD}"
 	clickhouseCreateSchema             = "CLICKHOUSE_CREATE_SCHEME"
 	clickhouseDatabaseName             = "CLICKHOUSE_DATABASE_NAME"
+	clickhouseTlsEnabled               = "CLICKHOUSE_TLS_ENABLED"
+	clickhouseCaPem                    = "CLICKHOUSE_CA_PEM"
+	clickhouseCertPem                  = "CLICKHOUSE_CERT_PEM"
+	clickhouseKeyPem                   = "${CLICKHOUSE_KEY_PEM}"
+	clickhouseInsecureSkipVerify       = "CLICKHOUSE_INSECURE_SKIP_VERIFY"
 	clickhouseTracesTable              = "CLICKHOUSE_TRACES_TABLE"
 	clickhouseLogsTable                = "CLICKHOUSE_LOGS_TABLE"
 	clickhouseMetricsTableSum          = "CLICKHOUSE_METRICS_TABLE_SUM"
@@ -28,6 +33,33 @@ type Clickhouse struct{}
 
 func (c *Clickhouse) DestType() common.DestinationType {
 	return common.ClickhouseDestinationType
+}
+
+func clickhouseTlsConfig(dest ExporterConfigurer) (GenericMap, error) {
+	tlsConfig := GenericMap{
+		"insecure": false,
+	}
+	if caPem, ok := dest.GetConfig()[clickhouseCaPem]; ok && caPem != "" {
+		tlsConfig["ca_pem"] = caPem
+	}
+
+	certPem, hasCert := dest.GetConfig()[clickhouseCertPem]
+	_, hasKey := dest.GetConfig()["CLICKHOUSE_KEY_PEM"]
+	if hasCert && certPem != "" && !hasKey {
+		return nil, errors.New("clickhouse client certificate (cert_pem) requires client private key (key_pem)")
+	}
+	if hasKey && (!hasCert || certPem == "") {
+		return nil, errors.New("clickhouse client private key (key_pem) requires client certificate (cert_pem)")
+	}
+	if hasCert && certPem != "" && hasKey {
+		tlsConfig["cert_pem"] = certPem
+		tlsConfig["key_pem"] = clickhouseKeyPem
+	}
+
+	if insecureSkipVerify, ok := dest.GetConfig()[clickhouseInsecureSkipVerify]; ok && insecureSkipVerify != "" {
+		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
+	}
+	return tlsConfig, nil
 }
 
 func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
@@ -67,6 +99,14 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		return nil, errors.New("clickhouse database name not specified, gateway will not be configured for Clickhouse")
 	}
 	exporterConfig["database"] = dbName
+
+	if dest.GetConfig()[clickhouseTlsEnabled] == "true" {
+		tlsConfig, err := clickhouseTlsConfig(dest)
+		if err != nil {
+			return nil, err
+		}
+		exporterConfig["tls"] = tlsConfig
+	}
 
 	if tracesTable, ok := dest.GetConfig()[clickhouseTracesTable]; ok {
 		exporterConfig["traces_table_name"] = tracesTable
