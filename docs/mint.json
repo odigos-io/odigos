@@ -291,7 +291,6 @@
             "backends/observe",
             "backends/oneuptime",
             "backends/openobserve",
-            "backends/opsverse",
             "backends/oracle",
             "backends/otlp",
             "backends/otlphttp",
