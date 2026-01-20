@@ -181,7 +181,7 @@ func DiagnoseDownload(c *gin.Context) {
 
 	// Stream tar.gz directly to response
 	if err := writeTarGzToWriter(tempDir, c.Writer); err != nil {
-		return
+		c.JSON(500, gin.H{"error": "Failed to write tar.gz to response"})
 	}
 
 	c.Status(200)
