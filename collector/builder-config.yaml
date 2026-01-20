@@ -1,3 +1,7 @@
+# Odigos OpenTelemetry Collector Builder Configuration
+# This file defines all components included in the custom Odigos collector distribution.
+# For detailed documentation on each component, see BUILDER_CONFIG_DOCUMENTATION.md
+
 dist:
   module: odigos.io/opentelemetry-collector/cmd/odigosotelcol
   name: odigosotelcol
@@ -5,130 +9,269 @@ dist:
   version: 0.130.0
   output_path: ./odigosotelcol
 
+# Extensions provide capabilities not requiring direct access to telemetry data
+# Includes: health checks, auth methods, debugging tools, and resource management
 extensions:
-  - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.130.0
-  - gomod: go.opentelemetry.io/collector/extension/memorylimiterextension v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.130.0
+  # Core operational extensions
+  - gomod: go.opentelemetry.io/collector/extension/zpagesextension v0.130.0  # Live debugging endpoints
+  - gomod: go.opentelemetry.io/collector/extension/memorylimiterextension v0.130.0  # Prevents OOM kills
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.130.0  # K8s health probes
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.130.0  # Go profiling
+  
+  # Authentication extensions for various backend destinations
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.130.0  # HTTP Basic Auth
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.130.0  # Bearer tokens
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.130.0  # OAuth2
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.130.0  # GCP auth
 
+# Exporters send telemetry to observability backends
+# Odigos supports 40+ destinations to remain vendor-agnostic
 exporters:
-  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.130.0
-  - gomod: go.opentelemetry.io/collector/exporter/nopexporter v0.130.0
-  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.130.0
-  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/carbonexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/cassandraexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/coralogixexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datasetexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/elasticsearchexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudpubsubexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlemanagedprometheusexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/honeycombmarkerexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/loadbalancingexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logicmonitorexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/lokiexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/mezmoexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opencensusexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opensearchexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/pulsarexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sentryexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sumologicexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.130.0
+  # Core/Debug exporters
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.130.0  # Logs to stdout for debugging
+  - gomod: go.opentelemetry.io/collector/exporter/nopexporter v0.130.0  # Discards data (testing/placeholder)
+  
+  # OTLP exporters - primary protocol for OpenTelemetry
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.130.0  # OTLP over gRPC
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.130.0  # OTLP over HTTP
+  
+  # Odigos custom exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter v0.130.0  # Azure Blob long-term storage
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter v0.130.0  # GCS long-term storage
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter v0.130.0  # Testing mock
+  
+  # AWS exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awscloudwatchlogsexporter v0.130.0  # CloudWatch Logs
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsemfexporter v0.130.0  # CloudWatch Metrics (EMF format)
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.130.0  # S3 storage
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awsxrayexporter v0.130.0  # AWS X-Ray traces
+  
+  # Azure exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuredataexplorerexporter v0.130.0  # Azure Data Explorer (Kusto)
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/azuremonitorexporter v0.130.0  # Azure Monitor
+  
+  # Database exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/carbonexporter v0.130.0  # Graphite/Carbon
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.130.0  # ClickHouse (popular for logs/traces)
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/cassandraexporter v0.130.0  # Cassandra
+  
+  # SaaS observability platforms
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/coralogixexporter v0.130.0  # Coralogix
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter v0.130.0  # Datadog APM
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datasetexporter v0.130.0  # Scalyr Dataset
+  
+  # Elasticsearch family
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/elasticsearchexporter v0.130.0  # Elasticsearch/ELK
+  
+  # File-based
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.130.0  # Local files (debugging/testing)
+  
+  # Google Cloud exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v0.130.0  # GCP Trace & Logging
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudpubsubexporter v0.130.0  # Pub/Sub messaging
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlemanagedprometheusexporter v0.130.0  # GCP Managed Prometheus
+  
+  # Additional SaaS platforms
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/honeycombmarkerexporter v0.130.0  # Honeycomb markers
+  
+  # Time-series databases
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influxdbexporter v0.130.0  # InfluxDB
+  
+  # Message queues
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter v0.130.0  # Apache Kafka
+  
+  # Specialized exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/loadbalancingexporter v0.130.0  # Load balancing across endpoints
+  # More SaaS platforms
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logicmonitorexporter v0.130.0  # LogicMonitor
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/logzioexporter v0.130.0  # Logz.io
+  
+  # Logging platforms
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/lokiexporter v0.130.0  # Grafana Loki
+  
+  # More SaaS platforms
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/mezmoexporter v0.130.0  # Mezmo (formerly LogDNA)
+  
+  # Legacy/compatibility exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opencensusexporter v0.130.0  # OpenCensus format
+  
+  # Search platforms
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opensearchexporter v0.130.0  # OpenSearch
+  
+  # Prometheus exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.130.0  # Prometheus scrape endpoint
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter v0.130.0  # Prometheus Remote Write
+  
+  # More message queues
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/pulsarexporter v0.130.0  # Apache Pulsar
+  # Splunk/SignalFx family
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sapmexporter v0.130.0  # SignalFx APM (SAPM protocol)
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sentryexporter v0.130.0  # Sentry error tracking
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/signalfxexporter v0.130.0  # SignalFx/Splunk Observability
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter v0.130.0  # Splunk HEC
+  
+  # More SaaS platforms
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/sumologicexporter v0.130.0  # Sumo Logic
+  
+  # Protocol exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter v0.130.0  # Syslog protocol
+  
+  # Regional cloud providers
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/tencentcloudlogserviceexporter v0.130.0  # Tencent Cloud
+  
+  # Trace format exporters
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/zipkinexporter v0.130.0  # Zipkin format
 
+# Processors transform, filter, and enrich telemetry data
+# Includes Odigos-specific processors and standard OTEL processors
 processors:
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.130.0
-  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.130.0
-  - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricsgenerationprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.130.0
-  - gomod: github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0
+  # Odigos custom processors - implement Odigos-specific logic
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor v0.130.0  # Custom sampling strategies
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes v0.130.0  # Conditional attribute logic
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor v0.130.0  # SQL operation extraction
+  
+  # Core processors - fundamental for collector operation
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.130.0  # Batching for efficiency
+  - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.130.0  # Memory management
+  
+  # Attribute manipulation processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.130.0  # Add/update/delete attributes
+  
+  # Metrics transformation processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.130.0  # Cumulative to delta metrics
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.130.0  # Delta to rate metrics
+  
+  # Filtering processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.130.0  # Filter/drop telemetry
+  
+  # Grouping processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.130.0  # Group by attributes
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v0.130.0  # Group by trace ID
+  
+  # Kubernetes enrichment - critical for K8s environments
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.130.0  # Add K8s metadata
+  
+  # More metrics processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricsgenerationprocessor v0.130.0  # Generate new metrics
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor v0.130.0  # Transform metric names/labels
+  
+  # Sampling processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.130.0  # Probabilistic sampling
+  
+  # Security/privacy processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor v0.130.0  # Redact PII/sensitive data
+  
+  # Resource processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.130.0  # Auto-detect resources
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.130.0  # Modify resource attributes
+  
+  # Routing processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/routingprocessor v0.130.0  # Route to different pipelines
+  
+  # Backend-specific processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor v0.130.0  # Sumo Logic formatting
+  
+  # Span processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor v0.130.0  # Modify span names/attributes
+  
+  # Advanced sampling
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.130.0  # Tail-based sampling
+  
+  # Transformation processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.130.0  # OTTL transformations
+  
+  # Debugging processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.130.0  # Remote debugging/sampling
+  
+  # More Odigos custom processors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics v0.130.0  # Service traffic metrics
+  - gomod: github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor v0.130.0  # URL templatization (reduce cardinality)
 
+# Receivers ingest telemetry from various sources
+# Includes OTLP, Prometheus scraping, Kubernetes metrics, and Odigos eBPF receiver
 receivers:
-  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.130.0
-  - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.130.0
+  # OTLP receivers - primary ingestion protocol
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.130.0  # OTLP gRPC/HTTP receiver
+  
+  # Trace receivers
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.130.0  # Zipkin format traces
+  
+  # Log receivers
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.130.0  # File-based logs
+  
+  # Kubernetes metrics receivers
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver v0.130.0  # Kubelet pod/node metrics
+  
+  # Host metrics receivers
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.130.0  # System metrics (CPU, memory, disk)
+  
+  # Prometheus receivers
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.130.0  # Prometheus scraping
+  
+  # Odigos custom receivers - critical for eBPF instrumentation
+  - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.130.0  # eBPF-based telemetry (Go auto-instrumentation)
 
+# Dependency exclusions
 # https://github.com/open-telemetry/opentelemetry-collector/issues/8127
 excludes:
-  - github.com/knadh/koanf v1.5.0
+  - github.com/knadh/koanf v1.5.0  # Known dependency conflict
 
+# Connectors act as both exporter and receiver, connecting pipelines
+# Used for generating metrics from traces, service graphs, and routing
 connectors:
-  - gomod: go.opentelemetry.io/collector/connector/forwardconnector v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.130.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.130.0
-  - gomod: github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.130.0
+  # Core connectors
+  - gomod: go.opentelemetry.io/collector/connector/forwardconnector v0.130.0  # Forward data between pipelines
+  
+  # Metric generation connectors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector v0.130.0  # Count telemetry items
+  
+  # Backend-specific connectors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.130.0  # Datadog APM stats
+  
+  # Analysis connectors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/exceptionsconnector v0.130.0  # Exception/error metrics
+  
+  # Routing connectors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.130.0  # Route between pipelines
+  
+  # Observability connectors
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector v0.130.0  # Service dependency graphs
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector v0.130.0  # RED metrics from spans
+  
+  # Odigos custom connectors
+  - gomod: github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector v0.130.0  # Odigos-specific routing logic
 
+# Providers supply configuration to the collector
+# Supports env vars, files, and Kubernetes ConfigMaps
 providers:
-  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v0.130.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.130.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v0.130.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v0.130.0  # Environment variables
+  - gomod: go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider v0.130.0  # Kubernetes ConfigMaps (Odigos custom)
+  - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v0.130.0  # File-based config
 
+# Module replacements for local/custom components
+# Points to local directories for Odigos-maintained components
 replaces:
+  # Odigos custom processors - built locally
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor => ../processors/odigossamplingprocessor
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigosconditionalattributes => ../processors/odigosconditionalattributes
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossqldboperationprocessor => ../processors/odigossqldboperationprocessor
+  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
+  - github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
+  
+  # Odigos custom exporters - built locally
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/azureblobstorageexporter => ../exporters/azureblobstorageexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/googlecloudstorageexporter => ../exporters/googlecloudstorageexporter
   - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter => ../exporters/mockdestinationexporter
-  - github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigostrafficmetrics => ../processors/odigostrafficmetrics
-  - github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor => ../processors/odigosurltemplateprocessor
+  
+  # Odigos custom providers - built locally
   - go.opentelemetry.io/collector/confmap/provider/odigosk8scmprovider => ../providers/odigosk8scmprovider
+  
+  # Odigos custom connectors - built locally
   - github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector => ../connectors/odigosrouterconnector
+  
+  # Odigos custom receivers - built locally
   - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
+  
+  # Shared dependencies
   - github.com/odigos-io/odigos/common => ../../common
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
