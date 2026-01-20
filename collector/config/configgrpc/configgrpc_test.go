@@ -100,6 +100,10 @@ func TestNewDefaultKeepaliveServerConfig(t *testing.T) {
 func TestNewDefaultServerConfig(t *testing.T) {
 	expected := ServerConfig{
 		Keepalive: configoptional.Some(NewDefaultKeepaliveServerConfig()),
+		NetAddr: confignet.AddrConfig{
+			Endpoint:  "",
+			Transport: confignet.TransportTypeTCP,
+		},
 	}
 
 	result := NewDefaultServerConfig()
