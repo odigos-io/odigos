@@ -26,6 +26,7 @@ const (
 
 // PartialPodMetadata contains only the metadata fields we need from a pod
 type PartialPodMetadata struct {
+	UID          types.UID
 	Name         string
 	Namespace    string
 	WorkloadName string       // The resolved workload name (e.g., "my-app" for a Deployment)
@@ -43,11 +44,11 @@ type deleteRequest struct {
 }
 
 type PodMetadataClient struct {
-	addMutex    sync.RWMutex
-	deleteMutex sync.Mutex
-	deleteQueue []deleteRequest
-	pods        map[types.UID]*PartialPodMetadata
-	podInformer cache.SharedIndexInformer
+	podsMapMutex     sync.RWMutex
+	deleteQueueMutex sync.Mutex
+	deleteQueue      []deleteRequest
+	pods             map[types.UID]*PartialPodMetadata
+	podInformer      cache.SharedIndexInformer
 }
 
 var podGVR = schema.GroupVersionResource{
@@ -78,17 +79,28 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 	factory := metadatainformer.NewFilteredSharedInformerFactory(metadataClient, 0, metav1.NamespaceAll, tweakListOptions)
 	c.podInformer = factory.ForResource(podGVR).Informer()
 
+	c.podInformer.SetTransform(
+		func(object any) (any, error) {
+			partialPodMetaData := extractPartialMetadata(object)
+			if partialPodMetaData == nil {
+				return nil, nil
+			}
+			return partialPodMetaData, nil
+		})
+
 	_, err = c.podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		// Cache functions require "any"
-		AddFunc: func(obj any) {
-			if podMeta := extractPartialMetadata(obj); podMeta != nil {
-				c.handlePodAdd(podMeta)
+		// Cache functions require "any" - but we pass PartialPodMetadata
+		AddFunc: func(partialPodMetaData any) {
+			if partialPodMetaData == nil {
+				return
 			}
+			c.handlePodAdd(partialPodMetaData.(PartialPodMetadata))
 		},
-		DeleteFunc: func(obj any) {
-			if podMeta := extractPartialMetadata(obj); podMeta != nil {
-				c.handlePodDelete(podMeta)
+		DeleteFunc: func(partialPodMetaData any) {
+			if partialPodMetaData == nil {
+				return
 			}
+			c.handlePodDelete(partialPodMetaData.(PartialPodMetadata))
 		},
 	})
 	if err != nil {
@@ -98,13 +110,27 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 	return c, nil
 }
 
-func extractPartialMetadata(obj any) *metav1.PartialObjectMetadata {
+func extractPartialMetadata(obj any) *PartialPodMetadata {
 	if podMeta, ok := obj.(*metav1.PartialObjectMetadata); ok {
-		return podMeta
+		workloadName, workloadKind := extractWorkloadInfo(podMeta)
+		return &PartialPodMetadata{
+			UID:          podMeta.UID,
+			Name:         podMeta.Name,
+			Namespace:    podMeta.Namespace,
+			WorkloadName: workloadName,
+			WorkloadKind: workloadKind,
+		}
 	}
 	if deleted, ok := obj.(cache.DeletedFinalStateUnknown); ok {
 		if podMeta, ok := deleted.Obj.(*metav1.PartialObjectMetadata); ok {
-			return podMeta
+			workloadName, workloadKind := extractWorkloadInfo(podMeta)
+			return &PartialPodMetadata{
+				UID:          podMeta.UID,
+				Name:         podMeta.Name,
+				Namespace:    podMeta.Namespace,
+				WorkloadName: workloadName,
+				WorkloadKind: workloadKind,
+			}
 		}
 	}
 	return nil
@@ -130,31 +156,25 @@ func extractWorkloadInfo(podMeta *metav1.PartialObjectMetadata) (name string, ki
 	return "", ""
 }
 
-func (c *PodMetadataClient) handlePodAdd(podMeta *metav1.PartialObjectMetadata) {
-	workloadName, workloadKind := extractWorkloadInfo(podMeta)
-	if workloadName == "" || workloadKind == "" {
+func (c *PodMetadataClient) handlePodAdd(partialPodMetaData PartialPodMetadata) {
+	// Skip pods without workload info (e.g., standalone pods without owner references)
+	if partialPodMetaData.WorkloadName == "" {
 		return
 	}
-
-	c.addMutex.Lock()
-	defer c.addMutex.Unlock()
-	c.pods[podMeta.UID] = &PartialPodMetadata{
-		Name:         podMeta.Name,
-		Namespace:    podMeta.Namespace,
-		WorkloadName: workloadName,
-		WorkloadKind: workloadKind,
-	}
+	c.podsMapMutex.Lock()
+	defer c.podsMapMutex.Unlock()
+	c.pods[partialPodMetaData.UID] = &partialPodMetaData
 }
 
-func (c *PodMetadataClient) handlePodDelete(podMeta *metav1.PartialObjectMetadata) {
-	c.deleteMutex.Lock()
-	defer c.deleteMutex.Unlock()
-	c.deleteQueue = append(c.deleteQueue, deleteRequest{podUID: podMeta.UID, timestamp: time.Now()})
+func (c *PodMetadataClient) handlePodDelete(partialPodMetaData PartialPodMetadata) {
+	c.deleteQueueMutex.Lock()
+	defer c.deleteQueueMutex.Unlock()
+	c.deleteQueue = append(c.deleteQueue, deleteRequest{podUID: partialPodMetaData.UID, timestamp: time.Now()})
 }
 
 func (c *PodMetadataClient) GetPodMetadata(uid types.UID) (*PartialPodMetadata, bool) {
-	c.addMutex.RLock()
-	defer c.addMutex.RUnlock()
+	c.podsMapMutex.RLock()
+	defer c.podsMapMutex.RUnlock()
 	pod, ok := c.pods[uid]
 	return pod, ok
 }
@@ -191,7 +211,8 @@ func (c *PodMetadataClient) runDeleteQueueProcessor(ctx context.Context) {
 }
 
 func (c *PodMetadataClient) processDeleteQueue() {
-	c.deleteMutex.Lock()
+	c.deleteQueueMutex.Lock()
+	defer c.deleteQueueMutex.Unlock()
 
 	now := time.Now()
 	var toDelete []types.UID
@@ -206,13 +227,12 @@ func (c *PodMetadataClient) processDeleteQueue() {
 	}
 
 	c.deleteQueue = remaining
-	c.deleteMutex.Unlock()
 
 	if len(toDelete) > 0 {
-		c.addMutex.Lock()
+		c.podsMapMutex.Lock()
 		for _, uid := range toDelete {
 			delete(c.pods, uid)
 		}
-		c.addMutex.Unlock()
+		c.podsMapMutex.Unlock()
 	}
 }

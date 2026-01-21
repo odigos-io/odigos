@@ -62,16 +62,13 @@ func (s *ClientTestSuite) TestGetPodMetadataExisting() {
 
 func (s *ClientTestSuite) TestHandlePodAddDeployment() {
 	// Pod owned by a ReplicaSet which is owned by a Deployment
-	// The extractWorkloadInfo should resolve this to Deployment
-	podMeta := &metav1.PartialObjectMetadata{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "new-pod",
-			Namespace: "test-ns",
-			UID:       types.UID("new-pod-uid"),
-			OwnerReferences: []metav1.OwnerReference{
-				{Name: "deployment-abc123", Kind: "ReplicaSet"},
-			},
-		},
+	// The workload info is pre-extracted before calling handlePodAdd
+	podMeta := PartialPodMetadata{
+		UID:          types.UID("new-pod-uid"),
+		Name:         "new-pod",
+		Namespace:    "test-ns",
+		WorkloadName: "deployment",
+		WorkloadKind: WorkloadKindDeployment,
 	}
 
 	s.client.handlePodAdd(podMeta)
@@ -80,22 +77,17 @@ func (s *ClientTestSuite) TestHandlePodAddDeployment() {
 	s.Require().True(found)
 	s.Equal("new-pod", pod.Name)
 	s.Equal("test-ns", pod.Namespace)
-	// Note: extractWorkloadInfo uses the workload package which resolves ReplicaSet to Deployment
-	// The workload name is derived from stripping the suffix from the ReplicaSet name
 	s.Equal("deployment", pod.WorkloadName)
 	s.Equal(WorkloadKindDeployment, pod.WorkloadKind)
 }
 
 func (s *ClientTestSuite) TestHandlePodAddDaemonSet() {
-	podMeta := &metav1.PartialObjectMetadata{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "daemon-pod",
-			Namespace: "kube-system",
-			UID:       types.UID("daemon-pod-uid"),
-			OwnerReferences: []metav1.OwnerReference{
-				{Name: "my-daemonset", Kind: "DaemonSet"},
-			},
-		},
+	podMeta := PartialPodMetadata{
+		UID:          types.UID("daemon-pod-uid"),
+		Name:         "daemon-pod",
+		Namespace:    "kube-system",
+		WorkloadName: "my-daemonset",
+		WorkloadKind: WorkloadKindDaemonSet,
 	}
 
 	s.client.handlePodAdd(podMeta)
@@ -109,15 +101,12 @@ func (s *ClientTestSuite) TestHandlePodAddDaemonSet() {
 }
 
 func (s *ClientTestSuite) TestHandlePodAddStatefulSet() {
-	podMeta := &metav1.PartialObjectMetadata{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "postgres-0",
-			Namespace: "database",
-			UID:       types.UID("postgres-pod-uid"),
-			OwnerReferences: []metav1.OwnerReference{
-				{Name: "postgres", Kind: "StatefulSet"},
-			},
-		},
+	podMeta := PartialPodMetadata{
+		UID:          types.UID("postgres-pod-uid"),
+		Name:         "postgres-0",
+		Namespace:    "database",
+		WorkloadName: "postgres",
+		WorkloadKind: WorkloadKindStatefulSet,
 	}
 
 	s.client.handlePodAdd(podMeta)
@@ -131,13 +120,13 @@ func (s *ClientTestSuite) TestHandlePodAddStatefulSet() {
 }
 
 func (s *ClientTestSuite) TestHandlePodAddNoOwner() {
-	podMeta := &metav1.PartialObjectMetadata{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            "standalone-pod",
-			Namespace:       "default",
-			UID:             types.UID("standalone-pod-uid"),
-			OwnerReferences: []metav1.OwnerReference{},
-		},
+	// Pods without owners (empty workload name) should not be added to cache
+	podMeta := PartialPodMetadata{
+		UID:          types.UID("standalone-pod-uid"),
+		Name:         "standalone-pod",
+		Namespace:    "default",
+		WorkloadName: "",
+		WorkloadKind: "",
 	}
 
 	s.client.handlePodAdd(podMeta)
@@ -146,30 +135,24 @@ func (s *ClientTestSuite) TestHandlePodAddNoOwner() {
 	s.False(found)
 }
 
-func (s *ClientTestSuite) TestHandlePodAdd() {
+func (s *ClientTestSuite) TestHandlePodAddUpdate() {
 	// Add initial pod
-	initialPodMeta := &metav1.PartialObjectMetadata{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "pod-to-update",
-			Namespace: "default",
-			UID:       types.UID("update-uid"),
-			OwnerReferences: []metav1.OwnerReference{
-				{Name: "old-owner-abc123", Kind: "ReplicaSet"},
-			},
-		},
+	initialPodMeta := PartialPodMetadata{
+		UID:          types.UID("update-uid"),
+		Name:         "pod-to-update",
+		Namespace:    "default",
+		WorkloadName: "old-owner",
+		WorkloadKind: WorkloadKindDeployment,
 	}
 	s.client.handlePodAdd(initialPodMeta)
 
 	// Update pod with new owner reference
-	updatedPodMeta := &metav1.PartialObjectMetadata{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "pod-to-update-renamed",
-			Namespace: "updated-ns",
-			UID:       types.UID("update-uid"),
-			OwnerReferences: []metav1.OwnerReference{
-				{Name: "new-owner-xyz789", Kind: "ReplicaSet"},
-			},
-		},
+	updatedPodMeta := PartialPodMetadata{
+		UID:          types.UID("update-uid"),
+		Name:         "pod-to-update-renamed",
+		Namespace:    "updated-ns",
+		WorkloadName: "new-owner",
+		WorkloadKind: WorkloadKindDeployment,
 	}
 	s.client.handlePodAdd(updatedPodMeta)
 
@@ -183,15 +166,12 @@ func (s *ClientTestSuite) TestHandlePodAdd() {
 
 func (s *ClientTestSuite) TestHandlePodDelete() {
 	// Add a pod first
-	podMeta := &metav1.PartialObjectMetadata{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "pod-to-delete",
-			Namespace: "default",
-			UID:       types.UID("delete-uid"),
-			OwnerReferences: []metav1.OwnerReference{
-				{Name: "my-service-abc123", Kind: "ReplicaSet"},
-			},
-		},
+	podMeta := PartialPodMetadata{
+		UID:          types.UID("delete-uid"),
+		Name:         "pod-to-delete",
+		Namespace:    "default",
+		WorkloadName: "my-service",
+		WorkloadKind: WorkloadKindDeployment,
 	}
 	s.client.handlePodAdd(podMeta)
 
@@ -455,15 +435,12 @@ func (s *ConcurrencyTestSuite) TestConcurrentAccess() {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 100; i++ {
-			podMeta := &metav1.PartialObjectMetadata{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "concurrent-pod",
-					Namespace: "default",
-					UID:       types.UID("concurrent-uid"),
-					OwnerReferences: []metav1.OwnerReference{
-						{Name: "concurrent-deployment-abc123", Kind: "ReplicaSet"},
-					},
-				},
+			podMeta := PartialPodMetadata{
+				UID:          types.UID("concurrent-uid"),
+				Name:         "concurrent-pod",
+				Namespace:    "default",
+				WorkloadName: "concurrent-deployment",
+				WorkloadKind: WorkloadKindDeployment,
 			}
 			client.handlePodAdd(podMeta)
 		}
@@ -481,15 +458,12 @@ func (s *ConcurrencyTestSuite) TestConcurrentAccess() {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 100; i++ {
-			podMeta := &metav1.PartialObjectMetadata{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "concurrent-pod-updated",
-					Namespace: "default",
-					UID:       types.UID("concurrent-uid"),
-					OwnerReferences: []metav1.OwnerReference{
-						{Name: "concurrent-deployment-abc123", Kind: "ReplicaSet"},
-					},
-				},
+			podMeta := PartialPodMetadata{
+				UID:          types.UID("concurrent-uid"),
+				Name:         "concurrent-pod-updated",
+				Namespace:    "default",
+				WorkloadName: "concurrent-deployment",
+				WorkloadKind: WorkloadKindDeployment,
 			}
 			client.handlePodAdd(podMeta)
 		}
@@ -514,15 +488,12 @@ func (s *ConcurrencyTestSuite) TestConcurrentDeleteQueueAccess() {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 100; i++ {
-			podMeta := &metav1.PartialObjectMetadata{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "concurrent-delete-pod",
-					Namespace: "default",
-					UID:       types.UID("concurrent-delete-uid"),
-					OwnerReferences: []metav1.OwnerReference{
-						{Name: "concurrent-deployment-abc123", Kind: "ReplicaSet"},
-					},
-				},
+			podMeta := PartialPodMetadata{
+				UID:          types.UID("concurrent-delete-uid"),
+				Name:         "concurrent-delete-pod",
+				Namespace:    "default",
+				WorkloadName: "concurrent-deployment",
+				WorkloadKind: WorkloadKindDeployment,
 			}
 			client.handlePodAdd(podMeta)
 		}
@@ -532,10 +503,8 @@ func (s *ConcurrencyTestSuite) TestConcurrentDeleteQueueAccess() {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 100; i++ {
-			podMeta := &metav1.PartialObjectMetadata{
-				ObjectMeta: metav1.ObjectMeta{
-					UID: types.UID("concurrent-delete-uid"),
-				},
+			podMeta := PartialPodMetadata{
+				UID: types.UID("concurrent-delete-uid"),
 			}
 			client.handlePodDelete(podMeta)
 		}

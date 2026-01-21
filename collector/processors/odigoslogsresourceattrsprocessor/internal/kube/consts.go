@@ -3,6 +3,7 @@ package kube
 // WorkloadKind represents the kind of Kubernetes workload
 type WorkloadKind string
 
+// THIS IS A COPY FROM k8sutils/pkg/workload/workloadkinds.go THAT WE NEED TO REMOVE IN THE FUTURE
 const (
 	WorkloadKindDeployment       WorkloadKind = "Deployment"
 	WorkloadKindDaemonSet        WorkloadKind = "DaemonSet"
