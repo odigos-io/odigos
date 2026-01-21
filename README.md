@@ -72,7 +72,7 @@ Manage and configure collectors via a convenient web UI.
 ## Installation
 
 Installing Odigos takes less than 5 minutes and requires no code changes.<br />
-Download our [CLI](https://docs.odigos.io/installation) and run the following command:
+Download our [CLI](https://docs.odigos.io/quickstart/installation) and run the following command:
 
 ```bash
 odigos install
