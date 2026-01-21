@@ -671,5 +671,19 @@ When updating components:
 
 ---
 
+## Component Usage Audit
+
+For a detailed analysis of deprecated and potentially unused components, see [COMPONENT_USAGE_AUDIT.md](./COMPONENT_USAGE_AUDIT.md).
+
+**Key Findings:**
+- 12 exporters have no corresponding destination configurations
+- 1 destination is deprecated (Splunk SAPM)
+- 3 configuration fields are deprecated
+- Several receivers are included but may only be used in manual configurations
+
+Removing unused components could reduce binary size by 10-20 MB and simplify maintenance.
+
+---
+
 *Last updated: 2026-01-20*
 *Odigos Collector Version: v0.130.0*
