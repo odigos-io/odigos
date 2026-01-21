@@ -14,7 +14,8 @@ This document identifies deprecated and potentially unused components in the Odi
 - **Deprecated Configuration Fields:** 3
 - **Utility Exporters (Not Destinations):** 4
 - **Potentially Unused Processors:** 2
-- **Potentially Unused Receivers:** 5
+- **Actively Used Receivers:** 6 core receivers
+- **Legacy/Uncertain Receivers:** 1 (zipkinreceiver - needs verification)
 
 ---
 
@@ -186,39 +187,59 @@ These are NOT unused - they serve specific purposes but aren't user-facing desti
 
 ---
 
-## 6. Potentially Unused Receivers
+## 6. Receiver Usage Analysis
 
-The following receivers are included but not referenced in the common config generation code. They may be available for manual/advanced configurations:
+**CORRECTION:** Initial audit incorrectly identified several receivers as "potentially unused." After thorough code analysis, all receivers except `zipkinreceiver` are confirmed to be actively used in Odigos.
 
-### `zipkinreceiver`
-**Status:** ⚠️ **LEGACY INGESTION**  
-**Purpose:** Receives Zipkin-format traces  
-**Recommendation:** Keep - supports legacy applications using Zipkin instrumentation  
-**Action:** Verify if actively used; consider removing if no usage
+### Actively Used Receivers
+
+### `otlpreceiver`
+**Status:** ✅ **CORE - ACTIVELY USED**  
+**Purpose:** Primary receiver for OTLP data from instrumented applications  
+**Usage:** Receives telemetry from auto-instrumented applications via gRPC and HTTP  
+**Location:** Used across all collector types
+
+### `odigosebpfreceiver`
+**Status:** ✅ **CORE - ACTIVELY USED**  
+**Purpose:** Custom receiver for eBPF-based instrumentation  
+**Usage:** Critical for Odigos's eBPF instrumentation, especially for Go applications  
+**Location:** Node collector metrics pipeline
 
 ### `filelogreceiver`
-**Status:** ⚠️ **MANUAL CONFIG ONLY**  
-**Purpose:** Reads logs from files  
-**Recommendation:** Keep - useful for file-based log collection  
-**Action:** Document as available for manual configuration
+**Status:** ✅ **ACTIVELY USED**  
+**Purpose:** Reads logs from container log files  
+**Usage:** Collects application logs from file system in node collectors  
+**Location:** `autoscaler/controllers/nodecollector/collectorconfig/logs.go`  
+**Configuration:** Configured with `filelogReceiverName` in logs pipeline
 
 ### `kubeletstatsreceiver`
-**Status:** ⚠️ **MANUAL CONFIG ONLY**  
-**Purpose:** Collects Kubernetes pod/node metrics from Kubelet  
-**Recommendation:** Keep - useful for Kubernetes infrastructure monitoring  
-**Action:** Document as available for manual configuration
+**Status:** ✅ **ACTIVELY USED**  
+**Purpose:** Collects Kubernetes pod/container metrics from Kubelet API  
+**Usage:** Gathers pod, container, and node metrics including CPU, memory, disk, and network  
+**Location:** `autoscaler/controllers/nodecollector/collectorconfig/metrics.go`  
+**Configuration:** Configurable via `MetricsSources.KubeletStats` in OdigosConfiguration  
+**Endpoint:** `https://${NODE_IP}:10250` with ServiceAccount authentication
 
 ### `hostmetricsreceiver`
-**Status:** ⚠️ **MANUAL CONFIG ONLY**  
-**Purpose:** Collects host system metrics (CPU, memory, disk)  
-**Recommendation:** Keep - useful for infrastructure monitoring  
-**Action:** Document as available for manual configuration
+**Status:** ✅ **ACTIVELY USED**  
+**Purpose:** Collects host system metrics (CPU, memory, disk, filesystem, network, processes)  
+**Usage:** Infrastructure monitoring for node-level metrics  
+**Location:** `autoscaler/controllers/nodecollector/collectorconfig/metrics.go`  
+**Configuration:** Configurable via `MetricsSources.HostMetrics` in OdigosConfiguration  
+**Scrapers:** CPU utilization, memory, disk, filesystem (with kubelet exclusions), network, processes, paging
 
 ### `prometheusreceiver`
-**Status:** ⚠️ **MANUAL CONFIG ONLY**  
+**Status:** ✅ **ACTIVELY USED**  
 **Purpose:** Scrapes Prometheus metrics endpoints  
-**Recommendation:** Keep - useful for scraping Prometheus exporters  
-**Action:** Document as available for manual configuration
+**Usage:** Self-monitoring and service graph metrics scraping  
+**Location:** `common/pipelinegen/config_builder.go`  
+**Configuration:** `prometheus/self-metrics` receiver for internal collector metrics and service graph connector
+
+### `zipkinreceiver`
+**Status:** ⚠️ **INCLUDED BUT USAGE UNCLEAR**  
+**Purpose:** Receives Zipkin-format traces  
+**Recommendation:** Verify if used for legacy Zipkin application support or can be removed  
+**Action:** Needs further investigation to confirm active usage
 
 ---
 
@@ -250,7 +271,7 @@ The following receivers are included but not referenced in the common config gen
 
 ### Medium Priority Actions
 
-4. **Document Manual-Config Components** - Clarify which receivers/processors are available for advanced/manual configuration but not auto-configured
+4. **Verify Zipkin Receiver Usage** - Investigate whether `zipkinreceiver` is actively used or can be safely removed
 
 5. **Audit Usage** - Before removing any component, search for:
    - User documentation references
@@ -296,11 +317,11 @@ If any exporter needs to be restored later:
 
 ## 10. Questions for Review
 
-1. Are any of the "unused" exporters planned for future destinations?
-2. Should we keep `zipkinreceiver` for legacy application support?
-3. Are the manual-config receivers (file logs, host metrics, etc.) actually being used?
-4. Should we maintain `opencensusexporter` for legacy compatibility?
-5. What's the timeline for removing deprecated Splunk (SAPM) destination?
+1. Are any of the 12 unused exporters planned for future destinations?
+2. Should we keep `zipkinreceiver` for legacy Zipkin application support or is it safe to remove?
+3. Should we maintain `opencensusexporter` for legacy compatibility?
+4. What's the timeline for removing deprecated Splunk (SAPM) destination?
+5. Are there plans to add destinations for any of the unused exporters (Cassandra, InfluxDB, etc.)?
 
 ---
 

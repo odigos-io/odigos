@@ -679,9 +679,19 @@ For a detailed analysis of deprecated and potentially unused components, see [CO
 - 12 exporters have no corresponding destination configurations
 - 1 destination is deprecated (Splunk SAPM)
 - 3 configuration fields are deprecated
-- Several receivers are included but may only be used in manual configurations
+- 6 receivers are actively used in node/cluster collector configurations
+- 1 receiver (zipkinreceiver) needs verification for active usage
 
-Removing unused components could reduce binary size by 10-20 MB and simplify maintenance.
+**Receiver Status (Corrected):**
+- ✅ `filelogreceiver` - Used for container log collection
+- ✅ `kubeletstatsreceiver` - Used for Kubernetes pod/container metrics
+- ✅ `hostmetricsreceiver` - Used for host system metrics
+- ✅ `prometheusreceiver` - Used for self-monitoring and service graph metrics
+- ✅ `otlpreceiver` - Core receiver for OTLP telemetry
+- ✅ `odigosebpfreceiver` - Core receiver for eBPF instrumentation
+- ⚠️ `zipkinreceiver` - Usage needs verification
+
+Removing unused exporters could reduce binary size by 10-20 MB and simplify maintenance.
 
 ---
 
