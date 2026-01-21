@@ -53,7 +53,7 @@ func syncWorkload(ctx context.Context, client ctrl.Client, pw k8sconsts.PodWorkl
 	for _, pod := range pods.Items {
 		if agentHashValue, ok := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]; ok {
 			if agentHashValue == ic.Spec.AgentsMetaHash {
-				podsManifestInjectionStatus.HasInjectedOutOfDatePods = true
+				podsManifestInjectionStatus.HasInjectedUpToDatePods = true
 			} else {
 				podsManifestInjectionStatus.HasInjectedOutOfDatePods = true
 			}
