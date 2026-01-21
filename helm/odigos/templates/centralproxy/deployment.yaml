@@ -39,6 +39,9 @@ spec:
       nodeSelector:
       {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- if .Values.centralProxy.priorityClassName }}
+      priorityClassName: {{ .Values.centralProxy.priorityClassName }}
+      {{- end }}
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: central-proxy

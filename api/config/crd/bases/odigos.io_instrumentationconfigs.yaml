@@ -197,6 +197,10 @@ spec:
                         The name of the otel distribution to use for this container.
                         if the name is empty, this container should not be instrumented.
                       type: string
+                    podManifestInjectionOptional:
+                      description: set to true if the agent used in this container
+                        can be injected without pod manifest changes.
+                      type: boolean
                     traces:
                       description: |-
                         Each enabled signal must be set with a non-nil value (even if the config content is empty).
@@ -473,6 +477,12 @@ spec:
                   - containerName
                   type: object
                 type: array
+              podManifestInjectionOptional:
+                description: |-
+                  true if all containers with agent injection enabled in this source
+                  can be enabled without pod manifest changes.
+                  if false, at least one container requires pod manifest changes to enable agent injection.
+                type: boolean
               sdkConfigs:
                 description: |-
                   Configuration for the OpenTelemetry SDKs that this workload should use.
@@ -1027,6 +1037,23 @@ spec:
                   This allows us to determine whether a crashing application should be rolled back or not
                 format: date-time
                 type: string
+              podsManifestInjectionStatus:
+                description: Represents the status of odigos MANIFEST injection to
+                  existing pods template.
+                properties:
+                  hasInjectedOutOfDatePods:
+                    description: if the source has any pods which are using an outdated
+                      agent deployment setup.
+                    type: boolean
+                  hasInjectedUpToDatePods:
+                    description: if the source has any pods which are using the latest
+                      agent deployment setup.
+                    type: boolean
+                  hasUninjectedPods:
+                    description: if the source has any pods which do not have the
+                      odigos agent injected.
+                    type: boolean
+                type: object
               rollbackOccurred:
                 description: Check if rollback happened to an application
                 type: boolean

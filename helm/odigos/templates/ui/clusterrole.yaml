@@ -92,22 +92,28 @@ rules:
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentationconfigs
-      - instrumentationinstances
+      - '*'
     verbs:
       - get
       - list
       - watch
+  {{- if include "odigos.ui.requiresWritePermissions" . }}
   - apiGroups:
       - odigos.io
     resources:
+      - instrumentationconfigs
+      - instrumentationinstances
       - sources
+    verbs:
+      - patch
+      - create
+      - delete
+  {{- end }}
+  - apiGroups:
+      - actions.odigos.io
+    resources:
+      - '*'
     verbs:
       - get
       - list
       - watch
-      {{- if include "odigos.ui.requiresWritePermissions" . }}
-      - patch
-      - create
-      - delete
-      {{- end }}

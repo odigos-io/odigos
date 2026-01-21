@@ -1,0 +1,236 @@
+# Config contains key information about the cluster and the installation
+
+type Config {
+  readonly: Boolean!
+  platformType: ComputePlatformType!
+  tier: Tier!
+  odigosVersion: String!
+  installationMethod: String!
+  installationStatus: InstallationStatus!
+  clusterName: String
+  isCentralProxyRunning: Boolean
+}
+
+# Effective configuration, reflects the actual values applied to the cluster
+
+enum UiMode {
+  default
+  readonly
+}
+
+enum MountMethod {
+  k8s_virtual_device
+  k8s_host_path
+  k8s_init_container
+}
+
+enum EnvInjectionMethod {
+  loader
+  pod_manifest
+  loader_fallback_to_pod_manifest
+}
+
+type RetryOnFailureConfig {
+  enabled: Boolean
+  initialInterval: String
+  maxInterval: String
+  maxElapsedTime: String
+}
+
+type OtlpExporterConfig {
+  enableDataCompression: Boolean
+  timeout: String
+  retryOnFailure: RetryOnFailureConfig
+}
+
+type CollectorNodeConfig {
+  collectorOwnMetricsPort: Int
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+  requestCPUm: Int
+  limitCPUm: Int
+  memoryLimiterLimitMiB: Int
+  memoryLimiterSpikeLimitMiB: Int
+  goMemLimitMiB: Int
+  k8sNodeLogsDirectory: String
+  enableDataCompression: Boolean
+  otlpExporterConfiguration: OtlpExporterConfig
+}
+
+type CollectorGatewayConfig {
+  minReplicas: Int
+  maxReplicas: Int
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+  requestCPUm: Int
+  limitCPUm: Int
+  memoryLimiterLimitMiB: Int
+  memoryLimiterSpikeLimitMiB: Int
+  goMemLimitMiB: Int
+  serviceGraphDisabled: Boolean
+  clusterMetricsEnabled: Boolean
+  httpsProxyAddress: String
+  nodeSelector: String # JSON string representation of map[string]string
+}
+
+type LanguageConfig {
+  enabled: Boolean!
+  envVars: String # JSON string representation of map[string]string
+}
+
+type UserInstrumentationEnvsConfig {
+  languages: String # JSON string representation of map[ProgrammingLanguage]LanguageConfig
+}
+
+type RolloutConfig {
+  automaticRolloutDisabled: Boolean
+}
+
+type OidcConfig {
+  tenantUrl: String
+  clientId: String
+  clientSecret: String
+}
+
+type MetricsSourceSpanMetricsConfig {
+  disabled: Boolean
+  interval: String
+  metricsExpiration: String
+  additionalDimensions: [String!]
+  histogramDisabled: Boolean
+  histogramBuckets: [String!]
+  includedProcessInDimensions: Boolean
+  excludedResourceAttributes: [String!]
+  resourceMetricsKeyAttributes: [String!]
+}
+
+type MetricsSourceHostMetricsConfig {
+  disabled: Boolean
+  interval: String
+}
+
+type MetricsSourceKubeletStatsConfig {
+  disabled: Boolean
+  interval: String
+}
+
+type MetricsSourceOdigosOwnMetricsConfig {
+  interval: String
+}
+
+type MetricsSourceAgentSpanMetricsConfig {
+  enabled: Boolean!
+}
+
+type MetricsSourceAgentRuntimeMetricConfig {
+  name: String!
+  disabled: Boolean
+}
+
+type MetricsSourceAgentJavaRuntimeMetricsConfig {
+  disabled: Boolean
+  metrics: [MetricsSourceAgentRuntimeMetricConfig!]
+}
+
+type MetricsSourceAgentRuntimeMetricsConfig {
+  java: MetricsSourceAgentJavaRuntimeMetricsConfig
+}
+
+type MetricsSourceAgentMetricsConfig {
+  spanMetrics: MetricsSourceAgentSpanMetricsConfig
+  runtimeMetrics: MetricsSourceAgentRuntimeMetricsConfig
+}
+
+type MetricsSourceConfig {
+  spanMetrics: MetricsSourceSpanMetricsConfig
+  hostMetrics: MetricsSourceHostMetricsConfig
+  kubeletStats: MetricsSourceKubeletStatsConfig
+  odigosOwnMetrics: MetricsSourceOdigosOwnMetricsConfig
+  agentMetrics: MetricsSourceAgentMetricsConfig
+}
+
+type AgentsInitContainerResourcesConfig {
+  requestCPUm: Int
+  limitCPUm: Int
+  requestMemoryMiB: Int
+  limitMemoryMiB: Int
+}
+
+type OdigosOwnTelemetryConfig {
+  metricsStoreDisabled: Boolean
+}
+
+type EffectiveConfig {
+  configVersion: Int!
+  telemetryEnabled: Boolean
+  openshiftEnabled: Boolean
+  ignoredNamespaces: [String!]
+  ignoredContainers: [String!]
+  ignoreOdigosNamespace: Boolean
+  psp: Boolean
+  imagePrefix: String
+  skipWebhookIssuerCreation: Boolean
+  collectorGateway: CollectorGatewayConfig
+  collectorNode: CollectorNodeConfig
+  profiles: [String!]
+  allowConcurrentAgents: Boolean
+  uiMode: UiMode
+  uiPaginationLimit: Int
+  uiRemoteUrl: String
+  centralBackendURL: String
+  clusterName: String
+  mountMethod: MountMethod
+  customContainerRuntimeSocketPath: String
+  agentEnvVarsInjectionMethod: EnvInjectionMethod
+  userInstrumentationEnvs: UserInstrumentationEnvsConfig
+  nodeSelector: String # JSON string representation of map[string]string
+  karpenterEnabled: Boolean
+  rollout: RolloutConfig
+  rollbackDisabled: Boolean
+  rollbackGraceTime: String
+  rollbackStabilityWindow: String
+  oidc: OidcConfig
+  odigletHealthProbeBindPort: Int
+  goAutoOffsetsCron: String
+  goAutoOffsetsMode: String
+  clickhouseJsonTypeEnabled: Boolean
+  checkDeviceHealthBeforeInjection: Boolean
+  resourceSizePreset: String
+  waspEnabled: Boolean
+  metricsSources: MetricsSourceConfig
+  agentsInitContainerResources: AgentsInitContainerResourcesConfig
+  traceIdSuffix: String
+  allowedTestConnectionHosts: [String!]
+  odigosOwnTelemetryStore: OdigosOwnTelemetryConfig
+  imagePullSecrets: [String!]
+}
+
+# Remote configuration managed by central-backend
+# These settings take precedence over Helm values and persist through upgrades
+
+type RemoteConfigRollout {
+  automaticRolloutDisabled: Boolean
+}
+type RemoteConfig {
+  rollout: RemoteConfigRollout
+}
+
+input RemoteConfigRolloutInput {
+  automaticRolloutDisabled: Boolean
+}
+input RemoteConfigInput {
+  rollout: RemoteConfigRolloutInput
+}
+
+extend type Query {
+  # key information about the cluster and the installation (self-defined config for UI control and usage)
+  config: Config
+  # odigos-remote-config ConfigMap managed by central-backend (deprecated, will be removed in the future)
+  remoteConfig: RemoteConfig
+  # effective-config ConfigMap, reflects the actual values applied to the cluster (by odigos-configuration, odigos-remote-config, etc.)
+  effectiveConfig: EffectiveConfig
+}
+
+extend type Mutation {
+  updateRemoteConfig(config: RemoteConfigInput!): Boolean!
+}

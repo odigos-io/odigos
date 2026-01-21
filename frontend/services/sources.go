@@ -27,7 +27,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/version"
@@ -324,51 +323,24 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 
 	switch kind {
 	case WorkloadKindDeployment:
-		dep, err := kube.DefaultClient.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
+		patchData := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, now))
+		_, err := kube.DefaultClient.AppsV1().Deployments(namespace).Patch(ctx, name, types.StrategicMergePatchType, patchData, metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to get deployment: %w", err)
-		}
-
-		if dep.Spec.Template.Annotations == nil {
-			dep.Spec.Template.Annotations = map[string]string{}
-		}
-		dep.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
-
-		_, err = kube.DefaultClient.AppsV1().Deployments(namespace).Update(ctx, dep, metav1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update deployment: %w", err)
+			return fmt.Errorf("failed to restart deployment: %w", err)
 		}
 
 	case WorkloadKindStatefulSet:
-		sts, err := kube.DefaultClient.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		patchData := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, now))
+		_, err := kube.DefaultClient.AppsV1().StatefulSets(namespace).Patch(ctx, name, types.StrategicMergePatchType, patchData, metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to get statefulset: %w", err)
-		}
-
-		if sts.Spec.Template.Annotations == nil {
-			sts.Spec.Template.Annotations = map[string]string{}
-		}
-		sts.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
-
-		_, err = kube.DefaultClient.AppsV1().StatefulSets(namespace).Update(ctx, sts, metav1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update statefulset: %w", err)
+			return fmt.Errorf("failed to restart statefulset: %w", err)
 		}
 
 	case WorkloadKindDaemonSet:
-		ds, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).Get(ctx, name, metav1.GetOptions{})
+		patchData := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, now))
+		_, err := kube.DefaultClient.AppsV1().DaemonSets(namespace).Patch(ctx, name, types.StrategicMergePatchType, patchData, metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to get daemonset: %w", err)
-		}
-
-		if ds.Spec.Template.Annotations == nil {
-			ds.Spec.Template.Annotations = map[string]string{}
-		}
-		ds.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
-
-		_, err = kube.DefaultClient.AppsV1().DaemonSets(namespace).Update(ctx, ds, metav1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update daemonset: %w", err)
+			return fmt.Errorf("failed to restart daemonset: %w", err)
 		}
 
 	case WorkloadKindCronJob:
@@ -389,34 +361,10 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 			Resource: "deploymentconfigs",
 		}).Namespace(namespace)
 
-		dcUnstructured, err := dcClient.Get(ctx, name, metav1.GetOptions{})
+		patchData := []byte(fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, now))
+		_, err := dcClient.Patch(ctx, name, types.MergePatchType, patchData, metav1.PatchOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to get deploymentconfig: %w", err)
-		}
-
-		// Convert to typed
-		var dc openshiftappsv1.DeploymentConfig
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(dcUnstructured.Object, &dc)
-		if err != nil {
-			return fmt.Errorf("failed to convert deploymentconfig: %w", err)
-		}
-
-		if dc.Spec.Template.Annotations == nil {
-			dc.Spec.Template.Annotations = map[string]string{}
-		}
-		dc.Spec.Template.Annotations["kubectl.kubernetes.io/restartedAt"] = now
-
-		// Convert back to unstructured
-		dcUnstructuredUpdated, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&dc)
-		if err != nil {
-			return fmt.Errorf("failed to convert deploymentconfig back to unstructured: %w", err)
-		}
-
-		dcUnstructured.Object = dcUnstructuredUpdated
-
-		_, err = dcClient.Update(ctx, dcUnstructured, metav1.UpdateOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to update deploymentconfig: %w", err)
+			return fmt.Errorf("failed to restart deploymentconfig: %w", err)
 		}
 
 	case WorkloadKindArgoRollout:

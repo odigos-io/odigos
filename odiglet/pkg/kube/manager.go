@@ -15,7 +15,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	corev1 "k8s.io/api/core/v1"
@@ -51,11 +50,7 @@ func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (c
 	log.Logger.V(0).Info("Starting reconcileres for runtime details")
 	ctrl.SetLogger(log.Logger)
 
-	odigosNs := env.GetCurrentNamespace()
-	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
-	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
-	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
 
 	metricsBindAddress := "0"
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
@@ -73,9 +68,6 @@ func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (c
 			ByObject: map[client.Object]cache.ByObject{
 				&corev1.Pod{}: {
 					Field: currentNodeSelector,
-				},
-				&corev1.ConfigMap{}: {
-					Field: odigosEffectiveConfigSelector,
 				},
 			},
 		},

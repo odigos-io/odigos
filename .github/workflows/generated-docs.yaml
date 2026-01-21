@@ -84,29 +84,30 @@ jobs:
             exit 1
           fi
 
-  check-instrumentation-doc-change:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
-          cd docs
-          yarn py-install-deps
-      - name: Generate Instrumentation docs
-        run: |
-          cd docs
-          python sync-instru-doc.py
-      - name: Check for changes in Instrumentation docs
-        run: |
-          if [[ -n $(git status --porcelain) ]]; then
-            git diff
-            echo "Instrumentation docs need to be updated. Pleaserun 'cd docs && python sync-instru-doc.py', then commit the changes."
-            exit 1
-          fi
+# Disabled for failing on fetching npm
+  # check-instrumentation-doc-change:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v5
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.x'
+  #     - name: Install Python dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install pyyaml
+  #         cd docs
+  #         yarn py-install-deps
+  #     - name: Generate Instrumentation docs
+  #       run: |
+  #         cd docs
+  #         python sync-instru-doc.py
+  #     - name: Check for changes in Instrumentation docs
+  #       run: |
+  #         if [[ -n $(git status --porcelain) ]]; then
+  #           git diff
+  #           echo "Instrumentation docs need to be updated. Pleaserun 'cd docs && python sync-instru-doc.py', then commit the changes."
+  #           exit 1
+  #         fi

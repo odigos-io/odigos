@@ -28,6 +28,20 @@ var KratosProfile = profile.Profile{
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
 		disabled := true
 		config.RollbackDisabled = &disabled
+
+		// Ensure each level exists, creating only if nil
+		if config.MetricsSources == nil {
+			config.MetricsSources = &common.MetricsSourceConfiguration{}
+		}
+		if config.MetricsSources.AgentMetrics == nil {
+			config.MetricsSources.AgentMetrics = &common.MetricsSourceAgentMetricsConfiguration{}
+		}
+		if config.MetricsSources.AgentMetrics.RuntimeMetrics == nil {
+			config.MetricsSources.AgentMetrics.RuntimeMetrics = &common.MetricsSourceAgentRuntimeMetricsConfiguration{}
+		}
+		if config.MetricsSources.AgentMetrics.RuntimeMetrics.Java == nil {
+			config.MetricsSources.AgentMetrics.RuntimeMetrics.Java = &common.MetricsSourceAgentJavaRuntimeMetricsConfiguration{}
+		}
 		config.MetricsSources.AgentMetrics.RuntimeMetrics.Java.Disabled = &disabled
 	},
 }

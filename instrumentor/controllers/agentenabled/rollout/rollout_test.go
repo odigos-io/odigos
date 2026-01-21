@@ -125,6 +125,8 @@ func Test_NoRollout_DistributionDoesntRequireRollout(t *testing.T) {
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := testutil.NewMockInstrumentationConfig(deployment)
+	// Set PodManifestInjectionOptional to true to indicate distribution doesn't require rollout
+	ic.Spec.PodManifestInjectionOptional = true
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
@@ -134,6 +136,7 @@ func Test_NoRollout_DistributionDoesntRequireRollout(t *testing.T) {
 
 	// Assert: Status updated to "NotRequired" - distribution doesn't need app restart, no requeue
 	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
+	assert.NotEmpty(t, ic.Status.Conditions, "expected conditions to be set")
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonNotRequired), ic.Status.Conditions[0].Reason)
 	assert.Equal(t, "The selected instrumentation distributions do not require application restart", ic.Status.Conditions[0].Message)
 }
