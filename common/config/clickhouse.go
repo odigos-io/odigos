@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"net/url"
 	"strings"
@@ -18,6 +20,7 @@ const (
 	clickhouseCaPem                    = "CLICKHOUSE_CA_PEM"
 	clickhouseCertPem                  = "CLICKHOUSE_CERT_PEM"
 	clickhouseKeyPem                   = "${CLICKHOUSE_KEY_PEM}"
+	clickhouseKeyPemConfig             = "CLICKHOUSE_KEY_PEM"
 	clickhouseInsecureSkipVerify       = "CLICKHOUSE_INSECURE_SKIP_VERIFY"
 	clickhouseTracesTable              = "CLICKHOUSE_TRACES_TABLE"
 	clickhouseLogsTable                = "CLICKHOUSE_LOGS_TABLE"
@@ -35,16 +38,33 @@ func (c *Clickhouse) DestType() common.DestinationType {
 	return common.ClickhouseDestinationType
 }
 
+func validateCertificatePem(pemData string) error {
+	block, _ := pem.Decode([]byte(pemData))
+	if block == nil {
+		return errors.New("failed to decode PEM block")
+	}
+	if block.Type != "CERTIFICATE" {
+		return errors.New("PEM block is not a certificate")
+	}
+	if _, err := x509.ParseCertificate(block.Bytes); err != nil {
+		return errors.New("failed to parse certificate: " + err.Error())
+	}
+	return nil
+}
+
 func clickhouseTlsConfig(dest ExporterConfigurer) (GenericMap, error) {
 	tlsConfig := GenericMap{
 		"insecure": false,
 	}
 	if caPem, ok := dest.GetConfig()[clickhouseCaPem]; ok && caPem != "" {
+		if err := validateCertificatePem(caPem); err != nil {
+			return nil, errors.New("invalid CA certificate: " + err.Error())
+		}
 		tlsConfig["ca_pem"] = caPem
 	}
 
 	certPem, hasCert := dest.GetConfig()[clickhouseCertPem]
-	_, hasKey := dest.GetConfig()["CLICKHOUSE_KEY_PEM"]
+	_, hasKey := dest.GetConfig()[clickhouseKeyPemConfig]
 	if hasCert && certPem != "" && !hasKey {
 		return nil, errors.New("clickhouse client certificate (cert_pem) requires client private key (key_pem)")
 	}
@@ -52,6 +72,9 @@ func clickhouseTlsConfig(dest ExporterConfigurer) (GenericMap, error) {
 		return nil, errors.New("clickhouse client private key (key_pem) requires client certificate (cert_pem)")
 	}
 	if hasCert && certPem != "" && hasKey {
+		if err := validateCertificatePem(certPem); err != nil {
+			return nil, errors.New("invalid client certificate: " + err.Error())
+		}
 		tlsConfig["cert_pem"] = certPem
 		tlsConfig["key_pem"] = clickhouseKeyPem
 	}
