@@ -22,14 +22,12 @@ import (
 )
 
 var (
-	HelmReleaseName        string
-	HelmNamespace          string
-	HelmChart              string
-	HelmValuesFile         string
-	HelmSetArgs            []string
-	HelmChartVersion       string
-	CentralHelmReleaseName = "odigos-central"
-	CentralHelmNamespace   = "odigos-central"
+	HelmReleaseName  string
+	HelmNamespace    string
+	HelmChart        string
+	HelmValuesFile   string
+	HelmSetArgs      []string
+	HelmChartVersion string
 )
 
 // injected at build time

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -371,29 +370,14 @@ func runCentralHelmUninstall(cmd *cobra.Command) error {
 	if res.Info != "" {
 		fmt.Printf("Info: %s\n", res.Info)
 	}
-
-	client := cmdcontext.KubeClientFromContextOrExit(cmd.Context())
-	_ = client.CoreV1().Namespaces().Delete(cmd.Context(), ns, metav1.DeleteOptions{})
-	waitForNamespaceDeletion(cmd.Context(), client, ns)
 	return nil
 }
 
 func runCentralInstallOrUpgrade() error {
-	ns := proNamespaceFlag
-	if ns == "" {
-		ns = consts.DefaultOdigosCentralNamespace
-	}
-	helm.HelmNamespace = ns
-	if centralHelmReleaseName != "" {
-		helm.HelmReleaseName = centralHelmReleaseName
-	} else {
-		helm.HelmReleaseName = clihelm.DefaultCentralReleaseName
-	}
-	if centralHelmChart != "" {
-		helm.HelmChart = centralHelmChart
-	} else {
-		helm.HelmChart = k8sconsts.DefaultCentralHelmChart
-	}
+
+	helm.HelmNamespace = consts.DefaultOdigosCentralNamespace
+	helm.HelmReleaseName = clihelm.DefaultCentralReleaseName
+	helm.HelmChart = k8sconsts.DefaultCentralHelmChart
 	helm.HelmValuesFile = centralHelmValuesFile
 	helm.HelmSetArgs = centralHelmSetArgs
 	helm.HelmChartVersion = versionFlag
@@ -429,28 +413,6 @@ func runCentralInstallOrUpgrade() error {
 func runCentralInstallOrUpgradeWithLegacyCheck(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	kubeClient := cmdcontext.KubeClientFromContextOrExit(ctx)
-
-	if helm.HelmNamespace == "" {
-		helm.HelmNamespace = proNamespaceFlag
-		if helm.HelmNamespace == "" {
-			helm.HelmNamespace = consts.DefaultOdigosCentralNamespace
-		}
-	}
-
-	// Central chart gates most resources on onPremToken; keep supporting --onprem-token
-	// by mapping it into Helm's --set layer.
-	if t, _ := cmd.Flags().GetString("onprem-token"); t != "" {
-		has := false
-		for _, s := range centralHelmSetArgs {
-			if strings.HasPrefix(s, "onPremToken=") {
-				has = true
-				break
-			}
-		}
-		if !has {
-			centralHelmSetArgs = append(centralHelmSetArgs, "onPremToken="+t)
-		}
-	}
 
 	isLegacy, err := helm.IsLegacyInstallation(ctx, kubeClient.Clientset.CoreV1(), helm.HelmNamespace)
 	if err != nil {
@@ -549,21 +511,21 @@ func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
 func init() {
 	rootCmd.AddCommand(proCmd)
 
-	proCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
-	proCmd.MarkFlagRequired("onprem-token")
-	proCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
+	// proCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	// proCmd.MarkFlagRequired("onprem-token")
+	// proCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
 
-	proCmd.AddCommand(offsetsCmd)
-	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
-	offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
-	offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")
+	// proCmd.AddCommand(offsetsCmd)
+	// offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
+	// offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
+	// offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
-	centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
-	centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
-	centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
-	centralInstallCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
+	// centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
+	// centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
+	// centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+	// centralInstallCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
 
 	// register and configure central uninstall command
 	centralCmd.AddCommand(centralUninstallCmd)
@@ -572,19 +534,19 @@ func init() {
 
 	// register and configure central upgrade command
 	centralCmd.AddCommand(centralUpgradeCmd)
-	centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
-	centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central upgrade")
-	centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
-	centralUpgradeCmd.MarkFlagRequired("version")
-	centralUpgradeCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
-	centralUpgradeCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
-	centralUpgradeCmd.Flags().String("onprem-token", "", "On-prem token for Odigos (required only if Central is not installed yet)")
+	// centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
+	// centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central upgrade")
+	// centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
+	// centralUpgradeCmd.MarkFlagRequired("version")
+	// centralUpgradeCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
+	// centralUpgradeCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
+	// centralUpgradeCmd.Flags().String("onprem-token", "", "On-prem token for Odigos (required only if Central is not installed yet)")
 
 	// Central configuration flags
-	centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
-	centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password (auto-generated if not provided)")
-	centralInstallCmd.Flags().StringVar(&centralAuthStorageClassName, "central-storage-class-name", "", "StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)")
-	centralInstallCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
+	// centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
+	// centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password (auto-generated if not provided)")
+	// centralInstallCmd.Flags().StringVar(&centralAuthStorageClassName, "central-storage-class-name", "", "StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)")
+	// centralInstallCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
 
 	// Helm-style flags for `odigos pro central` (same shape as `odigos install`)
 	for _, c := range []*cobra.Command{centralInstallCmd, centralUpgradeCmd} {
@@ -592,37 +554,38 @@ func init() {
 		c.Flags().StringVar(&centralHelmChart, "chart", k8sconsts.DefaultCentralHelmChart, "Helm chart to install (repo/name, local path, or URL)")
 		c.Flags().StringVarP(&centralHelmValuesFile, "values", "f", "", "Path to a custom values.yaml file")
 		c.Flags().StringSliceVar(&centralHelmSetArgs, "set", []string{}, "Set values on the command line (key=value)")
+		c.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 		c.Flags().BoolVar(
 			&centralHelmResetThenReuseValues,
 			"reset-then-reuse-values",
 			true,
 			"Reset to chart defaults, then reuse values from the previous release (default: true).",
 		)
+		c.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 	}
-	centralUninstallCmd.Flags().StringVar(&centralHelmReleaseName, "release-name", clihelm.DefaultCentralReleaseName, "Helm release name")
 
 	// Backward-compat flags (mapped where possible; otherwise ignored with a warning).
-	for _, c := range []*cobra.Command{centralInstallCmd, centralUpgradeCmd} {
-		c.Flags().StringVar(&centralImagePrefixFlag, "image-prefix", "", "Image registry/prefix override for Odigos Central images")
-		c.Flags().StringVar(&centralUIModeFlag, "ui-mode", "", "Central UI mode (maps to centralUI.uiMode)")
-		c.Flags().StringVar(&centralBackendURLFlag, "central-backend-url", "", "Override Central backend URL (maps to centralUI.centralBackendURL)")
-		c.Flags().StringVar(&centralNodeSelectorFlag, "node-selector", "", "Node selector for central components (key=value[,key=value...])")
+	// for _, c := range []*cobra.Command{centralInstallCmd, centralUpgradeCmd} {
+	// 	c.Flags().StringVar(&centralImagePrefixFlag, "image-prefix", "", "Image registry/prefix override for Odigos Central images")
+	// 	c.Flags().StringVar(&centralUIModeFlag, "ui-mode", "", "Central UI mode (maps to centralUI.uiMode)")
+	// 	c.Flags().StringVar(&centralBackendURLFlag, "central-backend-url", "", "Override Central backend URL (maps to centralUI.centralBackendURL)")
+	// 	c.Flags().StringVar(&centralNodeSelectorFlag, "node-selector", "", "Node selector for central components (key=value[,key=value...])")
 
-		c.Flags().BoolVar(&centralSkipWait, "skip-wait", false, "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().BoolVar(&centralTelemetryEnabled, "telemetry-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().BoolVar(&centralOpenshiftEnabled, "openshift-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().BoolVar(&centralSkipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().BoolVar(&centralPSPEnabled, "psp", false, "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().StringSliceVar(&centralIgnoredNamespaces, "ignored-namespaces", nil, "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().StringSliceVar(&centralIgnoredContainers, "ignored-containers", nil, "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().StringSliceVar(&centralInstallProfiles, "profiles", nil, "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().StringVar(&centralRuntimeSocketPath, "custom-container-runtime-socket-path", "", "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().StringVar(&centralK8sNodeLogsDirectory, "k8s-node-logs-directory", "", "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().StringVar(&centralInstrumentorImage, "instrumentor-image", "", "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().StringVar(&centralOdigletImage, "odiglet-image", "", "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().StringVar(&centralAutoScalerImage, "autoscaler-image", "", "Compatibility flag (ignored for Helm-based Central)")
-		c.Flags().BoolVar(&centralKarpenterEnabled, "karpenter-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
-	}
+	// 	c.Flags().BoolVar(&centralSkipWait, "skip-wait", false, "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().BoolVar(&centralTelemetryEnabled, "telemetry-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().BoolVar(&centralOpenshiftEnabled, "openshift-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().BoolVar(&centralSkipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().BoolVar(&centralPSPEnabled, "psp", false, "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().StringSliceVar(&centralIgnoredNamespaces, "ignored-namespaces", nil, "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().StringSliceVar(&centralIgnoredContainers, "ignored-containers", nil, "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().StringSliceVar(&centralInstallProfiles, "profiles", nil, "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().StringVar(&centralRuntimeSocketPath, "custom-container-runtime-socket-path", "", "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().StringVar(&centralK8sNodeLogsDirectory, "k8s-node-logs-directory", "", "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().StringVar(&centralInstrumentorImage, "instrumentor-image", "", "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().StringVar(&centralOdigletImage, "odiglet-image", "", "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().StringVar(&centralAutoScalerImage, "autoscaler-image", "", "Compatibility flag (ignored for Helm-based Central)")
+	// 	c.Flags().BoolVar(&centralKarpenterEnabled, "karpenter-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
+	// }
 
 	centralCmd.AddCommand(portForwardCentralCmd)
 	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
