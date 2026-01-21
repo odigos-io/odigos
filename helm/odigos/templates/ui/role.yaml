@@ -44,27 +44,28 @@ rules:
       - horizontalpodautoscalers
     verbs:
       - get
+  # Get/view all Odigos resources for debug dump
   - apiGroups:
       - odigos.io
     resources:
-      - instrumentationrules
-      - destinations
+      - '*'
     verbs:
       - get
       - list
       - watch
-      {{- if include "odigos.ui.requiresWritePermissions" . }}
+  {{- if include "odigos.ui.requiresWritePermissions" . }}
+  - apiGroups:
+      - odigos.io
+    resources:
+      - 'instrumentationrules'
+      - 'destinations'
+      - 'actions'
+    verbs:
       - create
       - patch
       - update
       - delete
-      {{- end }}
-  - apiGroups:
-      - odigos.io
-    resources:
-      - destinations
-    verbs:
-      - watch
+  {{- end }}
   - apiGroups:
       - odigos.io
     resources:
@@ -74,9 +75,9 @@ rules:
       - list
       - watch
   - apiGroups:
-      - odigos.io
+      - actions.odigos.io
     resources:
-      - 'actions'
+      - '*'
     verbs:
       - get
       - list
@@ -122,3 +123,17 @@ rules:
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - delete
       {{- end }}
+  # Get pod logs for debug dump
+  - apiGroups:
+      - ''
+    resources:
+      - pods/log
+    verbs:
+      - get
+  # Get pod proxy for debug dump (pprof profiles and metrics)
+  - apiGroups:
+      - ''
+    resources:
+      - pods/proxy
+    verbs:
+      - get

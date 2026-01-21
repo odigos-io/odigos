@@ -1133,6 +1133,11 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 	return sources, nil
 }
 
+// Diagnose is the resolver for the diagnose field.
+func (r *queryResolver) Diagnose(ctx context.Context, input *model.DiagnoseInput, dryRun *bool) (*model.DiagnoseResponse, error) {
+	return services.DiagnoseGraphQL(ctx, input, dryRun)
+}
+
 // ComputePlatform returns ComputePlatformResolver implementation.
 func (r *Resolver) ComputePlatform() ComputePlatformResolver { return &computePlatformResolver{r} }
 
