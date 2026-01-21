@@ -356,6 +356,27 @@ type DestinationsCategory struct {
 	Items       []*DestinationTypesCategoryItem `json:"items"`
 }
 
+type DiagnoseInput struct {
+	IncludeProfiles          *bool    `json:"includeProfiles,omitempty"`
+	IncludeMetrics           *bool    `json:"includeMetrics,omitempty"`
+	IncludeSourceWorkloads   *bool    `json:"includeSourceWorkloads,omitempty"`
+	SourceWorkloadNamespaces []string `json:"sourceWorkloadNamespaces,omitempty"`
+}
+
+type DiagnoseResponse struct {
+	Stats                    *DiagnoseStats `json:"stats"`
+	IncludeProfiles          bool           `json:"includeProfiles"`
+	IncludeMetrics           bool           `json:"includeMetrics"`
+	IncludeSourceWorkloads   bool           `json:"includeSourceWorkloads"`
+	SourceWorkloadNamespaces []string       `json:"sourceWorkloadNamespaces"`
+}
+
+type DiagnoseStats struct {
+	FileCount      int    `json:"fileCount"`
+	TotalSizeBytes int    `json:"totalSizeBytes"`
+	TotalSizeHuman string `json:"totalSizeHuman"`
+}
+
 type DistroParam struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
