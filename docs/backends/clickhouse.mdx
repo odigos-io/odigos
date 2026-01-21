@@ -124,17 +124,17 @@ Important Settings:
   - This field is required and defaults to `otel`
 - **CLICKHOUSE_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
   - This field is optional and defaults to `False`
-- **CLICKHOUSE_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
-  - This field is optional
-  - Example: `-----BEGIN CERTIFICATE-----`
-- **CLICKHOUSE_CERT_PEM** `string` : Client Certificate. Client TLS certificate in PEM format for mTLS authentication
-  - This field is optional
-  - Example: `-----BEGIN CERTIFICATE-----`
-- **CLICKHOUSE_KEY_PEM** `string` : Client Private Key. Client TLS private key in PEM format for mTLS authentication
-  - This field is optional
-  - Example: `-----BEGIN PRIVATE KEY-----`
 - **CLICKHOUSE_INSECURE_SKIP_VERIFY** `boolean` : Insecure Skip Verify. Skip TLS certificate verification
   - This field is optional and defaults to `False`
+- **CLICKHOUSE_CA_PEM** `string` : Certificate Authority (CA PEM). When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **CLICKHOUSE_CERT_PEM** `string` : Client Certificate (Cert PEM). Client TLS certificate in PEM format for mTLS authentication
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **CLICKHOUSE_KEY_PEM** `string` : Client Private Key (Key PEM). Client TLS private key in PEM format for mTLS authentication
+  - This field is optional
+  - Example: `-----BEGIN PRIVATE KEY-----`
 - **CLICKHOUSE_TRACES_TABLE** `string` : Traces Table. Name of the ClickHouse Table to use for storing trace spans. This name should be used in span queries
   - This field is required and defaults to `otel_traces`
 - **CLICKHOUSE_LOGS_TABLE** `string` : Logs Table. Name of the ClickHouse Table to use for storing logs
@@ -197,9 +197,9 @@ There are two primary methods for configuring destinations in Odigos:
         # Note: The commented fields below are optional.
         # CLICKHOUSE_USERNAME: <Username>
         # CLICKHOUSE_TLS_ENABLED: <Enable TLS>
-        # CLICKHOUSE_CA_PEM: <Certificate Authority>
-        # CLICKHOUSE_CERT_PEM: <Client Certificate>
         # CLICKHOUSE_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
+        # CLICKHOUSE_CA_PEM: <Certificate Authority (CA PEM)>
+        # CLICKHOUSE_CERT_PEM: <Client Certificate (Cert PEM)>
         # HYPERDX_LOG_NORMALIZER: <Enable Log Normalizer>
       destinationName: clickhouse
       # Uncomment the 'secretRef' below if you are using the optional Secret.
@@ -216,7 +216,7 @@ There are two primary methods for configuring destinations in Odigos:
     # The following Secret is optional. Uncomment the entire block if you need to use it.
     # apiVersion: v1
     # data:
-    #   CLICKHOUSE_KEY_PEM: <Base64 Client Private Key>
+    #   CLICKHOUSE_KEY_PEM: <Base64 Client Private Key (Key PEM)>
     #   CLICKHOUSE_PASSWORD: <Base64 Password>
     # kind: Secret
     # metadata:
