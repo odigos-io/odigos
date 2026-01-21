@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -36,13 +37,12 @@ import (
 )
 
 var (
-	updateRemoteFlag        bool
-	proNamespaceFlag        string
-	useDefault              bool
-	downloadFile            string
-	fromFile                string
-	centralImagePullSecrets []string
-	versionFlag             string
+	updateRemoteFlag bool
+	proNamespaceFlag string
+	useDefault       bool
+	downloadFile     string
+	fromFile         string
+	versionFlag      string
 
 	// Helm-like flags for `odigos pro central` (mirrors `odigos install`)
 	centralHelmReleaseName          string
@@ -50,28 +50,6 @@ var (
 	centralHelmValuesFile           string
 	centralHelmSetArgs              []string
 	centralHelmResetThenReuseValues = true
-
-	// Backward-compat flags (previous central installer scripts)
-	centralImagePrefixFlag  string
-	centralUIModeFlag       string
-	centralBackendURLFlag   string
-	centralNodeSelectorFlag string
-
-	// Accepted for compatibility; not used by the `odigos-central` chart today.
-	centralSkipWait                  bool
-	centralTelemetryEnabled          bool
-	centralOpenshiftEnabled          bool
-	centralSkipWebhookIssuerCreation bool
-	centralPSPEnabled                bool
-	centralIgnoredNamespaces         []string
-	centralIgnoredContainers         []string
-	centralInstallProfiles           []string
-	centralRuntimeSocketPath         string
-	centralK8sNodeLogsDirectory      string
-	centralInstrumentorImage         string
-	centralOdigletImage              string
-	centralAutoScalerImage           string
-	centralKarpenterEnabled          bool
 )
 
 var proCmd = &cobra.Command{
@@ -299,7 +277,19 @@ var (
 var centralInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Odigos Central backend and UI components",
-	RunE:  runCentralInstallOrUpgradeWithLegacyCheck,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		hasToken := false
+		for _, s := range centralHelmSetArgs {
+			if strings.HasPrefix(s, "onPremToken=") {
+				hasToken = true
+				break
+			}
+		}
+		if !hasToken {
+			return fmt.Errorf("missing required flag: --set onPremToken=<token>")
+		}
+		return runCentralInstallOrUpgradeWithLegacyCheck(cmd, args)
+	},
 	Example: `
 # Install Odigos Central
 odigos pro central install
@@ -515,10 +505,10 @@ func init() {
 	// proCmd.MarkFlagRequired("onprem-token")
 	// proCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
 
-	// proCmd.AddCommand(offsetsCmd)
-	// offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
-	// offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
-	// offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")
+	proCmd.AddCommand(offsetsCmd)
+	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
+	offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
+	offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")
 	proCmd.AddCommand(centralCmd)
 	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
