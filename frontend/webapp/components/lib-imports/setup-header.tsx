@@ -70,14 +70,17 @@ const SetupHeader: FC<SetupHeaderProps> = ({ step, streamFormRef, sourceFormRef 
 
       // Update the current stream name (in case user changed stream name during the same setup session)
       setConfiguredSources(
-        Object.entries(configuredSources).reduce((current, [ns, items]) => {
-          current[ns] = items.map((item) => ({
-            ...item,
-            currentStreamName: name,
-          }));
+        Object.entries(configuredSources).reduce(
+          (current, [ns, items]) => {
+            current[ns] = items.map((item) => ({
+              ...item,
+              currentStreamName: name,
+            }));
 
-          return current;
-        }, {} as typeof configuredSources),
+            return current;
+          },
+          {} as typeof configuredSources,
+        ),
       );
     }
 

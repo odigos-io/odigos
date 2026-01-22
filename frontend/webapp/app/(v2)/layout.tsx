@@ -48,7 +48,6 @@ function OverviewLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
-  const { config } = useConfig();
 
   // TODO: remove this after migration to v2
   const theme = useTheme();
@@ -60,9 +59,10 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   const router = useRouter();
   const pathname = usePathname();
+  const { config } = useConfig();
 
   const navbarIcons = useCallback(
-    (activeId: string) => {
+    (activeId?: string) => {
       const onClickId = (navId: keyof typeof routesMap) => {
         const route = routesMap[navId];
         if (route) router.push(route);
@@ -94,11 +94,11 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   return (
     <ErrorBoundary>
-      <OdigosProvider tier={config?.tier} version={config?.odigosVersion} platformType={config?.platformType}>
+      <OdigosProvider platformType={config?.platformType} tier={config?.tier} version={config?.odigosVersion || ''}>
         <FlexColumn $gap={0}>
           <OverviewHeader v2 />
           <FlexRow $gap={0}>
-            <Navbar height='calc(100vh - 60px)' icons={navbarIcons(getSelectedId(pathname) || '')} />
+            <Navbar height='calc(100vh - 60px)' icons={navbarIcons(getSelectedId(pathname))} />
             {children}
           </FlexRow>
         </FlexColumn>
