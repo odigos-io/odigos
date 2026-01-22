@@ -178,7 +178,7 @@ jobs:
           helm repo add odigos https://odigos-io.github.io/odigos/ || true
           helm repo update
 
-          BRANCH="${{ github.base_ref || github.ref_name }}"
+          BRANCH="${{ github.ref_name }}"
           # If on a release branch (e.g., releases/v1.14.0), get latest Helm version for that version line
           # Otherwise (main), get the latest overall Helm chart version
           if [[ "$BRANCH" == releases/* ]]; then
