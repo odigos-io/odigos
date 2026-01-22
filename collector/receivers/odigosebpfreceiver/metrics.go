@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cilium/ebpf"
+	"github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver/internal/metrics/jvm"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 )
@@ -90,17 +91,23 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 // each innermap represents a single process and its metrics
 func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, processKey [512]byte) error {
 
-	// Process with JVM handler
-	metrics, err := r.jvmHandler.ExtractJVMMetricsFromInnerMap(ctx, innerMap, processKey)
+	// 1. Extract resource attributes from key=0 (attributes are stored at key=0 and used to update resource attributes)
+	attributesBytes, err := r.extractAttributesFromInnerMap(innerMap)
+	if err != nil {
+		return fmt.Errorf("failed to extract attributes: %w", err)
+	}
+
+	// 2. Extract JVM metrics from the map
+	metrics, err := r.jvmHandler.ExtractJVMMetricsFromInnerMap(ctx, innerMap)
 	if err != nil {
 		return fmt.Errorf("JVM handler failed: %w", err)
 	}
 
-	// Add resource attributes from processKey if we have metrics
+	// 3. Add resource attributes to metrics if we have any
 	if metrics.ResourceMetrics().Len() > 0 {
 		resourceAttrs := metrics.ResourceMetrics().At(0).Resource().Attributes()
-		if err := r.addResourceAttributesFromProcessKey(resourceAttrs, processKey); err != nil {
-			r.logger.Error("failed to add resource attributes", zap.Error(err))
+		if err := r.addResourceAttributesFromProcessKey(resourceAttrs, attributesBytes); err != nil {
+			r.logger.Error("failed to add resource attributes from key=0", zap.Error(err))
 			return err
 		}
 	}
@@ -115,10 +122,25 @@ func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebp
 	return nil
 }
 
+// extractAttributesFromInnerMap extracts resource attributes from eBPF map key=0
+// Attributes are stored at key=0 and used to update the resource attributes
+// This is reusable for any metric type (JVM, Go, etc.)
+func (r *ebpfReceiver) extractAttributesFromInnerMap(innerMap *ebpf.Map) (jvm.MetricValue, error) {
+	var attributesKey jvm.MetricKey = jvm.MetricKey(jvm.MetricTypeAttributes) // key = 0
+	var attributesValue jvm.MetricValue
+
+	if err := innerMap.Lookup(&attributesKey, &attributesValue); err != nil {
+		r.logger.Error("Missing required attributes at key=0", zap.Error(err))
+		return jvm.MetricValue{}, fmt.Errorf("missing required attributes at key=0: %w", err)
+	}
+
+	return attributesValue, nil
+}
+
 // addResourceAttributesFromProcessKey parses processKey and adds resource attributes
 // Format: "k8s.container.name:frontend,k8s.deployment.name:frontend,service.name:frontend,..."
 // This is specific to how Odigos encodes process metadata in eBPF maps
-func (r *ebpfReceiver) addResourceAttributesFromProcessKey(resourceAttrs pcommon.Map, processKey [512]byte) error {
+func (r *ebpfReceiver) addResourceAttributesFromProcessKey(resourceAttrs pcommon.Map, processKey jvm.MetricValue) error {
 	// Convert byte array to string
 	processKeyStr := string(processKey[:])
 

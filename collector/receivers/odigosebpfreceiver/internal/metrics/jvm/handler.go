@@ -61,7 +61,8 @@ func NewJVMMetricsHandler(logger *zap.Logger) *JVMMetricsHandler {
 }
 
 // ExtractJVMMetricsFromInnerMap extracts JVM metrics from a process inner map and converts them to OpenTelemetry format
-func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, innerMap *ebpf.Map, processKey [512]byte) (pmetric.Metrics, error) {
+// This function focuses only on metrics extraction, not resource attributes (those are handled separately at key=0)
+func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, innerMap *ebpf.Map) (pmetric.Metrics, error) {
 	metrics := pmetric.NewMetrics()
 	resourceMetrics := metrics.ResourceMetrics().AppendEmpty()
 	scopeMetrics := resourceMetrics.ScopeMetrics().AppendEmpty()
@@ -70,6 +71,7 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 	scopeMetrics.Scope().SetName("jvm-ebpf-metrics")
 	scopeMetrics.Scope().SetVersion("1.0.0")
 
+	// Iterate through eBPF map for JVM metrics (skip key=0 which contains the resource attributes)
 	var key MetricKey
 	var value MetricValue
 
@@ -86,6 +88,11 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 	for iter.Next(&key, &value) {
 		entriesFound++
 		metricType := key.MetricType()
+
+		// Skip key=0 (attributes) since we already processed
+		if metricType == MetricTypeAttributes {
+			continue
+		}
 
 		switch metricType {
 		case MetricClassLoaded:

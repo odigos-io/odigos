@@ -45,6 +45,9 @@ func (k MetricKey) Attr2() uint8 {
 type MetricType uint8
 
 const (
+	// Attributes (key=0, contains metadata for all metrics in the map)
+	MetricTypeAttributes MetricType = 0
+
 	// Classes (no attributes)
 	MetricClassLoaded   MetricType = 1
 	MetricClassUnloaded MetricType = 2
@@ -353,10 +356,11 @@ type HistogramValue struct {
 	_           uint32 // padding
 }
 
-// MetricValue is a raw byte representation of union metric_value
-// Size must match BPF map value size: 40 bytes
-// Layout: histogram_value = 5×u32(20) + pad(4) + u64(8) + 2×u32(8) = 40
-type MetricValue [40]byte
+// MetricValue is a raw byte representation that can hold either:
+// - For key=0: Full 1024 bytes of attributes (comma-separated key:value pairs)
+// - For key=1,2,3...: First 40 bytes for metric data (rest is padding)
+// Size must match BPF map value size: 1024 bytes
+type MetricValue [1024]byte
 
 func (v *MetricValue) AsCounter() CounterValue {
 	return CounterValue{
