@@ -47,12 +47,12 @@ Once the collector adopts the new "middlewares" approach, this module can be ret
 
 ### How to Update
 
-The code in this module is copied from the collector repository using the current tag (`v0.130.0` as of this writing). When upgrading the collector version, this module must also be updated accordingly.
+The code in this module is copied from the collector repository using the current tag (`v0.141.0` as of this writing). When upgrading the collector version, this module must also be updated accordingly.
 
 - The original collector module, contains "replace" statements in it's `go.mod` which link to internally in the collector mono-repo (`../../pdata`). those need to be removed in odigos repo, as they confuse `make go-mod-tidy`
 
 ### Current Version
 
-- **Collector Version**: v0.130.0
-- **Last Updated**: 15/07/2025
+- **Collector Version**: v0.141.0
+- **Last Updated**: 22/01/2026
 

@@ -24,7 +24,7 @@ func NewSettings(tt *componenttest.Telemetry) processor.Settings {
 func AssertEqualOdigosAcceptedLogRecords(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos_accepted_log_records",
-		Description: "Number of log records passed through the processor.",
+		Description: "Number of log records passed through the processor. [Development]",
 		Unit:        "{records}",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
@@ -40,7 +40,7 @@ func AssertEqualOdigosAcceptedLogRecords(t *testing.T, tt *componenttest.Telemet
 func AssertEqualOdigosAcceptedMetricPoints(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos_accepted_metric_points",
-		Description: "Number of data points passed through the processor.",
+		Description: "Number of data points passed through the processor. [Development]",
 		Unit:        "{datapoints}",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
@@ -56,7 +56,7 @@ func AssertEqualOdigosAcceptedMetricPoints(t *testing.T, tt *componenttest.Telem
 func AssertEqualOdigosAcceptedSpans(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos_accepted_spans",
-		Description: "Number of spans passed through the processor.",
+		Description: "Number of spans passed through the processor. [Development]",
 		Unit:        "{spans}",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
@@ -72,7 +72,7 @@ func AssertEqualOdigosAcceptedSpans(t *testing.T, tt *componenttest.Telemetry, d
 func AssertEqualOdigosLogDataSize(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos_log_data_size",
-		Description: "Total size of log data passed to the processor",
+		Description: "Total size of log data passed to the processor [Development]",
 		Unit:        "By",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
@@ -88,7 +88,7 @@ func AssertEqualOdigosLogDataSize(t *testing.T, tt *componenttest.Telemetry, dps
 func AssertEqualOdigosMetricDataSize(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos_metric_data_size",
-		Description: "Total size of metric data passed to the processor",
+		Description: "Total size of metric data passed to the processor [Development]",
 		Unit:        "By",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
@@ -104,7 +104,7 @@ func AssertEqualOdigosMetricDataSize(t *testing.T, tt *componenttest.Telemetry, 
 func AssertEqualOdigosTraceDataSize(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_odigos_trace_data_size",
-		Description: "Total size of trace data passed to the processor",
+		Description: "Total size of trace data passed to the processor [Development]",
 		Unit:        "By",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,
