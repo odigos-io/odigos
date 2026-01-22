@@ -1,8 +1,6 @@
 package config
 
 import (
-	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"net/url"
 	"strings"
@@ -17,10 +15,8 @@ const (
 	clickhouseCreateSchema             = "CLICKHOUSE_CREATE_SCHEME"
 	clickhouseDatabaseName             = "CLICKHOUSE_DATABASE_NAME"
 	clickhouseTlsEnabled               = "CLICKHOUSE_TLS_ENABLED"
+	clickhouseUseCustomCa              = "CLICKHOUSE_USE_CUSTOM_CA"
 	clickhouseCaPem                    = "CLICKHOUSE_CA_PEM"
-	clickhouseCertPem                  = "CLICKHOUSE_CERT_PEM"
-	clickhouseKeyPem                   = "${CLICKHOUSE_KEY_PEM}"
-	clickhouseKeyPemConfig             = "CLICKHOUSE_KEY_PEM"
 	clickhouseInsecureSkipVerify       = "CLICKHOUSE_INSECURE_SKIP_VERIFY"
 	clickhouseTracesTable              = "CLICKHOUSE_TRACES_TABLE"
 	clickhouseLogsTable                = "CLICKHOUSE_LOGS_TABLE"
@@ -30,6 +26,10 @@ const (
 	clickhouseMetricsTableSummary      = "CLICKHOUSE_METRICS_TABLE_SUMMARY"
 	clickhouseMetricsTableExpHistogram = "CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM"
 	hyperdxLogNormalizer               = "HYPERDX_LOG_NORMALIZER"
+
+	// ClickhouseCaMountPath is the path where the CA certificate is mounted in the collector pod
+	ClickhouseCaMountPath        = "/etc/clickhouse/certs"
+	ClickhouseCaSecretVolumeName = "clickhouse-ca-cert"
 )
 
 type Clickhouse struct{}
@@ -38,51 +38,22 @@ func (c *Clickhouse) DestType() common.DestinationType {
 	return common.ClickhouseDestinationType
 }
 
-func validateCertificatePem(pemData string) error {
-	block, _ := pem.Decode([]byte(pemData))
-	if block == nil {
-		return errors.New("failed to decode PEM block")
-	}
-	if block.Type != "CERTIFICATE" {
-		return errors.New("PEM block is not a certificate")
-	}
-	if _, err := x509.ParseCertificate(block.Bytes); err != nil {
-		return errors.New("failed to parse certificate: " + err.Error())
-	}
-	return nil
-}
-
-func clickhouseTlsConfig(dest ExporterConfigurer) (GenericMap, error) {
+func clickhouseTlsConfig(dest ExporterConfigurer) GenericMap {
 	tlsConfig := GenericMap{
 		"insecure": false,
 	}
-	if caPem, ok := dest.GetConfig()[clickhouseCaPem]; ok && caPem != "" {
-		if err := validateCertificatePem(caPem); err != nil {
-			return nil, errors.New("invalid CA certificate: " + err.Error())
-		}
-		tlsConfig["ca_pem"] = caPem
+
+	if val, ok := dest.GetConfig()[clickhouseInsecureSkipVerify]; ok && val != "" {
+		tlsConfig["insecure_skip_verify"] = parseBool(val)
 	}
 
-	certPem, hasCert := dest.GetConfig()[clickhouseCertPem]
-	_, hasKey := dest.GetConfig()[clickhouseKeyPemConfig]
-	if hasCert && certPem != "" && !hasKey {
-		return nil, errors.New("clickhouse client certificate (cert_pem) requires client private key (key_pem)")
-	}
-	if hasKey && (!hasCert || certPem == "") {
-		return nil, errors.New("clickhouse client private key (key_pem) requires client certificate (cert_pem)")
-	}
-	if hasCert && certPem != "" && hasKey {
-		if err := validateCertificatePem(certPem); err != nil {
-			return nil, errors.New("invalid client certificate: " + err.Error())
-		}
-		tlsConfig["cert_pem"] = certPem
-		tlsConfig["key_pem"] = clickhouseKeyPem
+	// Set ca_file only if user explicitly chose to use a custom CA certificate
+	// The CA certificate will be mounted by k8sconfig if CLICKHOUSE_CA_PEM exists in the secret
+	if useCustomCa, ok := dest.GetConfig()[clickhouseUseCustomCa]; ok && useCustomCa == "true" {
+		tlsConfig["ca_file"] = ClickhouseCaMountPath + "/" + dest.GetID() + "/" + clickhouseCaPem
 	}
 
-	if insecureSkipVerify, ok := dest.GetConfig()[clickhouseInsecureSkipVerify]; ok && insecureSkipVerify != "" {
-		tlsConfig["insecure_skip_verify"] = parseBool(insecureSkipVerify)
-	}
-	return tlsConfig, nil
+	return tlsConfig
 }
 
 func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
@@ -124,11 +95,7 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 	exporterConfig["database"] = dbName
 
 	if dest.GetConfig()[clickhouseTlsEnabled] == "true" {
-		tlsConfig, err := clickhouseTlsConfig(dest)
-		if err != nil {
-			return nil, err
-		}
-		exporterConfig["tls"] = tlsConfig
+		exporterConfig["tls"] = clickhouseTlsConfig(dest)
 	}
 
 	if tracesTable, ok := dest.GetConfig()[clickhouseTracesTable]; ok {
