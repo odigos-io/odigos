@@ -338,10 +338,12 @@ func (r *k8sActualSourceResolver) WorkloadOdigosHealthStatus(ctx context.Context
 		})
 	}
 
+	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
+
 	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
 	// this is to detect if uninstrumented pods have agent injected when it should not.
 	conditions = append(conditions, status.CalculateAgentInjectedStatus(ic, pods))
-	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, workloadID)
+	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, workloadID, containerNamesWithOptionalPodManifestInjection)
 	if err != nil {
 		return nil, err
 	}

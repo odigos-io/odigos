@@ -136,7 +136,7 @@ func desiredStateProgressSeverity(desiredStateProgress model.DesiredStateProgres
 	return 1000
 }
 
-func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.K8sWorkloadID) (*model.DesiredConditionStatus, error) {
+func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.K8sWorkloadID, optionalPodManifestInjectionContainerNames map[string]struct{}) (*model.DesiredConditionStatus, error) {
 	l := loaders.For(ctx)
 	pods, err := l.GetWorkloadPods(ctx, *workloadId)
 	if err != nil {
@@ -152,15 +152,19 @@ func aggregateProcessesHealthForWorkload(ctx context.Context, workloadId *model.
 	numHealthyProcesses := 0
 	for _, pod := range pods {
 		for _, container := range pod.Containers {
-			if container.OtelDistroName == nil {
-				// do not expect instances from containers that are not instrumented
-				continue
+			_, containerPodManifestInjectionOptional := optionalPodManifestInjectionContainerNames[container.ContainerName]
+			if containerPodManifestInjectionOptional {
+				foundAgentOnAnyContainer = true
+			} else {
+				if container.OtelDistroName == nil {
+					continue
+				}
+				foundAgentOnAnyContainer = true
+				if !container.ExpectingInstrumentationInstances {
+					continue
+				}
 			}
-			foundAgentOnAnyContainer = true
 
-			if !container.ExpectingInstrumentationInstances {
-				continue
-			}
 			foundExpectedInstrumentationInstances = true
 
 			if !container.IsReady {
@@ -283,4 +287,20 @@ func aggregateConditionsBySeverity(conditions []*model.DesiredConditionStatus) *
 		}
 	}
 	return mostSevereCondition
+}
+
+func getContainerNamesWithOptionalPodManifestInjection(ic *v1alpha1.InstrumentationConfig) map[string]struct{} {
+	containerNamesWithOptionalPodManifestInjection := map[string]struct{}{}
+	if ic == nil {
+		return containerNamesWithOptionalPodManifestInjection
+	}
+
+	if ic.Spec.PodManifestInjectionOptional {
+		for _, container := range ic.Spec.Containers {
+			if container.PodManifestInjectionOptional {
+				containerNamesWithOptionalPodManifestInjection[container.ContainerName] = struct{}{}
+			}
+		}
+	}
+	return containerNamesWithOptionalPodManifestInjection
 }
