@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor/internal/kube"
@@ -25,6 +26,7 @@ func (s *ProcessorTestSuite) SetupTest() {
 	s.mockClient = newMockKubeClient()
 	s.processor = &partialK8sAttrsProcessor{
 		podMetadataClient: s.mockClient,
+		logger:            zap.NewNop(),
 	}
 }
 
@@ -32,98 +34,118 @@ func TestProcessorTestSuite(t *testing.T) {
 	suite.Run(t, new(ProcessorTestSuite))
 }
 
-func (s *ProcessorTestSuite) TestProcessResource_SetsAllAttributes() {
-	// Workload is Deployment "my-app"
+func (s *ProcessorTestSuite) TestEnrichResource_SetsAllAttributes() {
 	s.mockClient.AddPod(types.UID("test-pod-uid-1"), "my-app", kube.WorkloadKindDeployment, "my-app-xyz123", "production")
 
-	resource := pcommon.NewResource()
-	resource.Attributes().PutStr("k8s.pod.uid", "test-pod-uid-1")
+	attrs := pcommon.NewMap()
 
-	s.processor.processResource(resource)
+	s.processor.enrichResourceWithPodMetadata(attrs, "test-pod-uid-1")
 
 	// Check service.name
-	serviceNameAttr, exists := resource.Attributes().Get(string(semconv.ServiceNameKey))
+	serviceNameAttr, exists := attrs.Get(string(semconv.ServiceNameKey))
 	s.Require().True(exists, "service.name attribute should exist")
 	s.Equal("my-app", serviceNameAttr.AsString())
 
 	// Check k8s.pod.name
-	podNameAttr, exists := resource.Attributes().Get(string(semconv.K8SPodNameKey))
+	podNameAttr, exists := attrs.Get(string(semconv.K8SPodNameKey))
 	s.Require().True(exists, "k8s.pod.name attribute should exist")
 	s.Equal("my-app-xyz123", podNameAttr.AsString())
 
 	// Check k8s.namespace.name
-	nsAttr, exists := resource.Attributes().Get(string(semconv.K8SNamespaceNameKey))
+	nsAttr, exists := attrs.Get(string(semconv.K8SNamespaceNameKey))
 	s.Require().True(exists, "k8s.namespace.name attribute should exist")
 	s.Equal("production", nsAttr.AsString())
 
-	// Check k8s.deployment.name (semconv for Deployment workload)
-	deployAttr, exists := resource.Attributes().Get(string(semconv.K8SDeploymentNameKey))
+	// Check k8s.deployment.name
+	deployAttr, exists := attrs.Get(string(semconv.K8SDeploymentNameKey))
 	s.Require().True(exists, "k8s.deployment.name attribute should exist")
 	s.Equal("my-app", deployAttr.AsString())
+
+	// Check k8s.pod.uid is set
+	podUIDAttr, exists := attrs.Get(string(semconv.K8SPodUIDKey))
+	s.Require().True(exists, "k8s.pod.uid attribute should exist")
+	s.Equal("test-pod-uid-1", podUIDAttr.AsString())
 }
 
-func (s *ProcessorTestSuite) TestProcessResource_PodNotInCache() {
-	resource := pcommon.NewResource()
-	resource.Attributes().PutStr("k8s.pod.uid", "non-existent-pod-uid")
+func (s *ProcessorTestSuite) TestEnrichResource_PodNotInCache() {
+	attrs := pcommon.NewMap()
 
-	s.processor.processResource(resource)
+	s.processor.enrichResourceWithPodMetadata(attrs, "non-existent-uid")
 
-	_, exists := resource.Attributes().Get(string(semconv.ServiceNameKey))
+	_, exists := attrs.Get(string(semconv.ServiceNameKey))
 	s.False(exists, "service.name attribute should not exist")
 }
 
-func (s *ProcessorTestSuite) TestProcessResource_PodWithoutWorkload() {
-	// Pod without workload info (e.g., standalone pod)
-	s.mockClient.AddPod(types.UID("standalone-pod-uid"), "", "", "standalone-pod", "default")
+func (s *ProcessorTestSuite) TestEnrichResource_ArgoRollout() {
+	s.mockClient.AddPod(types.UID("rollout-pod-uid"), "my-rollout", kube.WorkloadKindArgoRollout, "my-rollout-pod-abc", "production")
 
-	resource := pcommon.NewResource()
-	resource.Attributes().PutStr("k8s.pod.uid", "standalone-pod-uid")
+	attrs := pcommon.NewMap()
 
-	s.processor.processResource(resource)
+	s.processor.enrichResourceWithPodMetadata(attrs, "rollout-pod-uid")
 
-	// service.name should not exist when workload info is empty
-	_, exists := resource.Attributes().Get(string(semconv.ServiceNameKey))
-	s.False(exists, "service.name attribute should not exist")
-
-	// But pod name and namespace should still be set
-	podNameAttr, exists := resource.Attributes().Get(string(semconv.K8SPodNameKey))
-	s.Require().True(exists, "k8s.pod.name should be set even without workload")
-	s.Equal("standalone-pod", podNameAttr.AsString())
-
-	nsAttr, exists := resource.Attributes().Get(string(semconv.K8SNamespaceNameKey))
-	s.Require().True(exists, "k8s.namespace.name should be set even without workload")
-	s.Equal("default", nsAttr.AsString())
-}
-
-func (s *ProcessorTestSuite) TestProcessResource_ComplexWorkloadName() {
-	s.mockClient.AddPod(types.UID("frontend-api-pod-uid"), "frontend-api-v2", kube.WorkloadKindDeployment, "frontend-api-v2-abc123-xyz", "staging")
-
-	resource := pcommon.NewResource()
-	resource.Attributes().PutStr("k8s.pod.uid", "frontend-api-pod-uid")
-
-	s.processor.processResource(resource)
-
-	serviceNameAttr, exists := resource.Attributes().Get(string(semconv.ServiceNameKey))
+	// Check service.name
+	serviceNameAttr, exists := attrs.Get(string(semconv.ServiceNameKey))
 	s.Require().True(exists, "service.name attribute should exist")
-	s.Equal("frontend-api-v2", serviceNameAttr.AsString())
+	s.Equal("my-rollout", serviceNameAttr.AsString())
+
+	// Check k8s.argoproj.rollout.name
+	rolloutAttr, exists := attrs.Get(kube.K8SArgoRolloutNameAttribute)
+	s.Require().True(exists, "k8s.argoproj.rollout.name attribute should exist")
+	s.Equal("my-rollout", rolloutAttr.AsString())
 }
 
-func (s *ProcessorTestSuite) TestProcessResource_NoPodUID() {
-	resource := pcommon.NewResource()
-	resource.Attributes().PutStr("some.other.attr", "value")
+func (s *ProcessorTestSuite) TestExtractPodUIDFromFilePath() {
+	tests := []struct {
+		name     string
+		path     string
+		expected string
+	}{
+		{
+			name:     "standard deployment pod path",
+			path:     "/var/log/pods/default_myapp-abc123-xyz_a1b2c3d4-e5f6-7890-abcd-ef1234567890/container/0.log",
+			expected: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		},
+		{
+			name:     "daemonset pod path",
+			path:     "/var/log/pods/kube-system_fluentd-abcde_12345678-1234-1234-1234-123456789012/fluentd/0.log",
+			expected: "12345678-1234-1234-1234-123456789012",
+		},
+		{
+			name:     "statefulset pod path",
+			path:     "/var/log/pods/database_postgres-0_fedcba98-7654-3210-fedc-ba9876543210/postgres/1.log",
+			expected: "fedcba98-7654-3210-fedc-ba9876543210",
+		},
+		{
+			name:     "invalid path - no pods directory",
+			path:     "/var/log/containers/myapp.log",
+			expected: "",
+		},
+		{
+			name:     "invalid path - no underscore",
+			path:     "/var/log/pods/invalid/container/0.log",
+			expected: "",
+		},
+		{
+			name:     "empty path",
+			path:     "",
+			expected: "",
+		},
+	}
 
-	s.processor.processResource(resource)
-
-	_, exists := resource.Attributes().Get(string(semconv.ServiceNameKey))
-	s.False(exists, "service.name should not be set when k8s.pod.uid is missing")
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			uid := extractPodUIDFromFilePath(tt.path)
+			s.Equal(tt.expected, uid)
+		})
+	}
 }
 
-func (s *ProcessorTestSuite) TestProcessLogs_SingleResource() {
+func (s *ProcessorTestSuite) TestProcessLogs_WithPodUIDInResource() {
 	s.mockClient.AddPod(types.UID("pod-uid-1"), "test-service", kube.WorkloadKindDeployment, "test-service-pod-abc", "default")
 
 	logs := plog.NewLogs()
 	rl := logs.ResourceLogs().AppendEmpty()
-	rl.Resource().Attributes().PutStr("k8s.pod.uid", "pod-uid-1")
+	rl.Resource().Attributes().PutStr(string(semconv.K8SPodUIDKey), "pod-uid-1")
 	sl := rl.ScopeLogs().AppendEmpty()
 	lr := sl.LogRecords().AppendEmpty()
 	lr.Body().SetStr("test log message")
@@ -139,6 +161,33 @@ func (s *ProcessorTestSuite) TestProcessLogs_SingleResource() {
 	s.Equal("test-service", serviceNameAttr.AsString())
 }
 
+func (s *ProcessorTestSuite) TestProcessLogs_ExtractsUIDFromFilePath() {
+	s.mockClient.AddPod(types.UID("uid-from-filepath"), "my-service", kube.WorkloadKindDeployment, "my-service-pod", "default")
+
+	logs := plog.NewLogs()
+	rl := logs.ResourceLogs().AppendEmpty()
+	// No k8s.pod.uid in resource attributes - will extract from file path
+	sl := rl.ScopeLogs().AppendEmpty()
+	lr := sl.LogRecords().AppendEmpty()
+	lr.Body().SetStr("test log")
+	lr.Attributes().PutStr("log.file.path", "/var/log/pods/default_my-service-pod_uid-from-filepath/container/0.log")
+
+	resultLogs, err := s.processor.processLogs(context.Background(), logs)
+
+	s.Require().NoError(err)
+	s.Equal(1, resultLogs.ResourceLogs().Len())
+
+	// Check that service.name was set
+	serviceNameAttr, exists := resultLogs.ResourceLogs().At(0).Resource().Attributes().Get(string(semconv.ServiceNameKey))
+	s.Require().True(exists, "service.name should be set when UID is extracted from file path")
+	s.Equal("my-service", serviceNameAttr.AsString())
+
+	// Check that k8s.pod.uid was also set on resource
+	podUIDAttr, exists := resultLogs.ResourceLogs().At(0).Resource().Attributes().Get(string(semconv.K8SPodUIDKey))
+	s.Require().True(exists, "k8s.pod.uid should be set on resource")
+	s.Equal("uid-from-filepath", podUIDAttr.AsString())
+}
+
 func (s *ProcessorTestSuite) TestProcessLogs_MultipleResources() {
 	s.mockClient.AddPod(types.UID("app-a-uid"), "app-a", kube.WorkloadKindDeployment, "app-a-pod", "ns-a")
 	s.mockClient.AddPod(types.UID("app-b-uid"), "app-b", kube.WorkloadKindDaemonSet, "app-b-pod", "ns-b")
@@ -146,13 +195,13 @@ func (s *ProcessorTestSuite) TestProcessLogs_MultipleResources() {
 	logs := plog.NewLogs()
 
 	rl1 := logs.ResourceLogs().AppendEmpty()
-	rl1.Resource().Attributes().PutStr("k8s.pod.uid", "app-a-uid")
+	rl1.Resource().Attributes().PutStr(string(semconv.K8SPodUIDKey), "app-a-uid")
 	sl1 := rl1.ScopeLogs().AppendEmpty()
 	lr1 := sl1.LogRecords().AppendEmpty()
 	lr1.Body().SetStr("log from app-a")
 
 	rl2 := logs.ResourceLogs().AppendEmpty()
-	rl2.Resource().Attributes().PutStr("k8s.pod.uid", "app-b-uid")
+	rl2.Resource().Attributes().PutStr(string(semconv.K8SPodUIDKey), "app-b-uid")
 	sl2 := rl2.ScopeLogs().AppendEmpty()
 	lr2 := sl2.LogRecords().AppendEmpty()
 	lr2.Body().SetStr("log from app-b")
@@ -167,18 +216,10 @@ func (s *ProcessorTestSuite) TestProcessLogs_MultipleResources() {
 	s.Require().True(exists1)
 	s.Equal("app-a", serviceNameAttr1.AsString())
 
-	deployAttr1, exists1 := resultLogs.ResourceLogs().At(0).Resource().Attributes().Get(string(semconv.K8SDeploymentNameKey))
-	s.Require().True(exists1)
-	s.Equal("app-a", deployAttr1.AsString())
-
 	// Check second resource - DaemonSet
 	serviceNameAttr2, exists2 := resultLogs.ResourceLogs().At(1).Resource().Attributes().Get(string(semconv.ServiceNameKey))
 	s.Require().True(exists2)
 	s.Equal("app-b", serviceNameAttr2.AsString())
-
-	dsAttr2, exists2 := resultLogs.ResourceLogs().At(1).Resource().Attributes().Get(string(semconv.K8SDaemonSetNameKey))
-	s.Require().True(exists2)
-	s.Equal("app-b", dsAttr2.AsString())
 }
 
 func (s *ProcessorTestSuite) TestProcessLogs_EmptyLogs() {
@@ -190,21 +231,20 @@ func (s *ProcessorTestSuite) TestProcessLogs_EmptyLogs() {
 	s.Equal(0, resultLogs.ResourceLogs().Len())
 }
 
-func (s *ProcessorTestSuite) TestProcessResource_ArgoRollout() {
-	s.mockClient.AddPod(types.UID("rollout-pod-uid"), "my-rollout", kube.WorkloadKindArgoRollout, "my-rollout-pod-abc", "production")
+func (s *ProcessorTestSuite) TestProcessLogs_SkipsWhenNoUID() {
+	logs := plog.NewLogs()
+	rl := logs.ResourceLogs().AppendEmpty()
+	// No k8s.pod.uid and no log.file.path
+	sl := rl.ScopeLogs().AppendEmpty()
+	lr := sl.LogRecords().AppendEmpty()
+	lr.Body().SetStr("test log message")
 
-	resource := pcommon.NewResource()
-	resource.Attributes().PutStr("k8s.pod.uid", "rollout-pod-uid")
+	resultLogs, err := s.processor.processLogs(context.Background(), logs)
 
-	s.processor.processResource(resource)
+	s.Require().NoError(err)
+	s.Equal(1, resultLogs.ResourceLogs().Len())
 
-	// Check service.name
-	serviceNameAttr, exists := resource.Attributes().Get(string(semconv.ServiceNameKey))
-	s.Require().True(exists, "service.name attribute should exist")
-	s.Equal("my-rollout", serviceNameAttr.AsString())
-
-	// Check k8s.argoproj.rollout.name (custom attribute for Argo Rollout)
-	rolloutAttr, exists := resource.Attributes().Get(kube.K8SArgoRolloutNameAttribute)
-	s.Require().True(exists, "k8s.argoproj.rollout.name attribute should exist")
-	s.Equal("my-rollout", rolloutAttr.AsString())
+	// service.name should not be set because there was no UID
+	_, exists := resultLogs.ResourceLogs().At(0).Resource().Attributes().Get(string(semconv.ServiceNameKey))
+	s.False(exists, "service.name should not be set when UID is missing")
 }

@@ -40,6 +40,7 @@ func (m *mockKubeClient) Start(ctx context.Context) error {
 
 func (m *mockKubeClient) AddPod(uid types.UID, workloadName string, workloadKind kube.WorkloadKind, name, namespace string) {
 	m.pods[uid] = &kube.PartialPodMetadata{
+		UID:          uid,
 		Name:         name,
 		Namespace:    namespace,
 		WorkloadName: workloadName,

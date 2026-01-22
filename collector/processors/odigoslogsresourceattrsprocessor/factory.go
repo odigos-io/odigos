@@ -32,7 +32,7 @@ func createLogsProcessor(
 	cfg component.Config,
 	nextConsumer consumer.Logs) (processor.Logs, error) {
 
-	proc := newPartialK8sAttrsProcessor()
+	proc := newPartialK8sAttrsProcessor(set.Logger)
 
 	return processorhelper.NewLogs(
 		ctx,
