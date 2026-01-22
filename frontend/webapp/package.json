@@ -15,7 +15,7 @@
   "dependencies": {
     "@apollo/client": "^3.13.9",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
-    "@odigos/ui-kit": "^0.0.177",
+    "@odigos/ui-kit": "^0.0.178",
     "graphql": "^16.12.0",
     "next": "15.5.9",
     "react": "19.2.3",

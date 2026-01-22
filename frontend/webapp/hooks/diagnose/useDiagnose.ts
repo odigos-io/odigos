@@ -26,7 +26,15 @@ export const useDiagnose = () => {
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `odigos-diagnose-${new Date().getTime()}.tar.gz`;
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error(error);
       addNotification({ type: StatusType.Error, title: 'Error', message: 'Failed to download diagnose file' });
