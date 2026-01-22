@@ -193,7 +193,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
-	podManifestInjectionOptional := ic.Spec.AgentInjectionEnabled // default to true if agent injection is enabled
+	podManifestInjectionOptional := true // pod manifest is optional, unless some container agent requires it
 
 	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
@@ -231,6 +231,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
 		ic.Spec.AgentInjectionEnabled = !rollbackOccurred
+		ic.Spec.PodManifestInjectionOptional = ic.Spec.AgentInjectionEnabled && podManifestInjectionOptional
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
@@ -245,6 +246,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
 		ic.Spec.AgentInjectionEnabled = false
+		ic.Spec.PodManifestInjectionOptional = false
 		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		return aggregatedCondition, nil
 	}
