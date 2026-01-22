@@ -1,17 +1,21 @@
-import React, { useMemo } from 'react';
-import { OdigosLogoText } from '@odigos/ui-kit/icons';
+import React, { useMemo, useState } from 'react';
 import { FORM_ALERTS } from '@odigos/ui-kit/constants';
 import { OtherStatusType } from '@odigos/ui-kit/types';
 import { StatusKeys, useStatusStore } from '../../store';
 import { Header, Tooltip } from '@odigos/ui-kit/components';
-import { useConfig, useDescribe, useTokenCRUD } from '@/hooks';
-import { Badge as V2Badge, Header as V2Header } from '@odigos/ui-kit/components/v2';
-import { NotificationManager, SlackInvite, SystemOverview, ToggleDarkMode } from '@odigos/ui-kit/containers';
+import { SystemDrawer } from '@odigos/ui-kit/containers/v2';
+import { useConfig, useDescribe, useDiagnose } from '@/hooks';
+import { OdigosLogoText, TerminalIcon } from '@odigos/ui-kit/icons';
+import { NotificationManager, SlackInvite, ToggleDarkMode } from '@odigos/ui-kit/containers';
+import { IconButton, Badge as V2Badge, Header as V2Header } from '@odigos/ui-kit/components/v2';
 
 const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   const { isReadonly } = useConfig();
+  const { downloadDiagnose } = useDiagnose();
   const { fetchDescribeOdigos } = useDescribe();
-  const { tokens, updateToken } = useTokenCRUD();
+
+  const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
+  const toggleSystemDrawer = () => setIsSystemDrawerOpen((prev) => !prev);
 
   const tokenStatus = useStatusStore((state) => state[StatusKeys.Token]);
   const backendStatus = useStatusStore((state) => state[StatusKeys.Backend]);
@@ -55,17 +59,27 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   const right = useMemo(() => {
     const arr = [<NotificationManager key='notification-manager' />];
     if (!v2) arr.unshift(<ToggleDarkMode key='toggle-theme' />);
-    arr.push(<SystemOverview key='system-overview' tokens={tokens} saveToken={updateToken} fetchDescribeOdigos={fetchDescribeOdigos} />);
+    arr.push(<IconButton key='system-drawer' icon={TerminalIcon} onClick={toggleSystemDrawer} />);
     arr.push(...[<SlackInvite key='slack-invite' />]);
 
     return arr;
-  }, [v2, tokens]);
+  }, [v2]);
 
   if (v2) {
-    return <V2Header left={left} right={right} />;
+    return (
+      <>
+        <V2Header left={left} right={right} />
+        <SystemDrawer isOpen={isSystemDrawerOpen} onClose={toggleSystemDrawer} fetchDescribeOdigos={fetchDescribeOdigos} downloadDiagnose={downloadDiagnose} />
+      </>
+    );
   }
 
-  return <Header left={left} right={right} />;
+  return (
+    <>
+      <Header left={left} right={right} />
+      <SystemDrawer isOpen={isSystemDrawerOpen} onClose={toggleSystemDrawer} fetchDescribeOdigos={fetchDescribeOdigos} downloadDiagnose={downloadDiagnose} />
+    </>
+  );
 };
 
 export { OverviewHeader };
