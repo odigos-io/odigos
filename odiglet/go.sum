@@ -149,7 +149,6 @@ go.opentelemetry.io/auto v0.21.0 h1:a6twt2c2HJX0JGCWqJcPOaoRQN/5eiep6Pduk2XU/zM=
 go.opentelemetry.io/auto v0.21.0/go.mod h1:maWvWRYZv3QeTR3y+GmfkvftYY+EQ+8EfwoMgMqm26Y=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
-go.opentelemetry.io/collector v0.141.0 h1:TrB5VlTVvWBPdx9Kvl4kigvkPr5RI2NhvXcN4CErrFY=
 go.opentelemetry.io/collector/featuregate v1.47.0 h1:LuJnDngViDzPKds5QOGxVYNL1QCCVWN/m61lHTV8Pf4=
 go.opentelemetry.io/collector/featuregate v1.47.0/go.mod h1:d0tiRzVYrytB6LkcYgz2ESFTv7OktRPQe0QEQcPt1L4=
 go.opentelemetry.io/collector/internal/testutil v0.141.0 h1:/rUGApojPtUPMN3rFfApNgEjAt03rCGt2qxNxGGs/4A=
