@@ -4,11 +4,12 @@ import React, { CSSProperties, useCallback, useMemo, type PropsWithChildren } fr
 import { usePathname, useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { EntityTypes } from '@odigos/ui-kit/types';
-import { PipelineCollectorIcon, ServiceMapIcon } from '@odigos/ui-kit/icons';
+import { OdigosProvider } from '@odigos/ui-kit/contexts';
 import { DATA_FLOW_HEIGHT, MENU_BAR_HEIGHT, ROUTES } from '@/utils';
-import { useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
 import { ErrorBoundary, FlexColumn } from '@odigos/ui-kit/components';
 import { OverviewHeader, OverviewModalsAndDrawers } from '@/components';
+import { PipelineCollectorIcon, ServiceMapIcon } from '@odigos/ui-kit/icons';
+import { useConfig, useDataStreamsCRUD, useSSE, useTokenTracker } from '@/hooks';
 import { DataFlowActionsMenu, NavIconIds, SideNav, ToastList } from '@odigos/ui-kit/containers';
 
 const PageContent = styled(FlexColumn)`
@@ -82,10 +83,12 @@ function OverviewLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
+
   const { updateDataStream, deleteDataStream } = useDataStreamsCRUD();
 
   const router = useRouter();
   const pathname = usePathname();
+  const { config } = useConfig();
 
   const entityType = useMemo(() => getEntityType(pathname), [pathname]);
   const selectedId = useMemo(() => getSelectedId(pathname), [pathname]);
@@ -100,44 +103,46 @@ function OverviewLayout({ children }: PropsWithChildren) {
 
   return (
     <ErrorBoundary>
-      <PageContent>
-        <OverviewHeader />
+      <OdigosProvider platformType={config?.platformType} tier={config?.tier} version={config?.odigosVersion || ''}>
+        <PageContent>
+          <OverviewHeader />
 
-        <ContentWithActions $height={DATA_FLOW_HEIGHT}>
-          {selectedId !== serviceMapId ? (
-            <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
-          ) : (
-            <div style={{ height: `${MENU_BAR_HEIGHT}px` }} />
-          )}
+          <ContentWithActions $height={DATA_FLOW_HEIGHT}>
+            {selectedId !== serviceMapId ? (
+              <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />
+            ) : (
+              <div style={{ height: `${MENU_BAR_HEIGHT}px` }} />
+            )}
 
-          <ContentUnderActions>
-            <SideNav
-              defaultSelectedId={selectedId}
-              onClickId={onClickId}
-              extendedNavIcons={[
-                {
-                  id: serviceMapId,
-                  icon: ServiceMapIcon,
-                  selected: selectedId === serviceMapId,
-                  onClick: () => onClickId(serviceMapId),
-                  tooltip: serviceMapDisplayName,
-                },
-                {
-                  id: pipelineCollectorsId,
-                  icon: PipelineCollectorIcon,
-                  selected: selectedId === pipelineCollectorsId,
-                  onClick: () => onClickId(pipelineCollectorsId),
-                  tooltip: pipelineCollectorsDisplayName,
-                },
-              ]}
-            />
-            {children}
-          </ContentUnderActions>
-        </ContentWithActions>
+            <ContentUnderActions>
+              <SideNav
+                defaultSelectedId={selectedId}
+                onClickId={onClickId}
+                extendedNavIcons={[
+                  {
+                    id: serviceMapId,
+                    icon: ServiceMapIcon,
+                    selected: selectedId === serviceMapId,
+                    onClick: () => onClickId(serviceMapId),
+                    tooltip: serviceMapDisplayName,
+                  },
+                  {
+                    id: pipelineCollectorsId,
+                    icon: PipelineCollectorIcon,
+                    selected: selectedId === pipelineCollectorsId,
+                    onClick: () => onClickId(pipelineCollectorsId),
+                    tooltip: pipelineCollectorsDisplayName,
+                  },
+                ]}
+              />
+              {children}
+            </ContentUnderActions>
+          </ContentWithActions>
 
-        <OverviewModalsAndDrawers />
-        <ToastList />
-      </PageContent>
+          <OverviewModalsAndDrawers />
+          <ToastList />
+        </PageContent>
+      </OdigosProvider>
     </ErrorBoundary>
   );
 }
