@@ -142,7 +142,7 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		return nil, fmt.Errorf("failed to get manifest YAML: %w", err)
 	}
 
-	instrumentationConfigYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindInstrumentationConfig, name)
+	instrumentationConfigYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindInstrumentationConfig, workload.CalculateWorkloadRuntimeObjectName(name, string(kind)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get InstrumentationConfig YAML: %w", err)
 	}
