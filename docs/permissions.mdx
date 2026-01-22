@@ -170,6 +170,7 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | \* | configmaps | odigos-data-collection | get<br />list<br />watch |
+| discovery.k8s.io | endpointslices | \* | get<br />list<br />watch |
 
 ### odigos-scheduler
 
@@ -239,6 +240,7 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 | batch | cronjobs | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | batch | jobs | \* | create<br />delete<br />get<br />list<br />watch |
 | coordination.k8s.io | leases | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
+| discovery.k8s.io | endpointslices | \* | get<br />list<br />watch |
 | odigos.io | \* | \* | \* |
 | odigos.io | collectorsgroups/finalizers<br />sources/finalizers | \* | update |
 | odigos.io | collectorsgroups/status<br />destinations/status<br />instrumentationconfigs/status<br />instrumentationinstances/status | \* | get<br />list<br />patch<br />update<br />watch |
