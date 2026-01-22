@@ -94,8 +94,9 @@ Below are the ClusterRoles used by Odigos components.
 | apps | replicasets | \* | get<br />list |
 | \* | services | \* | get<br />list |
 | \* | pods | \* | get<br />list<br />watch<br />delete |
-| odigos.io | instrumentationconfigs<br />instrumentationinstances | \* | get<br />list<br />watch |
-| odigos.io | sources | \* | get<br />list<br />watch<br />patch<br />create<br />delete |
+| odigos.io | \* | \* | get<br />list<br />watch |
+| odigos.io | instrumentationconfigs<br />instrumentationinstances<br />sources | \* | patch<br />create<br />delete |
+| actions.odigos.io | \* | \* | get<br />list<br />watch |
 
 ## Roles
 
@@ -196,13 +197,15 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | \* | secrets | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete |
 | apps | replicasets | \* | get<br />list |
 | autoscaling | horizontalpodautoscalers | \* | get |
-| odigos.io | instrumentationrules<br />destinations | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete |
-| odigos.io | destinations | \* | watch |
+| odigos.io | \* | \* | get<br />list<br />watch |
+| odigos.io | instrumentationrules<br />destinations<br />actions | \* | create<br />patch<br />update<br />delete |
 | odigos.io | collectorsgroups | \* | get<br />list<br />watch |
-| odigos.io | actions | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete |
+| actions.odigos.io | \* | \* | get<br />list<br />watch<br />create<br />patch<br />update<br />delete |
 | apps | deployments/scale | odigos-instrumentor | get<br />update<br />patch |
 | apps | daemonsets | odiglet | get<br />update<br />patch |
 | \* | pods | \* | get<br />list<br />delete |
+| \* | pods/log | \* | get |
+| \* | pods/proxy | \* | get |
 
 # Operator
 
@@ -219,7 +222,7 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 | \* | nodes | \* | get<br />list<br />patch<br />update<br />watch |
 | \* | nodes/proxy<br />nodes/stats | \* | get<br />list |
 | \* | pods | \* | delete<br />get<br />list<br />watch |
-| \* | pods/status | \* | get |
+| \* | pods/log<br />pods/status | \* | get |
 | \* | serviceaccounts | \* | create<br />delete<br />get<br />list<br />patch<br />watch |
 | actions.odigos.io | \* | \* | create<br />delete<br />deletecollection<br />get<br />list<br />patch<br />update<br />watch |
 | actions.odigos.io | */status | \* | get<br />patch<br />update |
