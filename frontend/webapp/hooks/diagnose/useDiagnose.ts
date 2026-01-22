@@ -1,9 +1,9 @@
+import { useCallback } from 'react';
+import { useLazyQuery } from '@apollo/client';
 import { DOWNLOAD_DIAGNOSE } from '@/graphql';
 import { API, downloadFileFromURL } from '@/utils';
-import { useLazyQuery } from '@apollo/client';
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { Crud, StatusType, type DiagnoseFormData } from '@odigos/ui-kit/types';
-import { useCallback } from 'react';
 
 interface DiagnoseResponse {
   stats: {
