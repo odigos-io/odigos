@@ -67,11 +67,9 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 	}
 
 	podManifestInjectionOptionalContainers := map[string]struct{}{}
-	if ic.Spec.PodManifestInjectionOptional {
-		for _, container := range ic.Spec.Containers {
-			if container.PodManifestInjectionOptional {
-				podManifestInjectionOptionalContainers[container.ContainerName] = struct{}{}
-			}
+	for _, container := range ic.Spec.Containers {
+		if container.PodManifestInjectionOptional {
+			podManifestInjectionOptionalContainers[container.ContainerName] = struct{}{}
 		}
 	}
 
@@ -79,13 +77,15 @@ func CalculateExpectingTelemetryStatus(ic *v1alpha1.InstrumentationConfig, pods 
 	// has at least one instrumentedcontainer that is ready.
 	foundInstrumentedContainer := false
 	for _, pod := range pods {
-		if !pod.AgentInjected {
+		if len(podManifestInjectionOptionalContainers) == 0 && !pod.AgentInjected {
 			continue
 		}
 		for _, container := range pod.Containers {
 			_, containerPodManifestInjectionOptional := podManifestInjectionOptionalContainers[container.ContainerName]
-			if !containerPodManifestInjectionOptional && (container.OtelDistroName == nil || *container.OtelDistroName == "") {
-				continue
+			if !containerPodManifestInjectionOptional {
+				if container.OtelDistroName == nil || *container.OtelDistroName == "" {
+					continue
+				}
 			}
 			foundInstrumentedContainer = true
 			if !container.IsReady {
