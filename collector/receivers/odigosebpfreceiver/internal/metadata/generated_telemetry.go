@@ -62,19 +62,19 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	var err, errs error
 	builder.EbpfLostSamples, err = builder.meter.Int64Counter(
 		"otelcol_ebpf_lost_samples",
-		metric.WithDescription("The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0."),
+		metric.WithDescription("The number of samples lost while reading from the eBPF perf buffer. For the ring buffer, this value is always 0. [Development]"),
 		metric.WithUnit("{samples}"),
 	)
 	errs = errors.Join(errs, err)
 	builder.EbpfMemoryPressureWaitTimeTotal, err = builder.meter.Int64Counter(
 		"otelcol_ebpf_memory_pressure_wait_time_total",
-		metric.WithDescription("Total time spent waiting due to memory pressure. Can be compared with otelcol_process_uptime_seconds_total to calculate the percentage of time spent in memory pressure: (ebpf_memory_pressure_wait_time_total_milliseconds / (otelcol_process_uptime_seconds_total * 1000)) * 100"),
+		metric.WithDescription("Total time spent waiting due to memory pressure. Can be compared with otelcol_process_uptime_seconds_total to calculate the percentage of time spent in memory pressure: (ebpf_memory_pressure_wait_time_total_milliseconds / (otelcol_process_uptime_seconds_total * 1000)) * 100 [Development]"),
 		metric.WithUnit("ms"),
 	)
 	errs = errors.Join(errs, err)
 	builder.EbpfTotalBytesRead, err = builder.meter.Int64Counter(
 		"otelcol_ebpf_total_bytes_read",
-		metric.WithDescription("Total number of bytes read from the eBPF buffer (perf or ring)."),
+		metric.WithDescription("Total number of bytes read from the eBPF buffer (perf or ring). [Development]"),
 		metric.WithUnit("bytes"),
 	)
 	errs = errors.Join(errs, err)
