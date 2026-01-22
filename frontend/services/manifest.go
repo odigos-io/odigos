@@ -127,6 +127,18 @@ func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKi
 		}
 		return string(rolloutYamlBytes), nil
 
+	case model.K8sResourceKindInstrumentationConfig:
+		obj, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		obj.ObjectMeta.ManagedFields = nil
+		yb, err := syaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
+		return string(yb), nil
+
 	default:
 		return "", fmt.Errorf("unsupported kind: %s", kind)
 	}
