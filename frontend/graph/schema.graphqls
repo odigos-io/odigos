@@ -13,6 +13,7 @@ enum K8sResourceKind {
   StaticPod
   DeploymentConfig
   Rollout
+  InstrumentationConfig
 }
 
 enum ConditionStatus {
@@ -127,6 +128,7 @@ type K8sActualSource {
   conditions: [Condition!]
   workloadOdigosHealthStatus: DesiredConditionStatus
   manifestYAML: String
+  instrumentationConfigYAML: String
 }
 
 input K8sDesiredSourceInput {

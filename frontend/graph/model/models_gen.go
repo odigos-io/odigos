@@ -631,6 +631,7 @@ type K8sActualSource struct {
 	Conditions                 []*Condition            `json:"conditions,omitempty"`
 	WorkloadOdigosHealthStatus *DesiredConditionStatus `json:"workloadOdigosHealthStatus,omitempty"`
 	ManifestYaml               *string                 `json:"manifestYAML,omitempty"`
+	InstrumentationConfigYaml  *string                 `json:"instrumentationConfigYAML,omitempty"`
 }
 
 type K8sAnnotationAttribute struct {
@@ -1813,15 +1814,16 @@ func (e K8sConditionStatus) MarshalGQL(w io.Writer) {
 type K8sResourceKind string
 
 const (
-	K8sResourceKindDeployment       K8sResourceKind = "Deployment"
-	K8sResourceKindDaemonSet        K8sResourceKind = "DaemonSet"
-	K8sResourceKindStatefulSet      K8sResourceKind = "StatefulSet"
-	K8sResourceKindCronJob          K8sResourceKind = "CronJob"
-	K8sResourceKindConfigMap        K8sResourceKind = "ConfigMap"
-	K8sResourceKindPod              K8sResourceKind = "Pod"
-	K8sResourceKindStaticPod        K8sResourceKind = "StaticPod"
-	K8sResourceKindDeploymentConfig K8sResourceKind = "DeploymentConfig"
-	K8sResourceKindRollout          K8sResourceKind = "Rollout"
+	K8sResourceKindDeployment            K8sResourceKind = "Deployment"
+	K8sResourceKindDaemonSet             K8sResourceKind = "DaemonSet"
+	K8sResourceKindStatefulSet           K8sResourceKind = "StatefulSet"
+	K8sResourceKindCronJob               K8sResourceKind = "CronJob"
+	K8sResourceKindConfigMap             K8sResourceKind = "ConfigMap"
+	K8sResourceKindPod                   K8sResourceKind = "Pod"
+	K8sResourceKindStaticPod             K8sResourceKind = "StaticPod"
+	K8sResourceKindDeploymentConfig      K8sResourceKind = "DeploymentConfig"
+	K8sResourceKindRollout               K8sResourceKind = "Rollout"
+	K8sResourceKindInstrumentationConfig K8sResourceKind = "InstrumentationConfig"
 )
 
 var AllK8sResourceKind = []K8sResourceKind{
@@ -1834,11 +1836,12 @@ var AllK8sResourceKind = []K8sResourceKind{
 	K8sResourceKindStaticPod,
 	K8sResourceKindDeploymentConfig,
 	K8sResourceKindRollout,
+	K8sResourceKindInstrumentationConfig,
 }
 
 func (e K8sResourceKind) IsValid() bool {
 	switch e {
-	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout:
+	case K8sResourceKindDeployment, K8sResourceKindDaemonSet, K8sResourceKindStatefulSet, K8sResourceKindCronJob, K8sResourceKindConfigMap, K8sResourceKindPod, K8sResourceKindStaticPod, K8sResourceKindDeploymentConfig, K8sResourceKindRollout, K8sResourceKindInstrumentationConfig:
 		return true
 	}
 	return false
