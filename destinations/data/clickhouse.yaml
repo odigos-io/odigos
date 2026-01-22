@@ -75,34 +75,24 @@ spec:
         required: false
         tooltip: 'Skip TLS certificate verification'
       renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+    - name: CLICKHOUSE_USE_CUSTOM_CA
+      displayName: Use Custom CA Certificate
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Use a custom CA certificate instead of the system root CA'
+      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
     - name: CLICKHOUSE_CA_PEM
       displayName: Certificate Authority (CA PEM)
       componentType: textarea
       componentProps:
         required: false
         placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA'
-      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+        tooltip: 'CA certificate in PEM format to verify the server'
+      renderCondition: ['CLICKHOUSE_USE_CUSTOM_CA', '==', 'true']
       hideFromReadData: ['true']
-    - name: CLICKHOUSE_CERT_PEM
-      displayName: Client Certificate (Cert PEM)
-      componentType: textarea
-      componentProps:
-        required: false
-        placeholder: '-----BEGIN CERTIFICATE-----'
-        tooltip: 'Client TLS certificate in PEM format for mTLS authentication'
-      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
-      hideFromReadData: ['true']
-    - name: CLICKHOUSE_KEY_PEM
-      displayName: Client Private Key (Key PEM)
-      componentType: textarea
       secret: true
-      componentProps:
-        required: false
-        placeholder: '-----BEGIN PRIVATE KEY-----'
-        tooltip: 'Client TLS private key in PEM format for mTLS authentication'
-      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
-      hideFromReadData: ['true']
 
     - name: CLICKHOUSE_TRACES_TABLE
       displayName: Traces Table
