@@ -8,10 +8,10 @@ export const DOWNLOAD_DIAGNOSE = gql`
         totalSizeBytes
         totalSizeHuman
       }
+      includeProfiles
+      includeMetrics
+      includeSourceWorkloads
+      sourceWorkloadNamespaces
     }
-    includeProfiles
-    includeMetrics
-    includeSourceWorkloads
-    sourceWorkloadNamespaces
   }
 `;
