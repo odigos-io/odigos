@@ -339,6 +339,15 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	// agent span metrics configuration
 	agentSpanMetricsEnabled := containerConfig.Metrics != nil && containerConfig.Metrics.SpanMetrics != nil
 	supportsAgentSpanMetrics := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.Supported
+	otlpHttpMetricsEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)") + "/v1/metrics"
+	if supportsAgentSpanMetrics && !agentSpanMetricsEnabled {
+		// TODO(edenfed): This is an ugly hack to also collect jvm metrics via OTel when span metrics are enbabled
+		// Its using the fact that only the distro we need it for has span metrics enabled
+		// This should not go into main branch, but its a temp workaround.
+		podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "OTEL_METRICS_EXPORTER", "otlp")
+		podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
+	}
+
 	if agentSpanMetricsEnabled && supportsAgentSpanMetrics && distroMetadata.ConfigAsEnvVars {
 		// serialize span metrics config to json and inject as env var
 		spanMetricsConfigJson, err := json.Marshal(containerConfig.Metrics.SpanMetrics)
@@ -346,7 +355,6 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 			return false, nil, fmt.Errorf("failed to marshal span metrics config: %w", err)
 		}
 		existingEnvNames = podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_AGENT_SPAN_METRICS_CONFIG", string(spanMetricsConfigJson))
-		otlpHttpMetricsEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)") + "/v1/metrics"
 		podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "ODIGOS_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
 	}
 
