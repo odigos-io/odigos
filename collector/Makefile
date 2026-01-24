@@ -65,7 +65,7 @@ ALL_GO_MOD_DIRS := $(shell find . -type f -name 'go.mod' -exec dirname {} \; | s
 .PHONY: fmt
 fmt: $(ALL_GO_MOD_DIRS:%=fmt/%)
 fmt/%: install-tools
-	cd $* && goimports -w -local github.com/odigos-io ./
+	cd $* && $(GOBIN)/goimports -w -local github.com/odigos-io ./
 
 ALL_GO_MODS := $(shell find . -type f -name 'go.mod' ! -path './exporters/googlecloudstorageexporter/*' ! -path './exporters/azureblobstorageexporter/*' ! -path './internal/tools/*' ! -path './odigosotelcol/*' | sort | grep -v "LICENSES")
 GO_MODS_TO_TEST := $(ALL_GO_MODS:%=test/%)
