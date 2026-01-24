@@ -345,6 +345,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 		// Its using the fact that only the distro we need it for has span metrics enabled
 		// This should not go into main branch, but its a temp workaround.
 		podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "OTEL_METRICS_EXPORTER", "otlp")
+		podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", "http/protobuf")
 		podswebhook.InjectConstEnvVarToPodContainer(existingEnvNames, podContainerSpec, "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", otlpHttpMetricsEndpoint)
 	}
 
