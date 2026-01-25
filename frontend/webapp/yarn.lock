@@ -652,10 +652,10 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@^0.0.180":
-  version "0.0.180"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.180.tgz#bc806733371cad0b95d50086a522db671cd1d6d2"
-  integrity sha512-WH9t7IhXE6NzyoeTjXeTGsBjECrsElYBtg9UHxx6jK8wl/HI0gXfG/j29VXaPfXcK7CyrWs2YMQiauwTb1eOhw==
+"@odigos/ui-kit@^0.0.181":
+  version "0.0.181"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.181.tgz#70daa1bc8ef125f11d1f6d6b62df5a5b866ebf4a"
+  integrity sha512-howUU/UqD3YyGWf6stiahdr1e8RVpH6bFGUbEq28Ubc1eP2iHAEDwJrVKyd66mnMcbwcW13vDXxf024N3HYH6A==
   dependencies:
     "@tanstack/react-virtual" "^3.13.17"
     "@xyflow/react" "^12.10.0"
@@ -1431,7 +1431,7 @@ chalk@^4.0.0, chalk@^4.1.0:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
 
-check-peer-dependencies@^4.3.0:
+check-peer-dependencies@^4.3.4:
   version "4.3.4"
   resolved "https://registry.yarnpkg.com/check-peer-dependencies/-/check-peer-dependencies-4.3.4.tgz#9ccfc507c13a1138d051d5749c7e79bf6b0ff8dd"
   integrity sha512-Z7iMjwy85Izmjav0+9/Tok8mpDgj0r4Z//yDsmcRYVm4hUSVKQgPvtbU6OU5/y+6Ntsa0cstZhOyavwla+w74A==

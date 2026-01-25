@@ -16,7 +16,7 @@
   "dependencies": {
     "@apollo/client": "^3.13.9",
     "@apollo/experimental-nextjs-app-support": "^0.12.3",
-    "@odigos/ui-kit": "^0.0.180",
+    "@odigos/ui-kit": "^0.0.181",
     "graphql": "^16.12.0",
     "next": "15.5.9",
     "react": "19.2.3",
@@ -26,12 +26,12 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
-    "check-peer-dependencies": "^4.3.0",
     "@next/bundle-analyzer": "^16.1.4",
     "@types/node": "25.0.10",
     "@types/react": "19.2.9",
     "@types/react-dom": "19.2.3",
     "autoprefixer": "^10.4.23",
+    "check-peer-dependencies": "^4.3.4",
     "cross-env": "^10.1.0",
     "cypress": "^15.9.0",
     "eslint": "9.39.2",
