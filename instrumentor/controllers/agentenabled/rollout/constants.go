@@ -77,3 +77,12 @@ func NewConditionTriggeredWithMessage(message string) metav1.Condition {
 		Message: message,
 	}
 }
+
+// ConditionWaitingInQueue is used when the workload is waiting for other rollouts to complete
+// due to rate limiting of concurrent reconciliations
+var ConditionWaitingInQueue = metav1.Condition{
+	Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+	Status:  metav1.ConditionTrue,
+	Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWaitingInQueue),
+	Message: "Waiting for other workload rollouts to complete",
+}
