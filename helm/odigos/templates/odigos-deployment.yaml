@@ -1,3 +1,4 @@
+{{- $existingCM := lookup "v1" "ConfigMap" .Release.Namespace "odigos-deployment" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
