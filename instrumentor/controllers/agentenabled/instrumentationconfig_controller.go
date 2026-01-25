@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -11,7 +12,8 @@ import (
 
 type InstrumentationConfigReconciler struct {
 	client.Client
-	DistrosProvider *distros.Provider
+	DistrosProvider    *distros.Provider
+	RolloutRateLimiter *rollout.RolloutRateLimiter
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -20,5 +22,5 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	return reconcileWorkload(ctx, r.Client, req.Name, req.Namespace, r.DistrosProvider, &conf)
+	return reconcileWorkload(ctx, r.Client, req.Name, req.Namespace, r.DistrosProvider, &conf, r.RolloutRateLimiter)
 }

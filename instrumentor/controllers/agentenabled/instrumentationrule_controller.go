@@ -4,13 +4,15 @@ import (
 	"context"
 
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type InstrumentationRuleReconciler struct {
 	client.Client
-	DistrosProvider *distros.Provider
+	DistrosProvider    *distros.Provider
+	RolloutRateLimiter *rollout.RolloutRateLimiter
 }
 
 func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -20,5 +22,5 @@ func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.
 	// but they should still be processed to potentially revert thier original effects.
 	// thus it is very important to have strong filtering in the predicate
 	// so not to execute this reconciler too much when not needed.
-	return reconcileAll(ctx, r.Client, r.DistrosProvider)
+	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutRateLimiter)
 }
