@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "check-peer-dependencies --runOnlyOnRootDependencies",
     "dev": "next dev --turbopack",
     "prebuild": "rm -rf out .next",
     "build": "cross-env NODE_ENV=production next build --turbopack",
@@ -21,10 +22,11 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-error-boundary": "^6.0.3",
-    "styled-components": "6.3.5",
+    "styled-components": "6.2.0",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "check-peer-dependencies": "^4.3.0",
     "@next/bundle-analyzer": "^16.1.4",
     "@types/node": "25.0.10",
     "@types/react": "19.2.9",
