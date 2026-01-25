@@ -11,6 +11,7 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -154,7 +155,7 @@ func assertTriggeredRollback(t *testing.T, statusChanged bool, result reconcile.
 	t.Helper()
 	assert.NoError(t, err)
 	assert.True(t, statusChanged, "expected status change after rollback")
-	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
 	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be true")
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
@@ -274,6 +275,43 @@ func mockICMidRollout(base *odigosv1alpha1.InstrumentationConfig) *odigosv1alpha
 	ic := mockICRolloutRequiredDistro(base)
 	ic.Status.WorkloadRolloutHash = ic.Spec.AgentsMetaHash
 	return ic
+}
+
+// ****************
+// Rate Limiter Fixtures
+// ****************
+
+// newRateLimiterNoLimit creates a rate limiter with infinite limit (no rate limiting).
+// This is used for tests that don't care about rate limiting behavior.
+func newRateLimiterNoLimit() *rollout.RolloutRateLimiter {
+	return rollout.NewRolloutRateLimiter(nil) // nil config defaults to rate limiting
+}
+
+// newRateLimiterWithLimit creates a rate limiter with a specific concurrent rollout limit.
+// Use this for tests that need to verify rate limiting behavior.
+func newRateLimiterWithLimit(concurrentRollouts float64) *rollout.RolloutRateLimiter {
+	enabled := true
+	conf := &common.OdigosConfiguration{
+		Rollout: &common.RolloutConfiguration{
+			IsConcurrentRolloutsEnabled: &enabled,
+			ConcurrentRollouts:          concurrentRollouts,
+		},
+	}
+	return rollout.NewRolloutRateLimiter(conf)
+}
+
+// newRateLimiterActive creates a rate limiter with a low limit (1 concurrent rollout).
+// First call to Allow() succeeds, subsequent calls fail until token is replenished.
+func newRateLimiterActive() *rollout.RolloutRateLimiter {
+	return newRateLimiterWithLimit(1.0)
+}
+
+// newRateLimiterExhausted creates a rate limiter that has already used its quota.
+// Any call to Allow() will return false.
+func newRateLimiterExhausted() *rollout.RolloutRateLimiter {
+	limiter := newRateLimiterActive()
+	limiter.Allow() // Exhaust the single token
+	return limiter
 }
 
 // newHealthyPod creates a healthy running pod that matches a deployment's selector.

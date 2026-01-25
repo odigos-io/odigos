@@ -2,7 +2,6 @@ package rollout_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -22,9 +21,10 @@ func Test_NoRollout_PodInMidRollout_AlreadyComplete(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
+	rateLimiter := newRateLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
+	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
 }
@@ -64,14 +64,15 @@ func Test_NoRollout_PodInMidRollout_WaitingNoBackoff(t *testing.T) {
 	}
 
 	fakeClient := s.newFakeClient(deployment, healthyPod)
+	rateLimiter := newRateLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
+	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No status change, requeue after 10s to continue monitoring rollout progress
 	assert.NoError(t, err)
 	assert.False(t, statusChanged, "expected no status change")
-	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
 }
 
 func Test_TriggeredRollout_PodInMidRollout_PreviousRolloutOngoing(t *testing.T) {
@@ -84,14 +85,15 @@ func Test_TriggeredRollout_PodInMidRollout_PreviousRolloutOngoing(t *testing.T) 
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
+	rateLimiter := newRateLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
+	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Status updated to "PreviousRolloutOngoing", requeue to wait for previous rollout
 	assert.NoError(t, err)
 	assert.True(t, statusChanged, "expected status change")
-	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing), ic.Status.Conditions[0].Reason)
 }
 
@@ -114,13 +116,14 @@ func Test_TriggeredRolloutRequeue_RolloutInProgress_TriggeredExternally(t *testi
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
+	rateLimiter := newRateLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
+	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Status updated to "PreviousRolloutOngoing", requeue to wait for previous rollout
 	assert.NoError(t, err)
 	assert.True(t, statusChanged, "expected status change")
-	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing), ic.Status.Conditions[0].Reason)
 }
