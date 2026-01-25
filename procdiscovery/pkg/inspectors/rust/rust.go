@@ -187,7 +187,7 @@ func (r *RustInspector) GetRuntimeVersion(pcx *process.ProcessContext, container
 			versionBytes = versionBytes[:nullIdx]
 		}
 		version := string(versionBytes)
-		if len(version) > 0 && len(version) <= 40 {
+		if version != "" && len(version) <= 40 {
 			return version
 		}
 	}

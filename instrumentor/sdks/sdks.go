@@ -16,7 +16,7 @@ func otelSdkConfigCommunity() map[common.ProgrammingLanguage]common.OtelSdk {
 		common.JavascriptProgrammingLanguage: common.OtelSdkNativeCommunity,
 		common.PhpProgrammingLanguage:        common.OtelSdkNativeCommunity,
 		common.RubyProgrammingLanguage:       common.OtelSdkNativeCommunity,
-		common.RustProgrammingLanguage:       common.OtelSdkEbpfCommunity,
+		common.RustProgrammingLanguage:       common.OtelSdkNativeCommunity,
 	}
 }
 
