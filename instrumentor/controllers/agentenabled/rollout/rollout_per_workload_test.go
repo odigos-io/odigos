@@ -24,13 +24,13 @@ func Test_NoRollout_StaticPodNoIC(t *testing.T) {
 
 	fakeClient := s.newFakeClient(staticPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, staticPodPw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, staticPodPw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No status change - StaticPod without IC don't need rollout
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 }
 
 func Test_NoRollout_StaticPodWithIC_NotSupportingRestart(t *testing.T) {
@@ -40,16 +40,16 @@ func Test_NoRollout_StaticPodWithIC_NotSupportingRestart(t *testing.T) {
 	staticPodPw := k8sconsts.PodWorkload{Name: staticPod.Name, Namespace: staticPod.Namespace, Kind: k8sconsts.WorkloadKindStaticPod}
 	ic := testutil.NewMockInstrumentationConfig(staticPod)
 	fakeClient := s.newFakeClient(staticPod, ic)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, staticPodPw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, staticPodPw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No rollout - StaticPod with IC don't support restart
 	// NOTE: despite that the status is changed, the rollout is not triggered because the workload doesn't support restart
 	// this is a hack to appease the UI.
-	assert.Equal(t, true, statusChanged)
-	assert.Equal(t, reconcile.Result{}, result)
+	assert.Equal(t, true, rolloutResult.StatusChanged)
+	assert.Equal(t, reconcile.Result{}, rolloutResult.Result)
 	assert.NoError(t, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWorkloadNotSupporting), ic.Status.Conditions[0].Reason)
 	assert.Equal(t, "static pods don't support restart", ic.Status.Conditions[0].Message)
@@ -65,15 +65,15 @@ func Test_NoRollout_JobOrCronjobNoIC(t *testing.T) {
 
 	fakeClient := s.newFakeClient(job, cronjob)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	jobStatusChanged, jobResult, jobErr := rollout.Do(s.ctx, fakeClient, ic, jobPw, s.conf, s.distroProvider, rateLimiter)
-	cronJobStatusChanged, cronJobResult, cronJobErr := rollout.Do(s.ctx, fakeClient, ic, cronJobPw, s.conf, s.distroProvider, rateLimiter)
+	jobRolloutResult, jobErr := rollout.Do(s.ctx, fakeClient, ic, jobPw, s.conf, s.distroProvider, rateLimiter)
+	cronJobRolloutResult, cronJobErr := rollout.Do(s.ctx, fakeClient, ic, cronJobPw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No status change - Jobs/CronJobs without IC don't need rollout
-	assertNoStatusChange(t, jobStatusChanged, jobResult, jobErr)
-	assertNoStatusChange(t, cronJobStatusChanged, cronJobResult, cronJobErr)
+	assertNoStatusChange(t, jobRolloutResult, jobErr)
+	assertNoStatusChange(t, cronJobRolloutResult, cronJobErr)
 }
 
 func Test_NoRollout_JobOrCronjobWaitingForRestart(t *testing.T) {
@@ -87,17 +87,17 @@ func Test_NoRollout_JobOrCronjobWaitingForRestart(t *testing.T) {
 	cronJobIc := testutil.NewMockInstrumentationConfig(cronjob)
 
 	fakeClient := s.newFakeClient(job, cronjob)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	jobStatusChanged, jobResult, jobErr := rollout.Do(s.ctx, fakeClient, jobIc, jobPw, s.conf, s.distroProvider, rateLimiter)
-	cronJobStatusChanged, cronJobResult, cronJobErr := rollout.Do(s.ctx, fakeClient, cronJobIc, cronJobPw, s.conf, s.distroProvider, rateLimiter)
+	jobRolloutResult, jobErr := rollout.Do(s.ctx, fakeClient, jobIc, jobPw, s.conf, s.distroProvider, rateLimiter)
+	cronJobRolloutResult, cronJobErr := rollout.Do(s.ctx, fakeClient, cronJobIc, cronJobPw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Status updated to "WaitingForRestart" - Jobs must trigger themselves, no requeue needed
-	assertTriggeredRolloutNoRequeue(t, jobStatusChanged, jobResult, jobErr)
+	assertTriggeredRolloutNoRequeue(t, jobRolloutResult, jobErr)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart), jobIc.Status.Conditions[0].Reason)
 	assert.Equal(t, "Waiting for job to trigger by itself", jobIc.Status.Conditions[0].Message)
-	assertTriggeredRolloutNoRequeue(t, cronJobStatusChanged, cronJobResult, cronJobErr)
+	assertTriggeredRolloutNoRequeue(t, cronJobRolloutResult, cronJobErr)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart), cronJobIc.Status.Conditions[0].Reason)
 	assert.Equal(t, "Waiting for job to trigger by itself", cronJobIc.Status.Conditions[0].Message)
 }
@@ -121,13 +121,13 @@ func Test_Rollout_ICNil_HasAgents_RestartsUsing_rolloutRestartWorkload(t *testin
 
 	fakeClient := s.newFakeClient(deployment, instrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Workload IS restarted (to remove odigos agents), but no IC status change (IC is nil)
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 	assertWorkloadRestarted(t, s.ctx, fakeClient, pw)
 }
 
@@ -150,13 +150,13 @@ func Test_Rollout_ICNil_HasAgents_RestartsStatefulSet(t *testing.T) {
 
 	fakeClient := s.newFakeClient(statefulSet, instrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Workload IS restarted (to remove odigos agents), but no IC status change (IC is nil)
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 	var updatedStatefulSet appsv1.StatefulSet
 	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: statefulSet.Name, Namespace: statefulSet.Namespace}, &updatedStatefulSet)
 	assert.NoError(t, err)
@@ -182,13 +182,13 @@ func Test_Rollout_ICNil_HasAgents_RestartsDaemonSet(t *testing.T) {
 
 	fakeClient := s.newFakeClient(daemonSet, instrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Workload IS restarted (to remove odigos agents), but no IC status change (IC is nil)
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 	var updatedDaemonSet appsv1.DaemonSet
 	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: daemonSet.Name, Namespace: daemonSet.Namespace}, &updatedDaemonSet)
 	assert.NoError(t, err)
@@ -214,13 +214,13 @@ func Test_Rollout_ICNil_HasAgents_RestartsArgoRollout(t *testing.T) {
 
 	fakeClient := s.newFakeClient(argoRollout, instrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Workload IS restarted (to remove odigos agents), but no IC status change (IC is nil)
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 	// Verify Argo Rollout was restarted with spec.restartAt field (different from other workloads)
 	var updatedRollout argorolloutsv1alpha1.Rollout
 	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: argoRollout.Name, Namespace: argoRollout.Namespace}, &updatedRollout)

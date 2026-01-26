@@ -36,13 +36,13 @@ func Test_NoRollout_ICNil_AutomaticRolloutDisabled(t *testing.T) {
 
 	fakeClient := s.newFakeClient(deployment, instrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No status change and workload NOT restarted - automatic rollout disabled
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 	assertWorkloadNotRestarted(t, s.ctx, fakeClient, pw)
 }
 func Test_NoRollout_InvalidRollbackGraceTime(t *testing.T) {
@@ -54,13 +54,13 @@ func Test_NoRollout_InvalidRollbackGraceTime(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Error returned - invalid config prevents rollout
-	assertErrorNoStatusChange(t, statusChanged, result, err)
+	assertErrorNoStatusChange(t, rolloutResult, err)
 }
 
 func Test_NoRollout_InvalidRollbackStabilityWindow(t *testing.T) {
@@ -72,13 +72,13 @@ func Test_NoRollout_InvalidRollbackStabilityWindow(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Error returned - invalid config prevents rollout
-	assertErrorNoStatusChange(t, statusChanged, result, err)
+	assertErrorNoStatusChange(t, rolloutResult, err)
 }
 
 func Test_TriggeredRollout_ConfigNil(t *testing.T) {
@@ -89,13 +89,13 @@ func Test_TriggeredRollout_ConfigNil(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Rollout triggered - nil config defaults to enabled, requeue to monitor
-	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
@@ -108,13 +108,13 @@ func Test_TriggeredRollout_AutomaticRolloutDisabledNil(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Rollout triggered - nil pointer defaults to enabled, requeue to monitor
-	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
@@ -130,13 +130,13 @@ func Test_TriggeredRollout_AutomaticRolloutDisabledFalse(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Rollout triggered successfully, requeue to monitor
-	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
@@ -152,13 +152,13 @@ func Test_NoRollout_AutomaticRolloutDisabledTrue(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Status updated to "Disabled" - no rollout triggered, no requeue needed
-	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutNoRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonDisabled), ic.Status.Conditions[0].Reason)
 	assert.Equal(t, "odigos automatic rollout is disabled", ic.Status.Conditions[0].Message)
 }

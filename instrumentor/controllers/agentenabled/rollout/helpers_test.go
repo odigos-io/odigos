@@ -104,26 +104,26 @@ func (s *testSetup) newFakeClientWithICUpdateError(objects ...client.Object) cli
 
 // assertNoStatusChange verifies Do() returned without changing IC status.
 // Note: This does NOT check whether the workload was restarted - use assertWorkloadRestarted/assertWorkloadNotRestarted for that.
-func assertNoStatusChange(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+func assertNoStatusChange(t *testing.T, rolloutResult rollout.RolloutResult, err error) {
 	t.Helper()
 	assert.NoError(t, err)
-	assert.False(t, statusChanged, "expected no status change")
-	assert.Equal(t, reconcile.Result{}, result)
+	assert.False(t, rolloutResult.StatusChanged, "expected no status change")
+	assert.Equal(t, reconcile.Result{}, rolloutResult.Result)
 }
 
-func assertTriggeredRolloutNoRequeue(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+func assertTriggeredRolloutNoRequeue(t *testing.T, rolloutResult rollout.RolloutResult, err error) {
 	t.Helper()
 	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change")
-	assert.Equal(t, reconcile.Result{}, result)
+	assert.True(t, rolloutResult.StatusChanged, "expected status change")
+	assert.Equal(t, reconcile.Result{}, rolloutResult.Result)
 }
 
 // assertErrorNoStatusChange verifies Do() returned an error without changing IC status.
-func assertErrorNoStatusChange(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+func assertErrorNoStatusChange(t *testing.T, rolloutResult rollout.RolloutResult, err error) {
 	t.Helper()
 	assert.Error(t, err)
-	assert.False(t, statusChanged, "expected no status change on error")
-	assert.Equal(t, reconcile.Result{}, result)
+	assert.False(t, rolloutResult.StatusChanged, "expected no status change on error")
+	assert.Equal(t, reconcile.Result{}, rolloutResult.Result)
 }
 
 // assertWorkloadRestarted verifies the workload was restarted by checking for the restartedAt annotation.
@@ -144,18 +144,18 @@ func assertWorkloadNotRestarted(t *testing.T, ctx context.Context, c client.Clie
 	assert.NotContains(t, dep.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt", "expected workload NOT to be restarted")
 }
 
-func assertTriggeredRolloutWithRequeue(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+func assertTriggeredRolloutWithRequeue(t *testing.T, rolloutResult rollout.RolloutResult, err error) {
 	t.Helper()
 	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change when rollout is triggered")
-	assert.NotEqual(t, reconcile.Result{}, result, "expected requeue after rollout")
+	assert.True(t, rolloutResult.StatusChanged, "expected status change when rollout is triggered")
+	assert.NotEqual(t, reconcile.Result{}, rolloutResult.Result, "expected requeue after rollout")
 }
 
-func assertTriggeredRollback(t *testing.T, statusChanged bool, result reconcile.Result, err error, ic *odigosv1alpha1.InstrumentationConfig) {
+func assertTriggeredRollback(t *testing.T, rolloutResult rollout.RolloutResult, err error, ic *odigosv1alpha1.InstrumentationConfig) {
 	t.Helper()
 	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change after rollback")
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
+	assert.True(t, rolloutResult.StatusChanged, "expected status change after rollback")
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, rolloutResult.Result)
 	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be true")
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
@@ -278,39 +278,44 @@ func mockICMidRollout(base *odigosv1alpha1.InstrumentationConfig) *odigosv1alpha
 }
 
 // ****************
-// Rate Limiter Fixtures
+// Rollout Concurrency Limiter Fixtures
 // ****************
 
-// newRateLimiterNoLimit creates a rate limiter with infinite limit (no rate limiting).
+// newRolloutConcurrencyLimiterNoLimit creates a rollout concurrency limiter with infinite limit (no rate limiting).
 // This is used for tests that don't care about rate limiting behavior.
-func newRateLimiterNoLimit() *rollout.RolloutRateLimiter {
-	return rollout.NewRolloutRateLimiter(nil) // nil config defaults to rate limiting
+func newRolloutConcurrencyLimiterNoLimit() *rollout.RolloutConcurrencyLimiter {
+	limiter := rollout.NewRolloutConcurrencyLimiter()
+	limiter.ApplyConfig(nil) // nil config = no rate limiting
+	return limiter
 }
 
-// newRateLimiterWithLimit creates a rate limiter with a specific concurrent rollout limit.
+// newRolloutConcurrencyLimiterWithLimit creates a rollout concurrency limiter with a specific concurrent rollout limit.
 // Use this for tests that need to verify rate limiting behavior.
-func newRateLimiterWithLimit(concurrentRollouts float64) *rollout.RolloutRateLimiter {
+func newRolloutConcurrencyLimiterWithLimit(concurrentRollouts int) *rollout.RolloutConcurrencyLimiter {
 	enabled := true
 	conf := &common.OdigosConfiguration{
 		Rollout: &common.RolloutConfiguration{
-			IsConcurrentRolloutsEnabled: &enabled,
-			ConcurrentRollouts:          concurrentRollouts,
+			IsConcurrentRolloutsLimiterEnabled: &enabled,
+			ConcurrentRollouts:                 concurrentRollouts,
 		},
 	}
-	return rollout.NewRolloutRateLimiter(conf)
+	limiter := rollout.NewRolloutConcurrencyLimiter()
+	limiter.ApplyConfig(conf)
+	return limiter
 }
 
-// newRateLimiterActive creates a rate limiter with a low limit (1 concurrent rollout).
-// First call to Allow() succeeds, subsequent calls fail until token is replenished.
-func newRateLimiterActive() *rollout.RolloutRateLimiter {
-	return newRateLimiterWithLimit(1.0)
+// newRolloutConcurrencyLimiterActive creates a rollout concurrency limiter with a low limit (1 concurrent rollout).
+// First call to TryAcquire() for a NEW workload succeeds, subsequent calls for OTHER workloads fail.
+func newRolloutConcurrencyLimiterActive() *rollout.RolloutConcurrencyLimiter {
+	return newRolloutConcurrencyLimiterWithLimit(1)
 }
 
-// newRateLimiterExhausted creates a rate limiter that has already used its quota.
-// Any call to Allow() will return false.
-func newRateLimiterExhausted() *rollout.RolloutRateLimiter {
-	limiter := newRateLimiterActive()
-	limiter.Allow() // Exhaust the single token
+// newRolloutConcurrencyLimiterExhausted creates a rollout concurrency limiter that has already used its quota.
+// Any call to TryAcquire() for a NEW workload will return false.
+// Note: Uses a placeholder workload key to exhaust the single slot.
+func newRolloutConcurrencyLimiterExhausted() *rollout.RolloutConcurrencyLimiter {
+	limiter := newRolloutConcurrencyLimiterActive()
+	limiter.TryAcquire("placeholder/Deployment/exhausted") // Exhaust the single slot
 	return limiter
 }
 

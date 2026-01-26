@@ -101,7 +101,7 @@ spec:
             timeout: 30s
             content: |
               ../../../cli/odigos upgrade --ns odigos-test \
-                --set rollout.isConcurrentRolloutsEnabled=true \
+                --set rollout.isConcurrentRolloutsLimiterEnabled=true \
                 --set rollout.concurrentRollouts=2
 
     - name: Assert Rate Limiting Config Applied
@@ -111,7 +111,7 @@ spec:
             content: |
               config=$(kubectl get odigosconfigurations.odigos.io -n odigos-test odigos -o jsonpath='{.spec.rollout}')
               echo "Rollout config: $config"
-              echo "$config" | grep -q '"isConcurrentRolloutsEnabled":true' || exit 1
+              echo "$config" | grep -q '"isConcurrentRolloutsLimiterEnabled":true' || exit 1
               echo "$config" | grep -q '"concurrentRollouts":2' || exit 1
               echo "Rate limiting config verified"
 

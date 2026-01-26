@@ -27,6 +27,19 @@ import (
 
 const RequeueWaitingForWorkloadRollout = 10 * time.Second
 
+type RolloutResult struct {
+	StatusChanged bool
+	// Used for acquiring lock on the rollout concurrency limiter
+	WorkloadKey string
+	// Result contains the controller result for requeue behavior.
+	Result ctrl.Result
+}
+
+// WorkloadKey generates a unique key for rate limiting purposes
+func WorkloadKey(pw k8sconsts.PodWorkload) string {
+	return fmt.Sprintf("%s/%s/%s", pw.Namespace, pw.Kind, pw.Name)
+}
+
 // Do potentially triggers a rollout for the given workload based on the given instrumentation config.
 // If the instrumentation config is nil, the workload is rolled out - this is used for un-instrumenting workloads.
 // Otherwise, the rollout config hash is calculated and compared to the saved hash in the instrumentation config.
@@ -36,84 +49,81 @@ const RequeueWaitingForWorkloadRollout = 10 * time.Second
 // If a rollout is triggered the status of the instrumentation config is updated with the new rollout hash
 // and a corresponding condition is set.
 //
-// Returns a boolean indicating if the status of the instrumentation config has changed, a ctrl.Result and an error.
-func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration, distroProvider *distros.Provider, rateLimiter *RolloutRateLimiter) (bool, ctrl.Result, error) {
-	isAutomaticRolloutDisabled, rollBackOptions, err := getRolloutAndRollbackOptions(conf)
-	if err != nil {
-		return false, ctrl.Result{}, err
+// Returns a RolloutResult and an error.
+func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration, distroProvider *distros.Provider, rolloutConcurrencyLimiter *RolloutConcurrencyLimiter) (RolloutResult, error) {
+	rolloutConcurrencyLimiter.ApplyConfig(conf)
+
+	isAutomaticRolloutDisabled, rollBackOptions, configErr := getRolloutAndRollbackOptions(conf)
+	if configErr != nil {
+		return RolloutResult{}, configErr
 	}
 	logger := log.FromContext(ctx)
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
-	err = c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
-	if err != nil {
-		return false, ctrl.Result{}, client.IgnoreNotFound(err)
+	getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
+	if getErr != nil {
+		return RolloutResult{}, client.IgnoreNotFound(getErr)
 	}
 
 	// Don't allow rollout of static pods, cronjobs or jobs
 	if pw.Kind == k8sconsts.WorkloadKindStaticPod {
 		if ic == nil {
-			return false, ctrl.Result{}, nil
+			return RolloutResult{}, nil
 		}
-		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, ConditionStaticPodsNotSupported)
-		return statusChanged, ctrl.Result{}, nil
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionStaticPodsNotSupported)
+		return RolloutResult{StatusChanged: changed}, nil
 	}
 
 	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
 		if ic == nil {
-			return false, ctrl.Result{}, nil
+			return RolloutResult{}, nil
 		}
-		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, ConditionWaitingForJobTrigger)
-		return statusChanged, ctrl.Result{}, nil
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionWaitingForJobTrigger)
+		return RolloutResult{StatusChanged: changed}, nil
 	}
 
 	// Check if the distribution requires a rollout (only when ic is not nil)
 	if ic != nil && !isRolloutDistro(ic, distroProvider, conf) {
-		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, ConditionNotRequired)
-		return statusChanged, ctrl.Result{}, nil
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionNotRequired)
+		return RolloutResult{StatusChanged: changed}, nil
 	}
 
 	if ic == nil {
 		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label,
 		// it means it is a rolled back application that shouldn't be rolled out again.
-		hasAgents, err := workloadHasOdigosAgents(ctx, c, workloadObj)
-		if err != nil {
-			logger.Error(err, "failed to check for odigos agent labels")
-			return false, ctrl.Result{}, err
+		hasAgents, agentsErr := workloadHasOdigosAgents(ctx, c, workloadObj)
+		if agentsErr != nil {
+			logger.Error(agentsErr, "failed to check for odigos agent labels")
+			return RolloutResult{}, agentsErr
 		}
 		if !hasAgents {
 			logger.Info("skipping rollout - workload already runs without odigos agents",
 				"workload", pw.Name, "namespace", pw.Namespace)
-			return false, ctrl.Result{}, nil
+			return RolloutResult{}, nil
 		}
 
 		if isAutomaticRolloutDisabled {
 			logger.Info("skipping rollout to uninstrument workload source - automatic rollout is disabled",
 				"workload", pw.Name, "namespace", pw.Namespace)
-			return false, ctrl.Result{}, nil
+			return RolloutResult{}, nil
 		}
 
 		// instrumentation config is deleted, trigger a rollout for the associated workload
 		// this should happen once per workload, as the instrumentation config is deleted
 		// and we want to rollout the workload to remove the instrumentation
-		if !rateLimiter.Allow() {
-			logger.V(1).Info("rate limited uninstrumentation rollout, requeuing",
-				"workload", pw.Name,
-				"namespace", pw.Namespace,
-				"requeueAfter", RequeueWaitingForWorkloadRollout)
-			return true, ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}, nil
-		}
-		logger.V(1).Info("proceeding with uninstrumentation rollout",
+		// Note: uninstrumentation rollouts are not rate limited since we can't track completion
+		// (the IC is deleted so we won't get subsequent reconciles)
+		logger.V(2).Info("proceeding with uninstrumentation rollout",
 			"workload", pw.Name,
 			"namespace", pw.Namespace)
 		rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-		return false, ctrl.Result{}, client.IgnoreNotFound(rolloutErr)
+		return RolloutResult{}, client.IgnoreNotFound(rolloutErr)
 	}
 
 	if ic.Spec.PodManifestInjectionOptional {
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
-		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, ConditionNotRequired)
-		return statusChanged, ctrl.Result{}, nil
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionNotRequired)
+		return RolloutResult{StatusChanged: changed}, nil
 	}
 
 	if isAutomaticRolloutDisabled {
@@ -121,23 +131,33 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// For example: if the workload has already been rolled out, we can set the status to true
 		// and signal that the process is considered completed.
 		// If manual rollout is required, we can mention this for better UX.
-		statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, ConditionRolloutDisabled)
-		return statusChanged, ctrl.Result{}, nil
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionRolloutDisabled)
+		return RolloutResult{StatusChanged: changed}, nil
 	}
 
+	workloadKey := WorkloadKey(pw)
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
 		rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
-		if !rolloutDone && !rollBackOptions.IsRollbackDisabled {
+		if rolloutDone {
+			// Rollout is complete - release the slot if we had one
+			if rolloutConcurrencyLimiter.HasSlot(workloadKey) {
+				logger.V(3).Info("rollout complete, releasing slot", "workload", pw.Name, "namespace", pw.Namespace)
+				rolloutConcurrencyLimiter.Release(workloadKey)
+			}
+			return RolloutResult{}, nil
+		}
+
+		if !rollBackOptions.IsRollbackDisabled {
 			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check pod backoff status")
-				return false, ctrl.Result{}, err
+				return RolloutResult{}, err
 			}
 
 			if ic.Status.InstrumentationTime == nil {
-				return false, ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}, nil
+				return RolloutResult{Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 			}
 			now := time.Now()
 			timeSinceInstrumentation := now.Sub(ic.Status.InstrumentationTime.Time)
@@ -145,7 +165,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			if backOffInfo.duration > 0 && timeSinceInstrumentation < rollBackOptions.RollbackStabilityWindow && ic.Spec.AgentInjectionEnabled {
 				// Allow grace time for worklaod to stabelize before uninstrumenting it
 				if backOffInfo.duration < rollBackOptions.RollbackGraceTime {
-					return false, ctrl.Result{RequeueAfter: rollBackOptions.RollbackGraceTime - backOffInfo.duration}, nil
+					return RolloutResult{Result: ctrl.Result{RequeueAfter: rollBackOptions.RollbackGraceTime - backOffInfo.duration}}, nil
 				}
 
 				logger.Info("Triggering rollback due to backoff", "reason", backOffInfo.reason, "workload", pw.Name, "namespace", pw.Namespace)
@@ -161,31 +181,31 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 				ic.Spec.AgentInjectionEnabled = false
 
 				if err := c.Update(ctx, ic); err != nil {
-					res, err := utils.K8SUpdateErrorHandler(err)
-					return false, res, err
+					res, handledErr := utils.K8SUpdateErrorHandler(err)
+					return RolloutResult{Result: res}, handledErr
 				}
 
 				ic.Status.RollbackOccurred = true
 
+				// Release any existing slot before rollback (rollback doesn't use concurrency limiter)
+				if rolloutConcurrencyLimiter.HasSlot(workloadKey) {
+					rolloutConcurrencyLimiter.Release(workloadKey)
+				}
+
 				rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
 				if rolloutErr != nil {
 					logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
-					return false, ctrl.Result{}, rolloutErr
+					return RolloutResult{}, rolloutErr
 				}
 
 				meta.SetStatusCondition(&ic.Status.Conditions, NewConditionTriggeredWithMessage(message))
 
-				meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-					Type:    odigosv1alpha1.AgentEnabledStatusConditionType,
-					Status:  metav1.ConditionFalse,
-					Reason:  string(reason),
-					Message: message,
-				})
+				meta.SetStatusCondition(&ic.Status.Conditions, NewConditionAgentDisabledDueToBackoff(reason, message))
 				// Status always changes, requeue to test wait for status change with workload
-				return true, ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}, nil
+				return RolloutResult{StatusChanged: true, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 			}
 			// Requeue to wait for workload to finish or enter backoff state
-			return false, ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}, nil
+			return RolloutResult{Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 		}
 
 		// at this point, we know that rollout happened.
@@ -202,23 +222,23 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return statusChanged, ctrl.Result{}, nil
 	}
 	// if a rollout is ongoing, wait for it to finish, requeue
-	statusChanged := false
+	changed := false
 	if !utils.IsWorkloadRolloutDone(workloadObj) {
-		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, ConditionPreviousRolloutOngoing)
-		return statusChanged, ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}, nil
+		changed = meta.SetStatusCondition(&ic.Status.Conditions, ConditionPreviousRolloutOngoing)
+		return RolloutResult{StatusChanged: changed, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 
-	if !rateLimiter.Allow() {
-		logger.V(1).Info("rate limited instrumentation rollout, requeuing",
+	// workloadKey was already defined above when checking if rollout was complete
+	if !rolloutConcurrencyLimiter.TryAcquire(workloadKey) {
+		logger.V(2).Info("rate limited instrumentation rollout, requeuing",
 			"workload", pw.Name,
 			"namespace", pw.Namespace,
 			"requeueAfter", RequeueWaitingForWorkloadRollout)
-		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, ConditionWaitingInQueue)
-		return statusChanged, ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}, nil
+		changed = meta.SetStatusCondition(&ic.Status.Conditions, ConditionWaitingInQueue)
+		return RolloutResult{StatusChanged: changed, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
-	logger.V(1).Info("proceeding with instrumentation rollout",
-		"workload", pw.Name,
-		"namespace", pw.Namespace)
+	logger.V(2).Info("proceeding with instrumentation rollout", "workload", pw.Name, "namespace", pw.Namespace)
+
 	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
@@ -235,7 +255,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 
 	// at this point, the hashes are different, notify the caller the status has changed
 	// Requeue to try and catch a crashing app
-	return true, ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}, nil
+	return RolloutResult{StatusChanged: true, WorkloadKey: workloadKey, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 }
 
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.
