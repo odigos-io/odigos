@@ -9,11 +9,20 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 )
 
+const PROTOCOL = "http"
+
+func generateFullServiceFQDN(serviceName string, port int) string {
+	return fmt.Sprintf("%s.%s.svc.%s:%d", serviceName, env.GetCurrentNamespace(), env.GetCurrentClusterDomain(), port)
+}
+
 func LocalTrafficOTLPGrpcDataCollectionEndpoint(nodeIP string) string {
+	url := ""
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
-		return fmt.Sprintf("%s.%s:%d", k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OTLPPort)
+		url = generateFullServiceFQDN(k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, consts.OTLPPort)
+	} else {
+		url = fmt.Sprintf("%s:%d", nodeIP, consts.OTLPPort)
 	}
-	return fmt.Sprintf("%s:%d", nodeIP, consts.OTLPPort)
+	return fmt.Sprintf("%s://%s", PROTOCOL, url)
 }
 
 // LocalTrafficOTLPHttpDataCollectionEndpoint returns the endpoint for the OTLP HTTP data collection pod on the same node.
@@ -23,10 +32,13 @@ func LocalTrafficOTLPGrpcDataCollectionEndpoint(nodeIP string) string {
 // which also requires having the `NODE_IP` environment variable set in the manifest.
 // Using a pattern is useful when the target node is not known once calling this function.
 func LocalTrafficOTLPHttpDataCollectionEndpoint(nodeIP string) string {
+	url := ""
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
-		return fmt.Sprintf("http://%s.%s:%d", k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OTLPHttpPort)
+		url = generateFullServiceFQDN(k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, consts.OTLPHttpPort)
+	} else {
+		url = fmt.Sprintf("%s:%d", nodeIP, consts.OTLPHttpPort)
 	}
-	return fmt.Sprintf("http://%s:%d", nodeIP, consts.OTLPHttpPort)
+	return fmt.Sprintf("%s://%s", PROTOCOL, url)
 }
 
 // LocalTrafficOTLPHttpDataCollectionEndpoint returns the endpoint for OpAmp server on the same node (odiglet).
@@ -36,8 +48,11 @@ func LocalTrafficOTLPHttpDataCollectionEndpoint(nodeIP string) string {
 // which also requires having the `NODE_IP` environment variable set in the manifest.
 // Using a pattern is useful when the target node is not known once calling this function.
 func LocalTrafficOpAmpOdigletEndpoint(nodeIP string) string {
+	url := ""
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
-		return fmt.Sprintf("%s.%s:%d", k8sconsts.OdigletLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OpAMPPort)
+		url = generateFullServiceFQDN(k8sconsts.OdigletLocalTrafficServiceName, consts.OpAMPPort)
+	} else {
+		url = fmt.Sprintf("%s:%d", nodeIP, consts.OpAMPPort)
 	}
-	return fmt.Sprintf("%s:%d", nodeIP, consts.OpAMPPort)
+	return fmt.Sprintf("%s://%s", PROTOCOL, url)
 }
