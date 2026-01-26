@@ -33,13 +33,13 @@ func Test_NoRollout_PodInMidRollout_WithRollbackDisabled(t *testing.T) {
 	crashingPod := newMockCrashingPod(s.ns, deployment.Name, ic.Spec.AgentsMetaHash, podStartTime)
 
 	fakeClient := s.newFakeClient(deployment, crashingPod)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No status change - rollbackDisabled config prevents rollback despite crashlooping pod
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 }
 
 func Test_NoRollout_PodInMidRollout_FailedToGetBackoffInfo(t *testing.T) {
@@ -51,13 +51,13 @@ func Test_NoRollout_PodInMidRollout_FailedToGetBackoffInfo(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Error returned - cannot determine backoff status due to nil selector
-	assertErrorNoStatusChange(t, statusChanged, result, err)
+	assertErrorNoStatusChange(t, rolloutResult, err)
 }
 
 func TestNoRolloutMidRolloutInstrumentationTimeIsNil(t *testing.T) {
@@ -68,17 +68,17 @@ func TestNoRolloutMidRolloutInstrumentationTimeIsNil(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No status change, requeue after 10s - waiting for rollout without backoff detection
 	assert.NoError(t, err)
-	assert.False(t, statusChanged, "expected no status change")
+	assert.False(t, rolloutResult.StatusChanged, "expected no status change")
 	// requeueWaitingForWorkloadRollout is 10 seconds but not publicly exported
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result, "expected requeue after rollout")
-}	
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, rolloutResult.Result, "expected requeue after rollout")
+}
 
 func Test_NoRollout_PodInMidRollout_BackoffDurationLessThanGraceTime(t *testing.T) {
 	// Arrange: Crashlooping pod started 5s ago - within rollback grace time (default 5m), not yet triggering rollback
@@ -96,15 +96,15 @@ func Test_NoRollout_PodInMidRollout_BackoffDurationLessThanGraceTime(t *testing.
 	crashingPod := newMockCrashingPod(s.ns, deployment.Name, ic.Spec.AgentsMetaHash, podStartTime)
 
 	fakeClient := s.newFakeClient(deployment, crashingPod)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No rollback yet - still in grace period, requeue to check again after remaining grace time
 	assert.NoError(t, err)
-	assert.False(t, statusChanged, "expected no status change during grace period")
-	assert.True(t, result.RequeueAfter > 0, "expected requeue with remaining grace time")
+	assert.False(t, rolloutResult.StatusChanged, "expected no status change during grace period")
+	assert.True(t, rolloutResult.Result.RequeueAfter > 0, "expected requeue with remaining grace time")
 }
 
 func Test_NoRollout_PodInMidRollout_ClientUpdateError(t *testing.T) {
@@ -124,13 +124,13 @@ func Test_NoRollout_PodInMidRollout_ClientUpdateError(t *testing.T) {
 
 	// Use interceptor to make c.Update(ic) fail
 	fakeClient := s.newFakeClientWithICUpdateError(deployment, crashingPod)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Error returned - rollback should happen but IC update failed
-	assertErrorNoStatusChange(t, statusChanged, result, err)
+	assertErrorNoStatusChange(t, rolloutResult, err)
 }
 
 func Test_TriggeredRollout_PodInMidRollout_RollbackRestartAnnotation(t *testing.T) {
@@ -149,13 +149,13 @@ func Test_TriggeredRollout_PodInMidRollout_RollbackRestartAnnotation(t *testing.
 	crashingPod := newMockCrashingPod(s.ns, deployment.Name, ic.Spec.AgentsMetaHash, podStartTime)
 
 	fakeClient := s.newFakeClient(deployment, crashingPod, ic)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Rollback triggered - IC updated, deployment gets restartedAt annotation to force restart
-	assertTriggeredRollback(t, statusChanged, result, err, ic)
+	assertTriggeredRollback(t, rolloutResult, err, ic)
 
 	// Assert deployment has restart annotation (kubectl.kubernetes.io/restartedAt)
 	var updatedDeployment appsv1.Deployment
@@ -179,13 +179,13 @@ func Test_TriggeredRollout_PodInMidRollout_RollbackRestartAtArgoRollout(t *testi
 	crashingPod := newMockCrashingPod(s.ns, argoRollout.Name, ic.Spec.AgentsMetaHash, podStartTime)
 
 	fakeClient := s.newFakeClient(argoRollout, crashingPod, ic)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Rollback triggered - Argo Rollout uses spec.restartAt instead of annotation
-	assertTriggeredRollback(t, statusChanged, result, err, ic)
+	assertTriggeredRollback(t, rolloutResult, err, ic)
 
 	// Assert Argo Rollout has spec.restartAt set
 	var updatedRollout argorolloutsv1alpha1.Rollout

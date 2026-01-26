@@ -15,7 +15,7 @@ import (
 )
 
 // ****************
-// Rate Limiting - Instrumentation Tests
+// Rollout Concurrency Limiting - Instrumentation Tests
 // ****************
 
 func Test_Instrumentation_RateLimited_WaitingInQueue(t *testing.T) {
@@ -26,15 +26,15 @@ func Test_Instrumentation_RateLimited_WaitingInQueue(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterExhausted() // Rate limiter with no available tokens
+	limiter := newRolloutConcurrencyLimiterExhausted() // rollout concurrency limiter with no available tokens
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
 
 	// Assert: Status set to WaitingInQueue, requeued for later retry
 	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change to WaitingInQueue")
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
+	assert.True(t, rolloutResult.StatusChanged, "expected status change to WaitingInQueue")
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, rolloutResult.Result)
 
 	// Verify the condition is set to WaitingInQueue
 	assert.NotEmpty(t, ic.Status.Conditions, "expected conditions to be set")
@@ -53,13 +53,13 @@ func Test_Instrumentation_FirstWorkload_AllowedByRateLimiter(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterActive() // Fresh rate limiter with 1 token
+	limiter := newRolloutConcurrencyLimiterActive() // Fresh rate limiter with 1 token
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
 
 	// Assert: Rollout triggered successfully
-	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 	assertWorkloadRestarted(t, s.ctx, fakeClient, pw)
 }
@@ -79,22 +79,22 @@ func Test_Instrumentation_SecondWorkload_RateLimited(t *testing.T) {
 	pw2 := k8sconsts.PodWorkload{Name: deployment2.Name, Namespace: deployment2.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment1, deployment2)
-	rateLimiter := newRateLimiterActive() // Rate limiter with 1 token
+	limiter := newRolloutConcurrencyLimiterActive() // Rate limiter with 1 token
 
 	// Act: First workload
-	statusChanged1, result1, err1 := rollout.Do(s.ctx, fakeClient, ic1, pw1, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult1, err1 := rollout.Do(s.ctx, fakeClient, ic1, pw1, s.conf, s.distroProvider, limiter)
 
 	// Assert: First workload succeeds
-	assertTriggeredRolloutWithRequeue(t, statusChanged1, result1, err1)
+	assertTriggeredRolloutWithRequeue(t, rolloutResult1, err1)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic1.Status.Conditions[0].Reason)
 
 	// Act: Second workload (should be rate limited)
-	statusChanged2, result2, err2 := rollout.Do(s.ctx, fakeClient, ic2, pw2, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult2, err2 := rollout.Do(s.ctx, fakeClient, ic2, pw2, s.conf, s.distroProvider, limiter)
 
 	// Assert: Second workload is rate limited
 	assert.NoError(t, err2)
-	assert.True(t, statusChanged2, "expected status change to WaitingInQueue")
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result2)
+	assert.True(t, rolloutResult2.StatusChanged, "expected status change to WaitingInQueue")
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, rolloutResult2.Result)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingInQueue), ic2.Status.Conditions[0].Reason)
 }
 
@@ -113,21 +113,21 @@ func Test_Instrumentation_MultipleWorkloads_HigherLimitAllowsMore(t *testing.T) 
 	}
 
 	fakeClient := s.newFakeClient(deployments[0], deployments[1], deployments[2])
-	rateLimiter := newRateLimiterWithLimit(2.0) // Rate limiter with 2 tokens
+	limiter := newRolloutConcurrencyLimiterWithLimit(2) // Rate limiter with 2 tokens
 
 	// Act & Assert: First two workloads succeed
 	for i := 0; i < 2; i++ {
-		statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ics[i], pws[i], s.conf, s.distroProvider, rateLimiter)
-		assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
+		rolloutResult, err := rollout.Do(s.ctx, fakeClient, ics[i], pws[i], s.conf, s.distroProvider, limiter)
+		assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 		assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ics[i].Status.Conditions[0].Reason,
 			"workload %d should have succeeded", i)
 	}
 
 	// Act & Assert: Third workload is rate limited
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ics[2], pws[2], s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ics[2], pws[2], s.conf, s.distroProvider, limiter)
 	assert.NoError(t, err)
-	assert.True(t, statusChanged)
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
+	assert.True(t, rolloutResult.StatusChanged)
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, rolloutResult.Result)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingInQueue), ics[2].Status.Conditions[0].Reason,
 		"workload 2 should be rate limited")
 }
@@ -136,7 +136,7 @@ func Test_Instrumentation_MultipleWorkloads_HigherLimitAllowsMore(t *testing.T) 
 // Rate Limiting - De-instrumentation Tests
 // ****************
 
-func Test_Deinstrumentation_RateLimited_Requeued(t *testing.T) {
+func Test_Deinstrumentation_RateLimited_NoRequeue(t *testing.T) {
 	// Arrange: Instrumented pod needs de-instrumentation, but rate limiter is exhausted
 	s := newTestSetup()
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
@@ -155,19 +155,17 @@ func Test_Deinstrumentation_RateLimited_Requeued(t *testing.T) {
 	}
 
 	fakeClient := s.newFakeClient(deployment, instrumentedPod)
-	var ic *odigosv1alpha1.InstrumentationConfig // nil IC = de-instrumentation
-	rateLimiter := newRateLimiterExhausted()     // Rate limiter with no available tokens
+	var ic *odigosv1alpha1.InstrumentationConfig       // nil IC = de-instrumentation
+	limiter := newRolloutConcurrencyLimiterExhausted() // Rate limiter with no available tokens
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
 
-	// Assert: De-instrumentation is rate limited, requeued
-	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change when rate limited")
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
+	// Assert: De-instrumentation is not rate limited, no requeue
+	assertNoStatusChange(t, rolloutResult, err)
 
-	// Verify workload was NOT restarted (rate limited)
-	assertWorkloadNotRestarted(t, s.ctx, fakeClient, pw)
+	// Verify workload was restarted - rate limited de-instrumentation is not supported
+	assertWorkloadRestarted(t, s.ctx, fakeClient, pw)
 }
 
 func Test_Deinstrumentation_AllowedByRateLimiter(t *testing.T) {
@@ -189,59 +187,14 @@ func Test_Deinstrumentation_AllowedByRateLimiter(t *testing.T) {
 
 	fakeClient := s.newFakeClient(deployment, instrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterActive() // Fresh rate limiter with token
+	limiter := newRolloutConcurrencyLimiterActive() // Fresh rate limiter with token
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
 
 	// Assert: De-instrumentation proceeds - workload is restarted
-	assertNoStatusChange(t, statusChanged, result, err) // No IC status change (IC is nil)
+	assertNoStatusChange(t, rolloutResult, err) // No IC status change (IC is nil)
 	assertWorkloadRestarted(t, s.ctx, fakeClient, pw)
-}
-
-func Test_Deinstrumentation_MixedWithInstrumentation_SharedRateLimit(t *testing.T) {
-	// Arrange: One workload needs de-instrumentation, another needs instrumentation
-	// Rate limiter allows only 1 operation
-	s := newTestSetup()
-
-	// Deployment needing de-instrumentation
-	deployment1 := testutil.NewMockTestDeployment(s.ns, "deployment-uninstrument")
-	pw1 := k8sconsts.PodWorkload{Name: deployment1.Name, Namespace: deployment1.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
-	instrumentedPod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "instrumented-pod",
-			Namespace: s.ns.Name,
-			Labels: map[string]string{
-				"app.kubernetes.io/name":            deployment1.Name,
-				k8sconsts.OdigosAgentsMetaHashLabel: "abc123",
-			},
-		},
-	}
-
-	// Deployment needing instrumentation
-	deployment2 := testutil.NewMockTestDeployment(s.ns, "deployment-instrument")
-	ic2 := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment2))
-	pw2 := k8sconsts.PodWorkload{Name: deployment2.Name, Namespace: deployment2.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
-
-	fakeClient := s.newFakeClient(deployment1, deployment2, instrumentedPod)
-	rateLimiter := newRateLimiterActive() // Rate limiter with 1 token
-	var ic1 *odigosv1alpha1.InstrumentationConfig
-
-	// Act: De-instrumentation first (consumes the token)
-	statusChanged1, result1, err1 := rollout.Do(s.ctx, fakeClient, ic1, pw1, s.conf, s.distroProvider, rateLimiter)
-
-	// Assert: De-instrumentation proceeds
-	assertNoStatusChange(t, statusChanged1, result1, err1)
-	assertWorkloadRestarted(t, s.ctx, fakeClient, pw1)
-
-	// Act: Instrumentation second (should be rate limited)
-	statusChanged2, result2, err2 := rollout.Do(s.ctx, fakeClient, ic2, pw2, s.conf, s.distroProvider, rateLimiter)
-
-	// Assert: Instrumentation is rate limited
-	assert.NoError(t, err2)
-	assert.True(t, statusChanged2)
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result2)
-	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingInQueue), ic2.Status.Conditions[0].Reason)
 }
 
 // ****************
@@ -263,12 +216,12 @@ func Test_NoRateLimit_AllWorkloadsProcessedImmediately(t *testing.T) {
 	}
 
 	fakeClient := s.newFakeClient(deployments[0], deployments[1], deployments[2], deployments[3], deployments[4])
-	rateLimiter := newRateLimiterNoLimit() // No rate limiting
+	limiter := newRolloutConcurrencyLimiterNoLimit() // No rate limiting
 
 	// Act & Assert: All workloads succeed
 	for i := 0; i < 5; i++ {
-		statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ics[i], pws[i], s.conf, s.distroProvider, rateLimiter)
-		assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
+		rolloutResult, err := rollout.Do(s.ctx, fakeClient, ics[i], pws[i], s.conf, s.distroProvider, limiter)
+		assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 		assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ics[i].Status.Conditions[0].Reason,
 			"workload %d should have succeeded with no rate limit", i)
 	}
@@ -288,10 +241,10 @@ func Test_RateLimiting_NilRateLimiter_FailsOpen(t *testing.T) {
 	fakeClient := s.newFakeClient(deployment)
 
 	// Act: Pass nil rate limiter
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, nil)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, nil)
 
 	// Assert: Rollout proceeds (nil limiter fails open)
-	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
 
@@ -305,13 +258,13 @@ func Test_RateLimiting_WorkloadNotRequiringRollout_NotAffected(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterExhausted() // Even with exhausted limiter
+	limiter := newRolloutConcurrencyLimiterExhausted() // Even with exhausted limiter
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
 
 	// Assert: Status is NotRequired (rate limiter not involved)
-	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutNoRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonNotRequired), ic.Status.Conditions[0].Reason)
 }
 
@@ -323,13 +276,13 @@ func Test_RateLimiting_JobsAndCronjobs_NotAffected(t *testing.T) {
 	jobIc := testutil.NewMockInstrumentationConfig(job)
 
 	fakeClient := s.newFakeClient(job)
-	rateLimiter := newRateLimiterExhausted() // Even with exhausted limiter
+	limiter := newRolloutConcurrencyLimiterExhausted() // Even with exhausted limiter
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, jobIc, jobPw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, jobIc, jobPw, s.conf, s.distroProvider, limiter)
 
 	// Assert: Job gets WaitingForRestart status, not affected by rate limiter
-	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutNoRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart), jobIc.Status.Conditions[0].Reason)
 }
 
@@ -341,14 +294,14 @@ func Test_RateLimiting_StaticPods_NotAffected(t *testing.T) {
 	ic := testutil.NewMockInstrumentationConfig(staticPod)
 
 	fakeClient := s.newFakeClient(staticPod, ic)
-	rateLimiter := newRateLimiterExhausted() // Even with exhausted limiter
+	limiter := newRolloutConcurrencyLimiterExhausted() // Even with exhausted limiter
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, staticPodPw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, staticPodPw, s.conf, s.distroProvider, limiter)
 
 	// Assert: Static pod gets WorkloadNotSupporting status, not affected by rate limiter
-	assert.Equal(t, true, statusChanged)
-	assert.Equal(t, reconcile.Result{}, result)
+	assert.Equal(t, true, rolloutResult.StatusChanged)
+	assert.Equal(t, reconcile.Result{}, rolloutResult.Result)
 	assert.NoError(t, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonWorkloadNotSupporting), ic.Status.Conditions[0].Reason)
 }
@@ -362,17 +315,17 @@ func Test_RateLimiting_PreviousRolloutOngoing_RateLimiterNotConsumed(t *testing.
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterActive() // Fresh limiter with 1 token
+	limiter := newRolloutConcurrencyLimiterActive() // Fresh limiter with 1 token
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
 
 	// Assert: Previous rollout ongoing status, rate limiter NOT consumed
 	assert.NoError(t, err)
-	assert.True(t, statusChanged)
-	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, result)
+	assert.True(t, rolloutResult.StatusChanged)
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, rolloutResult.Result)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing), ic.Status.Conditions[0].Reason)
 
-	// Verify rate limiter still has tokens (wasn't consumed)
-	assert.True(t, rateLimiter.Allow(), "rate limiter should still have tokens - wasn't consumed")
+	// Verify rate limiter still has capacity (slot wasn't acquired for this workload)
+	assert.Equal(t, 0, limiter.InFlightCount(), "rate limiter should have no in-flight rollouts - slot wasn't acquired")
 }

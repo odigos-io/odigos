@@ -11,8 +11,8 @@ import (
 
 type ActionReconciler struct {
 	client.Client
-	DistrosProvider    *distros.Provider
-	RolloutRateLimiter *rollout.RolloutRateLimiter
+	DistrosProvider           *distros.Provider
+	RolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter
 }
 
 func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -20,5 +20,5 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// is created, updated or deleted.
 	// When URLTemplatization actions change, we need to reconcile all workloads
 	// to ensure the correct instrumentation configuration is applied.
-	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutRateLimiter)
+	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutConcurrencyLimiter)
 }

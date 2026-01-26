@@ -12,8 +12,8 @@ import (
 
 type InstrumentationConfigReconciler struct {
 	client.Client
-	DistrosProvider    *distros.Provider
-	RolloutRateLimiter *rollout.RolloutRateLimiter
+	DistrosProvider           *distros.Provider
+	RolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -22,5 +22,5 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	return reconcileWorkload(ctx, r.Client, req.Name, req.Namespace, r.DistrosProvider, &conf, r.RolloutRateLimiter)
+	return reconcileWorkload(ctx, r.Client, req.Name, req.Namespace, r.DistrosProvider, &conf, r.RolloutConcurrencyLimiter)
 }

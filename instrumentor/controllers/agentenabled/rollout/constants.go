@@ -86,3 +86,14 @@ var ConditionWaitingInQueue = metav1.Condition{
 	Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWaitingInQueue),
 	Message: "Waiting for other workload rollouts to complete",
 }
+
+// NewConditionAgentDisabledDueToBackoff creates a condition for when agents are disabled due to pod backoff.
+// Used when pods enter CrashLoopBackOff or ImagePullBackOff and automatic rollback is triggered.
+func NewConditionAgentDisabledDueToBackoff(reason odigosv1alpha1.AgentEnabledReason, message string) metav1.Condition {
+	return metav1.Condition{
+		Type:    odigosv1alpha1.AgentEnabledStatusConditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(reason),
+		Message: message,
+	}
+}

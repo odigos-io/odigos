@@ -11,8 +11,8 @@ import (
 
 type InstrumentationRuleReconciler struct {
 	client.Client
-	DistrosProvider    *distros.Provider
-	RolloutRateLimiter *rollout.RolloutRateLimiter
+	DistrosProvider           *distros.Provider
+	RolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter
 }
 
 func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -22,5 +22,5 @@ func (r *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.
 	// but they should still be processed to potentially revert thier original effects.
 	// thus it is very important to have strong filtering in the predicate
 	// so not to execute this reconciler too much when not needed.
-	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutRateLimiter)
+	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutConcurrencyLimiter)
 }

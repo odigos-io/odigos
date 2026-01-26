@@ -23,13 +23,13 @@ func Test_NoRollout_ObjectKeyIsMissing(t *testing.T) {
 	ic := testutil.NewMockInstrumentationConfig(deployment)
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 	fakeClient := s.newFakeClientWithStatus(nil, ic)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No status change - workload doesn't exist in cluster (nothing to restart)
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 }
 
 func Test_NoRolloutWithError_ICNil_WorkloadHasOdigosAgents(t *testing.T) {
@@ -41,13 +41,13 @@ func Test_NoRolloutWithError_ICNil_WorkloadHasOdigosAgents(t *testing.T) {
 
 	fakeClient := s.newFakeClient(deployment)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Error returned - cannot determine if pods have odigos agents due to nil selector
-	assertErrorNoStatusChange(t, statusChanged, result, err)
+	assertErrorNoStatusChange(t, rolloutResult, err)
 }
 
 func Test_NoRollout_ICNil_NoOdigosAgents(t *testing.T) {
@@ -68,13 +68,13 @@ func Test_NoRollout_ICNil_NoOdigosAgents(t *testing.T) {
 
 	fakeClient := s.newFakeClient(deployment, uninstrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: No status change and no restart - pods don't have odigos agents, nothing to uninstrument
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 	assertWorkloadNotRestarted(t, s.ctx, fakeClient, pw)
 }
 
@@ -96,13 +96,13 @@ func Test_TriggeredRollout_WorkloadWithInstrumentedPods(t *testing.T) {
 
 	fakeClient := s.newFakeClient(deployment, instrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Workload IS restarted (to remove odigos agents), but no IC status change (IC is nil)
-	assertNoStatusChange(t, statusChanged, result, err)
+	assertNoStatusChange(t, rolloutResult, err)
 	assertWorkloadRestarted(t, s.ctx, fakeClient, pw)
 }
 
@@ -114,13 +114,13 @@ func Test_TriggeredRollout_DistributionRequiresRollout(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Rollout triggered successfully, requeue to monitor rollout progress
-	assertTriggeredRolloutWithRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutWithRequeue(t, rolloutResult, err)
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 	assert.Equal(t, "workload rollout triggered successfully", ic.Status.Conditions[0].Message)
 }
@@ -135,13 +135,13 @@ func Test_NoRollout_DistributionDoesntRequireRollout(t *testing.T) {
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	rateLimiter := newRateLimiterNoLimit()
+	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
 
 	// Act
-	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
 	// Assert: Status updated to "NotRequired" - distribution doesn't need app restart, no requeue
-	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutNoRequeue(t, rolloutResult, err)
 	assert.NotEmpty(t, ic.Status.Conditions, "expected conditions to be set")
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonNotRequired), ic.Status.Conditions[0].Reason)
 	assert.Equal(t, "The selected instrumentation distributions do not require application restart", ic.Status.Conditions[0].Message)
