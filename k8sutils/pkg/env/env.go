@@ -30,6 +30,11 @@ func GetCurrentNamespace() string {
 	return getEnvVarOrDefault(consts.CurrentNamespaceEnvVar, consts.DefaultOdigosNamespace)
 }
 
+// GetCurrentClusterDomain returns the cluster domain odigos is running in
+func GetCurrentClusterDomain() string {
+	return getEnvVarOrDefault(consts.ClusterDomaninEnvVar, consts.DefaultClusterDomain)
+}
+
 func GetDefaultKubeConfigPath() string {
 	if val, ok := os.LookupEnv(KUBECONFIG); ok {
 		return val
