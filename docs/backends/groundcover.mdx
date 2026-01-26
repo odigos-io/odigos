@@ -24,7 +24,7 @@ icon: 'signal-stream'
     !! START CUSTOM EDIT !!
 */}
 
-To get an API Key, refer to [these docs](https://docs.groundcover.com/architecture/incloud-managed/ingestion-endpoints#fetching-the-api-key).
+To get an API Key, refer to [these docs](https://docs.groundcover.com/architecture/byoc/ingestion-endpoints#creating-an-ingestion-key).
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -41,7 +41,7 @@ To get an API Key, refer to [these docs](https://docs.groundcover.com/architectu
 
 - **GROUNDCOVER_ENDPOINT** `string` : Groundcover inCloud Site. The format is `host:port`. Host is required, also known as your `inCloud_Site`, it is part of the configuration provided to you by Groundcover when setting up inCloud Managed. Port is optional, and defaults to the default OpenTelemetry gRPC port `4317`.
   - This field is required
-- **GROUNDCOVER_API_KEY** `string` : Groundcover API Key.
+- **GROUNDCOVER_API_KEY** `string` : Groundcover API/Ingestion Key.
   - This field is required
 
 ### Adding Destination to Odigos
