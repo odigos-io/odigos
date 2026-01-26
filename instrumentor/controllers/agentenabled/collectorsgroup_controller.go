@@ -11,10 +11,10 @@ import (
 
 type CollectorsGroupReconciler struct {
 	client.Client
-	DistrosProvider    *distros.Provider
-	RolloutRateLimiter *rollout.RolloutRateLimiter
+	DistrosProvider           *distros.Provider
+	RolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter
 }
 
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutRateLimiter)
+	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutConcurrencyLimiter)
 }

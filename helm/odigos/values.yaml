@@ -573,10 +573,10 @@ rollout:
 # When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
   automaticRolloutDisabled: false
   # ConcurrentRollouts is the maximum number of concurrent rollouts allowed.
-  # The default of 5.0 is selected for a cluster of 200 workloads with an average of 5 minute rollout time.
+  # The default of 5 is selected for a cluster of 200 workloads with an average of 5 minute rollout time.
   # This means instrumentation of the entire cluster will take 3.33 hours.
-  isConcurrentRolloutsEnabled: false
-  concurrentRollouts: 5.0
+  isConcurrentRolloutsLimiterEnabled: false
+  concurrentRollouts: 5
 
 # Pod Disruption Budgets (PDBs) help ensure high availability during voluntary disruptions like node drains or upgrades.
 # When enabled, Odigos will deploy PDBs for its components based on their importance:
