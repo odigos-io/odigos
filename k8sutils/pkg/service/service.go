@@ -9,9 +9,13 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 )
 
+func generateFullServiceFQDN(serviceName string, port int) string {
+	return fmt.Sprintf("%s.%s.svc.%s:%d", serviceName, env.GetCurrentNamespace(), env.GetCurrentClusterDomain(), port)
+}
+
 func LocalTrafficOTLPGrpcDataCollectionEndpoint(nodeIP string) string {
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
-		return fmt.Sprintf("%s.%s:%d", k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OTLPPort)
+		return generateFullServiceFQDN(k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, consts.OTLPPort)
 	}
 	return fmt.Sprintf("%s:%d", nodeIP, consts.OTLPPort)
 }
@@ -24,7 +28,7 @@ func LocalTrafficOTLPGrpcDataCollectionEndpoint(nodeIP string) string {
 // Using a pattern is useful when the target node is not known once calling this function.
 func LocalTrafficOTLPHttpDataCollectionEndpoint(nodeIP string) string {
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
-		return fmt.Sprintf("http://%s.%s:%d", k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OTLPHttpPort)
+		return generateFullServiceFQDN(k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, consts.OTLPHttpPort)
 	}
 	return fmt.Sprintf("http://%s:%d", nodeIP, consts.OTLPHttpPort)
 }
@@ -37,7 +41,7 @@ func LocalTrafficOTLPHttpDataCollectionEndpoint(nodeIP string) string {
 // Using a pattern is useful when the target node is not known once calling this function.
 func LocalTrafficOpAmpOdigletEndpoint(nodeIP string) string {
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
-		return fmt.Sprintf("%s.%s:%d", k8sconsts.OdigletLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OpAMPPort)
+		return generateFullServiceFQDN(k8sconsts.OdigletLocalTrafficServiceName, consts.OpAMPPort)
 	}
 	return fmt.Sprintf("%s:%d", nodeIP, consts.OpAMPPort)
 }

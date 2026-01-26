@@ -5,6 +5,8 @@ import (
 )
 
 const (
+	ClusterDomaninEnvVar    = "CLUSTER_DOMAIN"
+	DefaultClusterDomain    = "cluster.local"
 	CurrentNamespaceEnvVar  = "CURRENT_NS"
 	OdigosVersionEnvVarName = "ODIGOS_VERSION"
 	OdigosTierEnvVarName    = "ODIGOS_TIER"
