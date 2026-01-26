@@ -4,8 +4,8 @@ import { OtherStatusType } from '@odigos/ui-kit/types';
 import { StatusKeys, useStatusStore } from '../../store';
 import { Header, Tooltip } from '@odigos/ui-kit/components';
 import { SystemDrawer } from '@odigos/ui-kit/containers/v2';
-import { useConfig, useDescribe, useDiagnose } from '@/hooks';
 import { OdigosLogoText, TerminalIcon } from '@odigos/ui-kit/icons';
+import { useConfig, useDescribe, useDiagnose, useTokenCRUD } from '@/hooks';
 import { NotificationManager, SlackInvite, ToggleDarkMode } from '@odigos/ui-kit/containers';
 import { IconButton, Badge as V2Badge, Header as V2Header } from '@odigos/ui-kit/components/v2';
 
@@ -13,6 +13,7 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   const { isReadonly } = useConfig();
   const { downloadDiagnose } = useDiagnose();
   const { fetchDescribeOdigos } = useDescribe();
+  const { tokens, updateToken } = useTokenCRUD();
 
   const [isSystemDrawerOpen, setIsSystemDrawerOpen] = useState(false);
   const toggleSystemDrawer = () => setIsSystemDrawerOpen((prev) => !prev);
@@ -69,7 +70,14 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
     return (
       <>
         <V2Header left={left} right={right} />
-        <SystemDrawer isOpen={isSystemDrawerOpen} onClose={toggleSystemDrawer} fetchDescribeOdigos={fetchDescribeOdigos} downloadDiagnose={downloadDiagnose} />
+        <SystemDrawer
+          isOpen={isSystemDrawerOpen}
+          onClose={toggleSystemDrawer}
+          fetchDescribeOdigos={fetchDescribeOdigos}
+          downloadDiagnose={downloadDiagnose}
+          tokens={tokens}
+          updateToken={(_, newVal) => updateToken(newVal)}
+        />
       </>
     );
   }
@@ -77,7 +85,14 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   return (
     <>
       <Header left={left} right={right} />
-      <SystemDrawer isOpen={isSystemDrawerOpen} onClose={toggleSystemDrawer} fetchDescribeOdigos={fetchDescribeOdigos} downloadDiagnose={downloadDiagnose} />
+      <SystemDrawer
+        isOpen={isSystemDrawerOpen}
+        onClose={toggleSystemDrawer}
+        fetchDescribeOdigos={fetchDescribeOdigos}
+        downloadDiagnose={downloadDiagnose}
+        tokens={tokens}
+        updateToken={(_, newVal) => updateToken(newVal)}
+      />
     </>
   );
 };
