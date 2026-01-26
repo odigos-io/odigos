@@ -26,7 +26,12 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['@odigos/ui-kit', '@apollo/client', '@apollo/experimental-nextjs-app-support', 'graphql', 'react', 'react-dom', 'react-error-boundary', 'styled-components', 'zustand'],
   },
   // Turbopack configuration (empty config silences the warning)
-  turbopack: {},
+  turbopack: {
+    resolveAlias: {
+      'styled-components': './node_modules/styled-components',
+      zustand: './node_modules/zustand',
+    },
+  },
 };
 
 export default withBundleAnalyzer(nextConfig);

@@ -3,11 +3,11 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: odigos-deployment
-  namespace: '{{ .Release.Namespace }}'
+  namespace: "{{ .Release.Namespace }}"
   labels:
     odigos.io/system-object: "true"
 data:
-  ODIGOS_VERSION: '{{ .Values.image.tag | default .Chart.AppVersion }}'
+  ODIGOS_VERSION: "{{ .Values.image.tag | default .Chart.AppVersion }}"
   ODIGOS_TIER: '{{- if include "odigos.secretExists" . }}onprem{{- else }}community{{- end }}'
   installation-method: helm
   odigos-deployment-id: '{{- if $existingCM }}{{- if $existingCM.data }}{{- if index $existingCM.data "odigos-deployment-id" }}{{ index $existingCM.data "odigos-deployment-id" }}{{- else }}{{ uuidv4 }}{{- end }}{{- else }}{{ uuidv4 }}{{- end }}{{- else }}{{ uuidv4 }}{{- end }}'
