@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	filelogReceiverName = "filelog"
-	logsPipelineName    = "logs"
+	filelogReceiverName                  = "filelog"
+	logsPipelineName                     = "logs"
+	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
 )
 
 func getReceivers(sources *odigosv1.InstrumentationConfigList, odigosNamespace string) config.GenericMap {

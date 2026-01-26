@@ -16,18 +16,17 @@ const (
 )
 
 const (
-	healthCheckExtensionName             = "health_check"
-	odigosEbpfReceiverName               = "odigosebpf"
-	pprofExtensionName                   = "pprof"
-	batchProcessorName                   = "batch"
-	memoryLimiterProcessorName           = "memory_limiter"
-	balancerName                         = "round_robin"
-	nodeNameProcessorName                = "resource/node-name"
-	clusterCollectorTracesExporterName   = "otlp/out-cluster-collector-traces"
-	clusterCollectorMetricsExporterName  = "otlp/out-cluster-collector-metrics"
-	clusterCollectorLogsExporterName     = "otlp/out-cluster-collector-logs"
-	resourceDetectionProcessorName       = "resourcedetection"
-	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
+	healthCheckExtensionName            = "health_check"
+	odigosEbpfReceiverName              = "odigosebpf"
+	pprofExtensionName                  = "pprof"
+	batchProcessorName                  = "batch"
+	memoryLimiterProcessorName          = "memory_limiter"
+	balancerName                        = "round_robin"
+	nodeNameProcessorName               = "resource/node-name"
+	clusterCollectorTracesExporterName  = "otlp/out-cluster-collector-traces"
+	clusterCollectorMetricsExporterName = "otlp/out-cluster-collector-metrics"
+	clusterCollectorLogsExporterName    = "otlp/out-cluster-collector-logs"
+	resourceDetectionProcessorName      = "resourcedetection"
 )
 
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {

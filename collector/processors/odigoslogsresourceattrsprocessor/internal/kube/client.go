@@ -79,28 +79,20 @@ func NewMetadataClient(config *rest.Config) (Client, error) {
 	factory := metadatainformer.NewFilteredSharedInformerFactory(metadataClient, 0, metav1.NamespaceAll, tweakListOptions)
 	c.podInformer = factory.ForResource(podGVR).Informer()
 
-	c.podInformer.SetTransform(
-		func(object any) (any, error) {
-			partialPodMetaData := extractPartialMetadata(object)
-			if partialPodMetaData == nil {
-				return nil, nil
-			}
-			return partialPodMetaData, nil
-		})
-
 	_, err = c.podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		// Cache functions require "any" - but we pass PartialPodMetadata
-		AddFunc: func(partialPodMetaData any) {
-			if partialPodMetaData == nil {
+		AddFunc: func(obj any) {
+			podMeta := extractPartialMetadata(obj)
+			if podMeta == nil {
 				return
 			}
-			c.handlePodAdd(partialPodMetaData.(PartialPodMetadata))
+			c.handlePodAdd(*podMeta)
 		},
-		DeleteFunc: func(partialPodMetaData any) {
-			if partialPodMetaData == nil {
+		DeleteFunc: func(obj any) {
+			podMeta := extractPartialMetadata(obj)
+			if podMeta == nil {
 				return
 			}
-			c.handlePodDelete(partialPodMetaData.(PartialPodMetadata))
+			c.handlePodDelete(*podMeta)
 		},
 	})
 	if err != nil {

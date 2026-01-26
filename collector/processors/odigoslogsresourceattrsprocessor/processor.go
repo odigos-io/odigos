@@ -118,7 +118,8 @@ func (processor *partialK8sAttrsProcessor) enrichResourceWithPodMetadata(attrs p
 		if semconvKey, ok := workloadKindToSemconvKey[podMeta.WorkloadKind]; ok {
 			attrs.PutStr(semconvKey, podMeta.WorkloadName)
 		}
-
+	}
+	if podMeta.WorkloadName != "" {
 		attrs.PutStr(string(semconv.ServiceNameKey), podMeta.WorkloadName)
 	}
 }
