@@ -14,20 +14,20 @@ type RolloutRateLimiter struct {
 	limiter *rate.Limiter
 }
 
-// NewRolloutRateLimiter creates a rate limiter using OdigosConfiguration values,
-// falling back to defaults if not set.
+// NewRolloutRateLimiter creates a rate limiter using OdigosConfiguration values.
+// Rate limiting is disabled by default and only enabled when IsConcurrentRolloutsEnabled is explicitly set to true.
 func NewRolloutRateLimiter(conf *common.OdigosConfiguration) *RolloutRateLimiter {
 	concurrentRollouts := NoRateLimiting
-	if conf != nil && conf.Rollout != nil {
-		if conf.Rollout.IsConcurrentRolloutsEnabled != nil && *conf.Rollout.IsConcurrentRolloutsEnabled {
-			// We should not compare float64 values directly, so we convert to int and compare that.
-			if conf.Rollout.IsConcurrentRolloutsEnabled != nil && int(conf.Rollout.ConcurrentRollouts) == 0 {
-				// If the value is 0, we use the default value.
-				concurrentRollouts = DefaultConcurrentRollouts
-			} else {
-				// If the value is not 0, we use the value from the configuration.
-				concurrentRollouts = conf.Rollout.ConcurrentRollouts
-			}
+
+	// Only enable rate limiting if explicitly requested via IsConcurrentRolloutsEnabled=true
+	if conf != nil && conf.Rollout != nil &&
+		conf.Rollout.IsConcurrentRolloutsEnabled != nil &&
+		*conf.Rollout.IsConcurrentRolloutsEnabled {
+		// Use the configured value if positive, otherwise use the default
+		if conf.Rollout.ConcurrentRollouts > 0 {
+			concurrentRollouts = conf.Rollout.ConcurrentRollouts
+		} else {
+			concurrentRollouts = DefaultConcurrentRollouts
 		}
 	}
 
