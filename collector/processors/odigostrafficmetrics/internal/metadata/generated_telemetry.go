@@ -65,37 +65,37 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	var err, errs error
 	builder.OdigosAcceptedLogRecords, err = builder.meter.Int64Counter(
 		"otelcol_odigos_accepted_log_records",
-		metric.WithDescription("Number of log records passed through the processor."),
+		metric.WithDescription("Number of log records passed through the processor. [Development]"),
 		metric.WithUnit("{records}"),
 	)
 	errs = errors.Join(errs, err)
 	builder.OdigosAcceptedMetricPoints, err = builder.meter.Int64Counter(
 		"otelcol_odigos_accepted_metric_points",
-		metric.WithDescription("Number of data points passed through the processor."),
+		metric.WithDescription("Number of data points passed through the processor. [Development]"),
 		metric.WithUnit("{datapoints}"),
 	)
 	errs = errors.Join(errs, err)
 	builder.OdigosAcceptedSpans, err = builder.meter.Int64Counter(
 		"otelcol_odigos_accepted_spans",
-		metric.WithDescription("Number of spans passed through the processor."),
+		metric.WithDescription("Number of spans passed through the processor. [Development]"),
 		metric.WithUnit("{spans}"),
 	)
 	errs = errors.Join(errs, err)
 	builder.OdigosLogDataSize, err = builder.meter.Int64Counter(
 		"otelcol_odigos_log_data_size",
-		metric.WithDescription("Total size of log data passed to the processor"),
+		metric.WithDescription("Total size of log data passed to the processor [Development]"),
 		metric.WithUnit("By"),
 	)
 	errs = errors.Join(errs, err)
 	builder.OdigosMetricDataSize, err = builder.meter.Int64Counter(
 		"otelcol_odigos_metric_data_size",
-		metric.WithDescription("Total size of metric data passed to the processor"),
+		metric.WithDescription("Total size of metric data passed to the processor [Development]"),
 		metric.WithUnit("By"),
 	)
 	errs = errors.Join(errs, err)
 	builder.OdigosTraceDataSize, err = builder.meter.Int64Counter(
 		"otelcol_odigos_trace_data_size",
-		metric.WithDescription("Total size of trace data passed to the processor"),
+		metric.WithDescription("Total size of trace data passed to the processor [Development]"),
 		metric.WithUnit("By"),
 	)
 	errs = errors.Join(errs, err)

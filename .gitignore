@@ -4,6 +4,8 @@ node_modules
 .DS_Store
 go.work.sum
 go.work
+go.work.sum.bak
+go.work.bak
 cli/odigos
 .venv
 **/__pycache__/

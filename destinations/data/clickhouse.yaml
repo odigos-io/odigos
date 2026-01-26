@@ -53,6 +53,47 @@ spec:
         tooltip: "The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before"
       initialValue: otel
 
+    - name: CLICKHOUSE_TLS_ENABLED
+      displayName: Enable TLS
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Secure connection'
+      customReadDataLabels:
+        - condition: 'true'
+          title: 'TLS'
+          value: 'Encrypted'
+        - condition: 'false'
+          title: 'TLS'
+          value: 'Unencrypted'
+    - name: CLICKHOUSE_INSECURE_SKIP_VERIFY
+      displayName: Insecure Skip Verify
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Skip TLS certificate verification'
+      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+    - name: CLICKHOUSE_USE_CUSTOM_CA
+      displayName: Use Custom CA Certificate
+      componentType: checkbox
+      initialValue: false
+      componentProps:
+        required: false
+        tooltip: 'Use a custom CA certificate instead of the system root CA'
+      renderCondition: ['CLICKHOUSE_TLS_ENABLED', '==', 'true']
+    - name: CLICKHOUSE_CA_PEM
+      displayName: Certificate Authority (CA PEM)
+      componentType: textarea
+      componentProps:
+        required: false
+        placeholder: '-----BEGIN CERTIFICATE-----'
+        tooltip: 'CA certificate in PEM format to verify the server'
+      renderCondition: ['CLICKHOUSE_USE_CUSTOM_CA', '==', 'true']
+      hideFromReadData: ['true']
+      secret: true
+
     - name: CLICKHOUSE_TRACES_TABLE
       displayName: Traces Table
       componentType: input

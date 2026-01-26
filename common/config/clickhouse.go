@@ -14,6 +14,10 @@ const (
 	clickhousePassword                 = "${CLICKHOUSE_PASSWORD}"
 	clickhouseCreateSchema             = "CLICKHOUSE_CREATE_SCHEME"
 	clickhouseDatabaseName             = "CLICKHOUSE_DATABASE_NAME"
+	clickhouseTlsEnabled               = "CLICKHOUSE_TLS_ENABLED"
+	clickhouseUseCustomCa              = "CLICKHOUSE_USE_CUSTOM_CA"
+	clickhouseCaPem                    = "CLICKHOUSE_CA_PEM"
+	clickhouseInsecureSkipVerify       = "CLICKHOUSE_INSECURE_SKIP_VERIFY"
 	clickhouseTracesTable              = "CLICKHOUSE_TRACES_TABLE"
 	clickhouseLogsTable                = "CLICKHOUSE_LOGS_TABLE"
 	clickhouseMetricsTableSum          = "CLICKHOUSE_METRICS_TABLE_SUM"
@@ -22,12 +26,34 @@ const (
 	clickhouseMetricsTableSummary      = "CLICKHOUSE_METRICS_TABLE_SUMMARY"
 	clickhouseMetricsTableExpHistogram = "CLICKHOUSE_METRICS_TABLE_EXP_HISTOGRAM"
 	hyperdxLogNormalizer               = "HYPERDX_LOG_NORMALIZER"
+
+	// ClickhouseCaMountPath is the path where the CA certificate is mounted in the collector pod
+	ClickhouseCaMountPath        = "/etc/clickhouse/certs"
+	ClickhouseCaSecretVolumeName = "clickhouse-ca-cert"
 )
 
 type Clickhouse struct{}
 
 func (c *Clickhouse) DestType() common.DestinationType {
 	return common.ClickhouseDestinationType
+}
+
+func clickhouseTlsConfig(dest ExporterConfigurer) GenericMap {
+	tlsConfig := GenericMap{
+		"insecure": false,
+	}
+
+	if val, ok := dest.GetConfig()[clickhouseInsecureSkipVerify]; ok && val != "" {
+		tlsConfig["insecure_skip_verify"] = parseBool(val)
+	}
+
+	// Set ca_file only if user explicitly chose to use a custom CA certificate
+	// The CA certificate will be mounted by k8sconfig if CLICKHOUSE_CA_PEM exists in the secret
+	if useCustomCa, ok := dest.GetConfig()[clickhouseUseCustomCa]; ok && useCustomCa == "true" {
+		tlsConfig["ca_file"] = ClickhouseCaMountPath + "/" + dest.GetID() + "/" + clickhouseCaPem
+	}
+
+	return tlsConfig
 }
 
 func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) ([]string, error) {
@@ -67,6 +93,10 @@ func (c *Clickhouse) ModifyConfig(dest ExporterConfigurer, currentConfig *Config
 		return nil, errors.New("clickhouse database name not specified, gateway will not be configured for Clickhouse")
 	}
 	exporterConfig["database"] = dbName
+
+	if dest.GetConfig()[clickhouseTlsEnabled] == "true" {
+		exporterConfig["tls"] = clickhouseTlsConfig(dest)
+	}
 
 	if tracesTable, ok := dest.GetConfig()[clickhouseTracesTable]; ok {
 		exporterConfig["traces_table_name"] = tracesTable
