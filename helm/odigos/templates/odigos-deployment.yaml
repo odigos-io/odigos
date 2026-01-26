@@ -1,3 +1,4 @@
+{{- $existingCM := lookup "v1" "ConfigMap" .Release.Namespace "odigos-deployment" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,4 +10,4 @@ data:
   ODIGOS_VERSION: '{{ .Values.image.tag | default .Chart.AppVersion }}'
   ODIGOS_TIER: '{{- if include "odigos.secretExists" . }}onprem{{- else }}community{{- end }}'
   installation-method: helm
-  odigos-deployment-id: '{{ uuidv4 }}'
+  odigos-deployment-id: '{{ if and $existingCM $existingCM.data (index $existingCM.data "odigos-deployment-id") }}{{ index $existingCM.data "odigos-deployment-id" }}{{ else }}{{ uuidv4 }}{{ end }}'
