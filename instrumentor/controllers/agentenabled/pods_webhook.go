@@ -30,7 +30,6 @@ import (
 	webhookenvinjector "github.com/odigos-io/odigos/instrumentor/internal/webhook_env_injector"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/k8sutils/pkg/service"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
@@ -339,7 +338,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	// agent span metrics configuration
 	agentSpanMetricsEnabled := containerConfig.Metrics != nil && containerConfig.Metrics.SpanMetrics != nil
 	supportsAgentSpanMetrics := distroMetadata.AgentMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics != nil && distroMetadata.AgentMetrics.SpanMetrics.Supported
-	otlpHttpMetricsEndpoint := service.LocalTrafficOTLPHttpDataCollectionEndpoint("$(NODE_IP)") + "/v1/metrics"
+	otlpHttpMetricsEndpoint := fmt.Sprintf("http://%s.%s.svc.cluster.local:%d/v1/metrics", k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, env.GetCurrentNamespace(), consts.OTLPHttpPort)
 	if supportsAgentSpanMetrics && !agentSpanMetricsEnabled {
 		// TODO(edenfed): This is an ugly hack to also collect jvm metrics via OTel when span metrics are enbabled
 		// Its using the fact that only the distro we need it for has span metrics enabled
