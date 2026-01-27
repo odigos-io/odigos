@@ -35,7 +35,9 @@ jobs:
           cd cli
           TAG=0.0.0-e2e-test
           sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos/Chart.yaml
+          sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos-central/Chart.yaml
           helm package ../helm/odigos -d pkg/helm/embedded
+          helm package ../helm/odigos-central -d pkg/helm/embedded
           go build -tags=embed_manifests \
             -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=${TAG#v}" \
             -o odigos

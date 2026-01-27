@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -277,19 +276,7 @@ var (
 var centralInstallCmd = &cobra.Command{
 	Use:   "install",
 	Short: "Install Odigos Central backend and UI components",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		hasToken := false
-		for _, s := range centralHelmSetArgs {
-			if strings.HasPrefix(s, "onPremToken=") {
-				hasToken = true
-				break
-			}
-		}
-		if !hasToken {
-			return fmt.Errorf("missing required flag: --set onPremToken=<token>")
-		}
-		return runCentralInstallOrUpgradeWithLegacyCheck(cmd, args)
-	},
+	RunE:  runCentralInstallOrUpgradeWithLegacyCheck,
 	Example: `
 # Install Odigos Central
 odigos pro central install
@@ -300,7 +287,7 @@ var centralUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Uninstall Odigos Central backend and UI components",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runCentralHelmUninstall(cmd)
+		return runCentralHelmUninstall()
 	},
 	Example: `
 # Uninstall Odigos Central
@@ -324,7 +311,7 @@ odigos pro central upgrade --reset-then-reuse-values=false
 `,
 }
 
-func runCentralHelmUninstall(cmd *cobra.Command) error {
+func runCentralHelmUninstall() error {
 	ns := proNamespaceFlag
 	if ns == "" {
 		ns = consts.DefaultOdigosCentralNamespace
@@ -552,6 +539,7 @@ func init() {
 			"Reset to chart defaults, then reuse values from the previous release (default: true).",
 		)
 		c.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
+		// c.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	}
 
 	// Backward-compat flags (mapped where possible; otherwise ignored with a warning).

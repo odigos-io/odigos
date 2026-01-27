@@ -49,102 +49,17 @@ type CentralValues struct {
 }
 
 func PrepareChartAndValues(settings *cli.EnvSettings, chartName string) (*chart.Chart, map[string]interface{}, error) {
-	// choose version
-	version := ""
-	// if the version is set by the user via --chart-version flag, use it
-	if HelmChartVersion != "" {
-		version = strings.TrimPrefix(HelmChartVersion, "v")
-	} else if OdigosChartVersion != "" {
-		// if the version is set by the CLI at build time, use it
-		version = strings.TrimPrefix(OdigosChartVersion, "v")
-	}
-
-	// Use embedded chart if available (default odigos/odigos and no override)
-	if HelmChart == k8sconsts.DefaultHelmChart && HelmChartVersion == "" {
-		ch, err := LoadEmbeddedChart(version, chartName)
-		if err == nil {
-			fmt.Printf("📦 Using embedded chart %s (chart version: %s)\n", ch.Metadata.Name, ch.Metadata.Version)
-
-			// merge values like normal (so --set and --values flags work)
-			valOpts := &values.Options{
-				ValueFiles: []string{},
-				Values:     HelmSetArgs,
-			}
-			if HelmValuesFile != "" {
-				valOpts.ValueFiles = append(valOpts.ValueFiles, HelmValuesFile)
-			}
-			vals, err := valOpts.MergeValues(getter.All(settings))
-			if err != nil {
-				return nil, nil, err
-			}
-
-			// fallback image.tag to AppVersion if not set
-			// During the release of the helm chart, we're setting the appVersion to the same as the image.tag [package-charts.sh]
-			if ch.Metadata.AppVersion != "" {
-				if _, ok := vals["image"]; !ok {
-					vals["image"] = map[string]interface{}{}
-				}
-				if imgVals, ok := vals["image"].(map[string]interface{}); ok {
-					if _, hasTag := imgVals["tag"]; !hasTag || imgVals["tag"] == "" {
-						imgVals["tag"] = ch.Metadata.AppVersion
-						fmt.Printf("Using the Chart appVersion %s as image.tag\n", ch.Metadata.AppVersion)
-					}
-				}
-			}
-
-			return ch, vals, nil
-		}
-		// if no embedded chart found, continue with repo fallback
-	}
-
-	// otherwise: use remote/local chart like today
-	if strings.HasPrefix(HelmChart, k8sconsts.OdigosHelmRepoName+"/") {
-		if err := ensureHelmRepo(settings, k8sconsts.OdigosHelmRepoName, k8sconsts.OdigosHelmRepoURL); err != nil {
-			return nil, nil, err
-		}
-	}
-	if strings.Contains(HelmChart, "/") {
-		refreshHelmRepo(settings, HelmChart)
-	}
-
-	chartPathOptions := action.ChartPathOptions{Version: version}
-	chartPath, err := chartPathOptions.LocateChart(HelmChart, settings)
-	if err != nil {
-		return nil, nil, err
-	}
-	ch, err := loader.Load(chartPath)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	valOpts := &values.Options{
-		ValueFiles: []string{},
-		Values:     HelmSetArgs,
-	}
-	if HelmValuesFile != "" {
-		valOpts.ValueFiles = append(valOpts.ValueFiles, HelmValuesFile)
-	}
-	vals, err := valOpts.MergeValues(getter.All(settings))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if ch.Metadata.AppVersion != "" {
-		if _, ok := vals["image"]; !ok {
-			vals["image"] = map[string]interface{}{}
-		}
-		if imgVals, ok := vals["image"].(map[string]interface{}); ok {
-			if _, hasTag := imgVals["tag"]; !hasTag || imgVals["tag"] == "" {
-				imgVals["tag"] = ch.Metadata.AppVersion
-				fmt.Printf("Using appVersion %s as image.tag\n", ch.Metadata.AppVersion)
-			}
-		}
-	}
-
-	return ch, vals, nil
+	return prepareChartAndValues(settings, chartName, k8sconsts.DefaultHelmChart)
 }
 
 func PrepareCentralChartAndValues(settings *cli.EnvSettings, chartName string) (*chart.Chart, map[string]interface{}, error) {
+	return prepareChartAndValues(settings, chartName, k8sconsts.DefaultCentralHelmChart)
+}
+
+// prepareChartAndValues is the common implementation for both OSS and Central flows.
+// - chartName controls which embedded chart archive to load (e.g. "odigos" / "odigos-central")
+// - embeddedGateChart controls when we attempt embedded chart first (i.e. when HelmChart == embeddedGateChart and no --chart-version override)
+func prepareChartAndValues(settings *cli.EnvSettings, chartName string, embeddedGateChart string) (*chart.Chart, map[string]interface{}, error) {
 	// choose version
 	version := ""
 	// if the version is set by the user via --chart-version flag, use it
@@ -155,8 +70,8 @@ func PrepareCentralChartAndValues(settings *cli.EnvSettings, chartName string) (
 		version = strings.TrimPrefix(OdigosChartVersion, "v")
 	}
 
-	// Use embedded chart if available (default odigos/odigos and no override)
-	if HelmChart == k8sconsts.DefaultCentralHelmChart && HelmChartVersion == "" {
+	// Use embedded chart if available (when using the default chart and no override)
+	if HelmChart == embeddedGateChart && HelmChartVersion == "" {
 		ch, err := LoadEmbeddedChart(version, chartName)
 		if err == nil {
 			fmt.Printf("📦 Using embedded chart %s (chart version: %s)\n", ch.Metadata.Name, ch.Metadata.Version)
