@@ -1,4 +1,5 @@
 {{- $imageTag := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $odigletComponent := include "odigos.odiglet.component" . -}}
 {{- $signals := .Values.signals | default (list "traces") -}}
 {{- $collectLogs := has "logs" $signals -}}
 {{- $collectMetrics := has "metrics" $signals -}}
@@ -57,7 +58,7 @@ spec:
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" $odigletComponent "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
@@ -122,7 +123,7 @@ spec:
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" $odigletComponent "Tag" $imageTag) }}
           {{- end }}
           args:
             - --health-probe-bind-port={{ .Values.odiglet.odiglet.livenessProbe.httpGet.port }}
@@ -339,7 +340,7 @@ spec:
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" $odigletComponent "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
