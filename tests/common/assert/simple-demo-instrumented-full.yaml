@@ -30,7 +30,7 @@ spec:
               apiVersion: v1
               fieldPath: status.hostIP
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test.svc.cluster.local:4318'): true
       (env[?name == 'OTEL_SERVICE_NAME']):
         - value: frontend
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
@@ -130,7 +130,7 @@ spec:
       (env[?name == 'ODIGOS_OPAMP_SERVER_HOST']):
         - (($values.k8sMinorVersion < `26` && value == '$(NODE_IP):4320') || value == 'odiglet-local.odigos-test:4320'): true
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test.svc.cluster.local:4318'): true
       (env[?name == 'LD_PRELOAD']):
         - value: "/var/odigos/loader/loader.so"
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
@@ -223,7 +223,7 @@ spec:
       (env[?name == 'OTEL_TRACES_EXPORTER']):
         - value: otlp
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test.svc.cluster.local:4318'): true
 status:
   containerStatuses:
     - name: pricing
@@ -268,7 +268,7 @@ spec:
       (env[?name == 'OTEL_TRACES_EXPORTER']):
         - value: otlp
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test.svc.cluster.local:4318'): true
       (env[?name == 'PHP_INI_SCAN_DIR']):
         - value: ':/var/odigos/php/8.2'
       (env[?name == 'OTEL_PHP_AUTOLOAD_ENABLED']):
@@ -326,7 +326,7 @@ spec:
       (env[?name == 'OTEL_TRACES_EXPORTER']):
         - value: otlp
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test.svc.cluster.local:4318'): true
       (env[?name == 'OTEL_EXPORTER_OTLP_PROTOCOL']):
         - value: 'http/protobuf'
       (env[?name == 'OTEL_PROPAGATORS']):

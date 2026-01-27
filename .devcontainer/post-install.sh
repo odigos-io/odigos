@@ -49,6 +49,9 @@ KO_VERSION=$(curl -s https://api.github.com/repos/ko-build/ko/releases/latest \
     curl -L https://github.com/ko-build/ko/releases/download/v${KO_VERSION}/ko_Linux_$(dpkg --print-architecture).tar.gz \
     | tar xz -C /usr/local/bin
 
+log "Install Chainsaw..."
+go install github.com/kyverno/chainsaw@latest
+
 # Permissions
 log "Setting permissions..."
 chown -R vscode:vscode /home/vscode/.kube

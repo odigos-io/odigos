@@ -20,7 +20,7 @@ func LocalTrafficOTLPGrpcDataCollectionEndpoint(nodeIP string) string {
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
 		url = generateFullServiceFQDN(k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, consts.OTLPPort)
 	} else {
-		return fmt.Sprintf("%s:%d", nodeIP, consts.OTLPPort)
+		url = fmt.Sprintf("%s:%d", nodeIP, consts.OTLPPort)
 	}
 	return fmt.Sprintf("%s://%s", PROTOCOL, url)
 }
@@ -36,7 +36,7 @@ func LocalTrafficOTLPHttpDataCollectionEndpoint(nodeIP string) string {
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
 		url = generateFullServiceFQDN(k8sconsts.OdigosNodeCollectorLocalTrafficServiceName, consts.OTLPHttpPort)
 	} else {
-		return fmt.Sprintf("%s:%d", nodeIP, consts.OTLPHttpPort)
+		url = fmt.Sprintf("%s:%d", nodeIP, consts.OTLPHttpPort)
 	}
 	return fmt.Sprintf("%s://%s", PROTOCOL, url)
 }
@@ -52,7 +52,7 @@ func LocalTrafficOpAmpOdigletEndpoint(nodeIP string) string {
 	if feature.ServiceInternalTrafficPolicy(feature.GA) {
 		url = generateFullServiceFQDN(k8sconsts.OdigletLocalTrafficServiceName, consts.OpAMPPort)
 	} else {
-		return fmt.Sprintf("%s:%d", nodeIP, consts.OpAMPPort)
+		url = fmt.Sprintf("%s:%d", nodeIP, consts.OpAMPPort)
 	}
 	return fmt.Sprintf("%s://%s", PROTOCOL, url)
 }
