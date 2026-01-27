@@ -82,9 +82,9 @@ spec:
               apiVersion: v1
               fieldPath: status.hostIP
       (env[?name == 'ODIGOS_OPAMP_SERVER_HOST']):
-        - (($values.k8sMinorVersion < `26` && value == '$(NODE_IP):4320') || value == 'odiglet-local.odigos-test:4320'): true
+        - (($values.k8sMinorVersion < `26` && value == '$(NODE_IP):4320') || value == 'odiglet-local.odigos-test.svc.cluster.local:4320'): true
       (env[?name == 'OTEL_EXPORTER_OTLP_ENDPOINT']):
-        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test:4318'): true
+        - (($values.k8sMinorVersion < `26` && value == 'http://$(NODE_IP):4318') || value == 'http://odigos-data-collection-local-traffic.odigos-test.svc.cluster.local:4318'): true
       (env[?name == 'LD_PRELOAD']):
         - value: "/var/odigos/loader/loader.so"
       (env[?name == 'OTEL_RESOURCE_ATTRIBUTES']):
