@@ -118,7 +118,7 @@ jobs:
     strategy:
       matrix:
         rhel: ['true', 'false']
-        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
+        service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'odiglet-minimal', 'ui', 'operator', 'agents']
         include:
           - service: autoscaler
             runner: ubuntu-latest
@@ -140,6 +140,10 @@ jobs:
             runner: ubuntu-latest
             summary: 'Odiglet for Odigos'
             description: 'Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs.'
+          - service: odiglet-minimal
+            runner: ubuntu-latest
+            summary: 'Odiglet for Odigos (minimal)'
+            description: 'Odiglet is the core component of Odigos managing auto-instrumentation. This minimal image excludes PHP, .NET, and Ruby agents.'
           - service: ui
             runner: ubuntu-latest
             summary: 'UI for Odigos'
@@ -224,9 +228,11 @@ jobs:
             DESCRIPTION=${{ matrix.description }}
             LD_FLAGS=-s -w
             RHEL=${{ matrix.rhel }}
+            ODIGLET_MINIMAL=${{ matrix.service == 'odiglet-minimal' && 'true' || 'false' }}
           platforms: linux/amd64,linux/arm64
           file: >-
             ${{ matrix.service == 'odiglet' && 'odiglet/Dockerfile' ||
+                matrix.service == 'odiglet-minimal' && 'odiglet/Dockerfile' ||
                 matrix.service == 'collector' && 'collector/Dockerfile' ||
                 matrix.service == 'ui' && 'frontend/Dockerfile' ||
                 matrix.service == 'operator' && 'operator/Dockerfile' ||

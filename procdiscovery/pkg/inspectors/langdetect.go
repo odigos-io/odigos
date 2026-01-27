@@ -60,6 +60,12 @@ var inspectorsByLanguage = map[common.ProgrammingLanguage]Inspector{
 	common.PostgresProgrammingLanguage:   &postgres.PostgresInspector{},
 }
 
+func init() {
+	for lang := range disabledLanguages {
+		delete(inspectorsByLanguage, lang)
+	}
+}
+
 func runInspectionStage(
 	procContext *process.ProcessContext,
 	containerURL string,

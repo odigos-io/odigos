@@ -26,6 +26,14 @@
   {{- printf "%s/odigos-%s%s:%s" (include "utils.imagePrefix" .) .Component (ternary "-certified" "" (and $.Values.openshift.enabled $certified)) .Tag }}
 {{- end -}}
 {{- end -}}
+
+{{- define "odigos.odiglet.component" -}}
+{{- if .Values.odiglet.minimal -}}
+odiglet-minimal
+{{- else -}}
+odiglet
+{{- end -}}
+{{- end -}}
 {{/*
 Returns "true" if any userInstrumentationEnvs.language is enabled or has env vars
 */}}

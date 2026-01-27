@@ -3,11 +3,14 @@
 LIBRARIES := go.opentelemetry.io/auto \
 			github.com/odigos-io/runtime-detector
 
+BUILD_TAGS ?=
+GO_BUILD_TAGS := $(if $(strip $(BUILD_TAGS)),-tags $(BUILD_TAGS),)
+
 build-odiglet: generate
-	CGO_ENABLED=0 go build -ldflags="$(LD_FLAGS)" -o odiglet cmd/main.go
+	CGO_ENABLED=0 go build $(GO_BUILD_TAGS) -ldflags="$(LD_FLAGS)" -o odiglet cmd/main.go
 
 debug-build-odiglet: generate
-	go build -o odiglet -gcflags "all=-N -l" cmd/main.go
+	go build $(GO_BUILD_TAGS) -o odiglet -gcflags "all=-N -l" cmd/main.go
 
 generate:
 	go mod download

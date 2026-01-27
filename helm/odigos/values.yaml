@@ -21,7 +21,7 @@ imagePrefix:
 #     autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0
 #     collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 # Supported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,
-#   odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents
+#   odiglet, odiglet-minimal, enterprise-odiglet, scheduler, agents, enterprise-agents
 images: {}
 
 # namespaces list not to show in odigos ui
@@ -356,6 +356,8 @@ instrumentor:
   # podsWebhookTimeoutSeconds: 25
 
 odiglet:
+  # When true, use the minimal odiglet image (no PHP, .NET, Ruby agents).
+  minimal: false
   odiglet:
     livenessProbe:
       httpGet:
