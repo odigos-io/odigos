@@ -115,6 +115,16 @@ spec:
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
+          # # it does not run any actual code, just pulls the image
+          # we add the resources here to make sure any policy that may validate resources exist
+          # is satisfied, there should be no need to configure this as this is not running anything.
+          resources:
+            requests:
+              cpu: 1m
+              memory: 10Mi
+            limits:
+              cpu: 1m
+              memory: 10Mi
       {{- end }}
       containers:
         - name: odiglet
