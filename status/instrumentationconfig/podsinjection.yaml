@@ -1,0 +1,34 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Status
+metadata:
+  name: pods-injection
+spec:
+  type: 'PodsInjection'
+  reasons:
+  - name: "NoRunningPods"
+    message: "source has no running pods"
+    odigosSeverity: "irrelevant"
+  - name: "PodsInjectionNotRequired"
+    message: "agents in use works without pods injection"
+    k8sConditionStatus: "True"
+    odigosSeverity: "success"
+  - name: "PodsInjectedSuccessfully"
+    message: "source pods are successfully injected with odigos agent"
+    k8sConditionStatus: "True"
+    odigosSeverity: "success"
+  - name: "PodsOutOfDateAgent"
+    message: "some source pods are running outdated odigos agent version or configuration"
+    k8sConditionStatus: "False"
+    odigosSeverity: "error"
+  - name: "PodsNotInjected"
+    message: "some source pods of this source should be injected with odigos agent but are not"
+    k8sConditionStatus: "False"
+    odigosSeverity: "error"
+  - name: "PodsNotInjectedSuccessfully"
+    message: "some source pods of this source should be injected with odigos agent but are not"
+    k8sConditionStatus: "True"
+    odigosSeverity: "success"
+  - name: "PodsInjected"
+    message: "source pods are injected with odigos agent when they should not"
+    k8sConditionStatus: "False"
+    odigosSeverity: "error"

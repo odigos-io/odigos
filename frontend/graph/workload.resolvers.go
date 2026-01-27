@@ -59,10 +59,12 @@ func (r *k8sWorkloadResolver) WorkloadOdigosHealthStatus(ctx context.Context, ob
 		})
 	}
 
+	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
+
 	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
 	// this is to detect if uninstrumented pods have agent injected when it should not.
 	conditions = append(conditions, status.CalculateAgentInjectedStatus(ic, pods))
-	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID)
+	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID, containerNamesWithOptionalPodManifestInjection)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +124,8 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 	agentInjectionEnabled := status.CalculateAgentInjectionEnabledStatus(ic)
 	rollout := status.CalculateRolloutStatus(ic)
 	agentInjected := status.CalculateAgentInjectedStatus(ic, pods)
-	processesAgentHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID)
+	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
+	processesAgentHealth, err := aggregateProcessesHealthForWorkload(ctx, obj.ID, containerNamesWithOptionalPodManifestInjection)
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +484,13 @@ func (r *k8sWorkloadResolver) WorkloadHealthStatus(ctx context.Context, obj *mod
 
 // ProcessesHealthStatus is the resolver for the processesHealthStatus field.
 func (r *k8sWorkloadResolver) ProcessesHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error) {
-	return aggregateProcessesHealthForWorkload(ctx, obj.ID)
+	l := loaders.For(ctx)
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
+	return aggregateProcessesHealthForWorkload(ctx, obj.ID, containerNamesWithOptionalPodManifestInjection)
 }
 
 // TelemetryMetrics is the resolver for the telemetryMetrics field.

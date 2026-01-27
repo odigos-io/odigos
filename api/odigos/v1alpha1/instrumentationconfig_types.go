@@ -238,6 +238,21 @@ type RuntimeDetailsByContainer struct {
 	RuntimeUpdateState *ProcessingState `json:"runtimeUpdateState,omitempty"`
 }
 
+// represents the status of odigos MANIFEST injection to existing pods template.
+// each pod can be in one of 3 states: injected and up-to-date, injected and out-of-date, or not injected.
+// actual agent in pod container can be injected or not regardless of the pod manifest injection status.
+// status only shows if pods exists from each category and not count, to avoid frequent (noisy/expensive) updates in steady state
+type PodsManifestInjectionStatus struct {
+	// if the source has any pods which are using the latest agent deployment setup.
+	HasInjectedUpToDatePods bool `json:"hasInjectedUpToDatePods,omitempty"`
+
+	// if the source has any pods which are using an outdated agent deployment setup.
+	HasInjectedOutOfDatePods bool `json:"hasInjectedOutOfDatePods,omitempty"`
+
+	// if the source has any pods which do not have the odigos agent injected.
+	HasUninjectedPods bool `json:"hasUninjectedPods,omitempty"`
+}
+
 type InstrumentationConfigStatus struct {
 	// Capture Runtime Details for the workloads that this CR applies to.
 	RuntimeDetailsByContainer []RuntimeDetailsByContainer `json:"runtimeDetailsByContainer,omitempty"`
@@ -255,6 +270,9 @@ type InstrumentationConfigStatus struct {
 	// This time recorded only after the rollout took place.
 	// This allows us to determine whether a crashing application should be rolled back or not
 	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
+
+	// Represents the status of odigos MANIFEST injection to existing pods template.
+	PodsManifestInjectionStatus *PodsManifestInjectionStatus `json:"podsManifestInjectionStatus,omitempty"`
 }
 
 func (in *InstrumentationConfigStatus) GetRuntimeDetailsForContainer(container v1.Container) *RuntimeDetailsByContainer {
@@ -393,6 +411,9 @@ type ContainerAgentConfig struct {
 	// can be left empty if reason is self-explanatory.
 	AgentEnabledMessage string `json:"agentEnabledMessage,omitempty"`
 
+	// set to true if the agent used in this container can be injected without pod manifest changes.
+	PodManifestInjectionOptional bool `json:"podManifestInjectionOptional,omitempty"`
+
 	// The name of the otel distribution to use for this container.
 	// if the name is empty, this container should not be instrumented.
 	OtelDistroName string `json:"otelDistroName,omitempty"`
@@ -422,6 +443,11 @@ type InstrumentationConfigSpec struct {
 
 	// determines if odigos should inject agents to pods of this workload.
 	AgentInjectionEnabled bool `json:"agentInjectionEnabled"`
+
+	// true if all containers with agent injection enabled in this source
+	// can be enabled without pod manifest changes.
+	// if false, at least one container requires pod manifest changes to enable agent injection.
+	PodManifestInjectionOptional bool `json:"podManifestInjectionOptional,omitempty"`
 
 	// configuration for each instrumented container in the workload
 	Containers []ContainerAgentConfig `json:"containers,omitempty"`

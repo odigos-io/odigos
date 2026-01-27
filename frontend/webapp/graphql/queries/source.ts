@@ -63,6 +63,7 @@ export const GET_SOURCE = gql`
           message
         }
         manifestYAML
+        instrumentationConfigYAML
       }
     }
   }

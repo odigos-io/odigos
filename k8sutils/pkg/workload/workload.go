@@ -9,12 +9,14 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Workload interface {
 	client.Object
 	AvailableReplicas() int32
+	LabelSelector() *metav1.LabelSelector
 	PodSpec() *corev1.PodSpec
 }
 
@@ -40,6 +42,10 @@ func (d *DeploymentWorkload) PodSpec() *corev1.PodSpec {
 	return &d.Spec.Template.Spec
 }
 
+func (d *DeploymentWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
+}
+
 type DaemonSetWorkload struct {
 	*v1.DaemonSet
 }
@@ -50,6 +56,10 @@ func (d *DaemonSetWorkload) AvailableReplicas() int32 {
 
 func (d *DaemonSetWorkload) PodSpec() *corev1.PodSpec {
 	return &d.Spec.Template.Spec
+}
+
+func (d *DaemonSetWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
 }
 
 type StatefulSetWorkload struct {
@@ -79,8 +89,20 @@ func (s *StaticPodWorkload) PodSpec() *corev1.PodSpec {
 	return &s.Spec
 }
 
+func (s *StaticPodWorkload) LabelSelector() *metav1.LabelSelector {
+	return nil
+}
+
+func (s *StatefulSetWorkload) LabelSelector() *metav1.LabelSelector {
+	return s.Spec.Selector
+}
+
 type CronJobWorkloadV1 struct {
 	*batchv1.CronJob
+}
+
+func (c *CronJobWorkloadV1) LabelSelector() *metav1.LabelSelector {
+	return nil
 }
 
 type CronJobWorkloadBeta struct {
@@ -103,6 +125,10 @@ func (c *CronJobWorkloadBeta) PodSpec() *corev1.PodSpec {
 	return &c.Spec.JobTemplate.Spec.Template.Spec
 }
 
+func (c *CronJobWorkloadBeta) LabelSelector() *metav1.LabelSelector {
+	return nil
+}
+
 type DeploymentConfigWorkload struct {
 	*openshiftappsv1.DeploymentConfig
 }
@@ -115,6 +141,12 @@ func (d *DeploymentConfigWorkload) PodSpec() *corev1.PodSpec {
 	return &d.Spec.Template.Spec
 }
 
+func (d *DeploymentConfigWorkload) LabelSelector() *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: d.Spec.Selector,
+	}
+}
+
 type ArgoRolloutWorkload struct {
 	*argorolloutsv1alpha1.Rollout
 }
@@ -125,6 +157,10 @@ func (d *ArgoRolloutWorkload) AvailableReplicas() int32 {
 
 func (d *ArgoRolloutWorkload) PodSpec() *corev1.PodSpec {
 	return &d.Spec.Template.Spec
+}
+
+func (d *ArgoRolloutWorkload) LabelSelector() *metav1.LabelSelector {
+	return d.Spec.Selector
 }
 
 func ObjectToWorkload(obj client.Object) (Workload, error) {

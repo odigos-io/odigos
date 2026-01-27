@@ -530,6 +530,28 @@ auto_generated: true
    <p>Samplers is the config for the Samplers Action.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>urlTemplatization</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions.URLTemplatizationConfig</code>
+</td>
+<td>
+   <p>URLTemplatization is the config for the URLTemplatization Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>spanRenamer</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions.SpanRenamerConfig</code>
+</td>
+<td>
+   <p>SpanRenamer is the config for the SpanRenamer Action.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -592,7 +614,92 @@ The presence of this struct (as opposed to nil) means that logs collection is en
 <p>all &quot;metrics&quot; related configuration for an agent running on any process in a specific container.
 The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.</p>
 
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentSpanMetricsConfig"><code>AgentSpanMetricsConfig</code></a>
+</td>
+<td>
+   <p>if not nil, it means agent should report span metrics,
+calculated directly in the agent.
+this is most accurate as it includes any sampled spans,
+and is not affected if spans are dropped anywhere in the pipeline.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtimeMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceAgentRuntimeMetricsConfiguration"><code>common.MetricsSourceAgentRuntimeMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil, it means agent should report runtime metrics,
+such as JVM metrics for Java applications.
+these metrics provide insights into the runtime environment performance.</p>
+</td>
+</tr>
+</tbody>
+</table>
 
+## `AgentSpanMetricsConfig` <a id="odigos-io-v1alpha1-AgentSpanMetricsConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentMetricsConfig](#odigos-io-v1alpha1-AgentMetricsConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>dimensions</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>additional dimensions to add for the span metrics.
+for example, if you add <code>http.method</code> to the dimensions,
+then the span metrics data points will include the <code>http.method</code> in the attributes,
+and different values of <code>http.method</code> will be aggregated into different time series.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>intervalMs</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>time interval in miliseconds for flushing the span metrics.
+defaults: 60000 (60 seconds, 1 minute)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>histogramBucketsMs</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]int</code>
+</td>
+<td>
+   <p>explicit buckets list for the histogram metrics in ms</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `AgentTracesConfig` <a id="odigos-io-v1alpha1-AgentTracesConfig"></a>
     
@@ -619,6 +726,52 @@ The presence of this struct (as opposed to nil) means that trace collection is e
 <td>
    <p>id generator configuration for the traces.
 if not specified, the default random id generator will be used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>urlTemplatization</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-UrlTemplatizationConfig"><code>UrlTemplatizationConfig</code></a>
+</td>
+<td>
+   <p>A list of URL templatization configurations to be applied to the traces.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headersCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadersCollectionConfig"><code>HeadersCollectionConfig</code></a>
+</td>
+<td>
+   <p>Configuration for headers collection. If not specified, no headers will be collected.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headSampling</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadSamplingConfig"><code>HeadSamplingConfig</code></a>
+</td>
+<td>
+   <p>HeadSamplingConfig is a set sampling rules.
+This config currently only applies to root spans.
+In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>spanRenamer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SpanRenamerConfig"><code>SpanRenamerConfig</code></a>
+</td>
+<td>
+   <p>Configuration for span renamer.</p>
 </td>
 </tr>
 </tbody>
@@ -1163,31 +1316,6 @@ and for visibility into the aggregated settings being used to derive configurati
 </tr>
 <tr>
 <td>
-<code>ownTelemetryEnabled</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <p>wether to setup and collect own telemetry in the collector.
-currently, it is used to send odigos own metrics to the odigos prometheus (internal metrics store).</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ownMetricsScrapeInterval</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>the interval at which odigos will scrape own metrics from itself if own telemetry is enabled.
-format: duration string (15s, 1m, etc).
-default is 10s.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>nodeSelector</code> <B>[Required]</B>
 </td>
 <td>
@@ -1314,6 +1442,17 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <td>
    <p>free text message to provide more information about the instrumentation decision.
 can be left empty if reason is self-explanatory.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podManifestInjectionOptional</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>set to true if the agent used in this container can be injected without pod manifest changes.</p>
 </td>
 </tr>
 <tr>
@@ -1705,6 +1844,7 @@ If not specified, defaults to &quot;all&quot;.</p>
 
 **Appears in:**
 
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
 - [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
 
 <p>HeadSamplingConfig is a set of attribute rules.
@@ -1739,6 +1879,36 @@ The first attribute rule that evaluates to true is used to determine the samplin
 it may be empty - in this case the default value will be 1 - all spans are sampled.
 it should be a float value in the range [0, 1] - the fraction of spans to sample.
 a value of 0 means no spans are sampled if none of the rules evaluate to true.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `HeadersCollectionConfig` <a id="odigos-io-v1alpha1-HeadersCollectionConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+
+<p>HeadersCollectionConfig represents configuration for HTTP headers collection.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>httpHeaderKeys</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>Limit HTTP headers collection to specific header keys.
+if unset, no HTTP headers will be collected.
+HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.</p>
 </td>
 </tr>
 </tbody>
@@ -1861,6 +2031,19 @@ The workload is identified by the owner reference</p>
 </td>
 <td>
    <p>determines if odigos should inject agents to pods of this workload.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podManifestInjectionOptional</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>true if all containers with agent injection enabled in this source
+can be enabled without pod manifest changes.
+if false, at least one container requires pod manifest changes to enable agent injection.</p>
 </td>
 </tr>
 <tr>
@@ -2010,6 +2193,17 @@ if this field is different than the spec.AgentsDeploymentHash it means rollout i
 <td>
    <p>This time recorded only after the rollout took place.
 This allows us to determine whether a crashing application should be rolled back or not</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podsManifestInjectionStatus</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-PodsManifestInjectionStatus"><code>PodsManifestInjectionStatus</code></a>
+</td>
+<td>
+   <p>Represents the status of odigos MANIFEST injection to existing pods template.</p>
 </td>
 </tr>
 </tbody>
@@ -2553,6 +2747,19 @@ If empty, no instrumentation libraries will be used.</p>
    <p>Add custom instrumentation probes</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>headSamplingFallbackFraction</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HeadSamplingFallbackFraction"><code>instrumentationrules.HeadSamplingFallbackFraction</code></a>
+</td>
+<td>
+   <p>Configure general fraction of traces to record if none of the rules evaluate to true.
+this can help in reducing very noisy and heavy traffic services.
+note that traces will be dropped regardless of thier attributes/errors/importance.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -2590,7 +2797,54 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 - [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
 
+<p>configuration for collecting and exporting odigos own metrics.
+e.g. metrics about odigos components, and not about the user's application.</p>
 
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sendToMetricsDestinations</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if true, odigos will send all the metrics it collects about itself to the metrics pipeline,
+which will make them available to the metrics destinations.
+users can troubleshoot odigos itself by monitoring these metrics in their existing systems,
+and create their own dashboards, alerting, and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sendToOdigosMetricsStore</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if true, odigos will send all the metrics it collects about itself to the odigos metrics store,
+which is available to odigos UI.
+it can help in presenting a consistent view of odigos itself, without relying on user system and integrations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>interval</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>time interval for flusing metrics (format: 15s, 1m etc). defaults: 10s</p>
+</td>
+</tr>
+</tbody>
+</table>
 
 ## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
     
@@ -2624,6 +2878,59 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <td>
    <span class="text-muted">No description provided.</span>
    </td>
+</tr>
+</tbody>
+</table>
+
+## `PodsManifestInjectionStatus` <a id="odigos-io-v1alpha1-PodsManifestInjectionStatus"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigStatus](#odigos-io-v1alpha1-InstrumentationConfigStatus)
+
+<p>represents the status of odigos MANIFEST injection to existing pods template.
+each pod can be in one of 3 states: injected and up-to-date, injected and out-of-date, or not injected.
+actual agent in pod container can be injected or not regardless of the pod manifest injection status.
+status only shows if pods exists from each category and not count, to avoid frequent (noisy/expensive) updates in steady state</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>hasInjectedUpToDatePods</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if the source has any pods which are using the latest agent deployment setup.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hasInjectedOutOfDatePods</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if the source has any pods which are using an outdated agent deployment setup.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hasUninjectedPods</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if the source has any pods which do not have the odigos agent injected.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -2997,6 +3304,18 @@ In the Future we might add another level of configuration base on the parent spa
    <p>list of the custom instrumentation probes the SDK should use.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>runtimeMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceAgentRuntimeMetricsConfiguration"><code>common.MetricsSourceAgentRuntimeMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>configuration for runtime metrics that the SDK should generate.
+these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -3154,6 +3473,97 @@ Not valid for namespace sources.</p>
 <td>
    <p>Represents the observations of a source's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SpanRenamerConfig` <a id="odigos-io-v1alpha1-SpanRenamerConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>scopeRules</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SpanRenamerScopeRules"><code>[]SpanRenamerScopeRules</code></a>
+</td>
+<td>
+   <p>list of scope rules to be applied to the span name.
+all options are always tried, regardless of whether the previous options have matched or not.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SpanRenamerScopeRules` <a id="odigos-io-v1alpha1-SpanRenamerScopeRules"></a>
+    
+
+**Appears in:**
+
+- [SpanRenamerConfig](#odigos-io-v1alpha1-SpanRenamerConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>scopeName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>the name of the opentelemetry intrumentation scope which the renamed spans are written in.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>regexReplacements</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]actions.SpanRenamerRegexReplacement</code>
+</td>
+<td>
+   <p>list of regex replacements to be applied to the span name.
+all options are always tried, regardless of whether the previous options have matched or not.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `UrlTemplatizationConfig` <a id="odigos-io-v1alpha1-UrlTemplatizationConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>templatizationRules</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>Rule is the template rule to be applied to URLs</p>
 </td>
 </tr>
 </tbody>

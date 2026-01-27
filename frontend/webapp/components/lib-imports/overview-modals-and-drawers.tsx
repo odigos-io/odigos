@@ -2,7 +2,6 @@ import React from 'react';
 import { ActionDrawer, ActionModal, DestinationDrawer, DestinationModal, InstrumentationRuleDrawer, InstrumentationRuleModal, SourceDrawer, SourceModal } from '@odigos/ui-kit/containers';
 import {
   useActionCRUD,
-  useConfig,
   useDescribe,
   useDestinationCategories,
   useDestinationCRUD,
@@ -15,8 +14,6 @@ import {
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
-  const { isEnterprise } = useConfig();
-
   const { fetchNamespace } = useNamespace();
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
@@ -41,7 +38,7 @@ const OverviewModalsAndDrawers = () => {
         deleteDestination={deleteDestination}
         testConnection={testConnection}
       />
-      <InstrumentationRuleModal isEnterprise={isEnterprise} createInstrumentationRule={createInstrumentationRule} />
+      <InstrumentationRuleModal createInstrumentationRule={createInstrumentationRule} />
       <ActionModal createAction={createAction} />
 
       {/* drawers */}

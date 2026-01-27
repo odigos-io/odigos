@@ -52,6 +52,14 @@ func UpdateRemoteConfig(ctx context.Context, config *common.OdigosConfiguration)
 	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosRemoteConfigName, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
+			// Fetch odigos-configuration to use as owner reference.
+			// This ensures odigos-remote-config is automatically deleted by Kubernetes GC
+			// when odigos-configuration is deleted (e.g., during Helm uninstall).
+			ownerCm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to get odigos-configuration for owner reference: %w", err)
+			}
+
 			cm = &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      consts.OdigosRemoteConfigName,
@@ -59,6 +67,12 @@ func UpdateRemoteConfig(ctx context.Context, config *common.OdigosConfiguration)
 					Labels: map[string]string{
 						k8sconsts.OdigosSystemConfigLabelKey: "remote",
 					},
+					OwnerReferences: []metav1.OwnerReference{{
+						APIVersion: "v1",
+						Kind:       "ConfigMap",
+						Name:       ownerCm.Name,
+						UID:        ownerCm.UID,
+					}},
 				},
 				Data: map[string]string{
 					consts.OdigosConfigurationFileName: string(yamlBytes),

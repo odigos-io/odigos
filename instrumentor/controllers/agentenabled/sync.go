@@ -193,6 +193,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
+	podManifestInjectionOptional := true // pod manifest is optional, unless some container agent requires it
 
 	for containerName, containerRuntimeDetails := range runtimeDetailsByContainer {
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
@@ -200,8 +201,14 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		containerOverride := ic.GetOverridesForContainer(containerName)
 		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, workloadObj, pw)
 		containersConfig = append(containersConfig, currentContainerConfig)
+		// if at least one container has agent enabled, and pod manifest injection is required,
+		// then the overall pod manifest injection is required.
+		if currentContainerConfig.AgentEnabled && !currentContainerConfig.PodManifestInjectionOptional {
+			podManifestInjectionOptional = false
+		}
 	}
 	ic.Spec.Containers = containersConfig
+	ic.Spec.PodManifestInjectionOptional = podManifestInjectionOptional
 
 	// after updating the container configs, we can go over them and produce a useful aggregated status for the user
 	// if any container is instrumented, we can set the status to true
@@ -224,6 +231,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if any instrumented containers are found, the pods webhook should process pods for this workload.
 		// set the AgentInjectionEnabled to true to signal that.
 		ic.Spec.AgentInjectionEnabled = !rollbackOccurred
+		ic.Spec.PodManifestInjectionOptional = ic.Spec.AgentInjectionEnabled && podManifestInjectionOptional
 		agentsDeploymentHash, err := rollout.HashForContainersConfig(containersConfig)
 		if err != nil {
 			return nil, err
@@ -238,6 +246,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// if none of the containers are instrumented, we can set the status to false
 		// to signal to the webhook that those pods should not be processed.
 		ic.Spec.AgentInjectionEnabled = false
+		ic.Spec.PodManifestInjectionOptional = false
 		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		return aggregatedCondition, nil
 	}
@@ -489,20 +498,20 @@ func calculateContainerInstrumentationConfig(containerName string,
 	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, runtimeDetails.Language, pw)
 	ignoreHealthChecks := filterIgnoreHealthChecksForContainer(agentLevelActions, runtimeDetails.Language)
 
-	distro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
+	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {
 		return *err
 	}
-	distroName := distro.Name
+	distroName := d.Name
 
 	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 
 	// at this time, we don't populate the signals specific configs, but we will do it soon
-	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, filteredTemplateRules, ignoreHealthChecks, irls, agentLevelActions, workloadObj, distro)
+	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, filteredTemplateRules, ignoreHealthChecks, irls, agentLevelActions, workloadObj, d)
 	if err != nil {
 		return *err
 	}
-	metricsConfig, err := signalconfig.CalculateMetricsConfig(metricsEnabled, effectiveConfig, distro, containerName)
+	metricsConfig, err := signalconfig.CalculateMetricsConfig(metricsEnabled, effectiveConfig, d, containerName)
 	if err != nil {
 		return *err
 	}
@@ -511,7 +520,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		return *err
 	}
 
-	envInjectionDecision, unsupportedDetails := getEnvInjectionDecision(containerName, effectiveConfig, runtimeDetails, distro)
+	envInjectionDecision, unsupportedDetails := getEnvInjectionDecision(containerName, effectiveConfig, runtimeDetails, d)
 	if unsupportedDetails != nil {
 		// if we have a container agent config with reason and message, we return it.
 		// this is a failure to inject the agent, and we should not proceed with other checks.
@@ -531,14 +540,14 @@ func calculateContainerInstrumentationConfig(containerName string,
 	}
 
 	// check if the runtime version is in supported range if it is provided
-	if runtimeDetails.RuntimeVersion != "" && len(distro.RuntimeEnvironments) == 1 {
-		constraint, err := version.NewConstraint(distro.RuntimeEnvironments[0].SupportedVersions)
+	if runtimeDetails.RuntimeVersion != "" && len(d.RuntimeEnvironments) == 1 {
+		constraint, err := version.NewConstraint(d.RuntimeEnvironments[0].SupportedVersions)
 		if err != nil {
 			return odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", distro.RuntimeEnvironments[0].SupportedVersions),
+				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", d.RuntimeEnvironments[0].SupportedVersions),
 			}
 		}
 		detectedVersion, err := version.NewVersion(runtimeDetails.RuntimeVersion)
@@ -555,12 +564,12 @@ func calculateContainerInstrumentationConfig(containerName string,
 				ContainerName:       containerName,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
-				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", distro.RuntimeEnvironments[0].Name, constraint, detectedVersion),
+				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", d.RuntimeEnvironments[0].Name, constraint, detectedVersion),
 			}
 		}
 	}
 
-	distroParameters, err := calculateDistroParams(distro, runtimeDetails, envInjectionDecision)
+	distroParameters, err := calculateDistroParams(d, runtimeDetails, envInjectionDecision)
 	if err != nil {
 		return *err
 	}
@@ -577,6 +586,8 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
+	podManifestInjectionOptional := !distro.IsRestartRequired(d, effectiveConfig)
+
 	// check for presence of other agents
 	if runtimeDetails.OtherAgent != nil {
 		if effectiveConfig.AllowConcurrentAgents == nil || !*effectiveConfig.AllowConcurrentAgents {
@@ -588,29 +599,31 @@ func calculateContainerInstrumentationConfig(containerName string,
 			}
 		} else {
 			return odigosv1.ContainerAgentConfig{
-				ContainerName:       containerName,
-				AgentEnabled:        true,
-				AgentEnabledReason:  odigosv1.AgentEnabledReasonEnabledSuccessfully,
-				AgentEnabledMessage: fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
-				OtelDistroName:      distroName,
-				DistroParams:        distroParameters,
-				EnvInjectionMethod:  envInjectionDecision,
-				Traces:              tracesConfig,
-				Metrics:             metricsConfig,
-				Logs:                logsConfig,
+				ContainerName:                containerName,
+				AgentEnabled:                 true,
+				PodManifestInjectionOptional: podManifestInjectionOptional,
+				AgentEnabledReason:           odigosv1.AgentEnabledReasonEnabledSuccessfully,
+				AgentEnabledMessage:          fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
+				OtelDistroName:               distroName,
+				DistroParams:                 distroParameters,
+				EnvInjectionMethod:           envInjectionDecision,
+				Traces:                       tracesConfig,
+				Metrics:                      metricsConfig,
+				Logs:                         logsConfig,
 			}
 		}
 	}
 
 	return odigosv1.ContainerAgentConfig{
-		ContainerName:      containerName,
-		AgentEnabled:       true,
-		OtelDistroName:     distroName,
-		DistroParams:       distroParameters,
-		EnvInjectionMethod: envInjectionDecision,
-		Traces:             tracesConfig,
-		Metrics:            metricsConfig,
-		Logs:               logsConfig,
+		ContainerName:                containerName,
+		AgentEnabled:                 true,
+		PodManifestInjectionOptional: podManifestInjectionOptional,
+		OtelDistroName:               distroName,
+		DistroParams:                 distroParameters,
+		EnvInjectionMethod:           envInjectionDecision,
+		Traces:                       tracesConfig,
+		Metrics:                      metricsConfig,
+		Logs:                         logsConfig,
 	}
 }
 
