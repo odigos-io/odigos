@@ -90,11 +90,10 @@ spec:
 
     ############# Rate Limiting Test #############
     # Test that rollout rate limiting works by:
-    # 1. Enabling rate limiting with concurrentRollouts=2
+    # 1. Enabling rate limiting with concurrentRollouts=1
     # 2. Uninstrumenting all workloads
-    # 3. Re-instrumenting and verifying some workloads are queued
+    # 3. Re-instrumenting and verifying workloads are queued (with limit=1, at least 3 of 4 should queue)
 
-    # NOTE: we might see flakiness in the CI due to the rate limiting. If we see it, we can decrease the concurrentRollouts to 1.
     - name: Enable Rollout Rate Limiting
       try:
         - script:
@@ -102,17 +101,17 @@ spec:
             content: |
               ../../../cli/odigos upgrade --ns odigos-test \
                 --set rollout.isConcurrentRolloutsLimiterEnabled=true \
-                --set rollout.concurrentRollouts=2
+                --set rollout.concurrentRollouts=1
 
     - name: Assert Rate Limiting Config Applied
       try:
         - script:
             timeout: 30s
             content: |
-              config=$(kubectl get odigosconfigurations.odigos.io -n odigos-test odigos -o jsonpath='{.spec.rollout}')
+              config=$(kubectl get configmap odigos-configuration -n odigos-test -o jsonpath='{.data.config\.yaml}')
               echo "Rollout config: $config"
-              echo "$config" | grep -q '"isConcurrentRolloutsLimiterEnabled":true' || exit 1
-              echo "$config" | grep -q '"concurrentRollouts":2' || exit 1
+              echo "$config" | grep -q 'isConcurrentRolloutsLimiterEnabled: true' || exit 1
+              echo "$config" | grep -q 'concurrentRollouts: 1' || exit 1
               echo "Rate limiting config verified"
 
     - name: Uninstrument Namespace
@@ -146,31 +145,37 @@ spec:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
-    - name: Assert Some Workloads Waiting In Queue
+    - name: Assert Workloads Waiting In Queue
       try:
         - script:
             timeout: 30s
             content: |
-              # Wait briefly for instrumentation to start
-              sleep 3
-              # Check that at least one workload has WaitingInQueue condition
-              # With 4 workloads and limit of 2, at least 2 should be queued initially
-              for i in $(seq 1 10); do
+              # With concurrentRollouts=1 and 4 workloads, at least 3 should be queued
+              # Poll quickly to catch the WaitingInQueue state before rollouts complete
+              for i in $(seq 1 20); do
                 waiting=$(kubectl get instrumentationconfigs -n default -o json | \
                   jq '[.items[].status.conditions[]? | select(.type=="WorkloadRollout" and .reason=="WaitingInQueue")] | length')
-                if [ "$waiting" -ge "1" ]; then
-                  echo "Found $waiting workload(s) waiting in queue - rate limiting is working!"
+                echo "Attempt $i: Found $waiting workload(s) waiting in queue"
+                if [ "$waiting" -ge "3" ]; then
+                  echo "Rate limiting verified: $waiting workloads waiting in queue (expected >= 3)"
+                  # Print which workloads are waiting for debugging
+                  kubectl get instrumentationconfigs -n default -o json | \
+                    jq -r '.items[] | select(.status.conditions[]? | .type=="WorkloadRollout" and .reason=="WaitingInQueue") | .metadata.name'
                   exit 0
                 fi
-                echo "Attempt $i: No workloads in queue yet, checking again..."
-                sleep 1
+                sleep 0.5
               done
-              echo "Warning: Could not verify WaitingInQueue condition (workloads may have rolled out too fast)"
-              # Don't fail - the rate limiter might have processed them quickly
-              exit 0
+              # If we didn't catch 3 waiting, check if at least 1 was queued (rollouts may have been fast)
+              echo "Warning: Only found $waiting workloads in queue (expected 3). Rollouts may have completed quickly."
+              if [ "$waiting" -ge "1" ]; then
+                echo "At least 1 workload was queued - rate limiting is working"
+                exit 0
+              fi
+              echo "ERROR: No workloads were ever queued - rate limiting may not be working!"
+              exit 1
 
     - name: Assert All Rollouts Eventually Complete
       try:
         - assert:
             timeout: 3m
-            file: assert-rate-limited-rollouts-complete.yaml
+            file: assert-concurrency-limited-rollouts-complete.yaml
