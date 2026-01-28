@@ -26,7 +26,7 @@ func Test_NoRollout_PodInMidRollout_AlreadyComplete(t *testing.T) {
 	// Act
 	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
 
-	assertTriggeredRolloutNoRequeue(t, statusChanged, result, err)
+	assertTriggeredRolloutNoRequeue(t, rolloutResult, err)
 }
 
 func Test_NoRollout_PodInMidRollout_WaitingNoBackoff(t *testing.T) {
