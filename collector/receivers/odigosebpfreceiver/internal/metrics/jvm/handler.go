@@ -61,7 +61,7 @@ func NewJVMMetricsHandler(logger *zap.Logger) *JVMMetricsHandler {
 }
 
 // ExtractJVMMetricsFromInnerMap extracts JVM metrics from a process inner map and converts them to OpenTelemetry format
-func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, innerMap *ebpf.Map, processKey [512]byte) (pmetric.Metrics, error) {
+func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, innerMap *ebpf.Map) (pmetric.Metrics, error) {
 	metrics := pmetric.NewMetrics()
 	resourceMetrics := metrics.ResourceMetrics().AppendEmpty()
 	scopeMetrics := resourceMetrics.ScopeMetrics().AppendEmpty()

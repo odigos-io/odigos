@@ -38,11 +38,16 @@ type ReaderMap struct {
 	ExternalReader bool
 }
 
-// MetricsMap is used to pass the metrics eBPF map to the instrumentation.
+// MetricsMap is used to pass the metrics eBPF maps to the instrumentation.
 // It is used to send metric events from eBPF probes.
 type MetricsMap struct {
 	// HashMapOfMaps is the eBPF map that will be used to send metric events from eBPF probes.
+	// It is a HashOfMaps keyed by UUID, containing inner per-process metrics maps.
 	HashMapOfMaps *ebpf.Map
+	// AttributesMap is a simple eBPF Hash map keyed by UUID, containing packed resource attributes.
+	// It is used alongside HashMapOfMaps to store resource attributes separately from the metrics key,
+	// allowing attributes to exceed the eBPF key size limit.
+	AttributesMap *ebpf.Map
 }
 
 // Factory is used to create an Instrumentation

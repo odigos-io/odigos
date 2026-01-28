@@ -12,12 +12,11 @@ import (
 	"go.uber.org/zap"
 )
 
-// metricsReadLoop handles periodic collection of metrics from HashOfMaps
-func (r *ebpfReceiver) metricsReadLoop(ctx context.Context, m *ebpf.Map) error {
-	// Config should already have defaults from createDefaultConfig(), but validate just in case
+// metricsReadLoop handles periodic collection of metrics from HashOfMaps and AttributesMap
+func (r *ebpfReceiver) metricsReadLoop(ctx context.Context, hashOfMaps *ebpf.Map, attributesMap *ebpf.Map) error {
 	interval := r.config.MetricsConfig.Interval
 	if interval <= 0 {
-		interval = 30 * time.Second // Fallback if somehow defaults weren't applied
+		interval = 30 * time.Second
 	}
 
 	ticker := time.NewTicker(interval)
@@ -31,21 +30,41 @@ func (r *ebpfReceiver) metricsReadLoop(ctx context.Context, m *ebpf.Map) error {
 			r.logger.Info("metrics collection loop stopping")
 			return nil
 		case <-ticker.C:
-			if err := r.collectMetrics(ctx, m); err != nil {
+			if err := r.collectMetrics(ctx, hashOfMaps, attributesMap); err != nil {
 				r.logger.Error("failed to collect metrics", zap.Error(err))
-				// Continue collecting even if one iteration fails
 			}
 		}
 	}
 }
 
-// collectMetrics iterates over the HashOfMaps and processes each inner map for metrics
-func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map) error {
+// collectMetrics iterates over the AttributesMap and HashOfMaps to collect metrics.
+// It uses a two-phase approach:
+//  1. Build a UUID -> packed attributes cache from the AttributesMap
+//  2. Iterate the HashOfMaps, look up cached attributes by UUID, and process each inner map
+func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map, attributesMap *ebpf.Map) error {
+	// Phase 1: Build UUID -> packed attributes cache from AttributesMap
+	attrCache := make(map[[64]byte]string)
 
-	var processKey [512]byte // Key representing process ID or similar identifier
-	var innerMapID uint32    // ID of the inner map
+	var uuidKey [64]byte
+	var attrValue [1024]byte
 
-	// Iterate over all entries in the hash of maps
+	attrIter := attributesMap.Iterate()
+	for attrIter.Next(&uuidKey, &attrValue) {
+		attrStr := string(bytes.TrimRight(attrValue[:], "\x00"))
+		if attrStr != "" {
+			attrCache[uuidKey] = attrStr
+		}
+	}
+	if err := attrIter.Err(); err != nil {
+		r.logger.Error("attributes map iterator error", zap.Error(err))
+	}
+
+	r.logger.Debug("attributes cache built", zap.Int("entries", len(attrCache)))
+
+	// Phase 2: Iterate HashOfMaps using UUID key
+	var processKey [64]byte
+	var innerMapID uint32
+
 	iter := hashOfMaps.Iterate()
 	defer func() {
 		if err := iter.Err(); err != nil {
@@ -68,10 +87,17 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 			continue
 		}
 
+		// Look up cached attributes for this UUID
+		packedAttributes, found := attrCache[processKey]
+		if !found {
+			uuidStr := string(bytes.TrimRight(processKey[:], "\x00"))
+			r.logger.Warn("no attributes found for UUID in attributes map",
+				zap.String("uuid", uuidStr))
+		}
+
 		// Process metrics from this inner map
-		if err := r.processInnerMapMetrics(ctx, innerMap, processKey); err != nil {
+		if err := r.processInnerMapMetrics(ctx, innerMap, packedAttributes); err != nil {
 			r.logger.Error("failed to process inner map metrics",
-				zap.String("process_key", string(processKey[:])),
 				zap.Uint32("inner_map_id", innerMapID),
 				zap.Error(err))
 			continue
@@ -86,20 +112,20 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map)
 	return nil
 }
 
-// processInnerMapMetrics processes a single inner map and extracts metrics
-// each innermap represents a single process and its metrics
-func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, processKey [512]byte) error {
-
+// processInnerMapMetrics processes a single inner map and extracts metrics.
+// packedAttributes contains the resource attributes in "key1:value1,key2:value2" format,
+// looked up from the AttributesMap by UUID.
+func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, packedAttributes string) error {
 	// Process with JVM handler
-	metrics, err := r.jvmHandler.ExtractJVMMetricsFromInnerMap(ctx, innerMap, processKey)
+	metrics, err := r.jvmHandler.ExtractJVMMetricsFromInnerMap(ctx, innerMap)
 	if err != nil {
 		return fmt.Errorf("JVM handler failed: %w", err)
 	}
 
-	// Add resource attributes from processKey if we have metrics
-	if metrics.ResourceMetrics().Len() > 0 {
+	// Add resource attributes from packedAttributes if we have metrics
+	if metrics.ResourceMetrics().Len() > 0 && packedAttributes != "" {
 		resourceAttrs := metrics.ResourceMetrics().At(0).Resource().Attributes()
-		if err := r.addResourceAttributesFromProcessKey(resourceAttrs, processKey); err != nil {
+		if err := r.parseResourceAttributes(resourceAttrs, packedAttributes, ",", ":"); err != nil {
 			r.logger.Error("failed to add resource attributes", zap.Error(err))
 			return err
 		}
@@ -115,46 +141,21 @@ func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebp
 	return nil
 }
 
-// addResourceAttributesFromProcessKey parses processKey and adds resource attributes
-// Format: "k8s.container.name:frontend,k8s.deployment.name:frontend,service.name:frontend,..."
-// This is specific to how Odigos encodes process metadata in eBPF maps
-func (r *ebpfReceiver) addResourceAttributesFromProcessKey(resourceAttrs pcommon.Map, processKey [512]byte) error {
-	// Convert byte array to string
-	processKeyStr := string(processKey[:])
-
-	// Trim null bytes from the string
-	processKeyStr = string(bytes.TrimRight([]byte(processKeyStr), "\x00"))
-
-	// If empty, skip processing
-	if len(processKeyStr) == 0 {
-		return nil
-	}
-
-	// Parse comma-separated key:value pairs
-	return r.parseResourceAttributes(resourceAttrs, processKeyStr, ",", ":")
-}
-
 // parseResourceAttributes parses a delimited string and adds resource attributes
 // Format: "key1:value1,key2:value2,key3:value3"
-// This handles the specific format used by Odigos for eBPF processKey encoding
+// This handles the specific format used by Odigos for eBPF resource attribute encoding
 func (r *ebpfReceiver) parseResourceAttributes(resourceAttrs pcommon.Map, attributesStr string, itemDelimiter string, keyValueSeparator string) error {
 	if attributesStr == "" {
 		return fmt.Errorf("empty attributes string")
 	}
 
-	parts := strings.Split(attributesStr, itemDelimiter)
-	if len(parts) == 0 {
-		return fmt.Errorf("no attributes found")
-	}
-
-	attributesAdded := 0
-	for _, part := range parts {
+	parsed := false
+	for _, part := range strings.Split(attributesStr, itemDelimiter) {
 		part = strings.TrimSpace(part)
 		if part == "" {
 			continue
 		}
 
-		// Split by keyValueSeparator to get key:value
 		attrParts := strings.SplitN(part, keyValueSeparator, 2)
 		if len(attrParts) != 2 {
 			r.logger.Warn("invalid resource attribute format, skipping",
@@ -168,11 +169,11 @@ func (r *ebpfReceiver) parseResourceAttributes(resourceAttrs pcommon.Map, attrib
 
 		if attrKey != "" && attrValue != "" {
 			resourceAttrs.PutStr(attrKey, attrValue)
-			attributesAdded++
+			parsed = true
 		}
 	}
 
-	if attributesAdded == 0 {
+	if !parsed {
 		return fmt.Errorf("no valid attributes parsed from: %s", attributesStr)
 	}
 

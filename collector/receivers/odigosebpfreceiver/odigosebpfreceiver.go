@@ -55,6 +55,18 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	ctx, cancel := context.WithCancel(ctx)
 	r.cancel = cancel
 
+	switch r.receiverType {
+	case ReceiverTypeTraces:
+		r.startTracesReceiver(ctx)
+	case ReceiverTypeMetrics:
+		r.startMetricsReceiver(ctx)
+	}
+
+	return nil
+}
+
+// startTracesReceiver sets up a single FD client and map manager for traces.
+func (r *ebpfReceiver) startTracesReceiver(ctx context.Context) {
 	updates := make(chan *ebpf.Map, 1)
 
 	/*
@@ -76,13 +88,6 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	 * The two goroutines communicate via the 'updates' channel, creating a pipeline
 	 * that maintains continuous trace data flow even when odiglet restarts.
 	 */
-
-	/*
-	 * Map Manager Goroutine
-	 *
-	 * Manages eBPF map lifecycle as described in the architecture overview above.
-	 * Receives new maps via the updates channel and handles the switching process.
-	 */
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
@@ -90,13 +95,12 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		var (
 			currentMap   *ebpf.Map
 			readerCancel context.CancelFunc
-			readerWg     sync.WaitGroup // Tracks the current reader goroutine
+			readerWg     sync.WaitGroup
 		)
 
 		defer func() {
 			if readerCancel != nil {
 				readerCancel()
-				// Wait for the current reader to stop before cleanup
 				readerWg.Wait()
 			}
 			if currentMap != nil {
@@ -112,73 +116,46 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 				if !ok {
 					return
 				}
-				// Clean up the previous map and reader
 				if readerCancel != nil {
 					readerCancel()
-					// Wait for the current reader goroutine to fully stop
-					// This prevents race conditions between old and new readers
 					readerWg.Wait()
 				}
 				if currentMap != nil {
 					currentMap.Close()
 				}
 
-				// Switch to the new map
 				currentMap = newMap
 				readerCtx, cancel := context.WithCancel(ctx)
 				readerCancel = cancel
 
-				r.logger.Info("switched to new eBPF map", zap.Int("fd", newMap.FD()))
+				r.logger.Info("switched to new eBPF traces map", zap.Int("fd", newMap.FD()))
 
-				// Start reading from the new map
 				readerWg.Add(1)
 				go func() {
 					defer func() {
-						r.logger.Info("reader stopped")
-						readerWg.Done() // Signal that this reader has stopped
+						r.logger.Info("traces reader stopped")
+						readerWg.Done()
 					}()
 
-					var err error
-					switch r.receiverType {
-					case ReceiverTypeTraces:
-						err = r.tracesReadLoop(readerCtx, newMap)
-					case ReceiverTypeMetrics:
-						err = r.metricsReadLoop(readerCtx, newMap)
-					}
-
-					if err != nil {
-						r.logger.Error("readLoop failed", zap.Error(err))
+					if err := r.tracesReadLoop(readerCtx, newMap); err != nil {
+						r.logger.Error("tracesReadLoop failed", zap.Error(err))
 					}
 				}()
 			}
 		}
 	}()
 
-	/*
-	 * FD Client Goroutine
-	 *
-	 * Connects to odiglet as described in the architecture overview above.
-	 * Receives file descriptors for new eBPF maps and forwards them to the map manager.
-	 */
+	// FD client: connects to odiglet and receives FDs for traces eBPF maps.
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
 		defer close(updates)
 
-		r.logger.Info("starting FD client")
+		r.logger.Info("starting traces FD client")
 
-		var requestType string
-		switch r.receiverType {
-		case ReceiverTypeTraces:
-			requestType = unixfd.ReqGetTracesFD
-		case ReceiverTypeMetrics:
-			requestType = unixfd.ReqGetMetricsFD
-		}
+		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, unixfd.ReqGetTracesFD, r.logger, func(fd int) {
+			r.logger.Info("received new traces FD from odiglet", zap.Int("fd", fd))
 
-		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, requestType, r.logger, func(fd int) {
-			r.logger.Info("received new FD from odiglet", zap.Int("fd", fd))
-
-			// Convert the file descriptor into an eBPF map object
 			newMap, err := ebpf.NewMapFromFD(fd)
 			if err != nil {
 				r.logger.Error("failed to create map from FD", zap.Error(err), zap.Int("fd", fd))
@@ -186,21 +163,156 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 				return
 			}
 
-			// Send the new map to the map manager for processing
 			select {
 			case updates <- newMap:
-				r.logger.Info("queued new map for processing")
+				r.logger.Info("queued new traces map for processing")
 			case <-ctx.Done():
 				newMap.Close()
 			}
 		})
 
 		if err != nil && ctx.Err() == nil {
-			r.logger.Error("FD client failed", zap.Error(err))
+			r.logger.Error("traces FD client failed", zap.Error(err))
+		}
+	}()
+}
+
+// metricsMapPair holds both metrics eBPF maps received atomically from a single FD exchange.
+type metricsMapPair struct {
+	hashOfMaps    *ebpf.Map
+	attributesMap *ebpf.Map
+}
+
+// startMetricsReceiver sets up a single FD client that receives both the HashOfMaps and
+// AttributesMap file descriptors in a single message, and a map manager that restarts
+// the metrics read loop when new maps arrive.
+func (r *ebpfReceiver) startMetricsReceiver(ctx context.Context) {
+	updates := make(chan metricsMapPair, 1)
+
+	// Map manager: manages the lifecycle of both HashOfMaps and AttributesMap,
+	// which arrive atomically via a single FD exchange.
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+
+		var (
+			currentHashOfMaps    *ebpf.Map
+			currentAttributesMap *ebpf.Map
+			readerCancel         context.CancelFunc
+			readerWg             sync.WaitGroup
+		)
+
+		defer func() {
+			if readerCancel != nil {
+				readerCancel()
+				readerWg.Wait()
+			}
+			if currentHashOfMaps != nil {
+				currentHashOfMaps.Close()
+			}
+			if currentAttributesMap != nil {
+				currentAttributesMap.Close()
+			}
+		}()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case pair, ok := <-updates:
+				if !ok {
+					return
+				}
+
+				if readerCancel != nil {
+					readerCancel()
+					readerWg.Wait()
+				}
+				if currentHashOfMaps != nil {
+					currentHashOfMaps.Close()
+				}
+				if currentAttributesMap != nil {
+					currentAttributesMap.Close()
+				}
+
+				currentHashOfMaps = pair.hashOfMaps
+				currentAttributesMap = pair.attributesMap
+
+				r.logger.Info("received new metrics maps",
+					zap.Int("hashOfMaps_fd", currentHashOfMaps.FD()),
+					zap.Int("attributesMap_fd", currentAttributesMap.FD()))
+
+				readerCtx, cancel := context.WithCancel(ctx)
+				readerCancel = cancel
+
+				hashOfMaps := currentHashOfMaps
+				attributesMap := currentAttributesMap
+				readerWg.Add(1)
+				go func() {
+					defer func() {
+						r.logger.Info("metrics reader stopped")
+						readerWg.Done()
+					}()
+
+					if err := r.metricsReadLoop(readerCtx, hashOfMaps, attributesMap); err != nil {
+						r.logger.Error("metricsReadLoop failed", zap.Error(err))
+					}
+				}()
+			}
 		}
 	}()
 
-	return nil
+	// FD client: connects to odiglet and receives both metrics FDs via ConnectAndListenMulti.
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+		defer close(updates)
+
+		r.logger.Info("starting metrics FD client")
+
+		err := unixfd.ConnectAndListenMulti(ctx, unixfd.DefaultSocketPath, unixfd.ReqGetMetricsFD, r.logger, func(fds []int) {
+			if len(fds) != 2 {
+				r.logger.Error("expected 2 metrics FDs, closing all",
+					zap.Int("received", len(fds)))
+				for _, fd := range fds {
+					unix.Close(fd)
+				}
+				return
+			}
+
+			r.logger.Info("received metrics FDs from odiglet",
+				zap.Int("hashOfMaps_fd", fds[0]),
+				zap.Int("attributesMap_fd", fds[1]))
+
+			hashMap, err := ebpf.NewMapFromFD(fds[0])
+			if err != nil {
+				r.logger.Error("failed to create HashOfMaps from FD", zap.Error(err), zap.Int("fd", fds[0]))
+				unix.Close(fds[0])
+				unix.Close(fds[1])
+				return
+			}
+
+			attrMap, err := ebpf.NewMapFromFD(fds[1])
+			if err != nil {
+				r.logger.Error("failed to create AttributesMap from FD", zap.Error(err), zap.Int("fd", fds[1]))
+				hashMap.Close()
+				unix.Close(fds[1])
+				return
+			}
+
+			select {
+			case updates <- metricsMapPair{hashOfMaps: hashMap, attributesMap: attrMap}:
+				r.logger.Info("queued new metrics maps for processing")
+			case <-ctx.Done():
+				hashMap.Close()
+				attrMap.Close()
+			}
+		})
+
+		if err != nil && ctx.Err() == nil {
+			r.logger.Error("metrics FD client failed", zap.Error(err))
+		}
+	}()
 }
 
 func (r *ebpfReceiver) Shutdown(ctx context.Context) error {
