@@ -27,6 +27,13 @@ const (
 	metricCPUCount          = semconv1_26.JvmCPUCountName
 	metricCPUUtilization    = semconv1_26.JvmCPURecentUtilizationName
 
+	// New Relic metric names (process.runtime.jvm.* prefix) for multi-vendor compatibility
+	processRuntimeJVMMetricMemoryUsage     = "process.runtime.jvm.memory.usage"
+	processRuntimeJVMMetricMemoryCommitted = "process.runtime.jvm.memory.committed"
+	processRuntimeJVMMetricMemoryLimit     = "process.runtime.jvm.memory.limit"
+	processRuntimeJVMMetricMemoryMax       = "process.runtime.jvm.memory.max"
+	processRuntimeJVMMetricGCDuration      = "process.runtime.jvm.gc.duration"
+
 	// OTel attribute keys
 	attrGCAction       = semconv1_26.JvmGcActionKey
 	attrGCName         = semconv1_26.JvmGcNameKey
@@ -59,6 +66,77 @@ type JVMMetricsHandler struct {
 func NewJVMMetricsHandler(logger *zap.Logger) *JVMMetricsHandler {
 	return &JVMMetricsHandler{
 		logger: logger,
+	}
+}
+
+// emitGaugeMetric is a helper that creates a gauge metric with the given parameters.
+func (h *JVMMetricsHandler) emitGaugeMetric(
+	scopeMetrics pmetric.ScopeMetrics,
+	name string,
+	description string,
+	unit string,
+	value int64,
+	attrSetter func(pcommon.Map),
+) {
+	if value == 0 {
+		return
+	}
+
+	metric := scopeMetrics.Metrics().AppendEmpty()
+	metric.SetName(name)
+	metric.SetDescription(description)
+	metric.SetUnit(unit)
+
+	gaugeMetric := metric.SetEmptyGauge()
+	dataPoint := gaugeMetric.DataPoints().AppendEmpty()
+	dataPoint.SetIntValue(value)
+	now := pcommon.NewTimestampFromTime(time.Now())
+	dataPoint.SetTimestamp(now)
+
+	if attrSetter != nil {
+		attrSetter(dataPoint.Attributes())
+	}
+}
+
+// emitHistogramMetric is a helper that creates a histogram metric with the given parameters.
+func (h *JVMMetricsHandler) emitHistogramMetric(
+	scopeMetrics pmetric.ScopeMetrics,
+	name string,
+	description string,
+	unit string,
+	hist HistogramValue,
+	attrSetter func(pcommon.Map),
+) {
+	metric := scopeMetrics.Metrics().AppendEmpty()
+	metric.SetName(name)
+	metric.SetDescription(description)
+	metric.SetUnit(unit)
+
+	histogramMetric := metric.SetEmptyHistogram()
+	histogramMetric.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+
+	dataPoint := histogramMetric.DataPoints().AppendEmpty()
+	now := pcommon.NewTimestampFromTime(time.Now())
+	dataPoint.SetTimestamp(now)
+	dataPoint.SetStartTimestamp(now)
+
+	dataPoint.SetCount(uint64(hist.TotalCount))
+	dataPoint.SetSum(float64(hist.SumNs) / 1e9) // Convert nanoseconds to seconds
+
+	bucketBounds := []float64{0.001, 0.01, 0.1, 1.0}
+	bucketCounts := []uint64{
+		uint64(hist.Bucket1ms),
+		uint64(hist.Bucket1ms + hist.Bucket10ms),
+		uint64(hist.Bucket1ms + hist.Bucket10ms + hist.Bucket100ms),
+		uint64(hist.Bucket1ms + hist.Bucket10ms + hist.Bucket100ms + hist.Bucket1s),
+		uint64(hist.TotalCount),
+	}
+
+	dataPoint.ExplicitBounds().FromRaw(bucketBounds)
+	dataPoint.BucketCounts().FromRaw(bucketCounts)
+
+	if attrSetter != nil {
+		attrSetter(dataPoint.Attributes())
 	}
 }
 
@@ -237,18 +315,13 @@ func (h *JVMMetricsHandler) addMemoryUsedMetric(scopeMetrics pmetric.ScopeMetric
 		return
 	}
 
-	metric := scopeMetrics.Metrics().AppendEmpty()
-	metric.SetName(metricMemoryUsed)
-	metric.SetDescription(descMemoryUsed)
-	metric.SetUnit(semconv1_26.JvmMemoryUsedUnit)
+	attrSetter := func(attrs pcommon.Map) {
+		setMemoryAttributes(attrs, memType, poolName)
+	}
 
-	gaugeMetric := metric.SetEmptyGauge()
-	dataPoint := gaugeMetric.DataPoints().AppendEmpty()
-	dataPoint.SetIntValue(int64(gauge.Value))
-	now := pcommon.NewTimestampFromTime(time.Now())
-	dataPoint.SetTimestamp(now)
+	h.emitGaugeMetric(scopeMetrics, metricMemoryUsed, descMemoryUsed, semconv1_26.JvmMemoryUsedUnit, int64(gauge.Value), attrSetter)
 
-	setMemoryAttributes(dataPoint.Attributes(), memType, poolName)
+	h.emitGaugeMetric(scopeMetrics, processRuntimeJVMMetricMemoryUsage, descMemoryUsed, semconv1_26.JvmMemoryUsedUnit, int64(gauge.Value), attrSetter)
 }
 
 func (h *JVMMetricsHandler) addMemoryCommittedMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue, memType MemoryType, poolName MemoryPoolName) {
@@ -256,18 +329,13 @@ func (h *JVMMetricsHandler) addMemoryCommittedMetric(scopeMetrics pmetric.ScopeM
 		return
 	}
 
-	metric := scopeMetrics.Metrics().AppendEmpty()
-	metric.SetName(metricMemoryCommitted)
-	metric.SetDescription(descMemoryCommitted)
-	metric.SetUnit(semconv1_26.JvmMemoryCommittedUnit)
+	attrSetter := func(attrs pcommon.Map) {
+		setMemoryAttributes(attrs, memType, poolName)
+	}
 
-	gaugeMetric := metric.SetEmptyGauge()
-	dataPoint := gaugeMetric.DataPoints().AppendEmpty()
-	dataPoint.SetIntValue(int64(gauge.Value))
-	now := pcommon.NewTimestampFromTime(time.Now())
-	dataPoint.SetTimestamp(now)
+	h.emitGaugeMetric(scopeMetrics, metricMemoryCommitted, descMemoryCommitted, semconv1_26.JvmMemoryCommittedUnit, int64(gauge.Value), attrSetter)
 
-	setMemoryAttributes(dataPoint.Attributes(), memType, poolName)
+	h.emitGaugeMetric(scopeMetrics, processRuntimeJVMMetricMemoryCommitted, descMemoryCommitted, semconv1_26.JvmMemoryCommittedUnit, int64(gauge.Value), attrSetter)
 }
 
 func (h *JVMMetricsHandler) addMemoryLimitMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue, memType MemoryType, poolName MemoryPoolName) {
@@ -275,18 +343,14 @@ func (h *JVMMetricsHandler) addMemoryLimitMetric(scopeMetrics pmetric.ScopeMetri
 		return
 	}
 
-	metric := scopeMetrics.Metrics().AppendEmpty()
-	metric.SetName(metricMemoryLimit)
-	metric.SetDescription(descMemoryLimit)
-	metric.SetUnit(semconv1_26.JvmMemoryLimitUnit)
+	attrSetter := func(attrs pcommon.Map) {
+		setMemoryAttributes(attrs, memType, poolName)
+	}
 
-	gaugeMetric := metric.SetEmptyGauge()
-	dataPoint := gaugeMetric.DataPoints().AppendEmpty()
-	dataPoint.SetIntValue(int64(gauge.Value))
-	now := pcommon.NewTimestampFromTime(time.Now())
-	dataPoint.SetTimestamp(now)
+	h.emitGaugeMetric(scopeMetrics, metricMemoryLimit, descMemoryLimit, semconv1_26.JvmMemoryLimitUnit, int64(gauge.Value), attrSetter)
 
-	setMemoryAttributes(dataPoint.Attributes(), memType, poolName)
+	h.emitGaugeMetric(scopeMetrics, processRuntimeJVMMetricMemoryLimit, descMemoryLimit, semconv1_26.JvmMemoryLimitUnit, int64(gauge.Value), attrSetter)
+	h.emitGaugeMetric(scopeMetrics, processRuntimeJVMMetricMemoryMax, descMemoryLimit, semconv1_26.JvmMemoryLimitUnit, int64(gauge.Value), attrSetter)
 }
 
 func (h *JVMMetricsHandler) addMemoryUsedAfterGCMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue, memType MemoryType, poolName MemoryPoolName) {
@@ -324,39 +388,16 @@ func (h *JVMMetricsHandler) addThreadCountMetric(scopeMetrics pmetric.ScopeMetri
 }
 
 func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetrics, hist HistogramValue, gcAction GCAction, gcName GCName) {
-	metric := scopeMetrics.Metrics().AppendEmpty()
-	metric.SetName(metricGCDuration)
-	metric.SetDescription(descGCDuration)
-	metric.SetUnit(semconv1_26.JvmGcDurationUnit)
-
-	histogramMetric := metric.SetEmptyHistogram()
-	// Set cumulative temporality - histogram represents total observations since measurement started
-	histogramMetric.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-
-	dataPoint := histogramMetric.DataPoints().AppendEmpty()
-	now := pcommon.NewTimestampFromTime(time.Now())
-	dataPoint.SetTimestamp(now)
-	dataPoint.SetStartTimestamp(now)
-
-	// Set count and sum
-	dataPoint.SetCount(uint64(hist.TotalCount))
-	dataPoint.SetSum(float64(hist.SumNs) / 1e9) // Convert nanoseconds to seconds
-
-	// Set bucket boundaries (in seconds) and counts
-	// Bucket boundaries: 0.001s, 0.01s, 0.1s, 1.0s, +Inf
-	bucketBounds := []float64{0.001, 0.01, 0.1, 1.0}
-	bucketCounts := []uint64{
-		uint64(hist.Bucket1ms),
-		uint64(hist.Bucket1ms + hist.Bucket10ms),
-		uint64(hist.Bucket1ms + hist.Bucket10ms + hist.Bucket100ms),
-		uint64(hist.Bucket1ms + hist.Bucket10ms + hist.Bucket100ms + hist.Bucket1s),
-		uint64(hist.TotalCount), // Total includes all buckets
+	attrSetter := func(attrs pcommon.Map) {
+		setGCAttributes(attrs, gcAction, gcName)
 	}
 
-	dataPoint.ExplicitBounds().FromRaw(bucketBounds)
-	dataPoint.BucketCounts().FromRaw(bucketCounts)
+	// Grafana has a query to summarize both otel and process runtime metric name
+	// if we emit both we get "execution: vector cannot contain metrics with the same labelset"
+	// sticking to processruntime emition only
+	// h.emitHistogramMetric(scopeMetrics, metricGCDuration, descGCDuration, semconv1_26.JvmGcDurationUnit, hist, attrSetter)
 
-	setGCAttributes(dataPoint.Attributes(), gcAction, gcName)
+	h.emitHistogramMetric(scopeMetrics, processRuntimeJVMMetricGCDuration, descGCDuration, semconv1_26.JvmGcDurationUnit, hist, attrSetter)
 
 	h.logger.Debug("GC histogram recorded",
 		zap.Uint32("total_count", hist.TotalCount),
@@ -413,7 +454,7 @@ func (h *JVMMetricsHandler) addCPUUtilizationMetric(scopeMetrics pmetric.ScopeMe
 
 	gaugeMetric := metric.SetEmptyGauge()
 	dataPoint := gaugeMetric.DataPoints().AppendEmpty()
-	utilization := float64(gauge.Value) / 10000.0
+	utilization := float64(gauge.Value) / 1e7 // normalize values as they were scaled up to store float values as uint in ebpf maps
 	dataPoint.SetDoubleValue(utilization)
 	now := pcommon.NewTimestampFromTime(time.Now())
 	dataPoint.SetTimestamp(now)
