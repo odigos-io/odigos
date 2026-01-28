@@ -361,6 +361,9 @@ cli-build:
 	cp -r ./helm/odigos $$TMPDIR/odigos; \
 	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos/Chart.yaml; \
 	helm package $$TMPDIR/odigos -d cli/pkg/helm/embedded; \
+	cp -r ./helm/odigos-central $$TMPDIR/odigos-central; \
+	sed -i.bak -E 's/^version:.*/version: '"$${TAG#v}"'/' $$TMPDIR/odigos-central/Chart.yaml; \
+	helm package $$TMPDIR/odigos-central -d cli/pkg/helm/embedded; \
 	cd cli && go build -tags=embed_manifests \
 	  -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=$${TAG#v}" \
 	  -o odigos .; \

@@ -10,18 +10,26 @@ Install Odigos Central backend and UI components
 odigos pro central install [flags]
 ```
 
+### Examples
+
+```
+
+# Install Odigos Central
+odigos pro central install
+
+```
+
 ### Options
 
 ```
-      --central-admin-password string       Central admin password (auto-generated if not provided)
-      --central-admin-user string           Central admin username (default "admin")
-      --central-max-message-size string     Maximum message size in bytes for gRPC messages (empty = use default)
-      --central-storage-class-name string   StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)
-  -h, --help                                help for install
-      --image-pull-secrets strings          Secret names for imagePullSecrets (repeat or comma-separated)
-  -n, --namespace string                    Target namespace for Odigos Central installation (default "odigos-central")
-      --onprem-token string                 On-prem token for Odigos
-      --version string                      Specify version to install
+      --chart string              Helm chart to install (repo/name, local path, or URL) (default "odigos/odigos-central")
+  -h, --help                      help for install
+  -n, --namespace string          Target namespace for Odigos Central installation (default "odigos-central")
+      --release-name string       Helm release name (default "odigos-central")
+      --reset-then-reuse-values   Reset to chart defaults, then reuse values from the previous release (default: true). (default true)
+      --set strings               Set values on the command line (key=value)
+  -f, --values string             Path to a custom values.yaml file
+      --version string            Specify version to upgrade to
 ```
 
 ### Options inherited from parent commands
@@ -29,7 +37,6 @@ odigos pro central install [flags]
 ```
       --kube-context string   (optional) name of the kubeconfig context to use
       --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
-  -r, --remote                use odigos ui service in the cluster to update the onprem token
   -v, --verbose               enable verbose output
 ```
 

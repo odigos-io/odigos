@@ -179,7 +179,7 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 
 	// Load the embedded chart from CLI package
 	chartVersion := strings.TrimPrefix(version, "v")
-	ch, err := helm.LoadEmbeddedChart(chartVersion)
+	ch, err := helm.LoadEmbeddedChart(chartVersion, "odigos")
 	if err != nil {
 		return fmt.Errorf("failed to load embedded chart: %w", err)
 	}

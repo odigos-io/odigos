@@ -37,7 +37,29 @@ var (
 	HelmResetThenReuseValues = true // default: true (sensible for upgrades)
 )
 
-func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]interface{}, error) {
+type CentralValues struct {
+	OnPremToken          string
+	AdminUsername        string
+	AdminPassword        string
+	KeycloakStorageClass *string
+	MaxMessageSize       string
+	ImageTag             string
+	ImagePullSecrets     []string
+	ExternalOnpremSecret bool
+}
+
+func PrepareChartAndValues(settings *cli.EnvSettings, chartName string) (*chart.Chart, map[string]interface{}, error) {
+	return prepareChartAndValues(settings, chartName, k8sconsts.DefaultHelmChart)
+}
+
+func PrepareCentralChartAndValues(settings *cli.EnvSettings, chartName string) (*chart.Chart, map[string]interface{}, error) {
+	return prepareChartAndValues(settings, chartName, k8sconsts.DefaultCentralHelmChart)
+}
+
+// prepareChartAndValues is the common implementation for both OSS and Central flows.
+// - chartName controls which embedded chart archive to load (e.g. "odigos" / "odigos-central")
+// - embeddedGateChart controls when we attempt embedded chart first (i.e. when HelmChart == embeddedGateChart and no --chart-version override)
+func prepareChartAndValues(settings *cli.EnvSettings, chartName string, embeddedGateChart string) (*chart.Chart, map[string]interface{}, error) {
 	// choose version
 	version := ""
 	// if the version is set by the user via --chart-version flag, use it
@@ -48,9 +70,9 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 		version = strings.TrimPrefix(OdigosChartVersion, "v")
 	}
 
-	// Use embedded chart if available (default odigos/odigos and no override)
-	if HelmChart == k8sconsts.DefaultHelmChart && HelmChartVersion == "" {
-		ch, err := LoadEmbeddedChart(version)
+	// Use embedded chart if available (when using the default chart and no override)
+	if HelmChart == embeddedGateChart && HelmChartVersion == "" {
+		ch, err := LoadEmbeddedChart(version, chartName)
 		if err == nil {
 			fmt.Printf("📦 Using embedded chart %s (chart version: %s)\n", ch.Metadata.Name, ch.Metadata.Version)
 
@@ -89,6 +111,11 @@ func PrepareChartAndValues(settings *cli.EnvSettings) (*chart.Chart, map[string]
 	// otherwise: use remote/local chart like today
 	if strings.HasPrefix(HelmChart, k8sconsts.OdigosHelmRepoName+"/") {
 		if err := ensureHelmRepo(settings, k8sconsts.OdigosHelmRepoName, k8sconsts.OdigosHelmRepoURL); err != nil {
+			return nil, nil, err
+		}
+	}
+	if strings.HasPrefix(HelmChart, k8sconsts.OdigosCentralHelmRepoName+"/") {
+		if err := ensureHelmRepo(settings, k8sconsts.OdigosCentralHelmRepoName, k8sconsts.OdigosCentralHelmRepoURL); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -212,4 +239,46 @@ func IsLegacyInstallation(ctx context.Context, client corev1.CoreV1Interface, na
 	}
 
 	return false, nil
+}
+
+func centralValuesToMap(v CentralValues) map[string]interface{} {
+	out := map[string]interface{}{}
+
+	if v.OnPremToken != "" {
+		out["onPremToken"] = v.OnPremToken
+	}
+	if v.ExternalOnpremSecret {
+		out["externalOnpremTokenSecret"] = true
+	}
+
+	if len(v.ImagePullSecrets) > 0 {
+		out["imagePullSecrets"] = v.ImagePullSecrets
+	}
+	if v.ImageTag != "" {
+		out["image"] = map[string]interface{}{"tag": v.ImageTag}
+	}
+
+	if v.MaxMessageSize != "" {
+		out["centralBackend"] = map[string]interface{}{
+			"maxMessageSize": v.MaxMessageSize,
+		}
+	}
+
+	auth := map[string]interface{}{}
+	if v.AdminUsername != "" {
+		auth["adminUsername"] = v.AdminUsername
+	}
+	// Keep empty password as-is (chart will auto-generate on first install).
+	auth["adminPassword"] = v.AdminPassword
+
+	// Match the old CLI behavior: create PVC only when storageClassName is explicitly set and non-empty.
+	if v.KeycloakStorageClass != nil && *v.KeycloakStorageClass != "" {
+		auth["persistence"] = map[string]interface{}{
+			"enabled":          true,
+			"storageClassName": *v.KeycloakStorageClass,
+		}
+	}
+	out["auth"] = auth
+
+	return out
 }
