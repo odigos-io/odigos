@@ -146,7 +146,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 				logger.V(3).Info("rollout complete, releasing slot", "workload", pw.Name, "namespace", pw.Namespace)
 				rolloutConcurrencyLimiter.Release(workloadKey)
 			}
-			return RolloutResult{}, nil
+			statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(nil))
+			return RolloutResult{StatusChanged: statusChanged}, nil
 		}
 
 		if !rollBackOptions.IsRollbackDisabled {
@@ -219,13 +220,13 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		if rolloutDone {
 			statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(nil))
 		}
-		return statusChanged, ctrl.Result{}, nil
+		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{}}, nil
 	}
 	// if a rollout is ongoing, wait for it to finish, requeue
-	changed := false
+	statusChanged := false
 	if !utils.IsWorkloadRolloutDone(workloadObj) {
-		changed = meta.SetStatusCondition(&ic.Status.Conditions, ConditionPreviousRolloutOngoing)
-		return RolloutResult{StatusChanged: changed, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
+		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, ConditionPreviousRolloutOngoing)
+		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 
 	// workloadKey was already defined above when checking if rollout was complete
@@ -234,8 +235,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			"workload", pw.Name,
 			"namespace", pw.Namespace,
 			"requeueAfter", RequeueWaitingForWorkloadRollout)
-		changed = meta.SetStatusCondition(&ic.Status.Conditions, ConditionWaitingInQueue)
-		return RolloutResult{StatusChanged: changed, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
+		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, ConditionWaitingInQueue)
+		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 	logger.V(2).Info("proceeding with instrumentation rollout", "workload", pw.Name, "namespace", pw.Namespace)
 
