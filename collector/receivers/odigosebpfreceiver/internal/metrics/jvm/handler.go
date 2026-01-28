@@ -21,6 +21,7 @@ const (
 	metricMemoryUsedAfterGC = semconv1_26.JvmMemoryUsedAfterLastGcName
 	metricClassesLoaded     = semconv1_26.JvmClassLoadedName
 	metricClassesUnloaded   = semconv1_26.JvmClassUnloadedName
+	metricClassesCount      = semconv1_26.JvmClassCountName
 	metricThreadCount       = semconv1_26.JvmThreadCountName
 	metricCPUTime           = semconv1_26.JvmCPUTimeName
 	metricCPUCount          = semconv1_26.JvmCPUCountName
@@ -37,6 +38,7 @@ const (
 	// Metric descriptions
 	descClassLoaded       = semconv1_26.JvmClassLoadedDescription
 	descClassUnloaded     = semconv1_26.JvmClassUnloadedDescription
+	descClassCount        = semconv1_26.JvmClassCountDescription
 	descMemoryUsed        = semconv1_26.JvmMemoryUsedDescription
 	descMemoryCommitted   = semconv1_26.JvmMemoryCommittedDescription
 	descMemoryLimit       = semconv1_26.JvmMemoryLimitDescription
@@ -90,8 +92,10 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 		switch metricType {
 		case MetricClassLoaded:
 			h.addClassLoadedMetric(scopeMetrics, value.AsCounter())
+			h.updateClassCountMetric(scopeMetrics, int64(value.AsCounter().Count))
 		case MetricClassUnloaded:
 			h.addClassUnloadedMetric(scopeMetrics, value.AsCounter())
+			h.updateClassCountMetric(scopeMetrics, -int64(value.AsCounter().Count))
 
 		// Memory metrics - extract common attributes once
 		case MetricMemoryUsed, MetricMemoryCommitted, MetricMemoryLimit, MetricMemoryUsedAfterGC:
@@ -195,6 +199,19 @@ func (h *JVMMetricsHandler) addClassLoadedMetric(scopeMetrics pmetric.ScopeMetri
 	now := pcommon.NewTimestampFromTime(time.Now())
 	dataPoint.SetTimestamp(now)
 	dataPoint.SetStartTimestamp(now)
+}
+
+func (h *JVMMetricsHandler) updateClassCountMetric(scopeMetrics pmetric.ScopeMetrics, delta int64) {
+	metric := scopeMetrics.Metrics().AppendEmpty()
+	metric.SetName(metricClassesCount)
+	metric.SetDescription(descClassCount)
+	metric.SetUnit(semconv1_26.JvmClassCountUnit)
+
+	gauge := metric.SetEmptyGauge()
+	dataPoint := gauge.DataPoints().AppendEmpty()
+	dataPoint.SetIntValue(delta)
+	now := pcommon.NewTimestampFromTime(time.Now())
+	dataPoint.SetTimestamp(now)
 }
 
 func (h *JVMMetricsHandler) addClassUnloadedMetric(scopeMetrics pmetric.ScopeMetrics, counter CounterValue) {
