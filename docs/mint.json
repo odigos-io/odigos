@@ -166,6 +166,13 @@
           ]
         },
         {
+          "group": "Rust",
+          "icon": "rust",
+          "pages": [
+            "instrumentations/rust/status"
+          ]
+        },
+        {
           "group": "Advanced",
           "icon": "gear",
           "pages": [

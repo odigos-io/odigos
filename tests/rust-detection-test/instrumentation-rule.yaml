@@ -1,0 +1,10 @@
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationRule
+metadata:
+  name: rust-native-distro
+  namespace: odigos-system
+spec:
+  otelDistros:
+    otelDistroNames:
+      - rust-native
+
