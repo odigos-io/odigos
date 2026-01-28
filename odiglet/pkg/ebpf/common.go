@@ -25,13 +25,13 @@ import (
 const (
 	numOfPages = 2048
 
-	// JVM metrics collection uses a hash-of-maps architecture: one outer map containing multiple inner maps.
-	// Each Java process gets its own inner map to store metrics, enabling efficient per-process metric collection.
-	// eBPF Metrics Map Configuration
-	// Hash of Maps (outer map) configuration
-	ProcessKeySize    = 512 // Size of process identifier key
-	InnerMapIDSize    = 4   // Size of inner map ID (should be 4 bytes hard coded)
-	MaxProcessesCount = 512 // Max number of processes that can have metrics
+	// JVM metrics eBPF map sizing constants.
+	// Uses a hash-of-maps architecture: one outer HashOfMaps keyed by UUID containing
+	// per-process inner maps, plus a separate attributes map for resource attributes.
+	ProcessKeySize      = 64   // Size of UUID key
+	InnerMapIDSize      = 4    // Size of inner map ID (should be 4 bytes hard coded)
+	MaxProcessesCount   = 512  // Max number of processes that can have metrics
+	AttributesValueSize = 1024 // Size of packed resource attributes value buffer
 
 	// Inner Map configuration
 	MetricKeySize    = 4   // uint32 metric_key
@@ -70,9 +70,7 @@ func NewManager(
 	}
 	appendEnvVarSlice = append(appendEnvVarSlice, k8sconsts.OtelResourceAttributesEnvVar)
 
-	// creating ebpf map for traces
-	// later this can be expanded to other maps [e.g., metrics, logs]
-	// Create the eBPF map
+	// Create the eBPF maps
 	if err := rlimit.RemoveMemlock(); err != nil {
 		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
 	}
@@ -123,6 +121,24 @@ func NewManager(
 		return nil, err
 	}
 
+	// Create the metrics attributes eBPF map - simple Hash map for UUID -> packed resource attributes.
+	// This map stores resource attributes separately from the HashOfMaps key, allowing attributes
+	// to exceed the eBPF key size limit.
+	attributesSpec := &cilumebpf.MapSpec{
+		Type:       cilumebpf.Hash,
+		Name:       "metrics_attributes",
+		KeySize:    ProcessKeySize,
+		ValueSize:  AttributesValueSize,
+		MaxEntries: MaxProcessesCount,
+	}
+
+	metricsAttributesMap, err := cilumebpf.NewMap(attributesSpec)
+	if err != nil {
+		tracesMap.Close()
+		metricsMap.Close()
+		return nil, fmt.Errorf("failed to create metrics attributes eBPF map: %w", err)
+	}
+
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
 
 		Logger:                  logger,
@@ -133,6 +149,7 @@ func NewManager(
 		InstrumentationRequests: instrumentationRequests,
 		TracesMap:               tracesMap,
 		MetricsMap:              metricsMap,
+		MetricsAttributesMap:    metricsAttributesMap,
 	}
 
 	// Add file open triggers from all distributions.
