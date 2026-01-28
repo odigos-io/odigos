@@ -138,10 +138,10 @@ data:
     ignoreOdigosNamespace: true
     {{- end }}
     {{- if .Values.instrumentor.mountMethod }}
-      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container") }}
+      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container" "k8s-csi-driver") }}
     mountMethod: {{ .Values.instrumentor.mountMethod }}
       {{- else }}
-        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device' and 'k8s-init-container'." }}
+        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device', 'k8s-init-container' and 'k8s-csi-driver'." }}
       {{- end }}
     {{- end }}
     {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
