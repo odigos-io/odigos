@@ -113,7 +113,8 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 func init() {
 
 	staticProcessors = config.GenericMap{
-		batchProcessorName: config.GenericMap{},
+		batchProcessorName:                   config.GenericMap{},
+		odigosLogsResourceAttrsProcessorName: config.GenericMap{},
 		nodeNameProcessorName: config.GenericMap{
 			"attributes": []config.GenericMap{{
 				"key":    string(semconv.K8SNodeNameKey),
