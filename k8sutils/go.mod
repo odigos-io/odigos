@@ -6,6 +6,7 @@ require (
 	github.com/argoproj/argo-rollouts v1.8.3
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/odigosauth v0.0.0
 	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44
 	github.com/stretchr/testify v1.11.1
 	github.com/tj/assert v0.0.3
@@ -30,6 +31,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -85,4 +87,5 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 )

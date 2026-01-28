@@ -11,9 +11,13 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosconsts "github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/odigosauth"
 )
 
 func UpdateOdigosToken(ctx context.Context, client kubernetes.Interface, namespace string, onPremToken string) error {
+	if err := odigosauth.ValidateToken(onPremToken); err != nil {
+		return fmt.Errorf("failed to assert enterprise odigos token: %w", err)
+	}
 	if err := updateSecretToken(ctx, client, namespace, onPremToken); err != nil {
 		return fmt.Errorf("failed to update secret token: %w", err)
 	}
