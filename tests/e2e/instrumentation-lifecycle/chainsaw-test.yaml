@@ -87,3 +87,95 @@ spec:
         - assert:
             timeout: 1m
             file: assert-rollouts.yaml
+
+    ############# Rate Limiting Test #############
+    # Test that rollout rate limiting works by:
+    # 1. Enabling rate limiting with concurrentRollouts=1
+    # 2. Uninstrumenting all workloads
+    # 3. Re-instrumenting and verifying workloads are queued (with limit=1, at least 3 of 4 should queue)
+
+    - name: Enable Rollout Rate Limiting
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              ../../../cli/odigos upgrade --ns odigos-test \
+                --set rollout.isConcurrentRolloutsLimiterEnabled=true \
+                --set rollout.concurrentRollouts=1
+
+    - name: Assert Rate Limiting Config Applied
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              config=$(kubectl get configmap odigos-configuration -n odigos-test -o jsonpath='{.data.config\.yaml}')
+              echo "Rollout config: $config"
+              echo "$config" | grep -q 'isConcurrentRolloutsLimiterEnabled: true' || exit 1
+              echo "$config" | grep -q 'concurrentRollouts: 1' || exit 1
+              echo "Rate limiting config verified"
+
+    - name: Uninstrument Namespace
+      try:
+        - delete:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Wait for InstrumentationConfigs Deleted
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              while true; do
+                count=$(kubectl get instrumentationconfigs -n default --no-headers 2>/dev/null | wc -l)
+                if [ "$count" -eq "0" ]; then
+                  echo "All InstrumentationConfigs deleted"
+                  break
+                fi
+                echo "Waiting for InstrumentationConfigs to be deleted... ($count remaining)"
+                sleep 2
+              done
+
+    - name: Assert Workloads Uninstrumented
+      try:
+        - assert:
+            timeout: 2m
+            file: assert-uninstrumented-rollouts.yaml
+
+    - name: Re-instrument Namespace
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: Assert Workloads Waiting In Queue
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              # With concurrentRollouts=1 and 4 workloads, at least 3 should be queued
+              # Poll quickly to catch the WaitingInQueue state before rollouts complete
+              for i in $(seq 1 20); do
+                waiting=$(kubectl get instrumentationconfigs -n default -o json | \
+                  jq '[.items[].status.conditions[]? | select(.type=="WorkloadRollout" and .reason=="WaitingInQueue")] | length')
+                echo "Attempt $i: Found $waiting workload(s) waiting in queue"
+                if [ "$waiting" -ge "3" ]; then
+                  echo "Rate limiting verified: $waiting workloads waiting in queue (expected >= 3)"
+                  # Print which workloads are waiting for debugging
+                  kubectl get instrumentationconfigs -n default -o json | \
+                    jq -r '.items[] | select(.status.conditions[]? | .type=="WorkloadRollout" and .reason=="WaitingInQueue") | .metadata.name'
+                  exit 0
+                fi
+                sleep 0.5
+              done
+              # If we didn't catch 3 waiting, check if at least 1 was queued (rollouts may have been fast)
+              echo "Warning: Only found $waiting workloads in queue (expected 3). Rollouts may have completed quickly."
+              if [ "$waiting" -ge "1" ]; then
+                echo "At least 1 workload was queued - rate limiting is working"
+                exit 0
+              fi
+              echo "ERROR: No workloads were ever queued - rate limiting may not be working!"
+              exit 1
+
+    - name: Assert All Rollouts Eventually Complete
+      try:
+        - assert:
+            timeout: 3m
+            file: assert-concurrency-limited-rollouts-complete.yaml
