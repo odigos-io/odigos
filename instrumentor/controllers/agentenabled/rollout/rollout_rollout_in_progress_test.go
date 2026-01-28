@@ -26,8 +26,10 @@ func Test_NoRollout_PodInMidRollout_AlreadyComplete(t *testing.T) {
 	// Act
 	statusChanged, result, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider)
 
-	// Assert: No status change - workload rollout already complete
-	assertNoStatusChange(t, statusChanged, result, err)
+	// Assert: Status changed - workload rollout already complete
+	assert.NoError(t, err)
+	assert.True(t, statusChanged, "expected status change")
+	assert.Equal(t, reconcile.Result{}, result)
 }
 
 func Test_NoRollout_PodInMidRollout_WaitingNoBackoff(t *testing.T) {
