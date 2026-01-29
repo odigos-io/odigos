@@ -7,43 +7,29 @@ import (
 
 const ActionSpanRenamer = "SpanRenamer"
 
-// generic span renamer config that works for any programming language and scope name.
-// can be used as fast response to rename high-cardinality spans if they are ever created.
-type SpanRenamerGeneric struct {
-	// the programming language which the renamed spans are written in.
-	ProgrammingLanguage common.ProgrammingLanguage `json:"programmingLanguage"`
+// configuration for replacing parts of the span name with a template text based on regular expressions.
+type SpanRenamerRegexReplacement struct {
 
-	// the name of the opentelemetry intrumentation scope which the renamed spans are written in.
-	ScopeName string `json:"scopeName"`
+	// the text to be used for replacing the matched part of the span name.
+	TemplateText string `json:"templateText"`
 
-	// if set, spans matching the above conditions will be renamed to this constant value.
-	ConstantSpanName string `json:"constantSpanName"`
-}
-
-// can be used to rename java quarts spans.
-// by default the span name will be set to `{JobGroup}.{JobName}`.
-// these are typically low cardinality values, but not always.
-// the job group and name can be set to high cardinality values in code,
-// in which case they need to be templated to a low cardinality value replacement.
-type SpanRenamerJavaQuartz struct {
-
-	// if set, the job group will be replaced in span names to this templated value.
-	JobGroupTemplate string `json:"jobGroupTemplate,omitempty"`
-
-	// if set, the job name will be replaced in span names to this templated value.
-	JobNameTemplate string `json:"jobNameTemplate,omitempty"`
+	// regualr expression that will be used to match the part of the span name to be replaced.
+	RegexPattern string `json:"regexPattern"`
 }
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type SpanRenamerConfig struct {
 
-	// generic span renamer config that works for any programming language and scope name.
-	// can be used as fast response to rename high-cardinality spans if they are ever created.
-	Generic *SpanRenamerGeneric `json:"generic,omitempty"`
+	// the programming language which the renamed spans are written in.
+	ProgrammingLanguage common.ProgrammingLanguage `json:"programmingLanguage"`
 
-	// java quarts span renamer config that can be used to rename java quarts spans.
-	JavaQuartz *SpanRenamerJavaQuartz `json:"javaQuartz,omitempty"`
+	// the name of the opentelemetry intrumentation scope which is producing the spans to be renamed.
+	ScopeName string `json:"scopeName"`
+
+	// list of regex replacements to be applied to the span name.
+	// all options are always tried, regardless of whether the previous options have matched or not.
+	RegexReplacements []SpanRenamerRegexReplacement `json:"regexReplacements,omitempty"`
 }
 
 func (SpanRenamerConfig) ProcessorType() string {
