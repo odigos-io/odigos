@@ -79,14 +79,6 @@ rules:
   - apiGroups:
       - ''
     resources:
-      - nodes/stats
-      - nodes/proxy
-    verbs:
-      - get
-      - list
-  - apiGroups:
-      - ''
-    resources:
       - pods
       - namespaces
     verbs:

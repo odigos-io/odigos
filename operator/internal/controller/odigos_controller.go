@@ -67,8 +67,6 @@ type OdigosReconciler struct {
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=create;get;list;watch;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;patch
 // +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch;patch;update
-// +kubebuilder:rbac:groups="",resources=nodes/proxy,verbs=get;list
-// +kubebuilder:rbac:groups="",resources=nodes/stats,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;delete
 // +kubebuilder:rbac:groups="",resources=pods/status,verbs=get
 // +kubebuilder:rbac:groups="",resources=pods/finalizers,verbs=update
