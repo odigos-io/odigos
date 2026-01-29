@@ -68,9 +68,18 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 		},
 	)
 
-	watcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
-		return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(ctx, metav1.ListOptions{})
-	}})
+	// List first to get the current resource version, so we only watch for new events
+	list, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list instrumentation configs: %w", err)
+	}
+
+	// Create watcher with current resource version (prevents old events from re-surfacing)
+	watcher, err := toolsWatch.NewRetryWatcherWithContext(ctx, list.ResourceVersion, &cache.ListWatch{
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(ctx, options)
+		},
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create instrumentation config watcher: %w", err)
 	}
