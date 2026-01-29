@@ -124,6 +124,23 @@ func TestWorkloadHasPodInBackoff_InitContainerBackoff(t *testing.T) {
 // Do() tests
 // ****************
 
+func TestDo_WorkloadHasPodInBackoff_UpdateError(t *testing.T) {
+	// Arrange: Deployment with pod in backoff state, but IC update will fail
+	setup := newTestSetup()
+	deployment := testutil.NewMockTestDeployment(setup.ns, "test-deployment")
+	podInBackoff := newCrashLoopBackOffPodWithoutOdigosLabel(setup.ns, "test-deployment", "pod-in-backoff")
+	ic := testutil.NewMockInstrumentationConfig(deployment)
+	c := setup.newFakeClientWithICUpdateError(setup.ns, deployment, podInBackoff, ic)
+	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
+
+	// Act
+	statusChanged, _, err := rollout.Do(setup.ctx, c, ic, pw, setup.conf, setup.distroProvider)
+
+	// Assert: Error returned, no status change
+	assert.Error(t, err)
+	assert.False(t, statusChanged, "expected no status change when update fails")
+}
+
 func TestDo_WorkloadHasPodInBackoff(t *testing.T) {
 	// Arrange: Deployment with pod in backoff state (without odigos label - pre-existing crash)
 	setup := newTestSetup()
@@ -155,4 +172,3 @@ func TestDo_WorkloadHasPodInBackoff(t *testing.T) {
 	assert.Equal(t, odigosv1alpha1.AgentEnabledStatusConditionType, ic.Status.Conditions[1].Type)
 	assert.Equal(t, metav1.ConditionFalse, ic.Status.Conditions[1].Status)
 }
-
