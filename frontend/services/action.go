@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -637,7 +636,7 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 
 	signals := []model.SignalType{}
 	for _, signal := range action.Spec.Signals {
-		signals = append(signals, model.SignalType(strings.ToUpper(string(signal))))
+		signals = append(signals, model.SignalType(signal))
 	}
 
 	response := &model.Action{

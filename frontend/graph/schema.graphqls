@@ -34,11 +34,8 @@ enum ProgrammingLanguage {
 
 enum SignalType {
   TRACES
-  traces
   METRICS
-  metrics
   LOGS
-  logs
 }
 
 enum SpanKind {
