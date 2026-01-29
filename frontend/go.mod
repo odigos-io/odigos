@@ -49,12 +49,14 @@ require (
 	github.com/glebarez/go-sqlite v1.21.2 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
+	github.com/odigos-io/odigos/odigosauth v0.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
@@ -204,4 +206,5 @@ replace (
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/destinations => ../destinations
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 )

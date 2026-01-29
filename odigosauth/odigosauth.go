@@ -1,9 +1,10 @@
 package odigosauth
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -36,7 +37,6 @@ func parseToken(tokenString string) (*jwt.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// Parse the token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return publicKey, nil
@@ -65,7 +65,6 @@ func checkTokenAttributes(tokenString string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	// Check if the token is valid
 	claims, claimsok := token.Claims.(jwt.MapClaims)
 	if !claimsok {
@@ -94,34 +93,12 @@ func checkTokenAttributes(tokenString string) (string, error) {
 	return aud, nil
 }
 
-// we dont have cloud token because it is not set in the environment variables
-func verifyCloudApiKey(cloudApiKey string) error {
-	url := fmt.Sprintf("https://compute-platform.keyval.dev/cloudtoken/%s/verify", cloudApiKey)
-
-	// Make the GET request
-	response, err := http.Get(url)
-	if err != nil {
-		// Handle error from the GET request
-		return err
-	}
-	defer response.Body.Close()
-
-	// Check if the status code is 200 OK
-	if response.StatusCode == http.StatusOK {
-		return nil
-	} else {
-		// Return an error for any status code other than 200
-		return errors.New("invalid cloud api key or error in verification")
-	}
-}
-
 func ValidateToken(onpremToken string) error {
 	if onpremToken == "" {
 		return fmt.Errorf("missing Odigos Pro token")
 	}
 
 	trimmedOnpremToken := strings.TrimSpace(onpremToken)
-
 	aud, err := checkTokenAttributes(trimmedOnpremToken)
 	if err != nil {
 		return fmt.Errorf("failed to verify onprem token: %w", err)
@@ -129,4 +106,26 @@ func ValidateToken(onpremToken string) error {
 
 	fmt.Println("Odigos onprem token verified", "audience", aud)
 	return nil
+}
+
+func ExtractJWTPayload(token string) (map[string]interface{}, error) {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("invalid JWT token format")
+	}
+
+	// Decode the payload (second part of the JWT)
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode JWT payload: %w", err)
+	}
+
+	// Parse the payload as JSON
+	var payload map[string]interface{}
+	err = json.Unmarshal(payloadBytes, &payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JWT payload: %w", err)
+	}
+
+	return payload, nil
 }

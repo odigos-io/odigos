@@ -44,6 +44,7 @@ require (
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
@@ -70,6 +71,7 @@ require (
 	github.com/moby/term v0.5.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
+	github.com/odigos-io/odigos/odigosauth v0.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
@@ -143,5 +145,6 @@ replace (
 	github.com/odigos-io/odigos/autoscaler => ../autoscaler
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	github.com/odigos-io/odigos/profiles => ../profiles
 )
