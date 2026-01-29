@@ -43,7 +43,7 @@ var EnvValuesMap = map[string]envValues{
 			common.OtelSdkNativeCommunity: "-javaagent:/var/odigos/java/javaagent.jar",
 			common.OtelSdkEbpfEnterprise:  "-javaagent:/var/odigos/java-ebpf/dtrace-injector.jar",
 			common.OtelSdkNativeEnterprise: "-javaagent:/var/odigos/java-ext-ebpf/javaagent.jar " +
-				"-Dotel.javaagent.extensions=/var/odigos/java-ext-ebpf/otel_agent_extension.jar",
+				"-Dotel.javaagent.extensions=/var/odigos/java-ext-ebpf/otel_agent_extension.jar --enable-native-access=ALL-UNNAMED",
 		},
 	},
 }
