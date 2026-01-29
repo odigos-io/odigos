@@ -1,12 +1,11 @@
 import { GET_METRICS } from '@/graphql';
 import { useQuery } from '@apollo/client';
-import { useSourceCRUD } from '../sources';
 import type { Metrics } from '@odigos/ui-kit/types';
-import { useDestinationCRUD } from '../destinations';
+import { useEntityStore } from '@odigos/ui-kit/store';
 
 export const useMetrics = () => {
-  const { sources } = useSourceCRUD();
-  const { destinations } = useDestinationCRUD();
+  const sources = useEntityStore((state) => state.sources);
+  const destinations = useEntityStore((state) => state.destinations);
 
   const { data } = useQuery<{ getOverviewMetrics: Metrics }>(GET_METRICS, {
     skip: !sources.length && !destinations.length,
