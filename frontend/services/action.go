@@ -635,8 +635,14 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 	}
 
 	signals := []model.SignalType{}
-	for _, signal := range action.Spec.Signals {
-		signals = append(signals, model.SignalType(signal))
+	seen := make(map[model.SignalType]bool)
+	for _, s := range action.Spec.Signals {
+		signal := model.SignalType(s)
+		// Deduplicate: only add if not already seen
+		if !seen[signal] {
+			seen[signal] = true
+			signals = append(signals, signal)
+		}
 	}
 
 	response := &model.Action{
