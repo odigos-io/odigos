@@ -308,6 +308,7 @@ type ApiToken {
   name: String!
   issuedAt: Int!
   expiresAt: Int!
+  message: String
 }
 
 type ComputePlatform {

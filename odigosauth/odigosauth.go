@@ -101,7 +101,8 @@ func ValidateToken(onpremToken string) error {
 	trimmedOnpremToken := strings.TrimSpace(onpremToken)
 	aud, err := checkTokenAttributes(trimmedOnpremToken)
 	if err != nil {
-		return fmt.Errorf("failed to verify onprem token: %w", err)
+		fmt.Println("err verifying token", err)
+		return fmt.Errorf("Failed to verify onprem token")
 	}
 
 	fmt.Println("Odigos onprem token verified", "audience", aud)
