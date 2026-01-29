@@ -83,16 +83,25 @@ func ConvertConditions(conditions []metav1.Condition) []*model.Condition {
 
 func ConvertSignals(signals []model.SignalType) ([]common.ObservabilitySignal, error) {
 	var result []common.ObservabilitySignal
+	seen := make(map[common.ObservabilitySignal]bool)
+
 	for _, s := range signals {
+		var signal common.ObservabilitySignal
 		switch s {
-		case model.SignalTypeTraces, model.SignalTypetraces:
-			result = append(result, common.TracesObservabilitySignal)
-		case model.SignalTypeMetrics, model.SignalTypemetrics:
-			result = append(result, common.MetricsObservabilitySignal)
-		case model.SignalTypeLogs, model.SignalTypelogs:
-			result = append(result, common.LogsObservabilitySignal)
+		case model.SignalTypeTraces:
+			signal = common.TracesObservabilitySignal
+		case model.SignalTypeMetrics:
+			signal = common.MetricsObservabilitySignal
+		case model.SignalTypeLogs:
+			signal = common.LogsObservabilitySignal
 		default:
 			return nil, fmt.Errorf("unknown signal type: %v", s)
+		}
+
+		// Deduplicate: only add if not already seen
+		if !seen[signal] {
+			seen[signal] = true
+			result = append(result, signal)
 		}
 	}
 	return result, nil
