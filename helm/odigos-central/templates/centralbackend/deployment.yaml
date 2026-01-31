@@ -46,6 +46,25 @@ spec:
             - name: MAX_MESSAGE_SIZE
               value: {{ .Values.centralBackend.maxMessageSize | quote }}
             {{- end }}
+          ports:
+            - containerPort: 8081
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 60
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
           resources:
             requests:
               cpu: {{ .Values.centralBackend.resources.requests.cpu }}

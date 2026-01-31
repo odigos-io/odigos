@@ -97,6 +97,10 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 
 	// MetricsMap is the optional common eBPF map that is used to read metrics per Java process at each interval.
 	MetricsMap *cilumebpf.Map
+
+	// MetricsAttributesMap is the optional eBPF Hash map for UUID -> packed resource attributes.
+	// Used alongside MetricsMap to store resource attributes separately from the metrics hash key.
+	MetricsAttributesMap *cilumebpf.Map
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -134,8 +138,9 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 
 	metrics *managerMetrics
 
-	tracesMap  *cilumebpf.Map
-	metricsMap *cilumebpf.Map
+	tracesMap            *cilumebpf.Map
+	metricsMap           *cilumebpf.Map
+	metricsAttributesMap *cilumebpf.Map
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -186,6 +191,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		metrics:               managerMetrics,
 		tracesMap:             options.TracesMap,
 		metricsMap:            options.MetricsMap,
+		metricsAttributesMap: options.MetricsAttributesMap,
 	}, nil
 }
 
@@ -330,8 +336,15 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 			TracesFDProvider: func() int {
 				return m.tracesMap.FD()
 			},
-			MetricsFDProvider: func() int {
-				return m.metricsMap.FD()
+			MetricsFDsProvider: func() []int {
+				var fds []int
+				if m.metricsMap != nil {
+					fds = append(fds, m.metricsMap.FD())
+				}
+				if m.metricsAttributesMap != nil {
+					fds = append(fds, m.metricsAttributesMap.FD())
+				}
+				return fds
 			},
 		}
 
@@ -344,8 +357,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 
 		m.logger.Info("eBPF maps created, FD server started",
 			"socket", unixfd.DefaultSocketPath,
-			"traces_map_fd", m.tracesMap.FD(),
-			"metrics_map_fd", m.metricsMap.FD())
+			"traces_map_fd", m.tracesMap.FD())
 		return nil
 	})
 
@@ -452,6 +464,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 
 	settings.MetricsMap = MetricsMap{
 		HashMapOfMaps: m.metricsMap,
+		AttributesMap: m.metricsAttributesMap,
 	}
 
 	inst, initErr := factory.CreateInstrumentation(ctx, pid, settings)

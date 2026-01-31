@@ -9,132 +9,10 @@ import (
 )
 
 const (
-	filelogReceiverName = "filelog"
-	logsPipelineName    = "logs"
+	filelogReceiverName                  = "filelog"
+	logsPipelineName                     = "logs"
+	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
 )
-
-// this code was used to enrich the logs with the workload names.
-// commented out due to memory concerns for pulling all deplyments for the transformation.
-// copied here during refactor for future reference
-
-// err := updateOrCreateK8sAttributesForLogs(&cfg)
-// if err != nil {
-// 	return "", err
-// }
-// // remove logs processors from CRD logsProcessors in case it is there so not to add it twice
-// for i, processor := range logsProcessors {
-// 	if processor == k8sAttributesProcessorName {
-// 		logsProcessors = append(logsProcessors[:i], logsProcessors[i+1:]...)
-// 		break
-// 	}
-// }
-
-// set "service.name" for logs same as the workload name.
-// note: this does not respect the override service name a user can set in sources.
-// cfg.Processors[logsServiceNameProcessorName] = config.GenericMap{
-// 	"attributes": []config.GenericMap{
-// 		{
-// 			"key":            string(semconv.ServiceNameKey),
-// 			"from_attribute": string(semconv.K8SDeploymentNameKey),
-// 			"action":         "insert", // avoid overwriting existing value
-// 		},
-// 		{
-// 			"key":            string(semconv.ServiceNameKey),
-// 			"from_attribute": string(semconv.K8SStatefulSetNameKey),
-// 			"action":         "insert", // avoid overwriting existing value
-// 		},
-// 		{
-// 			"key":            string(semconv.ServiceNameKey),
-// 			"from_attribute": string(semconv.K8SDaemonSetNameKey),
-// 			"action":         "insert", // avoid overwriting existing value
-// 		},
-// 		{
-// 			"key":            string(semconv.ServiceNameKey),
-// 			"from_attribute": string(semconv.K8SCronJobNameKey),
-// 			"action":         "insert", // avoid overwriting existing value
-// 		},
-// 	},
-// }
-
-// const (
-// 	k8sAttributesProcessorName   = "k8sattributes/odigos-k8sattributes"
-// 	logsServiceNameProcessorName = "resource/service-name"
-// )
-
-// using the k8sattributes processor to add deployment, statefulset and daemonset metadata
-// has a high memory consumption in large clusters since it brings all the replicasets in the cluster into the cache.
-// this has been disabled for logs, until further investigation is done on how to reduce memory consumption.
-// The side effect is that logs record will lack deployment/statefulset/daemonset names and service name that could have been derived from them.
-// func updateOrCreateK8sAttributesForLogs(cfg *config.Config) error {
-
-// 	_, k8sProcessorExists := cfg.Processors[k8sAttributesProcessorName]
-
-// 	if k8sProcessorExists {
-// 		// make sure it includes the workload names attributes in the processor "extract" section.
-// 		// this is added automatically for logs regardless of any action configuration.
-// 		k8sAttributesCfg, ok := cfg.Processors[k8sAttributesProcessorName].(config.GenericMap)
-// 		if !ok {
-// 			return fmt.Errorf("failed to cast k8s attributes processor config to GenericMap")
-// 		}
-// 		if _, exists := k8sAttributesCfg["extract"]; !exists {
-// 			k8sAttributesCfg["extract"] = config.GenericMap{}
-// 		}
-// 		extract, ok := k8sAttributesCfg["extract"].(map[string]interface{})
-// 		if !ok {
-// 			return fmt.Errorf("failed to cast k8s attributes processor extract config to GenericMap")
-// 		}
-// 		if _, exists := extract["metadata"]; !exists {
-// 			extract["metadata"] = []interface{}{}
-// 		}
-// 		metadata, ok := extract["metadata"].([]interface{})
-// 		if !ok {
-// 			return fmt.Errorf("failed to cast k8s attributes processor metadata config to []interface{}")
-// 		}
-// 		// convert the metadata to a string array to compare it's values
-// 		asStrArray := make([]string, len(metadata))
-// 		for i, v := range metadata {
-// 			asStrArray[i] = v.(string)
-// 		}
-// 		// add the workload names attributes to the metadata list
-// 		if !slices.Contains(asStrArray, string(semconv.K8SDeploymentNameKey)) {
-// 			metadata = append(metadata, string(semconv.K8SDeploymentNameKey))
-// 		}
-// 		if !slices.Contains(asStrArray, string(semconv.K8SStatefulSetNameKey)) {
-// 			metadata = append(metadata, string(semconv.K8SStatefulSetNameKey))
-// 		}
-// 		if !slices.Contains(asStrArray, string(semconv.K8SDaemonSetNameKey)) {
-// 			metadata = append(metadata, string(semconv.K8SDaemonSetNameKey))
-// 		}
-// 		extract["metadata"] = metadata                                // set the copy back to the config
-// 		k8sAttributesCfg["extract"] = extract                         // set the copy back to the config
-// 		cfg.Processors[k8sAttributesProcessorName] = k8sAttributesCfg // set the copy back to the config
-// 	} else {
-// 		// if the processor does not exist, create it with the default configuration
-// 		cfg.Processors[k8sAttributesProcessorName] = config.GenericMap{
-// 			"auth_type": "serviceAccount",
-// 			"filter": config.GenericMap{
-// 				"node_from_env_var": k8sconsts.NodeNameEnvVar,
-// 			},
-// 			"extract": config.GenericMap{
-// 				"metadata": []string{
-// 					string(semconv.K8SDeploymentNameKey),
-// 					string(semconv.K8SStatefulSetNameKey),
-// 					string(semconv.K8SDaemonSetNameKey),
-// 				},
-// 			},
-// 			"pod_association": []config.GenericMap{
-// 				{
-// 					"sources": []config.GenericMap{
-// 						{"from": "resource_attribute", "name": string(semconv.K8SPodNameKey)},
-// 						{"from": "resource_attribute", "name": string(semconv.K8SNamespaceNameKey)},
-// 					},
-// 				},
-// 			},
-// 		}
-// 	}
-
-// 	return nil
-// }
 
 func getReceivers(sources *odigosv1.InstrumentationConfigList, odigosNamespace string) config.GenericMap {
 
@@ -193,6 +71,7 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manife
 		memoryLimiterProcessorName,
 		nodeNameProcessorName,
 		resourceDetectionProcessorName,
+		odigosLogsResourceAttrsProcessorName,
 	}, manifestProcessorNames...)
 	// append odigos traffic metrics processor last (after manifest processors)
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
