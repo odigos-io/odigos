@@ -12,13 +12,13 @@ import (
 
 ///this file is used to update the token for the odigos pro secret
 
-func CreateTokenPayload(onpremToken string) (string, error) {
+func createTokenPayload(onpremToken string) ([]byte, error) {
 	tokenPayload := pro.TokenPayload{OnpremToken: onpremToken}
 	jsonBytes, err := json.Marshal(tokenPayload)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(jsonBytes), nil
+	return jsonBytes, nil
 }
 
 func ExecuteRemoteUpdateToken(ctx context.Context, client *Client, namespace string, onPremToken string) error {
@@ -29,11 +29,11 @@ func ExecuteRemoteUpdateToken(ctx context.Context, client *Client, namespace str
 		k8sconsts.OdigosUiServicePort,
 	)
 
-	tokenPayload, err := CreateTokenPayload(onPremToken)
+	tokenPayload, err := createTokenPayload(onPremToken)
 	if err != nil {
 		return fmt.Errorf("failed to create token payload: %w", err)
 	}
-	body := bytes.NewBuffer([]byte(tokenPayload))
+	body := bytes.NewBuffer(tokenPayload)
 
 	request := client.Clientset.RESTClient().Post().
 		AbsPath(uiSvcProxyEndpoint).

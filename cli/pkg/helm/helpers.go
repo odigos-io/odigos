@@ -55,7 +55,6 @@ func prepareChartAndValues(settings *cli.EnvSettings, chartName string, embedded
 	} else if OdigosChartVersion != "" {
 		version = strings.TrimPrefix(OdigosChartVersion, "v")
 	}
-
 	// Use embedded chart if available (when using the default chart and no override)
 	if HelmChart == embeddedGateChart && HelmChartVersion == "" {
 		ch, err := LoadEmbeddedChart(version, chartName)
@@ -101,6 +100,7 @@ func prepareChartAndValues(settings *cli.EnvSettings, chartName string, embedded
 		}
 	}
 	if strings.HasPrefix(HelmChart, k8sconsts.OdigosCentralHelmRepoName+"/") {
+		fmt.Println("Ensuring Odigos Central Helm repo")
 		if err := ensureHelmRepo(settings, k8sconsts.OdigosCentralHelmRepoName, k8sconsts.OdigosCentralHelmRepoURL); err != nil {
 			return nil, nil, err
 		}

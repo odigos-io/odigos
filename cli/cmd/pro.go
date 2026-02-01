@@ -24,7 +24,6 @@ import (
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
-	helmcli "helm.sh/helm/v3/pkg/cli"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -286,7 +285,7 @@ func runCentralInstallOrUpgrade() error {
 	helm.HelmChartVersion = versionFlag
 	helm.HelmResetThenReuseValues = centralHelmResetThenReuseValues
 
-	settings := helmcli.New()
+	settings := cli.New()
 	actionConfig := new(action.Configuration)
 
 	if err := actionConfig.Init(settings.RESTClientGetter(), helm.HelmNamespace, "secret", helm.CustomInstallLogger); err != nil {
@@ -415,7 +414,7 @@ func init() {
 		c.Flags().StringVar(&centralHelmChart, "chart", k8sconsts.DefaultCentralHelmChart, "Helm chart to install (repo/name, local path, or URL)")
 		c.Flags().StringVarP(&centralHelmValuesFile, "values", "f", "", "Path to a custom values.yaml file")
 		c.Flags().StringSliceVar(&centralHelmSetArgs, "set", []string{}, "Set values on the command line (key=value)")
-		c.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
+		c.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", k8sconsts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
 		c.Flags().BoolVar(
 			&centralHelmResetThenReuseValues,
 			"reset-then-reuse-values",
