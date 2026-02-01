@@ -116,9 +116,10 @@ WORKDIR /go/src/github.com/odigos-io/odigos
 WORKDIR /go/src/github.com/odigos-io/odigos/csi-driver
 COPY csi-driver/ .
 ARG TARGETARCH
+ARG LD_FLAGS
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH go build -o odigos-csi-driver .
+    GOOS=linux GOARCH=$TARGETARCH go build -ldflags="${LD_FLAGS}" -o odigos-csi-driver .
 
 ######### Odiglet builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
