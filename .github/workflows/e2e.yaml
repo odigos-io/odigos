@@ -173,7 +173,30 @@ jobs:
       - name: Move CLI binary & set permissions
         run: chmod +x cli/odigos
 
+      - name: Get latest release tag for branch from Helm
+        id: get-latest-tag
+        run: |
+          echo "📦 Updating Helm repositories..."
+          helm repo add odigos https://odigos-io.github.io/odigos/ || true
+          helm repo update
+
+          BRANCH="${{ github.ref_name }}"
+          # If on a release branch (e.g., releases/v1.14.0), get latest Helm version for that version line
+          # Otherwise (main), get the latest overall Helm chart version
+          if [[ "$BRANCH" == releases/* ]]; then
+            VERSION_PREFIX=$(echo "$BRANCH" | sed -E 's|releases/v([0-9]+\.[0-9]+)\..*|\1|')
+            echo "Release branch detected, looking for v${VERSION_PREFIX}.* in Helm"
+            LATEST_RELEASE_TAG=$(helm search repo odigos/odigos --versions | awk -v prefix="^v${VERSION_PREFIX}\\\\." '$1 == "odigos/odigos" && $3 ~ prefix {print $3; exit}')
+          else
+            echo "Non-release branch, using latest Helm chart version"
+            LATEST_RELEASE_TAG=$(helm search repo odigos/odigos | awk '$1 == "odigos/odigos" {print $3}')
+          fi
+          echo "LATEST_RELEASE_TAG=$LATEST_RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "Latest release tag for branch $BRANCH: $LATEST_RELEASE_TAG"
+
       - name: Run E2E Tests
+        env:
+          LATEST_RELEASE_TAG: ${{ steps.get-latest-tag.outputs.LATEST_RELEASE_TAG }}
         run: |
           MINOR_VERSION=$(echo ${{ matrix.kube-version }} | sed -E 's/^1\.([0-9]+).*$/\1/')
           chainsaw test tests/e2e/${{ matrix.test-scenario }} --values - <<EOF

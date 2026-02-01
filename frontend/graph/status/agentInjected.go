@@ -34,6 +34,9 @@ const (
 	PodAgentInjectedReasonDisabledAutoRollout   PodAgentInjectedReason = "DisabledAutoRollout"
 	PodAgentInjectedReasonDisabledManualRollout PodAgentInjectedReason = "DisabledManualRollout"
 
+	// pod manifest injection optional (no restart required to enable agent injection)
+	PodAgentInjectedReasonPodManifestInjectionOptional PodAgentInjectedReason = "PodManifestInjectionOptional"
+
 	// out of date
 	PodAgentInjectedReasonOutOfDateAutoRollout   PodAgentInjectedReason = "OutOfDateAutoRollout"
 	PodAgentInjectedReasonOutOfDateManualRollout PodAgentInjectedReason = "OutOfDateManualRollout"
@@ -153,6 +156,10 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		}
 	}
 
+	// if the pod manifest injection is optional, we want to show this as success,
+	// since the agent can be enabled without a restart
+	podManifestInjectionOptional := ic.Spec.PodManifestInjectionOptional
+
 	if agentLabelExists {
 		sameHash := agentHashValue == ic.Spec.AgentsMetaHash
 		if sameHash {
@@ -165,6 +172,16 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 				Message:    "odigos agent is successfully injected to this pod",
 			}
 		} else {
+			if podManifestInjectionOptional {
+				reasonStr := string(PodAgentInjectedReasonPodManifestInjectionOptional)
+				return agentLabelExists, &model.DesiredConditionStatus{
+					Name:       PodAgentInjectionStatus,
+					Status:     model.DesiredStateProgressSuccess,
+					ReasonEnum: &reasonStr,
+					Message:    "this agent is automatically enabled in running pod",
+				}
+			}
+
 			// this is the rare case where the source and the agent are marked for instrumentation but the hash is different.
 			// it can happen when migrating from OSS <-> Enterprise, or when agent version is updated in a way that requires restarts.
 			// pods need to restart for new pods to have the correct agent hash.
@@ -188,10 +205,22 @@ func CalculatePodAgentInjectedStatus(pod *corev1.Pod, ic *v1alpha1.Instrumentati
 		}
 	}
 
+	// if the pod manifest injection optional, it's ok, agent is enabled regardless of the hash or pod manifest changes.
+	if podManifestInjectionOptional {
+		reasonStr := string(PodAgentInjectedReasonPodManifestInjectionOptional)
+		return agentLabelExists, &model.DesiredConditionStatus{
+			Name:       PodAgentInjectionStatus,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    "this agent is automatically enabled in running pod",
+		}
+	}
+
 	// at this point:
 	// - the source is marked for instrumentation
 	// - agent injection is enabled
 	// - the pod has no odigos label (agent is not injected)
+	// - the pod manifest injection is required (e.g. an agent in at least one container requires pod restart to be enabled)
 	//
 	// there can be few options here:
 	// 1. automatic rollout is awaiting or in progress
@@ -329,6 +358,17 @@ func CalculateAgentInjectedStatus(ic *v1alpha1.InstrumentationConfig, pods []com
 			Status:     model.DesiredStateProgressSuccess,
 			ReasonEnum: &reasonStr,
 			Message:    fmt.Sprintf("source is disabled for agent injection but %d/%d pods are running odigos agent; rollout this source to replace these pods with uninstrumented ones", num, len(pods)),
+		}
+	}
+
+	// ======= Pod manifest injection optional =======
+	if _, found := reasonsMap[PodAgentInjectedReasonPodManifestInjectionOptional]; found {
+		reasonStr := string(PodAgentInjectedReasonPodManifestInjectionOptional)
+		return &model.DesiredConditionStatus{
+			Name:       AgentInjectedStatus,
+			Status:     model.DesiredStateProgressSuccess,
+			ReasonEnum: &reasonStr,
+			Message:    "this agent is automatically enabled in running pod",
 		}
 	}
 

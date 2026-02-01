@@ -1119,6 +1119,35 @@ and service match but the span latency is below the threshold.</p>
 </tbody>
 </table>
 
+## `IgnoreHealthChecksConfig` <a id="IgnoreHealthChecksConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>fractionToRecord</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>FractionToRecord determines the percentage (0–100) of health checks traces to record.
+should be in range [0, 1]
+0 (default) means no health checks traces will be recorded
+1 means all health checks traces will be recorded</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `JsonAttributeCondition` <a id="JsonAttributeCondition"></a>
     
 
@@ -1226,7 +1255,7 @@ Example: $.user.role or $.events[0].code</p>
 <code>string</code>
 </td>
 <td>
-   <p>The label name to be extracted from the pod.
+   <p>The annotation name to be extracted.
 e.g. &quot;kubectl.kubernetes.io/restartedAt&quot;</p>
 </td>
 </tr>
@@ -1238,8 +1267,8 @@ e.g. &quot;kubectl.kubernetes.io/restartedAt&quot;</p>
 <code>string</code>
 </td>
 <td>
-   <p>The attribute key to be used for the resource attribute created from the label.
-e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
+   <p>The attribute key to be used for the resource attribute created from the annotation.
+e.g. &quot;kubectl.kubernetes.restartedAt&quot;</p>
 </td>
 </tr>
 <tr>
@@ -1251,7 +1280,23 @@ e.g. &quot;kubectl.kubernetes.restartedAte&quot;</p>
 </td>
 <td>
    <p>The source of the annotation.
-e.g. &quot;pod&quot; or &quot;namespace&quot;</p>
+e.g. &quot;pod&quot; or &quot;namespace&quot;
+Deprecated: Use FromSources instead for specifying multiple sources with precedence.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fromSources</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributeSource"><code>[]K8sAttributeSource</code></a>
+</td>
+<td>
+   <p>The sources from which to extract the annotation, in order of precedence (most specific first).
+When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+over less specific sources (e.g., namespace).
+If an annotation exists in multiple sources, the value from the most specific source will be used.
+Supported sources: &quot;pod&quot;, &quot;namespace&quot;, &quot;node&quot;</p>
 </td>
 </tr>
 </tbody>
@@ -1263,6 +1308,7 @@ e.g. &quot;pod&quot; or &quot;namespace&quot;</p>
 
 **Appears in:**
 
+- [K8sAnnotationAttribute](#K8sAnnotationAttribute)
 - [K8sLabelAttribute](#K8sLabelAttribute)
 
 
@@ -1547,7 +1593,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <code>string</code>
 </td>
 <td>
-   <p>The label name to be extracted from the pod.
+   <p>The label name to be extracted.
 e.g. &quot;app.kubernetes.io/name&quot;</p>
 </td>
 </tr>
@@ -1572,7 +1618,23 @@ e.g. &quot;app.kubernetes.name&quot;</p>
 </td>
 <td>
    <p>The source of the label.
-e.g. &quot;pod&quot; or &quot;namespace&quot;</p>
+e.g. &quot;pod&quot; or &quot;namespace&quot;
+Deprecated: Use FromSources instead for specifying multiple sources with precedence.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fromSources</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributeSource"><code>[]K8sAttributeSource</code></a>
+</td>
+<td>
+   <p>The sources from which to extract the label, in order of precedence (most specific first).
+When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+over less specific sources (e.g., namespace).
+If a label exists in multiple sources, the value from the most specific source will be used.
+Supported sources: &quot;pod&quot;, &quot;namespace&quot;, &quot;node&quot;</p>
 </td>
 </tr>
 </tbody>
@@ -2274,6 +2336,19 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </td>
 <td>
    <p>ProbabilisticSamplerSpec defines the desired state of ProbabilisticSampler</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>ignoreHealthChecks</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#IgnoreHealthChecksConfig"><code>IgnoreHealthChecksConfig</code></a>
+</td>
+<td>
+   <p>automatically sample out health checks by a set fraction.
+health checks are discovered based on the livenessProbe and readinessProbe in the workload spec.
+if set, health checks are sampled regardless of any other configuration (head sampling at agent level, before traces are pushed into the collector pipeline)</p>
 </td>
 </tr>
 </tbody>

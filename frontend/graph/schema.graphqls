@@ -13,6 +13,7 @@ enum K8sResourceKind {
   StaticPod
   DeploymentConfig
   Rollout
+  InstrumentationConfig
 }
 
 enum ConditionStatus {
@@ -127,6 +128,7 @@ type K8sActualSource {
   conditions: [Condition!]
   workloadOdigosHealthStatus: DesiredConditionStatus
   manifestYAML: String
+  instrumentationConfigYAML: String
 }
 
 input K8sDesiredSourceInput {
@@ -384,17 +386,6 @@ type Destination {
   fields: String!
   destinationType: DestinationTypesCategoryItem!
   conditions: [Condition!]
-}
-
-type GetConfigResponse {
-  readonly: Boolean!
-  platformType: ComputePlatformType!
-  tier: Tier!
-  odigosVersion: String!
-  installationMethod: String!
-  installationStatus: InstallationStatus!
-  clusterName: String
-  isCentralProxyRunning: Boolean
 }
 
 input DestinationInput {
@@ -871,30 +862,32 @@ type InstrumentationInstanceComponent {
   nonIdentifyingAttributes: [NonIdentifyingAttribute!]!
 }
 
-# Remote configuration managed by central-backend
-# These settings take precedence over Helm values and persist through upgrades
-type RemoteConfig {
-  rollout: RemoteConfigRollout
-  # Future fields:
-  # ignoredNamespaces: [String]
-  # ignoredContainers: [String]
+# Diagnose types for diagnostic data collection
+input DiagnoseInput {
+  includeProfiles: Boolean
+  includeMetrics: Boolean
+  includeSourceWorkloads: Boolean
+  sourceWorkloadNamespaces: [String!]
 }
 
-type RemoteConfigRollout {
-  automaticRolloutDisabled: Boolean
+type DiagnoseStats {
+  fileCount: Int!
+  totalSizeBytes: Int!
+  totalSizeHuman: String!
 }
 
-input RemoteConfigInput {
-  rollout: RemoteConfigRolloutInput
-}
-
-input RemoteConfigRolloutInput {
-  automaticRolloutDisabled: Boolean
+type DiagnoseResponse {
+  # Stats about the diagnose output
+  stats: DiagnoseStats!
+  # Options used for the diagnose
+  includeProfiles: Boolean!
+  includeMetrics: Boolean!
+  includeSourceWorkloads: Boolean!
+  sourceWorkloadNamespaces: [String!]!
 }
 
 type Query {
   computePlatform: ComputePlatform
-  config: GetConfigResponse
 
   # return the raw YAML manifest for a k8s resource
   k8sManifest(
@@ -929,8 +922,10 @@ type Query {
   # get all sources that match the filter
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
 
-  # remote configuration (managed by central-backend and persisted in the odigos-remote-config ConfigMap)
-  remoteConfig: RemoteConfig
+  # Diagnose - collect diagnostic data from Odigos components
+  # If dryRun is true, returns only stats without generating the file
+  # If dryRun is false, generates the file and returns a download URL
+  diagnose(input: DiagnoseInput, dryRun: Boolean): DiagnoseResponse!
 }
 
 type Mutation {
@@ -971,7 +966,4 @@ type Mutation {
 
   # enterprise: remove the central-proxy from this cluster
   deleteCentralProxy: Boolean!
-
-  # remote configuration (managed by central-backend and persisted in the odigos-remote-config ConfigMap)
-  updateRemoteConfig(config: RemoteConfigInput!): RemoteConfig
 }

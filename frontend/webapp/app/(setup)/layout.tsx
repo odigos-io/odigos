@@ -4,10 +4,11 @@ import React, { useMemo, type PropsWithChildren } from 'react';
 import { usePathname } from 'next/navigation';
 import { ROUTES } from '@/utils';
 import styled from 'styled-components';
-import { useSSE, useTokenTracker } from '@/hooks';
 import { ToastList } from '@odigos/ui-kit/containers';
 import { OnboardingStepperWrapper } from '@/components';
+import { OdigosProvider } from '@odigos/ui-kit/contexts';
 import { DISPLAY_TITLES } from '@odigos/ui-kit/constants';
+import { useConfig, useSSE, useTokenTracker } from '@/hooks';
 import { useDataStreamStore, useSetupStore } from '@odigos/ui-kit/store';
 import { ErrorBoundary, FlexColumn, Stepper, StepperProps } from '@odigos/ui-kit/components';
 
@@ -29,10 +30,12 @@ function SetupLayout({ children }: PropsWithChildren) {
   // call important hooks that should run on page-mount
   useSSE();
   useTokenTracker();
+
   const { selectedStreamName } = useDataStreamStore();
   const { configuredSources, configuredDestinations, configuredDestinationsUpdateOnly } = useSetupStore();
 
   const pathname = usePathname();
+  const { config } = useConfig();
 
   const sourceCount = useMemo(() => Object.values(configuredSources).reduce((total, sourceList) => total + sourceList.filter((s) => s.selected).length, 0), [configuredSources]);
   const destCount = useMemo(() => configuredDestinations.length + configuredDestinationsUpdateOnly.length, [configuredDestinations, configuredDestinationsUpdateOnly]);
@@ -50,15 +53,17 @@ function SetupLayout({ children }: PropsWithChildren) {
 
   return (
     <ErrorBoundary>
-      <PageContent>
-        <OnboardingStepperWrapper>
-          <Stepper currentStep={steps[pathname] || 1} data={stepsData} />
-        </OnboardingStepperWrapper>
+      <OdigosProvider platformType={config?.platformType} tier={config?.tier} version={config?.odigosVersion || ''}>
+        <PageContent>
+          <OnboardingStepperWrapper>
+            <Stepper currentStep={steps[pathname] || 1} data={stepsData} />
+          </OnboardingStepperWrapper>
 
-        {children}
+          {children}
 
-        <ToastList />
-      </PageContent>
+          <ToastList />
+        </PageContent>
+      </OdigosProvider>
     </ErrorBoundary>
   );
 }
