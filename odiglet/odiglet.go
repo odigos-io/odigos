@@ -19,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
 	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	ebpfMetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
 
@@ -68,6 +69,11 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 		return nil, fmt.Errorf("failed to create OpenTelemetry MeterProvider: %w", err)
 	}
 	otel.SetMeterProvider(provider)
+
+	collector := ebpfMetrics.NewEBPFMetricsCollector(env.Current.NodeName, log.Logger)
+	if err := collector.RegisterMetrics(); err != nil {
+		log.Logger.Error(err, "failed to register metrics")
+	}
 
 	appendEnvVarNames := distro.GetAppendEnvVarNames(instrumentationMgrOpts.DistributionGetter.GetAllDistros())
 
