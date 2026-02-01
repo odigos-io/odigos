@@ -802,6 +802,16 @@ odiglet:
       limits:
         cpu: 100m
         memory: 300Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
 
   # @schema
   # description: |-
@@ -818,7 +828,7 @@ odiglet:
   # @schema
   # CSI driver resource configuration
   # Only applied when instrumentor.mountMethod is "k8s-csi-driver"
-  csiDriver:
+  csidriver:
     resources:
       requests:
         cpu: 50m
@@ -826,6 +836,16 @@ odiglet:
       limits:
         cpu: 100m
         memory: 200Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 5
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
 
   # noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
   # for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
