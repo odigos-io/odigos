@@ -379,6 +379,10 @@ spec:
                 - -rpc-timeout=10s
 {{- toYaml .Values.odiglet.deviceplugin.readinessProbe | nindent 12 }}
 {{- end }}
+# CSI driver is only supported in privileged mode
+{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") .Values.odiglet.unPrivileged }}
+{{ fail "CSI driver mount method requires privileged mode, this is not supported in unprivileged mode" }}
+{{- end }}
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
         - name: csi-driver
           {{- if include "odigos.secretExists" . }}
