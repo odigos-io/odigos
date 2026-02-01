@@ -12,8 +12,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/tools/cache"
-	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
 var destinationAddedEventBatcher *EventBatcher
@@ -66,20 +64,20 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 		},
 	)
 
-	// List first to get the current resource version, so we only watch for new events
-	list, err := kube.DefaultClient.OdigosClient.Destinations(namespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to list destinations: %w", err)
-	}
-
-	// Create watcher with current resource version (prevents old events from re-surfacing)
-	watcher, err := toolsWatch.NewRetryWatcherWithContext(ctx, list.ResourceVersion, &cache.ListWatch{
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(ctx, options)
+	watcher, err := StartRetryWatcher(ctx, WatcherConfig[*v1alpha1.DestinationList]{
+		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.DestinationList, error) {
+			return kube.DefaultClient.OdigosClient.Destinations(namespace).List(ctx, opts)
 		},
+		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			return kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(ctx, opts)
+		},
+		GetResourceVersion: func(list *v1alpha1.DestinationList) string {
+			return list.ResourceVersion
+		},
+		ResourceName: "destinations",
 	})
 	if err != nil {
-		return fmt.Errorf("error creating destinations watcher: %v", err)
+		return err
 	}
 
 	go handleDestinationWatchEvents(ctx, watcher)
