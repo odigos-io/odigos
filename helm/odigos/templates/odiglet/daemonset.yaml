@@ -413,11 +413,7 @@ spec:
             - /root/odigos-csi-driver
           imagePullPolicy: IfNotPresent
           securityContext:
-            capabilities:
-              drop:
-                - ALL
-              add:
-                - SYS_ADMIN
+            privileged: true
           env:
             - name: NODE_NAME
               valueFrom:
@@ -428,7 +424,7 @@ spec:
               mountPath: /csi
             - name: kubelet-dir
               mountPath: /var/lib/kubelet
-              mountPropagation: HostToContainer
+              mountPropagation: Bidirectional
             - name: registration-dir
               mountPath: /registration
             {{- if not .Values.odiglet.noHostPathMounts }}
