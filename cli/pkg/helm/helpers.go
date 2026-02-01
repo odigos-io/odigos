@@ -37,17 +37,6 @@ var (
 	HelmResetThenReuseValues = true // default: true (sensible for upgrades)
 )
 
-type CentralValues struct {
-	OnPremToken          string
-	AdminUsername        string
-	AdminPassword        string
-	KeycloakStorageClass *string
-	MaxMessageSize       string
-	ImageTag             string
-	ImagePullSecrets     []string
-	ExternalOnpremSecret bool
-}
-
 func PrepareChartAndValues(settings *cli.EnvSettings, chartName string) (*chart.Chart, map[string]interface{}, error) {
 	return prepareChartAndValues(settings, chartName, k8sconsts.DefaultHelmChart)
 }

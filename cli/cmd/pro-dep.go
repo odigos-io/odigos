@@ -248,24 +248,24 @@ var centralUninstallCmdDep = &cobra.Command{
 
 		fmt.Println("Starting Odigos Central uninstallation...")
 
-		createKubeResourceWithLoggingDep(ctx, "Uninstalling Odigos Central Deployments",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Deployments",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteDeploymentsByLabel)
-		createKubeResourceWithLoggingDep(ctx, "Uninstalling Odigos Central Services",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Services",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServicesByLabel)
-		createKubeResourceWithLoggingDep(ctx, "Uninstalling Odigos Central Roles",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Roles",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRolesByLabel)
-		createKubeResourceWithLoggingDep(ctx, "Uninstalling Odigos Central RoleBindings",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central RoleBindings",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteRoleBindingsByLabel)
-		createKubeResourceWithLoggingDep(ctx, "Uninstalling Odigos Central ClusterRoles",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ClusterRoles",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteClusterRolesByLabelAdapterDep)
-		createKubeResourceWithLoggingDep(ctx, "Uninstalling Odigos Central ClusterRoleBindings",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ClusterRoleBindings",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteClusterRoleBindingsByLabelAdapterDep)
-		createKubeResourceWithLoggingDep(ctx, "Uninstalling Odigos Central ServiceAccounts",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ServiceAccounts",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServiceAccountsByLabel)
-		createKubeResourceWithLoggingDep(ctx, "Uninstalling Odigos Central Secrets",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Secrets",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteSecretsByLabel)
 
-		createKubeResourceWithLoggingDep(ctx, "Deleting Odigos Central token secret",
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Deleting Odigos Central token secret",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteCentralTokenSecretAdapterDep)
 
 		hasCentralLabel, err := kube.NamespaceHasLabel(ctx, client, ns, k8sconsts.OdigosSystemLabelCentralKey)
@@ -274,7 +274,7 @@ var centralUninstallCmdDep = &cobra.Command{
 			os.Exit(1)
 		}
 		if hasCentralLabel {
-			createKubeResourceWithLoggingDep(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+			cmdutil.CreateKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
 				client, ns, k8sconsts.OdigosSystemLabelCentralKey, uninstallNamespace)
 			waitForNamespaceDeletion(ctx, client, ns)
 		}
@@ -376,7 +376,7 @@ func installCentralBackendAndUIDep(ctx context.Context, client *kube.Client, ns 
 		ImagePullSecrets:     imagePullSecrets,
 	}
 
-	createKubeResourceWithLoggingDep(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelCentralKey, createNamespaceDep)
+	cmdutil.CreateKubeResourceWithLogging(ctx, fmt.Sprintf("> Creating namespace %s", ns), client, ns, k8sconsts.OdigosSystemLabelCentralKey, createNamespaceDep)
 
 	if err := createOdigosCentralSecretDep(ctx, client, ns, onPremToken); err != nil {
 		return err
@@ -508,10 +508,6 @@ func init() {
 
 	centralCmdDep.AddCommand(portForwardCentralCmdDep)
 	portForwardCentralCmdDep.Flags().String("address", "localhost", "Address to serve the UI on")
-}
-
-func createKubeResourceWithLoggingDep(ctx context.Context, msg string, client *kube.Client, ns string, labelScope string, create cmdutil.ResourceCreationFunc) {
-	cmdutil.CreateKubeResourceWithLogging(ctx, msg, client, ns, labelScope, create)
 }
 
 func GetImageReferencesDep(odigosTier common.OdigosTier, openshift bool) resourcemanager.ImageReferences {

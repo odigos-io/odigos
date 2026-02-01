@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/go-logr/logr"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/helm"
 	"github.com/odigos-io/odigos/common"
 	operatorv1alpha1 "github.com/odigos-io/odigos/operator/api/v1alpha1"
@@ -179,7 +180,7 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 
 	// Load the embedded chart from CLI package
 	chartVersion := strings.TrimPrefix(version, "v")
-	ch, err := helm.LoadEmbeddedChart(chartVersion, "odigos")
+	ch, err := helm.LoadEmbeddedChart(chartVersion, k8sconsts.OdigosHelmRepoName)
 	if err != nil {
 		return fmt.Errorf("failed to load embedded chart: %w", err)
 	}

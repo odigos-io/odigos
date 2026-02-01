@@ -14,7 +14,6 @@ import (
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
-	"github.com/odigos-io/odigos/cli/pkg/cmdutil"
 	"github.com/odigos-io/odigos/cli/pkg/helm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/offsets"
@@ -235,13 +234,7 @@ odigos pro central upgrade --reset-then-reuse-values=false
 
 func runCentralHelmUninstall() error {
 	ns := proNamespaceFlag
-	if ns == "" {
-		ns = consts.DefaultOdigosCentralNamespace
-	}
 	releaseName := centralHelmReleaseName
-	if releaseName == "" {
-		releaseName = helm.DefaultCentralReleaseName
-	}
 
 	fmt.Printf("🗑️  Starting uninstall of release %q from namespace %q...\n", releaseName, ns)
 
@@ -281,7 +274,7 @@ func runCentralInstallOrUpgrade() error {
 
 	helm.HelmReleaseName = centralHelmReleaseName
 	if helm.HelmReleaseName == "" {
-		helm.HelmReleaseName = helm.DefaultCentralReleaseName
+		helm.HelmReleaseName = k8sconsts.DefaultCentralReleaseName
 	}
 
 	helm.HelmChart = centralHelmChart
@@ -300,7 +293,7 @@ func runCentralInstallOrUpgrade() error {
 		return err
 	}
 
-	ch, vals, err := helm.PrepareCentralChartAndValues(settings, "odigos-central")
+	ch, vals, err := helm.PrepareCentralChartAndValues(settings, k8sconsts.OdigosCentralHelmRepoName)
 
 	if err != nil {
 		return err
@@ -343,7 +336,6 @@ and cannot automatically upgrade installations created with the legacy method.
 
 		fmt.Printf("%s\n", msg)
 		os.Exit(1)
-		return nil
 	}
 
 	return runCentralInstallOrUpgrade()
@@ -419,7 +411,7 @@ func init() {
 
 	// Helm-style flags for `odigos pro central` (same shape as `odigos install`)
 	for _, c := range []*cobra.Command{centralInstallCmd, centralUpgradeCmd} {
-		c.Flags().StringVar(&centralHelmReleaseName, "release-name", helm.DefaultCentralReleaseName, "Helm release name")
+		c.Flags().StringVar(&centralHelmReleaseName, "release-name", k8sconsts.DefaultCentralReleaseName, "Helm release name")
 		c.Flags().StringVar(&centralHelmChart, "chart", k8sconsts.DefaultCentralHelmChart, "Helm chart to install (repo/name, local path, or URL)")
 		c.Flags().StringVarP(&centralHelmValuesFile, "values", "f", "", "Path to a custom values.yaml file")
 		c.Flags().StringSliceVar(&centralHelmSetArgs, "set", []string{}, "Set values on the command line (key=value)")
@@ -433,10 +425,4 @@ func init() {
 		c.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
 	}
 
-}
-
-// Backwards-compat for other cmd files that might rely on the old local helper name.
-// Prefer using cmdutil.CreateKubeResourceWithLogging directly in new code.
-func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, labelScope string, create cmdutil.ResourceCreationFunc) {
-	cmdutil.CreateKubeResourceWithLogging(ctx, msg, client, ns, labelScope, create)
 }

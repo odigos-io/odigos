@@ -10,6 +10,8 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 )
 
+///this file is used to update the token for the odigos pro secret
+
 func CreateTokenPayload(onpremToken string) (string, error) {
 	tokenPayload := pro.TokenPayload{OnpremToken: onpremToken}
 	jsonBytes, err := json.Marshal(tokenPayload)
@@ -29,7 +31,7 @@ func ExecuteRemoteUpdateToken(ctx context.Context, client *Client, namespace str
 
 	tokenPayload, err := CreateTokenPayload(onPremToken)
 	if err != nil {
-		return fmt.Errorf("failed to create token payload: %v", err)
+		return fmt.Errorf("failed to create token payload: %w", err)
 	}
 	body := bytes.NewBuffer([]byte(tokenPayload))
 
@@ -40,7 +42,7 @@ func ExecuteRemoteUpdateToken(ctx context.Context, client *Client, namespace str
 		Do(ctx)
 
 	if err := request.Error(); err != nil {
-		return fmt.Errorf("failed to update token: %v", err)
+		return fmt.Errorf("failed to update token: %w", err)
 	}
 
 	return nil
