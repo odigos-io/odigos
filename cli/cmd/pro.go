@@ -1,27 +1,23 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	"github.com/odigos-io/odigos/cli/cmd/resources/odigospro"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/cmdutil"
 	"github.com/odigos-io/odigos/cli/pkg/helm"
-	clihelm "github.com/odigos-io/odigos/cli/pkg/helm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
-	"github.com/odigos-io/odigos/cli/pkg/log"
+	"github.com/odigos-io/odigos/cli/pkg/offsets"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
@@ -30,9 +26,7 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
 	helmcli "helm.sh/helm/v3/pkg/cli"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 var (
@@ -43,7 +37,6 @@ var (
 	fromFile         string
 	versionFlag      string
 
-	// Helm-like flags for `odigos pro central` (mirrors `odigos install`)
 	centralHelmReleaseName          string
 	centralHelmChart                string
 	centralHelmValuesFile           string
@@ -71,7 +64,7 @@ var proCmd = &cobra.Command{
 		}
 
 		if updateRemoteFlag {
-			err = executeRemoteUpdateToken(ctx, client, ns, onPremToken)
+			err = kube.ExecuteRemoteUpdateToken(ctx, client, ns, onPremToken)
 		} else {
 			err = pro.UpdateOdigosToken(ctx, client, ns, onPremToken)
 		}
@@ -91,42 +84,6 @@ odigos pro --onprem-token <token>
 
 
 `,
-}
-
-func createTokenPayload(onpremToken string) (string, error) {
-	tokenPayload := pro.TokenPayload{OnpremToken: onpremToken}
-	jsonBytes, err := json.Marshal(tokenPayload)
-	if err != nil {
-		return "", err
-	}
-	return string(jsonBytes), nil
-}
-
-func executeRemoteUpdateToken(ctx context.Context, client *kube.Client, namespace string, onPremToken string) error {
-	uiSvcProxyEndpoint := fmt.Sprintf(
-		"/api/v1/namespaces/%s/services/%s:%d/proxy/api/token/update",
-		namespace,
-		k8sconsts.OdigosUiServiceName,
-		k8sconsts.OdigosUiServicePort,
-	)
-
-	tokenPayload, err := createTokenPayload(onPremToken)
-	if err != nil {
-		return fmt.Errorf("failed to create token payload: %v", err)
-	}
-	body := bytes.NewBuffer([]byte(tokenPayload))
-
-	request := client.Clientset.RESTClient().Post().
-		AbsPath(uiSvcProxyEndpoint).
-		Body(body).
-		SetHeader("Content-Type", "application/json").
-		Do(ctx)
-
-	if err := request.Error(); err != nil {
-		return fmt.Errorf("failed to update token: %v", err)
-	}
-
-	return nil
 }
 
 var offsetsCmd = &cobra.Command{
@@ -174,9 +131,12 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 			os.Exit(1)
 		}
 
-		data, err := getLatestOffsets(useDefault)
+		data, err := offsets.GetLatestOffsets(offsets.GetLatestOffsetsOptions{
+			Revert:   useDefault,
+			FromFile: fromFile,
+		})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m %+s", err))
+			fmt.Printf("\033[31mERROR\033[0m %+v\n", err)
 			os.Exit(1)
 		}
 
@@ -184,7 +144,7 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 		if downloadFile != "" {
 			err = os.WriteFile(downloadFile, data, 0644)
 			if err != nil {
-				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to write offsets file: %s", err))
+				fmt.Printf("\033[31mERROR\033[0m Unable to write offsets file: %s\n", err)
 				os.Exit(1)
 			}
 			fmt.Printf("Successfully downloaded offsets to %s\n", downloadFile)
@@ -193,7 +153,7 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 
 		cm, err := client.Clientset.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.GoOffsetsConfigMap, metav1.GetOptions{})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s", err))
+			fmt.Printf("\033[31mERROR\033[0m Unable to get Go offsets ConfigMap: %s\n", err)
 			os.Exit(1)
 		}
 
@@ -207,7 +167,7 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 		} else {
 			escaped, err = json.Marshal(string(data))
 			if err != nil {
-				fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to encode json string: %s", err))
+				fmt.Printf("\033[31mERROR\033[0m Unable to encode json string: %s\n", err)
 				os.Exit(1)
 			}
 		}
@@ -215,49 +175,18 @@ odigos pro update-offsets --from-file /path/to/local/offsets.json
 		cm.Data[k8sconsts.GoOffsetsFileName] = string(escaped)
 		_, err = client.Clientset.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
 		if err != nil {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s", err))
+			fmt.Printf("\033[31mERROR\033[0m Unable to update Go offsets ConfigMap: %s\n", err)
 			os.Exit(1)
 		}
 
 		fmt.Println("Updated Go Offsets, restarting Odiglet to use the new offsets.")
-		err = restartOdiglet(ctx, client, ns)
+		err = kube.RestartOdiglet(ctx, client, ns)
 		if err != nil {
-			fmt.Println(fmt.Sprintf("\033[31mERROR\033[0m Unable to restart Odiglet: %s", err))
+			fmt.Printf("\033[31mERROR\033[0m Unable to restart Odiglet: %s\n", err)
 			os.Exit(1)
 		}
 		fmt.Println("Odiglet restarted successfully.")
 	},
-}
-
-func getLatestOffsets(revert bool) ([]byte, error) {
-	if revert {
-		return []byte{}, nil
-	}
-
-	// If fromFile is specified, read from local file
-	if fromFile != "" {
-		data, err := os.ReadFile(fromFile)
-		if err != nil {
-			return nil, fmt.Errorf("cannot read offsets file: %s", err)
-		}
-		return data, nil
-	}
-
-	resp, err := http.Get(consts.GoOffsetsPublicURL)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get latest offsets: %s", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("cannot get latest offsets: %d", resp.StatusCode)
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read response body: %s", err)
-	}
-	return data, nil
 }
 
 var centralCmd = &cobra.Command{
@@ -265,13 +194,6 @@ var centralCmd = &cobra.Command{
 	Short: "Manage Odigos Central (Enterprise tier)",
 	Long:  "Manage Odigos Central backend and UI components used in enterprise deployments.",
 }
-
-var (
-	centralAdminUser            string
-	centralAdminPassword        string
-	centralAuthStorageClassName string
-	centralMaxMessageSize       string
-)
 
 var centralInstallCmd = &cobra.Command{
 	Use:   "install",
@@ -318,7 +240,7 @@ func runCentralHelmUninstall() error {
 	}
 	releaseName := centralHelmReleaseName
 	if releaseName == "" {
-		releaseName = clihelm.DefaultCentralReleaseName
+		releaseName = helm.DefaultCentralReleaseName
 	}
 
 	fmt.Printf("🗑️  Starting uninstall of release %q from namespace %q...\n", releaseName, ns)
@@ -352,9 +274,20 @@ func runCentralHelmUninstall() error {
 
 func runCentralInstallOrUpgrade() error {
 
-	helm.HelmNamespace = consts.DefaultOdigosCentralNamespace
-	helm.HelmReleaseName = clihelm.DefaultCentralReleaseName
-	helm.HelmChart = k8sconsts.DefaultCentralHelmChart
+	helm.HelmNamespace = proNamespaceFlag
+	if helm.HelmNamespace == "" {
+		helm.HelmNamespace = consts.DefaultOdigosCentralNamespace
+	}
+
+	helm.HelmReleaseName = centralHelmReleaseName
+	if helm.HelmReleaseName == "" {
+		helm.HelmReleaseName = helm.DefaultCentralReleaseName
+	}
+
+	helm.HelmChart = centralHelmChart
+	if helm.HelmChart == "" {
+		helm.HelmChart = k8sconsts.DefaultCentralHelmChart
+	}
 	helm.HelmValuesFile = centralHelmValuesFile
 	helm.HelmSetArgs = centralHelmSetArgs
 	helm.HelmChartVersion = versionFlag
@@ -466,68 +399,27 @@ var portForwardCentralCmd = &cobra.Command{
 	},
 }
 
-func restartOdiglet(ctx context.Context, client *kube.Client, ns string) error {
-	// Create patch to add/update the restartedAt annotation
-	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
-		time.Now().Format(time.RFC3339))
-
-	// Patch the Odiglet daemonset
-	_, err := client.AppsV1().DaemonSets(ns).Patch(
-		ctx,
-		k8sconsts.OdigletDaemonSetName,
-		types.StrategicMergePatchType,
-		[]byte(patch),
-		metav1.PatchOptions{},
-	)
-	if apierrors.IsNotFound(err) {
-		return fmt.Errorf("odiglet daemonset not found in namespace %s", ns)
-	}
-	return err
-}
-
 func init() {
 	rootCmd.AddCommand(proCmd)
-
-	// proCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
-	// proCmd.MarkFlagRequired("onprem-token")
-	// proCmd.PersistentFlags().BoolVarP(&updateRemoteFlag, "remote", "r", false, "use odigos ui service in the cluster to update the onprem token")
 
 	proCmd.AddCommand(offsetsCmd)
 	offsetsCmd.Flags().BoolVar(&useDefault, "default", false, "revert to using the default offsets data shipped with the current version of Odigos")
 	offsetsCmd.Flags().StringVar(&downloadFile, "download-file", "", "download the offsets file to the specified location without updating the cluster")
 	offsetsCmd.Flags().StringVar(&fromFile, "from-file", "", "use the offsets file from the specified location instead of downloading it")
 	proCmd.AddCommand(centralCmd)
-	// central subcommands
 	centralCmd.AddCommand(centralInstallCmd)
-	// centralInstallCmd.Flags().String("onprem-token", "", "On-prem token for Odigos")
-	// centralInstallCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to install")
-	// centralInstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central installation")
-	// centralInstallCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
 
-	// register and configure central uninstall command
 	centralCmd.AddCommand(centralUninstallCmd)
 	centralUninstallCmd.Flags().Bool("yes", false, "Confirm the uninstall without prompting")
 	centralUninstallCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central uninstallation")
-
-	// register and configure central upgrade command
 	centralCmd.AddCommand(centralUpgradeCmd)
-	// centralUpgradeCmd.Flags().Bool("yes", false, "Confirm the upgrade without prompting")
-	// centralUpgradeCmd.Flags().StringVarP(&proNamespaceFlag, "namespace", "n", consts.DefaultOdigosCentralNamespace, "Target namespace for Odigos Central upgrade")
-	// centralUpgradeCmd.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
-	// centralUpgradeCmd.MarkFlagRequired("version")
-	// centralUpgradeCmd.Flags().StringSliceVar(&centralImagePullSecrets, "image-pull-secrets", nil, "Secret names for imagePullSecrets (repeat or comma-separated)")
-	// centralUpgradeCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
-	// centralUpgradeCmd.Flags().String("onprem-token", "", "On-prem token for Odigos (required only if Central is not installed yet)")
 
-	// Central configuration flags
-	// centralInstallCmd.Flags().StringVar(&centralAdminUser, "central-admin-user", "admin", "Central admin username")
-	// centralInstallCmd.Flags().StringVar(&centralAdminPassword, "central-admin-password", "", "Central admin password (auto-generated if not provided)")
-	// centralInstallCmd.Flags().StringVar(&centralAuthStorageClassName, "central-storage-class-name", "", "StorageClassName for Keycloak PVC (omit to use cluster default; set '' to disable)")
-	// centralInstallCmd.Flags().StringVar(&centralMaxMessageSize, "central-max-message-size", "", "Maximum message size in bytes for gRPC messages (empty = use default)")
+	centralCmd.AddCommand(portForwardCentralCmd)
+	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 
 	// Helm-style flags for `odigos pro central` (same shape as `odigos install`)
 	for _, c := range []*cobra.Command{centralInstallCmd, centralUpgradeCmd} {
-		c.Flags().StringVar(&centralHelmReleaseName, "release-name", clihelm.DefaultCentralReleaseName, "Helm release name")
+		c.Flags().StringVar(&centralHelmReleaseName, "release-name", helm.DefaultCentralReleaseName, "Helm release name")
 		c.Flags().StringVar(&centralHelmChart, "chart", k8sconsts.DefaultCentralHelmChart, "Helm chart to install (repo/name, local path, or URL)")
 		c.Flags().StringVarP(&centralHelmValuesFile, "values", "f", "", "Path to a custom values.yaml file")
 		c.Flags().StringSliceVar(&centralHelmSetArgs, "set", []string{}, "Set values on the command line (key=value)")
@@ -539,44 +431,12 @@ func init() {
 			"Reset to chart defaults, then reuse values from the previous release (default: true).",
 		)
 		c.Flags().StringVar(&versionFlag, "version", OdigosVersion, "Specify version to upgrade to")
-		// c.Flags().String("onprem-token", "", "On-prem token for Odigos")
 	}
 
-	// Backward-compat flags (mapped where possible; otherwise ignored with a warning).
-	// for _, c := range []*cobra.Command{centralInstallCmd, centralUpgradeCmd} {
-	// 	c.Flags().StringVar(&centralImagePrefixFlag, "image-prefix", "", "Image registry/prefix override for Odigos Central images")
-	// 	c.Flags().StringVar(&centralUIModeFlag, "ui-mode", "", "Central UI mode (maps to centralUI.uiMode)")
-	// 	c.Flags().StringVar(&centralBackendURLFlag, "central-backend-url", "", "Override Central backend URL (maps to centralUI.centralBackendURL)")
-	// 	c.Flags().StringVar(&centralNodeSelectorFlag, "node-selector", "", "Node selector for central components (key=value[,key=value...])")
-
-	// 	c.Flags().BoolVar(&centralSkipWait, "skip-wait", false, "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().BoolVar(&centralTelemetryEnabled, "telemetry-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().BoolVar(&centralOpenshiftEnabled, "openshift-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().BoolVar(&centralSkipWebhookIssuerCreation, "skip-webhook-issuer-creation", false, "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().BoolVar(&centralPSPEnabled, "psp", false, "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().StringSliceVar(&centralIgnoredNamespaces, "ignored-namespaces", nil, "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().StringSliceVar(&centralIgnoredContainers, "ignored-containers", nil, "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().StringSliceVar(&centralInstallProfiles, "profiles", nil, "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().StringVar(&centralRuntimeSocketPath, "custom-container-runtime-socket-path", "", "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().StringVar(&centralK8sNodeLogsDirectory, "k8s-node-logs-directory", "", "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().StringVar(&centralInstrumentorImage, "instrumentor-image", "", "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().StringVar(&centralOdigletImage, "odiglet-image", "", "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().StringVar(&centralAutoScalerImage, "autoscaler-image", "", "Compatibility flag (ignored for Helm-based Central)")
-	// 	c.Flags().BoolVar(&centralKarpenterEnabled, "karpenter-enabled", false, "Compatibility flag (ignored for Helm-based Central)")
-	// }
-
-	centralCmd.AddCommand(portForwardCentralCmd)
-	portForwardCentralCmd.Flags().String("address", "localhost", "Address to serve the UI on")
 }
 
-func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, labelScope string, create ResourceCreationFunc) {
-	l := log.Print(msg)
-	err := create(ctx, client, ns, labelScope)
-	if err != nil {
-		l.Error(err)
-	}
-
-	l.Success()
+// Backwards-compat for other cmd files that might rely on the old local helper name.
+// Prefer using cmdutil.CreateKubeResourceWithLogging directly in new code.
+func createKubeResourceWithLogging(ctx context.Context, msg string, client *kube.Client, ns string, labelScope string, create cmdutil.ResourceCreationFunc) {
+	cmdutil.CreateKubeResourceWithLogging(ctx, msg, client, ns, labelScope, create)
 }
-
-type ResourceCreationFunc func(ctx context.Context, client *kube.Client, ns string, labelKey string) error

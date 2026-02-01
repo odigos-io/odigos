@@ -60,13 +60,10 @@ func PrepareCentralChartAndValues(settings *cli.EnvSettings, chartName string) (
 // - chartName controls which embedded chart archive to load (e.g. "odigos" / "odigos-central")
 // - embeddedGateChart controls when we attempt embedded chart first (i.e. when HelmChart == embeddedGateChart and no --chart-version override)
 func prepareChartAndValues(settings *cli.EnvSettings, chartName string, embeddedGateChart string) (*chart.Chart, map[string]interface{}, error) {
-	// choose version
 	version := ""
-	// if the version is set by the user via --chart-version flag, use it
 	if HelmChartVersion != "" {
 		version = strings.TrimPrefix(HelmChartVersion, "v")
 	} else if OdigosChartVersion != "" {
-		// if the version is set by the CLI at build time, use it
 		version = strings.TrimPrefix(OdigosChartVersion, "v")
 	}
 
