@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
+	github.com/container-storage-interface/spec v1.10.0
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/moby/sys/mountinfo v0.7.2
@@ -22,9 +23,12 @@ require (
 	go.opentelemetry.io/otel/sdk v1.37.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.17.0
+	google.golang.org/grpc v1.75.1
+	google.golang.org/protobuf v1.36.9
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
 	k8s.io/client-go v0.34.1
+	k8s.io/kubelet v0.34.1
 	sigs.k8s.io/controller-runtime v0.22.1
 )
 
@@ -101,8 +105,6 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090 // indirect
-	google.golang.org/grpc v1.75.1 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
