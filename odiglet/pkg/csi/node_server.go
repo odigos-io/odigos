@@ -1,4 +1,4 @@
-package main
+package csi
 
 import (
 	"bufio"
@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -82,7 +83,7 @@ func (s *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublish
 	//
 
 	// CSI equivalent: bind mount from OdigosAgentsDir to targetPath
-	sourcePath := OdigosAgentsDir
+	sourcePath := k8sconsts.OdigosAgentsDirectory
 
 	// Create target directory if it doesn't exist
 	if err := os.MkdirAll(targetPath, 0755); err != nil {
@@ -163,9 +164,9 @@ func (s *NodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCa
 
 func (s *NodeServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	// Get node name from environment variable (set by Kubernetes)
-	nodeID := os.Getenv(NodeNameEnvVar)
+	nodeID := os.Getenv(k8sconsts.NodeNameEnvVar)
 	if nodeID == "" {
-		return nil, status.Error(codes.Internal, NodeNameEnvVar+" environment variable is required")
+		return nil, status.Error(codes.Internal, k8sconsts.NodeNameEnvVar+" environment variable is required")
 	}
 
 	return &csi.NodeGetInfoResponse{
@@ -181,7 +182,7 @@ func isPathMounted(targetPath string) (bool, error) {
 	}
 
 	// Read /proc/mounts to check if the path is mounted
-	file, err := os.Open(ProcMountsPath)
+	file, err := os.Open(k8sconsts.ProcMountsPath)
 	if err != nil {
 		return false, err
 	}

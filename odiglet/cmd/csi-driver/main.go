@@ -11,16 +11,18 @@ import (
 	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigletcsi "github.com/odigos-io/odigos/odiglet/pkg/csi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	v1 "k8s.io/kubelet/pkg/apis/pluginregistration/v1"
 )
 
 func main() {
-	slog.Info("Starting Odigos CSI Driver", "name", DriverName, "version", DriverVersion)
+	slog.Info("Starting Odigos CSI Driver", "name", k8sconsts.OdigletCSIDriverName, "version", k8sconsts.OdigletCSIDriverVersion)
 
 	// Create CSI driver
-	driver := NewCSIDriver(DriverName, DriverVersion)
+	driver := NewCSIDriver(k8sconsts.OdigletCSIDriverName, k8sconsts.OdigletCSIDriverVersion)
 
 	// Start gRPC server
 	if err := driver.Run(); err != nil {
@@ -34,32 +36,32 @@ type CSIDriver struct {
 	version            string
 	server             *grpc.Server
 	registrationServer *grpc.Server
-	identity           *IdentityServer
-	node               *NodeServer
+	identity           *odigletcsi.IdentityServer
+	node               *odigletcsi.NodeServer
 }
 
 func NewCSIDriver(name, version string) *CSIDriver {
 	return &CSIDriver{
 		name:     name,
 		version:  version,
-		identity: NewIdentityServer(name, version),
-		node:     NewNodeServer(),
+		identity: odigletcsi.NewIdentityServer(name, version),
+		node:     odigletcsi.NewNodeServer(),
 	}
 }
 
 func (d *CSIDriver) Run() error {
 
 	// Remove any existing socket file and ensure directory exists
-	if err := os.Remove(CSISocketPath); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove socket file %s: %v", CSISocketPath, err)
+	if err := os.Remove(k8sconsts.OdigletCSISocketPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove socket file %s: %v", k8sconsts.OdigletCSISocketPath, err)
 	}
-	if err := os.MkdirAll(filepath.Dir(CSISocketPath), 0750); err != nil {
-		return fmt.Errorf("failed to create directory %s: %v", filepath.Dir(CSISocketPath), err)
+	if err := os.MkdirAll(filepath.Dir(k8sconsts.OdigletCSISocketPath), 0750); err != nil {
+		return fmt.Errorf("failed to create directory %s: %v", filepath.Dir(k8sconsts.OdigletCSISocketPath), err)
 	}
 
-	lis, err := net.Listen("unix", CSISocketPath)
+	lis, err := net.Listen("unix", k8sconsts.OdigletCSISocketPath)
 	if err != nil {
-		return fmt.Errorf("failed to listen on %s: %v", CSISocketPath, err)
+		return fmt.Errorf("failed to listen on %s: %v", k8sconsts.OdigletCSISocketPath, err)
 	}
 
 	d.server = grpc.NewServer()
@@ -69,7 +71,7 @@ func (d *CSIDriver) Run() error {
 	csi.RegisterNodeServer(d.server, d.node)         // Node: handles actual volume mount/unmount operations
 
 	// Register custom health service that checks CSI driver health
-	healthService := &HealthService{identity: d.identity}
+	healthService := &odigletcsi.HealthService{Identity: d.identity}
 	grpc_health_v1.RegisterHealthServer(d.server, healthService)
 
 	// Create context for coordinated shutdown
@@ -83,7 +85,7 @@ func (d *CSIDriver) Run() error {
 		}
 	}()
 
-	slog.Info("Listening on", "endpoint", CSIEndpoint)
+	slog.Info("Listening on", "endpoint", k8sconsts.OdigletCSIEndpoint)
 
 	// Handle shutdown gracefully
 	go func() {
@@ -105,12 +107,12 @@ func (d *CSIDriver) Run() error {
 
 // registerWithKubelet registers the CSI driver with kubelet using the plugin registration API
 func (d *CSIDriver) registerWithKubelet(ctx context.Context) error {
-	pluginRegistrationPath := RegistrationPath
-	csiAddress := CSISocketPath
-	kubeletRegistrationPath := KubeletPluginSocket
+	pluginRegistrationPath := k8sconsts.OdigletCSIRegistrationPath
+	csiAddress := k8sconsts.OdigletCSISocketPath
+	kubeletRegistrationPath := k8sconsts.KubeletPluginSocket
 
 	// Create registration socket
-	registrationPath := filepath.Join(pluginRegistrationPath, d.name+RegistrationSocketSuffix)
+	registrationPath := filepath.Join(pluginRegistrationPath, d.name+k8sconsts.OdigletCSIRegistrationSocketSuffix)
 	if err := os.Remove(registrationPath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to remove registration socket: %v", err)
 	}

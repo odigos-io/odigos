@@ -112,14 +112,22 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 ######### CSI Driver builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS csi-driver-builder
 WORKDIR /go/src/github.com/odigos-io/odigos
-# Build CSI driver binary
-WORKDIR /go/src/github.com/odigos-io/odigos/csi-driver
-COPY csi-driver/ .
+# Copy local modules required by the build
+COPY api/ api/
+COPY common/ common/
+COPY k8sutils/ k8sutils/
+COPY procdiscovery/ procdiscovery/
+COPY opampserver/ opampserver/
+COPY instrumentation/ instrumentation/
+COPY distros/ distros/
+# Build CSI driver binary from odiglet module
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
+COPY odiglet/ .
 ARG TARGETARCH
 ARG LD_FLAGS
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH go build -ldflags="${LD_FLAGS}" -o odigos-csi-driver .
+    GOOS=linux GOARCH=$TARGETARCH go build -ldflags="${LD_FLAGS}" -o odigos-csi-driver ./cmd/csi-driver
 
 ######### Odiglet builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
@@ -214,7 +222,7 @@ COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licens
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
-COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/csi-driver/odigos-csi-driver /root/odigos-csi-driver
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
@@ -225,7 +233,7 @@ CMD ["/root/odiglet"]
 FROM gcr.io/distroless/base:latest
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
-COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/csi-driver/odigos-csi-driver /root/odigos-csi-driver
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync

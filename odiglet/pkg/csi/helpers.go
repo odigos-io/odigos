@@ -1,19 +1,21 @@
-package main
+package csi
 
 import (
 	"fmt"
 	"log/slog"
 	"os"
 	"regexp"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 // checkRequiredPaths validates that all required host paths are accessible
 // Returns true if all paths exist, false otherwise
 func checkRequiredPaths() bool {
 	requiredPaths := []string{
-		KubeletDir,                // kubelet directory for CSI operations
-		KubeletPluginsRegistryDir, // kubelet plugin registration
-		OdigosAgentsDir,           // instrumentation files source
+		k8sconsts.KubeletDir,                // kubelet directory for CSI operations
+		k8sconsts.KubeletPluginsRegistryDir, // kubelet plugin registration
+		k8sconsts.OdigosAgentsDirectory,     // instrumentation files source
 	}
 
 	for _, path := range requiredPaths {
@@ -31,7 +33,7 @@ func checkRequiredPaths() bool {
 // Expected format: /var/lib/kubelet/pods/{pod-uid}/volumes/kubernetes.io~csi/{volume-name}/mount
 func extractPodUIDFromPath(targetPath string) string {
 	// Simple regex to extract pod UID - much lighter than full parsing
-	pattern := fmt.Sprintf(`%s/pods/([^/]+)/`, KubeletDir)
+	pattern := fmt.Sprintf(`%s/pods/([^/]+)/`, k8sconsts.KubeletDir)
 	re := regexp.MustCompile(pattern)
 	matches := re.FindStringSubmatch(targetPath)
 

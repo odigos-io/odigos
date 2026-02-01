@@ -1,4 +1,4 @@
-package main
+package csi
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 // HealthService implements grpc.health.v1.Health with actual CSI driver health checks
 type HealthService struct {
 	grpc_health_v1.UnimplementedHealthServer
-	identity *IdentityServer
+	Identity *IdentityServer
 }
 
 // Check performs the health check by validating CSI driver readiness
@@ -26,7 +26,7 @@ func (h *HealthService) Check(ctx context.Context, req *grpc_health_v1.HealthChe
 	}
 
 	// Also verify we can call our own CSI Identity service
-	if _, err := h.identity.GetPluginInfo(ctx, &csi.GetPluginInfoRequest{}); err != nil {
+	if _, err := h.Identity.GetPluginInfo(ctx, &csi.GetPluginInfoRequest{}); err != nil {
 		slog.Debug("Health check failed - CSI Identity service not responding", "error", err)
 		return &grpc_health_v1.HealthCheckResponse{
 			Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING,
