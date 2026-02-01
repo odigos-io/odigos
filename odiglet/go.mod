@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
+	github.com/container-storage-interface/spec v1.10.0
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
@@ -99,10 +100,15 @@ require (
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
+<<<<<<< HEAD
 	google.golang.org/genproto/googleapis/api v0.0.0-20251022142026-3a174f9686a8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect
 	google.golang.org/grpc v1.77.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
+=======
+	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090 // indirect
+>>>>>>> a1a4d5fa0 (chore: move to not be a different module + some pr comments adjustments)
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
