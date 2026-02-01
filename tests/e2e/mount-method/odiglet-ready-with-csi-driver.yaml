@@ -55,7 +55,11 @@ spec:
     - name: csi-driver
       image: registry.odigos.io/odigos-odiglet:e2e-test
       securityContext:
-        privileged: true
+        capabilities:
+          add:
+            - SYS_ADMIN
+          drop:
+            - ALL
       resources:
         requests:
           (memory != null): true
@@ -140,7 +144,11 @@ spec:
     - name: csi-driver
       image: registry.odigos.io/odigos-odiglet:e2e-test
       securityContext:
-        privileged: true
+        capabilities:
+          add:
+            - SYS_ADMIN
+          drop:
+            - ALL
       resources:
         requests:
           (memory != null): true
