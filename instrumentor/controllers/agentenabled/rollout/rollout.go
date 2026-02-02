@@ -79,12 +79,6 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return RolloutResult{StatusChanged: changed}, nil
 	}
 
-	// Check if the distribution requires a rollout (only when ic is not nil)
-	if ic != nil && !isRolloutDistro(ic, distroProvider, conf) {
-		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionRestartNotRequiredForDistro)
-		return RolloutResult{StatusChanged: changed}, nil
-	}
-
 	if ic == nil {
 		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label,
 		// it means it is a rolled back application that shouldn't be rolled out again.
