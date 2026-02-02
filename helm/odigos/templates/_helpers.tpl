@@ -86,8 +86,8 @@ true
 {{- end }}
 
 
-{{- define "odigos.odiglet.gomemlimitFromLimit" -}}
-{{- $resources := include "odigos.odiglet.resolvedResources" . | fromYaml -}}
+{{- define "odigos.gomemlimitFromResources" -}}
+{{- $resources := .Resources | default dict -}}
 {{- $limits := get $resources "limits" -}}
 {{- $requests := get $resources "requests" -}}
 
