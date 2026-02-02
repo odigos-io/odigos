@@ -3,7 +3,6 @@
 import React, { useCallback, type PropsWithChildren, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/utils';
-import { useTheme } from 'styled-components';
 import { OverviewHeader } from '@/components';
 import { useDarkMode } from '@odigos/ui-kit/store';
 import { Navbar } from '@odigos/ui-kit/components/v2';
@@ -20,18 +19,18 @@ const getSelectedId = (pathname: string) => {
   return pathname.includes(ROUTES.OVERVIEW)
     ? NavIconIds.Overview
     : pathname.includes(ROUTES.SOURCES)
-    ? NavIconIds.Sources
-    : pathname.includes(ROUTES.DESTINATIONS)
-    ? NavIconIds.Destinations
-    : pathname.includes(ROUTES.ACTIONS)
-    ? NavIconIds.Actions
-    : pathname.includes(ROUTES.INSTRUMENTATION_RULES)
-    ? NavIconIds.InstrumentationRules
-    : pathname.includes(ROUTES.SERVICE_MAP)
-    ? serviceMapId
-    : pathname.includes(ROUTES.PIPELINE_COLLECTORS)
-    ? pipelineCollectorsId
-    : undefined;
+      ? NavIconIds.Sources
+      : pathname.includes(ROUTES.DESTINATIONS)
+        ? NavIconIds.Destinations
+        : pathname.includes(ROUTES.ACTIONS)
+          ? NavIconIds.Actions
+          : pathname.includes(ROUTES.INSTRUMENTATION_RULES)
+            ? NavIconIds.InstrumentationRules
+            : pathname.includes(ROUTES.SERVICE_MAP)
+              ? serviceMapId
+              : pathname.includes(ROUTES.PIPELINE_COLLECTORS)
+                ? pipelineCollectorsId
+                : undefined;
 };
 
 const routesMap = {
@@ -50,12 +49,11 @@ function OverviewLayout({ children }: PropsWithChildren) {
   useTokenTracker();
 
   // TODO: remove this after migration to v2
-  const theme = useTheme();
   const { darkMode, setDarkMode } = useDarkMode();
   useEffect(() => {
     if (!darkMode) setDarkMode(true);
-    document.body.style.backgroundColor = theme.v2.colors.black['500'];
-  }, [theme]);
+    document.body.style.backgroundColor = '#151618';
+  }, []);
 
   const router = useRouter();
   const pathname = usePathname();

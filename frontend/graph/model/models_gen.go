@@ -2151,25 +2151,19 @@ type SignalType string
 
 const (
 	SignalTypeTraces  SignalType = "TRACES"
-	SignalTypetraces  SignalType = "traces"
 	SignalTypeMetrics SignalType = "METRICS"
-	SignalTypemetrics SignalType = "metrics"
 	SignalTypeLogs    SignalType = "LOGS"
-	SignalTypelogs    SignalType = "logs"
 )
 
 var AllSignalType = []SignalType{
 	SignalTypeTraces,
-	SignalTypetraces,
 	SignalTypeMetrics,
-	SignalTypemetrics,
 	SignalTypeLogs,
-	SignalTypelogs,
 }
 
 func (e SignalType) IsValid() bool {
 	switch e {
-	case SignalTypeTraces, SignalTypetraces, SignalTypeMetrics, SignalTypemetrics, SignalTypeLogs, SignalTypelogs:
+	case SignalTypeTraces, SignalTypeMetrics, SignalTypeLogs:
 		return true
 	}
 	return false
