@@ -57,6 +57,8 @@ spec:
                 name: odigos-configuration
                 key: centralBackendURL
           {{- end }}
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.ui.resources) }}
         ports:
           - containerPort: 3000
             name: ui
