@@ -48,23 +48,22 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 
 	token := string(secret.Data[k8sconsts.OdigosOnpremTokenSecretKey])
 	tokenPayload, err := odigosauth.ValidateToken(token)
+	aud, _ := tokenPayload["aud"].(string)
+	iat, _ := tokenPayload["iat"].(float64)
+	exp, _ := tokenPayload["exp"].(float64)
+
 	if err != nil {
 		msg := err.Error()
 		return []*model.APIToken{
 			{
 				Token:     token,
-				Name:      "ERROR",
+				Name:      aud,
 				IssuedAt:  0,
 				ExpiresAt: 0,
 				Message:   &msg,
 			},
 		}, nil
 	}
-
-	// Extract values from the token payload
-	aud, _ := tokenPayload["aud"].(string)
-	iat, _ := tokenPayload["iat"].(float64)
-	exp, _ := tokenPayload["exp"].(float64)
 
 	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
 	return []*model.APIToken{
