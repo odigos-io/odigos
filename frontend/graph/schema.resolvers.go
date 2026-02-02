@@ -47,25 +47,8 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	}
 
 	token := string(secret.Data[k8sconsts.OdigosOnpremTokenSecretKey])
-	err = odigosauth.ValidateToken(token)
+	tokenPayload, err := odigosauth.ValidateToken(token)
 	if err != nil {
-		msg := err.Error()
-		return []*model.APIToken{
-			{
-				Token:     token,
-				Name:      "ERROR",
-				IssuedAt:  0,
-				ExpiresAt: 0,
-				Message:   &msg,
-			},
-		}, nil
-	}
-
-	tokenPayload, err := odigosauth.ExtractJWTPayload(token)
-	if err != nil {
-		// We don't want to return an error here, because the user may have provided a bad token.
-		// Throwing this will prevent the entire CP from being fetched, and prevent the user from being able to update the token...
-		// return nil, fmt.Errorf("failed to extract JWT payload: %w", err)
 		msg := err.Error()
 		return []*model.APIToken{
 			{
