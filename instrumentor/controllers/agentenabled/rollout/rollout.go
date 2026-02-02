@@ -74,49 +74,6 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return statusChanged, ctrl.Result{}, nil
 	}
 
-	// Check for workloads that are in backoff state and not eligible for instrumentation.
-	// It is enough to have one pod in backoff state to prevent instrumentation.
-	hasPodInBackoff, err := WorkloadHasPodInBackoff(ctx, c, workloadObj)
-	if err != nil {
-		logger.Error(err, "failed to check for pods in backoff")
-	}
-
-	if hasPodInBackoff {
-		// Only set the condition if the instrumentation config is not nil (=we try to instrument this workload)
-		// if it is nil, we don't do anything - this is a rolled back application that shouldn't be rolled out again.
-		if ic != nil {
-			// Disable agent for all containers since the workload has pre-existing backoff
-			for i := range ic.Spec.Containers {
-				ic.Spec.Containers[i].AgentEnabled = false
-				ic.Spec.Containers[i].AgentEnabledReason = odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff
-			}
-			ic.Spec.AgentInjectionEnabled = false
-
-			if err := c.Update(ctx, ic); err != nil {
-				res, updateErr := utils.K8SUpdateErrorHandler(err)
-				return false, res, updateErr
-			}
-
-			// Set the WorkloadRollout condition
-			meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-				Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
-				Status:  metav1.ConditionFalse,
-				Reason:  string(odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff),
-				Message: "Workload has pods in backoff state - not eligible for instrumentation",
-			})
-
-			// Set the AgentEnabled condition
-			meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-				Type:    odigosv1alpha1.AgentEnabledStatusConditionType,
-				Status:  metav1.ConditionFalse,
-				Reason:  string(odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff),
-				Message: "Workload has pods in backoff state before instrumentation - cannot instrument crashlooping workload",
-			})
-
-			return true, ctrl.Result{}, nil
-		}
-	}
-
 	if ic == nil {
 		// If ic is nil and the PodWorkload is missing the odigos.io/agents-meta-hash label,
 		// it means it is a rolled back application that shouldn't be rolled out again.
