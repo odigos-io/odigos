@@ -10,6 +10,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+const (
+	expectedIssuer  = "https://odigos.io"
+	expectedSubject = "https://odigos.io/onprem"
+)
+
 func parseTokenUnverified(tokenString string) (jwt.MapClaims, error) {
 	// NOTE: This intentionally does NOT verify the JWT signature.
 	// It is only suitable for checking token shape and non-cryptographic claims (like exp/iss/sub/aud).
@@ -47,12 +52,12 @@ func checkTokenAttributes(tokenString string) (string, error) {
 	}
 
 	iss, ok := claims["iss"].(string)
-	if !ok || iss != "https://odigos.io" {
+	if !ok || iss != expectedIssuer {
 		return "", fmt.Errorf("invalid iss")
 	}
 
 	sub, ok := claims["sub"].(string)
-	if !ok || sub != "https://odigos.io/onprem" {
+	if !ok || sub != expectedSubject {
 		return "", fmt.Errorf("invalid sub")
 	}
 
@@ -64,18 +69,18 @@ func checkTokenAttributes(tokenString string) (string, error) {
 	return aud, nil
 }
 
+// / This function validates the Odigos onprem token and checks claims and the expiration time
 func ValidateToken(onpremToken string) error {
 	if onpremToken == "" {
 		return fmt.Errorf("missing Odigos Pro token")
 	}
 
 	trimmedOnpremToken := strings.TrimSpace(onpremToken)
-	aud, err := checkTokenAttributes(trimmedOnpremToken)
+	_, err := checkTokenAttributes(trimmedOnpremToken)
 	if err != nil {
-		return fmt.Errorf("Failed to verify onprem token")
+		return fmt.Errorf("failed to verify onprem token: %w", err)
 	}
 
-	fmt.Println("Odigos onprem token verified", "audience", aud)
 	return nil
 }
 

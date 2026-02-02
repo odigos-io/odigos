@@ -424,7 +424,7 @@ func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bo
 	ns := env.GetCurrentNamespace()
 	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, ns, token)
 	if err != nil {
-		return false, fmt.Errorf("failed to update odigos token: %v", err)
+		return false, fmt.Errorf("failed to update odigos token: %w", err)
 	}
 	return true, nil
 }
