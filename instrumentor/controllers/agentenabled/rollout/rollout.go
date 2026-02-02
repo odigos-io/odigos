@@ -51,8 +51,6 @@ func WorkloadKey(pw k8sconsts.PodWorkload) string {
 //
 // Returns a RolloutResult and an error.
 func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.InstrumentationConfig, pw k8sconsts.PodWorkload, conf *common.OdigosConfiguration, distroProvider *distros.Provider, rolloutConcurrencyLimiter *RolloutConcurrencyLimiter) (RolloutResult, error) {
-	rolloutConcurrencyLimiter.ApplyConfig(conf)
-
 	isAutomaticRolloutDisabled, rollBackOptions, configErr := getRolloutAndRollbackOptions(conf)
 	if configErr != nil {
 		return RolloutResult{}, configErr
@@ -69,7 +67,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		if ic == nil {
 			return RolloutResult{}, nil
 		}
-		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionStaticPodsNotSupported)
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionStaticPodsNotSupported)
 		return RolloutResult{StatusChanged: changed}, nil
 	}
 
@@ -77,13 +75,13 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		if ic == nil {
 			return RolloutResult{}, nil
 		}
-		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionWaitingForJobTrigger)
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionWaitingForJobTrigger)
 		return RolloutResult{StatusChanged: changed}, nil
 	}
 
 	// Check if the distribution requires a rollout (only when ic is not nil)
 	if ic != nil && !isRolloutDistro(ic, distroProvider, conf) {
-		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionNotRequired)
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionRestartNotRequiredForDistro)
 		return RolloutResult{StatusChanged: changed}, nil
 	}
 
@@ -122,7 +120,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	if ic.Spec.PodManifestInjectionOptional {
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
-		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionNotRequired)
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionRestartNotRequiredForDistro)
 		return RolloutResult{StatusChanged: changed}, nil
 	}
 
@@ -131,7 +129,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// For example: if the workload has already been rolled out, we can set the status to true
 		// and signal that the process is considered completed.
 		// If manual rollout is required, we can mention this for better UX.
-		changed := meta.SetStatusCondition(&ic.Status.Conditions, ConditionRolloutDisabled)
+		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionRolloutDisabled)
 		return RolloutResult{StatusChanged: changed}, nil
 	}
 
@@ -140,17 +138,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	newRolloutHash := ic.Spec.AgentsMetaHash
 	if savedRolloutHash == newRolloutHash {
 		rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
-		if rolloutDone {
-			// Rollout is complete - release the slot if we had one
-			if rolloutConcurrencyLimiter.HasSlot(workloadKey) {
-				logger.V(3).Info("rollout complete, releasing slot", "workload", pw.Name, "namespace", pw.Namespace)
-				rolloutConcurrencyLimiter.Release(workloadKey)
-			}
-			statusChanged := meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(nil))
-			return RolloutResult{StatusChanged: statusChanged}, nil
-		}
 
-		if !rollBackOptions.IsRollbackDisabled {
+		if !rolloutDone && !rollBackOptions.IsRollbackDisabled {
 			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
 			if err != nil {
 				logger.Error(err, "Failed to check pod backoff status")
@@ -189,9 +178,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 				ic.Status.RollbackOccurred = true
 
 				// Release any existing slot before rollback (rollback doesn't use concurrency limiter)
-				if rolloutConcurrencyLimiter.HasSlot(workloadKey) {
-					rolloutConcurrencyLimiter.Release(workloadKey)
-				}
+				rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(workloadKey)
 
 				rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
 				if rolloutErr != nil {
@@ -219,13 +206,15 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		statusChanged := false
 		if rolloutDone {
 			statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(nil))
+			// Rollout is complete - release the slot if we had one
+			rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(workloadKey)
 		}
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{}}, nil
 	}
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false
 	if !utils.IsWorkloadRolloutDone(workloadObj) {
-		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, ConditionPreviousRolloutOngoing)
+		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionPreviousRolloutOngoing)
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 
@@ -235,7 +224,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			"workload", pw.Name,
 			"namespace", pw.Namespace,
 			"requeueAfter", RequeueWaitingForWorkloadRollout)
-		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, ConditionWaitingInQueue)
+		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionWaitingInQueue)
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 	logger.V(2).Info("proceeding with instrumentation rollout", "workload", pw.Name, "namespace", pw.Namespace)
@@ -293,7 +282,7 @@ func rolloutRestartWorkload(ctx context.Context, workloadObj client.Object, c cl
 
 func rolloutCondition(rolloutErr error) metav1.Condition {
 	if rolloutErr == nil {
-		return ConditionTriggeredSuccessfully
+		return conditionTriggeredSuccessfully
 	}
 	return NewConditionFailedToPatch(rolloutErr)
 }

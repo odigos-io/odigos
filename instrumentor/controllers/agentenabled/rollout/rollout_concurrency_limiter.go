@@ -10,14 +10,13 @@ import (
 )
 
 const (
-	DefaultConcurrentRollouts = 5
-	NoConcurrencyLimiting     = 0
+	NoConcurrencyLimiting = 0
 )
 
 type RolloutConcurrencyLimiter struct {
-	mutex              sync.Mutex
-	logger             logr.Logger
-	concurrentRollouts int
+	mutex                 sync.Mutex
+	logger                logr.Logger
+	maxConcurrentRollouts int
 	// set of workload keys currently rolling out - we use a map for fast lookup,
 	// and a struct{} for the value to avoid allocating memory for the value
 	inFlightRollouts map[string]struct{}
@@ -26,19 +25,15 @@ type RolloutConcurrencyLimiter struct {
 func NewRolloutConcurrencyLimiter() *RolloutConcurrencyLimiter {
 	logger := log.FromContext(context.Background()).WithName("RolloutConcurrencyLimiter")
 	return &RolloutConcurrencyLimiter{
-		logger:             logger,
-		concurrentRollouts: NoConcurrencyLimiting,
-		inFlightRollouts:   make(map[string]struct{}),
+		logger:                logger,
+		maxConcurrentRollouts: NoConcurrencyLimiting,
+		inFlightRollouts:      make(map[string]struct{}),
 	}
 }
 
 func (r *RolloutConcurrencyLimiter) ApplyConfig(conf *common.OdigosConfiguration) {
-	if conf != nil && conf.Rollout != nil && conf.Rollout.IsConcurrentRolloutsLimiterEnabled != nil && *conf.Rollout.IsConcurrentRolloutsLimiterEnabled {
-		if conf.Rollout.ConcurrentRollouts > 0 {
-			r.concurrentRollouts = conf.Rollout.ConcurrentRollouts
-		} else {
-			r.concurrentRollouts = DefaultConcurrentRollouts
-		}
+	if conf != nil && conf.Rollout != nil && conf.Rollout.MaxConcurrentRollouts > 0 {
+		r.maxConcurrentRollouts = conf.Rollout.MaxConcurrentRollouts
 	}
 }
 
@@ -52,7 +47,7 @@ func (r *RolloutConcurrencyLimiter) TryAcquire(workloadKey string) bool {
 	defer r.mutex.Unlock()
 
 	// No rate limiting configured
-	if r.concurrentRollouts == NoConcurrencyLimiting {
+	if r.maxConcurrentRollouts == NoConcurrencyLimiting {
 		return true
 	}
 
@@ -62,31 +57,18 @@ func (r *RolloutConcurrencyLimiter) TryAcquire(workloadKey string) bool {
 	}
 
 	// Check if under limit
-	if len(r.inFlightRollouts) < r.concurrentRollouts {
+	if len(r.inFlightRollouts) < r.maxConcurrentRollouts {
 		r.inFlightRollouts[workloadKey] = struct{}{}
-		r.logger.V(2).Info("Acquired rollout slot", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", r.concurrentRollouts)
+		r.logger.V(2).Info("Acquired rollout slot", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", r.maxConcurrentRollouts)
 		return true
 	}
 
-	r.logger.V(2).Info("Rollout slot denied - at capacity", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", r.concurrentRollouts)
+	r.logger.V(2).Info("Rollout slot denied - at capacity", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", r.maxConcurrentRollouts)
 	return false
 }
 
-// HasSlot returns true if the workload currently holds a slot
-func (r *RolloutConcurrencyLimiter) HasSlot(workloadKey string) bool {
-	if r == nil {
-		return false
-	}
-
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	_, exists := r.inFlightRollouts[workloadKey]
-	return exists
-}
-
 // Release releases the slot for a specific workload
-func (r *RolloutConcurrencyLimiter) Release(workloadKey string) {
+func (r *RolloutConcurrencyLimiter) ReleaseWorkloadRolloutSlot(workloadKey string) {
 	if r == nil {
 		return
 	}
@@ -95,7 +77,13 @@ func (r *RolloutConcurrencyLimiter) Release(workloadKey string) {
 	defer r.mutex.Unlock()
 
 	if _, exists := r.inFlightRollouts[workloadKey]; !exists {
-		// Not an error - workload may not have had a slot (e.g., no rate limiting)
+		if r.maxConcurrentRollouts == NoConcurrencyLimiting {
+			// Not an error - workload may not have had a slot (e.g., no rate limiting)
+			r.logger.V(2).Info("Workload does not have a slot - rate limiting is disabled", "workload", workloadKey)
+		} else {
+			// This should not happen, but we log it for debugging purposes
+			r.logger.V(2).Info("Workload does not have a slot - this should not happen, rate limiting is enabled", "workload", workloadKey)
+		}
 		return
 	}
 

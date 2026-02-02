@@ -292,11 +292,9 @@ func newRolloutConcurrencyLimiterNoLimit() *rollout.RolloutConcurrencyLimiter {
 // newRolloutConcurrencyLimiterWithLimit creates a rollout concurrency limiter with a specific concurrent rollout limit.
 // Use this for tests that need to verify rate limiting behavior.
 func newRolloutConcurrencyLimiterWithLimit(concurrentRollouts int) *rollout.RolloutConcurrencyLimiter {
-	enabled := true
 	conf := &common.OdigosConfiguration{
 		Rollout: &common.RolloutConfiguration{
-			IsConcurrentRolloutsLimiterEnabled: &enabled,
-			ConcurrentRollouts:                 concurrentRollouts,
+			MaxConcurrentRollouts: concurrentRollouts,
 		},
 	}
 	limiter := rollout.NewRolloutConcurrencyLimiter()

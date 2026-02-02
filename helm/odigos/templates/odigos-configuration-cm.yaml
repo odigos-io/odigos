@@ -192,9 +192,6 @@ data:
       {{- if .Values.rollout.automaticRolloutDisabled }}
       automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
       {{- end }}
-      {{- if .Values.rollout.isConcurrentRolloutsLimiterEnabled }}
-      isConcurrentRolloutsLimiterEnabled: {{ .Values.rollout.isConcurrentRolloutsLimiterEnabled }}
-      {{- end }}
       {{- if .Values.rollout.concurrentRollouts }}
       concurrentRollouts: {{ .Values.rollout.concurrentRollouts }}
       {{- end }}

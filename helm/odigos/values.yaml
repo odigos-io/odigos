@@ -961,11 +961,8 @@ autoRollback:
 # @schema
 rollout:
   automaticRolloutDisabled: false
-  # ConcurrentRollouts is the maximum number of concurrent rollouts allowed.
-  # The default of 5 is selected for a cluster of 200 workloads with an average of 5 minute rollout time.
-  # This means instrumentation of the entire cluster will take 3.33 hours.
-  isConcurrentRolloutsLimiterEnabled: false
-  concurrentRollouts: 5
+  # ConcurrentRollouts is the maximum number of concurrent rollouts allowed. 0 is unlimited, disabling the limit.
+  concurrentRollouts: 0
 
 # @schema
 # description: |-

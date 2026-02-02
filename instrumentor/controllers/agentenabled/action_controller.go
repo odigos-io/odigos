@@ -20,5 +20,5 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// is created, updated or deleted.
 	// When URLTemplatization actions change, we need to reconcile all workloads
 	// to ensure the correct instrumentation configuration is applied.
-	return reconcileAll(ctx, r.Client, r.DistrosProvider, r.RolloutConcurrencyLimiter)
+	return reconcileAll(ctx, r.Client, r.DistrosProvider)
 }

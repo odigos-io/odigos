@@ -7,8 +7,8 @@ import (
 
 // Predefined rollout condition states - these represent all discrete states for workload rollout
 var (
-	// ConditionNotRequired is used when the selected instrumentation distributions do not require application restart
-	ConditionNotRequired = metav1.Condition{
+	// conditionRestartNotRequiredForDistro is used when the selected instrumentation distributions do not require application restart
+	conditionRestartNotRequiredForDistro = metav1.Condition{
 		Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonNotRequired),
@@ -16,7 +16,7 @@ var (
 	}
 
 	// ConditionStaticPodsNotSupported is used when the workload is a static pod which doesn't support restart
-	ConditionStaticPodsNotSupported = metav1.Condition{
+	conditionStaticPodsNotSupported = metav1.Condition{
 		Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWorkloadNotSupporting),
@@ -24,7 +24,7 @@ var (
 	}
 
 	// ConditionWaitingForJobTrigger is used when waiting for a job/cronjob to trigger by itself
-	ConditionWaitingForJobTrigger = metav1.Condition{
+	conditionWaitingForJobTrigger = metav1.Condition{
 		Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWaitingForRestart),
@@ -32,7 +32,7 @@ var (
 	}
 
 	// ConditionRolloutDisabled is used when automatic rollout is disabled in odigos configuration
-	ConditionRolloutDisabled = metav1.Condition{
+	conditionRolloutDisabled = metav1.Condition{
 		Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonDisabled),
@@ -40,7 +40,7 @@ var (
 	}
 
 	// ConditionTriggeredSuccessfully is used when workload rollout was triggered successfully
-	ConditionTriggeredSuccessfully = metav1.Condition{
+	conditionTriggeredSuccessfully = metav1.Condition{
 		Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 		Status:  metav1.ConditionTrue,
 		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully),
@@ -48,7 +48,7 @@ var (
 	}
 
 	// ConditionPreviousRolloutOngoing is used when waiting for a previous rollout to finish
-	ConditionPreviousRolloutOngoing = metav1.Condition{
+	conditionPreviousRolloutOngoing = metav1.Condition{
 		Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 		Status:  metav1.ConditionUnknown,
 		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonPreviousRolloutOngoing),
@@ -80,7 +80,7 @@ func NewConditionTriggeredWithMessage(message string) metav1.Condition {
 
 // ConditionWaitingInQueue is used when the workload is waiting for other rollouts to complete
 // due to rate limiting of concurrent reconciliations
-var ConditionWaitingInQueue = metav1.Condition{
+var conditionWaitingInQueue = metav1.Condition{
 	Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
 	Status:  metav1.ConditionTrue,
 	Reason:  string(odigosv1alpha1.WorkloadRolloutReasonWaitingInQueue),
