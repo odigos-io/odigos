@@ -99,14 +99,10 @@ func prepareChartAndValues(settings *cli.EnvSettings, chartName string, embedded
 			return nil, nil, err
 		}
 	}
-	if strings.HasPrefix(HelmChart, k8sconsts.OdigosCentralHelmRepoName+"/") {
-		fmt.Println("Ensuring Odigos Central Helm repo")
-		if err := ensureHelmRepo(settings, k8sconsts.OdigosCentralHelmRepoName, k8sconsts.OdigosCentralHelmRepoURL); err != nil {
-			return nil, nil, err
-		}
-	}
+
 	if strings.Contains(HelmChart, "/") {
 		refreshHelmRepo(settings, HelmChart)
+		fmt.Println("Refreshed Helm repo", HelmChart)
 	}
 
 	chartPathOptions := action.ChartPathOptions{Version: version}
