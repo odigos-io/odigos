@@ -8,13 +8,12 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/kube/watchers"
 	"github.com/odigos-io/odigos/frontend/services/common"
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/tools/cache"
-	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
 type notification struct {
@@ -40,41 +39,89 @@ const (
 	source
 )
 
-type watchers struct {
+type watcherInterfaces struct {
 	nodeCollectors, clusterCollectors, destinations, sources watch.Interface
 }
 
 func runWatcher(ctx context.Context, cw *deleteWatcher) error {
-	nodeCollectorWatcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
-		return newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.CollectorsRoleNodeCollector)
-	}})
+	nodeCollectorLabelSelector := metav1.FormatLabelSelector(&metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleNodeCollector),
+		},
+	})
+	nodeCollectorWatcher, err := watchers.StartRetryWatcher(ctx, watchers.WatcherConfig[*corev1.PodList]{
+		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*corev1.PodList, error) {
+			return kube.DefaultClient.CoreV1().Pods(cw.odigosNS).List(ctx, opts)
+		},
+		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			return kube.DefaultClient.CoreV1().Pods(cw.odigosNS).Watch(ctx, opts)
+		},
+		GetResourceVersion: func(list *corev1.PodList) string {
+			return list.ResourceVersion
+		},
+		LabelSelector: nodeCollectorLabelSelector,
+		ResourceName:  "node collector pods",
+	})
 	if err != nil {
 		return err
 	}
 
-	clusterCollectorWatcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
-		return newCollectorWatcher(ctx, cw.odigosNS, k8sconsts.CollectorsRoleClusterGateway)
-	}})
+	clusterCollectorLabelSelector := metav1.FormatLabelSelector(&metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			k8sconsts.OdigosCollectorRoleLabel: string(k8sconsts.CollectorsRoleClusterGateway),
+		},
+	})
+	clusterCollectorWatcher, err := watchers.StartRetryWatcher(ctx, watchers.WatcherConfig[*corev1.PodList]{
+		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*corev1.PodList, error) {
+			return kube.DefaultClient.CoreV1().Pods(cw.odigosNS).List(ctx, opts)
+		},
+		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			return kube.DefaultClient.CoreV1().Pods(cw.odigosNS).Watch(ctx, opts)
+		},
+		GetResourceVersion: func(list *corev1.PodList) string {
+			return list.ResourceVersion
+		},
+		LabelSelector: clusterCollectorLabelSelector,
+		ResourceName:  "cluster collector pods",
+	})
 	if err != nil {
 		return err
 	}
 
-	sourcesWatcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
-		return kube.DefaultClient.OdigosClient.InstrumentationConfigs("").Watch(ctx, metav1.ListOptions{})
-	}})
+	sourcesWatcher, err := watchers.StartRetryWatcher(ctx, watchers.WatcherConfig[*v1alpha1.InstrumentationConfigList]{
+		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.InstrumentationConfigList, error) {
+			return kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, opts)
+		},
+		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			return kube.DefaultClient.OdigosClient.InstrumentationConfigs("").Watch(ctx, opts)
+		},
+		GetResourceVersion: func(list *v1alpha1.InstrumentationConfigList) string {
+			return list.ResourceVersion
+		},
+		ResourceName: "instrumentation configs",
+	})
 	if err != nil {
 		return err
 	}
 
-	destsWatcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
-		return kube.DefaultClient.OdigosClient.Destinations(cw.odigosNS).Watch(ctx, metav1.ListOptions{})
-	}})
+	destsWatcher, err := watchers.StartRetryWatcher(ctx, watchers.WatcherConfig[*v1alpha1.DestinationList]{
+		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.DestinationList, error) {
+			return kube.DefaultClient.OdigosClient.Destinations(cw.odigosNS).List(ctx, opts)
+		},
+		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			return kube.DefaultClient.OdigosClient.Destinations(cw.odigosNS).Watch(ctx, opts)
+		},
+		GetResourceVersion: func(list *v1alpha1.DestinationList) string {
+			return list.ResourceVersion
+		},
+		ResourceName: "destinations",
+	})
 	if err != nil {
 		return err
 	}
 
 	return runWatcherLoop(ctx,
-		watchers{
+		watcherInterfaces{
 			nodeCollectors:    nodeCollectorWatcher,
 			clusterCollectors: clusterCollectorWatcher,
 			destinations:      destsWatcher,
@@ -82,17 +129,7 @@ func runWatcher(ctx context.Context, cw *deleteWatcher) error {
 		}, cw.deleteNotifications)
 }
 
-func newCollectorWatcher(ctx context.Context, odigosNS string, collectorRole k8sconsts.CollectorRole) (watch.Interface, error) {
-	return kube.DefaultClient.CoreV1().Pods(odigosNS).Watch(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				k8sconsts.OdigosCollectorRoleLabel: string(collectorRole),
-			},
-		}),
-	})
-}
-
-func runWatcherLoop(ctx context.Context, w watchers, notifyChan chan<- notification) error {
+func runWatcherLoop(ctx context.Context, w watcherInterfaces, notifyChan chan<- notification) error {
 	nch := w.nodeCollectors.ResultChan()
 	cch := w.clusterCollectors.ResultChan()
 	dch := w.destinations.ResultChan()
