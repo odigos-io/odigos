@@ -46,6 +46,13 @@ spec:
             - name: MAX_MESSAGE_SIZE
               value: {{ .Values.centralBackend.maxMessageSize | quote }}
             {{- end }}
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: central-backend
+                  resource: limits.cpu
+            - name: GOMEMLIMIT
+              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.centralBackend.resources) }}
           ports:
             - containerPort: 8081
               name: http

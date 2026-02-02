@@ -28,6 +28,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: central-ui
+                  resource: limits.cpu
+            - name: GOMEMLIMIT
+              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.centralUI.resources) }}
           resources:
             requests:
               cpu: {{ .Values.centralUI.resources.requests.cpu }}

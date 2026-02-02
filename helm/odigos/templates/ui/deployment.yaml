@@ -49,6 +49,11 @@ spec:
           - --namespace=$(CURRENT_NS)
           - --address=0.0.0.0
         env:
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                containerName: ui
+                resource: limits.cpu
           - name: CURRENT_NS
             valueFrom:
               fieldRef:

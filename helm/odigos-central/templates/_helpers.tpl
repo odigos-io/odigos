@@ -36,3 +36,29 @@ imagePullSecrets:
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+  Calculate GOMEMLIMIT from Kubernetes resource limits.
+  Takes 80% of the memory limit to leave headroom for non-heap memory.
+*/}}
+{{- define "odigos.gomemlimitFromResources" -}}
+{{- $resources := .Resources | default dict -}}
+{{- $limits := get $resources "limits" -}}
+{{- $requests := get $resources "requests" -}}
+
+{{- $raw := (get $limits "memory") | default (get $requests "memory") -}}
+{{- $number := regexFind "^[0-9]+" $raw -}}
+{{- $unit := regexFind "[a-zA-Z]+$" $raw -}}
+
+{{- if and $number $unit }}
+  {{- $num := int $number -}}
+  {{- $val := div (mul $num 80) 100 -}}
+  {{- /*
+     GOMEMLIMIT requires units like "MiB" or "GiB", whereas Kubernetes uses "Mi" or "Gi".
+     To ensure Go runtime parses the value correctly, we must always append "B" to the unit.
+*/ -}}
+  {{- printf "%d%sB" $val $unit -}}
+{{- else }}
+   {{- fail (printf "Invalid memory limit format for GOMEMLIMIT: %q" $raw) -}}
+{{- end }}
+{{- end }}
