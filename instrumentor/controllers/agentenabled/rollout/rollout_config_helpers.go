@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/distros"
-	"github.com/odigos-io/odigos/distros/distro"
 )
 
 type RollBackOptions struct {
@@ -50,19 +47,4 @@ func getRolloutAndRollbackOptions(conf *common.OdigosConfiguration) (isAutomatic
 		RollbackStabilityWindow: rollbackStabilityWindow,
 	}
 	return isAutomaticRolloutDisabled, rollBackOptions, nil
-}
-
-// isRolloutDistro checks if at least one of the distributions used by this workload requires a rollout.
-func isRolloutDistro(ic *odigosv1alpha1.InstrumentationConfig, distroProvider *distros.Provider, conf *common.OdigosConfiguration) bool {
-	hasDistributionThatRequiresRollout := false
-	for _, containerConfig := range ic.Spec.Containers {
-		d := distroProvider.GetDistroByName(containerConfig.OtelDistroName)
-		if d == nil {
-			continue
-		}
-		if distro.IsRestartRequired(d, conf) {
-			hasDistributionThatRequiresRollout = true
-		}
-	}
-	return hasDistributionThatRequiresRollout
 }

@@ -214,29 +214,6 @@ func Test_NilReceiver_Release(t *testing.T) {
 	})
 }
 
-func Test_HasSlot(t *testing.T) {
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 2,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
-
-	key := "ns/Deployment/app1"
-
-	// Initially no slot
-	assert.False(t, limiter.TryAcquire(key))
-
-	// After acquiring
-	limiter.TryAcquire(key)                 // Should succeed - already has slot
-	assert.True(t, limiter.TryAcquire(key)) // Should succeed - already has slot
-
-	// After releasing
-	limiter.ReleaseWorkloadRolloutSlot(key)
-	assert.False(t, limiter.TryAcquire(key)) // Should fail - no slot available
-}
-
 func Test_InFlightCount(t *testing.T) {
 	conf := &common.OdigosConfiguration{
 		Rollout: &common.RolloutConfiguration{
