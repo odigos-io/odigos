@@ -16,7 +16,7 @@ import (
 
 func UpdateOdigosToken(ctx context.Context, client kubernetes.Interface, namespace string, onPremToken string) error {
 	if _, err := odigosauth.ValidateToken(onPremToken); err != nil {
-		return fmt.Errorf("failed to assert enterprise odigos token: %w", err)
+		return err
 	}
 	if err := updateSecretToken(ctx, client, namespace, onPremToken); err != nil {
 		return fmt.Errorf("failed to update secret token: %w", err)

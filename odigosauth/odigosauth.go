@@ -74,11 +74,11 @@ func ValidateToken(onpremToken string) (map[string]interface{}, error) {
 	trimmedOnpremToken := strings.TrimSpace(onpremToken)
 	tokenPayload, err := extractJWTPayload(trimmedOnpremToken)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract JWT payload: %w", err)
+		return nil, err
 	}
 	_, err = checkTokenAttributes(tokenPayload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to verify onprem token: %w", err)
+		return nil, err
 	}
 
 	return tokenPayload, nil
@@ -93,7 +93,7 @@ func extractJWTPayload(token string) (map[string]interface{}, error) {
 	// Decode the payload (second part of the JWT)
 	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode JWT payload: %w", err)
+		return nil, fmt.Errorf("failed to decode JWT payload")
 	}
 
 	// Parse the payload as JSON
