@@ -159,7 +159,7 @@ func (l *Loaders) loadWorkloadPods(ctx context.Context) error {
 		}
 	}
 
-	workloadPods, err := fetchWorkloadPods(ctx, l.logger, l.workloadFilter, singleWorkloadManifest, l.workloadIdsMap)
+	workloadPods, err := fetchWorkloadPods(ctx, l.logger, l.workloadFilter, singleWorkloadManifest, l.workloadIdsMap, l.k8sCacheClient)
 	if err != nil {
 		return err
 	}
