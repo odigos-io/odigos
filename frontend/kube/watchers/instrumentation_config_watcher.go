@@ -13,8 +13,6 @@ import (
 	commonutils "github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/tools/cache"
-	toolsWatch "k8s.io/client-go/tools/watch"
 )
 
 var instrumentationConfigAddedEventBatcher *EventBatcher
@@ -68,11 +66,20 @@ func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) er
 		},
 	)
 
-	watcher, err := toolsWatch.NewRetryWatcher("1", &cache.ListWatch{WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
-		return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(ctx, metav1.ListOptions{})
-	}})
+	watcher, err := StartRetryWatcher(ctx, WatcherConfig[*v1alpha1.InstrumentationConfigList]{
+		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.InstrumentationConfigList, error) {
+			return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).List(ctx, opts)
+		},
+		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(ctx, opts)
+		},
+		GetResourceVersion: func(list *v1alpha1.InstrumentationConfigList) string {
+			return list.ResourceVersion
+		},
+		ResourceName: "instrumentation configs",
+	})
 	if err != nil {
-		return fmt.Errorf("failed to create instrumentation config watcher: %w", err)
+		return err
 	}
 
 	go handleInstrumentationConfigWatchEvents(ctx, watcher)

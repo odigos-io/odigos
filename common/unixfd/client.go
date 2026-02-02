@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"slices"
 	"time"
 
 	"go.uber.org/zap"
@@ -56,64 +57,105 @@ func ConnectAndListen(ctx context.Context, socketPath string, requestType string
 	}
 }
 
-// connectAndGetFD makes a single connection, gets FD, and closes connection
+// connectAndGetFD makes a single connection, gets one FD, and closes the connection.
 func connectAndGetFD(ctx context.Context, socketPath string, requestType string) (int, error) {
+	fds, err := connectAndGetFDs(ctx, socketPath, requestType)
+	if err != nil {
+		return -1, err
+	}
+	if len(fds) != 1 {
+		return -1, fmt.Errorf("expected 1 fd, got %d", len(fds))
+	}
+	return fds[0], nil
+}
+
+// ConnectAndListenMulti is like ConnectAndListen but receives multiple file descriptors
+// in a single message. The onFDs callback is invoked only when the set of FDs changes.
+func ConnectAndListenMulti(ctx context.Context, socketPath string, requestType string, logger *zap.Logger, onFDs func(fds []int)) error {
+	var lastFDs []int
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		fds, err := connectAndGetFDs(ctx, socketPath, requestType)
+		if err != nil {
+			sleepTime := 2 * time.Second
+			logger.Info("Waiting for odiglet unix socket to be ready to receive FDs", zap.Error(err), zap.Duration("sleepTime", sleepTime))
+			time.Sleep(sleepTime)
+			continue
+		}
+
+		if !slices.Equal(fds, lastFDs) {
+			lastFDs = fds
+			onFDs(fds)
+		}
+
+		if err := waitForSocketChange(ctx, socketPath); err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			lastFDs = nil
+			continue
+		}
+	}
+}
+
+// connectAndGetFDs makes a single connection, gets multiple FDs, and closes connection
+func connectAndGetFDs(ctx context.Context, socketPath string, requestType string) ([]int, error) {
 	var d net.Dialer
 	conn, err := d.DialContext(ctx, "unix", socketPath)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 	defer func() {
 		_ = conn.Close()
 	}()
 
-	// Request the FD
 	if _, err := conn.Write([]byte(requestType)); err != nil {
-		return -1, err
+		return nil, err
 	}
 
-	// Receive the FD
-	return recvFD(conn.(*net.UnixConn))
+	return recvFDs(conn.(*net.UnixConn))
 }
 
-// recvFD reads a file descriptor from the connection
-func recvFD(c *net.UnixConn) (int, error) {
+// recvFDs reads multiple file descriptors from the connection
+func recvFDs(c *net.UnixConn) ([]int, error) {
 	buf := make([]byte, 16)
-	oob := make([]byte, unix.CmsgSpace(4))
+	oob := make([]byte, unix.CmsgSpace(4*8)) // space for up to 8 FDs
 
-	n, oobn, flags, addr, err := c.ReadMsgUnix(buf, oob)
-	// We only need oobn from this call, ignore for linter
-	_ = flags
-	_ = addr
+	n, oobn, _, _, err := c.ReadMsgUnix(buf, oob)
 	if err != nil {
-		return -1, fmt.Errorf("readmsg: %w", err)
+		return nil, fmt.Errorf("readmsg: %w", err)
 	}
 
-	// Validate the server response (defensive programming)
 	if n > 0 {
 		response := string(buf[:n])
 		if response != RespOK {
-			return -1, fmt.Errorf("unexpected server response: %q, expected %q", response, RespOK)
+			return nil, fmt.Errorf("unexpected server response: %q, expected %q", response, RespOK)
 		}
 	}
 
 	msgs, err := unix.ParseSocketControlMessage(oob[:oobn])
 	if err != nil {
-		return -1, fmt.Errorf("parse scm: %w", err)
+		return nil, fmt.Errorf("parse scm: %w", err)
 	}
 	if len(msgs) != 1 {
-		return -1, fmt.Errorf("expected 1 control message, got %d", len(msgs))
+		return nil, fmt.Errorf("expected 1 control message, got %d", len(msgs))
 	}
 
 	fds, err := unix.ParseUnixRights(&msgs[0])
 	if err != nil {
-		return -1, fmt.Errorf("parse rights: %w", err)
+		return nil, fmt.Errorf("parse rights: %w", err)
 	}
-	if len(fds) != 1 {
-		return -1, fmt.Errorf("no fd received")
+	if len(fds) == 0 {
+		return nil, fmt.Errorf("no fds received")
 	}
 
-	return fds[0], nil
+	return fds, nil
 }
 
 // waitForSocketChange monitors the socket file and returns when it changes or disappears
