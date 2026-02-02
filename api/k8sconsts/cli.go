@@ -20,6 +20,5 @@ const (
 	OdigosHelmRepoURL         = "https://odigos-io.github.io/odigos/"
 	DefaultCentralHelmChart   = "odigos/odigos-central"
 	OdigosCentralHelmRepoName = "odigos-central"
-	OdigosCentralHelmRepoURL  = "https://odigos-io.github.io/odigos-central/"
 	DefaultCentralReleaseName = "odigos-central"
 )
