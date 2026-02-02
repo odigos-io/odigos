@@ -267,19 +267,8 @@ func runCentralHelmUninstall() error {
 func runCentralInstallOrUpgrade() error {
 
 	helm.HelmNamespace = proNamespaceFlag
-	if helm.HelmNamespace == "" {
-		helm.HelmNamespace = consts.DefaultOdigosCentralNamespace
-	}
-
 	helm.HelmReleaseName = centralHelmReleaseName
-	if helm.HelmReleaseName == "" {
-		helm.HelmReleaseName = k8sconsts.DefaultCentralReleaseName
-	}
-
 	helm.HelmChart = centralHelmChart
-	if helm.HelmChart == "" {
-		helm.HelmChart = k8sconsts.DefaultCentralHelmChart
-	}
 	helm.HelmValuesFile = centralHelmValuesFile
 	helm.HelmSetArgs = centralHelmSetArgs
 	helm.HelmChartVersion = versionFlag
