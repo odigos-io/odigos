@@ -1,13 +1,10 @@
 package csi
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
-	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -66,13 +63,15 @@ func (s *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublish
 	}
 
 	// Check if already mounted (idempotency)
-	if isMounted, err := isPathMounted(targetPath); err != nil {
+	// We check in the HOST's mount namespace since that's where kubelet looks
+	if isMounted, err := isPathMountedInHostNS(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to check if path is mounted: %v", err))
 	} else if isMounted {
 		podUID := extractPodUIDFromPath(targetPath)
 		slog.Info("Volume already mounted (idempotent)", "volumeId", volumeId, "podUID", podUID)
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
+
 	// The device plugin returns a Mount configuration that kubelet applies.
 	// Here we directly apply that same mount operation.
 	//
@@ -81,29 +80,21 @@ func (s *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublish
 	//   HostPath:      OdigosAgentsDir,  // "/var/odigos"
 	//   ReadOnly:      true,
 	//
+	// We perform the mount in the HOST's mount namespace using setns().
+	// This allows kubelet to see the mount without requiring:
+	//   - privileged: true
+	//   - mountPropagation: Bidirectional
+	// Instead, we only need CAP_SYS_ADMIN capability.
 
-	// CSI equivalent: bind mount from OdigosAgentsDir to targetPath
 	sourcePath := k8sconsts.OdigosAgentsDirectory
 
-	// Create target directory if it doesn't exist
-	if err := os.MkdirAll(targetPath, 0755); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to create target directory: %v", err))
-	}
-
-	// Perform the bind mount (same as what kubelet would do with the device plugin Mount)
-	if err := syscall.Mount(sourcePath, targetPath, "", syscall.MS_BIND, ""); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount %s to %s: %v", sourcePath, targetPath, err))
-	}
-
-	// Make it read-only (same as device plugin ReadOnly: true)
-	if err := syscall.Mount("", targetPath, "", syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_RDONLY, ""); err != nil {
-		// Try to unmount if making read-only fails
-		syscall.Unmount(targetPath, 0)
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to make mount read-only: %v", err))
+	// Perform read-only bind mount in host namespace
+	if err := mountBindInHostNS(sourcePath, targetPath); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount volume: %v", err))
 	}
 
 	podUID := extractPodUIDFromPath(targetPath)
-	slog.Info("Successfully mounted volume", "volumeId", req.GetVolumeId(), "podUID", podUID, "sourcePath", sourcePath)
+	slog.Info("Successfully mounted volume in host namespace", "volumeId", req.GetVolumeId(), "podUID", podUID, "sourcePath", sourcePath)
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -120,23 +111,31 @@ func (s *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpub
 	}
 
 	targetPath := req.GetTargetPath()
+	podUID := extractPodUIDFromPath(targetPath)
 
-	// Check if mounted
-	if isMounted, err := isPathMounted(targetPath); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to check if path is mounted: %v", err))
-	} else if !isMounted {
-		podUID := extractPodUIDFromPath(targetPath)
+	// Check if mounted in host namespace (where kubelet looks)
+	isMounted, err := isPathMountedInHostNS(targetPath)
+	if err != nil {
+		// Log but continue - we'll try to unmount anyway
+		slog.Warn("Failed to check mount status, will try unmount anyway", "error", err, "podUID", podUID)
+	}
+
+	if !isMounted {
+		// Even if not mounted, try to unmount anyway to handle stale/orphan mounts
+		// that might not show up in /proc/mounts but still block pod termination
+		if err := tryUnmountInHostNS(targetPath); err != nil {
+			slog.Debug("Unmount attempt on non-mounted path", "targetPath", targetPath, "result", err)
+		}
 		slog.Info("Volume not mounted (idempotent)", "volumeId", req.GetVolumeId(), "podUID", podUID)
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	// Unmount
-	if err := syscall.Unmount(targetPath, 0); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount %s: %v", targetPath, err))
+	// Unmount in host namespace
+	if err := unmountInHostNS(targetPath); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount: %v", err))
 	}
 
-	podUID := extractPodUIDFromPath(targetPath)
-	slog.Info("Successfully unmounted volume", "volumeId", req.GetVolumeId(), "podUID", podUID)
+	slog.Info("Successfully unmounted volume from host namespace", "volumeId", req.GetVolumeId(), "podUID", podUID)
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
@@ -172,33 +171,4 @@ func (s *NodeServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoReques
 	return &csi.NodeGetInfoResponse{
 		NodeId: nodeID,
 	}, nil
-}
-
-// Helper function to check if a path is mounted
-func isPathMounted(targetPath string) (bool, error) {
-	// Check if target path exists
-	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
-		return false, nil
-	}
-
-	// Read /proc/mounts to check if the path is mounted
-	file, err := os.Open(k8sconsts.ProcMountsPath)
-	if err != nil {
-		return false, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		fields := strings.Fields(line)
-		if len(fields) >= 2 {
-			mountPoint := fields[1]
-			if mountPoint == targetPath {
-				return true, nil
-			}
-		}
-	}
-
-	return false, scanner.Err()
 }

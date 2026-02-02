@@ -136,6 +136,15 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 # Note that we do not pass --platform=$BUILDPLATFORM here because we want to have the base image for all target architecture - each contains the corresponding rsync binary for the target arch.
 FROM ${ODIGLET_BASE_IMAGE} AS rsync-base
 
+######### nsenter provider #########
+# Get nsenter and its dependencies from debian (glibc-based, compatible with distroless/base and RHEL)
+# Required for CSI driver to perform mount operations in host namespace without privileged mode
+FROM debian:bookworm-slim AS nsenter-provider
+RUN apt-get update && apt-get install -y --no-install-recommends util-linux && rm -rf /var/lib/apt/lists/*
+# Find and copy all required shared libraries for nsenter
+RUN mkdir -p /nsenter-libs && \
+    ldd /usr/bin/nsenter | grep "=>" | awk '{print $3}' | xargs -I {} cp -L {} /nsenter-libs/ 2>/dev/null || true
+
 ######### agents final image #########
 # Use BusyBox for the final image instead of distroless.
 # Rationale:
@@ -194,6 +203,9 @@ COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugi
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
+# Copy nsenter and its required libraries for CSI driver namespace operations
+COPY --from=nsenter-provider /usr/bin/nsenter /usr/bin/nsenter
+COPY --from=nsenter-provider /nsenter-libs/* /lib/
 WORKDIR /instrumentations/
 COPY --from=agents-builder /instrumentations/ .
 CMD ["/root/odiglet"]
@@ -206,6 +218,9 @@ COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigo
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
+# Copy nsenter and its required libraries for CSI driver namespace operations
+COPY --from=nsenter-provider /usr/bin/nsenter /usr/bin/nsenter
+COPY --from=nsenter-provider /nsenter-libs/* /lib/
 WORKDIR /instrumentations/
 COPY --from=agents-builder /instrumentations/ .
 CMD ["/root/odiglet"]

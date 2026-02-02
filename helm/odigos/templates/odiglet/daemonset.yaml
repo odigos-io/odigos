@@ -402,10 +402,8 @@ spec:
                 - -rpc-timeout=10s
 {{- toYaml .Values.odiglet.deviceplugin.readinessProbe | nindent 12 }}
 {{- end }}
-# CSI driver is only supported in privileged mode
-{{- if and (eq .Values.instrumentor.mountMethod "k8s-csi-driver") .Values.odiglet.unPrivileged }}
-{{ fail "CSI driver mount method requires privileged mode, this is not supported in unprivileged mode" }}
-{{- end }}
+# CSI driver now works without privileged mode using setns() to mount in host namespace
+# It only requires CAP_SYS_ADMIN capability instead of full privileged access
 {{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
         - name: csi-driver
           {{- if include "odigos.secretExists" . }}
@@ -417,7 +415,23 @@ spec:
             - /root/odigos-csi-driver
           imagePullPolicy: IfNotPresent
           securityContext:
-            privileged: true
+            # CSI driver uses nsenter to execute mount/umount commands in the host's
+            # mount namespace, avoiding the need for privileged mode or Bidirectional
+            # mount propagation. nsenter requires these capabilities:
+            # - CAP_SYS_ADMIN: for mount/umount syscalls and setns() (called by nsenter)
+            # - CAP_SYS_CHROOT: required by nsenter for entering mount namespaces
+            # - CAP_SYS_PTRACE: to access /proc/1/ns/mnt (host's mount namespace)
+            # - seccompProfile Unconfined: nsenter calls setns() which is blocked by default seccomp
+            privileged: false
+            capabilities:
+              add:
+                - SYS_ADMIN
+                - SYS_CHROOT
+                - SYS_PTRACE
+              drop:
+                - ALL
+            seccompProfile:
+              type: Unconfined
           env:
             - name: NODE_NAME
               valueFrom:
@@ -428,12 +442,15 @@ spec:
               mountPath: /csi
             - name: kubelet-dir
               mountPath: /var/lib/kubelet
-              mountPropagation: Bidirectional
+              # HostToContainer allows CSI to see kubelet-created directories.
+              # Bidirectional is NOT needed because we mount directly in host namespace via setns().
+              mountPropagation: HostToContainer
             - name: registration-dir
               mountPath: /registration
             {{- if not .Values.odiglet.noHostPathMounts }}
             - name: odigos
               mountPath: /var/odigos
+              readOnly: true
             {{- end }}
           resources:
 {{- toYaml .Values.odiglet.csidriver.resources | nindent 12 }}
