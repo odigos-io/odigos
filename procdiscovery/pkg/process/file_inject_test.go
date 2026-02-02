@@ -65,7 +65,7 @@ func TestInjectToProcessTempDir(t *testing.T) {
 			pid := cmd.Process.Pid
 
 			// Execute the function
-			err := InjectToProcessTempDir(pid, sourcePath)
+			err := InjectFileToProcessTempDir(pid, sourcePath)
 
 			// Check error expectations
 			if tt.wantErr {
@@ -139,7 +139,7 @@ func TestInjectToProcessTempDir_WithTargetProcess(t *testing.T) {
 	time.Sleep(300 * time.Millisecond)
 
 	t.Logf("Injecting file to process %d", pid)
-	if err := InjectToProcessTempDir(pid, sourcePath); err != nil {
+	if err := InjectFileToProcessTempDir(pid, sourcePath); err != nil {
 		t.Fatalf("InjectToProcessTempDir failed: %v", err)
 	}
 
@@ -167,6 +167,153 @@ func TestInjectToProcessTempDir_WithTargetProcess(t *testing.T) {
 	}
 }
 
+func TestInjectDirToProcessTempDir(t *testing.T) {
+	sourceDir := setupTestDirectory(t)
+	pid := startTestProcess(t)
+
+	if err := InjectDirToProcessTempDir(pid, sourceDir); err != nil {
+		t.Fatalf("InjectDirToProcessTempDir failed: %v", err)
+	}
+
+	verifyDirectoryCopied(t, pid, sourceDir)
+}
+
+func setupTestDirectory(t *testing.T) string {
+	t.Helper()
+
+	tmpDir := t.TempDir()
+	sourceDir := filepath.Join(tmpDir, "test-dir")
+
+	structure := map[string]fileSpec{
+		"file1.txt":               {content: "content of file1", perm: 0o644},
+		"subdir/file2.txt":        {content: "content of file2", perm: 0o600},
+		"subdir/nested/file3.txt": {content: "content of file3", perm: 0o644},
+	}
+
+	if err := os.Mkdir(sourceDir, 0o755); err != nil {
+		t.Fatalf("failed to create source dir: %v", err)
+	}
+
+	for path, spec := range structure {
+		fullPath := filepath.Join(sourceDir, path)
+
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatalf("failed to create directory %s: %v", dir, err)
+		}
+
+		if err := os.WriteFile(fullPath, []byte(spec.content), spec.perm); err != nil {
+			t.Fatalf("failed to create file %s: %v", path, err)
+		}
+	}
+
+	return sourceDir
+}
+
+func startTestProcess(t *testing.T) int {
+	t.Helper()
+
+	cmd := exec.Command("sleep", "10")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start test process: %v", err)
+	}
+	t.Cleanup(func() { cmd.Process.Kill() })
+
+	return cmd.Process.Pid
+}
+
+func verifyDirectoryCopied(t *testing.T, pid int, sourceDir string) {
+	t.Helper()
+
+	procTmpDir := filepath.Join("/proc", fmt.Sprintf("%d", pid), "root", os.TempDir())
+	destDir := filepath.Join(procTmpDir, filepath.Base(sourceDir))
+
+	checks := []struct {
+		path        string
+		isDir       bool
+		content     string
+		permissions os.FileMode
+	}{
+		{path: ".", isDir: true},
+		{path: "file1.txt", content: "content of file1", permissions: 0o644},
+		{path: "subdir", isDir: true},
+		{path: "subdir/file2.txt", content: "content of file2", permissions: 0o600},
+		{path: "subdir/nested", isDir: true},
+		{path: "subdir/nested/file3.txt", content: "content of file3", permissions: 0o644},
+	}
+
+	for _, check := range checks {
+		fullPath := filepath.Join(destDir, check.path)
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			t.Errorf("path %s: not found: %v", check.path, err)
+			continue
+		}
+
+		if check.isDir {
+			if !info.IsDir() {
+				t.Errorf("path %s: expected directory, got file", check.path)
+			}
+		} else {
+			if info.IsDir() {
+				t.Errorf("path %s: expected file, got directory", check.path)
+				continue
+			}
+
+			content, err := os.ReadFile(fullPath)
+			if err != nil {
+				t.Errorf("path %s: failed to read: %v", check.path, err)
+				continue
+			}
+
+			if string(content) != check.content {
+				t.Errorf("path %s: content mismatch: got %q, want %q",
+					check.path, content, check.content)
+			}
+
+			if info.Mode().Perm() != check.permissions {
+				t.Errorf("path %s: permission mismatch: got %o, want %o",
+					check.path, info.Mode().Perm(), check.permissions)
+			}
+		}
+	}
+}
+
+type fileSpec struct {
+	content string
+	perm    os.FileMode
+}
+
+func TestInjectDirToProcessTempDir_SourceNotDirectory(t *testing.T) {
+	tmpDir := t.TempDir()
+	sourceFile := filepath.Join(tmpDir, "not-a-dir.txt")
+	if err := os.WriteFile(sourceFile, []byte("test"), 0o644); err != nil {
+		t.Fatalf("failed to create test file: %v", err)
+	}
+
+	pid := startTestProcess(t)
+
+	err := InjectDirToProcessTempDir(pid, sourceFile)
+	if err == nil {
+		t.Error("expected error for non-directory source, got nil")
+	}
+	if !strings.Contains(err.Error(), "not a directory") {
+		t.Errorf("expected 'not a directory' error, got: %v", err)
+	}
+}
+
+func TestInjectDirToProcessTempDir_SourceNotExist(t *testing.T) {
+	pid := startTestProcess(t)
+
+	err := InjectDirToProcessTempDir(pid, "/non/existent/directory")
+	if err == nil {
+		t.Error("expected error for non-existent source, got nil")
+	}
+	if !strings.Contains(err.Error(), "failed to stat source directory") {
+		t.Errorf("expected stat error, got: %v", err)
+	}
+}
+
 func BenchmarkInjectToProcessTempDir(b *testing.B) {
 	benchmarks := []struct {
 		name string
@@ -181,13 +328,13 @@ func BenchmarkInjectToProcessTempDir(b *testing.B) {
 		b.Run(bm.name, func(b *testing.B) {
 			tmpDir := b.TempDir()
 			sourcePath := filepath.Join(tmpDir, "test-file.bin")
-			
+
 			// Generate data of the specified size
 			data := make([]byte, bm.size)
 			for i := range data {
 				data[i] = byte(i % 256)
 			}
-			
+
 			if err := os.WriteFile(sourcePath, data, 0o644); err != nil {
 				b.Fatalf("failed to create test file: %v", err)
 			}
@@ -216,7 +363,7 @@ func BenchmarkInjectToProcessTempDir(b *testing.B) {
 					b.StartTimer()
 				}
 
-				if err := InjectToProcessTempDir(pid, sourcePath); err != nil {
+				if err := InjectFileToProcessTempDir(pid, sourcePath); err != nil {
 					b.Fatalf("InjectToProcessTempDir failed: %v", err)
 				}
 			}
