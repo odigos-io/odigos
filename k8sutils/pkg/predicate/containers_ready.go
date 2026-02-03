@@ -26,9 +26,10 @@ func (p *AllContainersReadyPredicate) Create(e event.CreateEvent) bool {
 	}
 
 	allContainersReady := k8scontainer.AllContainersReady(pod)
+	isDeleting := pod.DeletionTimestamp != nil && !pod.DeletionTimestamp.IsZero()
 	// If all containers are not ready, return false.
 	// Otherwise, return true
-	return allContainersReady
+	return allContainersReady && !isDeleting
 }
 
 func (p *AllContainersReadyPredicate) Update(e event.UpdateEvent) bool {
@@ -45,9 +46,10 @@ func (p *AllContainersReadyPredicate) Update(e event.UpdateEvent) bool {
 
 	// First check if all containers in newPod are ready and started
 	allNewContainersReady := k8scontainer.AllContainersReady(newPod)
+	isDeleting := newPod.DeletionTimestamp != nil && !newPod.DeletionTimestamp.IsZero()
 
 	// If new containers aren't all ready, return false
-	if !allNewContainersReady {
+	if !allNewContainersReady || isDeleting {
 		return false
 	}
 
