@@ -17,8 +17,8 @@ require (
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/odigosauth v0.0.0
 	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44
-	github.com/prometheus/client_golang v1.22.0
-	github.com/prometheus/common v0.65.0
+	github.com/prometheus/client_golang v1.23.2
+	github.com/prometheus/common v0.67.1
 	github.com/stretchr/testify v1.11.1
 	github.com/vektah/gqlparser/v2 v2.5.27
 	go.opentelemetry.io/collector/component v1.47.0
