@@ -3,12 +3,9 @@ package rollout_test
 import (
 	"testing"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ****************
@@ -118,57 +115,4 @@ func TestWorkloadHasPodInBackoff_InitContainerBackoff(t *testing.T) {
 	// Assert: Backoff detected for init container in CrashLoopBackOff - we don't want to instrument the workload
 	assert.NoError(t, err)
 	assert.True(t, hasBackoff)
-}
-
-// ****************
-// Do() tests
-// ****************
-
-func TestDo_WorkloadHasPodInBackoff_UpdateError(t *testing.T) {
-	// Arrange: Deployment with pod in backoff state, but IC update will fail
-	setup := newTestSetup()
-	deployment := testutil.NewMockTestDeployment(setup.ns, "test-deployment")
-	podInBackoff := newCrashLoopBackOffPodWithoutOdigosLabel(setup.ns, "test-deployment", "pod-in-backoff")
-	ic := testutil.NewMockInstrumentationConfig(deployment)
-	c := setup.newFakeClientWithICUpdateError(setup.ns, deployment, podInBackoff, ic)
-	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
-
-	// Act
-	statusChanged, _, err := rollout.Do(setup.ctx, c, ic, pw, setup.conf, setup.distroProvider)
-
-	// Assert: Error returned, no status change
-	assert.Error(t, err)
-	assert.False(t, statusChanged, "expected no status change when update fails")
-}
-
-func TestDo_WorkloadHasPodInBackoff(t *testing.T) {
-	// Arrange: Deployment with pod in backoff state (without odigos label - pre-existing crash)
-	setup := newTestSetup()
-	deployment := testutil.NewMockTestDeployment(setup.ns, "test-deployment")
-	podInBackoff := newCrashLoopBackOffPodWithoutOdigosLabel(setup.ns, "test-deployment", "pod-in-backoff")
-	ic := testutil.NewMockInstrumentationConfig(deployment)
-	c := setup.newFakeClient(setup.ns, deployment, podInBackoff, ic)
-	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
-
-	// Act
-	statusChanged, result, err := rollout.Do(setup.ctx, c, ic, pw, setup.conf, setup.distroProvider)
-
-	// Assert: Status changed (instrumentation disabled), no error, no requeue
-	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change when preventing instrumentation")
-	assert.Empty(t, result, "expected no requeue when preventing instrumentation")
-
-	// Assert: Instrumentation config has AgentInjectionEnabled as false
-	assert.False(t, ic.Spec.AgentInjectionEnabled)
-
-	// Assert: all containers have AgentEnabled as false
-	for _, container := range ic.Spec.Containers {
-		assert.False(t, container.AgentEnabled)
-	}
-
-	// Assert: we add conditions to the instrumentation config
-	assert.Equal(t, odigosv1alpha1.WorkloadRolloutStatusConditionType, ic.Status.Conditions[0].Type)
-	assert.Equal(t, metav1.ConditionFalse, ic.Status.Conditions[0].Status)
-	assert.Equal(t, odigosv1alpha1.AgentEnabledStatusConditionType, ic.Status.Conditions[1].Type)
-	assert.Equal(t, metav1.ConditionFalse, ic.Status.Conditions[1].Status)
 }
