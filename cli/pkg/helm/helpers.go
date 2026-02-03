@@ -18,6 +18,8 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -221,4 +223,129 @@ func IsLegacyInstallation(ctx context.Context, client corev1.CoreV1Interface, na
 	}
 
 	return false, nil
+}
+
+// IsLegacyCentralInstallation checks whether Odigos Central was installed using the old non-Helm method
+// (aka the legacy `odigos pro-dep central install` flow).
+func IsLegacyCentralInstallation(ctx context.Context, client corev1.CoreV1Interface, namespace string) (bool, error) {
+	cm, err := client.ConfigMaps(namespace).Get(ctx, k8sconsts.OdigosCentralDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check Central installation method: %w", err)
+	}
+
+	method := cm.Data[k8sconsts.OdigosCentralDeploymentConfigMapInstallationMethodKey]
+	return method == string(installationmethod.K8sInstallationMethodOdigosCli), nil
+}
+
+func isHelmOwnedByRelease(labels map[string]string, annotations map[string]string, releaseName string, namespace string) bool {
+	if labels == nil || annotations == nil {
+		return false
+	}
+	return labels["app.kubernetes.io/managed-by"] == "Helm" &&
+		annotations["meta.helm.sh/release-name"] == releaseName &&
+		annotations["meta.helm.sh/release-namespace"] == namespace
+}
+
+func legacyCentralLeftoverErr(kind string, name string, namespace string, releaseName string) error {
+	return fmt.Errorf(
+		"found pre-existing %s %q in namespace %q that is not owned by Helm release %q; "+
+			"this usually happens after running the legacy Central install/uninstall flow (`odigos pro-dep central ...`). "+
+			"To proceed, uninstall the legacy Central installation (recommended), or delete the resource / namespace and retry. "+
+			"Example: odigos pro-dep central uninstall -n %s --yes  (or kubectl delete namespace %s)",
+		kind, name, namespace, releaseName, namespace, namespace,
+	)
+}
+
+// ValidateCentralHelmInstallPreconditions fails fast when the legacy Central install/uninstall flow left behind
+// resources that would block a Helm-based install/upgrade (Helm cannot adopt existing objects without ownership metadata).
+// It validates:
+// - The legacy install marker ConfigMap (`odigos-central-deployment`)
+// - The on-prem token Secret (`odigos-central`) which legacy creates without labels
+// - Any other legacy Central "system objects" in the namespace (Deployments/Services/SAs/Roles/RoleBindings/Secrets/ConfigMaps/PVCs/HPAs)
+func ValidateCentralHelmInstallPreconditions(
+	ctx context.Context,
+	coreClient corev1.CoreV1Interface,
+	dyn dynamic.Interface,
+	namespace string,
+	releaseName string,
+) error {
+	// 1) Explicitly check the Central deployment marker ConfigMap (common collision).
+	cm, err := coreClient.ConfigMaps(namespace).Get(ctx, k8sconsts.OdigosCentralDeploymentConfigMapName, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to check existing Central deployment ConfigMap: %w", err)
+	}
+	if err == nil && !isHelmOwnedByRelease(cm.GetLabels(), cm.GetAnnotations(), releaseName, namespace) {
+		return legacyCentralLeftoverErr("ConfigMap", cm.GetName(), namespace, releaseName)
+	}
+
+	// 2) Explicitly check the Central token secret, because legacy creates it without system labels (so label-scans may miss it).
+	sec, err := coreClient.Secrets(namespace).Get(ctx, k8sconsts.OdigosCentralSecretName, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to check existing Central token Secret: %w", err)
+	}
+	if err == nil && !isHelmOwnedByRelease(sec.GetLabels(), sec.GetAnnotations(), releaseName, namespace) {
+		return legacyCentralLeftoverErr("Secret", sec.GetName(), namespace, releaseName)
+	}
+
+	// 3) Scan all legacy Central system objects (created via ApplyResource) by label.
+	// Note: chart objects are labeled with odigos.io/system-object, but legacy Central objects get the *central* label as well
+	// because the legacy installer sets SystemObjectLabelKey = OdigosSystemLabelCentralKey.
+	labelSelector := fmt.Sprintf("%s=%s", k8sconsts.OdigosSystemLabelCentralKey, k8sconsts.OdigosSystemLabelValue)
+
+	type check struct {
+		gvr        schema.GroupVersionResource
+		kind       string
+		namespaced bool
+	}
+	checks := []check{
+		{gvr: schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}, kind: "ConfigMap", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}, kind: "Secret", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}, kind: "ServiceAccount", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}, kind: "Service", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}, kind: "PersistentVolumeClaim", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}, kind: "Deployment", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles"}, kind: "Role", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings"}, kind: "RoleBinding", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "autoscaling", Version: "v2", Resource: "horizontalpodautoscalers"}, kind: "HorizontalPodAutoscaler", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "autoscaling", Version: "v2beta2", Resource: "horizontalpodautoscalers"}, kind: "HorizontalPodAutoscaler", namespaced: true},
+		{gvr: schema.GroupVersionResource{Group: "autoscaling", Version: "v2beta1", Resource: "horizontalpodautoscalers"}, kind: "HorizontalPodAutoscaler", namespaced: true},
+	}
+
+	for _, c := range checks {
+		if c.namespaced {
+			ul, e := dyn.Resource(c.gvr).Namespace(namespace).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+			if e == nil {
+				for _, item := range ul.Items {
+					if isHelmOwnedByRelease(item.GetLabels(), item.GetAnnotations(), releaseName, namespace) {
+						continue
+					}
+					return legacyCentralLeftoverErr(c.kind, item.GetName(), namespace, releaseName)
+				}
+				continue
+			}
+			if !apierrors.IsNotFound(e) {
+				return fmt.Errorf("failed to scan existing Central %s resources: %w", c.kind, e)
+			}
+		} else {
+			ul, e := dyn.Resource(c.gvr).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+			if e == nil {
+				for _, item := range ul.Items {
+					// cluster-scoped resources don't have release-namespace annotation set to a namespace? Helm still sets it.
+					if isHelmOwnedByRelease(item.GetLabels(), item.GetAnnotations(), releaseName, namespace) {
+						continue
+					}
+					return legacyCentralLeftoverErr(c.kind, item.GetName(), namespace, releaseName)
+				}
+				continue
+			}
+			if !apierrors.IsNotFound(e) {
+				return fmt.Errorf("failed to scan existing Central %s resources: %w", c.kind, e)
+			}
+		}
+	}
+
+	return nil
 }

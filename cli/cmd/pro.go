@@ -305,25 +305,33 @@ func runCentralInstallOrUpgradeWithLegacyCheck(cmd *cobra.Command, args []string
 	ctx := cmd.Context()
 	kubeClient := cmdcontext.KubeClientFromContextOrExit(ctx)
 
-	isLegacy, err := helm.IsLegacyInstallation(ctx, kubeClient.Clientset.CoreV1(), helm.HelmNamespace)
+	// NOTE: Central has its own install marker (odigos-central-deployment) and legacy flow (`odigos pro-dep central ...`).
+	// Using the OSS legacy check here is incorrect and can miss legacy Central installations.
+	targetNamespace := proNamespaceFlag
+	isLegacy, err := helm.IsLegacyCentralInstallation(ctx, kubeClient.Clientset.CoreV1(), targetNamespace)
 	if err != nil {
 		return err
 	}
 	if isLegacy {
 		msg := fmt.Sprintf(`
-⚠️  Detected that Odigos was originally installed using an older CLI-based method (without Helm) in namespace "%s".
+⚠️  Detected that Odigos Central was originally installed using an older CLI-based method (without Helm) in namespace "%s".
 
-The current version of the Odigos CLI installs and upgrades Odigos using Helm under the hood,
-and cannot automatically upgrade installations created with the legacy method.
+The current version of the Odigos CLI installs and upgrades Odigos Central using Helm under the hood,
+and cannot automatically upgrade installations created with the legacy method ('odigos pro-dep central ...').
 
 👉  To proceed, please do one of the following:
-   • Run 'odigos uninstall-deprecated' to remove the old installation, then reinstall using 'odigos install'
-   • Or continue using 'odigos upgrade-deprecated' until you are ready to migrate
+   • Run 'odigos pro-dep central uninstall -n %s --yes' (or delete the namespace), then retry 'odigos pro central install'
+   • Or manually remove the legacy marker ConfigMap: kubectl -n %s delete configmap %s
 
-`, helm.HelmNamespace)
+`, targetNamespace, targetNamespace, targetNamespace, k8sconsts.OdigosCentralDeploymentConfigMapName)
 
 		fmt.Printf("%s\n", msg)
 		os.Exit(1)
+	}
+
+	// Fail fast if the legacy flow left behind Central resources that Helm cannot adopt.
+	if err := helm.ValidateCentralHelmInstallPreconditions(ctx, kubeClient.Clientset.CoreV1(), kubeClient.Dynamic, targetNamespace, centralHelmReleaseName); err != nil {
+		return err
 	}
 
 	return runCentralInstallOrUpgrade()

@@ -35,9 +35,6 @@ var (
 var (
 	updateRemoteFlagDep        bool
 	proNamespaceFlagDep        string
-	useDefaultDep              bool
-	downloadFileDep            string
-	fromFileDep                string
 	centralImagePullSecretsDep []string
 )
 
@@ -158,6 +155,10 @@ var centralUninstallCmdDep = &cobra.Command{
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteServiceAccountsByLabel)
 		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central Secrets",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteSecretsByLabel)
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central ConfigMaps",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteConfigMapsByLabel)
+		cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Central HPAs",
+			client, ns, k8sconsts.OdigosSystemLabelCentralKey, kube.DeleteHPAsByLabel)
 
 		cmdutil.CreateKubeResourceWithLogging(ctx, "Deleting Odigos Central token secret",
 			client, ns, k8sconsts.OdigosSystemLabelCentralKey, deleteCentralTokenSecretAdapterDep)
