@@ -788,30 +788,34 @@ func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *Workloa
 	return workloadPods, nil
 }
 
-func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (
+func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, k8sCacheClient client.Client) (
 	byPodContainer map[PodContainerId][]*odigosv1.InstrumentationInstance,
 	byWorkloadContainer map[WorkloadContainerId][]*odigosv1.InstrumentationInstance,
 	err error) {
 
-	labelSelector := ""
+	var matchingLabels map[string]string
 	if filters.SingleWorkload != nil {
 		// fetch only the instrumentation instances for the specific workload.
 		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(filters.SingleWorkload.WorkloadName, k8sconsts.WorkloadKind(filters.SingleWorkload.WorkloadKind))
-		selector := metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				consts.InstrumentedAppNameLabel: instrumentationConfigName,
-			},
+		matchingLabels = map[string]string{
+			consts.InstrumentedAppNameLabel: instrumentationConfigName,
 		}
-		labelSelector = metav1.FormatLabelSelector(&selector)
 	}
 
 	ii, err := timedAPICall(
 		logger,
-		formatOperationMessage("List InstrumentationInstances", filters.NamespaceString, labelSelector),
+		formatOperationMessage("List InstrumentationInstances", filters.NamespaceString),
 		func() (*odigosv1.InstrumentationInstanceList, error) {
-			return kube.DefaultClient.OdigosClient.InstrumentationInstances(filters.NamespaceString).List(ctx, metav1.ListOptions{
-				LabelSelector: labelSelector,
-			})
+			var instrumentationInstances odigosv1.InstrumentationInstanceList
+			opts := []client.ListOption{client.InNamespace(filters.NamespaceString)}
+			if matchingLabels != nil {
+				opts = append(opts, client.MatchingLabels(matchingLabels))
+			}
+			err := k8sCacheClient.List(ctx, &instrumentationInstances, opts...)
+			if err != nil {
+				return nil, err
+			}
+			return &instrumentationInstances, nil
 		},
 	)
 	if err != nil {

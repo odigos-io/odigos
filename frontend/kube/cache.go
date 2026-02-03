@@ -106,8 +106,9 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 			&corev1.Pod{}: {
 				Transform: podsTransformFunc,
 			},
-			&odigosv1.Source{}:                {},
-			&odigosv1.InstrumentationConfig{}: {},
+			&odigosv1.Source{}:                  {},
+			&odigosv1.InstrumentationConfig{}:   {},
+			&odigosv1.InstrumentationInstance{}: {},
 		},
 	}
 

@@ -78,6 +78,7 @@ require (
 	github.com/odigos-io/odigos/api v0.0.0 // indirect
 	github.com/odigos-io/odigos/common v0.0.0 // indirect
 	github.com/odigos-io/odigos/k8sutils v0.0.0 // indirect
+	github.com/odigos-io/odigos/odigosauth v0.0.0 // indirect
 	github.com/odigos-io/odigos/profiles v0.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
@@ -141,5 +142,6 @@ replace (
 	github.com/odigos-io/odigos/cli/cmd => ../../cli/cmd
 	github.com/odigos-io/odigos/common => ../../common
 	github.com/odigos-io/odigos/k8sutils => ../../k8sutils
+	github.com/odigos-io/odigos/odigosauth => ../../odigosauth
 	github.com/odigos-io/odigos/profiles => ../../profiles
 )

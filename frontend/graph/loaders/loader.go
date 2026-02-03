@@ -253,7 +253,7 @@ func (l *Loaders) loadInstrumentationInstances(ctx context.Context) error {
 	if l.instrumentationInstancesFetched {
 		return nil
 	}
-	byPodContainer, byWorkloadContainer, err := fetchInstrumentationInstances(ctx, l.logger, l.workloadFilter)
+	byPodContainer, byWorkloadContainer, err := fetchInstrumentationInstances(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
 	if err != nil {
 		return err
 	}
