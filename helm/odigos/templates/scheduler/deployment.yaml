@@ -67,6 +67,8 @@ spec:
               configMapKeyRef:
                 key: ODIGOS_VERSION
                 name: odigos-deployment
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.scheduler.resources) }}
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config

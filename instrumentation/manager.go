@@ -191,7 +191,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		metrics:               managerMetrics,
 		tracesMap:             options.TracesMap,
 		metricsMap:            options.MetricsMap,
-		metricsAttributesMap: options.MetricsAttributesMap,
+		metricsAttributesMap:  options.MetricsAttributesMap,
 	}, nil
 }
 
@@ -207,11 +207,10 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				m.logger.Error(ctx.Err(), "context canceled while cleaning up instrumentations before shutdown")
 				return
 			default:
-				if details.inst == nil {
-					continue
-				}
-				if err := details.inst.Close(ctx); err != nil {
-					m.logger.Error(err, "failed to close instrumentation", "pid", pid)
+				if details.inst != nil {
+					if err := details.inst.Close(ctx); err != nil {
+						m.logger.Error(err, "failed to close instrumentation", "pid", pid)
+					}
 				}
 				if err := m.handler.Reporter.OnExit(ctx, pid, details.pd); err != nil {
 					m.logger.Error(err, "failed to report instrumentation exit")
@@ -306,7 +305,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) handleInstrumentErr
 	// in cases where we detected a certain language for a container, but multiple processes are running in it,
 	// only one or some of them are in the language we detected.
 	if errors.Is(err, ErrProcessLanguageNotMatchesDistribution) {
-		m.logger.Info("process language does not match the detected language for container, skipping instrumentation", "error", err)
+		m.logger.V(1).Info("process language does not match the detected language for container, skipping instrumentation", "error", err)
 		return
 	}
 
