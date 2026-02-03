@@ -11,7 +11,15 @@ import (
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
+	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 	corev1 "k8s.io/api/core/v1"
+)
+
+var (
+	falseVal = false
+	trueVal  = true
 )
 
 // K8sProcessDetails holds Kubernetes-specific details about a process.
@@ -23,6 +31,7 @@ type K8sProcessDetails struct {
 	Distro        *distro.OtelDistro
 	Pw            *k8sconsts.PodWorkload
 	ProcEvent     detector.ProcessEvent
+	langVerified  *bool
 }
 
 func (kd K8sProcessDetails) String() string {
@@ -83,6 +92,35 @@ func (kd *K8sProcessDetails) Distribution(ctx context.Context) (*distro.OtelDist
 	if kd.Distro == nil {
 		return nil, errors.New("distribution is not provided, cannot resolve config group")
 	}
+
+	distro := kd.Distro
+	processEvent := kd.ProcEvent
+
+	// if we have already verified the language, return the cached result
+	if kd.langVerified != nil {
+		if *kd.langVerified {
+			return distro, nil
+		} else {
+			return nil, instrumentation.ErrProcessLanguageNotMatchesDistribution
+		}
+	}
+
+	// verify the language of the process event matches the detected language for the container
+	// for containers with multiple processes or a script that spawns other processes, the language
+	// being detected depends on timing and we may get events for un-related processes.
+	if ok := inspectors.VerifyLanguage(process.Details{
+		ProcessID: processEvent.PID,
+		ExePath:   processEvent.ExecDetails.ExePath,
+		CmdLine:   processEvent.ExecDetails.CmdLine,
+		Environments: process.ProcessEnvs{
+			DetailedEnvs: processEvent.ExecDetails.Environments,
+		},
+	}, distro.Language, log.Logger); !ok {
+		kd.langVerified = &falseVal
+		return nil, errors.Join(instrumentation.ErrProcessLanguageNotMatchesDistribution,
+			fmt.Errorf("process with exe path %s does not match the detected language (%s) for container: %s", processEvent.ExecDetails.ExePath, distro.Language, kd.ContainerName))
+	}
+	kd.langVerified = &trueVal
 	return kd.Distro, nil
 }
 
