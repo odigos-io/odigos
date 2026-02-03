@@ -74,10 +74,11 @@ type AgentsInitContainerResourcesConfig struct {
 }
 
 type APIToken struct {
-	Token     string `json:"token"`
-	Name      string `json:"name"`
-	IssuedAt  int    `json:"issuedAt"`
-	ExpiresAt int    `json:"expiresAt"`
+	Token     string  `json:"token"`
+	Name      string  `json:"name"`
+	IssuedAt  int     `json:"issuedAt"`
+	ExpiresAt int     `json:"expiresAt"`
+	Message   *string `json:"message,omitempty"`
 }
 
 type AttributeFilters struct {

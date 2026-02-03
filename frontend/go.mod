@@ -15,6 +15,7 @@ require (
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/destinations v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
+	github.com/odigos-io/odigos/odigosauth v0.0.0
 	github.com/openshift/api v0.0.0-20251103120323-33ccad512a44
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/common v0.65.0
@@ -204,4 +205,5 @@ replace (
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/destinations => ../destinations
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 )

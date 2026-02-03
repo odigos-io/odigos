@@ -25,6 +25,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"github.com/odigos-io/odigos/odigosauth"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,7 +34,6 @@ import (
 // APITokens is the resolver for the apiTokens field.
 func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.ComputePlatform) ([]*model.APIToken, error) {
 	ns := env.GetCurrentNamespace()
-
 	// The result should always be 0 or 1:
 	// If it's 0, it means this is the OSS version.
 	// If it's 1, it means this is the Enterprise version.
@@ -47,28 +47,23 @@ func (r *computePlatformResolver) APITokens(ctx context.Context, obj *model.Comp
 	}
 
 	token := string(secret.Data[k8sconsts.OdigosOnpremTokenSecretKey])
-
-	// Extract the payload from the JWT
-	tokenPayload, err := extractJWTPayload(token)
-	if err != nil {
-		// We don't want to return an error here, because the user may have provided a bad token.
-		// Throwing this will prevent the entire CP from being fetched, and prevent the user from being able to update the token...
-		// return nil, fmt.Errorf("failed to extract JWT payload: %w", err)
-
-		return []*model.APIToken{
-			{
-				Token:     token,
-				Name:      "ERROR",
-				IssuedAt:  0,
-				ExpiresAt: 0,
-			},
-		}, nil
-	}
-
-	// Extract values from the token payload
+	tokenPayload, err := odigosauth.ValidateToken(token)
 	aud, _ := tokenPayload["aud"].(string)
 	iat, _ := tokenPayload["iat"].(float64)
 	exp, _ := tokenPayload["exp"].(float64)
+
+	if err != nil {
+		msg := err.Error()
+		return []*model.APIToken{
+			{
+				Token:     token,
+				Name:      aud,
+				IssuedAt:  0,
+				ExpiresAt: 0,
+				Message:   &msg,
+			},
+		}, nil
+	}
 
 	// We need to return an array (even if it's just 1 token), because in the future we will have to support multiple platforms.
 	return []*model.APIToken{
@@ -410,7 +405,10 @@ func (r *k8sActualSourceResolver) WorkloadOdigosHealthStatus(ctx context.Context
 func (r *mutationResolver) UpdateAPIToken(ctx context.Context, token string) (bool, error) {
 	ns := env.GetCurrentNamespace()
 	err := pro.UpdateOdigosToken(ctx, kube.DefaultClient, ns, token)
-	return err == nil, nil
+	if err != nil {
+		return false, fmt.Errorf("failed to update odigos token: %w", err)
+	}
+	return true, nil
 }
 
 // UninstrumentCluster is the resolver for the uninstrumentCluster field.
