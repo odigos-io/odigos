@@ -66,11 +66,22 @@ jobs:
     needs: extract-versions
     if: needs.extract-versions.outputs.versions != '[]'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
         version: ${{ fromJson(needs.extract-versions.outputs.versions) }}
     steps:
+
+      - name: Create Cherry-Pick PR token
+        id: cherry-pick-pr-sts
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: create-pr
+          output-git-config: true
+
       - name: Determine Release Branch
         id: branch
         run: |
@@ -84,7 +95,7 @@ jobs:
         with:
           ref: ${{ steps.branch.outputs.release_branch }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.cherry-pick-pr-sts.outputs.GH_TOKEN }}
 
       - name: Verify Release Branch Exists
         run: |
@@ -118,7 +129,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.cherry-pick-pr-sts.outputs.GH_TOKEN }}
           branch: cherry-pick/${{ matrix.version }}/${{ github.event.pull_request.number }}
           base: ${{ steps.branch.outputs.release_branch }}
           title: "Cherry-pick: ${{ github.event.pull_request.title }} (backport to ${{ matrix.version }})"
