@@ -10,7 +10,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 )
 
-///this file is used to update the token for the odigos pro secret
+//this file is used to update the token for the odigos pro secret
 
 func createTokenPayload(onpremToken string) ([]byte, error) {
 	tokenPayload := pro.TokenPayload{OnpremToken: onpremToken}
