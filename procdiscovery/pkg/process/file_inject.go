@@ -45,7 +45,9 @@ func InjectFileToProcessTempDir(pid int, sourcePath string) error {
 }
 
 // InjectDirToProcessTempDir copies a complete directory to the process's temp directory.
-// It preserves directory structure and file permissions.
+// It preserves directory structure and file permissions. If the destination directory
+// already exists, files are merged (existing files are overwritten, new files are added,
+// and files not in the source are preserved).
 func InjectDirToProcessTempDir(pid int, sourceDirPath string) error {
 	info, err := os.Stat(sourceDirPath)
 	if err != nil {

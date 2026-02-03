@@ -314,6 +314,111 @@ func TestInjectDirToProcessTempDir_SourceNotExist(t *testing.T) {
 	}
 }
 
+func TestInjectDirToProcessTempDir_DirectoryAlreadyExists(t *testing.T) {
+	tmpDir := t.TempDir()
+	sourceDir := filepath.Join(tmpDir, "test-dir")
+
+	// Create initial directory structure
+	initialStructure := map[string]fileSpec{
+		"file1.txt":        {content: "original file1", perm: 0o644},
+		"file2.txt":        {content: "original file2", perm: 0o644},
+		"subdir/file3.txt": {content: "original file3", perm: 0o644},
+	}
+
+	if err := os.Mkdir(sourceDir, 0o755); err != nil {
+		t.Fatalf("failed to create source dir: %v", err)
+	}
+
+	for path, spec := range initialStructure {
+		fullPath := filepath.Join(sourceDir, path)
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatalf("failed to create directory %s: %v", dir, err)
+		}
+		if err := os.WriteFile(fullPath, []byte(spec.content), spec.perm); err != nil {
+			t.Fatalf("failed to create file %s: %v", path, err)
+		}
+	}
+
+	pid := startTestProcess(t)
+
+	// First injection
+	if err := InjectDirToProcessTempDir(pid, sourceDir); err != nil {
+		t.Fatalf("first injection failed: %v", err)
+	}
+
+	procTmpDir := filepath.Join("/proc", fmt.Sprintf("%d", pid), "root", os.TempDir())
+	destDir := filepath.Join(procTmpDir, filepath.Base(sourceDir))
+
+	// Add a file directly to the destination (simulating existing content)
+	extraFilePath := filepath.Join(destDir, "extra-file.txt")
+	if err := os.WriteFile(extraFilePath, []byte("extra content"), 0o644); err != nil {
+		t.Fatalf("failed to create extra file: %v", err)
+	}
+
+	// Modify source: change file1, remove file2, add file4
+	if err := os.WriteFile(filepath.Join(sourceDir, "file1.txt"), []byte("modified file1"), 0o644); err != nil {
+		t.Fatalf("failed to modify file1: %v", err)
+	}
+	if err := os.Remove(filepath.Join(sourceDir, "file2.txt")); err != nil {
+		t.Fatalf("failed to remove file2: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(sourceDir, "file4.txt"), []byte("new file4"), 0o644); err != nil {
+		t.Fatalf("failed to create file4: %v", err)
+	}
+
+	// Second injection
+	if err := InjectDirToProcessTempDir(pid, sourceDir); err != nil {
+		t.Fatalf("second injection failed: %v", err)
+	}
+
+	// Verify the results
+	checks := []struct {
+		path            string
+		shouldExist     bool
+		expectedContent string
+		expectedPerm    os.FileMode
+	}{
+		{path: "file1.txt", shouldExist: true, expectedContent: "modified file1", expectedPerm: 0o644},
+		{path: "file2.txt", shouldExist: true, expectedContent: "original file2", expectedPerm: 0o644}, // Still exists (merge behavior)
+		{path: "file4.txt", shouldExist: true, expectedContent: "new file4", expectedPerm: 0o644},
+		{path: "extra-file.txt", shouldExist: true, expectedContent: "extra content", expectedPerm: 0o644}, // Preserved
+		{path: "subdir/file3.txt", shouldExist: true, expectedContent: "original file3", expectedPerm: 0o644},
+	}
+
+	for _, check := range checks {
+		fullPath := filepath.Join(destDir, check.path)
+		info, err := os.Stat(fullPath)
+
+		if check.shouldExist {
+			if err != nil {
+				t.Errorf("path %s: expected to exist but not found: %v", check.path, err)
+				continue
+			}
+
+			content, err := os.ReadFile(fullPath)
+			if err != nil {
+				t.Errorf("path %s: failed to read: %v", check.path, err)
+				continue
+			}
+
+			if string(content) != check.expectedContent {
+				t.Errorf("path %s: content mismatch: got %q, want %q",
+					check.path, content, check.expectedContent)
+			}
+
+			if info.Mode().Perm() != check.expectedPerm {
+				t.Errorf("path %s: permission mismatch: got %o, want %o",
+					check.path, info.Mode().Perm(), check.expectedPerm)
+			}
+		} else {
+			if err == nil {
+				t.Errorf("path %s: expected not to exist but found", check.path)
+			}
+		}
+	}
+}
+
 func BenchmarkInjectToProcessTempDir(b *testing.B) {
 	benchmarks := []struct {
 		name string
