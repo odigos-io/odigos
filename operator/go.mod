@@ -8,7 +8,6 @@ require (
 	github.com/odigos-io/odigos/cli v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
-	github.com/odigos-io/odigos/odigosauth v0.0.0
 	github.com/onsi/ginkgo/v2 v2.25.1
 	github.com/onsi/gomega v1.38.2
 	helm.sh/helm/v3 v3.19.0
@@ -95,6 +94,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
+	github.com/odigos-io/odigos/odigosauth v0.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
@@ -164,7 +164,7 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
-	sigs.k8s.io/yaml v1.6.0 // indirect			
+	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 replace (
@@ -172,6 +172,5 @@ replace (
 	github.com/odigos-io/odigos/cli => ../cli
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
-	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	github.com/odigos-io/odigos/profiles => ../profiles
 )
