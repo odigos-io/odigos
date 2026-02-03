@@ -1,0 +1,134 @@
+name: Cherry Pick to Release Branches
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions: read-all
+
+jobs:
+  extract-versions:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.extract_versions.outputs.versions }}
+    steps: 
+      - name: Extract Cherry Pick Versions
+        id: extract_versions
+        run: |
+          # Get the PR description
+          PR_BODY="${{ github.event.pull_request.body }}"
+          
+          # Look for the cherry-pick marker (case insensitive)
+          # Format: "cherry-pick: v1.16, v1.15" or "cherry-pick: v1.16"
+          CHERRY_PICK_LINE=$(echo "$PR_BODY" | grep -i "^cherry-pick:" || true)
+          
+          if [[ -z "$CHERRY_PICK_LINE" ]]; then
+            echo "No cherry-pick marker found in PR description"
+            echo "versions=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "Found cherry-pick line: $CHERRY_PICK_LINE"
+          
+          # Extract the versions part (everything after "cherry-pick:")
+          VERSIONS_STR=$(echo "$CHERRY_PICK_LINE" | sed -E 's/^[Cc]herry-pick:\s*//')
+          
+          # Parse and validate each version (format: v1.X)
+          VALID_VERSIONS=()
+          IFS=',' read -ra VERSION_ARRAY <<< "$VERSIONS_STR"
+          for version in "${VERSION_ARRAY[@]}"; do
+            # Trim whitespace
+            version=$(echo "$version" | xargs)
+            
+            # Validate format v1.X (where X is a number, must start with v1.)
+            if [[ "$version" =~ ^v1\.[0-9]+$ ]]; then
+              VALID_VERSIONS+=("\"$version\"")
+              echo "Valid version found: $version"
+            else
+              echo "Warning: Invalid version format '$version' (expected v1.X format)"
+            fi
+          done
+          
+          # Create JSON array
+          if [[ ${#VALID_VERSIONS[@]} -eq 0 ]]; then
+            echo "versions=[]" >> $GITHUB_OUTPUT
+            echo "No valid cherry-pick versions found"
+          else
+            JSON_ARRAY="[$(IFS=,; echo "${VALID_VERSIONS[*]}")]"
+            echo "versions=$JSON_ARRAY" >> $GITHUB_OUTPUT
+            echo "Cherry-pick versions to process: $JSON_ARRAY"
+          fi
+
+  cherry-pick:
+    needs: extract-versions
+    if: needs.extract-versions.outputs.versions != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJson(needs.extract-versions.outputs.versions) }}
+    steps:
+      - name: Determine Release Branch
+        id: branch
+        run: |
+          VERSION="${{ matrix.version }}"
+          RELEASE_BRANCH="releases/${VERSION}.0"
+          echo "release_branch=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+          echo "Processing version $VERSION -> branch $RELEASE_BRANCH"
+
+      - name: Checkout Release Branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.branch.outputs.release_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Release Branch Exists
+        run: |
+          RELEASE_BRANCH="${{ steps.branch.outputs.release_branch }}"
+          if ! git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" > /dev/null 2>&1; then
+            echo "Error: Release branch '$RELEASE_BRANCH' does not exist"
+            exit 1
+          fi
+          echo "Release branch '$RELEASE_BRANCH' exists"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Cherry Pick Commit
+        id: cherry_pick
+        run: |
+          MERGE_COMMIT="${{ github.event.pull_request.merge_commit_sha }}"
+          echo "Cherry-picking commit $MERGE_COMMIT"
+          
+          # Cherry-pick the merge commit with mainline parent 1 (the main branch)
+          if ! git cherry-pick -m 1 "$MERGE_COMMIT"; then
+            echo "Cherry-pick failed. There may be conflicts."
+            git cherry-pick --abort || true
+            exit 1
+          fi
+          
+          echo "Successfully cherry-picked commit $MERGE_COMMIT"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: cherry-pick/${{ matrix.version }}/${{ github.event.pull_request.number }}
+          base: ${{ steps.branch.outputs.release_branch }}
+          title: "Cherry-pick: ${{ github.event.pull_request.title }} (backport to ${{ matrix.version }})"
+          body: |
+            This PR cherry-picks #${{ github.event.pull_request.number }} to the ${{ matrix.version }} release branch.
+            
+            Original PR: #${{ github.event.pull_request.number }}
+            Original Author: @${{ github.event.pull_request.user.login }}
+            
+            ---
+            
+            ${{ github.event.pull_request.body }}
+          labels: cherry-pick
