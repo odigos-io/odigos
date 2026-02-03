@@ -93,6 +93,7 @@ type ComplexityRoot struct {
 	ApiToken struct {
 		ExpiresAt func(childComplexity int) int
 		IssuedAt  func(childComplexity int) int
+		Message   func(childComplexity int) int
 		Name      func(childComplexity int) int
 		Token     func(childComplexity int) int
 	}
@@ -1397,6 +1398,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApiToken.IssuedAt(childComplexity), true
+
+	case "ApiToken.message":
+		if e.complexity.ApiToken.Message == nil {
+			break
+		}
+
+		return e.complexity.ApiToken.Message(childComplexity), true
 
 	case "ApiToken.name":
 		if e.complexity.ApiToken.Name == nil {
@@ -8748,6 +8756,47 @@ func (ec *executionContext) fieldContext_ApiToken_expiresAt(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _ApiToken_message(ctx context.Context, field graphql.CollectedField, obj *model.APIToken) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApiToken_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApiToken_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApiToken",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AttributeFilters_serviceName(ctx context.Context, field graphql.CollectedField, obj *model.AttributeFilters) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_AttributeFilters_serviceName(ctx, field)
 	if err != nil {
@@ -11764,6 +11813,8 @@ func (ec *executionContext) fieldContext_ComputePlatform_apiTokens(_ context.Con
 				return ec.fieldContext_ApiToken_issuedAt(ctx, field)
 			case "expiresAt":
 				return ec.fieldContext_ApiToken_expiresAt(ctx, field)
+			case "message":
+				return ec.fieldContext_ApiToken_message(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ApiToken", field.Name)
 		},
@@ -41534,6 +41585,8 @@ func (ec *executionContext) _ApiToken(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "message":
+			out.Values[i] = ec._ApiToken_message(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
