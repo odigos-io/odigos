@@ -127,6 +127,7 @@ jobs:
           echo "Successfully cherry-picked commit $MERGE_COMMIT"
 
       - name: Create Pull Request
+        id: create_pr
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.cherry-pick-pr-sts.outputs.GH_TOKEN }}
@@ -143,3 +144,12 @@ jobs:
             
             ${{ github.event.pull_request.body }}
           labels: cherry-pick
+
+      - name: Notify Slack
+        if: always()
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Cherry-pick PR created for ${{ matrix.version }}: ${{ steps.create_pr.outputs.pull-request-url }}"
+          failure-description: "ERROR: Failed to cherry-pick PR #${{ github.event.pull_request.number }} to ${{ matrix.version }}"
+          tag: ${{ matrix.version }}
