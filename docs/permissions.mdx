@@ -71,7 +71,7 @@ Below are the ClusterRoles used by Odigos components.
 | \* | nodes/stats | \* | get<br />list |
 | \* | pods<br />namespaces | \* | get<br />list<br />watch |
 | apps | replicasets<br />deployments<br />daemonsets<br />statefulsets | \* | get<br />list<br />watch |
-| \* | endpoints | \* | get<br />list<br />watch |
+| discovery.k8s.io | endpointslices | \* | get<br />list<br />watch |
 
 ### odigos-scheduler
 
@@ -170,7 +170,6 @@ Below are the Roles used by Odigos components. These Roles are only scoped to th
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | \* | configmaps | odigos-data-collection | get<br />list<br />watch |
-| discovery.k8s.io | endpointslices | \* | get<br />list<br />watch |
 
 ### odigos-scheduler
 
