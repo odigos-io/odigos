@@ -106,11 +106,6 @@ jobs:
           fi
           echo "Release branch '$RELEASE_BRANCH' exists"
 
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Cherry Pick Commit
         id: cherry_pick
         run: |
