@@ -3,6 +3,10 @@ import { EntityTypes, type WorkloadId, type Source, type Workload } from '@odigo
 import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigos/ui-kit/store';
 import type { NamespaceInstrumentInput, SourceConditions, SourceInstrumentInput } from '@/types';
 
+type WorkloadWithOdigosHealthStatus = Workload & {
+  workloadOdigosHealthStatus?: Source['workloadOdigosHealthStatus'];
+};
+
 export const addConditionToSources = ({ namespace, name, kind, conditions }: SourceConditions, sources: Source[]): Source | null => {
   const foundIdx = sources.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
   if (foundIdx === -1) return null;
@@ -20,13 +24,17 @@ export const addConditionToSources = ({ namespace, name, kind, conditions }: Sou
   };
 };
 
-export const addAgentInjectionStatusToSources = ({ id: { namespace, name, kind }, podsAgentInjectionStatus }: Workload, sources: Source[]): Source | null => {
+export const addAgentInjectionStatusToSources = (
+  { id: { namespace, name, kind }, podsAgentInjectionStatus, workloadOdigosHealthStatus }: WorkloadWithOdigosHealthStatus,
+  sources: Source[],
+): Source | null => {
   const foundIdx = sources.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
   if (foundIdx === -1) return null;
 
   return {
     ...sources[foundIdx],
     podsAgentInjectionStatus,
+    workloadOdigosHealthStatus,
   };
 };
 

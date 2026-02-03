@@ -15,10 +15,8 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
-	"github.com/odigos-io/odigos/frontend/graph/status"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
-	frontendcommon "github.com/odigos-io/odigos/frontend/services/common"
 	"github.com/odigos-io/odigos/frontend/services/describe/odigos_describe"
 	"github.com/odigos-io/odigos/frontend/services/describe/source_describe"
 	testconnection "github.com/odigos-io/odigos/frontend/services/test_connection"
@@ -287,118 +285,6 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 	}
 
 	return sources, nil
-}
-
-// WorkloadOdigosHealthStatus is the resolver for the workloadOdigosHealthStatus field.
-func (r *k8sActualSourceResolver) WorkloadOdigosHealthStatus(ctx context.Context, obj *model.K8sActualSource) (*model.DesiredConditionStatus, error) {
-	// Create a workload ID from the K8sActualSource
-	workloadID := &model.K8sWorkloadID{
-		Namespace: obj.Namespace,
-		Kind:      obj.Kind,
-		Name:      obj.Name,
-	}
-
-	// Set up loaders with a filter for this specific workload
-	l := loaders.For(ctx)
-	filter := &model.WorkloadFilter{
-		Namespace: &obj.Namespace,
-		Kind:      &obj.Kind,
-		Name:      &obj.Name,
-	}
-	err := l.SetFilters(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the instrumentation config
-	ic, err := l.GetInstrumentationConfig(ctx, *workloadID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the pods
-	pods, err := l.GetWorkloadPods(ctx, *workloadID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Calculate the health status using the same logic as K8sWorkload resolver
-	conditions := []*model.DesiredConditionStatus{}
-	if ic != nil {
-		conditions = append(conditions, status.CalculateRuntimeInspectionStatus(ic))
-		conditions = append(conditions, status.CalculateAgentInjectionEnabledStatus(ic))
-		conditions = append(conditions, status.CalculateRolloutStatus(ic))
-	} else {
-		reasonStr := string(status.WorkloadOdigosHealthStatusReasonDisabled)
-		conditions = append(conditions, &model.DesiredConditionStatus{
-			Name:       status.WorkloadOdigosHealthStatus,
-			Status:     model.DesiredStateProgressDisabled,
-			ReasonEnum: &reasonStr,
-			Message:    "workload is not marked for instrumentation",
-		})
-	}
-
-	containerNamesWithOptionalPodManifestInjection := getContainerNamesWithOptionalPodManifestInjection(ic)
-
-	// always report if agent is injected or not, even if the workload is not marked for instrumentation.
-	// this is to detect if uninstrumented pods have agent injected when it should not.
-	conditions = append(conditions, status.CalculateAgentInjectedStatus(ic, pods))
-	aggregateContainerProcessesHealth, err := aggregateProcessesHealthForWorkload(ctx, workloadID, containerNamesWithOptionalPodManifestInjection)
-	if err != nil {
-		return nil, err
-	}
-	conditions = append(conditions, aggregateContainerProcessesHealth)
-
-	mostSevereCondition := aggregateConditionsBySeverity(conditions)
-	if mostSevereCondition == nil {
-		mostSevereCondition = &model.DesiredConditionStatus{
-			Name:       status.WorkloadOdigosHealthStatus,
-			Status:     model.DesiredStateProgressUnknown,
-			ReasonEnum: nil,
-			Message:    "",
-		}
-	}
-
-	// exception, if all is well, we return a special condition to denote it
-	if mostSevereCondition.Status == model.DesiredStateProgressSuccess {
-
-		workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
-			Namespace: obj.Namespace,
-			Kind:      k8sconsts.WorkloadKind(obj.Kind),
-			Name:      obj.Name,
-		})
-		var totalDataSent *int
-		if ok {
-			tds := int(workloadMetrics.TotalDataSent())
-			totalDataSent = &tds
-		}
-
-		// consider the telemetry metrics status if relevant.
-		telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
-		expectingTelemetry := telemetryMetrics != nil && telemetryMetrics.IsExpectingTelemetry != nil && *telemetryMetrics.IsExpectingTelemetry
-
-		var reasonStr, message string
-		if expectingTelemetry {
-			if telemetryMetrics.TelemetryObservedStatus.Status == model.DesiredStateProgressSuccess {
-				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccessAndEmittingTelemetry)
-				message = "source is instrumented, healthy and telemetry has been observed"
-			} else {
-				reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
-				message = "source is instrumented and healthy, no telemetry recorded yet"
-			}
-		} else {
-			reasonStr = string(status.WorkloadOdigosHealthStatusReasonSuccess)
-			message = "source is healthy, no telemetry is expected"
-		}
-		return &model.DesiredConditionStatus{
-			Name:       status.WorkloadOdigosHealthStatus,
-			Status:     model.DesiredStateProgressSuccess,
-			ReasonEnum: &reasonStr,
-			Message:    message,
-		}, nil
-	}
-
-	return mostSevereCondition, nil
 }
 
 // UpdateAPIToken is the resolver for the updateApiToken field.
@@ -1151,9 +1037,6 @@ func (r *Resolver) K8sActualNamespace() K8sActualNamespaceResolver {
 	return &k8sActualNamespaceResolver{r}
 }
 
-// K8sActualSource returns K8sActualSourceResolver implementation.
-func (r *Resolver) K8sActualSource() K8sActualSourceResolver { return &k8sActualSourceResolver{r} }
-
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -1162,6 +1045,5 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type computePlatformResolver struct{ *Resolver }
 type k8sActualNamespaceResolver struct{ *Resolver }
-type k8sActualSourceResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
