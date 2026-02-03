@@ -350,7 +350,7 @@ func getPodBackOffReason(p *corev1.Pod) (odigosv1alpha1.AgentEnabledReason, stri
 // to detect pre-existing crashloops and prevent attempting to instrument already-crashlooping workloads.
 // Pods that are already instrumented (have the odigos label) are handled by the rollback logic instead.
 func WorkloadHasPodInBackoff(ctx context.Context, c client.Client, workloadObj client.Object) (bool, error) {
-	selector, err := workloadPodsSelector(workloadObj)
+	selector, err := notInstrumentedWorkloadPodsSelector(workloadObj)
 	if err != nil {
 		return false, fmt.Errorf("WorkloadHasPodInBackoff: %w", err)
 	}
@@ -363,13 +363,9 @@ func WorkloadHasPodInBackoff(ctx context.Context, c client.Client, workloadObj c
 		return false, fmt.Errorf("WorkloadHasPodInBackoff: failed listing pods: %w", err)
 	}
 
+	// If a pod has the odigos label and is in backoff, it's handled by the rollback logic.
 	for i := range podList.Items {
 		pod := &podList.Items[i]
-		// Only check pods that are NOT already instrumented by Odigos.
-		// If a pod has the odigos label and is in backoff, it's handled by the rollback logic.
-		if _, hasOdigosLabel := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]; hasOdigosLabel {
-			continue
-		}
 		if podHasBackOff(pod) {
 			return true, nil
 		}
@@ -410,16 +406,22 @@ func workloadLabelSelector(obj client.Object) (*metav1.LabelSelector, error) {
 }
 
 // workloadPodsSelector returns a selector for all pods that are associated with the workload object
-// (without requiring the odigos instrumentation label)
-func workloadPodsSelector(obj client.Object) (labels.Selector, error) {
+// who do not have the odigos instrumentation label
+func notInstrumentedWorkloadPodsSelector(obj client.Object) (labels.Selector, error) {
 	labelSelector, err := workloadLabelSelector(obj)
 	if err != nil {
 		return nil, err
 	}
 
-	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	selectorCopy := labelSelector.DeepCopy()
+	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
+		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
+		Operator: metav1.LabelSelectorOpDoesNotExist,
+	})
+
+	selector, err := metav1.LabelSelectorAsSelector(selectorCopy)
 	if err != nil {
-		return nil, fmt.Errorf("workloadPodsSelector: invalid selector: %w", err)
+		return nil, fmt.Errorf("notInstrumentedWorkloadPodsSelector: invalid selector: %w", err)
 	}
 
 	return selector, nil
