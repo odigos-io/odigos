@@ -1,8 +1,8 @@
 ---
-title: "odigos pro"
-sidebarTitle: "odigos pro"
+title: "odigos pro-dep"
+sidebarTitle: "odigos pro-dep"
 ---
-## odigos pro
+## odigos pro-dep
 
 Manage Odigos onprem tier for enterprise users
 
@@ -11,7 +11,7 @@ Manage Odigos onprem tier for enterprise users
 The pro command provides various operations and functionalities specifically designed for enterprise users. Use this command to access advanced features and manage your pro account.
 
 ```
-odigos pro [flags]
+odigos pro-dep [flags]
 ```
 
 ### Examples
@@ -28,7 +28,9 @@ odigos pro --onprem-token <token>
 ### Options
 
 ```
-  -h, --help   help for pro
+  -h, --help                  help for pro-dep
+      --onprem-token string   On-prem token for Odigos
+  -r, --remote                use odigos ui service in the cluster to update the onprem token
 ```
 
 ### Options inherited from parent commands
@@ -42,5 +44,4 @@ odigos pro --onprem-token <token>
 ### SEE ALSO
 
 * [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes
-* [odigos pro central](/cli/odigos_pro_central)	 - Manage Odigos Central (Enterprise tier)
-* [odigos pro update-offsets](/cli/odigos_pro_update-offsets)	 - Update Odiglet to use the latest available Go instrumentation offsets
+* [odigos pro-dep central](/cli/odigos_pro-dep_central)	 - Manage Odigos Central (Enterprise tier)
