@@ -93,7 +93,7 @@ func runInstallOrUpgrade() error {
 		return err
 	}
 
-	ch, vals, err := helm.PrepareChartAndValues(settings)
+	ch, vals, err := helm.PrepareChartAndValues(settings, k8sconsts.OdigosHelmRepoName)
 	if err != nil {
 		return err
 	}

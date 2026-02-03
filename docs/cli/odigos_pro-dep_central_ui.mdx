@@ -1,8 +1,8 @@
 ---
-title: "odigos pro central ui"
-sidebarTitle: "odigos pro central ui"
+title: "odigos pro-dep central ui"
+sidebarTitle: "odigos pro-dep central ui"
 ---
-## odigos pro central ui
+## odigos pro-dep central ui
 
 Port-forward Odigos Central UI and Backend to localhost
 
@@ -11,7 +11,7 @@ Port-forward Odigos Central UI and Backend to localhost
 Port-forward the Central UI (port 3000) and Central Backend (port 8081) to enable local access to Odigos UI. Use --address to bind to specific interfaces.
 
 ```
-odigos pro central ui [flags]
+odigos pro-dep central ui [flags]
 ```
 
 ### Options
@@ -26,9 +26,10 @@ odigos pro central ui [flags]
 ```
       --kube-context string   (optional) name of the kubeconfig context to use
       --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -r, --remote                use odigos ui service in the cluster to update the onprem token
   -v, --verbose               enable verbose output
 ```
 
 ### SEE ALSO
 
-* [odigos pro central](/cli/odigos_pro_central)	 - Manage Odigos Central (Enterprise tier)
+* [odigos pro-dep central](/cli/odigos_pro-dep_central)	 - Manage Odigos Central (Enterprise tier)

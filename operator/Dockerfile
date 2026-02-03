@@ -12,6 +12,7 @@ COPY api/ api/
 COPY k8sutils/ k8sutils/
 COPY cli/ cli/
 COPY common/ common/
+COPY odigosauth/ odigosauth/
 COPY profiles/ profiles/
 COPY helm/ helm/
 
