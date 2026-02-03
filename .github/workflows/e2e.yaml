@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kube-version: [ "1.32", "1.23", "1.21.14" ]
+        kube-version: [ "1.32", "1.23", "1.21.1" ]
         test-scenario:
           - "ui"
           - "helm-chart"
@@ -100,8 +100,8 @@ jobs:
           - "mount-method"
           - "argo-rollouts"
         include:
-          - kube-version: "1.21.14"
-            kind-image: "kindest/node:v1.21.14@sha256:8a4e9bb3f415d2bb81629ce33ef9c76ba514c14d707f9797a01e3216376ba093"
+          - kube-version: "1.21.1"
+            kind-image: "kindest/node:v1.21.1@sha256:f4eaad3d61dfe1228b43407dc9db980cd0a2e254588d133762750e605f5f368a"
           - kube-version: "1.23"
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"
