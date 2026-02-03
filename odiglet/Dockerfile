@@ -1,4 +1,5 @@
 ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.10
+ARG ODIGLET_MINIMAL=false
 
 ######### python Native Community Agent #########
 FROM python:3.11.9 AS python-builder
@@ -41,6 +42,7 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
 # combine all agents into a single image
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS agents-builder
 WORKDIR /instrumentations
+ARG ODIGLET_MINIMAL=false
 
 # Java
 ARG JAVA_OTEL_VERSION=v2.10.0
@@ -62,6 +64,10 @@ COPY --from=public.ecr.aws/odigos/agents/php-community:v0.2.5 /instrumentations/
 
 # Ruby
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.7 /instrumentations/ruby /instrumentations/ruby
+
+RUN if [ "$ODIGLET_MINIMAL" = "true" ]; then \
+      rm -rf /instrumentations/dotnet /instrumentations/php /instrumentations/ruby; \
+    fi
 
 # loader
 ARG TARGETARCH
@@ -85,9 +91,12 @@ COPY odiglet/ .
 ARG TARGETARCH
 ARG LD_FLAGS
 ARG RHEL=false
+ARG ODIGLET_MINIMAL=false
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
+    BUILD_TAGS="" && \
+    if [ "$ODIGLET_MINIMAL" = "true" ]; then BUILD_TAGS="odigletminimal"; fi && \
+    GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" BUILD_TAGS="${BUILD_TAGS}" make build-odiglet
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi

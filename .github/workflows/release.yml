@@ -118,7 +118,7 @@ jobs:
 
       - name: Verify Components Image Ready
         run: |
-          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
+          declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-odiglet-minimal" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
           for repo in "${REPOS[@]}"; do
             REPOS+=("${repo}-rhel-certified")
           done

@@ -106,11 +106,11 @@ jobs:
       - name: Retag existing images to stable
         run: |
             # Define which images go to which registries
-            GCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
+            GCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-odiglet-minimal" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
 
-            GHCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator")
+            GHCR_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-odiglet-minimal" "odigos-collector" "odigos-ui" "odigos-operator")
 
-            DOCKERHUB_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
+            DOCKERHUB_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-odiglet-minimal" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
 
             IMAGE_SUFFIXES=("" "-rhel-certified")
             # Track failed copies for potential rollback
