@@ -172,5 +172,6 @@ replace (
 	github.com/odigos-io/odigos/cli => ../cli
 	github.com/odigos-io/odigos/common => ../common
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
+	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 	github.com/odigos-io/odigos/profiles => ../profiles
 )
