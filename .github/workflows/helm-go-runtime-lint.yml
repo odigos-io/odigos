@@ -1,0 +1,33 @@
+name: Lint Helm K8s Resources
+
+on:
+  pull_request:
+    paths:
+      - helm/**
+      - scripts/validate-helm-k8s-resources.py
+      - scripts/lint-helm-k8s-resources.sh
+      - .github/workflows/helm-go-runtime-lint.yml
+
+jobs:
+  lint-k8s-resources:
+    name: Validate K8s Resource Configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
+      - name: Run K8s resource configuration linter
+        run: |
+          chmod +x scripts/lint-helm-k8s-resources.sh
+          ./scripts/lint-helm-k8s-resources.sh

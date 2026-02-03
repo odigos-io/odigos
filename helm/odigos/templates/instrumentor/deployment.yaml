@@ -68,6 +68,11 @@ spec:
             name: webhook-server
             protocol: TCP
         env:
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                containerName: manager
+                resource: limits.cpu
           - name: OTEL_SERVICE_NAME
             value: instrumentor
           - name: CURRENT_NS

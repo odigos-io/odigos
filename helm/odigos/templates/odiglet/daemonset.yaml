@@ -101,6 +101,8 @@ spec:
                 resourceFieldRef:
                   containerName: init
                   resource: limits.cpu
+            - name: GOMEMLIMIT
+              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.odiglet.initContainerResources) }}
           resources:
 {{ toYaml .Values.odiglet.initContainerResources | indent 12 }}
       {{- end }}
@@ -199,6 +201,11 @@ spec:
                   name: odigos-pro
                   key: odigos-onprem-token
           {{- end }}
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: odiglet
+                  resource: limits.cpu
             - name: GOMEMLIMIT
               value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" (include "odigos.odiglet.resolvedResources" . | fromYaml)) }}
           {{- if .Values.odiglet.noHostPid }}
@@ -367,6 +374,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: deviceplugin
+                  resource: limits.cpu
+            - name: GOMEMLIMIT
+              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.odiglet.deviceplugin.resources) }}
           volumeMounts:
             - name: device-plugins-dir
               mountPath: /var/lib/kubelet/device-plugins

@@ -505,6 +505,16 @@ centralProxy:
   # Priority class name. Set to use your existing cluster priority classes.
   # priorityClassName: ''
 
+# Cleanup job configuration (runs during helm uninstall)
+cleanup:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 128Mi
+
 # Pod Security Policy
 psp:
   enabled: false

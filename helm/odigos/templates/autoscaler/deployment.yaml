@@ -51,6 +51,11 @@ spec:
           - /app
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
         env:
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                containerName: manager
+                resource: limits.cpu
           - name: OTEL_SERVICE_NAME
             value: auto-scaler
           - name: CURRENT_NS

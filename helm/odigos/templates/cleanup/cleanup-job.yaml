@@ -20,5 +20,15 @@ spec:
       - name: cleanup
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "cli" "Tag" $imageTag) }}
         args: ["cleanup", "--yes", "--instrumentation-only", "--namespace", "{{ .Release.Namespace }}"]
+        env:
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                containerName: cleanup
+                resource: limits.cpu
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.cleanup.resources) }}
+        resources:
+{{ toYaml .Values.cleanup.resources | indent 10 }}
       restartPolicy: Never
       {{ include "odigos.renderPullSecrets" . | nindent 6 }}

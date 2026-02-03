@@ -28,6 +28,7 @@ spec:
               app: redis
         {{- end }}
         {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: redis
           image: {{ .Values.redis.image | quote }}

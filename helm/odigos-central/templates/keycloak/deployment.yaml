@@ -44,6 +44,7 @@ spec:
       securityContext:
         fsGroup: {{ .Values.auth.podSecurityContext.fsGroup }}
       {{- end }}
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
       containers:
         - name: keycloak
           image: {{ .Values.auth.image | quote }}
