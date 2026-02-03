@@ -104,10 +104,6 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 				log.Logger.Error(err, "failed to find processes in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				return nil, err
 			}
-			if len(processes) == 0 {
-				log.Logger.V(0).Info("no processes found in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
-				continue
-			}
 
 			// map of known programming languages detected by pid in this container
 			knownLangsByPid := make(map[int]common.ProgramLanguageDetails)
