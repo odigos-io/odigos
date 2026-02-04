@@ -1,4 +1,4 @@
-{{- if (include "odigos.secretExists" .) }}
+{{- if and .Values.auth.enabled (include "odigos.secretExists" .) }}
 {{- if and .Values.auth.persistence.enabled (not .Values.auth.persistence.existingClaim) }}
 apiVersion: v1
 kind: PersistentVolumeClaim

@@ -11,6 +11,10 @@ metadata:
 data:
   odigosCentralVersion: {{ $imageTag | quote }}
   installationMethod: "helm"
+  # Used by central-backend at runtime to decide whether to enforce Keycloak auth
+  AUTH_ENABLED: {{ .Values.auth.enabled | quote }}
+  # Used by central-ui (Next.js) to decide whether to enforce token/login flows
+  NEXT_PUBLIC_AUTH_ENABLED: {{ .Values.auth.enabled | quote }}
 {{- end }}
 
 

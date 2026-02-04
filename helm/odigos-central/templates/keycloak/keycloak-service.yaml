@@ -1,4 +1,4 @@
-{{- if (include "odigos.secretExists" .) }}
+{{- if and .Values.auth.enabled (include "odigos.secretExists" .) }}
 apiVersion: v1
 kind: Service
 metadata:
