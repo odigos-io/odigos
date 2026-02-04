@@ -160,6 +160,13 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		return nil, err
 	}
 	if backoffCondition != nil {
+		// Set the WorkloadRollout condition
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1.WorkloadRolloutStatusConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  string(odigosv1.AgentEnabledReasonCrashLoopBackOff),
+			Message: "Workload has pods in backoff state - not eligible for instrumentation",
+		})
 		return backoffCondition, nil
 	}
 
@@ -274,14 +281,6 @@ func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k
 		}
 		if hasPodInBackoff {
 			logger.V(2).Info("workload has pods in backoff state", "workload", pw.Name, "namespace", pw.Namespace)
-			// Set the WorkloadRollout condition
-			meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
-				Type:    odigosv1.WorkloadRolloutStatusConditionType,
-				Status:  metav1.ConditionFalse,
-				Reason:  string(odigosv1.AgentEnabledReasonCrashLoopBackOff),
-				Message: "Workload has pods in backoff state - not eligible for instrumentation",
-			})
-
 			return &agentInjectedStatusCondition{
 				Status:  metav1.ConditionFalse,
 				Reason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,

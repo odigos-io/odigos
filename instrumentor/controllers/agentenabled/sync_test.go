@@ -64,11 +64,6 @@ func TestHasUninstrumentedPodsWithBackoff_CrashLoopBackOff(t *testing.T) {
 	assert.NotNil(t, condition, "expected condition when backoff detected")
 	assert.Equal(t, metav1.ConditionFalse, condition.Status)
 	assert.Equal(t, odigosv1alpha1.AgentEnabledReasonCrashLoopBackOff, condition.Reason)
-
-	// Assert: WorkloadRollout condition was set on IC
-	assert.Len(t, ic.Status.Conditions, 1)
-	assert.Equal(t, odigosv1alpha1.WorkloadRolloutStatusConditionType, ic.Status.Conditions[0].Type)
-	assert.Equal(t, metav1.ConditionFalse, ic.Status.Conditions[0].Status)
 }
 
 func TestHasUninstrumentedPodsWithBackoff_CrashLoopBackOff_WithOdigosLabel(t *testing.T) {
