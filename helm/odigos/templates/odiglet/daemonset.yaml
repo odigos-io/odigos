@@ -1,6 +1,6 @@
 {{- $imageTag := .Values.image.tag | default .Chart.AppVersion -}}
 {{- $extendedSuffix := "" -}}
-{{- if .Values.odiglet.extended -}}
+{{- if and .Values.odiglet.extended (include "odigos.secretExists" .) -}}
   {{- $extendedSuffix = "-extended" -}}
 {{- end -}}
 {{- $odigletImageTag := printf "%s%s" $imageTag $extendedSuffix -}}
