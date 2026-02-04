@@ -1,4 +1,9 @@
 {{- $imageTag := .Values.image.tag | default .Chart.AppVersion -}}
+{{- $extendedSuffix := "" -}}
+{{- if and .Values.odiglet.extended (include "odigos.secretExists" .) -}}
+  {{- $extendedSuffix = "-extended" -}}
+{{- end -}}
+{{- $odigletImageTag := printf "%s%s" $imageTag $extendedSuffix -}}
 {{- $signals := .Values.signals | default (list "traces") -}}
 {{- $collectLogs := has "logs" $signals -}}
 {{- $collectMetrics := has "metrics" $signals -}}
@@ -53,11 +58,10 @@ spec:
       initContainers:
       {{- if or (not .Values.odiglet.noHostPathMounts) (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
         - name: init
-          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $odigletImageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
@@ -106,13 +110,12 @@ spec:
       {{- end }}
       {{- if eq .Values.instrumentor.mountMethod "k8s-init-container" }}
         # This init container pre-pulls the odigos-agents image to the node
-        # so it's available in the image cache when user pods need it 
+        # so it's available in the image cache when user pods need it
         - name: odigos-agents-image-pull
-          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $odigletImageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           # # it does not run any actual code, just pulls the image
@@ -128,11 +131,10 @@ spec:
       {{- end }}
       containers:
         - name: odiglet
-          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $odigletImageTag) }}
           {{- end }}
           args:
             - --health-probe-bind-port={{ .Values.odiglet.odiglet.livenessProbe.httpGet.port }}
@@ -345,11 +347,10 @@ spec:
 # and to have hostMounts allowed
 {{- if and (or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device")) (not .Values.odiglet.noHostPathMounts) }}
         - name: deviceplugin
-          {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $odigletImageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
