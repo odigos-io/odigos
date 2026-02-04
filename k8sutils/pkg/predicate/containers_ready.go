@@ -4,7 +4,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
-	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	k8spod "github.com/odigos-io/odigos/k8sutils/pkg/pod"
 )
 
 // AllContainersReadyPredicate is a predicate that checks if all containers in a pod are ready or becoming ready.
@@ -25,10 +25,11 @@ func (p *AllContainersReadyPredicate) Create(e event.CreateEvent) bool {
 		return false
 	}
 
-	allContainersReady := k8scontainer.AllContainersReady(pod)
+	allContainersReady := k8spod.AllContainersReady(pod)
+	isDeleting := k8spod.IsPodDeleting(pod)
 	// If all containers are not ready, return false.
 	// Otherwise, return true
-	return allContainersReady
+	return allContainersReady && !isDeleting
 }
 
 func (p *AllContainersReadyPredicate) Update(e event.UpdateEvent) bool {
@@ -44,15 +45,16 @@ func (p *AllContainersReadyPredicate) Update(e event.UpdateEvent) bool {
 	}
 
 	// First check if all containers in newPod are ready and started
-	allNewContainersReady := k8scontainer.AllContainersReady(newPod)
+	allNewContainersReady := k8spod.AllContainersReady(newPod)
+	isDeleting := k8spod.IsPodDeleting(newPod)
 
 	// If new containers aren't all ready, return false
-	if !allNewContainersReady {
+	if !allNewContainersReady || isDeleting {
 		return false
 	}
 
 	// Now check if any container in oldPod was not ready or not started
-	allOldContainersReady := k8scontainer.AllContainersReady(oldPod)
+	allOldContainersReady := k8spod.AllContainersReady(oldPod)
 
 	// Return true only if old pods had at least one container not ready/not started
 	// and new pod has all containers ready/started

@@ -8,7 +8,7 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 
 	"github.com/odigos-io/odigos/k8sutils/pkg/conditions"
-	"github.com/odigos-io/odigos/k8sutils/pkg/container"
+	k8spod "github.com/odigos-io/odigos/k8sutils/pkg/pod"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +30,7 @@ func checkAllPodsRunning(pods *corev1.PodList) bool {
 			}
 		}
 
-		if !container.AllContainersReady(pod) {
+		if !k8spod.AllContainersReady(pod) {
 			return false
 		}
 	}
