@@ -117,7 +117,6 @@ jobs:
       packages: 'write'
     strategy:
       matrix:
-        rhel: ['true', 'false']
         service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
         include:
           - service: autoscaler
@@ -212,18 +211,12 @@ jobs:
           push: true
           provenance: false
           tags: |
-            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-rhel-certified' || '' }}:${{ env.ODIGOS_TAG }}
-            keyval/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-rhel-certified' || '' }}:${{ env.ODIGOS_TAG }}
-            ghcr.io/odigos-io/odigos-${{ matrix.service }}${{ matrix.rhel == 'true' && '-rhel-certified' || '' }}:${{ env.ODIGOS_TAG }}
+            us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
+            keyval/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
+            ghcr.io/odigos-io/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
           build-args: |
-            SERVICE_NAME=${{ matrix.service }}
-            ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
-            RELEASE=${{ env.ODIGOS_TAG }}
-            VERSION=${{ env.ODIGOS_TAG }}
-            SUMMARY=${{ matrix.summary }}
-            DESCRIPTION=${{ matrix.description }}
             LD_FLAGS=-s -w
-            RHEL=${{ matrix.rhel }}
+            RHEL=false
           platforms: linux/amd64,linux/arm64
           file: >-
             ${{ matrix.service == 'odiglet' && 'odiglet/Dockerfile' ||
@@ -233,10 +226,7 @@ jobs:
                 matrix.service == 'agents' && 'odiglet/Dockerfile' ||
                 'Dockerfile' }}
           target: >-
-            ${{ matrix.service == 'agents' && matrix.rhel == 'true' && 'agents-rhel' ||
-                matrix.service == 'agents' && 'agents' ||
-                matrix.rhel == 'true' && 'rhel' ||
-                '' }}
+            ${{ matrix.service == 'agents' && 'agents' || '' }}
 
       - name: Notify Slack
         if: always()
