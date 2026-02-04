@@ -56,14 +56,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - nodes/stats
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - pods
   verbs:
   - delete
