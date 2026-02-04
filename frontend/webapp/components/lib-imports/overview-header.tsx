@@ -25,10 +25,10 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   const left = useMemo(() => {
     const arr = [<OdigosLogoText key='logo' size={150} />];
 
-    if (tokenStatus) {
+    if (isReadonly) {
       arr.push(
-        <Tooltip key='token-status' text={tokenStatus.tooltip}>
-          <V2Badge {...tokenStatus} />
+        <Tooltip key='readonly' text={FORM_ALERTS.READONLY_WARNING}>
+          <V2Badge status={OtherStatusType.Disabled} label='Read Only' />
         </Tooltip>,
       );
     }
@@ -46,25 +46,28 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
         </Tooltip>,
       );
     }
-    if (isReadonly) {
+
+    return arr;
+  }, [v2, isReadonly, backendStatus?.label, instrumentationStatus?.label]);
+
+  const right = useMemo(() => {
+    const arr = [];
+
+    if (tokenStatus) {
       arr.push(
-        <Tooltip key='readonly' text={FORM_ALERTS.READONLY_WARNING}>
-          <V2Badge status={OtherStatusType.Disabled} label='Read Only' />
+        <Tooltip key='token-status' text={tokenStatus.tooltip}>
+          <V2Badge {...tokenStatus} />
         </Tooltip>,
       );
     }
 
-    return arr;
-  }, [v2, tokenStatus?.label, backendStatus?.label, instrumentationStatus?.label, isReadonly]);
-
-  const right = useMemo(() => {
-    const arr = [<NotificationManager key='notification-manager' />];
-    if (!v2) arr.unshift(<ToggleDarkMode key='toggle-theme' />);
+    if (!v2) arr.push(<ToggleDarkMode key='toggle-theme' />);
+    arr.push(<NotificationManager key='notification-manager' />);
     arr.push(<IconButton key='system-drawer' icon={TerminalIcon} onClick={toggleSystemDrawer} />);
     arr.push(...[<SlackInvite key='slack-invite' />]);
 
     return arr;
-  }, [v2]);
+  }, [v2, tokenStatus?.label]);
 
   if (v2) {
     return (
@@ -75,8 +78,8 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
           onClose={toggleSystemDrawer}
           fetchDescribeOdigos={fetchDescribeOdigos}
           downloadDiagnose={downloadDiagnose}
-          tokens={tokens}
-          updateToken={(_, newVal) => updateToken(newVal)}
+          token={tokens[0]}
+          updateToken={updateToken}
         />
       </>
     );
@@ -90,8 +93,8 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
         onClose={toggleSystemDrawer}
         fetchDescribeOdigos={fetchDescribeOdigos}
         downloadDiagnose={downloadDiagnose}
-        tokens={tokens}
-        updateToken={(_, newVal) => updateToken(newVal)}
+        token={tokens[0]}
+        updateToken={updateToken}
       />
     </>
   );
