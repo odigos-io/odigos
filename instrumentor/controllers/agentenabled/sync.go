@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-version"
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -146,10 +147,27 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
+	logger := log.FromContext(ctx)
 	cg, irls, agentLevelActions, workloadObj, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
+	}
+
+	// Check for workloads that are in backoff state and not eligible for instrumentation.
+	backoffCondition, err := hasUninstrumentedPodsWithBackoff(ctx, c, pw, ic, logger)
+	if err != nil {
+		return nil, err
+	}
+	if backoffCondition != nil {
+		// Set the WorkloadRollout condition
+		meta.SetStatusCondition(&ic.Status.Conditions, metav1.Condition{
+			Type:    odigosv1.WorkloadRolloutStatusConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  string(odigosv1.AgentEnabledReasonCrashLoopBackOff),
+			Message: "Workload has pods in backoff state - not eligible for instrumentation",
+		})
+		return backoffCondition, nil
 	}
 
 	// check if we are waiting for some transient prerequisites to be completed before injecting the agent
@@ -250,6 +268,27 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		updateInstrumentationConfigAgentsMetaHash(ic, "")
 		return aggregatedCondition, nil
 	}
+}
+
+// hasUninstrumentedPodsWithBackoff checks if the workload has pods in backoff state before instrumentation.
+func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, logger logr.Logger) (*agentInjectedStatusCondition, error) {
+	workloadClientObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
+	if getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadClientObj); getErr == nil {
+		hasPodInBackoff, backoffErr := rollout.WorkloadHasNonInstrumentedPodInBackoff(ctx, c, workloadClientObj)
+		if backoffErr != nil {
+			logger.V(2).Info("failed to check for pods in backoff", "error", backoffErr, "workload", pw.Name, "namespace", pw.Namespace)
+			return nil, fmt.Errorf("failed to check for pods in backoff: %w", backoffErr)
+		}
+		if hasPodInBackoff {
+			logger.V(2).Info("workload has pods in backoff state", "workload", pw.Name, "namespace", pw.Namespace)
+			return &agentInjectedStatusCondition{
+				Status:  metav1.ConditionFalse,
+				Reason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,
+				Message: "Workload has pods in backoff state before instrumentation - cannot instrument crashlooping workload",
+			}, nil
+		}
+	}
+	return nil, nil
 }
 
 func containerConfigToStatusCondition(containerConfig odigosv1.ContainerAgentConfig) *agentInjectedStatusCondition {

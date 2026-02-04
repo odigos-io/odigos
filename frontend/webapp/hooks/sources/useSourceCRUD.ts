@@ -31,12 +31,12 @@ interface UseSourceCrud {
 
 export const useSourceCRUD = (): UseSourceCrud => {
   const { isReadonly } = useConfig();
-  const { setProgress, resetProgress } = useProgressStore();
   const { persistNamespaces } = useNamespace();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
+  const { setProgress, resetProgress } = useProgressStore();
+  const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
   const { sourcesLoading, setEntitiesLoading, sources, setEntities, addEntities, removeEntities } = useEntityStore();
-  const { setFetchedAllNamespaces, setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.Source, target: id ? getSseTargetFromId(id, EntityTypes.Source) : undefined, hideFromHistory });
@@ -165,7 +165,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
       await mutatePersistSources({ variables: persistSourcesPayloads });
       await persistNamespaces(persistNamespacesPayloads);
 
-      setFetchedAllNamespaces(false);
       setAvailableSources({});
       setConfiguredSources({});
       setConfiguredFutureApps({});

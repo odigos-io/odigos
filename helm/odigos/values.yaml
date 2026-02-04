@@ -475,6 +475,12 @@ odiglet:
   # Set this to true to turn off code attribute recording for Go instrumentation.
   disableGoCodeAttributes: false
 
+
+  # extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.
+  # When true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).
+  # Default: false
+  extended: false
+
 centralProxy:
   # Central backend URL where this proxy will forward data
   centralBackendURL: ''
