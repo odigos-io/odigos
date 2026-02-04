@@ -12,6 +12,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/cmdutil"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/labels"
@@ -105,7 +106,7 @@ and rollback any metadata changes made to your objects.`,
 			if cmd.Flag("instrumentation-only").Changed {
 				// Node labels are added by the Odiglet, and since it's not managed by Helm, we need to clean them up here.
 				// In CLI logic, this is done in UninstallClusterResources after the Odiglet is deleted.
-				createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
+				cmdutil.CreateKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
 					client, ns, k8sconsts.OdigosSystemLabelKey, cleanupNodeOdigosLabels)
 				// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
 				// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
@@ -141,7 +142,7 @@ and rollback any metadata changes made to your objects.`,
 			}
 			// This means that we only delete the namespace if we created (labled) it during the install process.
 			if hasSystemLabel {
-				createKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
+				cmdutil.CreateKubeResourceWithLogging(ctx, fmt.Sprintf("Uninstalling Namespace %s", ns),
 					client, ns, k8sconsts.OdigosSystemLabelKey, uninstallNamespace)
 
 				waitForNamespaceDeletion(ctx, client, ns)
@@ -177,34 +178,34 @@ odigos install
 // UninstallOdigosResources removes Odigos system resources from the Odigos namespace,
 // such as component deployments, daemonsets, configmaps, services, RBAC, and secrets.
 func UninstallOdigosResources(ctx context.Context, client *kube.Client, ns string) {
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos Deployments",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Deployments",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallDeployments)
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos DaemonSets",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos DaemonSets",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallDaemonSets)
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos ConfigMaps",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallConfigMaps)
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Services",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallServices)
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos RBAC",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallRBAC)
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos Secrets",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallSecrets)
 	// Without deleting the mutating and validating webhook configurations the CRDs cannot be deleted.
 	// E.g deleting "Sources" at later stage will fail as the CRD is still in use.
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos MutatingWebhookConfigurations",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos MutatingWebhookConfigurations",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallMutatingWebhookConfigs)
 
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos ValidatingWebhookConfigurations",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos ValidatingWebhookConfigurations",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallValidatingWebhookConfigs)
 }
 
 // UninstallClusterResources removes cluster-wide Odigos resources, such as node labels,
 // pod and namespace changes, CRDs, and webhook configurations.
 func UninstallClusterResources(ctx context.Context, client *kube.Client, ns string) {
-	createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
 		client, ns, k8sconsts.OdigosSystemLabelKey, cleanupNodeOdigosLabels)
 
-	createKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
+	cmdutil.CreateKubeResourceWithLogging(ctx, "Uninstalling Odigos CRDs",
 		client, ns, k8sconsts.OdigosSystemLabelKey, uninstallCRDs)
 
 }

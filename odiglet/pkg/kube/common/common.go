@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	k8scontainer "github.com/odigos-io/odigos/k8sutils/pkg/container"
+	k8spod "github.com/odigos-io/odigos/k8sutils/pkg/pod"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -40,7 +40,10 @@ func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv
 	var selectedPods []corev1.Pod
 	for _, pod := range podList.Items {
 		// skip pods that are being deleted or not ready
-		if pod.DeletionTimestamp != nil || !k8scontainer.AllContainersReady(&pod) {
+		if k8spod.IsPodDeleting(&pod) {
+			continue
+		}
+		if !k8spod.AllContainersReady(&pod) {
 			continue
 		}
 		// making sure the pod is in the current node
