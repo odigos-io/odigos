@@ -7,6 +7,14 @@
 {{- $signals := .Values.signals | default (list "traces") -}}
 {{- $collectLogs := has "logs" $signals -}}
 {{- $collectMetrics := has "metrics" $signals -}}
+{{- $hostMetricsDisabled := false -}}
+{{- if .Values.metricsSources -}}
+  {{- if .Values.metricsSources.hostMetrics -}}
+    {{- if hasKey .Values.metricsSources.hostMetrics "disabled" -}}
+      {{- $hostMetricsDisabled = .Values.metricsSources.hostMetrics.disabled -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
 {{- $privilegedRequired := or $collectLogs $collectMetrics -}}
 {{- $k8sVersion := include "utils.cleanKubeVersion" . }}
 {{- if and $privilegedRequired .Values.odiglet.unPrivileged }}
@@ -332,7 +340,7 @@ spec:
               readOnly: true
             {{- end }}
             {{- end }}
-            {{- if and $collectMetrics (not (and (kindIs "map" .Values.metricsSources) (kindIs "map" .Values.metricsSources.hostMetrics) .Values.metricsSources.hostMetrics.disabled)) }}
+            {{- if and $collectMetrics (not $hostMetricsDisabled) }}
             - name: hostfs
               mountPath: /hostfs
               readOnly: true
@@ -423,7 +431,7 @@ spec:
             path: {{ $logsDir }}
         {{- end }}
         {{- end }}
-        {{- if and $collectMetrics (not (and (kindIs "map" .Values.metricsSources) (kindIs "map" .Values.metricsSources.hostMetrics) .Values.metricsSources.hostMetrics.disabled)) }}
+        {{- if and $collectMetrics (not $hostMetricsDisabled) }}
         - name: hostfs
           hostPath:
             path: /
