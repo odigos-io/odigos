@@ -4,7 +4,6 @@ import type { NamespaceSelectionFormData, SourceSelectionFormData } from '@odigo
 import type { NamespaceInstrumentInput, SourceConditions, SourceInstrumentInput } from '@/types';
 import { WorkloadWithOdigosHealthStatus } from '@/types';
 
-
 export const addConditionToSources = ({ namespace, name, kind, conditions }: SourceConditions, sources: Source[]): Source | null => {
   const foundIdx = sources.findIndex((x) => x.namespace === namespace && x.name === name && x.kind === kind);
   if (foundIdx === -1) return null;
