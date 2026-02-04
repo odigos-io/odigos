@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
 	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
+	"github.com/odigos-io/odigos/cli/pkg/cmdutil"
 	"github.com/odigos-io/odigos/cli/pkg/confirm"
 	"github.com/odigos-io/odigos/common/consts"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -96,7 +97,7 @@ All other Odigos components and system resources are deleted automatically by He
 				fmt.Println("Cleaning up Odigos instrumentation resources... new approeach")
 				// Node labels are added by the Odiglet, and since it's not managed by Helm, we need to clean them up here.
 				// In CLI logic, this is done in UninstallClusterResources after the Odiglet is deleted.
-				createKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
+				cmdutil.CreateKubeResourceWithLogging(ctx, "Cleaning up Odigos node labels",
 					client, ns, k8sconsts.OdigosSystemLabelKey, cleanupNodeOdigosLabels)
 				// MIGRATION: In older versions of Odigos, a legacy ConfigMap named "odigos-config" was used.
 				// It has since been replaced by "odigos-configuration", which is Helm-managed and does not include hook annotations.
