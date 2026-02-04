@@ -76,7 +76,15 @@ rules:
       - patch
       - update
 ## related to node collector
-{{- if or (not .Values.metricsSources) (not .Values.metricsSources.kubeletStats) (not .Values.metricsSources.kubeletStats.disabled) }}
+{{- $kubeletStatsDisabled := false }}
+{{- if .Values.metricsSources }}
+  {{- if .Values.metricsSources.kubeletStats }}
+    {{- if hasKey .Values.metricsSources.kubeletStats "disabled" }}
+      {{- $kubeletStatsDisabled = .Values.metricsSources.kubeletStats.disabled }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if not $kubeletStatsDisabled }}
   - apiGroups:
       - ''
     resources:
