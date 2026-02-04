@@ -24,12 +24,13 @@ spec:
           {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "central-ui" "Tag" $imageTag) }}
           env:
-            - name: NEXT_PUBLIC_AUTH_ENABLED
-              value: {{ .Values.auth.enabled | quote }}
             - name: CURRENT_NS
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          envFrom:
+            - configMapRef:
+                name: odigos-central-deployment
           resources:
             requests:
               cpu: {{ .Values.centralUI.resources.requests.cpu }}

@@ -30,8 +30,6 @@ spec:
                 secretKeyRef:
                   name: odigos-central
                   key: ODIGOS_ONPREM_TOKEN
-            - name: AUTH_ENABLED
-              value: {{ .Values.auth.enabled | quote }}
             - name: CURRENT_NS
               valueFrom:
                 fieldRef:
@@ -50,6 +48,9 @@ spec:
             - name: MAX_MESSAGE_SIZE
               value: {{ .Values.centralBackend.maxMessageSize | quote }}
             {{- end }}
+          envFrom:
+            - configMapRef:
+                name: odigos-central-deployment
           ports:
             - containerPort: 8081
               name: http
