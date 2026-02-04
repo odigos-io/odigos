@@ -4,7 +4,7 @@ SRC_ROOT := $(shell git rev-parse --show-toplevel)/collector
 TOOLS_BIN_DIR    := $(SRC_ROOT)/.tools
 
 # Define the tool version
-BUILDER_VERSION = 0.130.0
+BUILDER_VERSION = 0.141.0
 BUILDER := $(TOOLS_BIN_DIR)/builder_$(BUILDER_VERSION)
 
 # Determine the current operating system and architecture

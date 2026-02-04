@@ -122,6 +122,15 @@ Important Settings:
   - This field is required and defaults to `True`
 - **CLICKHOUSE_DATABASE_NAME** `string` : Database Name. The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before
   - This field is required and defaults to `otel`
+- **CLICKHOUSE_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
+  - This field is optional and defaults to `False`
+- **CLICKHOUSE_INSECURE_SKIP_VERIFY** `boolean` : Insecure Skip Verify. Skip TLS certificate verification
+  - This field is optional and defaults to `False`
+- **CLICKHOUSE_USE_CUSTOM_CA** `boolean` : Use Custom CA Certificate. Use a custom CA certificate instead of the system root CA
+  - This field is optional and defaults to `False`
+- **CLICKHOUSE_CA_PEM** `string` : Certificate Authority (CA PEM). CA certificate in PEM format to verify the server
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
 - **CLICKHOUSE_TRACES_TABLE** `string` : Traces Table. Name of the ClickHouse Table to use for storing trace spans. This name should be used in span queries
   - This field is required and defaults to `otel_traces`
 - **CLICKHOUSE_LOGS_TABLE** `string` : Logs Table. Name of the ClickHouse Table to use for storing logs
@@ -183,6 +192,9 @@ There are two primary methods for configuring destinations in Odigos:
         CLICKHOUSE_TRACES_TABLE: '<Traces Table (default: otel_traces)>'
         # Note: The commented fields below are optional.
         # CLICKHOUSE_USERNAME: <Username>
+        # CLICKHOUSE_TLS_ENABLED: <Enable TLS>
+        # CLICKHOUSE_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
+        # CLICKHOUSE_USE_CUSTOM_CA: <Use Custom CA Certificate>
         # HYPERDX_LOG_NORMALIZER: <Enable Log Normalizer>
       destinationName: clickhouse
       # Uncomment the 'secretRef' below if you are using the optional Secret.
@@ -199,6 +211,7 @@ There are two primary methods for configuring destinations in Odigos:
     # The following Secret is optional. Uncomment the entire block if you need to use it.
     # apiVersion: v1
     # data:
+    #   CLICKHOUSE_CA_PEM: <Base64 Certificate Authority (CA PEM)>
     #   CLICKHOUSE_PASSWORD: <Base64 Password>
     # kind: Secret
     # metadata:
