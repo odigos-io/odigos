@@ -30,6 +30,8 @@ spec:
                 secretKeyRef:
                   name: odigos-central
                   key: ODIGOS_ONPREM_TOKEN
+            - name: AUTH_ENABLED
+              value: {{ .Values.auth.enabled | quote }}
             - name: CURRENT_NS
               valueFrom:
                 fieldRef:
