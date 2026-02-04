@@ -9,6 +9,7 @@ export default function Page() {
 
   return (
     <PipelineCollectors
+      minSupportedVersion={1.12}
       tableRowsMaxHeight={'calc(100vh - 350px)'}
       getGatewayInfo={getGatewayInfo}
       getGatewayPods={getGatewayPods}
