@@ -332,7 +332,7 @@ spec:
               readOnly: true
             {{- end }}
             {{- end }}
-            {{- if $collectMetrics }}
+            {{- if and $collectMetrics (not (and (kindIs "map" .Values.metricsSources) (kindIs "map" .Values.metricsSources.hostMetrics) .Values.metricsSources.hostMetrics.disabled)) }}
             - name: hostfs
               mountPath: /hostfs
               readOnly: true
@@ -423,7 +423,7 @@ spec:
             path: {{ $logsDir }}
         {{- end }}
         {{- end }}
-        {{- if $collectMetrics }}
+        {{- if and $collectMetrics (not (and (kindIs "map" .Values.metricsSources) (kindIs "map" .Values.metricsSources.hostMetrics) .Values.metricsSources.hostMetrics.disabled)) }}
         - name: hostfs
           hostPath:
             path: /
