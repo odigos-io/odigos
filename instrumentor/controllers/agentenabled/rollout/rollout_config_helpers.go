@@ -12,6 +12,7 @@ type RollBackOptions struct {
 	IsRollbackDisabled      bool
 	RollbackGraceTime       time.Duration
 	RollbackStabilityWindow time.Duration
+	MaxConcurrentRollouts   int
 }
 
 // GetRolloutAndRollbackOptions extracts rollout and rollback configuration from OdigosConfiguration.
@@ -41,10 +42,17 @@ func getRolloutAndRollbackOptions(conf *common.OdigosConfiguration) (isAutomatic
 		rollbackStabilityWindow = parsedRollbackStabilityWindow
 	}
 
+	// Concurrent rollout limiter configuration - defaults to no concurrency limiting
+	maxConcurrentRollouts := NoConcurrencyLimiting
+	if conf.Rollout != nil && conf.Rollout.MaxConcurrentRollouts > 0 {
+		maxConcurrentRollouts = conf.Rollout.MaxConcurrentRollouts
+	}
+
 	rollBackOptions = RollBackOptions{
 		IsRollbackDisabled:      isRollbackDisabled,
 		RollbackGraceTime:       rollbackGraceTime,
 		RollbackStabilityWindow: rollbackStabilityWindow,
+		MaxConcurrentRollouts:   maxConcurrentRollouts,
 	}
 	return isAutomaticRolloutDisabled, rollBackOptions, nil
 }
