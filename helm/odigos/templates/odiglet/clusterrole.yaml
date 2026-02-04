@@ -76,6 +76,15 @@ rules:
       - patch
       - update
 ## related to node collector
+{{- if not (and .Values.metricsSources.kubeletStats .Values.metricsSources.kubeletStats.disabled) }}
+  - apiGroups:
+      - ''
+    resources:
+      - nodes/stats
+    verbs:
+      - get
+      - list
+{{- end }}
   - apiGroups:
       - ''
     resources:
