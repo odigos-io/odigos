@@ -356,10 +356,6 @@ instrumentor:
   # podsWebhookTimeoutSeconds: 25
 
 odiglet:
-  # extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.
-  # When true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).
-  # Default: false
-  extended: false
   odiglet:
     livenessProbe:
       httpGet:
@@ -480,7 +476,9 @@ odiglet:
   disableGoCodeAttributes: false
 
 
-  # When set to true, odiglet will be installed with the extended version of the Odiglet image (with legacy .NET instrumentation).
+  # extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.
+  # When true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).
+  # Default: false
   extended: false
 
 centralProxy:
