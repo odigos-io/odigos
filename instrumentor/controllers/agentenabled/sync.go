@@ -47,7 +47,7 @@ type agentInjectedStatusCondition struct {
 	Message string
 }
 
-func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (ctrl.Result, error) {
+func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider, rolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter) (ctrl.Result, error) {
 	allInstrumentationConfigs := odigosv1.InstrumentationConfigList{}
 	listErr := c.List(ctx, &allInstrumentationConfigs)
 	if listErr != nil {
@@ -58,10 +58,6 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	// Create a new rate limiter with the new configuration
-	rolloutConcurrencyLimiter := rollout.NewRolloutConcurrencyLimiter()
-	rolloutConcurrencyLimiter.ApplyConfig(&conf)
 
 	var allErrs error
 	aggregatedResult := ctrl.Result{}

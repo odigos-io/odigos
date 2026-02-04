@@ -212,8 +212,8 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
 
-	// workloadKey was already defined above when checking if rollout was complete
-	if !rolloutConcurrencyLimiter.TryAcquire(workloadKey) {
+	if !rolloutConcurrencyLimiter.TryAcquire(workloadKey, rollBackOptions.MaxConcurrentRollouts) {
+		ic.Status.RolloutStatus = odigosv1alpha1.WorkloadRolloutWaitingInQueue
 		logger.V(2).Info("rate limited instrumentation rollout, requeuing",
 			"workload", pw.Name,
 			"namespace", pw.Namespace,
@@ -221,7 +221,6 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionWaitingInQueue)
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 	}
-	logger.V(2).Info("proceeding with instrumentation rollout", "workload", pw.Name, "namespace", pw.Namespace)
 
 	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
 	if rolloutErr != nil {
