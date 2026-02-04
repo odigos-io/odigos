@@ -274,7 +274,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, logger logr.Logger) (*agentInjectedStatusCondition, error) {
 	workloadClientObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	if getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadClientObj); getErr == nil {
-		hasPodInBackoff, backoffErr := rollout.WorkloadHasPodInBackoff(ctx, c, workloadClientObj)
+		hasPodInBackoff, backoffErr := rollout.WorkloadHasNonInstrumentedPodInBackoff(ctx, c, workloadClientObj)
 		if backoffErr != nil {
 			logger.V(2).Info("failed to check for pods in backoff", "error", backoffErr, "workload", pw.Name, "namespace", pw.Namespace)
 			return nil, fmt.Errorf("failed to check for pods in backoff: %w", backoffErr)

@@ -9,7 +9,7 @@ import (
 )
 
 // ****************
-// WorkloadHasPodInBackoff() tests
+// WorkloadHasNonInstrumentedPodInBackoff() tests
 // ****************
 
 func TestWorkloadHasPodInBackoff_NoPods(t *testing.T) {
@@ -19,7 +19,7 @@ func TestWorkloadHasPodInBackoff_NoPods(t *testing.T) {
 	c := setup.newFakeClient(setup.ns, deployment)
 
 	// Act
-	hasBackoff, err := rollout.WorkloadHasPodInBackoff(setup.ctx, c, deployment)
+	hasBackoff, err := rollout.WorkloadHasNonInstrumentedPodInBackoff(setup.ctx, c, deployment)
 
 	// Assert: No backoff detected when no pods exist
 	assert.NoError(t, err)
@@ -34,7 +34,7 @@ func TestWorkloadHasPodInBackoff_HealthyPods(t *testing.T) {
 	c := setup.newFakeClient(setup.ns, deployment, healthyPod)
 
 	// Act
-	hasBackoff, err := rollout.WorkloadHasPodInBackoff(setup.ctx, c, deployment)
+	hasBackoff, err := rollout.WorkloadHasNonInstrumentedPodInBackoff(setup.ctx, c, deployment)
 
 	// Assert: No backoff detected with healthy pods
 	assert.NoError(t, err)
@@ -49,7 +49,7 @@ func TestWorkloadHasPodInBackoff_CrashLoopBackOff(t *testing.T) {
 	c := setup.newFakeClient(setup.ns, deployment, crashingPod)
 
 	// Act
-	hasBackoff, err := rollout.WorkloadHasPodInBackoff(setup.ctx, c, deployment)
+	hasBackoff, err := rollout.WorkloadHasNonInstrumentedPodInBackoff(setup.ctx, c, deployment)
 
 	// Assert: Backoff detected - this is a pre-existing crash, not caused by Odigos
 	assert.NoError(t, err)
@@ -64,7 +64,7 @@ func TestWorkloadHasPodInBackoff_CrashLoopBackOff_WithOdigosLabel(t *testing.T) 
 	c := setup.newFakeClient(setup.ns, deployment, crashingPod)
 
 	// Act
-	hasBackoff, err := rollout.WorkloadHasPodInBackoff(setup.ctx, c, deployment)
+	hasBackoff, err := rollout.WorkloadHasNonInstrumentedPodInBackoff(setup.ctx, c, deployment)
 
 	// Assert: No backoff detected - pods with odigos label are handled by rollback logic instead
 	assert.NoError(t, err)
@@ -79,7 +79,7 @@ func TestWorkloadHasPodInBackoff_ImagePullBackOff(t *testing.T) {
 	c := setup.newFakeClient(setup.ns, deployment, imagePullPod)
 
 	// Act
-	hasBackoff, err := rollout.WorkloadHasPodInBackoff(setup.ctx, c, deployment)
+	hasBackoff, err := rollout.WorkloadHasNonInstrumentedPodInBackoff(setup.ctx, c, deployment)
 
 	// Assert: Backoff detected for ImagePullBackOff - we don't want to instrument the workload
 	assert.NoError(t, err)
@@ -95,7 +95,7 @@ func TestWorkloadHasPodInBackoff_MixedPods(t *testing.T) {
 	c := setup.newFakeClient(setup.ns, deployment, healthyPod1, healthyPod2, crashingPod)
 
 	// Act
-	hasBackoff, err := rollout.WorkloadHasPodInBackoff(setup.ctx, c, deployment)
+	hasBackoff, err := rollout.WorkloadHasNonInstrumentedPodInBackoff(setup.ctx, c, deployment)
 
 	// Assert: Backoff detected even when some pods are healthy - we don't want to instrument the workload
 	assert.NoError(t, err)
@@ -110,7 +110,7 @@ func TestWorkloadHasPodInBackoff_InitContainerBackoff(t *testing.T) {
 	c := setup.newFakeClient(setup.ns, deployment, podWithInitBackoff)
 
 	// Act
-	hasBackoff, err := rollout.WorkloadHasPodInBackoff(setup.ctx, c, deployment)
+	hasBackoff, err := rollout.WorkloadHasNonInstrumentedPodInBackoff(setup.ctx, c, deployment)
 
 	// Assert: Backoff detected for init container in CrashLoopBackOff - we don't want to instrument the workload
 	assert.NoError(t, err)

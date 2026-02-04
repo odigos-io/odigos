@@ -345,14 +345,14 @@ func getPodBackOffReason(p *corev1.Pod) (odigosv1alpha1.AgentEnabledReason, stri
 	return "", ""
 }
 
-// WorkloadHasPodInBackoff checks if any NON-INSTRUMENTED pod belonging to the workload is in a backoff state
+// WorkloadHasNonInstrumentedPodInBackoff checks if any NON-INSTRUMENTED pod belonging to the workload is in a backoff state
 // (CrashLoopBackOff or ImagePullBackOff). This specifically checks pods that DON'T have the odigos label,
 // to detect pre-existing crashloops and prevent attempting to instrument already-crashlooping workloads.
 // Pods that are already instrumented (have the odigos label) are handled by the rollback logic instead.
-func WorkloadHasPodInBackoff(ctx context.Context, c client.Client, workloadObj client.Object) (bool, error) {
+func WorkloadHasNonInstrumentedPodInBackoff(ctx context.Context, c client.Client, workloadObj client.Object) (bool, error) {
 	selector, err := notInstrumentedWorkloadPodsSelector(workloadObj)
 	if err != nil {
-		return false, fmt.Errorf("WorkloadHasPodInBackoff: %w", err)
+		return false, fmt.Errorf("WorkloadHasNonInstrumentedPodInBackoff: %w", err)
 	}
 
 	var podList corev1.PodList
@@ -360,7 +360,7 @@ func WorkloadHasPodInBackoff(ctx context.Context, c client.Client, workloadObj c
 		client.InNamespace(workloadObj.GetNamespace()),
 		client.MatchingLabelsSelector{Selector: selector},
 	); err != nil {
-		return false, fmt.Errorf("WorkloadHasPodInBackoff: failed listing pods: %w", err)
+		return false, fmt.Errorf("WorkloadHasNonInstrumentedPodInBackoff: failed listing pods: %w", err)
 	}
 
 	// If a pod has the odigos label and is in backoff, it's handled by the rollback logic.
