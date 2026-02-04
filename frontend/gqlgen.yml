@@ -110,5 +110,3 @@ models:
 
   K8sActualSource:
     fields:
-      workloadOdigosHealthStatus:
-        resolver: true

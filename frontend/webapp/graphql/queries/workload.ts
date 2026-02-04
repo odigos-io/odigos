@@ -9,6 +9,12 @@ export const GET_WORKLOADS = gql`
         kind
         name
       }
+      workloadOdigosHealthStatus {
+        name
+        status
+        reasonEnum
+        message
+      }
       podsAgentInjectionStatus {
         status
         message
