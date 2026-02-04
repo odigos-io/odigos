@@ -169,11 +169,11 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 
 		switch metricType {
 		case MetricClassLoaded:
-			h.addClassLoadedMetric(scopeMetrics, value.AsCounter())
-			h.updateClassCountMetric(scopeMetrics, int64(value.AsCounter().Count))
+			h.addClassLoadedMetric(scopeMetrics, value.AsGauge())
 		case MetricClassUnloaded:
-			h.addClassUnloadedMetric(scopeMetrics, value.AsCounter())
-			h.updateClassCountMetric(scopeMetrics, -int64(value.AsCounter().Count))
+			h.addClassUnloadedMetric(scopeMetrics, value.AsGauge())
+		case MetricClassCount:
+			h.addClassCountMetric(scopeMetrics, value.AsGauge())
 
 		// Memory metrics - extract common attributes once
 		case MetricMemoryUsed, MetricMemoryCommitted, MetricMemoryLimit, MetricMemoryUsedAfterGC:
@@ -261,53 +261,19 @@ func setGCAttributes(attrs pcommon.Map, gcAction GCAction, gcName GCName) {
 	}
 }
 
-func (h *JVMMetricsHandler) addClassLoadedMetric(scopeMetrics pmetric.ScopeMetrics, counter CounterValue) {
-	metric := scopeMetrics.Metrics().AppendEmpty()
-	metric.SetName(metricClassesLoaded)
-	metric.SetDescription(descClassLoaded)
-	metric.SetUnit(semconv1_26.JvmClassLoadedUnit)
-
-	sum := metric.SetEmptySum()
-	sum.SetIsMonotonic(true)
-	// Set cumulative temporality - values represent total since measurement started, not delta changes
-	sum.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-
-	dataPoint := sum.DataPoints().AppendEmpty()
-	dataPoint.SetIntValue(int64(counter.Count))
-	now := pcommon.NewTimestampFromTime(time.Now())
-	dataPoint.SetTimestamp(now)
-	dataPoint.SetStartTimestamp(now)
+func (h *JVMMetricsHandler) addClassLoadedMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue) {
+	h.emitGaugeMetric(scopeMetrics, metricClassesLoaded, descClassLoaded,
+		semconv1_26.JvmClassLoadedUnit, int64(gauge.Value), nil)
 }
 
-func (h *JVMMetricsHandler) updateClassCountMetric(scopeMetrics pmetric.ScopeMetrics, delta int64) {
-	metric := scopeMetrics.Metrics().AppendEmpty()
-	metric.SetName(metricClassesCount)
-	metric.SetDescription(descClassCount)
-	metric.SetUnit(semconv1_26.JvmClassCountUnit)
-
-	gauge := metric.SetEmptyGauge()
-	dataPoint := gauge.DataPoints().AppendEmpty()
-	dataPoint.SetIntValue(delta)
-	now := pcommon.NewTimestampFromTime(time.Now())
-	dataPoint.SetTimestamp(now)
+func (h *JVMMetricsHandler) addClassUnloadedMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue) {
+	h.emitGaugeMetric(scopeMetrics, metricClassesUnloaded, descClassUnloaded,
+		semconv1_26.JvmClassUnloadedUnit, int64(gauge.Value), nil)
 }
 
-func (h *JVMMetricsHandler) addClassUnloadedMetric(scopeMetrics pmetric.ScopeMetrics, counter CounterValue) {
-	metric := scopeMetrics.Metrics().AppendEmpty()
-	metric.SetName(metricClassesUnloaded)
-	metric.SetDescription(descClassUnloaded)
-	metric.SetUnit(semconv1_26.JvmClassUnloadedUnit)
-
-	sum := metric.SetEmptySum()
-	sum.SetIsMonotonic(true)
-	// Set cumulative temporality - values represent total since measurement started, not delta changes
-	sum.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
-
-	dataPoint := sum.DataPoints().AppendEmpty()
-	dataPoint.SetIntValue(int64(counter.Count))
-	now := pcommon.NewTimestampFromTime(time.Now())
-	dataPoint.SetTimestamp(now)
-	dataPoint.SetStartTimestamp(now)
+func (h *JVMMetricsHandler) addClassCountMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue) {
+	h.emitGaugeMetric(scopeMetrics, metricClassesCount, descClassCount,
+		semconv1_26.JvmClassCountUnit, int64(gauge.Value), nil)
 }
 
 func (h *JVMMetricsHandler) addMemoryUsedMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue, memType MemoryType, poolName MemoryPoolName) {
