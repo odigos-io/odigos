@@ -11,6 +11,7 @@ spec:
       supported: true
     metrics:
       supported: true
+      spanMetricsEnabledByDefault: true
     logs:
       supported: true
   fields:
