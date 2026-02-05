@@ -3,52 +3,21 @@ package rollout
 import (
 	"testing"
 
-	"github.com/odigos-io/odigos/common"
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_NilConfig(t *testing.T) {
-	// Arrange: nil config
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(nil)
-
-	// Assert: limiter is not nil, all TryAcquire calls should succeed (no rate limiting when config is nil)
-	assert.NotNil(t, limiter)
-	for i := 0; i < 100; i++ {
-		key := workloadKey("ns", "Deployment", i)
-		assert.True(t, limiter.TryAcquire(key), "TryAcquire() should return true for workload %d when config is nil", i+1)
-	}
-}
-
-func Test_NilRolloutConfig(t *testing.T) {
-	// Arrange: nil rollout config
-	conf := &common.OdigosConfiguration{
-		Rollout: nil,
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
-
-	// Assert: limiter is not nil
-	assert.NotNil(t, limiter)
-}
-
 func Test_CustomValues(t *testing.T) {
 	// Arrange: custom values
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 3,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
 	// Assert: limiter is not nil, first 3 TryAcquire calls should succeed, 4th should fail
 	assert.NotNil(t, limiter)
 	for i := 0; i < 3; i++ {
 		key := workloadKey("ns", "Deployment", i)
-		assert.True(t, limiter.TryAcquire(key), "TryAcquire() should return true for workload %d", i+1)
+		assert.True(t, limiter.TryAcquire(key, 3), "TryAcquire() should return true for workload %d", i+1)
 	}
-	assert.False(t, limiter.TryAcquire(workloadKey("ns", "Deployment", 3)))
+	assert.False(t, limiter.TryAcquire(workloadKey("ns", "Deployment", 3), 3))
 }
 
 func Test_NilReceiver_TryAcquire(t *testing.T) {
@@ -56,108 +25,72 @@ func Test_NilReceiver_TryAcquire(t *testing.T) {
 	var limiter *RolloutConcurrencyLimiter
 
 	// Assert: nil receiver should return true (fail-open)
-	assert.True(t, limiter.TryAcquire("test/Deployment/test"))
+	assert.True(t, limiter.TryAcquire("test/Deployment/test", 0))
 }
 
 func Test_SingleConcurrentRollout(t *testing.T) {
 	// Arrange: single concurrent rollout
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 1,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
 	// Assert: first request should succeed, second (different workload) should fail
-	assert.True(t, limiter.TryAcquire("ns/Deployment/app1"))
-	assert.False(t, limiter.TryAcquire("ns/Deployment/app2"))
+	assert.True(t, limiter.TryAcquire("ns/Deployment/app1", 1))
+	assert.False(t, limiter.TryAcquire("ns/Deployment/app2", 1))
 }
 
 func Test_SameWorkloadCanReacquire(t *testing.T) {
 	// Arrange: single concurrent rollout
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 1,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
 	// Assert: same workload can re-acquire its existing slot
-	assert.True(t, limiter.TryAcquire("ns/Deployment/app1"))
-	assert.True(t, limiter.TryAcquire("ns/Deployment/app1"))  // Should succeed - already has slot
-	assert.False(t, limiter.TryAcquire("ns/Deployment/app2")) // Different workload - denied
+	assert.True(t, limiter.TryAcquire("ns/Deployment/app1", 1))
+	assert.True(t, limiter.TryAcquire("ns/Deployment/app1", 1))  // Should succeed - already has slot
+	assert.False(t, limiter.TryAcquire("ns/Deployment/app2", 1)) // Different workload - denied
 }
 
 func Test_RateLimitingEnabled(t *testing.T) {
 	// Arrange: rate limiting enabled (MaxConcurrentRollouts: 5)
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 5,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
 	// Assert: first 5 TryAcquire calls should succeed, 6th should fail
 	assert.NotNil(t, limiter)
 	for i := 0; i < 5; i++ {
 		key := workloadKey("ns", "Deployment", i)
-		assert.True(t, limiter.TryAcquire(key), "TryAcquire() should return true for workload %d", i+1)
+		assert.True(t, limiter.TryAcquire(key, 5), "TryAcquire() should return true for workload %d", i+1)
 	}
-	assert.False(t, limiter.TryAcquire(workloadKey("ns", "Deployment", 5)))
+	assert.False(t, limiter.TryAcquire(workloadKey("ns", "Deployment", 5), 5))
 }
 
 func Test_RateLimitingDisabled_ZeroValue(t *testing.T) {
 	// Arrange: rate limiting disabled (MaxConcurrentRollouts: 0 means unlimited)
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 0,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
 	// Assert: all requests should succeed (no rate limiting when MaxConcurrentRollouts is 0)
 	assert.NotNil(t, limiter)
 	for i := 0; i < 100; i++ {
 		key := workloadKey("ns", "Deployment", i)
-		assert.True(t, limiter.TryAcquire(key), "TryAcquire() should return true for workload %d when rate limiting is disabled", i+1)
+		assert.True(t, limiter.TryAcquire(key, 0), "TryAcquire() should return true for workload %d when rate limiting is disabled", i+1)
 	}
 }
 
 func Test_Release_ReturnsSlot(t *testing.T) {
 	// Arrange: rate limiter with 1 concurrent rollout
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 1,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
 	key1 := "ns/Deployment/app1"
 	key2 := "ns/Deployment/app2"
 
 	// Act: acquire slot for app1, then release it
-	assert.True(t, limiter.TryAcquire(key1), "first TryAcquire() should succeed")
-	assert.False(t, limiter.TryAcquire(key2), "second TryAcquire() should fail (exhausted)")
+	assert.True(t, limiter.TryAcquire(key1, 1), "first TryAcquire() should succeed")
+	assert.False(t, limiter.TryAcquire(key2, 1), "second TryAcquire() should fail (exhausted)")
 	limiter.ReleaseWorkloadRolloutSlot(key1)
 
 	// Assert: slot is returned, app2 can now acquire
-	assert.True(t, limiter.TryAcquire(key2), "TryAcquire() should succeed after Release()")
+	assert.True(t, limiter.TryAcquire(key2, 1), "TryAcquire() should succeed after Release()")
 }
 
 func Test_Release_MultipleSlots(t *testing.T) {
 	// Arrange: rate limiter with 3 concurrent rollouts
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 3,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
 	keys := []string{
 		"ns/Deployment/app1",
@@ -169,39 +102,32 @@ func Test_Release_MultipleSlots(t *testing.T) {
 
 	// Act: consume all 3 slots
 	for i := 0; i < 3; i++ {
-		assert.True(t, limiter.TryAcquire(keys[i]), "TryAcquire() %d should succeed", i+1)
+		assert.True(t, limiter.TryAcquire(keys[i], 3), "TryAcquire() %d should succeed", i+1)
 	}
-	assert.False(t, limiter.TryAcquire(keys[3]), "4th TryAcquire() should fail (exhausted)")
+	assert.False(t, limiter.TryAcquire(keys[3], 3), "4th TryAcquire() should fail (exhausted)")
 
 	// Release 2 slots
 	limiter.ReleaseWorkloadRolloutSlot(keys[0])
 	limiter.ReleaseWorkloadRolloutSlot(keys[1])
 
 	// Assert: 2 slots available again
-	assert.True(t, limiter.TryAcquire(keys[3]), "TryAcquire() should succeed after first Release()")
-	assert.True(t, limiter.TryAcquire(keys[4]), "TryAcquire() should succeed after second Release()")
-	assert.False(t, limiter.TryAcquire("ns/Deployment/app6"), "TryAcquire() should fail (exhausted again)")
+	assert.True(t, limiter.TryAcquire(keys[3], 3), "TryAcquire() should succeed after first Release()")
+	assert.True(t, limiter.TryAcquire(keys[4], 3), "TryAcquire() should succeed after second Release()")
+	assert.False(t, limiter.TryAcquire("ns/Deployment/app6", 3), "TryAcquire() should fail (exhausted again)")
 }
 
-func Test_Release_WhenNoSlotHeld(t *testing.T) {
-	// Arrange: rate limiter with slots available (none consumed)
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 2,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+func Test_Release_NonexistentWorkload_DoesNotAffectOtherSlots(t *testing.T) {
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
-	// Act: call Release() for workloads that don't have slots (should be no-op)
-	limiter.ReleaseWorkloadRolloutSlot("ns/Deployment/nonexistent1")
-	limiter.ReleaseWorkloadRolloutSlot("ns/Deployment/nonexistent2")
-	limiter.ReleaseWorkloadRolloutSlot("ns/Deployment/nonexistent3")
+	// First acquire a slot
+	assert.True(t, limiter.TryAcquire("ns/Deployment/app1", 2), "TryAcquire() 1 should succeed")
 
-	// Assert: limiter still works correctly, allows up to 2 concurrent rollouts
-	assert.True(t, limiter.TryAcquire("ns/Deployment/app1"), "TryAcquire() 1 should succeed")
-	assert.True(t, limiter.TryAcquire("ns/Deployment/app2"), "TryAcquire() 2 should succeed")
-	assert.False(t, limiter.TryAcquire("ns/Deployment/app3"), "TryAcquire() 3 should fail (limit is 2)")
+	// Release a DIFFERENT workload that never acquired a slot (should be no-op)
+	limiter.ReleaseWorkloadRolloutSlot("ns/Deployment/nonexistent")
+
+	// Verify app1's slot is still held (only 1 slot left, not 2)
+	assert.True(t, limiter.TryAcquire("ns/Deployment/app2", 2), "TryAcquire() 2 should succeed")
+	assert.False(t, limiter.TryAcquire("ns/Deployment/app3", 2), "TryAcquire() 3 should fail (limit is 2)")
 }
 
 func Test_NilReceiver_Release(t *testing.T) {
@@ -215,21 +141,15 @@ func Test_NilReceiver_Release(t *testing.T) {
 }
 
 func Test_InFlightCount(t *testing.T) {
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: 5,
-		},
-	}
-	limiter := NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
+	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
 
 	assert.Equal(t, 0, limiter.InFlightCount())
 
-	limiter.TryAcquire("ns/Deployment/app1")
+	limiter.TryAcquire("ns/Deployment/app1", 3)
 	assert.Equal(t, 1, limiter.InFlightCount())
 
-	limiter.TryAcquire("ns/Deployment/app2")
-	limiter.TryAcquire("ns/Deployment/app3")
+	limiter.TryAcquire("ns/Deployment/app2", 3)
+	limiter.TryAcquire("ns/Deployment/app3", 3)
 	assert.Equal(t, 3, limiter.InFlightCount())
 
 	limiter.ReleaseWorkloadRolloutSlot("ns/Deployment/app1")

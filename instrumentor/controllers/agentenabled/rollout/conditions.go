@@ -55,6 +55,14 @@ var (
 		Message: "waiting for workload rollout to finish before triggering a new one",
 	}
 
+	// conditionRolloutOngoing is used for an ongoing rollout
+	conditionRolloutOngoing = metav1.Condition{
+		Type:    odigosv1alpha1.WorkloadRolloutStatusConditionType,
+		Status:  metav1.ConditionUnknown,
+		Reason:  string(odigosv1alpha1.WorkloadRolloutReasonRolloutOngoing),
+		Message: "ongoing rollout",
+	}
+
 	// ConditionWaitingInQueue is used when the workload is waiting for other rollouts to complete
 	// due to rate limiting of concurrent reconciliations
 	conditionWaitingInQueue = metav1.Condition{
