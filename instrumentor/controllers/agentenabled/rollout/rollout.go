@@ -350,6 +350,10 @@ func getPodBackOffReason(p *corev1.Pod) (odigosv1alpha1.AgentEnabledReason, stri
 // to detect pre-existing crashloops and prevent attempting to instrument already-crashlooping workloads.
 // Pods that are already instrumented (have the odigos label) are handled by the rollback logic instead.
 func WorkloadHasNonInstrumentedPodInBackoff(ctx context.Context, c client.Client, workloadObj client.Object) (bool, error) {
+	if pod, ok := workloadObj.(*corev1.Pod); ok {
+		return podHasBackOff(pod), nil
+	}
+
 	selector, err := notInstrumentedWorkloadPodsSelector(workloadObj)
 	if err != nil {
 		return false, fmt.Errorf("WorkloadHasNonInstrumentedPodInBackoff: %w", err)

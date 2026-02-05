@@ -76,6 +76,23 @@ rules:
       - patch
       - update
 ## related to node collector
+{{- $kubeletStatsDisabled := false }}
+{{- if .Values.metricsSources }}
+  {{- if .Values.metricsSources.kubeletStats }}
+    {{- if hasKey .Values.metricsSources.kubeletStats "disabled" }}
+      {{- $kubeletStatsDisabled = .Values.metricsSources.kubeletStats.disabled }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if not $kubeletStatsDisabled }}
+  - apiGroups:
+      - ''
+    resources:
+      - nodes/stats
+    verbs:
+      - get
+      - list
+{{- end }}
   - apiGroups:
       - ''
     resources:
@@ -97,9 +114,9 @@ rules:
       - list
       - watch
   - apiGroups:
-      - ''
+      - 'discovery.k8s.io'
     resources:
-      - endpoints
+      - endpointslices
     verbs:
       - get
       - list
