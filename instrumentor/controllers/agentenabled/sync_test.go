@@ -102,3 +102,35 @@ func TestHasUninstrumentedPodsWithBackoff_WorkloadNotFound(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, condition, "expected no condition when workload not found")
 }
+
+func TestHasUninstrumentedPodsWithBackoff_CronJob_Skipped(t *testing.T) {
+	// Arrange: CronJob workload - should skip backoff check entirely
+	setup := newSyncTestSetup()
+	cronJob := newMockCronJob(setup.ns, "test-cronjob")
+	ic := testutil.NewMockInstrumentationConfig(cronJob)
+	client := setup.newFakeClient(setup.ns, cronJob, ic)
+	pw := k8sconsts.PodWorkload{Name: cronJob.Name, Namespace: cronJob.Namespace, Kind: k8sconsts.WorkloadKindCronJob}
+
+	// Act
+	condition, err := hasUninstrumentedPodsWithBackoff(setup.ctx, client, pw, ic, setup.logger)
+
+	// Assert: No error, no condition - CronJob workloads skip the backoff check
+	assert.NoError(t, err)
+	assert.Nil(t, condition, "expected no condition for CronJob workloads")
+}
+
+func TestHasUninstrumentedPodsWithBackoff_Job_Skipped(t *testing.T) {
+	// Arrange: Job workload - should skip backoff check entirely
+	setup := newSyncTestSetup()
+	job := newMockJob(setup.ns, "test-job")
+	ic := testutil.NewMockInstrumentationConfig(job)
+	client := setup.newFakeClient(setup.ns, job, ic)
+	pw := k8sconsts.PodWorkload{Name: job.Name, Namespace: job.Namespace, Kind: k8sconsts.WorkloadKindJob}
+
+	// Act
+	condition, err := hasUninstrumentedPodsWithBackoff(setup.ctx, client, pw, ic, setup.logger)
+
+	// Assert: No error, no condition - Job workloads skip the backoff check
+	assert.NoError(t, err)
+	assert.Nil(t, condition, "expected no condition for Job workloads")
+}
