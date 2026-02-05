@@ -165,7 +165,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// - agent enabled -> no need for a rollout, but the status needs to be updated.
 		statusChanged := false
 		if rolloutDone {
-			statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(nil))
+			statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionRolloutFinished)
 			// Rollout is complete - release the slot if we had one
 			rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(workloadKey)
 		}
@@ -232,7 +232,6 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-	statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionRolloutOngoing)
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 	}
