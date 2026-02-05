@@ -87,6 +87,22 @@ cli-docs:
 rbac-docs:
 	cd scripts/rbac-docgen && go run main.go
 
+TOOLS_DIR := .tools
+HELM_SCHEMA_VERSION := v0.21.1
+HELM_SCHEMA_BIN := $(TOOLS_DIR)/helm-schema
+
+.PHONY: helm-schema
+helm-schema: $(HELM_SCHEMA_BIN)
+	cd helm/odigos && ../../$(HELM_SCHEMA_BIN) --uncomment -k required
+
+$(HELM_SCHEMA_BIN):
+	@mkdir -p $(TOOLS_DIR)
+	GOBIN=$(CURDIR)/$(TOOLS_DIR) go install github.com/dadav/helm-schema/cmd/helm-schema@$(HELM_SCHEMA_VERSION)
+
+.PHONY: helm-schema-clean
+helm-schema-clean:
+	rm -f $(HELM_SCHEMA_BIN)
+
 build-image/%:
 	docker build $(TARGET_FLAG) \
 	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
