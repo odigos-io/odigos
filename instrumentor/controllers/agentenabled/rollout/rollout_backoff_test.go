@@ -116,3 +116,17 @@ func TestWorkloadHasPodInBackoff_InitContainerBackoff(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, hasBackoff)
 }
+
+func TestWorkloadHasPodInBackoff_StaticPod(t *testing.T) {
+	// Arrange: StaticPod in CrashLoopBackOff - the workload object IS the pod, so it checks itself directly
+	setup := newTestSetup()
+	crashingStaticPod := newCrashLoopBackOffStaticPod(setup.ns, "test-staticpod")
+	c := setup.newFakeClient(setup.ns, crashingStaticPod)
+
+	// Act
+	hasBackoff, err := rollout.WorkloadHasNonInstrumentedPodInBackoff(setup.ctx, c, crashingStaticPod)
+
+	// Assert: Backoff detected for StaticPod - we don't want to instrument the workload
+	assert.NoError(t, err)
+	assert.True(t, hasBackoff)
+}
