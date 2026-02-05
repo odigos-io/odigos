@@ -107,13 +107,17 @@ func (h *JVMMetricsHandler) emitHistogramMetric(
 	hist HistogramValue,
 	attrSetter func(pcommon.Map),
 ) {
+	if hist.TotalCount == 0 {
+		return
+	}
+
 	metric := scopeMetrics.Metrics().AppendEmpty()
 	metric.SetName(name)
 	metric.SetDescription(description)
 	metric.SetUnit(unit)
 
 	histogramMetric := metric.SetEmptyHistogram()
-	histogramMetric.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	histogramMetric.SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
 
 	dataPoint := histogramMetric.DataPoints().AppendEmpty()
 	now := pcommon.NewTimestampFromTime(time.Now())
@@ -123,13 +127,15 @@ func (h *JVMMetricsHandler) emitHistogramMetric(
 	dataPoint.SetCount(uint64(hist.TotalCount))
 	dataPoint.SetSum(float64(hist.SumNs) / 1e9) // Convert nanoseconds to seconds
 
+	// OTLP bucket_counts are per-bucket (non-cumulative).
+	// The sum of bucket_counts must equal the Count field.
 	bucketBounds := []float64{0.001, 0.01, 0.1, 1.0}
 	bucketCounts := []uint64{
 		uint64(hist.Bucket1ms),
-		uint64(hist.Bucket1ms + hist.Bucket10ms),
-		uint64(hist.Bucket1ms + hist.Bucket10ms + hist.Bucket100ms),
-		uint64(hist.Bucket1ms + hist.Bucket10ms + hist.Bucket100ms + hist.Bucket1s),
-		uint64(hist.TotalCount),
+		uint64(hist.Bucket10ms),
+		uint64(hist.Bucket100ms),
+		uint64(hist.Bucket1s),
+		uint64(hist.BucketInf),
 	}
 
 	dataPoint.ExplicitBounds().FromRaw(bucketBounds)
@@ -358,10 +364,7 @@ func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetri
 		setGCAttributes(attrs, gcAction, gcName)
 	}
 
-	// Grafana has a query to summarize both otel and process runtime metric name
-	// if we emit both we get "execution: vector cannot contain metrics with the same labelset"
-	// sticking to processruntime emition only
-	// h.emitHistogramMetric(scopeMetrics, metricGCDuration, descGCDuration, semconv1_26.JvmGcDurationUnit, hist, attrSetter)
+	h.emitHistogramMetric(scopeMetrics, metricGCDuration, descGCDuration, semconv1_26.JvmGcDurationUnit, hist, attrSetter)
 
 	h.emitHistogramMetric(scopeMetrics, processRuntimeJVMMetricGCDuration, descGCDuration, semconv1_26.JvmGcDurationUnit, hist, attrSetter)
 
