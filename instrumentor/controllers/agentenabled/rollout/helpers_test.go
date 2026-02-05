@@ -417,3 +417,35 @@ func newInitContainerBackOffPod(ns *corev1.Namespace, deploymentName, podName st
 		},
 	}
 }
+
+// newCrashLoopBackOffStaticPod creates a static pod in CrashLoopBackOff state WITHOUT odigos label.
+func newCrashLoopBackOffStaticPod(ns *corev1.Namespace, podName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: ns.Name,
+			Annotations: map[string]string{
+				"kubernetes.io/config.source": "file",
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind: "Node",
+					Name: "test-node",
+				},
+			},
+		},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
+			ContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: "test",
+					State: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Reason: "CrashLoopBackOff",
+						},
+					},
+				},
+			},
+		},
+	}
+}
