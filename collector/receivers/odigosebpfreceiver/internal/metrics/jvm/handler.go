@@ -31,7 +31,10 @@ const (
 	processRuntimeJVMMetricMemoryCommitted = "process.runtime.jvm.memory.committed"
 	processRuntimeJVMMetricMemoryLimit     = "process.runtime.jvm.memory.limit"
 	processRuntimeJVMMetricMemoryMax       = "process.runtime.jvm.memory.max"
-	processRuntimeJVMMetricGCDuration      = "process.runtime.jvm.gc.duration"
+
+	// Grafana metric names (jvm.classes.* prefix) for multi-vendor compatibility
+	grafanaMetricClassesLoaded   = "jvm.classes.loaded"
+	grafanaMetricClassesUnloaded = "jvm.classes.unloaded"
 
 	// OTel attribute keys
 	attrGCAction       = semconv1_26.JvmGcActionKey
@@ -262,10 +265,14 @@ func setGCAttributes(attrs pcommon.Map, gcAction GCAction, gcName GCName) {
 func (h *JVMMetricsHandler) addClassLoadedMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue) {
 	h.emitGaugeMetric(scopeMetrics, metricClassesLoaded, descClassLoaded,
 		semconv1_26.JvmClassLoadedUnit, int64(gauge.Value), nil)
+	h.emitGaugeMetric(scopeMetrics, grafanaMetricClassesLoaded, descClassLoaded,
+		semconv1_26.JvmClassLoadedUnit, int64(gauge.Value), nil)
 }
 
 func (h *JVMMetricsHandler) addClassUnloadedMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue) {
 	h.emitGaugeMetric(scopeMetrics, metricClassesUnloaded, descClassUnloaded,
+		semconv1_26.JvmClassUnloadedUnit, int64(gauge.Value), nil)
+	h.emitGaugeMetric(scopeMetrics, grafanaMetricClassesUnloaded, descClassUnloaded,
 		semconv1_26.JvmClassUnloadedUnit, int64(gauge.Value), nil)
 }
 
