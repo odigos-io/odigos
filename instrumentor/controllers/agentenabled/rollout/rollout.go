@@ -7,6 +7,7 @@ import (
 	"time"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -130,62 +131,27 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	workloadKey := WorkloadKey(pw)
 	savedRolloutHash := ic.Status.WorkloadRolloutHash
 	newRolloutHash := ic.Spec.AgentsMetaHash
+	// Scenario: successful instrumentation ("X"="X") or successful uninstrumentation (""="")
 	if savedRolloutHash == newRolloutHash {
 		rolloutDone := utils.IsWorkloadRolloutDone(workloadObj)
 
 		if !rolloutDone && !rollBackOptions.IsRollbackDisabled {
-			backOffInfo, err := podBackOffDuration(ctx, c, workloadObj)
+			// Rollback scenario: already instrumented workload is in backoff state, trigger rollback.
+			shouldRollback, waitDuration, backOffInfo, err := shouldTriggerRollback(
+				ctx, c, ic, workloadObj, rollBackOptions,
+			)
 			if err != nil {
 				logger.Error(err, "Failed to check pod backoff status")
 				return RolloutResult{}, err
 			}
-
-			if ic.Status.InstrumentationTime == nil {
-				return RolloutResult{Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
+			if waitDuration > 0 && shouldRollback {
+				return RolloutResult{Result: ctrl.Result{RequeueAfter: waitDuration}}, nil
 			}
-			now := time.Now()
-			timeSinceInstrumentation := now.Sub(ic.Status.InstrumentationTime.Time)
-
-			if backOffInfo.duration > 0 && timeSinceInstrumentation < rollBackOptions.RollbackStabilityWindow && ic.Spec.AgentInjectionEnabled {
-				// Allow grace time for worklaod to stabelize before uninstrumenting it
-				if backOffInfo.duration < rollBackOptions.RollbackGraceTime {
-					return RolloutResult{Result: ctrl.Result{RequeueAfter: rollBackOptions.RollbackGraceTime - backOffInfo.duration}}, nil
-				}
-
-				logger.Info("Triggering rollback due to backoff", "reason", backOffInfo.reason, "workload", pw.Name, "namespace", pw.Namespace)
-
-				// Determine the reason based on which backoff was detected
-				reason := backOffInfo.reason
-				message := backOffInfo.message
-
-				for i := range ic.Spec.Containers {
-					ic.Spec.Containers[i].AgentEnabled = false
-					ic.Spec.Containers[i].AgentEnabledReason = reason
-				}
-				ic.Spec.AgentInjectionEnabled = false
-
-				if err := c.Update(ctx, ic); err != nil {
-					res, handledErr := utils.K8SUpdateErrorHandler(err)
-					return RolloutResult{Result: res}, handledErr
-				}
-
-				ic.Status.RollbackOccurred = true
-
-				// Release any existing slot before rollback (rollback doesn't use concurrency limiter)
-				rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(workloadKey)
-
-				rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-				if rolloutErr != nil {
-					logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
-					return RolloutResult{}, rolloutErr
-				}
-
-				meta.SetStatusCondition(&ic.Status.Conditions, NewConditionTriggeredWithMessage(message))
-
-				meta.SetStatusCondition(&ic.Status.Conditions, NewConditionAgentDisabledDueToBackoff(reason, message))
-				// Status always changes, requeue to test wait for status change with workload
-				return RolloutResult{StatusChanged: true, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
+			if shouldRollback {
+				return triggerRollback(ctx, c, logger, ic, workloadObj, workloadKey,
+					rolloutConcurrencyLimiter, &backOffInfo, pw)
 			}
+
 			// Requeue to wait for workload to finish or enter backoff state
 			return RolloutResult{Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 		}
@@ -205,6 +171,50 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		}
 		return RolloutResult{StatusChanged: statusChanged, Result: ctrl.Result{}}, nil
 	}
+
+	// Rollback scenario: Webhook-instrumented pod crashlooping before rollout: AgentsMetaHash is populated but WorkloadRolloutHash is empty.
+	if savedRolloutHash == "" && newRolloutHash != "" &&
+		!rollBackOptions.IsRollbackDisabled && ic.Spec.AgentInjectionEnabled {
+		// TODO: this must be changed - if rate limiting is enabled, then this time will prevent webhook crashlooping pods from rollbacking.
+		// This is becasue the AgentsMetaHashChangedTime is set when the pod is created by the agentsenabled, but rate limiting may cause the actual rollout
+		// to be much further on, preventing rollback when neccessary.
+		ic.Status.InstrumentationTime = ic.Spec.AgentsMetaHashChangedTime
+
+		shouldRollback, waitDuration, backOffInfo, err := shouldTriggerRollback(
+			ctx, c, ic, workloadObj, rollBackOptions,
+		)
+		if err != nil {
+			logger.Error(err, "Failed to check pod backoff status for pre-rollout pods")
+			return RolloutResult{}, err
+		}
+		if waitDuration > 0 && shouldRollback {
+			return RolloutResult{Result: ctrl.Result{RequeueAfter: waitDuration}}, nil
+		}
+		if shouldRollback {
+			return triggerRollback(ctx, c, logger, ic, workloadObj, workloadKey,
+				rolloutConcurrencyLimiter, &backOffInfo, pw)
+		}
+	}
+
+	// Rollback scenario: new instrumented pod was inited due to new runtime, but it is potentially crashlooping, check for rollback
+	if savedRolloutHash != "" && newRolloutHash != "" && savedRolloutHash != newRolloutHash &&
+		!rollBackOptions.IsRollbackDisabled && ic.Spec.AgentInjectionEnabled {
+		shouldRollback, waitDuration, backOffInfo, err := shouldTriggerRollback(
+			ctx, c, ic, workloadObj, rollBackOptions,
+		)
+		if err != nil {
+			logger.Error(err, "Failed to check pod backoff status pods with new runtime")
+			return RolloutResult{}, err
+		}
+		if waitDuration > 0 && shouldRollback {
+			return RolloutResult{Result: ctrl.Result{RequeueAfter: waitDuration}}, nil
+		}
+		if shouldRollback {
+			return triggerRollback(ctx, c, logger, ic, workloadObj, workloadKey,
+				rolloutConcurrencyLimiter, &backOffInfo, pw)
+		}
+	}
+
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false
 	if !utils.IsWorkloadRolloutDone(workloadObj) {
@@ -213,7 +223,6 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	if !rolloutConcurrencyLimiter.TryAcquire(workloadKey, rollBackOptions.MaxConcurrentRollouts) {
-		ic.Status.RolloutStatus = odigosv1alpha1.WorkloadRolloutWaitingInQueue
 		logger.V(2).Info("rate limited instrumentation rollout, requeuing",
 			"workload", pw.Name,
 			"namespace", pw.Namespace,
@@ -223,6 +232,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
+	statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionRolloutOngoing)
 	if rolloutErr != nil {
 		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
 	}
@@ -277,7 +287,7 @@ func rolloutCondition(rolloutErr error) metav1.Condition {
 	if rolloutErr == nil {
 		return conditionTriggeredSuccessfully
 	}
-	return NewConditionFailedToPatch(rolloutErr)
+	return newConditionFailedToPatch(rolloutErr)
 }
 
 // WorkloadHasNonInstrumentedPodInBackoff checks if any NON-INSTRUMENTED pod belonging to the workload is in a backoff state
@@ -406,4 +416,88 @@ func workloadHasOdigosAgents(ctx context.Context, c client.Client, obj client.Ob
 
 	// any non-empty list means the workload still runs instrumented pods.
 	return len(pods.Items) > 0, nil
+}
+
+// shouldTriggerRollback checks if rollback should be triggered based on backoff state and timing.
+// Original condition: backOffInfo.duration > 0 && timeSinceInstrumentation < RollbackStabilityWindow && AgentInjectionEnabled
+// Returns:
+// - shouldRollback=true, waitDuration > 0: grace period not elapsed, requeue and wait
+// - shouldRollback=true, waitDuration=0: execute rollback now
+// - shouldRollback=false: no rollback needed
+func shouldTriggerRollback(
+	ctx context.Context,
+	c client.Client,
+	ic *odigosv1alpha1.InstrumentationConfig,
+	workloadObj client.Object,
+	rollBackOptions RollBackOptions,
+) (shouldRollback bool, waitDuration time.Duration, backOffInfo podBackOffInfo, err error) {
+	backOffInfo, err = podBackOffDuration(ctx, c, workloadObj)
+	if err != nil {
+		return false, 0, podBackOffInfo{}, err
+	}
+
+	if ic.Status.InstrumentationTime == nil {
+		return false, RequeueWaitingForWorkloadRollout, podBackOffInfo{}, nil
+	}
+
+	timeSinceInstrumentation := time.Since(ic.Status.InstrumentationTime.Time)
+
+	// Original condition: backOffInfo.duration > 0 && timeSinceInstrumentation < RollbackStabilityWindow && AgentInjectionEnabled
+	if backOffInfo.duration <= 0 || timeSinceInstrumentation >= rollBackOptions.RollbackStabilityWindow || !ic.Spec.AgentInjectionEnabled {
+		return false, 0, podBackOffInfo{}, nil
+	}
+
+	// At this point, rollback conditions are met (the outer condition from original code)
+	// Allow grace time for workload to stabilize before uninstrumenting it
+	if backOffInfo.duration < rollBackOptions.RollbackGraceTime {
+		return true, rollBackOptions.RollbackGraceTime - backOffInfo.duration, backOffInfo, nil
+	}
+
+	return true, 0, backOffInfo, nil
+}
+
+// triggerRollback executes the rollback: disables agents, updates IC, and restarts the workload.
+func triggerRollback(
+	ctx context.Context,
+	c client.Client,
+	logger logr.Logger,
+	ic *odigosv1alpha1.InstrumentationConfig,
+	workloadObj client.Object,
+	workloadKey string,
+	rolloutConcurrencyLimiter *RolloutConcurrencyLimiter,
+	backOffInfo *podBackOffInfo,
+	pw k8sconsts.PodWorkload,
+) (RolloutResult, error) {
+	logger.Info("Triggering rollback due to backoff",
+		"reason", backOffInfo.reason,
+		"workload", pw.Name,
+		"namespace", pw.Namespace)
+
+	for i := range ic.Spec.Containers {
+		ic.Spec.Containers[i].AgentEnabled = false
+		ic.Spec.Containers[i].AgentEnabledReason = backOffInfo.reason
+	}
+	ic.Spec.AgentInjectionEnabled = false
+
+	if err := c.Update(ctx, ic); err != nil {
+		_, handledErr := utils.K8SUpdateErrorHandler(err)
+		return RolloutResult{}, handledErr
+	}
+
+	ic.Status.RollbackOccurred = true
+
+	// Release any rate limiter slot (rollback bypasses rate limiting)
+	rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(workloadKey)
+
+	// Restart the workload to remove instrumentation
+	rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
+	if rolloutErr != nil {
+		logger.Error(rolloutErr, "error rolling out workload", "name", pw.Name, "namespace", pw.Namespace)
+		return RolloutResult{}, rolloutErr
+	}
+
+	meta.SetStatusCondition(&ic.Status.Conditions, newConditionTriggeredWithMessage(backOffInfo.message))
+	meta.SetStatusCondition(&ic.Status.Conditions, newConditionAgentDisabledDueToBackoff(backOffInfo.reason, backOffInfo.message))
+
+	return RolloutResult{StatusChanged: true, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 }

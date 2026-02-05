@@ -7,6 +7,7 @@ import (
 	"time"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -281,39 +282,24 @@ func mockICMidRollout(base *odigosv1alpha1.InstrumentationConfig) *odigosv1alpha
 // Rollout Concurrency Limiter Fixtures
 // ****************
 
+// newRolloutConcurrencyLimiter creates a rollout concurrency limiter.
+// This is the base limiter used by all rate limiting tests.
+func newRolloutConcurrencyLimiter() *rollout.RolloutConcurrencyLimiter {
+	return rollout.NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+}
+
 // newRolloutConcurrencyLimiterNoLimit creates a rollout concurrency limiter with infinite limit (no rate limiting).
-// This is used for tests that don't care about rate limiting behavior.
+// This is used for tests that don't care about rate limiting behavior. This is the default limiter.
 func newRolloutConcurrencyLimiterNoLimit() *rollout.RolloutConcurrencyLimiter {
-	limiter := rollout.NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(nil) // nil config = no rate limiting
-	return limiter
-}
-
-// newRolloutConcurrencyLimiterWithLimit creates a rollout concurrency limiter with a specific concurrent rollout limit.
-// Use this for tests that need to verify rate limiting behavior.
-func newRolloutConcurrencyLimiterWithLimit(maxConcurrentRollouts int) *rollout.RolloutConcurrencyLimiter {
-	conf := &common.OdigosConfiguration{
-		Rollout: &common.RolloutConfiguration{
-			MaxConcurrentRollouts: maxConcurrentRollouts,
-		},
-	}
-	limiter := rollout.NewRolloutConcurrencyLimiter()
-	limiter.ApplyConfig(conf)
-	return limiter
-}
-
-// newRolloutConcurrencyLimiterActive creates a rollout concurrency limiter with a low limit (1 concurrent rollout).
-// First call to TryAcquire() for a NEW workload succeeds, subsequent calls for OTHER workloads fail.
-func newRolloutConcurrencyLimiterActive() *rollout.RolloutConcurrencyLimiter {
-	return newRolloutConcurrencyLimiterWithLimit(1)
+	return newRolloutConcurrencyLimiter()
 }
 
 // newRolloutConcurrencyLimiterExhausted creates a rollout concurrency limiter that has already used its quota.
-// Any call to TryAcquire() for a NEW workload will return false.
+// Any call to TryAcquire() for a NEW workload will return false when limit is 1.
 // Note: Uses a placeholder workload key to exhaust the single slot.
 func newRolloutConcurrencyLimiterExhausted() *rollout.RolloutConcurrencyLimiter {
-	limiter := newRolloutConcurrencyLimiterActive()
-	limiter.TryAcquire("placeholder/Deployment/exhausted") // Exhaust the single slot
+	limiter := newRolloutConcurrencyLimiter()
+	limiter.TryAcquire("placeholder/Deployment/exhausted", 1) // Exhaust the single slot
 	return limiter
 }
 
@@ -457,6 +443,33 @@ func newInitContainerBackOffPod(ns *corev1.Namespace, deploymentName, podName st
 			},
 		},
 	}
+}
+
+// newRolloutConcurrencyLimiterActive creates a fresh rollout concurrency limiter with no pre-allocated slots.
+// This is used for tests that need an active limiter that hasn't been used yet.
+func newRolloutConcurrencyLimiterActive() *rollout.RolloutConcurrencyLimiter {
+	return newRolloutConcurrencyLimiter()
+}
+
+// newRolloutConcurrencyLimiterWithLimit creates a rollout concurrency limiter that will be used with the given limit.
+// The limit is not stored in the limiter itself (it's passed to TryAcquire), but this helper
+// makes test intent clear about the expected rate limiting behavior.
+func newRolloutConcurrencyLimiterWithLimit(limit int) *rollout.RolloutConcurrencyLimiter {
+	_ = limit // limit is used at TryAcquire time, not stored in limiter
+	return newRolloutConcurrencyLimiter()
+}
+
+// ****************
+// Configuration helpers for rate limiting
+// ****************
+
+// setConfigConcurrentRolloutLimit sets the MaxConcurrentRollouts in the configuration.
+// Use limit=0 for no rate limiting (unlimited), limit>0 for rate limiting.
+func setConfigConcurrentRolloutLimit(conf *common.OdigosConfiguration, limit int) {
+	if conf.Rollout == nil {
+		conf.Rollout = &common.RolloutConfiguration{}
+	}
+	conf.Rollout.MaxConcurrentRollouts = limit
 }
 
 // newCrashLoopBackOffStaticPod creates a static pod in CrashLoopBackOff state WITHOUT odigos label.

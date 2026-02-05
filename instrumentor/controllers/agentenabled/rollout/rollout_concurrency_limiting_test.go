@@ -21,12 +21,13 @@ import (
 func Test_Instrumentation_RateLimited_WaitingInQueue(t *testing.T) {
 	// Arrange: IC requires rollout but rate limiter is exhausted
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	limiter := newRolloutConcurrencyLimiterExhausted() // rollout concurrency limiter with no available tokens
+	limiter := newRolloutConcurrencyLimiterExhausted() // limiter with one slot already taken
 
 	// Act
 	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
@@ -48,12 +49,13 @@ func Test_Instrumentation_RateLimited_WaitingInQueue(t *testing.T) {
 func Test_Instrumentation_FirstWorkload_AllowedByRateLimiter(t *testing.T) {
 	// Arrange: IC requires rollout, rate limiter has available tokens
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	limiter := newRolloutConcurrencyLimiterActive() // Fresh rate limiter with 1 token
+	limiter := newRolloutConcurrencyLimiterActive() // Fresh limiter with no slots taken
 
 	// Act
 	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
@@ -67,6 +69,7 @@ func Test_Instrumentation_FirstWorkload_AllowedByRateLimiter(t *testing.T) {
 func Test_Instrumentation_SecondWorkload_RateLimited(t *testing.T) {
 	// Arrange: Two workloads need instrumentation, rate limiter allows only 1
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 
 	// First deployment
 	deployment1 := testutil.NewMockTestDeployment(s.ns, "deployment-1")
@@ -79,7 +82,7 @@ func Test_Instrumentation_SecondWorkload_RateLimited(t *testing.T) {
 	pw2 := k8sconsts.PodWorkload{Name: deployment2.Name, Namespace: deployment2.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment1, deployment2)
-	limiter := newRolloutConcurrencyLimiterActive() // Rate limiter with 1 token
+	limiter := newRolloutConcurrencyLimiterActive() // Fresh limiter
 
 	// Act: First workload
 	rolloutResult1, err1 := rollout.Do(s.ctx, fakeClient, ic1, pw1, s.conf, s.distroProvider, limiter)
@@ -101,6 +104,7 @@ func Test_Instrumentation_SecondWorkload_RateLimited(t *testing.T) {
 func Test_Instrumentation_MultipleWorkloads_HigherLimitAllowsMore(t *testing.T) {
 	// Arrange: Three workloads need instrumentation, rate limiter allows 2
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 2) // Set limit to 2 in configuration
 
 	deployments := make([]*appsv1.Deployment, 3)
 	ics := make([]*odigosv1alpha1.InstrumentationConfig, 3)
@@ -113,7 +117,7 @@ func Test_Instrumentation_MultipleWorkloads_HigherLimitAllowsMore(t *testing.T) 
 	}
 
 	fakeClient := s.newFakeClient(deployments[0], deployments[1], deployments[2])
-	limiter := newRolloutConcurrencyLimiterWithLimit(2) // Rate limiter with 2 tokens
+	limiter := newRolloutConcurrencyLimiterActive() // Fresh limiter
 
 	// Act & Assert: First two workloads succeed
 	for i := 0; i < 2; i++ {
@@ -139,6 +143,7 @@ func Test_Instrumentation_MultipleWorkloads_HigherLimitAllowsMore(t *testing.T) 
 func Test_Deinstrumentation_RateLimited_NoRequeue(t *testing.T) {
 	// Arrange: Instrumented pod needs de-instrumentation, but rate limiter is exhausted
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
@@ -155,8 +160,8 @@ func Test_Deinstrumentation_RateLimited_NoRequeue(t *testing.T) {
 	}
 
 	fakeClient := s.newFakeClient(deployment, instrumentedPod)
-	var ic *odigosv1alpha1.InstrumentationConfig       // nil IC = de-instrumentation
-	limiter := newRolloutConcurrencyLimiterExhausted() // Rate limiter with no available tokens
+	var ic *odigosv1alpha1.InstrumentationConfig // nil IC = de-instrumentation
+	limiter := newRolloutConcurrencyLimiterExhausted() // Limiter with one slot already taken
 
 	// Act
 	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
@@ -171,6 +176,7 @@ func Test_Deinstrumentation_RateLimited_NoRequeue(t *testing.T) {
 func Test_Deinstrumentation_AllowedByRateLimiter(t *testing.T) {
 	// Arrange: Instrumented pod needs de-instrumentation, rate limiter has tokens
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
@@ -187,7 +193,7 @@ func Test_Deinstrumentation_AllowedByRateLimiter(t *testing.T) {
 
 	fakeClient := s.newFakeClient(deployment, instrumentedPod)
 	var ic *odigosv1alpha1.InstrumentationConfig
-	limiter := newRolloutConcurrencyLimiterActive() // Fresh rate limiter with token
+	limiter := newRolloutConcurrencyLimiterActive() // Fresh limiter with no slots taken
 
 	// Act
 	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)
@@ -204,6 +210,7 @@ func Test_Deinstrumentation_AllowedByRateLimiter(t *testing.T) {
 func Test_NoRateLimit_AllWorkloadsProcessedImmediately(t *testing.T) {
 	// Arrange: Multiple workloads with no rate limiting (infinite limit)
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 0) // Set limit to 0 = no rate limiting
 
 	deployments := make([]*appsv1.Deployment, 5)
 	ics := make([]*odigosv1alpha1.InstrumentationConfig, 5)
@@ -216,7 +223,7 @@ func Test_NoRateLimit_AllWorkloadsProcessedImmediately(t *testing.T) {
 	}
 
 	fakeClient := s.newFakeClient(deployments[0], deployments[1], deployments[2], deployments[3], deployments[4])
-	limiter := newRolloutConcurrencyLimiterNoLimit() // No rate limiting
+	limiter := newRolloutConcurrencyLimiterActive() // Limiter (limit comes from config)
 
 	// Act & Assert: All workloads succeed
 	for i := 0; i < 5; i++ {
@@ -234,6 +241,7 @@ func Test_NoRateLimit_AllWorkloadsProcessedImmediately(t *testing.T) {
 func Test_RateLimiting_NilRateLimiter_FailsOpen(t *testing.T) {
 	// Arrange: nil rate limiter should allow the rollout (fail-open behavior)
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Even with limit set, nil limiter fails open
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
@@ -252,6 +260,7 @@ func Test_RateLimiting_WorkloadNotRequiringRollout_NotAffected(t *testing.T) {
 	// Arrange: Workload that doesn't require rollout (e.g., native instrumentation)
 	// should NOT consume rate limiter tokens
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 	deployment := testutil.NewMockTestDeployment(s.ns, "test-deployment")
 	ic := testutil.NewMockInstrumentationConfig(deployment)
 	ic.Spec.PodManifestInjectionOptional = true // Distribution doesn't require rollout
@@ -271,6 +280,7 @@ func Test_RateLimiting_WorkloadNotRequiringRollout_NotAffected(t *testing.T) {
 func Test_RateLimiting_JobsAndCronjobs_NotAffected(t *testing.T) {
 	// Arrange: Jobs don't use rate limiting (they trigger themselves)
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 	job := testutil.NewMockTestJob(s.ns, "test-job")
 	jobPw := k8sconsts.PodWorkload{Name: job.Name, Namespace: job.Namespace, Kind: k8sconsts.WorkloadKindJob}
 	jobIc := testutil.NewMockInstrumentationConfig(job)
@@ -289,6 +299,7 @@ func Test_RateLimiting_JobsAndCronjobs_NotAffected(t *testing.T) {
 func Test_RateLimiting_StaticPods_NotAffected(t *testing.T) {
 	// Arrange: Static pods don't use rate limiting (they don't support restart)
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 	staticPod := testutil.NewMockTestStaticPod(s.ns, "test-staticpod")
 	staticPodPw := k8sconsts.PodWorkload{Name: staticPod.Name, Namespace: staticPod.Namespace, Kind: k8sconsts.WorkloadKindStaticPod}
 	ic := testutil.NewMockInstrumentationConfig(staticPod)
@@ -309,13 +320,14 @@ func Test_RateLimiting_StaticPods_NotAffected(t *testing.T) {
 func Test_RateLimiting_PreviousRolloutOngoing_RateLimiterNotConsumed(t *testing.T) {
 	// Arrange: If a previous rollout is ongoing, rate limiter should NOT be consumed
 	s := newTestSetup()
+	setConfigConcurrentRolloutLimit(s.conf, 1) // Set limit to 1 in configuration
 	deployment := newMockDeploymentMidRollout(s.ns, "test-deployment")
 	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
 	ic.Status.WorkloadRolloutHash = "old-hash" // Different hash triggers new rollout check
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
 	fakeClient := s.newFakeClient(deployment)
-	limiter := newRolloutConcurrencyLimiterActive() // Fresh limiter with 1 token
+	limiter := newRolloutConcurrencyLimiterActive() // Fresh limiter with no slots taken
 
 	// Act
 	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, limiter)

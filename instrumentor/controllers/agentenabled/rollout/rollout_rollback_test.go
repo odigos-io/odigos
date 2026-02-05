@@ -193,3 +193,203 @@ func Test_TriggeredRollout_PodInMidRollout_RollbackRestartAtArgoRollout(t *testi
 	assert.NoError(t, err)
 	assert.NotNil(t, updatedRollout.Spec.RestartAt, "expected spec.restartAt to be set for Argo Rollout")
 }
+
+func Test_Rollback_WebhookInstrumentedPodCrashloops_WhileWorkloadWaitingInQueue(t *testing.T) {
+	// Scenario: Webhook-instrumented pod crashlooping before workload rollout: AgentsMetaHash is populated but WorkloadRolloutHash is empty.
+	//
+	// 1. Workload is waiting in rate limiter queue to be rolled out
+	// 2. ic.Status.WorkloadRolloutHash is EMPTY (no rollout happened yet)
+	// 3. A new pod is added to the workload
+	// 4. The webhook (pods_webhook.go) instruments this new pod immediately
+	// 5. The instrumented pod starts crashlooping
+	// 6. Reconciliation detects crashloop via pods triggered by webhook handling
+	// 7. Rollback is triggered, bypassing the rate limiter
+	s := newTestSetup()
+
+	// Deployment that hasn't been rolled out yet (waiting in queue)
+	// Using a stable deployment (not mid-rollout) because the rollout hasn't started
+	deployment := testutil.NewMockTestDeployment(s.ns, "waiting-deployment")
+
+	// IC with rollout required, but WorkloadRolloutHash is EMPTY (no rollout happened yet)
+	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
+	// Key: WorkloadRolloutHash is empty/unset - this is the bug trigger
+	ic.Status.WorkloadRolloutHash = "" // Explicitly empty - no rollout has happened
+	now := metav1.Now()
+	// For this scenario, use AgentsMetaHashChangedTime (set when webhook instruments, before rollout)
+	// InstrumentationTime is only set AFTER rollout happens
+	ic.Spec.AgentsMetaHashChangedTime = &now
+	ic.Spec.AgentInjectionEnabled = true
+
+	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
+
+	// Crashlooping pod that was instrumented by the webhook (not via rollout)
+	// This pod has the AgentsMetaHash label because the webhook added instrumentation
+	podStartTime := metav1.NewTime(time.Now().Add(-6 * time.Minute))
+	crashingPod := newMockCrashingPod(s.ns, deployment.Name, ic.Spec.AgentsMetaHash, podStartTime)
+
+	fakeClient := s.newFakeClient(deployment, crashingPod, ic)
+
+	// Rate limiter is exhausted - workload is waiting in queue
+	rateLimiter := newRolloutConcurrencyLimiterExhausted()
+
+	// Act: Reconcile the workload
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+
+	// Assert: Rollback SHOULD be triggered for the crashlooping pod
+	assert.NoError(t, err)
+	assert.True(t, rolloutResult.StatusChanged, "expected status change after rollback")
+	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be true - crashlooping pod should trigger rollback")
+	assert.False(t, ic.Spec.AgentInjectionEnabled, "agent injection should be disabled after rollback")
+
+	// Verify the deployment was restarted via rollback (uninstrument the crashlooping pod)
+	var updatedDeployment appsv1.Deployment
+	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, &updatedDeployment)
+	assert.NoError(t, err)
+	assert.Contains(t, updatedDeployment.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt",
+		"crashlooping webhook-instrumented pod should trigger rollback restart")
+}
+
+func Test_Rollback_BypassesRateLimiter_WhenOtherDeploymentsWaitingInQueue(t *testing.T) {
+	// Scenario: Multiple deployments are being instrumented with rate limiting enabled (limit=1).
+	// One deployment is mid-rollout and enters CrashLoopBackOff.
+	// Other deployments are waiting in queue (rate limited).
+	// The crashlooping deployment should be able to rollback (auto-heal) immediately,
+	// bypassing the rate limiter to prevent prolonged downtime.
+	s := newTestSetup()
+
+	// Create 3 deployments:
+	// - crashloopDeployment: mid-rollout, will crashloop and need rollback
+	// - waitingDeployment2, waitingDeployment3: waiting to be instrumented (rate limited)
+	crashloopDeployment := newMockDeploymentMidRollout(s.ns, "crashloop-deployment")
+	waitingDeployment2 := testutil.NewMockTestDeployment(s.ns, "waiting-deployment-2")
+	waitingDeployment3 := testutil.NewMockTestDeployment(s.ns, "waiting-deployment-3")
+
+	// IC for crashlooping deployment: mid-rollout state (hash matches, instrumentation triggered)
+	crashloopIC := mockICMidRollout(testutil.NewMockInstrumentationConfig(crashloopDeployment))
+	now := metav1.Now()
+	crashloopIC.Status.InstrumentationTime = &now
+	crashloopIC.Spec.AgentInjectionEnabled = true
+
+	// ICs for waiting deployments: need rollout but haven't started yet
+	waitingIC2 := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(waitingDeployment2))
+	waitingIC3 := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(waitingDeployment3))
+
+	crashloopPW := k8sconsts.PodWorkload{Name: crashloopDeployment.Name, Namespace: crashloopDeployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
+	waitingPW2 := k8sconsts.PodWorkload{Name: waitingDeployment2.Name, Namespace: waitingDeployment2.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
+	waitingPW3 := k8sconsts.PodWorkload{Name: waitingDeployment3.Name, Namespace: waitingDeployment3.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
+
+	// Create crashlooping pod (6 minutes - past grace time)
+	podStartTime := metav1.NewTime(time.Now().Add(-6 * time.Minute))
+	crashingPod := newMockCrashingPod(s.ns, crashloopDeployment.Name, crashloopIC.Spec.AgentsMetaHash, podStartTime)
+
+	fakeClient := s.newFakeClient(crashloopDeployment, waitingDeployment2, waitingDeployment3, crashloopIC, crashingPod)
+
+	// Rate limiter with limit of 1 - only one rollout at a time
+	// Pre-acquire a slot for the crashlooping deployment (simulating it already being in-flight)
+	setConfigConcurrentRolloutLimit(s.conf, 1)
+	rateLimiter := newRolloutConcurrencyLimiterWithLimit(1)
+	crashloopWorkloadKey := rollout.WorkloadKey(crashloopPW)
+	rateLimiter.TryAcquire(crashloopWorkloadKey, 1)
+	assert.Equal(t, 1, rateLimiter.InFlightCount(), "rate limiter should have 1 in-flight rollout (crashloop deployment)")
+
+	// Step 1: Waiting deployments try to rollout but are rate limited
+	rolloutResult2, err := rollout.Do(s.ctx, fakeClient, waitingIC2, waitingPW2, s.conf, s.distroProvider, rateLimiter)
+	assert.NoError(t, err)
+	assert.True(t, rolloutResult2.StatusChanged)
+	assert.Equal(t, "WaitingInQueue", waitingIC2.Status.Conditions[0].Reason,
+		"waiting deployment 2 should be in queue")
+
+	rolloutResult3, err := rollout.Do(s.ctx, fakeClient, waitingIC3, waitingPW3, s.conf, s.distroProvider, rateLimiter)
+	assert.NoError(t, err)
+	assert.True(t, rolloutResult3.StatusChanged)
+	assert.Equal(t, "WaitingInQueue", waitingIC3.Status.Conditions[0].Reason,
+		"waiting deployment 3 should be in queue")
+
+	// Verify rate limiter is exhausted (slot held by crashloop deployment)
+	assert.Equal(t, 1, rateLimiter.InFlightCount(), "rate limiter should still have 1 in-flight rollout")
+
+	// Step 2: Crashlooping deployment reconciles - should detect crashloop and trigger rollback
+	// Key assertion: rollback should succeed even though rate limiter slot is "held"
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, crashloopIC, crashloopPW, s.conf, s.distroProvider, rateLimiter)
+
+	// Assert: Rollback triggered successfully
+	assert.NoError(t, err)
+	assert.True(t, rolloutResult.StatusChanged, "expected status change after rollback")
+	assert.True(t, crashloopIC.Status.RollbackOccurred, "expected RollbackOccurred to be true")
+	assert.False(t, crashloopIC.Spec.AgentInjectionEnabled, "agent injection should be disabled after rollback")
+
+	// Verify the deployment was restarted via rollback
+	var updatedDeployment appsv1.Deployment
+	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: crashloopDeployment.Name, Namespace: crashloopDeployment.Namespace}, &updatedDeployment)
+	assert.NoError(t, err)
+	assert.Contains(t, updatedDeployment.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt",
+		"crashlooping deployment should be restarted via rollback")
+
+	// Verify the rate limiter slot was released after rollback
+	// This is critical: auto-heal releases the slot so other workloads can proceed
+	assert.Equal(t, 0, rateLimiter.InFlightCount(),
+		"rate limiter slot should be released after rollback - auto-heal releases its slot")
+
+	// Step 3: Verify waiting deployments can now proceed (rate limiter has capacity)
+	// Re-reconcile waiting deployment 2 - should now acquire the slot and proceed
+	rolloutResult2After, err := rollout.Do(s.ctx, fakeClient, waitingIC2, waitingPW2, s.conf, s.distroProvider, rateLimiter)
+	assert.NoError(t, err)
+	assertTriggeredRolloutWithRequeue(t, rolloutResult2After, err)
+	assert.Equal(t, "RolloutTriggeredSuccessfully", waitingIC2.Status.Conditions[0].Reason,
+		"waiting deployment 2 should now be able to rollout after crashloop deployment released its slot")
+}
+
+func Test_Rollback_WebhookInstrumentedPodCrashloops_WhileWorkloadRolloutNotStarted(t *testing.T) {
+	// Scenario: Webhook-instrumented pod crashlooping before workload rollout.
+	//
+	// 1. Workload is waiting in rate limiter queue to be rolled out
+	// 2. ic.Status.WorkloadRolloutHash is EMPTY (no rollout happened yet)
+	// 3. A new pod is added to the workload
+	// 4. The webhook (pods_webhook.go) instruments this new pod immediately
+	// 5. The instrumented pod starts crashlooping
+	// 6. Reconciliation detects crashloop via pods triggered by webhook handling
+	// 7. Rollback is triggered, bypassing the rate limiter
+	s := newTestSetup()
+
+	// Deployment that hasn't been rolled out yet (waiting in queue)
+	// Using a stable deployment (not mid-rollout) because the rollout hasn't started
+	deployment := testutil.NewMockTestDeployment(s.ns, "waiting-deployment")
+
+	// IC with rollout required, but WorkloadRolloutHash is EMPTY (no rollout happened yet)
+	ic := mockICRolloutRequiredDistro(testutil.NewMockInstrumentationConfig(deployment))
+	// Key: WorkloadRolloutHash is empty/unset - this is the bug trigger
+	ic.Status.WorkloadRolloutHash = "" // Explicitly empty - no rollout has happened
+	now := metav1.Now()
+	// For scenario, use AgentsMetaHashChangedTime (set when webhook instruments, before rollout)
+	// InstrumentationTime is only set AFTER rollout happens
+	ic.Spec.AgentsMetaHashChangedTime = &now
+	ic.Spec.AgentInjectionEnabled = true
+
+	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
+
+	// Crashlooping pod that was instrumented by the webhook (not via rollout)
+	// This pod has the AgentsMetaHash label because the webhook added instrumentation
+	podStartTime := metav1.NewTime(time.Now().Add(-6 * time.Minute))
+	crashingPod := newMockCrashingPod(s.ns, deployment.Name, ic.Spec.AgentsMetaHash, podStartTime)
+
+	fakeClient := s.newFakeClient(deployment, crashingPod, ic)
+
+	// Rate limiter is exhausted - workload is waiting in queue
+	rateLimiter := newRolloutConcurrencyLimiterExhausted()
+
+	// Act: Reconcile the workload
+	rolloutResult, err := rollout.Do(s.ctx, fakeClient, ic, pw, s.conf, s.distroProvider, rateLimiter)
+
+	// Assert: Rollback SHOULD be triggered for the crashlooping pod
+	assert.NoError(t, err)
+	assert.True(t, rolloutResult.StatusChanged, "expected status change after rollback")
+	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be true - crashlooping pod should trigger rollback")
+	assert.False(t, ic.Spec.AgentInjectionEnabled, "agent injection should be disabled after rollback")
+
+	// Verify the deployment was restarted via rollback (uninstrument the crashlooping pod)
+	var updatedDeployment appsv1.Deployment
+	err = fakeClient.Get(s.ctx, client.ObjectKey{Name: deployment.Name, Namespace: deployment.Namespace}, &updatedDeployment)
+	assert.NoError(t, err)
+	assert.Contains(t, updatedDeployment.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt",
+		"crashlooping webhook-instrumented pod should trigger rollback restart")
+}
