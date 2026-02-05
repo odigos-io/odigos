@@ -2,7 +2,6 @@ package jvm
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cilium/ebpf"
@@ -105,6 +104,7 @@ func (h *JVMMetricsHandler) emitHistogramMetric(
 	description string,
 	unit string,
 	hist HistogramValue,
+	startTime pcommon.Timestamp,
 	attrSetter func(pcommon.Map),
 ) {
 	if hist.TotalCount == 0 {
@@ -117,12 +117,12 @@ func (h *JVMMetricsHandler) emitHistogramMetric(
 	metric.SetUnit(unit)
 
 	histogramMetric := metric.SetEmptyHistogram()
-	histogramMetric.SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
+	histogramMetric.SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 
 	dataPoint := histogramMetric.DataPoints().AppendEmpty()
 	now := pcommon.NewTimestampFromTime(time.Now())
 	dataPoint.SetTimestamp(now)
-	dataPoint.SetStartTimestamp(now)
+	dataPoint.SetStartTimestamp(startTime)
 
 	dataPoint.SetCount(uint64(hist.TotalCount))
 	dataPoint.SetSum(float64(hist.SumNs) / 1e9) // Convert nanoseconds to seconds
@@ -146,8 +146,9 @@ func (h *JVMMetricsHandler) emitHistogramMetric(
 	}
 }
 
-// ExtractJVMMetricsFromInnerMap extracts JVM metrics from a process inner map and converts them to OpenTelemetry format
-func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, innerMap *ebpf.Map) (pmetric.Metrics, error) {
+// ExtractJVMMetricsFromInnerMap extracts JVM metrics from a process inner map and converts them to OpenTelemetry format.
+// startTime is the timestamp when this process was first observed, used as StartTimestamp for cumulative metrics.
+func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, innerMap *ebpf.Map, startTime pcommon.Timestamp) (pmetric.Metrics, error) {
 	metrics := pmetric.NewMetrics()
 	resourceMetrics := metrics.ResourceMetrics().AppendEmpty()
 	scopeMetrics := resourceMetrics.ScopeMetrics().AppendEmpty()
@@ -200,7 +201,7 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 		case MetricGCDuration:
 			gcAction := GCAction(key.Attr1())
 			gcName := GCName(key.Attr2())
-			h.addGCHistogramMetric(scopeMetrics, value.AsHistogram(), gcAction, gcName)
+			h.addGCHistogramMetric(scopeMetrics, value.AsHistogram(), gcAction, gcName, startTime)
 		case MetricThreadCount:
 			daemon := ThreadDaemon(key.Attr1())
 			state := ThreadState(key.Attr2())
@@ -208,7 +209,7 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 
 		// CPU metrics
 		case MetricCPUTime:
-			h.addCPUTimeMetric(scopeMetrics, value.AsCounter())
+			h.addCPUTimeMetric(scopeMetrics, value.AsCounter(), startTime)
 		case MetricCPUCount:
 			h.addCPUCountMetric(scopeMetrics, value.AsGauge())
 		case MetricCPURecentUtilization:
@@ -218,15 +219,6 @@ func (h *JVMMetricsHandler) ExtractJVMMetricsFromInnerMap(ctx context.Context, i
 		}
 
 		metricsAdded++
-
-		// Reset counters/histogram after read (delta reporting)
-		// Don't reset gauges - they represent current state
-		if !metricType.IsGauge() {
-			var zeroValue MetricValue
-			if err := innerMap.Update(&key, &zeroValue, ebpf.UpdateExist); err != nil {
-				h.logger.Debug("Failed to reset metric", zap.String("key", fmt.Sprintf("%d", key)), zap.Error(err))
-			}
-		}
 	}
 
 	h.logger.Debug("JVM metrics extraction completed",
@@ -359,14 +351,12 @@ func (h *JVMMetricsHandler) addThreadCountMetric(scopeMetrics pmetric.ScopeMetri
 	setThreadAttributes(dataPoint.Attributes(), daemon, state)
 }
 
-func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetrics, hist HistogramValue, gcAction GCAction, gcName GCName) {
+func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetrics, hist HistogramValue, gcAction GCAction, gcName GCName, startTime pcommon.Timestamp) {
 	attrSetter := func(attrs pcommon.Map) {
 		setGCAttributes(attrs, gcAction, gcName)
 	}
 
-	h.emitHistogramMetric(scopeMetrics, metricGCDuration, descGCDuration, semconv1_26.JvmGcDurationUnit, hist, attrSetter)
-
-	h.emitHistogramMetric(scopeMetrics, processRuntimeJVMMetricGCDuration, descGCDuration, semconv1_26.JvmGcDurationUnit, hist, attrSetter)
+	h.emitHistogramMetric(scopeMetrics, metricGCDuration, descGCDuration, semconv1_26.JvmGcDurationUnit, hist, startTime, attrSetter)
 
 	h.logger.Debug("GC histogram recorded",
 		zap.Uint32("total_count", hist.TotalCount),
@@ -376,7 +366,7 @@ func (h *JVMMetricsHandler) addGCHistogramMetric(scopeMetrics pmetric.ScopeMetri
 	)
 }
 
-func (h *JVMMetricsHandler) addCPUTimeMetric(scopeMetrics pmetric.ScopeMetrics, counter CounterValue) {
+func (h *JVMMetricsHandler) addCPUTimeMetric(scopeMetrics pmetric.ScopeMetrics, counter CounterValue, startTime pcommon.Timestamp) {
 	if counter.Count == 0 {
 		return
 	}
@@ -395,7 +385,7 @@ func (h *JVMMetricsHandler) addCPUTimeMetric(scopeMetrics pmetric.ScopeMetrics, 
 	dataPoint.SetDoubleValue(seconds)
 	now := pcommon.NewTimestampFromTime(time.Now())
 	dataPoint.SetTimestamp(now)
-	dataPoint.SetStartTimestamp(now)
+	dataPoint.SetStartTimestamp(startTime)
 }
 
 func (h *JVMMetricsHandler) addCPUCountMetric(scopeMetrics pmetric.ScopeMetrics, gauge GaugeValue) {
