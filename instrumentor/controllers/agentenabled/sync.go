@@ -272,6 +272,12 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 
 // hasUninstrumentedPodsWithBackoff checks if the workload has pods in backoff state before instrumentation.
 func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, logger logr.Logger) (*agentInjectedStatusCondition, error) {
+	// CronJob and Job workloads don't have a label selector like Deployments/StatefulSets/DaemonSets,
+	// so we skip the backoff check for them. Their pods are managed differently through the Job controller.
+	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
+		return nil, nil
+	}
+
 	workloadClientObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	if getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadClientObj); getErr == nil {
 		hasPodInBackoff, backoffErr := rollout.WorkloadHasNonInstrumentedPodInBackoff(ctx, c, workloadClientObj)
