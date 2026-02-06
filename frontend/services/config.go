@@ -132,35 +132,15 @@ func isCentralProxyRunning(ctx context.Context) (bool, error) {
 }
 
 func isSourceCreated(ctx context.Context) bool {
-	ns := env.GetCurrentNamespace()
-
-	nsList, err := getRelevantNameSpaces(ctx, ns)
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{})
 	if err != nil {
-		log.Printf("Error listing namespaces: %v\n", err)
+		log.Printf("Error listing sources: %v\n", err)
 		return false
 	}
 
-	for _, ns := range nsList {
-		sourceList, err := kube.DefaultClient.OdigosClient.Sources(ns.Namespace).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			log.Printf("Error listing sources: %v\n", err)
-			return false
-		}
-
-		if len(sourceList.Items) > 0 {
-			allDisabled := true
-
-			for _, source := range sourceList.Items {
-				if !source.Spec.DisableInstrumentation {
-					// Found an enabled source, no need to keep checking
-					return true
-				}
-			}
-
-			// If we get here, all sources were disabled
-			if allDisabled {
-				continue
-			}
+	for _, source := range sourceList.Items {
+		if !source.Spec.DisableInstrumentation {
+			return true
 		}
 	}
 

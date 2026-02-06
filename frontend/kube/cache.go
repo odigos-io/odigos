@@ -8,6 +8,8 @@ import (
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -71,6 +73,75 @@ func podsTransformFunc(obj interface{}) (interface{}, error) {
 	return minimalPod, nil
 }
 
+func deploymentsTransformFunc(obj interface{}) (interface{}, error) {
+	dep, ok := obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, fmt.Errorf("expected a Deployment, got %T", obj)
+	}
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dep.Name,
+			Namespace: dep.Namespace,
+			UID:       dep.UID,
+		},
+		Status: appsv1.DeploymentStatus{
+			ReadyReplicas:     dep.Status.ReadyReplicas,
+			AvailableReplicas: dep.Status.AvailableReplicas,
+		},
+	}, nil
+}
+
+func statefulSetsTransformFunc(obj interface{}) (interface{}, error) {
+	ss, ok := obj.(*appsv1.StatefulSet)
+	if !ok {
+		return nil, fmt.Errorf("expected a StatefulSet, got %T", obj)
+	}
+	return &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ss.Name,
+			Namespace: ss.Namespace,
+			UID:       ss.UID,
+		},
+		Status: appsv1.StatefulSetStatus{
+			ReadyReplicas: ss.Status.ReadyReplicas,
+		},
+	}, nil
+}
+
+func daemonSetsTransformFunc(obj interface{}) (interface{}, error) {
+	ds, ok := obj.(*appsv1.DaemonSet)
+	if !ok {
+		return nil, fmt.Errorf("expected a DaemonSet, got %T", obj)
+	}
+	return &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ds.Name,
+			Namespace: ds.Namespace,
+			UID:       ds.UID,
+		},
+		Status: appsv1.DaemonSetStatus{
+			NumberReady: ds.Status.NumberReady,
+		},
+	}, nil
+}
+
+func cronJobsTransformFunc(obj interface{}) (interface{}, error) {
+	cj, ok := obj.(*batchv1.CronJob)
+	if !ok {
+		return nil, fmt.Errorf("expected a CronJob, got %T", obj)
+	}
+	return &batchv1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cj.Name,
+			Namespace: cj.Namespace,
+			UID:       cj.UID,
+		},
+		Status: batchv1.CronJobStatus{
+			Active: cj.Status.Active,
+		},
+	}, nil
+}
+
 // SetupK8sCache initializes and starts the controller runtime cache for Source resources
 // Returns the cache client for direct usage
 func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, odigosNs string) (client.Client, error) {
@@ -109,6 +180,10 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 			&odigosv1.Source{}:                  {},
 			&odigosv1.InstrumentationConfig{}:   {},
 			&odigosv1.InstrumentationInstance{}: {},
+			&appsv1.Deployment{}:                {Transform: deploymentsTransformFunc},
+			&appsv1.StatefulSet{}:               {Transform: statefulSetsTransformFunc},
+			&appsv1.DaemonSet{}:                 {Transform: daemonSetsTransformFunc},
+			&batchv1.CronJob{}:                  {Transform: cronJobsTransformFunc},
 		},
 	}
 

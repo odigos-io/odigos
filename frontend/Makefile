@@ -1,3 +1,11 @@
+.PHONY: test
+test:
+	go test ./graph/... ./kube/... ./services/... ./testutil/... ./version/... -count=1
+
+.PHONY: bench
+bench:
+	go test -bench=. -benchtime=3s -count=1 ./services/ ./graph/
+
 gqlgen:
 	go get github.com/99designs/gqlgen@v0.17.70 && go run github.com/99designs/gqlgen generate
 

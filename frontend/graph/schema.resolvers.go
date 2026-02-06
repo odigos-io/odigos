@@ -24,6 +24,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odigosauth"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -167,18 +168,28 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 		return nil, err
 	}
 
+	readonly := services.IsReadonlyMode(ctx)
+	secretsByName := make(map[string]*corev1.Secret)
+	if !readonly {
+		allSecrets, err := kube.DefaultClient.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		for i := range allSecrets.Items {
+			secretsByName[allSecrets.Items[i].Name] = &allSecrets.Items[i]
+		}
+	}
+
 	var destinations []*model.Destination
 	for _, dest := range dests.Items {
 		secretFields := make(map[string]string)
 
-		if !services.IsReadonlyMode(ctx) {
-			secretFields, err = services.GetDestinationSecretFields(ctx, ns, &dest)
-			if err != nil {
-				return nil, err
+		if !readonly && dest.Spec.SecretRef != nil {
+			if secret, ok := secretsByName[dest.Spec.SecretRef.Name]; ok {
+				secretFields = services.ExtractSecretFields(secret)
 			}
 		}
 
-		// Convert the k8s destination format to the expected endpoint format
 		endpointDest := services.K8sDestinationToEndpointFormat(dest, secretFields)
 		destinations = append(destinations, &endpointDest)
 	}
