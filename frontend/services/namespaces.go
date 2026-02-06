@@ -3,9 +3,9 @@ package services
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -17,6 +17,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
 )
@@ -39,14 +40,26 @@ func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sA
 		namespaces = []corev1.Namespace{*namespace}
 	}
 
+	// Batch-fetch all namespace-kind sources in one call instead of per-namespace
+	allNsSources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(labels.Set{
+			k8sconsts.WorkloadKindLabel: string(k8sconsts.WorkloadKindNamespace),
+		}).String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	nsSourceMap := make(map[string]*v1alpha1.Source)
+	for i := range allNsSources.Items {
+		s := &allNsSources.Items[i]
+		nsSourceMap[s.Spec.Workload.Name] = s
+	}
+
 	for _, item := range namespaces {
 		nsName := item.Name
 
-		// check if entire namespace is instrumented
-		source, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
-		if err != nil && !strings.Contains(err.Error(), "not found") {
-			return nil, err
-		}
+		// check if entire namespace is instrumented via map lookup
+		source := nsSourceMap[nsName]
 
 		instrumented := source != nil && !source.Spec.DisableInstrumentation
 		response = append(response, &model.K8sActualNamespace{

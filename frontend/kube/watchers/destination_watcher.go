@@ -18,7 +18,9 @@ var destinationAddedEventBatcher *EventBatcher
 var destinationModifiedEventBatcher *EventBatcher
 var destinationDeletedEventBatcher *EventBatcher
 
-func StartDestinationWatcher(ctx context.Context, namespace string) error {
+// RunDestinationWatcher runs the destination watcher in a reconnection loop.
+// It should be launched as a goroutine. It only returns when ctx is cancelled.
+func RunDestinationWatcher(ctx context.Context, namespace string) {
 	destinationAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
@@ -64,27 +66,41 @@ func StartDestinationWatcher(ctx context.Context, namespace string) error {
 		},
 	)
 
-	watcher, err := StartRetryWatcher(ctx, WatcherConfig[*v1alpha1.DestinationList]{
-		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.DestinationList, error) {
-			return kube.DefaultClient.OdigosClient.Destinations(namespace).List(ctx, opts)
-		},
-		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-			return kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(ctx, opts)
-		},
-		GetResourceVersion: func(list *v1alpha1.DestinationList) string {
-			return list.ResourceVersion
-		},
-		ResourceName: "destinations",
-	})
-	if err != nil {
-		return err
-	}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 
-	go handleDestinationWatchEvents(ctx, watcher)
-	return nil
+		watcher, err := StartRetryWatcher(ctx, WatcherConfig[*v1alpha1.DestinationList]{
+			ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.DestinationList, error) {
+				return kube.DefaultClient.OdigosClient.Destinations(namespace).List(ctx, opts)
+			},
+			WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+				return kube.DefaultClient.OdigosClient.Destinations(namespace).Watch(ctx, opts)
+			},
+			GetResourceVersion: func(list *v1alpha1.DestinationList) string {
+				return list.ResourceVersion
+			},
+			ResourceName: "destinations",
+		})
+		if err != nil {
+			log.Printf("Failed to start destination watcher: %v, retrying in 5s", err)
+			select {
+			case <-time.After(5 * time.Second):
+			case <-ctx.Done():
+				return
+			}
+			continue
+		}
+
+		processDestinationWatchEvents(ctx, watcher)
+		log.Println("Destination watcher disconnected, reconnecting...")
+	}
 }
 
-func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) {
+func processDestinationWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
 	defer destinationModifiedEventBatcher.Cancel()
 	for {
@@ -94,7 +110,7 @@ func handleDestinationWatchEvents(ctx context.Context, watcher watch.Interface) 
 			return
 		case event, ok := <-ch:
 			if !ok {
-				log.Println("Destination watcher closed")
+				log.Println("Destination watcher channel closed")
 				return
 			}
 			switch event.Type {

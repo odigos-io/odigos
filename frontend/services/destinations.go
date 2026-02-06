@@ -188,6 +188,16 @@ func GetDestinationSecretFields(c context.Context, odigosns string, dest *v1alph
 	return secretFields, nil
 }
 
+// ExtractSecretFields extracts string fields from a Secret object.
+// Used by batch-fetch paths that already have the secret in memory.
+func ExtractSecretFields(secret *k8s.Secret) map[string]string {
+	fields := make(map[string]string, len(secret.Data))
+	for k, v := range secret.Data {
+		fields[k] = string(v)
+	}
+	return fields
+}
+
 func K8sDestinationToEndpointFormat(k8sDest v1alpha1.Destination, secretFields map[string]string) model.Destination {
 	destType := k8sDest.Spec.Type
 	destName := k8sDest.Spec.DestinationName
