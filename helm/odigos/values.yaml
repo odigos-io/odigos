@@ -578,6 +578,8 @@ rollout:
 # will still have the agent injected, regardless of this setting.
 # When set to true, all additional configurations related to automated rollouts or rollbacks are ignored.
   automaticRolloutDisabled: false
+  # MaxConcurrentRollouts is the maximum number of concurrent rollouts allowed. 0 is unlimited, disabling the limit.
+  maxConcurrentRollouts: 0
 
 # Pod Disruption Budgets (PDBs) help ensure high availability during voluntary disruptions like node drains or upgrades.
 # When enabled, Odigos will deploy PDBs for its components based on their importance:

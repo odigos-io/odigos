@@ -7,10 +7,12 @@ import (
 	"time"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
+	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -103,26 +105,26 @@ func (s *testSetup) newFakeClientWithICUpdateError(objects ...client.Object) cli
 
 // assertNoStatusChange verifies Do() returned without changing IC status.
 // Note: This does NOT check whether the workload was restarted - use assertWorkloadRestarted/assertWorkloadNotRestarted for that.
-func assertNoStatusChange(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+func assertNoStatusChange(t *testing.T, rolloutResult rollout.RolloutResult, err error) {
 	t.Helper()
 	assert.NoError(t, err)
-	assert.False(t, statusChanged, "expected no status change")
-	assert.Equal(t, reconcile.Result{}, result)
+	assert.False(t, rolloutResult.StatusChanged, "expected no status change")
+	assert.Equal(t, reconcile.Result{}, rolloutResult.Result)
 }
 
-func assertTriggeredRolloutNoRequeue(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+func assertTriggeredRolloutNoRequeue(t *testing.T, rolloutResult rollout.RolloutResult, err error) {
 	t.Helper()
 	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change")
-	assert.Equal(t, reconcile.Result{}, result)
+	assert.True(t, rolloutResult.StatusChanged, "expected status change")
+	assert.Equal(t, reconcile.Result{}, rolloutResult.Result)
 }
 
 // assertErrorNoStatusChange verifies Do() returned an error without changing IC status.
-func assertErrorNoStatusChange(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+func assertErrorNoStatusChange(t *testing.T, rolloutResult rollout.RolloutResult, err error) {
 	t.Helper()
 	assert.Error(t, err)
-	assert.False(t, statusChanged, "expected no status change on error")
-	assert.Equal(t, reconcile.Result{}, result)
+	assert.False(t, rolloutResult.StatusChanged, "expected no status change on error")
+	assert.Equal(t, reconcile.Result{}, rolloutResult.Result)
 }
 
 // assertWorkloadRestarted verifies the workload was restarted by checking for the restartedAt annotation.
@@ -143,18 +145,18 @@ func assertWorkloadNotRestarted(t *testing.T, ctx context.Context, c client.Clie
 	assert.NotContains(t, dep.Spec.Template.Annotations, "kubectl.kubernetes.io/restartedAt", "expected workload NOT to be restarted")
 }
 
-func assertTriggeredRolloutWithRequeue(t *testing.T, statusChanged bool, result reconcile.Result, err error) {
+func assertTriggeredRolloutWithRequeue(t *testing.T, rolloutResult rollout.RolloutResult, err error) {
 	t.Helper()
 	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change when rollout is triggered")
-	assert.NotEqual(t, reconcile.Result{}, result, "expected requeue after rollout")
+	assert.True(t, rolloutResult.StatusChanged, "expected status change when rollout is triggered")
+	assert.NotEqual(t, reconcile.Result{}, rolloutResult.Result, "expected requeue after rollout")
 }
 
-func assertTriggeredRollback(t *testing.T, statusChanged bool, result reconcile.Result, err error, ic *odigosv1alpha1.InstrumentationConfig) {
+func assertTriggeredRollback(t *testing.T, rolloutResult rollout.RolloutResult, err error, ic *odigosv1alpha1.InstrumentationConfig) {
 	t.Helper()
 	assert.NoError(t, err)
-	assert.True(t, statusChanged, "expected status change after rollback")
-	assert.Equal(t, reconcile.Result{RequeueAfter: 10 * time.Second}, result)
+	assert.True(t, rolloutResult.StatusChanged, "expected status change after rollback")
+	assert.Equal(t, reconcile.Result{RequeueAfter: rollout.RequeueWaitingForWorkloadRollout}, rolloutResult.Result)
 	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be true")
 	assert.Equal(t, string(odigosv1alpha1.WorkloadRolloutReasonTriggeredSuccessfully), ic.Status.Conditions[0].Reason)
 }
@@ -274,6 +276,31 @@ func mockICMidRollout(base *odigosv1alpha1.InstrumentationConfig) *odigosv1alpha
 	ic := mockICRolloutRequiredDistro(base)
 	ic.Status.WorkloadRolloutHash = ic.Spec.AgentsMetaHash
 	return ic
+}
+
+// ****************
+// Rollout Concurrency Limiter Fixtures
+// ****************
+
+// newRolloutConcurrencyLimiter creates a rollout concurrency limiter.
+// This is the base limiter used by all rate limiting tests.
+func newRolloutConcurrencyLimiter() *rollout.RolloutConcurrencyLimiter {
+	return rollout.NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+}
+
+// newRolloutConcurrencyLimiterNoLimit creates a rollout concurrency limiter with infinite limit (no rate limiting).
+// This is used for tests that don't care about rate limiting behavior. This is the default limiter.
+func newRolloutConcurrencyLimiterNoLimit() *rollout.RolloutConcurrencyLimiter {
+	return newRolloutConcurrencyLimiter()
+}
+
+// newRolloutConcurrencyLimiterExhausted creates a rollout concurrency limiter that has already used its quota.
+// Any call to TryAcquire() for a NEW workload will return false when limit is 1.
+// Note: Uses a placeholder workload key to exhaust the single slot.
+func newRolloutConcurrencyLimiterExhausted() *rollout.RolloutConcurrencyLimiter {
+	limiter := newRolloutConcurrencyLimiter()
+	limiter.TryAcquire("placeholder/Deployment/exhausted", 1) // Exhaust the single slot
+	return limiter
 }
 
 // newHealthyPod creates a healthy running pod that matches a deployment's selector.
@@ -416,6 +443,33 @@ func newInitContainerBackOffPod(ns *corev1.Namespace, deploymentName, podName st
 			},
 		},
 	}
+}
+
+// newRolloutConcurrencyLimiterActive creates a fresh rollout concurrency limiter with no pre-allocated slots.
+// This is used for tests that need an active limiter that hasn't been used yet.
+func newRolloutConcurrencyLimiterActive() *rollout.RolloutConcurrencyLimiter {
+	return newRolloutConcurrencyLimiter()
+}
+
+// newRolloutConcurrencyLimiterWithLimit creates a rollout concurrency limiter that will be used with the given limit.
+// The limit is not stored in the limiter itself (it's passed to TryAcquire), but this helper
+// makes test intent clear about the expected rate limiting behavior.
+func newRolloutConcurrencyLimiterWithLimit(limit int) *rollout.RolloutConcurrencyLimiter {
+	_ = limit // limit is used at TryAcquire time, not stored in limiter
+	return newRolloutConcurrencyLimiter()
+}
+
+// ****************
+// Configuration helpers for rate limiting
+// ****************
+
+// setConfigConcurrentRolloutLimit sets the MaxConcurrentRollouts in the configuration.
+// Use limit=0 for no rate limiting (unlimited), limit>0 for rate limiting.
+func setConfigConcurrentRolloutLimit(conf *common.OdigosConfiguration, limit int) {
+	if conf.Rollout == nil {
+		conf.Rollout = &common.RolloutConfiguration{}
+	}
+	conf.Rollout.MaxConcurrentRollouts = limit
 }
 
 // newCrashLoopBackOffStaticPod creates a static pod in CrashLoopBackOff state WITHOUT odigos label.
