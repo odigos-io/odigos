@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rust-detection-test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-unstripped
+  namespace: rust-detection-test
+  labels:
+    app: rust-unstripped
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rust-unstripped
+  template:
+    metadata:
+      labels:
+        app: rust-unstripped
+    spec:
+      containers:
+        - name: app
+          image: rust-detection-test:unstripped
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-stripped
+  namespace: rust-detection-test
+  labels:
+    app: rust-stripped
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rust-stripped
+  template:
+    metadata:
+      labels:
+        app: rust-stripped
+    spec:
+      containers:
+        - name: app
+          image: rust-detection-test:stripped
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-unstripped
+  namespace: rust-detection-test
+spec:
+  selector:
+    app: rust-unstripped
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-stripped
+  namespace: rust-detection-test
+spec:
+  selector:
+    app: rust-stripped
+  ports:
+    - port: 8080
+      targetPort: 8080
+

@@ -1,0 +1,482 @@
+---
+title: 'Rust Trace Enrichment'
+sidebarTitle: 'Enrichment'
+icon: 'wand-magic-sparkles'
+---
+
+This guide covers advanced patterns for enriching traces in Rust applications, including custom attributes, semantic conventions, and integration patterns.
+
+## Semantic Conventions
+
+Follow OpenTelemetry semantic conventions for consistent, queryable traces:
+
+### HTTP Server Spans
+
+```rust
+use opentelemetry::{global, trace::{Tracer, Span, SpanKind}};
+use opentelemetry::KeyValue;
+use opentelemetry_semantic_conventions::trace as semconv;
+
+async fn handle_request(req: &Request) -> Response {
+    let tracer = global::tracer("http-server");
+    
+    let mut span = tracer
+        .span_builder(format!("{} {}", req.method(), req.uri().path()))
+        .with_kind(SpanKind::Server)
+        .with_attributes(vec![
+            semconv::HTTP_REQUEST_METHOD.string(req.method().to_string()),
+            semconv::URL_PATH.string(req.uri().path().to_string()),
+            semconv::HTTP_ROUTE.string("/api/users/:id"),
+            semconv::SERVER_ADDRESS.string("api.example.com"),
+            semconv::SERVER_PORT.i64(443),
+            semconv::USER_AGENT_ORIGINAL.string(
+                req.headers()
+                    .get("user-agent")
+                    .and_then(|v| v.to_str().ok())
+                    .unwrap_or("")
+                    .to_string()
+            ),
+        ])
+        .start(&tracer);
+
+    let response = process_request(req).await;
+    
+    span.set_attribute(semconv::HTTP_RESPONSE_STATUS_CODE.i64(response.status().as_u16() as i64));
+    
+    if response.status().is_server_error() {
+        span.set_status(opentelemetry::trace::Status::error("Server error"));
+    }
+    
+    span.end();
+    response
+}
+```
+
+### HTTP Client Spans
+
+```rust
+use opentelemetry_semantic_conventions::trace as semconv;
+
+async fn call_external_api(url: &str) -> Result<Response, Error> {
+    let tracer = global::tracer("http-client");
+    
+    let parsed_url = url::Url::parse(url)?;
+    
+    let mut span = tracer
+        .span_builder(format!("GET {}", parsed_url.host_str().unwrap_or("unknown")))
+        .with_kind(SpanKind::Client)
+        .with_attributes(vec![
+            semconv::HTTP_REQUEST_METHOD.string("GET"),
+            semconv::URL_FULL.string(url.to_string()),
+            semconv::SERVER_ADDRESS.string(parsed_url.host_str().unwrap_or("").to_string()),
+            semconv::SERVER_PORT.i64(parsed_url.port().unwrap_or(443) as i64),
+        ])
+        .start(&tracer);
+    
+    // Inject trace context into headers
+    let mut headers = HeaderMap::new();
+    inject_context(&mut headers);
+    
+    let response = client.get(url).headers(headers).send().await;
+    
+    match &response {
+        Ok(resp) => {
+            span.set_attribute(semconv::HTTP_RESPONSE_STATUS_CODE.i64(resp.status().as_u16() as i64));
+        }
+        Err(e) => {
+            span.record_error(e);
+            span.set_status(opentelemetry::trace::Status::error(e.to_string()));
+        }
+    }
+    
+    span.end();
+    response.map_err(|e| e.into())
+}
+```
+
+### Database Spans
+
+```rust
+use opentelemetry_semantic_conventions::trace as semconv;
+
+async fn query_user(pool: &PgPool, user_id: i64) -> Result<User, Error> {
+    let tracer = global::tracer("database");
+    
+    let mut span = tracer
+        .span_builder("SELECT users")
+        .with_kind(SpanKind::Client)
+        .with_attributes(vec![
+            semconv::DB_SYSTEM.string("postgresql"),
+            semconv::DB_NAME.string("myapp"),
+            semconv::DB_OPERATION.string("SELECT"),
+            semconv::DB_SQL_TABLE.string("users"),
+            KeyValue::new("db.user.id", user_id),
+        ])
+        .start(&tracer);
+    
+    let result = sqlx::query_as!(
+        User,
+        "SELECT * FROM users WHERE id = $1",
+        user_id
+    )
+    .fetch_one(pool)
+    .await;
+    
+    match &result {
+        Ok(_) => {
+            span.set_attribute(KeyValue::new("db.rows_affected", 1));
+        }
+        Err(e) => {
+            span.record_error(e);
+            span.set_status(opentelemetry::trace::Status::error(e.to_string()));
+        }
+    }
+    
+    span.end();
+    result
+}
+```
+
+### gRPC Spans
+
+```rust
+use opentelemetry_semantic_conventions::trace as semconv;
+
+async fn call_grpc_service(request: Request<MyMessage>) -> Result<Response<MyResponse>, Status> {
+    let tracer = global::tracer("grpc-client");
+    
+    let mut span = tracer
+        .span_builder("mypackage.MyService/MyMethod")
+        .with_kind(SpanKind::Client)
+        .with_attributes(vec![
+            semconv::RPC_SYSTEM.string("grpc"),
+            semconv::RPC_SERVICE.string("mypackage.MyService"),
+            semconv::RPC_METHOD.string("MyMethod"),
+            semconv::SERVER_ADDRESS.string("grpc-server.default.svc.cluster.local"),
+            semconv::SERVER_PORT.i64(9090),
+        ])
+        .start(&tracer);
+    
+    let result = client.my_method(request).await;
+    
+    match &result {
+        Ok(response) => {
+            span.set_attribute(semconv::RPC_GRPC_STATUS_CODE.i64(0));
+        }
+        Err(status) => {
+            span.set_attribute(semconv::RPC_GRPC_STATUS_CODE.i64(status.code() as i64));
+            span.set_status(opentelemetry::trace::Status::error(status.message().to_string()));
+        }
+    }
+    
+    span.end();
+    result
+}
+```
+
+## Custom Attributes
+
+### Business-Specific Attributes
+
+```rust
+#[derive(Debug)]
+struct OrderContext {
+    order_id: String,
+    customer_id: String,
+    total_amount: f64,
+    item_count: usize,
+}
+
+async fn process_order(ctx: &OrderContext) -> Result<(), Error> {
+    let tracer = global::tracer("order-service");
+    
+    let mut span = tracer
+        .span_builder("process_order")
+        .with_kind(SpanKind::Internal)
+        .with_attributes(vec![
+            KeyValue::new("order.id", ctx.order_id.clone()),
+            KeyValue::new("order.customer_id", ctx.customer_id.clone()),
+            KeyValue::new("order.total_amount", ctx.total_amount),
+            KeyValue::new("order.item_count", ctx.item_count as i64),
+            KeyValue::new("order.currency", "USD"),
+        ])
+        .start(&tracer);
+    
+    // Process order...
+    
+    span.set_attribute(KeyValue::new("order.status", "completed"));
+    span.set_attribute(KeyValue::new("order.processing_time_ms", 150));
+    
+    span.end();
+    Ok(())
+}
+```
+
+### Dynamic Attribute Addition
+
+```rust
+async fn handle_with_dynamic_attrs(req: Request) -> Response {
+    let tracer = global::tracer("my-service");
+    let mut span = tracer.start("handle_request");
+    
+    // Add attributes as you learn more about the request
+    if let Some(auth) = req.headers().get("authorization") {
+        span.set_attribute(KeyValue::new("auth.type", "bearer"));
+    }
+    
+    let user = authenticate(&req).await?;
+    span.set_attribute(KeyValue::new("user.id", user.id.clone()));
+    span.set_attribute(KeyValue::new("user.role", user.role.clone()));
+    
+    // Continue processing...
+    
+    span.end();
+    Ok(response)
+}
+```
+
+## Span Events
+
+Add timestamped events within a span:
+
+```rust
+use opentelemetry::trace::Span;
+
+async fn complex_operation() -> Result<(), Error> {
+    let tracer = global::tracer("my-service");
+    let mut span = tracer.start("complex_operation");
+    
+    span.add_event("starting_validation", vec![]);
+    validate_input().await?;
+    
+    span.add_event("validation_complete", vec![
+        KeyValue::new("items_validated", 42),
+    ]);
+    
+    span.add_event("starting_processing", vec![]);
+    let result = process_data().await?;
+    
+    span.add_event("processing_complete", vec![
+        KeyValue::new("records_processed", result.count),
+        KeyValue::new("bytes_written", result.bytes),
+    ]);
+    
+    span.end();
+    Ok(())
+}
+```
+
+## Error Recording
+
+### Structured Error Recording
+
+```rust
+use opentelemetry::trace::{Span, Status};
+
+async fn risky_operation() -> Result<Data, MyError> {
+    let tracer = global::tracer("my-service");
+    let mut span = tracer.start("risky_operation");
+    
+    match do_work().await {
+        Ok(data) => {
+            span.set_status(Status::Ok);
+            span.end();
+            Ok(data)
+        }
+        Err(e) => {
+            span.record_error(&e);
+            
+            // Add error details as attributes
+            span.set_attribute(KeyValue::new("error.type", e.error_type()));
+            span.set_attribute(KeyValue::new("error.code", e.code()));
+            
+            if e.is_retryable() {
+                span.set_attribute(KeyValue::new("error.retryable", true));
+            }
+            
+            span.set_status(Status::error(e.to_string()));
+            span.end();
+            Err(e)
+        }
+    }
+}
+```
+
+### Exception Events
+
+```rust
+use std::backtrace::Backtrace;
+
+fn record_exception(span: &mut impl Span, error: &dyn std::error::Error) {
+    let mut attrs = vec![
+        KeyValue::new("exception.type", std::any::type_name_of_val(error)),
+        KeyValue::new("exception.message", error.to_string()),
+    ];
+    
+    // Add backtrace if available
+    let backtrace = Backtrace::capture();
+    if backtrace.status() == std::backtrace::BacktraceStatus::Captured {
+        attrs.push(KeyValue::new("exception.stacktrace", backtrace.to_string()));
+    }
+    
+    span.add_event("exception", attrs);
+}
+```
+
+## Async Context Management
+
+### Propagating Context Across Tasks
+
+```rust
+use opentelemetry::Context;
+
+async fn spawn_background_task(data: Data) {
+    let tracer = global::tracer("my-service");
+    let span = tracer.start("main_operation");
+    
+    // Capture current context
+    let cx = Context::current();
+    
+    // Spawn background task with context
+    tokio::spawn(async move {
+        let _guard = cx.attach();
+        
+        // This span will be a child of main_operation
+        let tracer = global::tracer("my-service");
+        let span = tracer.start("background_task");
+        
+        do_background_work(data).await;
+        
+        span.end();
+    });
+    
+    span.end();
+}
+```
+
+### Using Tracing Spans with OpenTelemetry
+
+```rust
+use tracing::{instrument, Instrument};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+
+#[instrument]
+async fn parent_operation() {
+    let current_span = tracing::Span::current();
+    
+    // Get OpenTelemetry context from tracing span
+    let cx = current_span.context();
+    
+    // Spawn task that continues the trace
+    tokio::spawn(
+        async move {
+            child_operation().await;
+        }
+        .instrument(tracing::info_span!("spawned_task"))
+    );
+}
+
+#[instrument]
+async fn child_operation() {
+    // This will be properly linked as a child span
+    tracing::info!("Doing work in child");
+}
+```
+
+## Sampling Considerations
+
+### Respecting Sampling Decisions
+
+```rust
+use opentelemetry::trace::TraceContextExt;
+
+async fn handle_request(req: Request) -> Response {
+    let cx = extract_context(req.headers());
+    let span_context = cx.span().span_context();
+    
+    // Check if this trace is being sampled
+    if span_context.is_sampled() {
+        // Add detailed attributes for sampled traces
+        add_detailed_attributes(&mut span).await;
+    }
+    
+    // Always add critical attributes
+    span.set_attribute(KeyValue::new("http.status_code", 200));
+    
+    process_request(req).await
+}
+```
+
+## Metrics Integration
+
+Combine traces with metrics:
+
+```rust
+use opentelemetry::metrics::{MeterProvider, Counter, Histogram};
+use opentelemetry_sdk::metrics::SdkMeterProvider;
+
+struct Metrics {
+    request_counter: Counter<u64>,
+    request_duration: Histogram<f64>,
+}
+
+impl Metrics {
+    fn new(provider: &SdkMeterProvider) -> Self {
+        let meter = provider.meter("my-service");
+        
+        Self {
+            request_counter: meter
+                .u64_counter("http.server.request_count")
+                .with_description("Number of HTTP requests")
+                .init(),
+            request_duration: meter
+                .f64_histogram("http.server.request_duration")
+                .with_description("HTTP request duration in seconds")
+                .with_unit(opentelemetry::metrics::Unit::new("s"))
+                .init(),
+        }
+    }
+}
+
+async fn handle_with_metrics(req: Request, metrics: &Metrics) -> Response {
+    let start = std::time::Instant::now();
+    let tracer = global::tracer("my-service");
+    let mut span = tracer.start("handle_request");
+    
+    let response = process_request(req).await;
+    let duration = start.elapsed().as_secs_f64();
+    
+    // Record metrics
+    let labels = &[
+        KeyValue::new("http.method", "GET"),
+        KeyValue::new("http.status_code", response.status().as_u16() as i64),
+    ];
+    
+    metrics.request_counter.add(1, labels);
+    metrics.request_duration.record(duration, labels);
+    
+    // Also record in span
+    span.set_attribute(KeyValue::new("http.duration_ms", (duration * 1000.0) as i64));
+    
+    span.end();
+    response
+}
+```
+
+## Best Practices Summary
+
+| Practice | Description |
+|----------|-------------|
+| Use semantic conventions | Follow OpenTelemetry naming for consistent queries |
+| Add business context | Include domain-specific attributes for debugging |
+| Record errors properly | Use `record_error()` and set status for failures |
+| Propagate context | Ensure trace context flows across async boundaries |
+| End spans explicitly | Always call `.end()` or use `#[instrument]` |
+| Be selective with attributes | Don't add PII; focus on debugging value |
+
+## Resources
+
+- [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/concepts/semantic-conventions/)
+- [Rust Tracing Crate Documentation](https://docs.rs/tracing/latest/tracing/)
+- [OpenTelemetry Rust Examples](https://github.com/open-telemetry/opentelemetry-rust/tree/main/examples)
+
