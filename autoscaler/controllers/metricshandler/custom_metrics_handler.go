@@ -12,7 +12,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,6 +25,14 @@ import (
 
 const (
 	gatewayRejectionMetricName = "odigos_gateway_memory_limiter_rejections_total"
+
+	// Custom Metrics API constants
+	customMetricsAPIGroup     = "custom.metrics.k8s.io"
+	customMetricsAPIVersion   = "v1beta1"
+	customMetricsGroupVersion = customMetricsAPIGroup + "/" + customMetricsAPIVersion
+	NewAPIServiceName         = customMetricsAPIVersion + "." + customMetricsAPIGroup
+	// TODO remove after migration is completed
+	legacyAPIServiceName = "v1beta1.custom.metrics.k8s.io"
 )
 
 type MetricValueList struct {
@@ -126,7 +134,7 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 		}
 
 		resp := MetricValueList{
-			APIVersion: "custom.metrics.k8s.io/v1beta1",
+			APIVersion: customMetricsGroupVersion,
 			Kind:       "MetricValueList",
 			Items: []MetricValue{
 				{
@@ -154,7 +162,7 @@ func DiscoveryHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"kind":         "APIResourceList",
 		"apiVersion":   "v1",
-		"groupVersion": "custom.metrics.k8s.io/v1beta1",
+		"groupVersion": customMetricsGroupVersion,
 		"resources": []map[string]interface{}{
 			{
 				"name":         "deployments.apps/odigos_gateway_rejections",
@@ -188,57 +196,35 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 		return fmt.Errorf("ca.crt not found in secret %s", secret.Name)
 	}
 
-	// Create or update APIService for custom.metrics.k8s.io
-	apiSvcName := "v1beta1.custom.metrics.k8s.io"
-	existing := &apiregv1.APIService{}
-	err := mgr.GetClient().Get(ctx, client.ObjectKey{Name: apiSvcName}, existing)
-	if client.IgnoreNotFound(err) != nil {
-		return err
-	}
-
+	helmManagedAPIService := &apiregv1.APIService{}
+	err := mgr.GetClient().Get(ctx, client.ObjectKey{Name: NewAPIServiceName}, helmManagedAPIService)
 	if err != nil {
-		// NotFound error -> create the APIService
-		port := int32(9443)
-		apiSvc := &apiregv1.APIService{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: apiSvcName,
-			},
-			Spec: apiregv1.APIServiceSpec{
-				Service: &apiregv1.ServiceReference{
-					Name:      "odigos-autoscaler",
-					Namespace: namespace,
-					Port:      &port,
-				},
-				Group:                 "custom.metrics.k8s.io",
-				Version:               "v1beta1",
-				InsecureSkipTLSVerify: false,
-				CABundle:              caData,
-				GroupPriorityMinimum:  100,
-				VersionPriority:       100,
-			},
-		}
-		if err := mgr.GetClient().Create(ctx, apiSvc); err != nil {
-			return fmt.Errorf("failed to create APIService: %w", err)
+		if apierrors.IsNotFound(err) {
+			// Register handlers anyway, they'll work once Helm creates the APIService
+		} else {
+			return fmt.Errorf("failed to get Helm-managed APIService: %w", err)
 		}
 	} else {
-		// Found -> update if CA changed
-		if base64.StdEncoding.EncodeToString(existing.Spec.CABundle) !=
+		// Update CA bundle if needed
+		if base64.StdEncoding.EncodeToString(helmManagedAPIService.Spec.CABundle) !=
 			base64.StdEncoding.EncodeToString(caData) {
-			existing.Spec.CABundle = caData
-			if err := mgr.GetClient().Update(ctx, existing); err != nil {
-				return fmt.Errorf("failed to update APIService: %w", err)
+			helmManagedAPIService.Spec.CABundle = caData
+			if err := mgr.GetClient().Update(ctx, helmManagedAPIService); err != nil {
+				return fmt.Errorf("failed to update Helm-managed APIService CA bundle: %w", err)
 			}
+			ctrl.Log.Info("Updated CA bundle for Helm-managed APIService")
 		}
 	}
 
 	// Register HTTP handlers on the webhook server
 	webhookServer := mgr.GetWebhookServer()
 
-	discoveryPath := "/apis/custom.metrics.k8s.io/v1beta1"
+	discoveryPath := fmt.Sprintf("/apis/%s", customMetricsGroupVersion)
 	webhookServer.Register(discoveryPath, http.HandlerFunc(DiscoveryHandler))
 
 	deploymentMetricPath := fmt.Sprintf(
-		"/apis/custom.metrics.k8s.io/v1beta1/namespaces/%s/deployments.apps/odigos-gateway/odigos_gateway_rejections",
+		"/apis/%s/namespaces/%s/deployments.apps/odigos-gateway/odigos_gateway_rejections",
+		customMetricsGroupVersion,
 		namespace,
 	)
 	webhookServer.Register(deploymentMetricPath, MetricHandler(ctx, mgr.GetClient(), namespace))
