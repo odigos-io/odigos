@@ -192,26 +192,6 @@ jobs:
         run: |
           ko build --bare --tags latest --tags ${{ env.TAG }} --platform=linux/amd64,linux/arm64
 
-      - name: publish cli certified image to GCR registry
-        working-directory: ./cli
-        env:
-          KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-certified
-          KO_CONFIG_PATH: ./.ko.yaml
-          VERSION: ${{ env.TAG }}
-          SHORT_COMMIT: ${{ steps.vars.outputs.short_commit }}
-          DATE: ${{ steps.vars.outputs.date }}
-          KO_DEFAULTBASEIMAGE: registry.access.redhat.com/ubi9/ubi-micro:latest
-        run: |
-          ko build --bare --tags latest --tags ${{ env.TAG }} \
-          --image-label name=odigos-cli \
-          --image-label vendor=Odigos \
-          --image-label maintainer=Odigos \
-          --image-label version=${{ env.TAG }} \
-          --image-label release=${{ env.TAG }} \
-          --image-label summary="Odigos CLI" \
-          --image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
-          --platform=all .
-
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4
 
@@ -290,26 +270,3 @@ jobs:
           success-description: "Helm charts published successfully. new version is ready"
           failure-description: "ERROR: Failed to publish Helm charts"
           tag: ${{ env.TAG }}
-
-  trigger-openshift-certification:
-    needs: publish-helm
-    runs-on: ubuntu-latest
-    steps:
-      - name: Determine Tag Value
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
-          else
-            echo "Unknown event type"
-            exit 1
-          fi
-
-      - name: Trigger OpenShift Preflight job
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-            https://api.github.com/repos/odigos-io/odigos/dispatches \
-            -d '{"event_type": "openshift_preflight", "client_payload": {"tag": "${{ env.TAG }}"}}'
