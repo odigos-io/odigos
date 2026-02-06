@@ -74,9 +74,18 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map,
 
 	innerMapsCount := 0
 	processedMaps := 0
+	seenProcesses := make(map[[64]byte]struct{})
 
 	for iter.Next(&processKey, &innerMapID) {
 		innerMapsCount++
+		seenProcesses[processKey] = struct{}{}
+
+		// Get or create the start time for this process
+		startTime, exists := r.processStartTimes[processKey]
+		if !exists {
+			startTime = pcommon.NewTimestampFromTime(time.Now())
+			r.processStartTimes[processKey] = startTime
+		}
 
 		// Get the inner map from the ID
 		innerMap, err := ebpf.NewMapFromID(ebpf.MapID(innerMapID))
@@ -96,7 +105,7 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map,
 		}
 
 		// Process metrics from this inner map
-		if err := r.processInnerMapMetrics(ctx, innerMap, packedAttributes); err != nil {
+		if err := r.processInnerMapMetrics(ctx, innerMap, packedAttributes, startTime); err != nil {
 			r.logger.Error("failed to process inner map metrics",
 				zap.Uint32("inner_map_id", innerMapID),
 				zap.Error(err))
@@ -104,6 +113,13 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map,
 		}
 
 		processedMaps++
+	}
+
+	// Cleanup start times for processes that are no longer present
+	for key := range r.processStartTimes {
+		if _, seen := seenProcesses[key]; !seen {
+			delete(r.processStartTimes, key)
+		}
 	}
 
 	r.logger.Debug("metrics collection completed",
@@ -115,9 +131,10 @@ func (r *ebpfReceiver) collectMetrics(ctx context.Context, hashOfMaps *ebpf.Map,
 // processInnerMapMetrics processes a single inner map and extracts metrics.
 // packedAttributes contains the resource attributes in "key1:value1,key2:value2" format,
 // looked up from the AttributesMap by UUID.
-func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, packedAttributes string) error {
+// startTime is when this process was first observed, used as StartTimestamp for cumulative metrics.
+func (r *ebpfReceiver) processInnerMapMetrics(ctx context.Context, innerMap *ebpf.Map, packedAttributes string, startTime pcommon.Timestamp) error {
 	// Process with JVM handler
-	metrics, err := r.jvmHandler.ExtractJVMMetricsFromInnerMap(ctx, innerMap)
+	metrics, err := r.jvmHandler.ExtractJVMMetricsFromInnerMap(ctx, innerMap, startTime)
 	if err != nil {
 		return fmt.Errorf("JVM handler failed: %w", err)
 	}
