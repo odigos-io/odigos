@@ -8,18 +8,6 @@
       "required": [],
       "title": "ResourceSizePreset"
     },
-    "additionalDimensions": {
-      "items": {
-        "anyOf": [
-          {
-            "type": "string"
-          }
-        ],
-        "required": []
-      },
-      "title": "additionalDimensions",
-      "type": "array"
-    },
     "allowConcurrentAgents": {
       "additionalProperties": false,
       "description": "Setting for allowing Odigos to run concurrently with other agents",
@@ -65,6 +53,18 @@
           "description": "affinity for the autoscaler deployment.",
           "required": [],
           "title": "affinity"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
         },
         "resources": {
           "additionalProperties": false,
@@ -137,6 +137,18 @@
           "description": "Central backend URL where this proxy will forward data",
           "required": [],
           "title": "centralBackendURL"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
         },
         "resources": {
           "additionalProperties": false,
@@ -219,11 +231,6 @@
       "required": [],
       "title": "centralProxy"
     },
-    "certifiedImageTags": {
-      "default": false,
-      "title": "certifiedImageTags",
-      "type": "boolean"
-    },
     "clickhouseDestinationJsonType": {
       "additionalProperties": false,
       "description": "Enable support for ClickHouse JSON column type when storing Odigos data.\nWhen set to true, Odigos will use a new schema with JSON-typed columns (requires ClickHouse v25.3+).\nIf set to false, the default schema using Map-type columns will be used instead.",
@@ -253,6 +260,72 @@
           "required": [],
           "title": "clusterMetricsEnabled"
         },
+        "goMemLimitMiB": {
+          "default": "460",
+          "description": "the GOMEMLIMIT environment variable value for the collector gateway deployment.\nthis is when go runtime will start garbage collection.\nif not specified, it will be set to 80% of the hard limit of the memory limiter.",
+          "required": [],
+          "title": "goMemLimitMiB"
+        },
+        "httpsProxyAddress": {
+          "default": "",
+          "description": "for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.\nwhen unset or empty, no proxy will be used.",
+          "required": [],
+          "title": "httpsProxyAddress"
+        },
+        "limitCPUm": {
+          "default": "1000",
+          "description": "the CPU limit for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource limit\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 1000m\nIf you set only limitCPUm, the requestCPUm will be set to the same value.",
+          "required": [],
+          "title": "limitCPUm"
+        },
+        "limitMemoryMiB": {
+          "default": "625",
+          "description": "the memory limit for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource limit\nof the form \"memory: \u003cvalue\u003eMi\".\ndefault value is 625Mi\nIf you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.",
+          "required": [],
+          "title": "limitMemoryMiB"
+        },
+        "maxReplicas": {
+          "default": "10",
+          "description": "The maxReplicas in the HPA config.",
+          "required": [],
+          "title": "maxReplicas"
+        },
+        "memoryLimiterLimitMiB": {
+          "default": "575",
+          "description": "sets the \"limit_mib\" parameter in the memory limiter configuration for the collector gateway.\nit is the hard limit after which a force garbage collection will be performed.\nif not set, it will be 50Mi below the memory limit.",
+          "required": [],
+          "title": "memoryLimiterLimitMiB"
+        },
+        "memoryLimiterSpikeLimitMiB": {
+          "default": "110",
+          "description": "sets the \"spike_limit_mib\" parameter in the memory limiter configuration for the collector gateway.\nnote that this is not the processor soft limit, but the diff in MiB between the hard limit and the soft limit.\nif not specified, this value will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).",
+          "required": [],
+          "title": "memoryLimiterSpikeLimitMiB"
+        },
+        "minReplicas": {
+          "default": "1",
+          "description": "The number of replicas for the cluster gateway collector deployment.\nAlso uses in MinReplicas the HPA config.",
+          "required": [],
+          "title": "minReplicas"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Node selector for the cluster gateway collector deployment.\nUncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "requestCPUm": {
+          "default": "500",
+          "description": "the CPU request for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource request\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 500m\nIf you set only requestCPUm, the limitCPUm will be set to the same value.",
+          "required": [],
+          "title": "requestCPUm"
+        },
+        "requestMemoryMiB": {
+          "default": "625",
+          "description": "the memory request for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource request\nof the form \"memory: \u003cvalue\u003eMi\".\ndefault value is 500Mi\nIf you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.",
+          "required": [],
+          "title": "requestMemoryMiB"
+        },
         "serviceGraphDisabled": {
           "default": "false",
           "description": "Service Graph settings\nService Graph is a feature that allows you to visualize the service graph of your application.\nIt is enabled by default and can be disabled by setting the disabled flag to true.",
@@ -273,11 +346,41 @@
           "required": [],
           "title": "collectorOwnMetricsPort"
         },
+        "goMemLimitMiB": {
+          "default": "360",
+          "description": "the GOMEMLIMIT environment variable value for the node collector daemonset.\nthis is when go runtime will start garbage collection.\nif not specified, it will be set to 80% of the hard limit of the memory limiter.",
+          "required": [],
+          "title": "goMemLimitMiB"
+        },
         "k8sNodeLogsDirectory": {
           "default": "",
           "description": "this configuration is used for logs collection where '/var/log' in a k8s node is a symlink\nto some other directory (for example, '/mnt/var/log')",
           "required": [],
           "title": "k8sNodeLogsDirectory"
+        },
+        "limitCPUm": {
+          "default": "500",
+          "description": "the CPU limit for the node collector daemonset.\nit will be embedded in the daemonset as a resource limit\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 500m\nIf you set only limitCPUm, the requestCPUm will be set to the same value.",
+          "required": [],
+          "title": "limitCPUm"
+        },
+        "limitMemoryMiB": {
+          "default": "500",
+          "description": "LimitMemoryMiB is the memory limit for the node collector daemonset.\nit will be embedded in the daemonset as a resource limit of the form \"memory: \u003cvalue\u003eMi\"\ndefault value is 500Mi\nIf you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.",
+          "required": [],
+          "title": "limitMemoryMiB"
+        },
+        "memoryLimiterLimitMiB": {
+          "default": "450",
+          "description": "this parameter sets the \"limit_mib\" parameter in the memory limiter configuration for the node collector.\nit is the hard limit after which a force garbage collection will be performed.\nif not set, it will be 50Mi below the memory limit.",
+          "required": [],
+          "title": "memoryLimiterLimitMiB"
+        },
+        "memoryLimiterSpikeLimitMiB": {
+          "default": "90",
+          "description": "this parameter sets the \"spike_limit_mib\" parameter in the memory limiter configuration for the node collector.\nnote that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.\nif not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).",
+          "required": [],
+          "title": "memoryLimiterSpikeLimitMiB"
         },
         "otlpExporterConfiguration": {
           "additionalProperties": false,
@@ -330,6 +433,18 @@
           },
           "required": [],
           "title": "otlpExporterConfiguration"
+        },
+        "requestCPUm": {
+          "default": "250",
+          "description": "the CPU request for the node collector daemonset.\nit will be embedded in the daemonset as a resource request\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 250m\nIf you set only requestCPUm, the limitCPUm will be set to the same value.",
+          "required": [],
+          "title": "requestCPUm"
+        },
+        "requestMemoryMiB": {
+          "default": "250",
+          "description": "RequestMemoryMiB is the memory request for the node collector daemonset.\nit will be embedded in the daemonset as a resource request of the form \"memory: \u003cvalue\u003eMi\"\ndefault value is 250Mi\nIf you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.",
+          "required": [],
+          "title": "requestMemoryMiB"
         }
       },
       "required": [],
@@ -499,11 +614,23 @@
           "required": [],
           "title": "noHostPid"
         },
+        "nodeSelector": {
+          "default": "",
+          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
         "priorityClassName": {
           "default": "system-node-critical",
           "description": "Priority class name. Set to empty string to disable.",
           "required": [],
           "title": "priorityClassName"
+        },
+        "resources": {
+          "default": "",
+          "description": "Resource configuration for the odiglet daemonset",
+          "required": [],
+          "title": "resources"
         },
         "tolerations": {
           "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
@@ -537,80 +664,6 @@
       "required": [],
       "title": "dataCollection"
     },
-    "excludedResourceAttributes": {
-      "description": "set resource attributes to exclude from the span metrics",
-      "items": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          }
-        ],
-        "required": []
-      },
-      "required": [],
-      "title": "excludedResourceAttributes"
-    },
-    "explicitHistogramBuckets": {
-      "description": "set explicit histogram buckets for span metrics\nformat is duration string (1us, 2ms, 3s, 4m, 5h, 6d, etc)",
-      "items": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          }
-        ],
-        "required": []
-      },
-      "required": [],
-      "title": "explicitHistogramBuckets"
-    },
     "gke": {
       "additionalProperties": false,
       "description": "GKE-specific configuration.",
@@ -630,23 +683,17 @@
       "title": "global",
       "type": "object"
     },
-    "goMemLimitMiB": {
-      "default": "360",
-      "description": "the GOMEMLIMIT environment variable value for the node collector daemonset.\nthis is when go runtime will start garbage collection.\nif not specified, it will be set to 80% of the hard limit of the memory limiter.",
-      "required": [],
-      "title": "goMemLimitMiB"
-    },
-    "histogramDisabled": {
-      "default": "true",
-      "description": "uncomment the next line to disable histogram metrics collection (while still recording non-histogram span metrics)",
-      "required": [],
-      "title": "histogramDisabled"
-    },
-    "httpsProxyAddress": {
+    "goAutoOffsetsCron": {
       "default": "",
-      "description": "for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.\nwhen unset or empty, no proxy will be used.",
+      "description": "Enable automatic Go library offsets updates.\nSee https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.\ncron schedule for automatic Go offsets updates (e.g. \"0 0 * * *\" for daily at midnight). Set to empty string to disable.\nCustom Offsets support is only available in Odigos pro tier.",
       "required": [],
-      "title": "httpsProxyAddress"
+      "title": "goAutoOffsetsCron"
+    },
+    "goAutoOffsetsMode": {
+      "default": "off",
+      "description": "mode for automatic Go offsets updates. Options include direct (pull from cloud server), image (pull from local image) and off (disabled).\nCustom Offsets support is only available in Odigos pro tier.",
+      "required": [],
+      "title": "goAutoOffsetsMode"
     },
     "ignoreOdigosNamespace": {
       "default": "true",
@@ -697,12 +744,6 @@
       "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
       "required": [],
       "title": "images"
-    },
-    "includedProcessInDimensions": {
-      "default": "true",
-      "description": "set if process level dimensions will be included in span metrics\nby default, process level metrics are not included\nwhen set to true - timeseries will be created for each process in a container\nwhen unset or set to false - timeseries will aggregate all processes into a single value per series",
-      "required": [],
-      "title": "includedProcessInDimensions"
     },
     "instrumentor": {
       "additionalProperties": false,
@@ -776,6 +817,24 @@
           "required": [],
           "title": "mountMethod"
         },
+        "nodeSelector": {
+          "default": "",
+          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "podsWebhookTimeoutSeconds": {
+          "default": "25",
+          "description": "the timeout in seconds for the pods webhook.\ndefault is 10 seconds and it is recommended to keep it as is unless you are experiencing issues with the webhook.\nvalue must be 30 seconds max (inforced by kubernetes)\na shorter timeout will relieve API pressure, but may result in more pods failing to instrument",
+          "required": [],
+          "title": "podsWebhookTimeoutSeconds"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
         "resources": {
           "additionalProperties": false,
           "description": "resources for the instrumentor deployment.",
@@ -845,40 +904,46 @@
       "required": [],
       "title": "karpenter"
     },
-    "limitCPUm": {
-      "default": "500",
-      "description": "the CPU limit for the node collector daemonset.\nit will be embedded in the daemonset as a resource limit\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 500m\nIf you set only limitCPUm, the requestCPUm will be set to the same value.",
-      "required": [],
-      "title": "limitCPUm"
-    },
-    "limitMemoryMiB": {
-      "default": "500",
-      "description": "LimitMemoryMiB is the memory limit for the node collector daemonset.\nit will be embedded in the daemonset as a resource limit of the form \"memory: \u003cvalue\u003eMi\"\ndefault value is 500Mi\nIf you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.",
-      "required": [],
-      "title": "limitMemoryMiB"
-    },
-    "maxReplicas": {
-      "default": "10",
-      "description": "The maxReplicas in the HPA config.",
-      "required": [],
-      "title": "maxReplicas"
-    },
-    "memoryLimiterLimitMiB": {
-      "default": "450",
-      "description": "this parameter sets the \"limit_mib\" parameter in the memory limiter configuration for the node collector.\nit is the hard limit after which a force garbage collection will be performed.\nif not set, it will be 50Mi below the memory limit.",
-      "required": [],
-      "title": "memoryLimiterLimitMiB"
-    },
-    "memoryLimiterSpikeLimitMiB": {
-      "default": "90",
-      "description": "this parameter sets the \"spike_limit_mib\" parameter in the memory limiter configuration for the node collector.\nnote that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.\nif not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).",
-      "required": [],
-      "title": "memoryLimiterSpikeLimitMiB"
-    },
     "metricsSources": {
       "additionalProperties": false,
       "description": "configuration for metrics sources (where odigos collects metrics from)\nonly relevant when a metrics destination is enabled",
       "properties": {
+        "agentMetrics": {
+          "additionalProperties": false,
+          "description": "Configuration for agent metrics collection.",
+          "properties": {
+            "runtimeMetrics": {
+              "additionalProperties": false,
+              "description": "Configuration for runtime metrics collection.",
+              "properties": {
+                "java": {
+                  "additionalProperties": false,
+                  "description": "Configuration for Java runtime metrics.",
+                  "properties": {
+                    "disabled": {
+                      "default": "true",
+                      "description": "Global enable/disable for all JVM metrics",
+                      "required": [],
+                      "title": "disabled"
+                    }
+                  },
+                  "required": [],
+                  "title": "java"
+                }
+              },
+              "required": [],
+              "title": "runtimeMetrics"
+            },
+            "spanMetrics": {
+              "default": "",
+              "description": "uncomment the next section to enable computing and reporting\nspan metrics directly in agents that support it.\nthe configuration for agent span metrics is the same as the\nspan metrics collector settings.\nagents have different capabilities and support different configuration options.",
+              "required": [],
+              "title": "spanMetrics"
+            }
+          },
+          "required": [],
+          "title": "agentMetrics"
+        },
         "hostMetrics": {
           "additionalProperties": false,
           "description": "Configuration for host metrics collection.",
@@ -919,21 +984,150 @@
           "required": [],
           "title": "kubeletStats"
         },
+        "odigosOwnMetrics": {
+          "additionalProperties": false,
+          "description": "Configuration for Odigos own metrics collection.",
+          "properties": {
+            "scrapeInterval": {
+              "default": "10s",
+              "description": "set the interval at which odigos will scrape metrics from itself.\nformat: duration string (15s, 1m, etc).\ndefault is 10s.",
+              "required": [],
+              "title": "scrapeInterval"
+            }
+          },
+          "required": [],
+          "title": "odigosOwnMetrics"
+        },
         "spanMetrics": {
           "additionalProperties": false,
           "description": "Configuration for span metrics collection.",
           "properties": {
+            "additionalDimensions": {
+              "description": "set additional dimensions for span metrics\nformat is a list of strings",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "additionalDimensions"
+            },
             "disabled": {
               "default": "false",
               "description": "disable span metrics collection globally",
               "required": [],
               "title": "disabled"
             },
+            "excludedResourceAttributes": {
+              "description": "set resource attributes to exclude from the span metrics",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "excludedResourceAttributes"
+            },
+            "explicitHistogramBuckets": {
+              "description": "set explicit histogram buckets for span metrics\nformat is duration string (1us, 2ms, 3s, 4m, 5h, 6d, etc)",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "explicitHistogramBuckets"
+            },
+            "histogramDisabled": {
+              "default": "true",
+              "description": "uncomment the next line to disable histogram metrics collection (while still recording non-histogram span metrics)",
+              "required": [],
+              "title": "histogramDisabled"
+            },
+            "includedProcessInDimensions": {
+              "default": "true",
+              "description": "set if process level dimensions will be included in span metrics\nby default, process level metrics are not included\nwhen set to true - timeseries will be created for each process in a container\nwhen unset or set to false - timeseries will aggregate all processes into a single value per series",
+              "required": [],
+              "title": "includedProcessInDimensions"
+            },
             "interval": {
               "default": "60s",
               "description": "set time interval for span metrics flushing\nformat is duration string (15s, 1m, etc)\ndefault is 60s",
               "required": [],
               "title": "interval"
+            },
+            "resourceMetricsKeyAttributes": {
+              "description": "Advanced configuration - avoid using unless you know what you are doing.\nThis list controls which resource attributes are included in the metric stream identity.\nThese attributes are used to determines how span metrics are grouped.",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "resourceMetricsKeyAttributes"
             }
           },
           "required": [],
@@ -942,12 +1136,6 @@
       },
       "required": [],
       "title": "metricsSources"
-    },
-    "minReplicas": {
-      "default": "1",
-      "description": "The number of replicas for the cluster gateway collector deployment.\nAlso uses in MinReplicas the HPA config.",
-      "required": [],
-      "title": "minReplicas"
     },
     "nodeSelector": {
       "additionalProperties": false,
@@ -1090,6 +1278,12 @@
           },
           "required": [],
           "title": "odiglet"
+        },
+        "traceIdSuffix": {
+          "default": "AA",
+          "description": "traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.\nsupported only in odigos pro (not available in community tier)",
+          "required": [],
+          "title": "traceIdSuffix"
         }
       },
       "required": [],
@@ -1099,6 +1293,12 @@
       "additionalProperties": false,
       "description": "OpenShift-specific configuration.",
       "properties": {
+        "certifiedImageTags": {
+          "default": "false",
+          "description": "Controls whether to use Red Hat certified image tags (-certified suffix).\nBy default, this is unset and will inherit the value of openshift.enabled.\nSet to false to explicitly disable certified images even when openshift.enabled is true.\nSet to true to explicitly enable certified images (requires openshift.enabled to also be true).\nNote that certifiedImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry\n(registry.connect.redhat.com) which is used when openshift.enabled is true.\nSetting this to false is useful if you are hosting images in your own registry (with imagePrefix set) but\nstill deploying on OpenShift, which requires other settings that are applied by openshift.enabled for OpenShift compatibility.",
+          "required": [],
+          "title": "certifiedImageTags"
+        },
         "enabled": {
           "default": "false",
           "description": "Controls whether to use OpenShift-specific settings and images.",
@@ -1108,6 +1308,28 @@
       },
       "required": [],
       "title": "openshift"
+    },
+    "ownTelemetry": {
+      "additionalProperties": false,
+      "description": "experimental configuration for own telemetry of odigos on itself",
+      "properties": {
+        "metricsStore": {
+          "additionalProperties": false,
+          "description": "configuration for the victoriametrics instance that is shipped with odigos for own telemetry",
+          "properties": {
+            "disabled": {
+              "default": "true",
+              "description": "set to true to disable the odigos victoriametrics own metrics store",
+              "required": [],
+              "title": "disabled"
+            }
+          },
+          "required": [],
+          "title": "metricsStore"
+        }
+      },
+      "required": [],
+      "title": "ownTelemetry"
     },
     "pdb": {
       "additionalProperties": false,
@@ -1121,16 +1343,6 @@
       },
       "required": [],
       "title": "pdb"
-    },
-    "podsWebhookTimeoutSeconds": {
-      "default": 25,
-      "title": "podsWebhookTimeoutSeconds",
-      "type": "integer"
-    },
-    "priorityClassName": {
-      "default": "",
-      "title": "priorityClassName",
-      "type": "string"
     },
     "profiles": {
       "description": "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}",
@@ -1152,77 +1364,6 @@
       },
       "required": [],
       "title": "psp"
-    },
-    "requestCPUm": {
-      "default": "250",
-      "description": "the CPU request for the node collector daemonset.\nit will be embedded in the daemonset as a resource request\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 250m\nIf you set only requestCPUm, the limitCPUm will be set to the same value.",
-      "required": [],
-      "title": "requestCPUm"
-    },
-    "requestMemoryMiB": {
-      "default": 250,
-      "title": "requestMemoryMiB",
-      "type": "integer"
-    },
-    "resourceMetricsKeyAttributes": {
-      "description": "Advanced configuration - avoid using unless you know what you are doing.\nThis list controls which resource attributes are included in the metric stream identity.\nThese attributes are used to determines how span metrics are grouped.",
-      "items": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "string"
-          }
-        ],
-        "required": []
-      },
-      "required": [],
-      "title": "resourceMetricsKeyAttributes"
-    },
-    "resources": {
-      "additionalProperties": false,
-      "properties": {
-        "limits": {
-          "additionalProperties": false,
-          "properties": {
-            "cpu": {
-              "default": "500m",
-              "title": "cpu",
-              "type": "string"
-            },
-            "memory": {
-              "default": "512Mi",
-              "title": "memory",
-              "type": "string"
-            }
-          },
-          "required": [],
-          "title": "limits",
-          "type": "object"
-        },
-        "requests": {
-          "additionalProperties": false,
-          "properties": {
-            "cpu": {
-              "default": "10m",
-              "title": "cpu",
-              "type": "string"
-            },
-            "memory": {
-              "default": "64Mi",
-              "title": "memory",
-              "type": "string"
-            }
-          },
-          "required": [],
-          "title": "requests",
-          "type": "object"
-        }
-      },
-      "required": [],
-      "title": "resources",
-      "type": "object"
     },
     "rollout": {
       "additionalProperties": false,
@@ -1246,6 +1387,18 @@
           "description": "affinity for the scheduler deployment.",
           "required": [],
           "title": "affinity"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
         },
         "resources": {
           "additionalProperties": false,
@@ -1343,14 +1496,120 @@
       "required": [],
       "title": "topologySpreadConstraints"
     },
-    "traceIdSuffix": {
-      "default": "AA",
-      "title": "traceIdSuffix",
-      "type": "string"
-    },
     "ui": {
-      "default": "",
+      "additionalProperties": false,
       "description": "Configuration for the UI component.",
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "description": "  kubernetes.io/os: linux",
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "centralBackendURL": {
+          "default": "",
+          "description": "centralBackendURL:\n - This flag sets the URL of the central backend.\n - If not set, the UI will not connect to the central backend.",
+          "required": [],
+          "title": "centralBackendURL"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "oidcClientId": {
+          "default": "",
+          "title": "oidcClientId",
+          "type": "string"
+        },
+        "oidcClientSecret": {
+          "default": "",
+          "description": "oidcClientSecret:\n - This flag sets the client secret of the OIDC application.\n - If not set, the UI will not process OIDC authentication.",
+          "required": [],
+          "title": "oidcClientSecret"
+        },
+        "oidcTenantUrl": {
+          "default": "",
+          "title": "oidcTenantUrl",
+          "type": "string"
+        },
+        "priorityClassName": {
+          "default": "",
+          "title": "priorityClassName",
+          "type": "string"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "500m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "512Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "10m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "64Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "tolerations"
+        },
+        "uiMode": {
+          "default": "default",
+          "description": "uiMode: 'default' or 'readonly'\n - This flag controls whether the UI should be in read-only mode.\n - Setting this to \"readonly\" will disable the ability to create, update, or delete objects in the UI.\n - If not set, the UI will be in default mode.",
+          "required": [],
+          "title": "uiMode"
+        },
+        "uiPaginationLimit": {
+          "default": "0",
+          "description": "uiPaginationLimit:\n - This flag controls the number of items to fetch per paginated-batch in the UI.\n - If not set, the UI will fetch 100 items per paginated-batch.",
+          "required": [],
+          "title": "uiPaginationLimit"
+        },
+        "uiRemoteUrl": {
+          "default": "",
+          "title": "uiRemoteUrl",
+          "type": "string"
+        }
+      },
       "required": [],
       "title": "ui"
     },
