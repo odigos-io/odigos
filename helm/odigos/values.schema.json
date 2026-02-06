@@ -450,220 +450,6 @@
       "required": [],
       "title": "collectorNode"
     },
-    "dataCollection": {
-      "additionalProperties": false,
-      "description": "Configuration for the data-collection container.",
-      "properties": {
-        "affinity": {
-          "additionalProperties": false,
-          "required": [],
-          "title": "affinity",
-          "type": "object"
-        },
-        "capabilities": {
-          "description": "capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher",
-          "items": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "string"
-              },
-              {
-                "type": "string"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "required": []
-          },
-          "required": [],
-          "title": "capabilities"
-        },
-        "customContainerRuntimeSocketPath": {
-          "default": "",
-          "description": "in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.\nIn these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)\ninto the Odiglet to ensure it can access the container runtime unix socket.",
-          "required": [],
-          "title": "customContainerRuntimeSocketPath"
-        },
-        "deviceplugin": {
-          "additionalProperties": false,
-          "description": "Configuration for the device plugin.",
-          "properties": {
-            "resources": {
-              "additionalProperties": false,
-              "properties": {
-                "limits": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "cpu": {
-                      "default": "100m",
-                      "title": "cpu",
-                      "type": "string"
-                    },
-                    "memory": {
-                      "default": "300Mi",
-                      "title": "memory",
-                      "type": "string"
-                    }
-                  },
-                  "required": [],
-                  "title": "limits",
-                  "type": "object"
-                },
-                "requests": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "cpu": {
-                      "default": "40m",
-                      "title": "cpu",
-                      "type": "string"
-                    },
-                    "memory": {
-                      "default": "200Mi",
-                      "title": "memory",
-                      "type": "string"
-                    }
-                  },
-                  "required": [],
-                  "title": "requests",
-                  "type": "object"
-                }
-              },
-              "required": [],
-              "title": "resources",
-              "type": "object"
-            }
-          },
-          "required": [],
-          "title": "deviceplugin"
-        },
-        "disableGoCodeAttributes": {
-          "default": "false",
-          "description": "When the code-attributes InstrumentationRule is enabled, you can choose to disable collecting code attributes for Go instrumentation.\nCollecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.\nSet this to true to turn off code attribute recording for Go instrumentation.",
-          "required": [],
-          "title": "disableGoCodeAttributes"
-        },
-        "extended": {
-          "default": "false",
-          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nDefault: false",
-          "required": [],
-          "title": "extended"
-        },
-        "initContainerResources": {
-          "additionalProperties": false,
-          "description": "Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.\nThere is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.",
-          "properties": {
-            "limits": {
-              "additionalProperties": false,
-              "properties": {
-                "cpu": {
-                  "default": "200m",
-                  "title": "cpu",
-                  "type": "string"
-                },
-                "memory": {
-                  "default": "200Mi",
-                  "title": "memory",
-                  "type": "string"
-                }
-              },
-              "required": [],
-              "title": "limits",
-              "type": "object"
-            },
-            "requests": {
-              "additionalProperties": false,
-              "properties": {
-                "cpu": {
-                  "default": "200m",
-                  "title": "cpu",
-                  "type": "string"
-                },
-                "memory": {
-                  "default": "200Mi",
-                  "title": "memory",
-                  "type": "string"
-                }
-              },
-              "required": [],
-              "title": "requests",
-              "type": "object"
-            }
-          },
-          "required": [],
-          "title": "initContainerResources"
-        },
-        "noHostNetwork": {
-          "default": "false",
-          "description": "noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.\nfor k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.\nfor k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.",
-          "required": [],
-          "title": "noHostNetwork"
-        },
-        "noHostPathMounts": {
-          "default": "false",
-          "description": "noHostPathMounts can be set to true to avoid using hostPath mounts in the odiglet daemonset.\nWhen set to true, instrumentor.mountMethod must be set to \"k8s-init-container\", since that is the only mount method\nthat does not rely on host mounts to pass the required agents files to instrumented pods.\nby default, odiglet will rely on hostPath mounts in /var/odigos",
-          "required": [],
-          "title": "noHostPathMounts"
-        },
-        "noHostPid": {
-          "default": "false",
-          "description": "noHostPid can be set to true to avoid using hostPID in the odiglet daemonset.\nwhen set to true, odiglet will mount /proc from the host to be able scan running processes and instrument them.\nwhen noHostPid and noHostPathMounts are set to true the /proc host mount must be allowed.\nsetting this to true (i.e avoiding hostPid) may limit some eBPF capabilities, depending on the instrumented workloads.\nby default, odiglet will use hostPID to be able to scan running processes and instrument them.",
-          "required": [],
-          "title": "noHostPid"
-        },
-        "nodeSelector": {
-          "default": "",
-          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
-          "required": [],
-          "title": "nodeSelector"
-        },
-        "priorityClassName": {
-          "default": "system-node-critical",
-          "description": "Priority class name. Set to empty string to disable.",
-          "required": [],
-          "title": "priorityClassName"
-        },
-        "resources": {
-          "default": "",
-          "description": "Resource configuration for the odiglet daemonset",
-          "required": [],
-          "title": "resources"
-        },
-        "tolerations": {
-          "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
-          "items": {
-            "anyOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "operator": {
-                    "default": "Exists",
-                    "title": "operator",
-                    "type": "string"
-                  }
-                },
-                "required": [],
-                "type": "object"
-              }
-            ],
-            "required": []
-          },
-          "required": [],
-          "title": "tolerations"
-        },
-        "unPrivileged": {
-          "default": "false",
-          "description": "run the odiglet container without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
-          "required": [],
-          "title": "unPrivileged"
-        }
-      },
-      "required": [],
-      "title": "dataCollection"
-    },
     "gke": {
       "additionalProperties": false,
       "description": "GKE-specific configuration.",
@@ -1154,6 +940,180 @@
       "additionalProperties": false,
       "description": "Configuration for the odiglet component.",
       "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "customContainerRuntimeSocketPath": {
+          "default": "",
+          "description": "in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.\nIn these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)\ninto the Odiglet to ensure it can access the container runtime unix socket.",
+          "required": [],
+          "title": "customContainerRuntimeSocketPath"
+        },
+        "dataCollection": {
+          "additionalProperties": false,
+          "description": "Configuration for the data-collection container.",
+          "properties": {
+            "capabilities": {
+              "description": "capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "capabilities"
+            }
+          },
+          "required": [],
+          "title": "dataCollection"
+        },
+        "deviceplugin": {
+          "additionalProperties": false,
+          "description": "Configuration for the device plugin.",
+          "properties": {
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "100m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "300Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "40m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "200Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "deviceplugin"
+        },
+        "disableGoCodeAttributes": {
+          "default": "false",
+          "description": "When the code-attributes InstrumentationRule is enabled, you can choose to disable collecting code attributes for Go instrumentation.\nCollecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.\nSet this to true to turn off code attribute recording for Go instrumentation.",
+          "required": [],
+          "title": "disableGoCodeAttributes"
+        },
+        "extended": {
+          "default": "false",
+          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nDefault: false",
+          "required": [],
+          "title": "extended"
+        },
+        "initContainerResources": {
+          "additionalProperties": false,
+          "description": "Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.\nThere is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.",
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "200m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "200Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "200m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "200Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "initContainerResources"
+        },
+        "noHostNetwork": {
+          "default": "false",
+          "description": "noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.\nfor k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.\nfor k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.",
+          "required": [],
+          "title": "noHostNetwork"
+        },
+        "noHostPathMounts": {
+          "default": "false",
+          "description": "noHostPathMounts can be set to true to avoid using hostPath mounts in the odiglet daemonset.\nWhen set to true, instrumentor.mountMethod must be set to \"k8s-init-container\", since that is the only mount method\nthat does not rely on host mounts to pass the required agents files to instrumented pods.\nby default, odiglet will rely on hostPath mounts in /var/odigos",
+          "required": [],
+          "title": "noHostPathMounts"
+        },
+        "noHostPid": {
+          "default": "false",
+          "description": "noHostPid can be set to true to avoid using hostPID in the odiglet daemonset.\nwhen set to true, odiglet will mount /proc from the host to be able scan running processes and instrument them.\nwhen noHostPid and noHostPathMounts are set to true the /proc host mount must be allowed.\nsetting this to true (i.e avoiding hostPid) may limit some eBPF capabilities, depending on the instrumented workloads.\nby default, odiglet will use hostPID to be able to scan running processes and instrument them.",
+          "required": [],
+          "title": "noHostPid"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
         "odiglet": {
           "additionalProperties": false,
           "description": "Configuration for the odiglet container.",
@@ -1279,11 +1239,51 @@
           "required": [],
           "title": "odiglet"
         },
+        "priorityClassName": {
+          "default": "system-node-critical",
+          "description": "Priority class name. Set to empty string to disable.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "default": "",
+          "description": "Resource configuration for the odiglet daemonset",
+          "required": [],
+          "title": "resources"
+        },
+        "tolerations": {
+          "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
+          "items": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "operator": {
+                    "default": "Exists",
+                    "title": "operator",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            ],
+            "required": []
+          },
+          "required": [],
+          "title": "tolerations"
+        },
         "traceIdSuffix": {
           "default": "AA",
           "description": "traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.\nsupported only in odigos pro (not available in community tier)",
           "required": [],
           "title": "traceIdSuffix"
+        },
+        "unPrivileged": {
+          "default": "false",
+          "description": "run the odiglet container without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
+          "required": [],
+          "title": "unPrivileged"
         }
       },
       "required": [],
