@@ -370,6 +370,12 @@
           "required": [],
           "title": "limitMemoryMiB"
         },
+        "memoryLimit": {
+          "default": "500",
+          "description": "Deprecated: Use limitMemoryMiB instead. Here for backwards compatibility with helm schema.",
+          "required": [],
+          "title": "memoryLimit"
+        },
         "memoryLimiterLimitMiB": {
           "default": "450",
           "description": "this parameter sets the \"limit_mib\" parameter in the memory limiter configuration for the node collector.\nit is the hard limit after which a force garbage collection will be performed.\nif not set, it will be 50Mi below the memory limit.",

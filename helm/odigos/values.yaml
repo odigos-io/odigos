@@ -307,6 +307,12 @@ collectorNode:
 
   # @schema
   # description: |-
+  #   Deprecated: Use limitMemoryMiB instead. Here for backwards compatibility with helm schema.
+  # @schema
+  # memoryLimit: 500
+
+  # @schema
+  # description: |-
   #   the CPU request for the node collector daemonset.
   #   it will be embedded in the daemonset as a resource request
   #   of the form "cpu: <value>m".
