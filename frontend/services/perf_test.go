@@ -29,12 +29,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// ============================================================================
-// Threshold tests — these fail CI if an API path exceeds its time budget.
-// ============================================================================
-
-// TestPerfGetK8SNamespaces verifies the batch Sources.List path completes
-// within budget (3 API calls: ConfigMap.Get || Namespaces.List, then Sources.List).
 func TestPerfGetK8SNamespaces(t *testing.T) {
 	nsCount := 100
 	latency := 5 * time.Millisecond
@@ -63,7 +57,6 @@ func TestPerfGetK8SNamespaces(t *testing.T) {
 	t.Logf("GetK8SNamespaces: %v (budget %v)", elapsed, budget)
 }
 
-// TestPerfGetWorkloadsInNamespace verifies cache-based workload listing is fast.
 func TestPerfGetWorkloadsInNamespace(t *testing.T) {
 	depCount := 1000
 	nsName := "test-ns"
@@ -112,7 +105,6 @@ func TestPerfGetWorkloadsInNamespace(t *testing.T) {
 	t.Logf("GetWorkloadsInNamespace: %v (budget %v)", elapsed, budget)
 }
 
-// TestPerfCountAppsPerNamespace verifies cache-based counting is fast.
 func TestPerfCountAppsPerNamespace(t *testing.T) {
 	nsCount := 100
 	workloadsPerNs := 10
@@ -151,15 +143,10 @@ func TestPerfCountAppsPerNamespace(t *testing.T) {
 	t.Logf("CountAppsPerNamespace: %v (budget %v)", elapsed, budget)
 }
 
-// ============================================================================
-// Benchmarks — GetK8SNamespaces: batch Sources.List vs per-namespace N+1
-// ============================================================================
-
 func BenchmarkGetK8SNamespaces(b *testing.B) {
 	for _, nsCount := range []int{10, 100, 500} {
 		latency := 5 * time.Millisecond
 
-		// "before": simulate old N+1 pattern (per-namespace Sources.List)
 		b.Run(fmt.Sprintf("before/%dns", nsCount), func(b *testing.B) {
 			namespaces := testutil.GenerateNamespaces(nsCount)
 			sources := testutil.GenerateNamespaceSources(nsCount)
@@ -189,7 +176,6 @@ func BenchmarkGetK8SNamespaces(b *testing.B) {
 			}
 		})
 
-		// "after": batch code — GetK8SNamespaces does 1 Sources.List
 		b.Run(fmt.Sprintf("after/%dns", nsCount), func(b *testing.B) {
 			namespaces := testutil.GenerateNamespaces(nsCount)
 			sources := testutil.GenerateNamespaceSources(nsCount)
@@ -212,16 +198,11 @@ func BenchmarkGetK8SNamespaces(b *testing.B) {
 	}
 }
 
-// ============================================================================
-// Benchmarks — GetWorkloadsInNamespace: direct API vs cache
-// ============================================================================
-
 func BenchmarkGetWorkloadsInNamespace(b *testing.B) {
 	for _, depCount := range []int{100, 1000} {
 		nsName := "test-ns"
 		latency := 5 * time.Millisecond
 
-		// "before": simulate old direct API pattern (4 slow list calls)
 		b.Run(fmt.Sprintf("before/%ddeps", depCount), func(b *testing.B) {
 			var k8sObjs []runtime.Object
 			k8sObjs = append(k8sObjs, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}})
@@ -271,7 +252,6 @@ func BenchmarkGetWorkloadsInNamespace(b *testing.B) {
 			}
 		})
 
-		// "after": uses CacheClient (in-memory, no latency)
 		b.Run(fmt.Sprintf("after/%ddeps", depCount), func(b *testing.B) {
 			var cacheObjs []ctrlclient.Object
 			for _, obj := range testutil.GenerateDeployments(nsName, depCount) {
@@ -313,10 +293,6 @@ func BenchmarkGetWorkloadsInNamespace(b *testing.B) {
 		})
 	}
 }
-
-// ============================================================================
-// Benchmarks — CountAppsPerNamespace: cache reads
-// ============================================================================
 
 func BenchmarkCountAppsPerNamespace(b *testing.B) {
 	nsCount := 50

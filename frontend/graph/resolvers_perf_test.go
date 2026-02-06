@@ -23,12 +23,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// ============================================================================
-// Threshold tests — these fail CI if an API path exceeds its time budget.
-// ============================================================================
-
-// TestPerfDestinations verifies the batch Destinations+Secrets path completes
-// within budget (3 API calls: Destinations.List + ConfigMap.Get + Secrets.List).
 func TestPerfDestinations(t *testing.T) {
 	destCount := 100
 	latency := 5 * time.Millisecond
@@ -58,8 +52,6 @@ func TestPerfDestinations(t *testing.T) {
 	t.Logf("Destinations: %v (budget %v)", elapsed, budget)
 }
 
-// TestPerfDataStreams verifies the DataStreams resolver completes within budget
-// (2 API calls: InstrumentationConfigs.List + Destinations.List).
 func TestPerfDataStreams(t *testing.T) {
 	icCount := 500
 	destCount := 50
@@ -92,10 +84,6 @@ func TestPerfDataStreams(t *testing.T) {
 	}
 	t.Logf("DataStreams: %v (budget %v), streams: %d", elapsed, budget, len(result))
 }
-
-// ============================================================================
-// Benchmarks — Destinations: batch Secrets.List vs per-destination N+1
-// ============================================================================
 
 func BenchmarkDestinationSecrets_Before(b *testing.B) {
 	for _, destCount := range []int{10, 100} {

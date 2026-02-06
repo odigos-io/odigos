@@ -168,7 +168,6 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 		return nil, err
 	}
 
-	// Batch-fetch all secrets in the odigos namespace in one call
 	readonly := services.IsReadonlyMode(ctx)
 	secretsByName := make(map[string]*corev1.Secret)
 	if !readonly {
@@ -191,7 +190,6 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 			}
 		}
 
-		// Convert the k8s destination format to the expected endpoint format
 		endpointDest := services.K8sDestinationToEndpointFormat(dest, secretFields)
 		destinations = append(destinations, &endpointDest)
 	}

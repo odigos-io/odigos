@@ -39,7 +39,6 @@ func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sA
 		namespaces = []corev1.Namespace{*namespace}
 	}
 
-	// Batch-fetch all namespace-kind sources in one call instead of per-namespace
 	allNsSources, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			k8sconsts.WorkloadKindLabel: string(k8sconsts.WorkloadKindNamespace),
@@ -57,7 +56,6 @@ func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sA
 	for _, item := range namespaces {
 		nsName := item.Name
 
-		// check if entire namespace is instrumented via map lookup
 		source := nsSourceMap[nsName]
 
 		instrumented := source != nil && !source.Spec.DisableInstrumentation
@@ -114,9 +112,6 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]corev1.Names
 	return result, nil
 }
 
-// returns a map, where the key is a namespace name and the value is the
-// number of apps in this namespace (not necessarily instrumented).
-// Uses the in-memory cache for instant reads instead of API calls.
 func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
 	counts := make(map[string]int)
 

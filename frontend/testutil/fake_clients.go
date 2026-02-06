@@ -20,15 +20,13 @@ import (
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-// SlowReactor adds latency to every API call to simulate a real K8s API server.
 func SlowReactor(latency time.Duration) k8stesting.ReactionFunc {
 	return func(action k8stesting.Action) (bool, runtime.Object, error) {
 		time.Sleep(latency)
-		return false, nil, nil // pass through to object tracker
+		return false, nil, nil
 	}
 }
 
-// SlowFakeClient builds a *kube.Client with slowReactor on all verbs.
 func SlowFakeClient(latency time.Duration, k8sObjects []runtime.Object, odigosObjects []runtime.Object) *kube.Client {
 	k8sFake := kubefake.NewSimpleClientset(k8sObjects...)
 	k8sFake.PrependReactor("*", "*", SlowReactor(latency))
@@ -46,7 +44,6 @@ func SlowFakeClient(latency time.Duration, k8sObjects []runtime.Object, odigosOb
 	}
 }
 
-// FakeCacheClient builds a controller-runtime fake client with scheme.
 func FakeCacheClient(objects ...ctrlclient.Object) ctrlclient.Client {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
@@ -54,9 +51,6 @@ func FakeCacheClient(objects ...ctrlclient.Object) ctrlclient.Client {
 	return crfake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).Build()
 }
 
-// FakeDynamicClient creates a dynamic client that knows about OpenShift
-// DeploymentConfigs and Argo Rollouts GVRs so IsDeploymentConfigAvailable()
-// doesn't panic. Both will return empty lists (not available).
 func FakeDynamicClient() *fakedynamic.FakeDynamicClient {
 	dynScheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(dynScheme)

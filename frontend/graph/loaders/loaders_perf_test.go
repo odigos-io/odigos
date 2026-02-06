@@ -20,8 +20,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// TestPerfFetchWorkloadManifests verifies that fetchWorkloadManifests completes
-// within budget when using parallel errgroup (6 concurrent API calls = 1 round-trip).
 func TestPerfFetchWorkloadManifests(t *testing.T) {
 	nsName := "test-ns"
 	depCount := 100

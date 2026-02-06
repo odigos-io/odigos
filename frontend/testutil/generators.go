@@ -175,7 +175,6 @@ func GenerateInstrumentationConfigs(namespace string, count int) []runtime.Objec
 	return objs
 }
 
-// OdigosConfigMap creates the standard odigos effective config ConfigMap.
 func OdigosConfigMap(ns string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
