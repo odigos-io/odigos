@@ -40,9 +40,22 @@ func (n *NewRelic) ModifyConfig(dest ExporterConfigurer, currentConfig *Config) 
 	}
 
 	if isMetricsEnabled(dest) {
+		// Add cumulativetodelta processor to convert cumulative metrics to delta for New Relic
+		cumulativeToDeltaProcessorName := "cumulativetodelta/newrelic-" + dest.GetID()
+		currentConfig.Processors[cumulativeToDeltaProcessorName] = GenericMap{
+			"include": GenericMap{
+				"metrics": []string{
+					"jvm.gc.duration",
+					"jvm.cpu.time",
+				},
+				"match_type": "strict",
+			},
+		}
+
 		metricsPipelineName := "metrics/newrelic-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters:  []string{exporterName},
+			Processors: []string{cumulativeToDeltaProcessorName},
 		}
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
