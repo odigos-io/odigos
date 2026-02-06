@@ -87,6 +87,26 @@ cli-docs:
 rbac-docs:
 	cd scripts/rbac-docgen && go run main.go
 
+TOOLS_DIR := .tools
+HELM_SCHEMA_REPO := https://github.com/odigos-io/helm-schema.git
+HELM_SCHEMA_DIR := $(TOOLS_DIR)/helm-schema-repo
+HELM_SCHEMA_BIN := $(TOOLS_DIR)/helm-schema
+
+.PHONY: helm-schema
+helm-schema: $(HELM_SCHEMA_BIN)
+	cd helm/odigos && ../../$(HELM_SCHEMA_BIN) --uncomment -k required
+
+$(HELM_SCHEMA_BIN): $(HELM_SCHEMA_DIR)
+	cd $(HELM_SCHEMA_DIR) && go build -o ../../$(HELM_SCHEMA_BIN) ./cmd/helm-schema
+
+$(HELM_SCHEMA_DIR):
+	@mkdir -p $(TOOLS_DIR)
+	git clone $(HELM_SCHEMA_REPO) $(HELM_SCHEMA_DIR)
+
+.PHONY: helm-schema-clean
+helm-schema-clean:
+	rm -rf $(HELM_SCHEMA_DIR) $(HELM_SCHEMA_BIN)
+
 build-image/%:
 	docker build $(TARGET_FLAG) \
 	-t $(ORG)/odigos-$*$(IMG_SUFFIX):$(TAG) $(BUILD_DIR) -f $(DOCKERFILE) \
