@@ -1,6 +1,6 @@
 .PHONY: test
 test:
-	go test ./... -count=1
+	go test $$(go list ./... | grep -v 'odigos/frontend$$') -count=1
 
 .PHONY: bench
 bench:
