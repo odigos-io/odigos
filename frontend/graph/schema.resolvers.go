@@ -169,8 +169,9 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 	}
 
 	// Batch-fetch all secrets in the odigos namespace in one call
+	readonly := services.IsReadonlyMode(ctx)
 	secretsByName := make(map[string]*corev1.Secret)
-	if !services.IsReadonlyMode(ctx) {
+	if !readonly {
 		allSecrets, err := kube.DefaultClient.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, err
@@ -184,7 +185,7 @@ func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.C
 	for _, dest := range dests.Items {
 		secretFields := make(map[string]string)
 
-		if !services.IsReadonlyMode(ctx) && dest.Spec.SecretRef != nil {
+		if !readonly && dest.Spec.SecretRef != nil {
 			if secret, ok := secretsByName[dest.Spec.SecretRef.Name]; ok {
 				secretFields = services.ExtractSecretFields(secret)
 			}

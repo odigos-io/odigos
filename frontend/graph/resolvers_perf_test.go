@@ -7,17 +7,13 @@ import (
 	"testing"
 	"time"
 
-	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
+	"github.com/odigos-io/odigos/frontend/testutil"
 
-	odigosfake "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	kubefake "k8s.io/client-go/kubernetes/fake"
-	k8stesting "k8s.io/client-go/testing"
 )
 
 const odigosNs = "odigos-system"
@@ -27,83 +23,92 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func slowReactor(latency time.Duration) k8stesting.ReactionFunc {
-	return func(action k8stesting.Action) (bool, runtime.Object, error) {
-		time.Sleep(latency)
-		return false, nil, nil
+// ============================================================================
+// Threshold tests — these fail CI if an API path exceeds its time budget.
+// ============================================================================
+
+// TestPerfDestinations verifies the batch Destinations+Secrets path completes
+// within budget (3 API calls: Destinations.List + ConfigMap.Get + Secrets.List).
+func TestPerfDestinations(t *testing.T) {
+	destCount := 100
+	latency := 5 * time.Millisecond
+	budget := 100 * time.Millisecond
+
+	odigosObjs, k8sObjs := testutil.GenerateDestinationsAndSecrets(odigosNs, destCount)
+	k8sObjs = append(k8sObjs, testutil.OdigosConfigMap(odigosNs))
+
+	kube.DefaultClient = testutil.SlowFakeClient(latency, k8sObjs, odigosObjs)
+
+	resolver := &computePlatformResolver{}
+	ctx := context.Background()
+
+	start := time.Now()
+	result, err := resolver.Destinations(ctx, nil)
+	elapsed := time.Since(start)
+
+	if err != nil {
+		t.Fatalf("Destinations failed: %v", err)
 	}
+	if len(result) != destCount {
+		t.Fatalf("expected %d destinations, got %d", destCount, len(result))
+	}
+	if elapsed > budget {
+		t.Fatalf("Destinations took %v, exceeds budget %v (possible N+1)", elapsed, budget)
+	}
+	t.Logf("Destinations: %v (budget %v)", elapsed, budget)
 }
 
-func odigosConfigMap() *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      consts.OdigosEffectiveConfigName,
-			Namespace: odigosNs,
-		},
-		Data: map[string]string{
-			consts.OdigosConfigurationFileName: "ignoredNamespaces: []",
-		},
-	}
-}
+// TestPerfDataStreams verifies the DataStreams resolver completes within budget
+// (2 API calls: InstrumentationConfigs.List + Destinations.List).
+func TestPerfDataStreams(t *testing.T) {
+	icCount := 500
+	destCount := 50
+	latency := 5 * time.Millisecond
+	budget := 100 * time.Millisecond
 
-func generateDestinationsAndSecrets(count int) ([]runtime.Object, []runtime.Object) {
 	var odigosObjs []runtime.Object
-	var k8sObjs []runtime.Object
-	for i := 0; i < count; i++ {
-		secretName := fmt.Sprintf("dest-secret-%d", i)
-		destName := fmt.Sprintf("dest-%d", i)
+	odigosObjs = append(odigosObjs, testutil.GenerateInstrumentationConfigs("test-ns", icCount)...)
+	destOdigosObjs, k8sObjs := testutil.GenerateDestinationsAndSecrets(odigosNs, destCount)
+	odigosObjs = append(odigosObjs, destOdigosObjs...)
+	k8sObjs = append(k8sObjs, testutil.OdigosConfigMap(odigosNs))
 
-		k8sObjs = append(k8sObjs, &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: odigosNs,
-			},
-			Data: map[string][]byte{
-				"api_key":  []byte(fmt.Sprintf("key-%d", i)),
-				"endpoint": []byte(fmt.Sprintf("https://endpoint-%d.example.com", i)),
-			},
-		})
+	kube.DefaultClient = testutil.SlowFakeClient(latency, k8sObjs, odigosObjs)
 
-		odigosObjs = append(odigosObjs, &odigosv1alpha1.Destination{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      destName,
-				Namespace: odigosNs,
-			},
-			Spec: odigosv1alpha1.DestinationSpec{
-				Type:            "jaeger",
-				DestinationName: fmt.Sprintf("Dest %d", i),
-				Data:            map[string]string{"host": "localhost"},
-				SecretRef:       &corev1.LocalObjectReference{Name: secretName},
-			},
-		})
+	resolver := &computePlatformResolver{}
+	ctx := context.Background()
+
+	start := time.Now()
+	result, err := resolver.DataStreams(ctx, nil)
+	elapsed := time.Since(start)
+
+	if err != nil {
+		t.Fatalf("DataStreams failed: %v", err)
 	}
-	return odigosObjs, k8sObjs
+	if len(result) == 0 {
+		t.Fatal("expected at least 1 data stream")
+	}
+	if elapsed > budget {
+		t.Fatalf("DataStreams took %v, exceeds budget %v", elapsed, budget)
+	}
+	t.Logf("DataStreams: %v (budget %v), streams: %d", elapsed, budget, len(result))
 }
 
-// BenchmarkDestinationSecrets_Before measures the old N+1 pattern:
-// for each destination, call GetDestinationSecretFields (1 API call per dest).
+// ============================================================================
+// Benchmarks — Destinations: batch Secrets.List vs per-destination N+1
+// ============================================================================
+
 func BenchmarkDestinationSecrets_Before(b *testing.B) {
 	for _, destCount := range []int{10, 100} {
 		b.Run(fmt.Sprintf("%ddests", destCount), func(b *testing.B) {
 			latency := 5 * time.Millisecond
-			odigosObjs, k8sObjs := generateDestinationsAndSecrets(destCount)
-			k8sObjs = append(k8sObjs, odigosConfigMap())
+			odigosObjs, k8sObjs := testutil.GenerateDestinationsAndSecrets(odigosNs, destCount)
+			k8sObjs = append(k8sObjs, testutil.OdigosConfigMap(odigosNs))
 
-			k8sFake := kubefake.NewSimpleClientset(k8sObjs...)
-			k8sFake.PrependReactor("*", "*", slowReactor(latency))
-
-			odigosFake := odigosfake.NewSimpleClientset(odigosObjs...)
-			odigosFake.PrependReactor("*", "*", slowReactor(latency))
-
-			kube.DefaultClient = &kube.Client{
-				Interface:    k8sFake,
-				OdigosClient: odigosFake.OdigosV1alpha1(),
-			}
+			kube.DefaultClient = testutil.SlowFakeClient(latency, k8sObjs, odigosObjs)
 
 			ctx := context.Background()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				// Simulate old pattern: List destinations, then per-dest secret fetch
 				dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
 				if err != nil {
 					b.Fatal(err)
@@ -122,30 +127,18 @@ func BenchmarkDestinationSecrets_Before(b *testing.B) {
 	}
 }
 
-// BenchmarkDestinationSecrets_After measures the new batch pattern:
-// one Secrets.List + one Destinations.List, then map lookups.
 func BenchmarkDestinationSecrets_After(b *testing.B) {
 	for _, destCount := range []int{10, 100} {
 		b.Run(fmt.Sprintf("%ddests", destCount), func(b *testing.B) {
 			latency := 5 * time.Millisecond
-			odigosObjs, k8sObjs := generateDestinationsAndSecrets(destCount)
-			k8sObjs = append(k8sObjs, odigosConfigMap())
+			odigosObjs, k8sObjs := testutil.GenerateDestinationsAndSecrets(odigosNs, destCount)
+			k8sObjs = append(k8sObjs, testutil.OdigosConfigMap(odigosNs))
 
-			k8sFake := kubefake.NewSimpleClientset(k8sObjs...)
-			k8sFake.PrependReactor("*", "*", slowReactor(latency))
-
-			odigosFake := odigosfake.NewSimpleClientset(odigosObjs...)
-			odigosFake.PrependReactor("*", "*", slowReactor(latency))
-
-			kube.DefaultClient = &kube.Client{
-				Interface:    k8sFake,
-				OdigosClient: odigosFake.OdigosV1alpha1(),
-			}
+			kube.DefaultClient = testutil.SlowFakeClient(latency, k8sObjs, odigosObjs)
 
 			ctx := context.Background()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				// New batch pattern: 1 Destinations.List + 1 Secrets.List
 				dests, err := kube.DefaultClient.OdigosClient.Destinations(odigosNs).List(ctx, metav1.ListOptions{})
 				if err != nil {
 					b.Fatal(err)

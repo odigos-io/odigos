@@ -10,15 +10,14 @@ import (
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
-	"github.com/odigos-io/odigos/k8sutils/pkg/client"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"golang.org/x/sync/errgroup"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
 )
 
@@ -116,29 +115,36 @@ func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]corev1.Names
 }
 
 // returns a map, where the key is a namespace name and the value is the
-// number of apps in this namespace (not necessarily instrumented)
+// number of apps in this namespace (not necessarily instrumented).
+// Uses the in-memory cache for instant reads instead of API calls.
 func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
-	namespaceToAppsCount := make(map[string]int)
-	resourceTypes := []string{"deployments", "statefulsets", "daemonsets"}
+	counts := make(map[string]int)
 
-	for _, resourceType := range resourceTypes {
-		err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.MetadataClient.Resource(schema.GroupVersionResource{
-			Group:    "apps",
-			Version:  "v1",
-			Resource: resourceType,
-		}).List, ctx, &metav1.ListOptions{}, func(list *metav1.PartialObjectMetadataList) error {
-			for _, item := range list.Items {
-				namespaceToAppsCount[item.Namespace]++
-			}
-			return nil
-		})
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to count %s: %w", resourceType, err)
-		}
+	var deps appsv1.DeploymentList
+	if err := kube.CacheClient.List(ctx, &deps); err != nil {
+		return nil, fmt.Errorf("failed to list deployments: %w", err)
+	}
+	for _, d := range deps.Items {
+		counts[d.Namespace]++
 	}
 
-	return namespaceToAppsCount, nil
+	var stss appsv1.StatefulSetList
+	if err := kube.CacheClient.List(ctx, &stss); err != nil {
+		return nil, fmt.Errorf("failed to list statefulsets: %w", err)
+	}
+	for _, s := range stss.Items {
+		counts[s.Namespace]++
+	}
+
+	var dss appsv1.DaemonSetList
+	if err := kube.CacheClient.List(ctx, &dss); err != nil {
+		return nil, fmt.Errorf("failed to list daemonsets: %w", err)
+	}
+	for _, d := range dss.Items {
+		counts[d.Namespace]++
+	}
+
+	return counts, nil
 }
 
 func SyncWorkloadsInNamespace(ctx context.Context, workloads []*model.PersistNamespaceSourceInput) error {
