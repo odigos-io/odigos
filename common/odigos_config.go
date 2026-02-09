@@ -358,6 +358,51 @@ type OdigosOwnTelemetryConfiguration struct {
 	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
 }
 
+type TailSamplingConfiguration struct {
+
+	// if set to true, tail sampling will be disabled globally
+	// regardless of any other configurations or rules set.
+	// can be used to reduce collectors resource usage, troubleshooting, etc,
+	// or when tail-sampling is not needed or desired and should be shut off.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// time to wait from the first span of a trace until a trace is considered completed.
+	// at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+	// introduces this amount of latency in the pipeline and for trace to hit the destination.
+	// also increases memory usage for keeping spans in memory until the wait duration time is reached.
+	// setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+	// and broken traces due to sampling each trace in few pieces.
+	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+}
+
+// configuration for odigos auto-kubelet-probes detection and sampling.
+// odigos can automatically pick up health probes from the k8s manifest,
+// and treat them as "noisy endpoints" to be sampled out.
+// most users get little or no value from tracing health probes,
+// and it is recommended to enable and use it.
+// it will be used with head sampling where the agent support it.
+// when tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.
+type K8sHealthProbesSamplingConfiguration struct {
+	// if set to true, odigos will not automatically detect and sample out health probes.
+	// this is a global knob to disable health probes auto-detection and sampling completely.
+	// users interested in full observability of health probes can set this to true.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// percentage % (0-100) of health probes to keep.
+	// if not set, it is defaulted to 0% -> all health probes will be sampled out.
+	// set to some low value (like 1%) to still keep some health-probes traces.
+	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
+}
+
+type SamplingConfiguration struct {
+
+	// configuration for tail sampling.
+	TailSampling *TailSamplingConfiguration `json:"tailSampling,omitempty"`
+
+	// configuration for odigos auto-kubelet-probes detection and sampling.
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
+}
+
 // OdigosConfiguration defines the desired state of OdigosConfiguration
 type OdigosConfiguration struct {
 	ConfigVersion             int                            `json:"configVersion" yaml:"configVersion"`
@@ -414,4 +459,7 @@ type OdigosConfiguration struct {
 
 	// ImagePullSecrets to use for collectors and init container
 	ImagePullSecrets []string `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets"`
+
+	// global configurations for sampling.
+	Sampling *SamplingConfiguration `json:"sampling,omitempty" yaml:"sampling"`
 }
