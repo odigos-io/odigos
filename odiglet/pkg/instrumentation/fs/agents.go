@@ -42,7 +42,11 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/java-ext-ebpf/otel_agent_extension.jar":                                           {},
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 		"/var/odigos/loader/loader.so":                                                                 {},
-		"/var/odigos/python/google/_upb/_message.abi3.so":                                              {},
+		// Google protobuf library shared object loaded by Python processes.
+		// This file gets mapped into process memory and cannot be replaced while loaded.
+		// Therefore, we need to keep this file in the host filesystem to avoid removing it.
+		// This file is versioned and renamed if changed (python protobuf library version changes).
+		"/var/odigos/python/google/_upb/_message.abi3.so": {},
 	}
 	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
