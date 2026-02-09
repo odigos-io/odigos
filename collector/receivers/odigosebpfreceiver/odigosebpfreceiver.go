@@ -8,6 +8,7 @@ import (
 	"github.com/cilium/ebpf"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"go.opentelemetry.io/collector/receiver"
 	"go.uber.org/zap"
@@ -34,7 +35,8 @@ type ebpfReceiver struct {
 	settings  receiver.Settings
 
 	// Metrics handlers - only used for metrics receivers
-	jvmHandler *jvm.JVMMetricsHandler
+	jvmHandler        *jvm.JVMMetricsHandler
+	processStartTimes map[[64]byte]pcommon.Timestamp
 
 	wg sync.WaitGroup
 }
@@ -50,6 +52,7 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 	// Initialize metrics handlers - only for metrics receivers
 	if r.receiverType == ReceiverTypeMetrics {
 		r.jvmHandler = jvm.NewJVMMetricsHandler(r.logger)
+		r.processStartTimes = make(map[[64]byte]pcommon.Timestamp)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
