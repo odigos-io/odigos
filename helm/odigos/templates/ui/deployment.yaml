@@ -49,6 +49,10 @@ spec:
           - --namespace=$(CURRENT_NS)
           - --address=0.0.0.0
         env:
+          {{- if .Values.ui.deploymentName }}
+          - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
+            value: {{ .Values.ui.deploymentName | quote }}
+          {{- end }}
           - name: CURRENT_NS
             valueFrom:
               fieldRef:

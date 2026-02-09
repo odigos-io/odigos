@@ -68,6 +68,10 @@ spec:
             name: webhook-server
             protocol: TCP
         env:
+          {{- if .Values.instrumentor.deploymentName }}
+          - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
+            value: {{ .Values.instrumentor.deploymentName | quote }}
+          {{- end }}
           - name: OTEL_SERVICE_NAME
             value: instrumentor
           - name: CURRENT_NS

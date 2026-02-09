@@ -51,6 +51,10 @@ spec:
           - /app
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
         env:
+          {{- if .Values.autoscaler.deploymentName }}
+          - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
+            value: {{ .Values.autoscaler.deploymentName | quote }}
+          {{- end }}
           - name: OTEL_SERVICE_NAME
             value: auto-scaler
           - name: CURRENT_NS
