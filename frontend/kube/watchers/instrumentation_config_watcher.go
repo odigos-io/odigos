@@ -19,9 +19,7 @@ var instrumentationConfigAddedEventBatcher *EventBatcher
 var instrumentationConfigModifiedEventBatcher *EventBatcher
 var instrumentationConfigDeletedEventBatcher *EventBatcher
 
-// RunInstrumentationConfigWatcher runs the instrumentation config watcher in a reconnection loop.
-// It should be launched as a goroutine. It only returns when ctx is cancelled.
-func RunInstrumentationConfigWatcher(ctx context.Context, namespace string) {
+func StartInstrumentationConfigWatcher(ctx context.Context, namespace string) error {
 	instrumentationConfigAddedEventBatcher = NewEventBatcher(
 		EventBatcherConfig{
 			MinBatchSize: 1,
@@ -68,41 +66,27 @@ func RunInstrumentationConfigWatcher(ctx context.Context, namespace string) {
 		},
 	)
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		watcher, err := StartRetryWatcher(ctx, WatcherConfig[*v1alpha1.InstrumentationConfigList]{
-			ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.InstrumentationConfigList, error) {
-				return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).List(ctx, opts)
-			},
-			WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-				return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(ctx, opts)
-			},
-			GetResourceVersion: func(list *v1alpha1.InstrumentationConfigList) string {
-				return list.ResourceVersion
-			},
-			ResourceName: "instrumentation configs",
-		})
-		if err != nil {
-			log.Printf("Failed to start instrumentation config watcher: %v, retrying in 5s", err)
-			select {
-			case <-time.After(5 * time.Second):
-			case <-ctx.Done():
-				return
-			}
-			continue
-		}
-
-		processInstrumentationConfigWatchEvents(ctx, watcher)
-		log.Println("InstrumentationConfig watcher disconnected, reconnecting...")
+	watcher, err := StartRetryWatcher(ctx, WatcherConfig[*v1alpha1.InstrumentationConfigList]{
+		ListFunc: func(ctx context.Context, opts metav1.ListOptions) (*v1alpha1.InstrumentationConfigList, error) {
+			return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).List(ctx, opts)
+		},
+		WatchFunc: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+			return kube.DefaultClient.OdigosClient.InstrumentationConfigs(namespace).Watch(ctx, opts)
+		},
+		GetResourceVersion: func(list *v1alpha1.InstrumentationConfigList) string {
+			return list.ResourceVersion
+		},
+		ResourceName: "instrumentation configs",
+	})
+	if err != nil {
+		return err
 	}
+
+	go handleInstrumentationConfigWatchEvents(ctx, watcher)
+	return nil
 }
 
-func processInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
+func handleInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.Interface) {
 	ch := watcher.ResultChan()
 	defer instrumentationConfigAddedEventBatcher.Cancel()
 	defer instrumentationConfigModifiedEventBatcher.Cancel()
@@ -114,7 +98,7 @@ func processInstrumentationConfigWatchEvents(ctx context.Context, watcher watch.
 			return
 		case event, ok := <-ch:
 			if !ok {
-				log.Println("InstrumentationConfig watcher channel closed")
+				log.Println("InstrumentationConfig watcher closed")
 				return
 			}
 			switch event.Type {

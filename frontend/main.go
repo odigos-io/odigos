@@ -92,10 +92,20 @@ func initKubernetesClient(flags *Flags) error {
 	return nil
 }
 
-func startWatchers(ctx context.Context) {
+func startWatchers(ctx context.Context) error {
 	odigosNs := env.GetCurrentNamespace()
-	go watchers.RunInstrumentationConfigWatcher(ctx, "")
-	go watchers.RunDestinationWatcher(ctx, odigosNs)
+
+	err := watchers.StartInstrumentationConfigWatcher(ctx, "")
+	if err != nil {
+		return fmt.Errorf("error starting InstrumentationConfig watcher: %v", err)
+	}
+
+	err = watchers.StartDestinationWatcher(ctx, odigosNs)
+	if err != nil {
+		return fmt.Errorf("error starting Destination watcher: %v", err)
+	}
+
+	return nil
 }
 
 func startDatabase() error {
@@ -305,8 +315,11 @@ func main() {
 		odigosMetrics.Run(ctx, flags.Namespace)
 	}()
 
-	// Start watchers (run in background goroutines with reconnection)
-	startWatchers(ctx)
+	// Start watchers
+	err = startWatchers(ctx)
+	if err != nil {
+		log.Fatalf("Error starting watchers: %s", err)
+	}
 
 	var promAPI v1.API
 	metricsURL := fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
