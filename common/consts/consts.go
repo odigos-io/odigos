@@ -5,11 +5,12 @@ import (
 )
 
 const (
-	CurrentNamespaceEnvVar  = "CURRENT_NS"
-	OdigosVersionEnvVarName = "ODIGOS_VERSION"
-	OdigosTierEnvVarName    = "ODIGOS_TIER"
-	DefaultOdigosNamespace  = "odigos-system"
-	OdigosConfigurationName = "odigos-configuration"
+	CurrentNamespaceEnvVar              = "CURRENT_NS"
+	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
+	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
+	OdigosTierEnvVarName                = "ODIGOS_TIER"
+	DefaultOdigosNamespace              = "odigos-system"
+	OdigosConfigurationName             = "odigos-configuration"
 	// Deprecated: only used for migrations
 	OdigosLegacyConfigName      = "odigos-config"
 	OdigosEffectiveConfigName   = "effective-config"

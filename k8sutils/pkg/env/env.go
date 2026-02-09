@@ -51,6 +51,12 @@ func GetSyncDaemonSetDelay() int {
 	return delayValue
 }
 
+// GetComponentDeploymentNameOrDefault returns the deployment name for this component.
+// It reads ODIGOS_COMPONENT_DEPLOYMENT_NAME from the environment; if unset, returns defaultName.
+func GetComponentDeploymentNameOrDefault(defaultName string) string {
+	return getEnvVarOrDefault(consts.OdigosComponentDeploymentNameEnvVar, defaultName)
+}
+
 func GetOdigosTierFromEnv() common.OdigosTier {
 	odigosTierStr := os.Getenv(consts.OdigosTierEnvVarName)
 
