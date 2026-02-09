@@ -30,8 +30,6 @@ const RequeueWaitingForWorkloadRollout = 10 * time.Second
 
 type RolloutResult struct {
 	StatusChanged bool
-	// Used for acquiring lock on the rollout concurrency limiter
-	WorkloadKey string
 	// Result contains the controller result for requeue behavior.
 	Result ctrl.Result
 }
@@ -108,13 +106,15 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		logger.V(2).Info("proceeding with uninstrumentation rollout",
 			"workload", pw.Name,
 			"namespace", pw.Namespace)
+		rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
 		rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-		return RolloutResult{}, client.IgnoreNotFound(rolloutErr)
+		return RolloutResult{Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, client.IgnoreNotFound(rolloutErr)
 	}
 
 	if ic.Spec.PodManifestInjectionOptional {
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
+		rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
 		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionRestartNotRequiredForDistro)
 		return RolloutResult{StatusChanged: changed}, nil
 	}
@@ -124,6 +124,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// For example: if the workload has already been rolled out, we can set the status to true
 		// and signal that the process is considered completed.
 		// If manual rollout is required, we can mention this for better UX.
+		rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
 		changed := meta.SetStatusCondition(&ic.Status.Conditions, conditionRolloutDisabled)
 		return RolloutResult{StatusChanged: changed}, nil
 	}
@@ -164,6 +165,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// - agent disabled -> status is changed to "waiting for previous rollout to finish"
 		// - agent enabled -> no need for a rollout, but the status needs to be updated.
 		statusChanged := false
+		// This is the happy flow - the workload is rolled out successfully
 		if rolloutDone {
 			statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, conditionRolloutFinished)
 			// Rollout is complete - release the slot if we had one
@@ -247,7 +249,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 
 	// at this point, the hashes are different, notify the caller the status has changed
 	// Requeue to try and catch a crashing app
-	return RolloutResult{StatusChanged: true, WorkloadKey: workloadKey, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
+	return RolloutResult{StatusChanged: true, Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, nil
 }
 
 // RolloutRestartWorkload restarts the given workload by patching its template annotations.

@@ -47,8 +47,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 			&instrumentorpredicate.ContainerOverridesChangedPredicate{},
 			odigospredicate.DeletionPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
-			Client:          mgr.GetClient(),
-			DistrosProvider: dp,
+			Client:                    mgr.GetClient(),
+			DistrosProvider:           dp,
+			RolloutConcurrencyLimiter: rolloutConcurrencyLimiter,
 		})
 	if err != nil {
 		return err
@@ -73,8 +74,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(odigospredicate.OdigosEffectiveConfigMapPredicate).
 		Complete(&EffectiveConfigReconciler{
-			Client:          mgr.GetClient(),
-			DistrosProvider: dp,
+			Client:                    mgr.GetClient(),
+			DistrosProvider:           dp,
+			RolloutConcurrencyLimiter: rolloutConcurrencyLimiter,
 		})
 	if err != nil {
 		return err
@@ -86,8 +88,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&odigosv1.Action{}).
 		WithEventFilter(&instrumentorpredicate.AgentInjectionEnabledActionsPredicate{}).
 		Complete(&ActionReconciler{
-			Client:          mgr.GetClient(),
-			DistrosProvider: dp,
+			Client:                    mgr.GetClient(),
+			DistrosProvider:           dp,
+			RolloutConcurrencyLimiter: rolloutConcurrencyLimiter,
 		})
 	if err != nil {
 		return err

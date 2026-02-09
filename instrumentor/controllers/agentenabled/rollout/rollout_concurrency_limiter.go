@@ -11,9 +11,8 @@ const (
 )
 
 type RolloutConcurrencyLimiter struct {
-	mutex                 sync.Mutex
-	logger                logr.Logger
-	maxConcurrentRollouts int
+	mutex  sync.Mutex
+	logger logr.Logger
 	// set of workload keys currently rolling out - we use a map for fast lookup,
 	// and a struct{} for the value to avoid allocating memory for the value
 	inFlightRollouts map[string]struct{}
@@ -21,9 +20,8 @@ type RolloutConcurrencyLimiter struct {
 
 func NewRolloutConcurrencyLimiter(logger logr.Logger) *RolloutConcurrencyLimiter {
 	return &RolloutConcurrencyLimiter{
-		logger:                logger,
-		maxConcurrentRollouts: NoConcurrencyLimiting,
-		inFlightRollouts:      make(map[string]struct{}),
+		logger:           logger,
+		inFlightRollouts: make(map[string]struct{}),
 	}
 }
 
@@ -33,13 +31,13 @@ func (r *RolloutConcurrencyLimiter) TryAcquire(workloadKey string, limit int) bo
 		return true
 	}
 
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
 	// No rate limiting configured
 	if limit == NoConcurrencyLimiting {
 		return true
 	}
+
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
 	// Already has a slot for this workload (from a previous reconcile that triggered rollout)
 	if _, exists := r.inFlightRollouts[workloadKey]; exists {
@@ -49,7 +47,7 @@ func (r *RolloutConcurrencyLimiter) TryAcquire(workloadKey string, limit int) bo
 	// Check if under limit
 	if len(r.inFlightRollouts) < limit {
 		r.inFlightRollouts[workloadKey] = struct{}{}
-		r.logger.V(2).Info("Acquired rollout slot", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", r.maxConcurrentRollouts)
+		r.logger.V(2).Info("Acquired rollout slot", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", limit)
 		return true
 	} else if len(r.inFlightRollouts) == limit {
 		r.logger.V(2).Info("Rollout slot denied - at capacity", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", limit)

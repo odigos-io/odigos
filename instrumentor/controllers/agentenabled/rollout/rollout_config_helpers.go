@@ -22,9 +22,7 @@ func getRolloutAndRollbackOptions(conf *common.OdigosConfiguration) (isAutomatic
 
 	isRollbackDisabled := conf.RollbackDisabled != nil && *conf.RollbackDisabled
 
-	defaultRollbackGraceTime, _ := time.ParseDuration(consts.DefaultAutoRollbackGraceTime)
-
-	rollbackGraceTime := defaultRollbackGraceTime
+	rollbackGraceTime := consts.DefaultAutoRollbackGraceTime
 	if conf.RollbackGraceTime != "" {
 		parsedRollbackGraceTime, parseErr := time.ParseDuration(conf.RollbackGraceTime)
 		if parseErr != nil {
@@ -33,7 +31,7 @@ func getRolloutAndRollbackOptions(conf *common.OdigosConfiguration) (isAutomatic
 		rollbackGraceTime = parsedRollbackGraceTime
 	}
 
-	rollbackStabilityWindow, _ := time.ParseDuration(consts.DefaultAutoRollbackStabilityWindow)
+	rollbackStabilityWindow := consts.DefaultAutoRollbackStabilityWindow
 	if conf.RollbackStabilityWindow != "" {
 		parsedRollbackStabilityWindow, parseErr := time.ParseDuration(conf.RollbackStabilityWindow)
 		if parseErr != nil {
