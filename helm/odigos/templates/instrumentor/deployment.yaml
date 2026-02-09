@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-instrumentor
     odigos.io/system-object: "true"
-  name: odigos-instrumentor
+  name: {{ .Values.instrumentor.deploymentName | default "odigos-instrumentor" }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 2

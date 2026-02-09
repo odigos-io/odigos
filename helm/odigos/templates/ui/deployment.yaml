@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-ui
     odigos.io/system-object: "true"
-  name: odigos-ui
+  name: {{ .Values.ui.deploymentName | default "odigos-ui" }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1

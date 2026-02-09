@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-scheduler
     odigos.io/system-object: "true"
-  name: odigos-scheduler
+  name: {{ .Values.scheduler.deploymentName | default "odigos-scheduler" }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
