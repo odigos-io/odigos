@@ -34,6 +34,7 @@ type InstrumentationConfigSpecApplyConfiguration struct {
 	AgentsMetaHash               *string                                      `json:"agentsMetaHash,omitempty"`
 	AgentsMetaHashChangedTime    *v1.Time                                     `json:"agentsMetaHashChangedTime,omitempty"`
 	SdkConfigs                   []SdkConfigApplyConfiguration                `json:"sdkConfigs,omitempty"`
+	RecoveredFromRollbackAt      *v1.Time                                 `json:"recoveredFromRollbackAt,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -139,5 +140,13 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithSdkConfigs(values ...*
 		}
 		b.SdkConfigs = append(b.SdkConfigs, *values[i])
 	}
+	return b
+}
+
+// WithRecoveredFromRollbackAt sets the RecoveredFromRollbackAt field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RecoveredFromRollbackAt field is set to the value of the last call.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithRecoveredFromRollbackAt(value v1.Time) *InstrumentationConfigSpecApplyConfiguration {
+	b.RecoveredFromRollbackAt = &value
 	return b
 }

@@ -118,15 +118,16 @@ const (
 type WorkloadRolloutReason string
 
 const (
-	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
-	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
-	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
-	WorkloadRolloutReasonRolloutFinished        WorkloadRolloutReason = "RolloutFinished"
-	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
-	WorkloadRolloutReasonNotRequired            WorkloadRolloutReason = "NotRequired"
-	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
-	WorkloadRolloutReasonWorkloadNotSupporting  WorkloadRolloutReason = "WorkloadNotSupporting"
-	WorkloadRolloutReasonWaitingInQueue         WorkloadRolloutReason = "WaitingInQueue"
+	WorkloadRolloutReasonTriggeredSuccessfully     WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
+	WorkloadRolloutReasonFailedToPatch             WorkloadRolloutReason = "FailedToPatch"
+	WorkloadRolloutReasonPreviousRolloutOngoing    WorkloadRolloutReason = "PreviousRolloutOngoing"
+	WorkloadRolloutReasonRolloutFinished           WorkloadRolloutReason = "RolloutFinished"
+	WorkloadRolloutReasonDisabled                  WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonNotRequired               WorkloadRolloutReason = "NotRequired"
+	WorkloadRolloutReasonWaitingForRestart         WorkloadRolloutReason = "WaitingForRestart"
+	WorkloadRolloutReasonWorkloadNotSupporting     WorkloadRolloutReason = "WorkloadNotSupporting"
+	WorkloadRolloutReasonRollbackRecoveryTriggered WorkloadRolloutReason = "RollbackRecoveryTriggered"
+	WorkloadRolloutReasonWaitingInQueue            WorkloadRolloutReason = "WaitingInQueue"
 )
 
 const (
@@ -272,6 +273,10 @@ type InstrumentationConfigStatus struct {
 	// This time recorded only after the rollout took place.
 	// This allows us to determine whether a crashing application should be rolled back or not
 	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
+
+	// RecoveredFromRollbackAt records the last spec timestamp that was processed for rollback recovery.
+	// When this matches IC.Spec.RecoveredFromRollbackAt, the recovery has been handled.
+	RecoveredFromRollbackAt *metav1.Time `json:"recoveredFromRollbackAt,omitempty"`
 
 	// Represents the status of odigos MANIFEST injection to existing pods template.
 	PodsManifestInjectionStatus *PodsManifestInjectionStatus `json:"podsManifestInjectionStatus,omitempty"`
@@ -497,6 +502,12 @@ type InstrumentationConfigSpec struct {
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
 	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
+
+	// RecoveredFromRollbackAt is a timestamp propagated from the Source spec.
+	// The agentenabled controller compares this with the status timestamp: if they differ,
+	// it clears RollbackOccurred and copies this value to the status, allowing a retry.
+	// Setting a new timestamp on the Source triggers another recovery.
+	RecoveredFromRollbackAt *metav1.Time `json:"recoveredFromRollbackAt,omitempty"`
 }
 
 func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {
