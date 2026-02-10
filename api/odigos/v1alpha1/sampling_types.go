@@ -1,6 +1,10 @@
 package v1alpha1
 
-// define conditions to match specific services in the cluster.
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// define conditions to match specific services (containers) in the cluster.
 // a service matches, if ALL non empty fields match (AND semantics)
 //
 // common patterns:
@@ -40,6 +44,8 @@ type NoisyEndpoint struct {
 	Notes            string     `json:"notes,omitempty"`
 }
 
+// match only spans with a specific http server operation.
+// user can specify route and method to match, and limit a sampling instruction to only this operation.
 type HttpServerOperationMatcher struct {
 
 	// a specific exact match http route
@@ -73,12 +79,18 @@ type HighlyRelevantOperation struct {
 	// if Duration is set, only operations with duration in milli seconds larger then this value are considered
 	DurationMsAtLeast *int `json:"durationMsAtLeast,omitempty"`
 
+	// optionally, limit this rule to specific operations.
+	// for example: specific endpoint or kafka topic.
+	// this field is optional, and if not set, the rule will be applied to all operations.
 	Operation *OperationMatcher `json:"operation,omitempty"`
 
 	// traces that contains this operation will be sampled by at least this percentage.
 	// if unset, 100% of such the traces will be sampled.
 	PercentageAtLeast *float64 `json:"percentageAtLeast,omitempty"`
 
+	// optional free-form text field that allows you to attach notes
+	// for future context and maintenance.
+	// users can write why this rule was added, observations, document considerations, etc.
 	Notes string `json:"notes,omitempty"`
 }
 
@@ -99,7 +111,7 @@ type SamplingSpec struct {
 	// give these sampling rules a name for display, easier identification and reference.
 	Name string `json:"name,omitempty"`
 
-	// a free-form text field that allows you to attach notes regarding the rule for convenience.
+	// a free-form text field that allows you to attach notes regardinag the rule for convenience.
 	// Odigos does not use or assume any meaning from this field.
 	Notes string `json:"notes,omitempty"`
 
@@ -110,4 +122,42 @@ type SamplingSpec struct {
 	NoisyEndpoints           []NoisyEndpoint           `json:"noisyEndpoints,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRule       `json:"costReductionRules,omitempty"`
+}
+
+// SamplingStatus defines the observed state of Sampling.
+type SamplingStatus struct {
+	// Represents the observations of a Sampling's current state.
+	// Known .status.conditions.type are: "Available", "Progressing"
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+}
+
+//+genclient
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:metadata:labels=odigos.io/system-object=true
+
+// Sampling is the Schema for the sampling rules API.
+type Sampling struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   SamplingSpec   `json:"spec,omitempty"`
+	Status SamplingStatus `json:"status,omitempty"`
+}
+
+//+kubebuilder:object:root=true
+
+// SamplingList contains a list of Sampling.
+type SamplingList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Sampling `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&Sampling{}, &SamplingList{})
 }
