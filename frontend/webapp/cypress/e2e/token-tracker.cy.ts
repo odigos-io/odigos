@@ -1,4 +1,3 @@
-import type { TokenPayload } from '@odigos/ui-kit/types';
 import { ROUTES } from '../constants';
 import { aliasQuery, awaitToast, handleExceptions, hasOperationName, visitPage } from '../functions';
 
