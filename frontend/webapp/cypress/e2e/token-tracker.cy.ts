@@ -45,10 +45,8 @@ describe('Token Tracker', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.wait('@gql').then(() => {
         awaitToast({ message: 'The token is about to expire in 1 day.' });
-        cy.wait(1000).then(() => {
-          cy.get('[data-id=token-status]').should('contain.text', 'The token is about to expire in 1 day.');
-          cy.get('[data-id=system-drawer]').click(); // testing that the UI does not crash
-        });
+        cy.get('[data-id=token-status]').should('contain.text', 'The token is about to expire in 1 day.');
+        cy.get('[data-id=system-drawer]').click(); // testing that the UI does not crash
       });
     });
   });
@@ -60,10 +58,8 @@ describe('Token Tracker', () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.wait('@gql').then(() => {
         awaitToast({ message: 'The token has expired 1 day ago.' });
-        cy.wait(1000).then(() => {
-          cy.get('[data-id=token-status]').should('contain.text', 'The token has expired 1 day ago.');
-          cy.get('[data-id=system-drawer]').click(); // testing that the UI does not crash
-        });
+        cy.get('[data-id=token-status]').should('contain.text', 'The token has expired 1 day ago.');
+        cy.get('[data-id=system-drawer]').click(); // testing that the UI does not crash
       });
     });
   });
