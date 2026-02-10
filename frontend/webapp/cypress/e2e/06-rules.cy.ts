@@ -1,5 +1,5 @@
 import { BUTTONS, CRD_NAMES, DATA_IDS, INPUTS, NAMESPACES, ROUTES, SELECTED_ENTITIES, TEXTS } from '../constants';
-import { aliasMutation, awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateEntity, visitPage } from '../functions';
+import { aliasQuery, awaitToast, deleteEntity, getCrdById, getCrdIds, handleExceptions, hasOperationName, updateEntity, visitPage } from '../functions';
 
 // The number of CRDs that exist in the cluster before running any tests should be 0.
 // Tests will fail if you have existing CRDs in the cluster.
@@ -12,10 +12,9 @@ const totalEntities = SELECTED_ENTITIES.INSTRUMENTATION_RULES.length;
 describe('Instrumentation Rules CRUD', () => {
   beforeEach(() => {
     cy.intercept('/graphql', (req) => {
-      aliasMutation(req, 'GetConfig');
-
       if (hasOperationName(req, 'GetConfig')) {
-        req.alias = 'config';
+        aliasQuery(req, 'GetConfig');
+
         req.reply((res) => {
           // This is to make the test think this is enterprise/onprem - which will allow us to create rules
           res.body.data = { config: { tier: 'onprem' } };

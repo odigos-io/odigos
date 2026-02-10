@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-instrumentor
     odigos.io/system-object: "true"
-  name: odigos-instrumentor
+  name: {{ .Values.instrumentor.deploymentName | default "odigos-instrumentor" }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 2
@@ -68,6 +68,10 @@ spec:
             name: webhook-server
             protocol: TCP
         env:
+          {{- if .Values.instrumentor.deploymentName }}
+          - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
+            value: {{ .Values.instrumentor.deploymentName | quote }}
+          {{- end }}
           - name: OTEL_SERVICE_NAME
             value: instrumentor
           - name: CURRENT_NS
@@ -97,6 +101,8 @@ spec:
             {{- else }}
             value: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
             {{- end }}
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.instrumentor.resources) }}
         volumeMounts:
           - name: instrumentor-webhooks-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs

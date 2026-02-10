@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-autoscaler
     odigos.io/system-object: "true"
-  name: odigos-autoscaler
+  name: {{ .Values.autoscaler.deploymentName | default "odigos-autoscaler" }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
@@ -51,6 +51,10 @@ spec:
           - /app
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "autoscaler" "Tag" $imageTag) }}
         env:
+          {{- if .Values.autoscaler.deploymentName }}
+          - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
+            value: {{ .Values.autoscaler.deploymentName | quote }}
+          {{- end }}
           - name: OTEL_SERVICE_NAME
             value: auto-scaler
           - name: CURRENT_NS
@@ -64,6 +68,8 @@ spec:
                 name: odigos-deployment
           - name: ODIGOS_COLLECTOR_IMAGE
             value: '{{ template "utils.imageName" (dict "Values" .Values "Component" "collector" "Tag" $imageTag) }}'
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.autoscaler.resources) }}
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config

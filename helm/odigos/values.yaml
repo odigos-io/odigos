@@ -244,8 +244,11 @@ autoscaler:
     limits:
       cpu: 500m
       memory: 512Mi
-  # Priority class name. Set to use your existing cluster priority classes.
+  ## Priority class name. Set to use your existing cluster priority classes.
   # priorityClassName: ''
+  ## Deployment name. if you want the deployment (and related pods) to have a specific name.
+  ## default is 'odigos-autoscaler'
+  # deploymentName: 'odigos-autoscaler'
 
 scheduler:
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -260,8 +263,11 @@ scheduler:
     limits:
       cpu: 500m
       memory: 512Mi
-  # Priority class name. Set to use your existing cluster priority classes.
+  ## Priority class name. Set to use your existing cluster priority classes.
   # priorityClassName: ''
+  ## Deployment name. if you want the deployment (and related pods) to have a specific name.
+  ## default is 'odigos-scheduler'
+  # deploymentName: 'odigos-scheduler'
 
 ui:
   # Uncomment to override the global nodeSelector (values.nodeSelector) for this component
@@ -276,8 +282,11 @@ ui:
     limits:
       cpu: 500m
       memory: 512Mi
-  # Priority class name. Set to use your existing cluster priority classes.
+  ## Priority class name. Set to use your existing cluster priority classes.
   # priorityClassName: ''
+  ## Deployment name. if you want the deployment (and related pods) to have a specific name.
+  ## default is 'odigos-ui'
+  # deploymentName: 'odigos-ui'
 
   # uiMode: 'default' or 'readonly'
   #  - This flag controls whether the UI should be in read-only mode.
@@ -341,8 +350,12 @@ instrumentor:
     limits:
       cpu: 500m
       memory: 512Mi
-  # Priority class name. Set to use your existing cluster priority classes.
+  ## Priority class name. Set to use your existing cluster priority classes.
   # priorityClassName: ''
+  ## Deployment name. if you want the deployment (and related pods) to have a specific name.
+  ## default is 'odigos-instrumentor'
+  # deploymentName: 'odigos-instrumentor'
+
   # how to add the required environment variables for instrumentation to a container
   # loader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.
   # pod-manifest: add the environment variables to the container manifest.
@@ -432,6 +445,10 @@ odiglet:
         cpu: 100m
         memory: 300Mi
 
+  ## DaemonSet name. if you want the daemonset (and related pods) to have a specific name.
+  ## default is 'odiglet'
+  # daemonsetName: 'odiglet'
+
   # noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
   # for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
   # for k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.
@@ -474,6 +491,12 @@ odiglet:
   # Collecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.
   # Set this to true to turn off code attribute recording for Go instrumentation.
   disableGoCodeAttributes: false
+
+
+  # extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.
+  # When true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).
+  # Default: false
+  extended: false
 
 centralProxy:
   # Central backend URL where this proxy will forward data

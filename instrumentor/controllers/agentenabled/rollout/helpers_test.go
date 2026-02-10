@@ -275,3 +275,177 @@ func mockICMidRollout(base *odigosv1alpha1.InstrumentationConfig) *odigosv1alpha
 	ic.Status.WorkloadRolloutHash = ic.Spec.AgentsMetaHash
 	return ic
 }
+
+// newHealthyPod creates a healthy running pod that matches a deployment's selector.
+func newHealthyPod(ns *corev1.Namespace, deploymentName, podName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: ns.Name,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": deploymentName,
+			},
+		},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
+			ContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name:  "test",
+					Ready: true,
+					State: corev1.ContainerState{
+						Running: &corev1.ContainerStateRunning{
+							StartedAt: metav1.NewTime(time.Now().Add(-5 * time.Minute)),
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// newCrashLoopBackOffPod creates a pod in CrashLoopBackOff state WITH odigos label (already instrumented).
+func newCrashLoopBackOffPod(ns *corev1.Namespace, deploymentName, podName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: ns.Name,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":            deploymentName,
+				k8sconsts.OdigosAgentsMetaHashLabel: "some-hash",
+			},
+		},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
+			ContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: "test",
+					State: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Reason: "CrashLoopBackOff",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// newCrashLoopBackOffPodWithoutOdigosLabel creates a pod in CrashLoopBackOff WITHOUT odigos label (not instrumented).
+func newCrashLoopBackOffPodWithoutOdigosLabel(ns *corev1.Namespace, deploymentName, podName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: ns.Name,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": deploymentName,
+			},
+		},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
+			ContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: "test",
+					State: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Reason: "CrashLoopBackOff",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// newImagePullBackOffPod creates a pod in ImagePullBackOff state.
+func newImagePullBackOffPod(ns *corev1.Namespace, deploymentName, podName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: ns.Name,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": deploymentName,
+			},
+		},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodPending,
+			ContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: "test",
+					State: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Reason: "ImagePullBackOff",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// newInitContainerBackOffPod creates a pod with init container in CrashLoopBackOff state.
+func newInitContainerBackOffPod(ns *corev1.Namespace, deploymentName, podName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: ns.Name,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": deploymentName,
+			},
+		},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodPending,
+			InitContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: "init-container",
+					State: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Reason: "CrashLoopBackOff",
+						},
+					},
+				},
+			},
+			ContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: "test",
+					State: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Reason: "PodInitializing",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// newCrashLoopBackOffStaticPod creates a static pod in CrashLoopBackOff state WITHOUT odigos label.
+func newCrashLoopBackOffStaticPod(ns *corev1.Namespace, podName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: ns.Name,
+			Annotations: map[string]string{
+				"kubernetes.io/config.source": "file",
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind: "Node",
+					Name: "test-node",
+				},
+			},
+		},
+		Status: corev1.PodStatus{
+			Phase: corev1.PodRunning,
+			ContainerStatuses: []corev1.ContainerStatus{
+				{
+					Name: "test",
+					State: corev1.ContainerState{
+						Waiting: &corev1.ContainerStateWaiting{
+							Reason: "CrashLoopBackOff",
+						},
+					},
+				},
+			},
+		},
+	}
+}

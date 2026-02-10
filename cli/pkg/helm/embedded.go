@@ -12,13 +12,11 @@ import (
 //go:embed embedded/*
 var embeddedCharts embed.FS
 
-// LoadEmbeddedChart loads the odigos chart with the given version (e.g. "1.3.2")
-// from the embedded filesystem.
-func LoadEmbeddedChart(version string) (*chart.Chart, error) {
-	file := fmt.Sprintf("embedded/odigos-%s.tgz", version)
+func LoadEmbeddedChart(version string, chartBasename string) (*chart.Chart, error) {
+	file := fmt.Sprintf("embedded/%s-%s.tgz", chartBasename, version)
 	data, err := embeddedCharts.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("embedded chart not found for version %s: %w", version, err)
+		return nil, fmt.Errorf("embedded chart %q not found for version %s: %w", chartBasename, version, err)
 	}
 	return loader.LoadArchive(bytes.NewReader(data))
 }

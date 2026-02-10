@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odigos-scheduler
     odigos.io/system-object: "true"
-  name: odigos-scheduler
+  name: {{ .Values.scheduler.deploymentName | default "odigos-scheduler" }}
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
@@ -51,6 +51,10 @@ spec:
         {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "scheduler" "Tag" $imageTag) }}
         env:
+          {{- if .Values.scheduler.deploymentName }}
+          - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
+            value: {{ .Values.scheduler.deploymentName | quote }}
+          {{- end }}
           - name: OTEL_SERVICE_NAME
             value: scheduler
           - name: CURRENT_NS
@@ -67,6 +71,8 @@ spec:
               configMapKeyRef:
                 key: ODIGOS_VERSION
                 name: odigos-deployment
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.scheduler.resources) }}
         envFrom:
           - configMapRef:
               name: odigos-own-telemetry-otel-config

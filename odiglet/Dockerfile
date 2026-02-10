@@ -100,7 +100,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.24
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.44
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         GRPC_ARCH="arm64"; \
     else \
@@ -174,7 +174,7 @@ COPY --from=agents-builder /instrumentations/ .
 CMD ["/root/odiglet"]
 
 ######### Default Odiglet #########
-FROM gcr.io/distroless/base:latest
+FROM gcr.io/distroless/base:3443777deec6bd5c58be682f286aefffd1c871ae
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe

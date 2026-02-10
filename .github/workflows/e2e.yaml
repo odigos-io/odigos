@@ -35,7 +35,9 @@ jobs:
           cd cli
           TAG=0.0.0-e2e-test
           sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos/Chart.yaml
+          sed -i -E 's/0.0.0/'"${TAG#v}"'/' ../helm/odigos-central/Chart.yaml
           helm package ../helm/odigos -d pkg/helm/embedded
+          helm package ../helm/odigos-central -d pkg/helm/embedded
           go build -tags=embed_manifests \
             -ldflags "-X github.com/odigos-io/odigos/cli/pkg/helm.OdigosChartVersion=${TAG#v}" \
             -o odigos
@@ -79,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kube-version: [ "1.32", "1.23", "1.20.15" ]
+        kube-version: [ "1.32", "1.23", "1.21.12" ]
         test-scenario:
           - "ui"
           - "helm-chart"
@@ -98,8 +100,9 @@ jobs:
           - "mount-method"
           - "argo-rollouts"
         include:
-          - kube-version: "1.20.15"
-            kind-image: "kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394"
+          - kube-version: "1.21.12"
+            # use 1.21.12 for systemd cgroups compatibility changes in kind 0.13 https://github.com/kubernetes-sigs/kind/releases/tag/v0.13.0
+            kind-image: "kindest/node:v1.21.12@sha256:ae05d44cc636ee961068399ea5123ae421790f472c309900c151a44ee35c3e3e"
           - kube-version: "1.23"
             kind-image: "kindest/node:v1.23.17@sha256:14d0a9a892b943866d7e6be119a06871291c517d279aedb816a4b4bc0ec0a5b3"
           - kube-version: "1.32"

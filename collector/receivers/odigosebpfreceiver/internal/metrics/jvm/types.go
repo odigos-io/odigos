@@ -73,7 +73,8 @@ const (
 // rather than a counter or histogram (delta/cumulative values)
 func (t MetricType) IsGauge() bool {
 	switch t {
-	case MetricMemoryUsed, MetricMemoryCommitted, MetricMemoryLimit,
+	case MetricClassLoaded, MetricClassUnloaded, MetricClassCount,
+		MetricMemoryUsed, MetricMemoryCommitted, MetricMemoryLimit,
 		MetricMemoryUsedAfterGC, MetricMemoryInit,
 		MetricThreadCount, MetricCPUCount, MetricCPURecentUtilization:
 		return true

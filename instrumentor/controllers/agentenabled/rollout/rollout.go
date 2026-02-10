@@ -345,8 +345,41 @@ func getPodBackOffReason(p *corev1.Pod) (odigosv1alpha1.AgentEnabledReason, stri
 	return "", ""
 }
 
-// instrumentedPodsSelector returns a selector for all the instrumented pods that are associated with the workload object
-func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
+// WorkloadHasNonInstrumentedPodInBackoff checks if any NON-INSTRUMENTED pod belonging to the workload is in a backoff state
+// (CrashLoopBackOff or ImagePullBackOff). This specifically checks pods that DON'T have the odigos label,
+// to detect pre-existing crashloops and prevent attempting to instrument already-crashlooping workloads.
+// Pods that are already instrumented (have the odigos label) are handled by the rollback logic instead.
+func WorkloadHasNonInstrumentedPodInBackoff(ctx context.Context, c client.Client, workloadObj client.Object) (bool, error) {
+	if pod, ok := workloadObj.(*corev1.Pod); ok {
+		return podHasBackOff(pod), nil
+	}
+
+	selector, err := notInstrumentedWorkloadPodsSelector(workloadObj)
+	if err != nil {
+		return false, fmt.Errorf("WorkloadHasNonInstrumentedPodInBackoff: %w", err)
+	}
+
+	var podList corev1.PodList
+	if err := c.List(ctx, &podList,
+		client.InNamespace(workloadObj.GetNamespace()),
+		client.MatchingLabelsSelector{Selector: selector},
+	); err != nil {
+		return false, fmt.Errorf("WorkloadHasNonInstrumentedPodInBackoff: failed listing pods: %w", err)
+	}
+
+	// If a pod has the odigos label and is in backoff, it's handled by the rollback logic.
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		if podHasBackOff(pod) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// workloadLabelSelector returns the label selector for a workload object
+func workloadLabelSelector(obj client.Object) (*metav1.LabelSelector, error) {
 	var selector *metav1.LabelSelector
 
 	switch o := obj.(type) {
@@ -366,22 +399,55 @@ func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
 			MatchLabels: o.Spec.Selector.MatchLabels,
 		}
 	default:
-		return nil, fmt.Errorf("crashLoopBackOffDuration: unsupported workload kind %T", obj)
+		return nil, fmt.Errorf("workloadLabelSelector: unsupported workload kind %T", obj)
 	}
 
 	if selector == nil {
-		return nil, fmt.Errorf("crashLoopBackOffDuration: workload has nil selector")
+		return nil, fmt.Errorf("workloadLabelSelector: workload has nil selector")
+	}
+
+	return selector, nil
+}
+
+// workloadPodsSelector returns a selector for all pods that are associated with the workload object
+// who do not have the odigos instrumentation label
+func notInstrumentedWorkloadPodsSelector(obj client.Object) (labels.Selector, error) {
+	labelSelector, err := workloadLabelSelector(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	selectorCopy := labelSelector.DeepCopy()
+	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
+		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
+		Operator: metav1.LabelSelectorOpDoesNotExist,
+	})
+
+	selector, err := metav1.LabelSelectorAsSelector(selectorCopy)
+	if err != nil {
+		return nil, fmt.Errorf("notInstrumentedWorkloadPodsSelector: invalid selector: %w", err)
+	}
+
+	return selector, nil
+}
+
+// instrumentedPodsSelector returns a selector for all the instrumented pods that are associated with the workload object
+func instrumentedPodsSelector(obj client.Object) (labels.Selector, error) {
+	labelSelector, err := workloadLabelSelector(obj)
+	if err != nil {
+		return nil, err
 	}
 
 	// Create a deep copy of the selector to avoid mutating the original
-	selectorCopy := selector.DeepCopy()
+	selectorCopy := labelSelector.DeepCopy()
 	selectorCopy.MatchExpressions = append(selectorCopy.MatchExpressions, metav1.LabelSelectorRequirement{
 		Key:      k8sconsts.OdigosAgentsMetaHashLabel,
 		Operator: metav1.LabelSelectorOpExists,
 	})
+
 	sel, err := metav1.LabelSelectorAsSelector(selectorCopy)
 	if err != nil {
-		return nil, fmt.Errorf("crashLoopBackOffDuration: invalid selector: %w", err)
+		return nil, fmt.Errorf("instrumentedPodsSelector: invalid selector: %w", err)
 	}
 
 	return sel, nil

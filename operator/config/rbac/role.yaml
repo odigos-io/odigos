@@ -56,6 +56,14 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes/stats
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
   - delete
@@ -243,6 +251,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - odigos.io

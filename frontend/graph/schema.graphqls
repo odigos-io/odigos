@@ -123,7 +123,6 @@ type K8sActualSource {
   otelServiceName: String
   containers: [SourceContainer!]
   conditions: [Condition!]
-  workloadOdigosHealthStatus: DesiredConditionStatus
   manifestYAML: String
   instrumentationConfigYAML: String
 }
@@ -305,6 +304,7 @@ type ApiToken {
   name: String!
   issuedAt: Int!
   expiresAt: Int!
+  message: String
 }
 
 type ComputePlatform {
