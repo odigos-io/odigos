@@ -208,6 +208,10 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			}
 		}
 	}
+	// If not found in containers and we are in rollback state, default to CrashLoopBackOff
+	if rollbackOccurred && existingBackoffReason == "" {
+		existingBackoffReason = odigosv1.AgentEnabledReasonCrashLoopBackOff
+	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
 	podManifestInjectionOptional := true // pod manifest is optional, unless some container agent requires it
