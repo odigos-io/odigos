@@ -21,6 +21,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 )
 
 const (
@@ -205,7 +206,7 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 			},
 			Spec: apiregv1.APIServiceSpec{
 				Service: &apiregv1.ServiceReference{
-					Name:      "odigos-autoscaler",
+					Name:      k8sconsts.AutoScalerWebhookServiceName,
 					Namespace: namespace,
 					Port:      &port,
 				},
@@ -269,7 +270,7 @@ func scrapeGatewayMetric(podIP string) (float64, error) {
 		return 0, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	parser := expfmt.TextParser{}
+	parser := expfmt.NewTextParser(model.UTF8Validation)
 	metricFamilies, err := parser.TextToMetricFamilies(bytes.NewReader(body))
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse metrics: %w", err)
