@@ -30,7 +30,7 @@ type SourceSpecApplyConfiguration struct {
 	OtelServiceName          *string                               `json:"otelServiceName,omitempty"`
 	ContainerOverrides       []ContainerOverrideApplyConfiguration `json:"containerOverrides,omitempty"`
 	MatchWorkloadNameAsRegex *bool                                 `json:"matchWorkloadNameAsRegex,omitempty"`
-	RecoveredFromRollbackAt *v1.Time                               `json:"recoveredFromRollbackAt,omitempty"`
+	RecoveredFromRollbackAt  *v1.Time                              `json:"recoveredFromRollbackAt,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with

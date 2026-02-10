@@ -488,6 +488,7 @@ spec:
                   RecoveredFromRollbackAt is a timestamp propagated from the Source spec.
                   The agentenabled controller compares this with the status timestamp: if they differ,
                   it clears RollbackOccurred and copies this value to the status, allowing a retry.
+                  Setting a new timestamp on the Source triggers another recovery.
                 format: date-time
                 type: string
               sdkConfigs:
@@ -1407,12 +1408,6 @@ spec:
                   This allows us to determine whether a crashing application should be rolled back or not
                 format: date-time
                 type: string
-              recoveredFromRollbackAt:
-                description: Records the last spec timestamp that was processed for
-                  rollback recovery. When this matches IC.Spec.RecoveredFromRollbackAt,
-                  the recovery has been handled.
-                format: date-time
-                type: string
               podsManifestInjectionStatus:
                 description: Represents the status of odigos MANIFEST injection to
                   existing pods template.
@@ -1430,6 +1425,12 @@ spec:
                       odigos agent injected.
                     type: boolean
                 type: object
+              recoveredFromRollbackAt:
+                description: |-
+                  RecoveredFromRollbackAt records the last spec timestamp that was processed for rollback recovery.
+                  When this matches IC.Spec.RecoveredFromRollbackAt, the recovery has been handled.
+                format: date-time
+                type: string
               rollbackOccurred:
                 description: Check if rollback happened to an application
                 type: boolean
