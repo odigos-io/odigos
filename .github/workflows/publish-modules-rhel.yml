@@ -1,0 +1,183 @@
+name: Publish Modules for RHEL
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'image tag'
+        required: true
+
+jobs:
+    publish-images-rhel:
+        runs-on: ${{ matrix.runner }}
+        permissions:
+          contents: 'read'
+          id-token: 'write'
+          packages: 'write'
+        strategy:
+          matrix:
+            service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
+            include:
+              - service: autoscaler
+                runner: ubuntu-latest
+                summary: 'Autoscaler for Odigos'
+                description: 'Autoscaler manages the installation of Odigos components.'
+              - service: scheduler
+                runner: ubuntu-latest
+                summary: 'Scheduler for Odigos'
+                description: 'Scheduler manages the installation of OpenTelemetry Collectors with Odigos.'
+              - service: instrumentor
+                runner: ubuntu-latest
+                summary: 'Instrumentor for Odigos'
+                description: 'Instrumentor manages auto-instrumentation for workloads with Odigos.'
+              - service: collector
+                runner: large-runner
+                summary: 'Odigos Collector'
+                description: 'The Odigos build of the OpenTelemetry Collector.'
+              - service: odiglet
+                runner: ubuntu-latest
+                summary: 'Odiglet for Odigos'
+                description: 'Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs.'
+              - service: ui
+                runner: ubuntu-latest
+                summary: 'UI for Odigos'
+                description: 'UI provides the frontend webapp for managing an Odigos installation.'
+              - service: operator
+                runner: ubuntu-latest
+                summary: 'Odigos Operator'
+                description: 'The Odigos Operator installs and manages Odigos in a cluster'
+              - service: agents
+                runner: ubuntu-latest
+                summary: 'Odigos Agents'
+                description: 'The Odigos Agents used to copy Odigos agent relevant files into the user workloads.'
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v5
+            with:
+              ref: ${{ inputs.tag }}
+
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v3
+      
+          - name: Set up QEMU
+            uses: docker/setup-qemu-action@v3
+      
+          - id: gcp-auth
+            name: Authenticate with Google Cloud
+            uses: google-github-actions/auth@v3
+            with:
+              token_format: 'access_token'
+              workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+              service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+              access_token_lifetime: 1200s
+      
+          - name: Login to Artifact Registry
+            uses: docker/login-action@v3
+            with:
+              registry: us-central1-docker.pkg.dev
+              username: oauth2accesstoken
+              password: ${{ steps.gcp-auth.outputs.access_token }}
+      
+          - name: Login to Docker Hub
+            uses: docker/login-action@v3
+            with:
+              username: ${{ secrets.DOCKERHUB_USERNAME }}
+              password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+          - name: Login to GitHub Container Registry
+            uses: docker/login-action@v3
+            with:
+              registry: ghcr.io
+              username: ${{ github.actor }}
+              password: ${{ secrets.GITHUB_TOKEN }}
+      
+          - name: Build and Push Docker Image for ${{ matrix.service }}
+            uses: docker/build-push-action@v6
+            env:
+              ODIGOS_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || steps.extract_tag.outputs.tag}}
+            with:
+              push: true
+              provenance: false
+              tags: |
+                us-central1-docker.pkg.dev/odigos-cloud/components/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
+                keyval/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
+                ghcr.io/odigos-io/odigos-${{ matrix.service }}-rhel-certified:${{ env.ODIGOS_TAG }}
+              build-args: |
+                SERVICE_NAME=${{ matrix.service }}
+                ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
+                RELEASE=${{ env.ODIGOS_TAG }}
+                VERSION=${{ env.ODIGOS_TAG }}
+                SUMMARY=${{ matrix.summary }}
+                DESCRIPTION=${{ matrix.description }}
+                LD_FLAGS=-s -w
+                RHEL=true
+              platforms: linux/amd64,linux/arm64
+              file: >-
+                ${{ matrix.service == 'odiglet' && 'odiglet/Dockerfile' ||
+                    matrix.service == 'collector' && 'collector/Dockerfile' ||
+                    matrix.service == 'ui' && 'frontend/Dockerfile' ||
+                    matrix.service == 'operator' && 'operator/Dockerfile' ||
+                    matrix.service == 'agents' && 'odiglet/Dockerfile' ||
+                    'Dockerfile' }}
+              target: >-
+                ${{ matrix.service == 'agents' && 'agents-rhel' || 'rhel' }}
+
+    publish-cli-rhel:
+        needs: publish-images-rhel
+        runs-on: ubuntu-latest
+        permissions:
+          contents: 'read'
+          id-token: 'write'
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v5
+            with:
+              ref: ${{ inputs.tag }}
+
+          - id: gcp-auth
+            name: Authenticate with Google Cloud
+            uses: google-github-actions/auth@v3
+            with:
+              token_format: 'access_token'
+              workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+              service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+              access_token_lifetime: 1200s
+
+          - name: Login to Artifact Registry
+            uses: docker/login-action@v3
+            with:
+              registry: us-central1-docker.pkg.dev
+              username: oauth2accesstoken
+              password: ${{ steps.gcp-auth.outputs.access_token }}
+
+          - uses: ko-build/setup-ko@v0.9
+
+          - name: Publish CLI certified image to GCR registry
+            working-directory: ./cli
+            env:
+              KO_DOCKER_REPO: us-central1-docker.pkg.dev/odigos-cloud/components/odigos-cli-rhel-certified
+              KO_CONFIG_PATH: ./.ko.yaml
+              VERSION: ${{ inputs.tag }}
+              KO_DEFAULTBASEIMAGE: registry.access.redhat.com/ubi9/ubi-micro:latest
+            run: |
+              ko build --bare --tags latest --tags ${{ inputs.tag }} \
+              --image-label name=odigos-cli \
+              --image-label vendor=Odigos \
+              --image-label maintainer=Odigos \
+              --image-label version=${{ inputs.tag }} \
+              --image-label release=${{ inputs.tag }} \
+              --image-label summary="Odigos CLI" \
+              --image-label description="Odigos CLI to install and manage Odigos in your Kubernetes cluster." \
+              --platform=all .
+
+    trigger-enterprise-publish:
+        needs: publish-cli-rhel
+        runs-on: ubuntu-latest
+        steps:
+          - name: Trigger Enterprise Publish job
+            run: |
+              curl -X POST \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
+                https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
+                -d '{"event_type": "publish_images_rhel", "client_payload": {"tag": "${{ inputs.tag }}"}}'
