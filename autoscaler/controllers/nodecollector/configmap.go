@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +31,8 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		// we only need to get the autoscaler deployment once since it can't change while this code is running
 		// (since we are running in the autoscaler pod)
 		autoscalerDeployment := &appsv1.Deployment{}
-		err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: k8sconsts.AutoScalerDeploymentName}, autoscalerDeployment)
+		autoscalerDeploymentName := env.GetComponentDeploymentNameOrDefault(k8sconsts.AutoScalerDeploymentName)
+		err := b.Client.Get(ctx, client.ObjectKey{Namespace: b.odigosNamespace, Name: autoscalerDeploymentName}, autoscalerDeployment)
 		if err != nil {
 			return err
 		}

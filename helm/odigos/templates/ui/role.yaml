@@ -94,7 +94,7 @@ rules:
     resources:
       - deployments/scale
     resourceNames:
-      - odigos-instrumentor
+      - {{ .Values.instrumentor.deploymentName | default "odigos-instrumentor" }}
     verbs:
       - get
       {{- if include "odigos.ui.requiresWritePermissions" . }}
