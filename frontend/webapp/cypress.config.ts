@@ -20,10 +20,8 @@ const config: Cypress.ConfigOptions = {
     pageLoadTimeout: 30000,
     requestTimeout: 10000,
     responseTimeout: 10000,
-    retries: {
-      runMode: 0,
-      openMode: 0,
-    },
+    retries: { runMode: 0, openMode: 0 },
+    allowCypressEnv: false,
     // Keep test isolation enabled but handle navigation carefully
     // Next.js 15 App Router uses client-side navigation which requires proper waits
     testIsolation: true,

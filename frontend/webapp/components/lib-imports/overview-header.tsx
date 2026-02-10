@@ -23,27 +23,37 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
   const instrumentationStatus = useStatusStore((state) => state[StatusKeys.Instrumentation]);
 
   const left = useMemo(() => {
-    const arr = [<OdigosLogoText key='logo' size={150} />];
+    const arr = [
+      <div key='logo' data-id='logo'>
+        <OdigosLogoText size={150} />
+      </div>,
+    ];
 
     if (isReadonly) {
       arr.push(
-        <Tooltip key='readonly' text={FORM_ALERTS.READONLY_WARNING}>
-          <V2Badge status={OtherStatusType.Disabled} label='Read Only' />
-        </Tooltip>,
+        <div key='readonly' data-id='readonly'>
+          <Tooltip text={FORM_ALERTS.READONLY_WARNING}>
+            <V2Badge status={OtherStatusType.Disabled} label='Read Only' />
+          </Tooltip>
+        </div>,
       );
     }
     if (backendStatus) {
       arr.push(
-        <Tooltip key='backend-status' text={backendStatus.tooltip}>
-          <V2Badge {...backendStatus} />
-        </Tooltip>,
+        <div key='backend-status' data-id='backend-status'>
+          <Tooltip text={backendStatus.tooltip}>
+            <V2Badge {...backendStatus} />
+          </Tooltip>
+        </div>,
       );
     }
     if (instrumentationStatus) {
       arr.push(
-        <Tooltip key='instrumentation-status' text={instrumentationStatus.tooltip}>
-          <V2Badge {...instrumentationStatus} />
-        </Tooltip>,
+        <div key='instrumentation-status' data-id='instrumentation-status'>
+          <Tooltip text={instrumentationStatus.tooltip}>
+            <V2Badge {...instrumentationStatus} />
+          </Tooltip>
+        </div>,
       );
     }
 
@@ -55,16 +65,37 @@ const OverviewHeader = ({ v2 }: { v2?: boolean }) => {
 
     if (tokenStatus) {
       arr.push(
-        <Tooltip key='token-status' text={tokenStatus.tooltip}>
-          <V2Badge {...tokenStatus} />
-        </Tooltip>,
+        <div key='token-status' data-id='token-status'>
+          <Tooltip text={tokenStatus.tooltip}>
+            <V2Badge {...tokenStatus} />
+          </Tooltip>
+        </div>,
       );
     }
 
-    if (!v2) arr.push(<ToggleDarkMode key='toggle-theme' />);
-    arr.push(<NotificationManager key='notification-manager' />);
-    arr.push(<IconButton key='system-drawer' icon={TerminalIcon} onClick={toggleSystemDrawer} />);
-    arr.push(...[<SlackInvite key='slack-invite' />]);
+    if (!v2)
+      arr.push(
+        <div key='toggle-theme' data-id='toggle-theme'>
+          <ToggleDarkMode />
+        </div>,
+      );
+    arr.push(
+      <div key='notifications' data-id='notifications'>
+        <NotificationManager />
+      </div>,
+    );
+    arr.push(
+      <div key='system-drawer' data-id='system-drawer'>
+        <IconButton icon={TerminalIcon} onClick={toggleSystemDrawer} />
+      </div>,
+    );
+    arr.push(
+      ...[
+        <div key='slack-invite' data-id='slack-invite'>
+          <SlackInvite />
+        </div>,
+      ],
+    );
 
     return arr;
   }, [v2, tokenStatus?.label]);
