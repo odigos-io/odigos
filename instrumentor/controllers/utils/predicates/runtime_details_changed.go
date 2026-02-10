@@ -80,6 +80,41 @@ func (i RuntimeDetailsChangedPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
+type RecoveredFromRollbackAtChangedPredicate struct{}
+
+var _ predicate.Predicate = &RecoveredFromRollbackAtChangedPredicate{}
+
+func (p RecoveredFromRollbackAtChangedPredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+	ic, ok := e.Object.(*odigosv1.InstrumentationConfig)
+	if !ok {
+		return false
+	}
+	return ic.Spec.RecoveredFromRollbackAt != nil
+}
+
+func (p RecoveredFromRollbackAtChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+	oldIC, oldOK := e.ObjectOld.(*odigosv1.InstrumentationConfig)
+	newIC, newOK := e.ObjectNew.(*odigosv1.InstrumentationConfig)
+	if !oldOK || !newOK {
+		return false
+	}
+	return !oldIC.Spec.RecoveredFromRollbackAt.Equal(newIC.Spec.RecoveredFromRollbackAt)
+}
+
+func (p RecoveredFromRollbackAtChangedPredicate) Delete(e event.DeleteEvent) bool {
+	return false
+}
+
+func (p RecoveredFromRollbackAtChangedPredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
+
 type ContainerOverridesChangedPredicate struct{}
 
 var _ predicate.Predicate = &ContainerOverridesChangedPredicate{}
