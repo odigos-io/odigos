@@ -128,6 +128,8 @@ export const useSSE = () => {
                 addNotification({ type: StatusType.Success, title: EventTypes.ADDED, message: `Successfully created ${progress[ProgressKeys.Instrumenting]?.total} sources` });
                 clearStatusMessage();
                 resetProgress(ProgressKeys.Instrumenting);
+
+                fetchSources();
               });
               break;
 
@@ -139,6 +141,7 @@ export const useSSE = () => {
                 handleEvent(EventTypes.MODIFIED, () => {
                   addNotification({ type: StatusType.Success, title: EventTypes.MODIFIED, message: 'Instrumentation completed' });
                   clearStatusMessage();
+
                   fetchSources();
                 });
               }
