@@ -38,8 +38,9 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, odigosVersion string) (*appsv1.Deployment, error) {
 	logger := log.FromContext(ctx)
 
+	autoscalerDeploymentName := env.GetComponentDeploymentNameOrDefault(k8sconsts.AutoScalerDeploymentName)
 	autoscalerDeployment := &appsv1.Deployment{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: k8sconsts.AutoScalerDeploymentName}, autoscalerDeployment); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: autoscalerDeploymentName}, autoscalerDeployment); err != nil {
 		return nil, err
 	}
 	autoScalerTopologySpreadConstraints := autoscalerDeployment.Spec.Template.Spec.TopologySpreadConstraints

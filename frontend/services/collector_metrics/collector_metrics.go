@@ -12,6 +12,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/frontend/services/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configgrpc"
 	"go.opentelemetry.io/collector/config/confignet"
@@ -154,7 +155,8 @@ func (c *OdigosMetricsConsumer) ConsumeMetrics(ctx context.Context, md pmetric.M
 		return err
 	}
 
-	if strings.HasPrefix(senderPod, k8sconsts.OdigletDaemonSetName) {
+	odigletDsName := env.GetOdigletDaemonSetNameOrDefault(k8sconsts.OdigletDaemonSetName)
+	if strings.HasPrefix(senderPod, odigletDsName) {
 		c.sources.handleNodeCollectorMetrics(senderPod, md)
 		return nil
 	}

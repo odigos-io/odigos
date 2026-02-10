@@ -108,7 +108,8 @@ func main() {
 
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 
-	schedulerDeploymentNameSelector := fields.OneTermEqualSelector("metadata.name", k8sconsts.SchedulerDeploymentName)
+	schedulerDeploymentName := env.GetComponentDeploymentNameOrDefault(k8sconsts.SchedulerDeploymentName)
+	schedulerDeploymentNameSelector := fields.OneTermEqualSelector("metadata.name", schedulerDeploymentName)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
