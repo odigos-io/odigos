@@ -5,6 +5,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -13,7 +14,7 @@ import (
 
 func SetOwnerControllerToSchedulerDeployment(ctx context.Context, c client.Client, cg *odigosv1.CollectorsGroup, scheme *runtime.Scheme) error {
 	schedluerDeployment := appsv1.Deployment{}
-	err := c.Get(ctx, client.ObjectKey{Namespace: cg.GetNamespace(), Name: k8sconsts.SchedulerDeploymentName}, &schedluerDeployment)
+	err := c.Get(ctx, client.ObjectKey{Namespace: cg.GetNamespace(), Name: env.GetComponentDeploymentNameOrDefault(k8sconsts.SchedulerDeploymentName)}, &schedluerDeployment)
 	if err != nil {
 		return err
 	}

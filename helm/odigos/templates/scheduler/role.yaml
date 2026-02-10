@@ -107,7 +107,7 @@ rules:
     resources:
       - 'deployments'
     resourceNames:
-      - 'odigos-scheduler'
+      - {{ .Values.scheduler.deploymentName | default "odigos-scheduler" | quote }}
     verbs:
       - 'get'
       - 'list'
