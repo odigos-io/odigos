@@ -21,8 +21,7 @@ func PauseOdigos(ctx context.Context) error {
 	}
 	fmt.Printf("Scaled instrumentor deployment to 0 replicas in")
 
-	odigletDsName := env.GetOdigletDaemonSetNameOrDefault(k8sconsts.OdigletDaemonSetName)
-	if err := disableOdiglet(ctx, ns, odigletDsName); err != nil {
+	if err := disableOdiglet(ctx, ns); err != nil {
 		return fmt.Errorf("disable odiglet: %w", err)
 	}
 	fmt.Printf("Disabled odiglet daemonset in %q\n", ns)
@@ -53,7 +52,20 @@ func scaleInstrumentorDeploymentToZero(ctx context.Context, odigosNamespace stri
 	return err
 }
 
-func disableOdiglet(ctx context.Context, ns string, name string) error {
+func disableOdiglet(ctx context.Context, ns string) error {
+	selector := fmt.Sprintf("app.kubernetes.io/name=%s", k8sconsts.OdigletDaemonSetName)
+	dsList, err := kube.DefaultClient.AppsV1().DaemonSets(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return err
+	}
+	if len(dsList.Items) == 0 {
+		return fmt.Errorf("no odiglet daemonset in namespace %q", ns)
+	}
+	if len(dsList.Items) > 1 {
+		return fmt.Errorf("multiple odiglet daemonsets in namespace %q", ns)
+	}
+	ds := dsList.Items[0]
+
 	// Patch DaemonSet template with an impossible nodeSelector and bump annotation to force rollout
 	patch := []byte(`{
       "spec": {
@@ -72,12 +84,11 @@ func disableOdiglet(ctx context.Context, ns string, name string) error {
       }
     }`)
 
-	if _, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Patch(ctx, name, types.StrategicMergePatchType, patch, metav1.PatchOptions{}); err != nil {
+	if _, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Patch(ctx, ds.Name, types.StrategicMergePatchType, patch, metav1.PatchOptions{}); err != nil {
 		return err
 	}
 
 	// Delete existing odiglet pods to stop data flow immediately (pod label is fixed "odiglet" in helm)
-	selector := fmt.Sprintf("app.kubernetes.io/name=%s", k8sconsts.OdigletDaemonSetName)
 	podList, err := kube.DefaultClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {
 		return err

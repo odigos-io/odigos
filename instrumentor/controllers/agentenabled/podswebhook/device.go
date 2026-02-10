@@ -6,7 +6,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	containerutils "github.com/odigos-io/odigos/k8sutils/pkg/container"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -30,14 +29,22 @@ func InjectDeviceToContainer(container *corev1.Container, device string) {
 
 func CheckDevicePluginContainersHealth(ctx context.Context, kubeClient client.Client, odigosNamespace string) error {
 
-	odigletDsName := env.GetOdigletDaemonSetNameOrDefault(k8sconsts.OdigletDaemonSetName)
-	odigletDaemonset := &appsv1.DaemonSet{}
-	if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: odigosNamespace, Name: odigletDsName}, odigletDaemonset); err != nil {
-		// this check verifies that the odiglet daemonset is found.
-		// a user can delete the daemonset (doesn't make sense but can happen).
-		// in this case, there are no odiglet pods so we should not inject instrumentation.
+	odigletDaemonsets := &appsv1.DaemonSetList{}
+	selector := labels.SelectorFromSet(map[string]string{"app.kubernetes.io/name": k8sconsts.OdigletDaemonSetName})
+	if err := kubeClient.List(ctx, odigletDaemonsets, &client.ListOptions{
+		Namespace:     odigosNamespace,
+		LabelSelector: selector,
+	}); err != nil {
 		return err
 	}
+	if len(odigletDaemonsets.Items) == 0 {
+		// no odiglet daemonset: no odiglet pods, so we should not inject instrumentation
+		return fmt.Errorf("no odiglet daemonset in namespace %q", odigosNamespace)
+	}
+	if len(odigletDaemonsets.Items) > 1 {
+		return fmt.Errorf("multiple odiglet daemonsets in namespace %q", odigosNamespace)
+	}
+	odigletDaemonset := &odigletDaemonsets.Items[0]
 
 	odigletPods := corev1.PodList{}
 	err := kubeClient.List(ctx, &odigletPods, &client.ListOptions{

@@ -72,10 +72,6 @@ spec:
           - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
             value: {{ .Values.instrumentor.deploymentName | quote }}
           {{- end }}
-          {{- if .Values.odiglet.daemonsetName }}
-          - name: ODIGOS_ODIGLET_DAEMONSET_NAME
-            value: {{ .Values.odiglet.daemonsetName | quote }}
-          {{- end }}
           - name: OTEL_SERVICE_NAME
             value: instrumentor
           - name: CURRENT_NS
