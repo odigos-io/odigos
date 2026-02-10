@@ -963,4 +963,7 @@ type Mutation {
 
   # enterprise: remove the central-proxy from this cluster
   deleteCentralProxy: Boolean!
+
+  # Disables rollback protection on the Source and re-instruments the workload through the reconciliation flow.
+  retryInstrumentationForWorkload(sourceId: K8sSourceId!): Boolean!
 }
