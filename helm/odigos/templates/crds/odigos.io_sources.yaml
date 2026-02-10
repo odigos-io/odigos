@@ -165,15 +165,6 @@ spec:
               disableInstrumentation:
                 description: DisableInstrumentation excludes this workload from auto-instrumentation.
                 type: boolean
-              recoveredFromRollbackAt:
-                description: |-
-                  RecoveredFromRollbackAt is a timestamp signal to recover from a rollback and retry instrumentation.
-                  When set, the agentenabled controller compares the IC spec timestamp with the IC status timestamp:
-                  if they differ, it clears RollbackOccurred and copies the timestamp to IC status.
-                  Setting a new timestamp triggers another recovery attempt.
-                  Not valid for namespace sources.
-                format: date-time
-                type: string
               matchWorkloadNameAsRegex:
                 description: |-
                   MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
@@ -186,6 +177,14 @@ spec:
                   OtelServiceName determines the "service.name" resource attribute which will be reported by the instrumentations of this source.
                   If not set, the workload name will be used.
                   It is not valid for namespace sources.
+                type: string
+              recoveredFromRollbackAt:
+                description: |-
+                  RecoveredFromRollbackAt is a timestamp signal to recover from a rollback and retry instrumentation.
+                  When set, it propagates to the InstrumentationConfig spec, and is used to determine if recovery from rollback is needed.
+                  Setting a new timestamp triggers another recovery attempt.
+                  Not valid for namespace sources.
+                format: date-time
                 type: string
               workload:
                 description: |-
