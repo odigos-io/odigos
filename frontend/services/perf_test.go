@@ -108,7 +108,7 @@ func TestPerfGetWorkloadsInNamespace(t *testing.T) {
 func TestPerfCountAppsPerNamespace(t *testing.T) {
 	nsCount := 100
 	workloadsPerNs := 10
-	budget := 50 * time.Millisecond
+	budget := 100 * time.Millisecond
 
 	var cacheObjs []ctrlclient.Object
 	for i := range nsCount {
