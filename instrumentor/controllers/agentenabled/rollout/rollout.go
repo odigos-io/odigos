@@ -108,7 +108,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			"namespace", pw.Namespace)
 		rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
 		rolloutErr := rolloutRestartWorkload(ctx, workloadObj, c, time.Now())
-		return RolloutResult{Result: ctrl.Result{RequeueAfter: RequeueWaitingForWorkloadRollout}}, client.IgnoreNotFound(rolloutErr)
+		return RolloutResult{}, client.IgnoreNotFound(rolloutErr)
 	}
 
 	if ic.Spec.PodManifestInjectionOptional {
