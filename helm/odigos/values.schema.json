@@ -54,6 +54,12 @@
           "title": "affinity",
           "type": "object"
         },
+        "deploymentName": {
+          "default": "odigos-autoscaler",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-autoscaler'",
+          "required": [],
+          "title": "deploymentName"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -610,6 +616,12 @@
           "required": [],
           "title": "checkDeviceHealthBeforeInjection"
         },
+        "deploymentName": {
+          "default": "odigos-instrumentor",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-instrumentor'",
+          "required": [],
+          "title": "deploymentName"
+        },
         "mountMethod": {
           "default": "",
           "description": "which mount method to use for odigos agent directory\nk8s-virtual-device: default method using a virtual device\nk8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)\nk8s-init-container: alternative which uses an init container to copy the agent files to the shared volume",
@@ -964,6 +976,12 @@
           "description": "in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.\nIn these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)\ninto the Odiglet to ensure it can access the container runtime unix socket.",
           "required": [],
           "title": "customContainerRuntimeSocketPath"
+        },
+        "daemonsetName": {
+          "default": "odiglet",
+          "description": "DaemonSet name. if you want the daemonset (and related pods) to have a specific name.\ndefault is 'odiglet'",
+          "required": [],
+          "title": "daemonsetName"
         },
         "dataCollection": {
           "additionalProperties": false,
@@ -1407,6 +1425,12 @@
           "title": "affinity",
           "type": "object"
         },
+        "deploymentName": {
+          "default": "odigos-scheduler",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-scheduler'",
+          "required": [],
+          "title": "deploymentName"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -1530,6 +1554,12 @@
           "description": "centralBackendURL:\n - This flag sets the URL of the central backend.\n - If not set, the UI will not connect to the central backend.",
           "required": [],
           "title": "centralBackendURL"
+        },
+        "deploymentName": {
+          "default": "odigos-ui",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-ui'",
+          "required": [],
+          "title": "deploymentName"
         },
         "nodeSelector": {
           "default": "",

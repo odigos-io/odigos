@@ -88,7 +88,7 @@ rbac-docs:
 	cd scripts/rbac-docgen && go run main.go
 
 TOOLS_DIR := .tools
-HELM_SCHEMA_VERSION := v0.21.1
+HELM_SCHEMA_VERSION := latest
 HELM_SCHEMA_BIN := $(TOOLS_DIR)/helm-schema
 
 .PHONY: helm-schema
