@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const odigosNs = "odigos-system"
@@ -32,6 +33,8 @@ func TestPerfDestinations(t *testing.T) {
 	k8sObjs = append(k8sObjs, testutil.OdigosConfigMap(odigosNs))
 
 	kube.DefaultClient = testutil.SlowFakeClient(latency, k8sObjs, odigosObjs)
+	// IsReadonlyMode → GetOdigosConfiguration now reads ConfigMap from cache
+	kube.CacheClient = testutil.FakeCacheClient(testutil.OdigosConfigMap(odigosNs))
 
 	resolver := &computePlatformResolver{}
 	ctx := context.Background()
@@ -58,8 +61,16 @@ func TestPerfDataStreams(t *testing.T) {
 	latency := 5 * time.Millisecond
 	budget := 100 * time.Millisecond
 
+	// InstrumentationConfigs are read from cache
+	icObjs := testutil.GenerateInstrumentationConfigs("test-ns", icCount)
+	var cacheObjs []ctrlclient.Object
+	for _, obj := range icObjs {
+		cacheObjs = append(cacheObjs, obj.(ctrlclient.Object))
+	}
+	kube.CacheClient = testutil.FakeCacheClient(cacheObjs...)
+
+	// Destinations are read from DefaultClient (not cached)
 	var odigosObjs []runtime.Object
-	odigosObjs = append(odigosObjs, testutil.GenerateInstrumentationConfigs("test-ns", icCount)...)
 	destOdigosObjs, k8sObjs := testutil.GenerateDestinationsAndSecrets(odigosNs, destCount)
 	odigosObjs = append(odigosObjs, destOdigosObjs...)
 	k8sObjs = append(k8sObjs, testutil.OdigosConfigMap(odigosNs))

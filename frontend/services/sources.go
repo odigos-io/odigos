@@ -25,7 +25,6 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/version"
@@ -387,15 +386,15 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 }
 
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind model.K8sResourceKind) (*v1alpha1.Source, error) {
-	sourceList := &v1alpha1.SourceList{}
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labels.Set{
+	var sourceList v1alpha1.SourceList
+	if err := kube.CacheClient.List(ctx, &sourceList,
+		ctrlclient.InNamespace(nsName),
+		ctrlclient.MatchingLabels{
 			k8sconsts.WorkloadNamespaceLabel: nsName,
 			k8sconsts.WorkloadNameLabel:      workloadName,
 			k8sconsts.WorkloadKindLabel:      string(workloadKind),
-		}).String(),
-	})
-	if err != nil {
+		},
+	); err != nil {
 		return nil, err
 	}
 	if len(sourceList.Items) == 0 {
@@ -629,7 +628,7 @@ func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 func GetInstrumentationInstances(ctx context.Context, namespace string, name string, kind string) ([]*v1alpha1.InstrumentationInstance, error) {
 	result := make([]*v1alpha1.InstrumentationInstance, 0)
 
-	listOptions := metav1.ListOptions{}
+	opts := []ctrlclient.ListOption{}
 	if namespace != "" && name != "" && kind != "" {
 		objectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 		if len(objectName) > 63 {
@@ -637,16 +636,16 @@ func GetInstrumentationInstances(ctx context.Context, namespace string, name str
 			// see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 			return result, nil
 		}
-		listOptions.LabelSelector = fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, objectName)
+		opts = append(opts, ctrlclient.MatchingLabels{consts.InstrumentedAppNameLabel: objectName})
 	}
 
-	list, err := kube.DefaultClient.OdigosClient.InstrumentationInstances("").List(ctx, listOptions)
-	if err != nil {
+	var list v1alpha1.InstrumentationInstanceList
+	if err := kube.CacheClient.List(ctx, &list, opts...); err != nil {
 		return nil, err
 	}
 
-	for _, instance := range list.Items {
-		result = append(result, &instance)
+	for i := range list.Items {
+		result = append(result, &list.Items[i])
 	}
 
 	return result, nil
@@ -932,19 +931,25 @@ func UninstrumentCluster(ctx context.Context) error {
 		}
 	}
 
+	// Delete namespace sources first (they control future-app selection)
+	g, gCtx := errgroup.WithContext(ctx)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
 	for _, source := range namespaceSources {
-		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
+		g.Go(func() error {
+			return kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(gCtx, source.Name, metav1.DeleteOptions{})
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
+	// Then delete workload sources in parallel
+	g, gCtx = errgroup.WithContext(ctx)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
 	for _, source := range workloadSources {
-		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
+		g.Go(func() error {
+			return kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(gCtx, source.Name, metav1.DeleteOptions{})
+		})
 	}
-
-	return nil
+	return g.Wait()
 }

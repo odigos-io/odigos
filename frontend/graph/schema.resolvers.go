@@ -24,10 +24,12 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/pro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/odigosauth"
+	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // APITokens is the resolver for the apiTokens field.
@@ -97,8 +99,8 @@ func (r *computePlatformResolver) K8sActualNamespace(ctx context.Context, obj *m
 
 // Sources is the resolver for the sources field.
 func (r *computePlatformResolver) Sources(ctx context.Context, obj *model.ComputePlatform) ([]*model.K8sActualSource, error) {
-	icList, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var icList v1alpha1.InstrumentationConfigList
+	if err := kube.CacheClient.List(ctx, &icList); err != nil {
 		return nil, err
 	}
 
@@ -121,27 +123,34 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 	kind := sourceID.Kind
 	name := sourceID.Name
 
-	ic, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs(ns).Get(ctx, workload.CalculateWorkloadRuntimeObjectName(name, string(kind)), metav1.GetOptions{})
-	if err != nil {
+	var ic v1alpha1.InstrumentationConfig
+	if err := kube.CacheClient.Get(ctx, ctrlclient.ObjectKey{
+		Namespace: ns,
+		Name:      workload.CalculateWorkloadRuntimeObjectName(name, string(kind)),
+	}, &ic); err != nil {
 		return nil, fmt.Errorf("failed to get InstrumentationConfig: %w", err)
 	}
-	if ic == nil {
-		return nil, fmt.Errorf("InstrumentationConfig not found for %s/%s in namespace %s", kind, name, ns)
-	}
 
-	dataStreamNames := services.ExtractDataStreamsFromInstrumentationConfig(ic)
+	dataStreamNames := services.ExtractDataStreamsFromInstrumentationConfig(&ic)
 
-	manifestYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKind(kind), name)
-	if err != nil {
+	// Fetch both manifest YAMLs in parallel (independent API calls)
+	var manifestYAML, instrumentationConfigYAML string
+	g, gCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		var err error
+		manifestYAML, err = services.K8sManifest(gCtx, ns, model.K8sResourceKind(kind), name)
+		return err
+	})
+	g.Go(func() error {
+		var err error
+		instrumentationConfigYAML, err = services.K8sManifest(gCtx, ns, model.K8sResourceKindInstrumentationConfig, workload.CalculateWorkloadRuntimeObjectName(name, string(kind)))
+		return err
+	})
+	if err := g.Wait(); err != nil {
 		return nil, fmt.Errorf("failed to get manifest YAML: %w", err)
 	}
 
-	instrumentationConfigYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindInstrumentationConfig, workload.CalculateWorkloadRuntimeObjectName(name, string(kind)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get InstrumentationConfig YAML: %w", err)
-	}
-
-	payload, err := instrumentationConfigToActualSource(ctx, *ic, dataStreamNames, manifestYAML, instrumentationConfigYAML)
+	payload, err := instrumentationConfigToActualSource(ctx, ic, dataStreamNames, manifestYAML, instrumentationConfigYAML)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Source: %w", err)
 	}
@@ -162,21 +171,37 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 // Destinations is the resolver for the destinations field.
 func (r *computePlatformResolver) Destinations(ctx context.Context, obj *model.ComputePlatform) ([]*model.Destination, error) {
 	ns := env.GetCurrentNamespace()
+	readonly := services.IsReadonlyMode(ctx) // instant cache read
 
-	dests, err := kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	readonly := services.IsReadonlyMode(ctx)
+	var dests *v1alpha1.DestinationList
 	secretsByName := make(map[string]*corev1.Secret)
+
 	if !readonly {
-		allSecrets, err := kube.DefaultClient.CoreV1().Secrets(ns).List(ctx, metav1.ListOptions{})
-		if err != nil {
+		// Fetch destinations and secrets in parallel (both are API calls)
+		g, gCtx := errgroup.WithContext(ctx)
+		g.Go(func() error {
+			var err error
+			dests, err = kube.DefaultClient.OdigosClient.Destinations(ns).List(gCtx, metav1.ListOptions{})
+			return err
+		})
+		g.Go(func() error {
+			allSecrets, err := kube.DefaultClient.CoreV1().Secrets(ns).List(gCtx, metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
+			for i := range allSecrets.Items {
+				secretsByName[allSecrets.Items[i].Name] = &allSecrets.Items[i]
+			}
+			return nil
+		})
+		if err := g.Wait(); err != nil {
 			return nil, err
 		}
-		for i := range allSecrets.Items {
-			secretsByName[allSecrets.Items[i].Name] = &allSecrets.Items[i]
+	} else {
+		var err error
+		dests, err = kube.DefaultClient.OdigosClient.Destinations(ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -217,8 +242,8 @@ func (r *computePlatformResolver) DataStreams(ctx context.Context, obj *model.Co
 	dataStreams = append(dataStreams, &model.DataStream{Name: "default"})
 	seen["default"] = true
 
-	instrumentationConfigs, err := kube.DefaultClient.OdigosClient.InstrumentationConfigs("").List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var instrumentationConfigs v1alpha1.InstrumentationConfigList
+	if err := kube.CacheClient.List(ctx, &instrumentationConfigs); err != nil {
 		return nil, err
 	}
 	for _, ic := range instrumentationConfigs.Items {
@@ -259,8 +284,8 @@ func (r *k8sActualNamespaceResolver) Sources(ctx context.Context, obj *model.K8s
 		return nil, err
 	}
 
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources(ns).List(ctx, metav1.ListOptions{})
-	if err != nil {
+	var sourceList v1alpha1.SourceList
+	if err := kube.CacheClient.List(ctx, &sourceList, ctrlclient.InNamespace(ns)); err != nil {
 		return nil, err
 	}
 

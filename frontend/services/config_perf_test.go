@@ -12,19 +12,22 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TestPerfIsSourceCreated verifies the cluster-wide Sources("").List path
-// completes within budget (1 API call instead of N+1 per-namespace).
+// TestPerfIsSourceCreated verifies that isSourceCreated reads from cache
+// (instant in-memory read, no API calls).
 func TestPerfIsSourceCreated(t *testing.T) {
-	latency := 5 * time.Millisecond
-	budget := 100 * time.Millisecond
+	budget := 10 * time.Millisecond
 
-	var odigosObjs []runtime.Object
-	odigosObjs = append(odigosObjs, testutil.GenerateSources("ns-0", 5)...)
-	odigosObjs = append(odigosObjs, testutil.GenerateSources("ns-1", 3)...)
-
-	kube.DefaultClient = testutil.SlowFakeClient(latency, nil, odigosObjs)
+	var cacheObjs []ctrlclient.Object
+	for _, obj := range testutil.GenerateSources("ns-0", 5) {
+		cacheObjs = append(cacheObjs, obj.(ctrlclient.Object))
+	}
+	for _, obj := range testutil.GenerateSources("ns-1", 3) {
+		cacheObjs = append(cacheObjs, obj.(ctrlclient.Object))
+	}
+	kube.CacheClient = testutil.FakeCacheClient(cacheObjs...)
 
 	ctx := context.Background()
 	start := time.Now()
@@ -35,19 +38,22 @@ func TestPerfIsSourceCreated(t *testing.T) {
 		t.Fatal("expected isSourceCreated to return true")
 	}
 	if elapsed > budget {
-		t.Fatalf("isSourceCreated took %v, exceeds budget %v (possible N+1)", elapsed, budget)
+		t.Fatalf("isSourceCreated took %v, exceeds budget %v (should be instant cache read)", elapsed, budget)
 	}
 	t.Logf("isSourceCreated: %v (budget %v)", elapsed, budget)
 }
 
-// TestPerfGetConfig verifies the full GetConfig path completes within budget.
+// TestPerfGetConfig verifies GetConfig completes within budget.
+// Most reads are from cache (ConfigMaps, Deployment, Sources).
+// Only isDestinationConnected makes an API call (with Limit:1).
 func TestPerfGetConfig(t *testing.T) {
 	latency := 5 * time.Millisecond
-	budget := 200 * time.Millisecond
+	budget := 50 * time.Millisecond
 
-	var k8sObjs []runtime.Object
-	k8sObjs = append(k8sObjs, testutil.OdigosConfigMap(odigosNs))
-	k8sObjs = append(k8sObjs, &corev1.ConfigMap{
+	// Cache objects: ConfigMaps + Sources
+	var cacheObjs []ctrlclient.Object
+	cacheObjs = append(cacheObjs, testutil.OdigosConfigMap(odigosNs))
+	cacheObjs = append(cacheObjs, &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosDeploymentConfigMapName,
 			Namespace: odigosNs,
@@ -57,14 +63,16 @@ func TestPerfGetConfig(t *testing.T) {
 			k8sconsts.OdigosDeploymentConfigMapInstallationMethodKey: "cli",
 		},
 	})
+	for _, obj := range testutil.GenerateSources("ns-0", 5) {
+		cacheObjs = append(cacheObjs, obj.(ctrlclient.Object))
+	}
+	kube.CacheClient = testutil.FakeCacheClient(cacheObjs...)
 
+	// DefaultClient: only used for isDestinationConnected
 	var odigosObjs []runtime.Object
-	odigosObjs = append(odigosObjs, testutil.GenerateSources("ns-0", 5)...)
 	destObjs, destK8sObjs := testutil.GenerateDestinationsAndSecrets(odigosNs, 1)
 	odigosObjs = append(odigosObjs, destObjs...)
-	k8sObjs = append(k8sObjs, destK8sObjs...)
-
-	kube.DefaultClient = testutil.SlowFakeClient(latency, k8sObjs, odigosObjs)
+	kube.DefaultClient = testutil.SlowFakeClient(latency, destK8sObjs, odigosObjs)
 
 	ctx := context.Background()
 	start := time.Now()
