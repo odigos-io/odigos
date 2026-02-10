@@ -23,13 +23,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/version"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -54,11 +53,6 @@ type InstanceCounts struct {
 }
 
 func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
-	namespace, err := kube.DefaultClient.CoreV1().Namespaces().Get(ctx, nsName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
 	g, ctx := errgroup.WithContext(ctx)
 	var (
 		deps          []model.K8sActualSource
@@ -71,25 +65,25 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 
 	g.Go(func() error {
 		var err error
-		deps, err = getDeployments(ctx, *namespace)
+		deps, err = getDeployments(ctx, nsName)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		statefuls, err = getStatefulSets(ctx, *namespace)
+		statefuls, err = getStatefulSets(ctx, nsName)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		daemons, err = getDaemonSets(ctx, *namespace)
+		daemons, err = getDaemonSets(ctx, nsName)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		crons, err = getCronJobs(ctx, *namespace)
+		crons, err = getCronJobs(ctx, nsName)
 		return err
 	})
 
@@ -100,7 +94,7 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 			return nil
 		}
 		var err error
-		deployConfigs, err = getDeploymentConfigs(ctx, *namespace)
+		deployConfigs, err = getDeploymentConfigs(ctx, nsName)
 		return err
 	})
 
@@ -110,7 +104,7 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 			return nil
 		}
 		var err error
-		rollouts, err = getRollouts(ctx, *namespace)
+		rollouts, err = getRollouts(ctx, nsName)
 		return err
 	})
 
@@ -129,70 +123,61 @@ func GetWorkloadsInNamespace(ctx context.Context, nsName string) ([]model.K8sAct
 	return items, nil
 }
 
-func getDeployments(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
-	var response []model.K8sActualSource
-	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().Deployments(namespace.Name).List, ctx, &metav1.ListOptions{}, func(deps *appsv1.DeploymentList) error {
-		for _, dep := range deps.Items {
-			numberOfInstances := int(dep.Status.ReadyReplicas)
-			response = append(response, model.K8sActualSource{
-				Namespace:         dep.Namespace,
-				Name:              dep.Name,
-				Kind:              WorkloadKindDeployment,
-				NumberOfInstances: &numberOfInstances,
-			})
-		}
-		return nil
-	})
-	if err != nil {
+func getDeployments(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
+	var depList appsv1.DeploymentList
+	if err := kube.CacheClient.List(ctx, &depList, ctrlclient.InNamespace(nsName)); err != nil {
 		return nil, err
 	}
-
+	response := make([]model.K8sActualSource, 0, len(depList.Items))
+	for _, dep := range depList.Items {
+		numberOfInstances := int(dep.Status.ReadyReplicas)
+		response = append(response, model.K8sActualSource{
+			Namespace:         dep.Namespace,
+			Name:              dep.Name,
+			Kind:              WorkloadKindDeployment,
+			NumberOfInstances: &numberOfInstances,
+		})
+	}
 	return response, nil
 }
 
-func getDaemonSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
-	var response []model.K8sActualSource
-	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().DaemonSets(namespace.Name).List, ctx, &metav1.ListOptions{}, func(dss *appsv1.DaemonSetList) error {
-		for _, ds := range dss.Items {
-			numberOfInstances := int(ds.Status.NumberReady)
-			response = append(response, model.K8sActualSource{
-				Namespace:         ds.Namespace,
-				Name:              ds.Name,
-				Kind:              WorkloadKindDaemonSet,
-				NumberOfInstances: &numberOfInstances,
-			})
-		}
-		return nil
-	})
-	if err != nil {
+func getDaemonSets(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
+	var dsList appsv1.DaemonSetList
+	if err := kube.CacheClient.List(ctx, &dsList, ctrlclient.InNamespace(nsName)); err != nil {
 		return nil, err
 	}
-
+	response := make([]model.K8sActualSource, 0, len(dsList.Items))
+	for _, ds := range dsList.Items {
+		numberOfInstances := int(ds.Status.NumberReady)
+		response = append(response, model.K8sActualSource{
+			Namespace:         ds.Namespace,
+			Name:              ds.Name,
+			Kind:              WorkloadKindDaemonSet,
+			NumberOfInstances: &numberOfInstances,
+		})
+	}
 	return response, nil
 }
 
-func getStatefulSets(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
-	var response []model.K8sActualSource
-	err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.AppsV1().StatefulSets(namespace.Name).List, ctx, &metav1.ListOptions{}, func(sss *appsv1.StatefulSetList) error {
-		for _, ss := range sss.Items {
-			numberOfInstances := int(ss.Status.ReadyReplicas)
-			response = append(response, model.K8sActualSource{
-				Namespace:         ss.Namespace,
-				Name:              ss.Name,
-				Kind:              WorkloadKindStatefulSet,
-				NumberOfInstances: &numberOfInstances,
-			})
-		}
-		return nil
-	})
-	if err != nil {
+func getStatefulSets(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
+	var ssList appsv1.StatefulSetList
+	if err := kube.CacheClient.List(ctx, &ssList, ctrlclient.InNamespace(nsName)); err != nil {
 		return nil, err
 	}
-
+	response := make([]model.K8sActualSource, 0, len(ssList.Items))
+	for _, ss := range ssList.Items {
+		numberOfInstances := int(ss.Status.ReadyReplicas)
+		response = append(response, model.K8sActualSource{
+			Namespace:         ss.Namespace,
+			Name:              ss.Name,
+			Kind:              WorkloadKindStatefulSet,
+			NumberOfInstances: &numberOfInstances,
+		})
+	}
 	return response, nil
 }
 
-func getCronJobs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
+func getCronJobs(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 
 	ver, err := getKubeVersion()
@@ -204,7 +189,8 @@ func getCronJobs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sAc
 	// so we use batchv1beta1 for versions < 1.21 and batchv1 for >= 1.21
 	// this is to ensure compatibility with older Kubernetes versions.
 	if ver.LessThan(version.MustParseSemantic("1.21.0")) {
-		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1beta1().CronJobs(namespace.Name).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1beta1.CronJobList) error {
+		// Fall back to direct API for very old clusters (< 1.21)
+		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1beta1().CronJobs(nsName).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1beta1.CronJobList) error {
 			for _, cj := range cjs.Items {
 				numberOfInstances := len(cj.Status.Active)
 				response = append(response, model.K8sActualSource{
@@ -217,18 +203,21 @@ func getCronJobs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sAc
 			return nil
 		})
 	} else {
-		err = client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.BatchV1().CronJobs(namespace.Name).List, ctx, &metav1.ListOptions{}, func(cjs *batchv1.CronJobList) error {
-			for _, cj := range cjs.Items {
-				numberOfInstances := len(cj.Status.Active)
-				response = append(response, model.K8sActualSource{
-					Namespace:         cj.Namespace,
-					Name:              cj.Name,
-					Kind:              WorkloadKindCronJob,
-					NumberOfInstances: &numberOfInstances,
-				})
-			}
-			return nil
-		})
+		// Use cache client for batchv1 CronJobs
+		var cjList batchv1.CronJobList
+		if err := kube.CacheClient.List(ctx, &cjList, ctrlclient.InNamespace(nsName)); err != nil {
+			return nil, err
+		}
+		for _, cj := range cjList.Items {
+			numberOfInstances := len(cj.Status.Active)
+			response = append(response, model.K8sActualSource{
+				Namespace:         cj.Namespace,
+				Name:              cj.Name,
+				Kind:              WorkloadKindCronJob,
+				NumberOfInstances: &numberOfInstances,
+			})
+		}
+		return response, nil
 	}
 
 	if err != nil {
@@ -238,7 +227,7 @@ func getCronJobs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sAc
 	return response, nil
 }
 
-func getDeploymentConfigs(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
+func getDeploymentConfigs(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 
 	// Use dynamic client for DeploymentConfigs
@@ -246,7 +235,7 @@ func getDeploymentConfigs(ctx context.Context, namespace corev1.Namespace) ([]mo
 		Group:    "apps.openshift.io",
 		Version:  "v1",
 		Resource: "deploymentconfigs",
-	}).Namespace(namespace.Name)
+	}).Namespace(nsName)
 
 	// List all DeploymentConfigs in the namespace
 	dcList, err := dcClient.List(ctx, metav1.ListOptions{})
@@ -279,14 +268,14 @@ func getDeploymentConfigs(ctx context.Context, namespace corev1.Namespace) ([]mo
 	return response, nil
 }
 
-func getRollouts(ctx context.Context, namespace corev1.Namespace) ([]model.K8sActualSource, error) {
+func getRollouts(ctx context.Context, nsName string) ([]model.K8sActualSource, error) {
 	var response []model.K8sActualSource
 
 	rolloutClient := kube.DefaultClient.DynamicClient.Resource(schema.GroupVersionResource{
 		Group:    "argoproj.io",
 		Version:  "v1alpha1",
 		Resource: "rollouts",
-	}).Namespace(namespace.Name)
+	}).Namespace(nsName)
 
 	// List all Rollouts in the namespace
 	rolloutList, err := rolloutClient.List(ctx, metav1.ListOptions{})
@@ -397,15 +386,15 @@ func RolloutRestartWorkload(ctx context.Context, namespace string, name string, 
 }
 
 func GetSourceCRD(ctx context.Context, nsName string, workloadName string, workloadKind model.K8sResourceKind) (*v1alpha1.Source, error) {
-	sourceList := &v1alpha1.SourceList{}
-	sourceList, err := kube.DefaultClient.OdigosClient.Sources(nsName).List(ctx, metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(labels.Set{
+	var sourceList v1alpha1.SourceList
+	if err := kube.CacheClient.List(ctx, &sourceList,
+		ctrlclient.InNamespace(nsName),
+		ctrlclient.MatchingLabels{
 			k8sconsts.WorkloadNamespaceLabel: nsName,
 			k8sconsts.WorkloadNameLabel:      workloadName,
 			k8sconsts.WorkloadKindLabel:      string(workloadKind),
-		}).String(),
-	})
-	if err != nil {
+		},
+	); err != nil {
 		return nil, err
 	}
 	if len(sourceList.Items) == 0 {
@@ -639,7 +628,7 @@ func ToggleSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 func GetInstrumentationInstances(ctx context.Context, namespace string, name string, kind string) ([]*v1alpha1.InstrumentationInstance, error) {
 	result := make([]*v1alpha1.InstrumentationInstance, 0)
 
-	listOptions := metav1.ListOptions{}
+	opts := []ctrlclient.ListOption{}
 	if namespace != "" && name != "" && kind != "" {
 		objectName := workload.CalculateWorkloadRuntimeObjectName(name, kind)
 		if len(objectName) > 63 {
@@ -647,16 +636,16 @@ func GetInstrumentationInstances(ctx context.Context, namespace string, name str
 			// see https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 			return result, nil
 		}
-		listOptions.LabelSelector = fmt.Sprintf("%s=%s", consts.InstrumentedAppNameLabel, objectName)
+		opts = append(opts, ctrlclient.MatchingLabels{consts.InstrumentedAppNameLabel: objectName})
 	}
 
-	list, err := kube.DefaultClient.OdigosClient.InstrumentationInstances("").List(ctx, listOptions)
-	if err != nil {
+	var list v1alpha1.InstrumentationInstanceList
+	if err := kube.CacheClient.List(ctx, &list, opts...); err != nil {
 		return nil, err
 	}
 
-	for _, instance := range list.Items {
-		result = append(result, &instance)
+	for i := range list.Items {
+		result = append(result, &list.Items[i])
 	}
 
 	return result, nil
@@ -942,19 +931,25 @@ func UninstrumentCluster(ctx context.Context) error {
 		}
 	}
 
+	// Delete namespace sources first (they control future-app selection)
+	g, gCtx := errgroup.WithContext(ctx)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
 	for _, source := range namespaceSources {
-		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
+		g.Go(func() error {
+			return kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(gCtx, source.Name, metav1.DeleteOptions{})
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
+	// Then delete workload sources in parallel
+	g, gCtx = errgroup.WithContext(ctx)
+	g.SetLimit(k8sconsts.K8sClientDefaultBurst)
 	for _, source := range workloadSources {
-		err = kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(ctx, source.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
+		g.Go(func() error {
+			return kube.DefaultClient.OdigosClient.Sources(source.Namespace).Delete(gCtx, source.Name, metav1.DeleteOptions{})
+		})
 	}
-
-	return nil
+	return g.Wait()
 }

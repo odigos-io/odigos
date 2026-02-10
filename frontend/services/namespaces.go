@@ -3,22 +3,18 @@ package services
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
-	"github.com/odigos-io/odigos/k8sutils/pkg/client"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 
 	"golang.org/x/sync/errgroup"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/yaml"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sActualNamespace, error) {
@@ -26,7 +22,7 @@ func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sA
 	var response []*model.K8sActualNamespace
 
 	if namespaceName == nil || *namespaceName == "" {
-		relevantNameSpaces, err := getRelevantNameSpaces(ctx, env.GetCurrentNamespace())
+		relevantNameSpaces, err := getRelevantNameSpaces(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -39,14 +35,22 @@ func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sA
 		namespaces = []corev1.Namespace{*namespace}
 	}
 
+	var allNsSources v1alpha1.SourceList
+	if err := kube.CacheClient.List(ctx, &allNsSources, ctrlclient.MatchingLabels{
+		k8sconsts.WorkloadKindLabel: string(k8sconsts.WorkloadKindNamespace),
+	}); err != nil {
+		return nil, err
+	}
+	nsSourceMap := make(map[string]*v1alpha1.Source)
+	for i := range allNsSources.Items {
+		s := &allNsSources.Items[i]
+		nsSourceMap[s.Spec.Workload.Name] = s
+	}
+
 	for _, item := range namespaces {
 		nsName := item.Name
 
-		// check if entire namespace is instrumented
-		source, err := GetSourceCRD(ctx, nsName, nsName, WorkloadKindNamespace)
-		if err != nil && !strings.Contains(err.Error(), "not found") {
-			return nil, err
-		}
+		source := nsSourceMap[nsName]
 
 		instrumented := source != nil && !source.Spec.DisableInstrumentation
 		response = append(response, &model.K8sActualNamespace{
@@ -61,71 +65,56 @@ func GetK8SNamespaces(ctx context.Context, namespaceName *string) ([]*model.K8sA
 
 // getRelevantNameSpaces returns a list of namespaces that are relevant for instrumentation.
 // Taking into account the ignored namespaces from the OdigosConfiguration.
-func getRelevantNameSpaces(ctx context.Context, odigosns string) ([]corev1.Namespace, error) {
-	var (
-		odigosConfiguration *common.OdigosConfiguration
-		list                *corev1.NamespaceList
-	)
-
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		var err error
-		configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
-			return err
-		}
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		list, err = kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-		return err
-	})
-
-	if err := g.Wait(); err != nil {
-		return []corev1.Namespace{}, err
+func getRelevantNameSpaces(ctx context.Context) ([]corev1.Namespace, error) {
+	odigosConfiguration, err := GetOdigosConfiguration(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	result := []corev1.Namespace{}
+	list, err := kube.DefaultClient.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]corev1.Namespace, 0, len(list.Items))
 	for _, namespace := range list.Items {
 		if utils.IsItemIgnored(namespace.Name, odigosConfiguration.IgnoredNamespaces) {
 			continue
 		}
-
 		result = append(result, namespace)
 	}
 
 	return result, nil
 }
 
-// returns a map, where the key is a namespace name and the value is the
-// number of apps in this namespace (not necessarily instrumented)
 func CountAppsPerNamespace(ctx context.Context) (map[string]int, error) {
-	namespaceToAppsCount := make(map[string]int)
-	resourceTypes := []string{"deployments", "statefulsets", "daemonsets"}
+	counts := make(map[string]int)
 
-	for _, resourceType := range resourceTypes {
-		err := client.ListWithPages(client.DefaultPageSize, kube.DefaultClient.MetadataClient.Resource(schema.GroupVersionResource{
-			Group:    "apps",
-			Version:  "v1",
-			Resource: resourceType,
-		}).List, ctx, &metav1.ListOptions{}, func(list *metav1.PartialObjectMetadataList) error {
-			for _, item := range list.Items {
-				namespaceToAppsCount[item.Namespace]++
-			}
-			return nil
-		})
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to count %s: %w", resourceType, err)
-		}
+	var deps appsv1.DeploymentList
+	if err := kube.CacheClient.List(ctx, &deps); err != nil {
+		return nil, fmt.Errorf("failed to list deployments: %w", err)
+	}
+	for _, d := range deps.Items {
+		counts[d.Namespace]++
 	}
 
-	return namespaceToAppsCount, nil
+	var stss appsv1.StatefulSetList
+	if err := kube.CacheClient.List(ctx, &stss); err != nil {
+		return nil, fmt.Errorf("failed to list statefulsets: %w", err)
+	}
+	for _, s := range stss.Items {
+		counts[s.Namespace]++
+	}
+
+	var dss appsv1.DaemonSetList
+	if err := kube.CacheClient.List(ctx, &dss); err != nil {
+		return nil, fmt.Errorf("failed to list daemonsets: %w", err)
+	}
+	for _, d := range dss.Items {
+		counts[d.Namespace]++
+	}
+
+	return counts, nil
 }
 
 func SyncWorkloadsInNamespace(ctx context.Context, workloads []*model.PersistNamespaceSourceInput) error {

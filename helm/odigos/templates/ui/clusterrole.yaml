@@ -25,6 +25,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
@@ -36,6 +37,7 @@ rules:
     verbs:
       - get
       - list
+      - watch
       {{- if include "odigos.ui.requiresWritePermissions" . }}
       - update
       - patch
