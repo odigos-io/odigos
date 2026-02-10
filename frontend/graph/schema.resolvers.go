@@ -826,6 +826,15 @@ func (r *mutationResolver) DeleteCentralProxy(ctx context.Context) (bool, error)
 	return services.DeleteCentralProxy(ctx)
 }
 
+// Sets RecoveredFromRollbackAt on the Source, which flows through reconciliation
+// to clear the rollback state and re-enable instrumentation with an automatic rollout.
+func (r *mutationResolver) RetryInstrumentationForWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error) {
+	if err := services.RecoverFromRollback(ctx, kube.CacheClient, sourceID.Namespace, sourceID.Name, string(sourceID.Kind)); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // ComputePlatform is the resolver for the computePlatform field.
 func (r *queryResolver) ComputePlatform(ctx context.Context) (*model.ComputePlatform, error) {
 	return &model.ComputePlatform{
