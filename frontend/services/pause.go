@@ -16,18 +16,18 @@ import (
 func PauseOdigos(ctx context.Context) error {
 	ns := env.GetCurrentNamespace()
 
-	if err := scaleDeploymentToZero(ctx, ns, k8sconsts.InstrumentorDeploymentName); err != nil {
+	instrumentorDeploymentName := env.GetInstrumentorDeploymentNameOrDefault()
+	if err := scaleDeploymentToZero(ctx, ns, instrumentorDeploymentName); err != nil {
 		return fmt.Errorf("scale instrumentor to 0: %w", err)
 	}
 
 	odigletDsName := env.GetOdigletDaemonSetNameOrDefault(k8sconsts.OdigletDaemonSetName)
-
 	if err := disableOdiglet(ctx, ns, odigletDsName); err != nil {
 		return fmt.Errorf("disable odiglet: %w", err)
 	}
 
 	fmt.Printf("Paused Odigos in %q: scaled %q to 0 and patched %q\n",
-		ns, k8sconsts.InstrumentorDeploymentName, odigletDsName)
+		ns, instrumentorDeploymentName, odigletDsName)
 
 	return nil
 }
