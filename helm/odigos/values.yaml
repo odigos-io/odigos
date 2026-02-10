@@ -1171,3 +1171,19 @@ ownTelemetry:
     # description: set to true to disable the odigos victoriametrics own metrics store
     # @schema
     disabled: true
+
+# @schema
+# description: |-
+#   On-prem token for Odigos Pro/Enterprise features.
+#   When set, Odigos will create a secret with this token to enable Pro features.
+#   Leave empty for community edition.
+# @schema
+# onPremToken: ''
+
+# @schema
+# description: |-
+#   Set to true if you are providing the odigos-pro secret externally (not managed by this chart).
+#   When true, the chart will not create the secret but will still enable Pro features if the secret exists.
+#   This is useful for GitOps workflows where secrets are managed separately.
+# @schema
+# externalOnpremTokenSecret: false

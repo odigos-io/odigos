@@ -457,6 +457,12 @@
       "required": [],
       "title": "collectorNode"
     },
+    "externalOnpremTokenSecret": {
+      "default": "false",
+      "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the secret but will still enable Pro features if the secret exists.\nThis is useful for GitOps workflows where secrets are managed separately.",
+      "required": [],
+      "title": "externalOnpremTokenSecret"
+    },
     "gke": {
       "additionalProperties": false,
       "description": "GKE-specific configuration.",
@@ -1295,6 +1301,12 @@
       },
       "required": [],
       "title": "odiglet"
+    },
+    "onPremToken": {
+      "default": "",
+      "description": "On-prem token for Odigos Pro/Enterprise features.\nWhen set, Odigos will create a secret with this token to enable Pro features.\nLeave empty for community edition.",
+      "required": [],
+      "title": "onPremToken"
     },
     "openshift": {
       "additionalProperties": false,
