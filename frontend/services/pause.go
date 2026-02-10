@@ -16,31 +16,40 @@ import (
 func PauseOdigos(ctx context.Context) error {
 	ns := env.GetCurrentNamespace()
 
-	instrumentorDeploymentName := env.GetInstrumentorDeploymentNameOrDefault()
-	if err := scaleDeploymentToZero(ctx, ns, instrumentorDeploymentName); err != nil {
+	if err := scaleInstrumentorDeploymentToZero(ctx, ns, k8sconsts.InstrumentorDeploymentName); err != nil {
 		return fmt.Errorf("scale instrumentor to 0: %w", err)
 	}
+	fmt.Printf("Scaled instrumentor deployment to 0 replicas in")
 
 	odigletDsName := env.GetOdigletDaemonSetNameOrDefault(k8sconsts.OdigletDaemonSetName)
 	if err := disableOdiglet(ctx, ns, odigletDsName); err != nil {
 		return fmt.Errorf("disable odiglet: %w", err)
 	}
-
-	fmt.Printf("Paused Odigos in %q: scaled %q to 0 and patched %q\n",
-		ns, instrumentorDeploymentName, odigletDsName)
+	fmt.Printf("Disabled odiglet daemonset in %q\n", ns)
 
 	return nil
 }
 
-func scaleDeploymentToZero(ctx context.Context, ns string, name string) error {
+func scaleInstrumentorDeploymentToZero(ctx context.Context, odigosNamespace string, appKubernetesName string) error {
 
-	scale, err := kube.DefaultClient.AppsV1().Deployments(ns).GetScale(ctx, name, metav1.GetOptions{})
+	instrumentors, err := kube.DefaultClient.AppsV1().Deployments(odigosNamespace).List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s", appKubernetesName)})
+	if err != nil {
+		return err
+	}
+	if len(instrumentors.Items) == 0 {
+		return fmt.Errorf("no instrumentor deployment in namespace %q", odigosNamespace)
+	}
+	if len(instrumentors.Items) > 1 {
+		return fmt.Errorf("multiple instrumentor deployments in namespace %q", odigosNamespace)
+	}
+	instrumentor := instrumentors.Items[0]
+	scale, err := kube.DefaultClient.AppsV1().Deployments(odigosNamespace).GetScale(ctx, instrumentor.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	var zero int32 = 0
 	scale.Spec.Replicas = zero
-	_, err = kube.DefaultClient.AppsV1().Deployments(ns).UpdateScale(ctx, name, scale, metav1.UpdateOptions{})
+	_, err = kube.DefaultClient.AppsV1().Deployments(odigosNamespace).UpdateScale(ctx, instrumentor.Name, scale, metav1.UpdateOptions{})
 	return err
 }
 

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 
@@ -62,12 +61,6 @@ func GetComponentDeploymentNameOrDefault(defaultName string) string {
 // It reads ODIGOS_ODIGLET_DAEMONSET_NAME from the environment; if unset, returns defaultName.
 func GetOdigletDaemonSetNameOrDefault(defaultName string) string {
 	return getEnvVarOrDefault(consts.OdigosOdigletDaemonSetNameEnvVar, defaultName)
-}
-
-// GetInstrumentorDeploymentNameOrDefault returns the instrumentor Deployment name.
-// It reads ODIGOS_INSTRUMENTOR_DEPLOYMENT_NAME from the environment; if unset, returns defaultName.
-func GetInstrumentorDeploymentNameOrDefault() string {
-	return getEnvVarOrDefault(consts.OdigosInstrumentorDeploymentNameEnvVar, k8sconsts.InstrumentorDeploymentName)
 }
 
 func GetOdigosTierFromEnv() common.OdigosTier {
