@@ -53,6 +53,10 @@ spec:
           - name: ODIGOS_COMPONENT_DEPLOYMENT_NAME
             value: {{ .Values.ui.deploymentName | quote }}
           {{- end }}
+          {{- if .Values.odiglet.daemonsetName }}
+          - name: ODIGOS_ODIGLET_DAEMONSET_NAME
+            value: {{ .Values.odiglet.daemonsetName | quote }}
+          {{- end }}
           - name: CURRENT_NS
             valueFrom:
               fieldRef:

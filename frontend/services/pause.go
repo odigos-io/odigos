@@ -20,12 +20,14 @@ func PauseOdigos(ctx context.Context) error {
 		return fmt.Errorf("scale instrumentor to 0: %w", err)
 	}
 
-	if err := disableOdiglet(ctx, ns, k8sconsts.OdigletDaemonSetName); err != nil {
+	odigletDsName := env.GetOdigletDaemonSetNameOrDefault(k8sconsts.OdigletDaemonSetName)
+
+	if err := disableOdiglet(ctx, ns, odigletDsName); err != nil {
 		return fmt.Errorf("disable odiglet: %w", err)
 	}
 
 	fmt.Printf("Paused Odigos in %q: scaled %q to 0 and patched %q\n",
-		ns, k8sconsts.InstrumentorDeploymentName, k8sconsts.OdigletDaemonSetName)
+		ns, k8sconsts.InstrumentorDeploymentName, odigletDsName)
 
 	return nil
 }
@@ -65,7 +67,7 @@ func disableOdiglet(ctx context.Context, ns string, name string) error {
 		return err
 	}
 
-	// Delete existing odiglet pods to stop data flow immediately
+	// Delete existing odiglet pods to stop data flow immediately (pod label is fixed "odiglet" in helm)
 	selector := fmt.Sprintf("app.kubernetes.io/name=%s", k8sconsts.OdigletDaemonSetName)
 	podList, err := kube.DefaultClient.CoreV1().Pods(ns).List(ctx, metav1.ListOptions{LabelSelector: selector})
 	if err != nil {

@@ -57,6 +57,12 @@ func GetComponentDeploymentNameOrDefault(defaultName string) string {
 	return getEnvVarOrDefault(consts.OdigosComponentDeploymentNameEnvVar, defaultName)
 }
 
+// GetOdigletDaemonSetNameOrDefault returns the odiglet DaemonSet name.
+// It reads ODIGOS_ODIGLET_DAEMONSET_NAME from the environment; if unset, returns defaultName.
+func GetOdigletDaemonSetNameOrDefault(defaultName string) string {
+	return getEnvVarOrDefault(consts.OdigosOdigletDaemonSetNameEnvVar, defaultName)
+}
+
 func GetOdigosTierFromEnv() common.OdigosTier {
 	odigosTierStr := os.Getenv(consts.OdigosTierEnvVarName)
 

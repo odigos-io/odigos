@@ -8,6 +8,7 @@ const (
 	CurrentNamespaceEnvVar              = "CURRENT_NS"
 	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
 	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
+	OdigosOdigletDaemonSetNameEnvVar     = "ODIGOS_ODIGLET_DAEMONSET_NAME"
 	OdigosTierEnvVarName                = "ODIGOS_TIER"
 	DefaultOdigosNamespace              = "odigos-system"
 	OdigosConfigurationName             = "odigos-configuration"
