@@ -22,6 +22,9 @@ jobs:
           provenance: false
           build-args: SERVICE_NAME=autoscaler
           file: Dockerfile
+          outputs: type=docker,dest=/tmp/autoscaler.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/autoscaler.tar
       - name: Scan image for vulnerabilities
         id: scan-autoscaler
         uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
@@ -66,6 +69,9 @@ jobs:
           provenance: false
           build-args: SERVICE_NAME=scheduler
           file: Dockerfile
+          outputs: type=docker,dest=/tmp/scheduler.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/scheduler.tar
       - name: Scan image for vulnerabilities
         id: scan-scheduler
         uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
@@ -107,6 +113,9 @@ jobs:
           file: odiglet/Dockerfile
           build-args: SERVICE_NAME=agents
           target: agents
+          outputs: type=docker,dest=/tmp/agents.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/agents.tar
       - name: Scan image for vulnerabilities
         id: scan-agents
         uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
@@ -150,6 +159,9 @@ jobs:
           provenance: false
           build-args: SERVICE_NAME=instrumentor
           file: Dockerfile
+          outputs: type=docker,dest=/tmp/instrumentor.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/instrumentor.tar
       - name: Scan image for vulnerabilities
         id: scan-instrumentor
         uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
@@ -193,6 +205,9 @@ jobs:
           tags: odigos-collector:pr-${{ github.event.number || github.run_number }}
           provenance: false
           file: collector/Dockerfile
+          outputs: type=docker,dest=/tmp/odigos-collector.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/odigos-collector.tar
       - name: Scan image for vulnerabilities
         id: scan-collector
         uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
@@ -239,6 +254,9 @@ jobs:
           push: false
           tags: odiglet:pr-${{ github.event.number || github.run_number }}
           provenance: false
+          outputs: type=docker,dest=/tmp/odiglet.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/odiglet.tar
       - name: Scan image for vulnerabilities
         id: scan-odiglet
         uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
@@ -286,6 +304,9 @@ jobs:
           push: false
           tags: frontend:pr-${{ github.event.number || github.run_number }}
           provenance: false
+          outputs: type=docker,dest=/tmp/frontend.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/frontend.tar
       - name: Scan image for vulnerabilities
         id: scan-frontend
         uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
@@ -328,6 +349,9 @@ jobs:
           provenance: false
           build-args: |
             ODIGOS_VERSION=v0.0.0-pr${{ github.event.number }}
+          outputs: type=docker,dest=/tmp/operator.tar
+      - name: Load Docker image for scanning
+        run: docker load -i /tmp/operator.tar
       - name: Scan image for vulnerabilities
         id: scan-operator
         uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
