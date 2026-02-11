@@ -3,7 +3,7 @@ name: build
 on:
   merge_group:
   pull_request:
-    branches: [ main, 'releases/**' ]
+    branches: [main, "releases/**"]
 
 jobs:
   build-and-test-autoscaler:
@@ -18,10 +18,33 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: autoscaler:pr-${{ github.event.number }}
+          tags: autoscaler:pr-${{ github.event.number || github.run_number }}
           provenance: false
           build-args: SERVICE_NAME=autoscaler
           file: Dockerfile
+      - name: Scan image for vulnerabilities
+        id: scan-autoscaler
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          image: autoscaler:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save autoscaler scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-autoscaler.json << 'EOF'
+          ${{ steps.scan-autoscaler.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-autoscaler" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-autoscaler.json > /tmp/scan-results/odigos-autoscaler_enriched.json
+          mv /tmp/scan-results/odigos-autoscaler_enriched.json /tmp/scan-results/odigos-autoscaler.json
+      - name: Upload autoscaler scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-autoscaler-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-autoscaler.json
+          retention-days: 30
       - name: run tests
         working-directory: ./autoscaler
         run: |
@@ -39,10 +62,33 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: scheduler:pr-${{ github.event.number }}
+          tags: scheduler:pr-${{ github.event.number || github.run_number }}
           provenance: false
           build-args: SERVICE_NAME=scheduler
           file: Dockerfile
+      - name: Scan image for vulnerabilities
+        id: scan-scheduler
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          image: scheduler:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save scheduler scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-scheduler.json << 'EOF'
+          ${{ steps.scan-scheduler.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-scheduler" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-scheduler.json > /tmp/scan-results/odigos-scheduler_enriched.json
+          mv /tmp/scan-results/odigos-scheduler_enriched.json /tmp/scan-results/odigos-scheduler.json
+      - name: Upload scheduler scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-scheduler-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-scheduler.json
+          retention-days: 30
 
   build-agents:
     name: build-agents
@@ -56,11 +102,34 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: agents:pr-${{ github.event.number }}
+          tags: agents:pr-${{ github.event.number || github.run_number }}
           provenance: false
           file: odiglet/Dockerfile
           build-args: SERVICE_NAME=agents
           target: agents
+      - name: Scan image for vulnerabilities
+        id: scan-agents
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          image: agents:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save agents scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-agents.json << 'EOF'
+          ${{ steps.scan-agents.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-agents" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-agents.json > /tmp/scan-results/odigos-agents_enriched.json
+          mv /tmp/scan-results/odigos-agents_enriched.json /tmp/scan-results/odigos-agents.json
+      - name: Upload agents scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-agents-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-agents.json
+          retention-days: 30
 
   build-and-test-instrumentor:
     name: build-and-test-instrumentor
@@ -77,10 +146,33 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: instrumentor:pr-${{ github.event.number }}
+          tags: instrumentor:pr-${{ github.event.number || github.run_number }}
           provenance: false
           build-args: SERVICE_NAME=instrumentor
           file: Dockerfile
+      - name: Scan image for vulnerabilities
+        id: scan-instrumentor
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          image: instrumentor:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save instrumentor scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-instrumentor.json << 'EOF'
+          ${{ steps.scan-instrumentor.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-instrumentor" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-instrumentor.json > /tmp/scan-results/odigos-instrumentor_enriched.json
+          mv /tmp/scan-results/odigos-instrumentor_enriched.json /tmp/scan-results/odigos-instrumentor.json
+      - name: Upload instrumentor scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-instrumentor-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-instrumentor.json
+          retention-days: 30
       - name: run tests
         working-directory: ./instrumentor
         run: |
@@ -98,9 +190,32 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: false
-          tags: odigos-collector:pr-${{ github.event.number }}
+          tags: odigos-collector:pr-${{ github.event.number || github.run_number }}
           provenance: false
           file: collector/Dockerfile
+      - name: Scan image for vulnerabilities
+        id: scan-collector
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          image: odigos-collector:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save collector scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-collector.json << 'EOF'
+          ${{ steps.scan-collector.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-collector" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-collector.json > /tmp/scan-results/odigos-collector_enriched.json
+          mv /tmp/scan-results/odigos-collector_enriched.json /tmp/scan-results/odigos-collector.json
+      - name: Upload collector scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-collector-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-collector.json
+          retention-days: 30
       - name: run tests
         working-directory: ./collector
         run: |
@@ -122,8 +237,31 @@ jobs:
           file: odiglet/Dockerfile
           context: .
           push: false
-          tags: odiglet:pr-${{ github.event.number }}
+          tags: odiglet:pr-${{ github.event.number || github.run_number }}
           provenance: false
+      - name: Scan image for vulnerabilities
+        id: scan-odiglet
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          image: odiglet:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save odiglet scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-odiglet.json << 'EOF'
+          ${{ steps.scan-odiglet.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-odiglet" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-odiglet.json > /tmp/scan-results/odigos-odiglet_enriched.json
+          mv /tmp/scan-results/odigos-odiglet_enriched.json /tmp/scan-results/odigos-odiglet.json
+      - name: Upload odiglet scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-odiglet-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-odiglet.json
+          retention-days: 30
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev
@@ -146,8 +284,31 @@ jobs:
           file: frontend/Dockerfile
           context: .
           push: false
-          tags: frontend:pr-${{ github.event.number }}
+          tags: frontend:pr-${{ github.event.number || github.run_number }}
           provenance: false
+      - name: Scan image for vulnerabilities
+        id: scan-frontend
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          image: frontend:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save frontend scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-ui.json << 'EOF'
+          ${{ steps.scan-frontend.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-ui" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-ui.json > /tmp/scan-results/odigos-ui_enriched.json
+          mv /tmp/scan-results/odigos-ui_enriched.json /tmp/scan-results/odigos-ui.json
+      - name: Upload frontend scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-frontend-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-ui.json
+          retention-days: 30
 
   build-operator:
     name: build-operator
@@ -163,10 +324,71 @@ jobs:
           file: operator/Dockerfile
           context: .
           push: false
-          tags: operator:pr-${{ github.event.number }}
+          tags: operator:pr-${{ github.event.number || github.run_number }}
           provenance: false
           build-args: |
             ODIGOS_VERSION=v0.0.0-pr${{ github.event.number }}
+      - name: Scan image for vulnerabilities
+        id: scan-operator
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          image: operator:pr-${{ github.event.number || github.run_number }}
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save operator scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-operator.json << 'EOF'
+          ${{ steps.scan-operator.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-operator" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-operator.json > /tmp/scan-results/odigos-operator_enriched.json
+          mv /tmp/scan-results/odigos-operator_enriched.json /tmp/scan-results/odigos-operator.json
+      - name: Upload operator scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-operator-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-operator.json
+          retention-days: 30
+
+  vulnerability-report:
+    name: Generate Vulnerability Report
+    needs:
+      - build-and-test-autoscaler
+      - build-scheduler
+      - build-agents
+      - build-and-test-instrumentor
+      - build-and-test-odigos-collector
+      - build-and-test-odiglet
+      - build-frontend
+      - build-operator
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all scan JSON results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vuln-scan-result-*
+          path: scan-results
+          merge-multiple: true
+
+      - name: Zip individual scan results
+        run: |
+          if [ -d "scan-results" ] && ls scan-results/*.json 1> /dev/null 2>&1; then
+            zip -j scan-results.zip scan-results/*.json
+            echo "Created zip with $(unzip -l scan-results.zip | grep -c '\.json') JSON files"
+          else
+            echo "No scan results to zip"
+            touch scan-results.zip
+          fi
+
+      - name: Upload scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-report
+          path: scan-results.zip
+          retention-days: 90
 
   build-cli:
     runs-on: ubuntu-latest
