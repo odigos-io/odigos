@@ -27,8 +27,8 @@ status:
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
-    - message: workload rollout triggered successfully
-      reason: RolloutTriggeredSuccessfully
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
       status: "True"
       type: WorkloadRollout
   runtimeDetailsByContainer:
@@ -61,8 +61,8 @@ status:
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
-    - message: workload rollout triggered successfully
-      reason: RolloutTriggeredSuccessfully
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
       status: "True"
       type: WorkloadRollout
   runtimeDetailsByContainer:
@@ -95,8 +95,8 @@ status:
       reason: EnabledSuccessfully
       status: "True"
       type: AgentEnabled
-    - message: workload rollout triggered successfully
-      reason: RolloutTriggeredSuccessfully
+    - message: workload rollout finished successfully
+      reason: RolloutFinished
       status: "True"
       type: WorkloadRollout
   runtimeDetailsByContainer:

@@ -961,6 +961,8 @@ autoRollback:
 # @schema
 rollout:
   automaticRolloutDisabled: false
+  # MaxConcurrentRollouts is the maximum number of concurrent rollouts allowed. 0 is unlimited, disabling the limit.
+  maxConcurrentRollouts: 0
 
 # @schema
 # description: |-
