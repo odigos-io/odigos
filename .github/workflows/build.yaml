@@ -16,7 +16,7 @@ jobs:
       - name: Build Autoscaler Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: autoscaler:pr-${{ github.event.number || github.run_number }}
           provenance: false
@@ -63,7 +63,7 @@ jobs:
       - name: Build Scheduler Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: scheduler:pr-${{ github.event.number || github.run_number }}
           provenance: false
@@ -106,7 +106,7 @@ jobs:
       - name: Build Agents Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: agents:pr-${{ github.event.number || github.run_number }}
           provenance: false
@@ -153,7 +153,7 @@ jobs:
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: instrumentor:pr-${{ github.event.number || github.run_number }}
           provenance: false
@@ -200,7 +200,7 @@ jobs:
       - name: build Odigos Collector Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           tags: odigos-collector:pr-${{ github.event.number || github.run_number }}
           provenance: false
@@ -248,7 +248,7 @@ jobs:
       - name: Build Odiglet Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: odiglet/Dockerfile
           context: .
           push: false
@@ -298,7 +298,7 @@ jobs:
       - name: Build Frontend Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: frontend/Dockerfile
           context: .
           push: false
@@ -341,7 +341,7 @@ jobs:
       - name: Build Operator Image
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           file: operator/Dockerfile
           context: .
           push: false
