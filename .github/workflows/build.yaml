@@ -293,6 +293,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # webapp is scanned separately because it runs with yarn, while the rest of the frontend runs with golang.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install webapp dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: frontend/webapp
+      - name: Scan frontend webapp for vulnerabilities
+        id: scan-frontend-webapp
+        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        with:
+          path: frontend/webapp
+          severity-cutoff: "CRITICAL"
+        continue-on-error: true
+      - name: Save frontend webapp scan JSON
+        if: always()
+        run: |
+          mkdir -p /tmp/scan-results
+          cat > /tmp/scan-results/odigos-ui-webapp.json << 'EOF'
+          ${{ steps.scan-frontend-webapp.outputs.results-json }}
+          EOF
+          jq --arg img "odigos-ui-webapp" --arg tag "pr-${{ github.event.number || github.run_number }}" '. + {imageName: $img, imageTag: $tag}' /tmp/scan-results/odigos-ui-webapp.json > /tmp/scan-results/odigos-ui-webapp_enriched.json
+          mv /tmp/scan-results/odigos-ui-webapp_enriched.json /tmp/scan-results/odigos-ui-webapp.json
+      - name: Upload frontend webapp scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-scan-result-frontend-webapp-${{ github.sha }}.json
+          path: /tmp/scan-results/odigos-ui-webapp.json
+          retention-days: 30
+      # build the frontend image and scan the golang code.
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build Frontend Image
