@@ -1,0 +1,97 @@
+---
+title: "Rust Binary Detection"
+sidebarTitle: "Detection"
+---
+
+# How Odigos Detects Rust Applications
+
+Odigos uses multiple detection strategies to identify Rust binaries, including
+stripped production builds where debug symbols have been removed.
+
+## Detection Strategies
+
+### 1. Symbol-Based Detection (Primary)
+
+For unstripped binaries, Odigos checks for Rust-specific symbols:
+
+**Runtime symbols:**
+- `__rust_alloc`, `__rust_dealloc`, `__rust_realloc`
+- `rust_begin_unwind` (panic handler)
+- `rust_eh_personality` (exception handling)
+
+**Mangled symbols:**
+Rust uses a specific name mangling scheme. Symbols starting with these prefixes
+indicate Rust code:
+- `_ZN4core` - Rust `core` crate
+- `_ZN5alloc` - Rust `alloc` crate  
+- `_ZN3std` - Rust `std` crate
+
+### 2. ELF Section Detection
+
+Rust binaries may contain specific ELF sections:
+- `.rustc` - Contains rustc metadata
+- `.note.rustc` - Rustc build notes
+
+These sections survive stripping in some configurations.
+
+### 3. Panic String Detection (For Stripped Binaries)
+
+Even fully stripped Rust binaries retain panic messages in the binary's
+read-only data section. Odigos scans for these Rust-specific strings:
+
+```
+"panicked at"
+"called `Option::unwrap()` on a `None` value"
+"called `Result::unwrap()` on an `Err` value"
+"/rustc/"
+".cargo/registry"
+"rust_begin_unwind"
+```
+
+These strings are embedded by the compiler for panic diagnostics and survive
+`strip --strip-all`.
+
+### 4. Dynamic Library Detection
+
+For dynamically linked Rust binaries, Odigos checks for Rust standard library:
+- `libstd-*.so` - Rust standard library
+
+## Version Detection
+
+Rust embeds the compiler version path in panic location strings:
+
+```
+/rustc/9b00956e56009bab2aa15d7bff10916599e3d6d6/library/core/src/panicking.rs
+```
+
+The hash (`9b00956e56009bab2aa15d7bff10916599e3d6d6`) corresponds to a specific
+rustc commit, which Odigos uses to determine the Rust version.
+
+## Stripping Considerations
+
+| Strip Level | Symbols | Sections | Panic Strings | Detection |
+|------------|---------|----------|---------------|-----------|
+| None | ✅ | ✅ | ✅ | All methods work |
+| `--strip-debug` | ✅ | ✅ | ✅ | All methods work |
+| `--strip-unneeded` | ⚠️ | ✅ | ✅ | Sections + strings |
+| `--strip-all` | ❌ | ⚠️ | ✅ | Panic strings only |
+| `--strip-all + sstrip` | ❌ | ❌ | ✅ | Panic strings only |
+
+## False Positive Prevention
+
+To avoid misidentifying C++ or other LLVM-compiled binaries, Odigos requires
+multiple indicators or specific Rust-only patterns like `__rust_` prefixed
+symbols or exact Rust panic message formats.
+
+## Recommendations for Users
+
+**For reliable detection:**
+1. Use release builds without stripping, or use `--strip=debuginfo` instead of
+   full stripping
+2. Include panic hooks that reference Rust crates
+3. Use dynamic linking to `libstd` when possible
+
+**If detection fails:**
+1. Annotate your Kubernetes resources manually with language hints
+2. Use the `rust-native` distro explicitly in your instrumentation config
+
