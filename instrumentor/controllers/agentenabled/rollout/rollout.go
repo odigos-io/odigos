@@ -245,6 +245,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		now := metav1.NewTime(time.Now())
 		ic.Status.InstrumentationTime = &now
 	}
+	// Setting the condition for successful triggering the rollout, or a failed to patch condition with a specific error message.
 	meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(rolloutErr))
 
 	// at this point, the hashes are different, notify the caller the status has changed
