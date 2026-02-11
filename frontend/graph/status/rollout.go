@@ -22,7 +22,7 @@ func workloadRolloutStatusCondition(reason *string) model.DesiredStateProgress {
 	case v1alpha1.WorkloadRolloutReasonDisabled:
 		return model.DesiredStateProgressUnknown // rollout is disabled in config, or agent was not enabled etc. need to refine those cases in the future.
 	case v1alpha1.WorkloadRolloutReasonNotRequired:
-		return model.DesiredStateProgressSuccess // rollout is not required
+		return model.DesiredStateProgressIrrelevant // rollout is not required
 	case v1alpha1.WorkloadRolloutReasonWaitingForRestart:
 		return model.DesiredStateProgressIrrelevant // rollout state is irrelevant in this case (no rollout for cronjob for example)
 	case v1alpha1.WorkloadRolloutReasonWaitingInQueue:
