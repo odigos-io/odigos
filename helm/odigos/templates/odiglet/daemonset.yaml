@@ -26,7 +26,7 @@ metadata:
   labels:
     app.kubernetes.io/name: odiglet
     odigos.io/system-object: "true"
-  name: odiglet
+  name: {{ .Values.odiglet.daemonsetName | default "odiglet" }}
   namespace: {{ .Release.Namespace }}
 spec:
   selector:

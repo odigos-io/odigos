@@ -51,7 +51,7 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		// 		if for any reason the config map is modified or deleted, this will reconcile it.
 		WithEventFilter(
 			predicate.Or(
-				predicate.And(&odigospredicate.ObjectNamePredicate{AllowedObjectName: k8sconsts.AutoScalerDeploymentName}, &odigospredicate.CreationPredicate{}),
+				predicate.And(&odigospredicate.ObjectNamePredicate{AllowedObjectName: env.GetComponentDeploymentNameOrDefault(k8sconsts.AutoScalerDeploymentName)}, &odigospredicate.CreationPredicate{}),
 				predicate.And(&odigospredicate.ObjectNamePredicate{AllowedObjectName: k8sconsts.OdigosNodeCollectorConfigMapName}, &odigospredicate.OnlyUpdatesPredicate{}),
 			)).
 		Complete(&AutoscalerDeploymentReconciler{

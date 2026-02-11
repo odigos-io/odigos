@@ -10,6 +10,7 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/xconfmap"
 	"go.opentelemetry.io/collector/exporter"
@@ -189,7 +190,7 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestCon
 		return TestConnectionResult{Succeeded: false, Message: handleError(err), Reason: InvalidConfig, DestinationType: destType, StatusCode: http.StatusInternalServerError}
 	}
 
-	err = exporter.Start(ctx, nil)
+	err = exporter.Start(ctx, componenttest.NewNopHost())
 	if err != nil {
 		return TestConnectionResult{Succeeded: false, Message: handleError(err), Reason: FailedToConnect, DestinationType: destType, StatusCode: http.StatusInternalServerError}
 	}

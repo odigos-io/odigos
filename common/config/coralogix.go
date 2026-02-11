@@ -59,9 +59,27 @@ func (c *Coralogix) ModifyConfig(dest ExporterConfigurer, currentConfig *Config)
 	}
 
 	if isMetricsEnabled(dest) {
+		// Add transform processor to rename span metrics for Coralogix spanmetrics
+		// this according to the Coralogix documentation:
+		// https://coralogix.com/docs/user-guides/apm/getting-started/apm-onboarding-tutorial/
+		transformProcessorName := "transform/coralogix-spanmetrics-" + dest.GetID()
+		currentConfig.Processors[transformProcessorName] = GenericMap{
+			"metric_statements": []GenericMap{
+				{
+					"context": "metric",
+					"statements": []string{
+						`set(name, "calls") where name == "traces.span.metrics.calls"`,
+						`set(name, "errors") where name == "traces.span.metrics.errors"`,
+						`set(name, "duration") where name == "traces.span.metrics.duration"`,
+					},
+				},
+			},
+		}
+
 		metricsPipelineName := "metrics/coralogix-" + dest.GetID()
 		currentConfig.Service.Pipelines[metricsPipelineName] = Pipeline{
-			Exporters: []string{exporterName},
+			Exporters:  []string{exporterName},
+			Processors: []string{transformProcessorName},
 		}
 		pipelineNames = append(pipelineNames, metricsPipelineName)
 	}
