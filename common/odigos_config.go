@@ -164,6 +164,9 @@ type RolloutConfiguration struct {
 	// This setting does not control manual rollouts executed from the UI or via the API.
 	// Any additional configuration regarding rollouts and rollbacks are ignored when this is set to true.
 	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled"`
+
+	// ConcurrentRollouts is the maximum number of concurrent rollouts allowed. 0 is unlimited, disabling the limit.
+	MaxConcurrentRollouts int `json:"maxConcurrentRollouts"`
 }
 
 type OidcConfiguration struct {
