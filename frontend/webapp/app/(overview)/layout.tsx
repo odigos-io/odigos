@@ -33,15 +33,18 @@ const ContentUnderActions = styled.div`
 `;
 
 const getEntityType = (pathname: string) => {
-  return pathname.includes(ROUTES.SOURCES)
-    ? EntityTypes.Source
-    : pathname.includes(ROUTES.DESTINATIONS)
-      ? EntityTypes.Destination
-      : pathname.includes(ROUTES.ACTIONS)
-        ? EntityTypes.Action
-        : pathname.includes(ROUTES.INSTRUMENTATION_RULES)
-          ? EntityTypes.InstrumentationRule
-          : undefined;
+  switch (pathname) {
+    case ROUTES.SOURCES:
+      return EntityTypes.Source;
+    case ROUTES.DESTINATIONS:
+      return EntityTypes.Destination;
+    case ROUTES.ACTIONS:
+      return EntityTypes.Action;
+    case ROUTES.INSTRUMENTATION_RULES:
+      return EntityTypes.InstrumentationRule;
+    default:
+      return undefined;
+  }
 };
 
 function OverviewLayout({ children }: PropsWithChildren) {
@@ -64,7 +67,7 @@ function OverviewLayout({ children }: PropsWithChildren) {
           <OverviewHeader />
 
           <ContentWithActions $height={DATA_FLOW_HEIGHT}>
-            {pathname.includes(ROUTES.SERVICE_MAP) ? (
+            {pathname === ROUTES.SERVICE_MAP ? (
               <div style={{ height: `${MENU_BAR_HEIGHT}px` }} />
             ) : (
               <DataFlowActionsMenu addEntity={entityType} onClickNewDataStream={() => router.push(ROUTES.CHOOSE_STREAM)} updateDataStream={updateDataStream} deleteDataStream={deleteDataStream} />

@@ -14,16 +14,15 @@ const getPayloadForIcon = (router: AppRouterInstance, currentPath: string, targe
 };
 
 export const getNavbarIcons = (router: AppRouterInstance, currentPath: string) => {
-  const navIcons: NavbarProps['icons'] = [];
-
-  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.OVERVIEW, OverviewIcon));
-  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.SOURCES, SourceIcon));
-  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.DESTINATIONS, DestinationIcon));
-  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.ACTIONS, ActionIcon));
-  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.INSTRUMENTATION_RULES, InstrumentationRuleIcon));
-
-  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.SERVICE_MAP, ServiceMapIcon));
-  navIcons.push(getPayloadForIcon(router, currentPath, ROUTES.PIPELINE_COLLECTORS, PipelineCollectorIcon));
+  const navIcons: NavbarProps['icons'] = [
+    getPayloadForIcon(router, currentPath, ROUTES.OVERVIEW, OverviewIcon),
+    getPayloadForIcon(router, currentPath, ROUTES.SOURCES, SourceIcon),
+    getPayloadForIcon(router, currentPath, ROUTES.DESTINATIONS, DestinationIcon),
+    getPayloadForIcon(router, currentPath, ROUTES.ACTIONS, ActionIcon),
+    getPayloadForIcon(router, currentPath, ROUTES.INSTRUMENTATION_RULES, InstrumentationRuleIcon),
+    getPayloadForIcon(router, currentPath, ROUTES.SERVICE_MAP, ServiceMapIcon),
+    getPayloadForIcon(router, currentPath, ROUTES.PIPELINE_COLLECTORS, PipelineCollectorIcon),
+  ];
 
   return navIcons;
 };
