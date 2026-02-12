@@ -6,7 +6,7 @@ spec:
   description: This e2e test verifies that Odigos auto-detects PSA baseline enforcement and switches to the init-container mount method
   skipDelete: true
   steps:
-    - name: '[1 - Setup] Apply PSA baseline labels to default namespace'
+    - name: "[1 - Setup] Apply PSA baseline labels to default namespace"
       try:
         - script:
             timeout: 30s
@@ -18,12 +18,12 @@ spec:
               echo "PSA baseline labels applied to default namespace"
               kubectl get namespace default --show-labels
 
-    - name: '[1 - Setup] Install - Simple Demo Apps'
+    - name: "[1 - Setup] Install - Simple Demo Apps"
       try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
 
-    - name: '[1 - Setup] Prepare destination'
+    - name: "[1 - Setup] Prepare destination"
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
@@ -31,7 +31,7 @@ spec:
     # Install Odigos with DEFAULT settings (no explicit mount method).
     # The webhook should auto-detect PSA baseline on the default namespace
     # and switch to init-container mount method automatically.
-    - name: '[1 - Setup] Install Odigos with default settings'
+    - name: "[1 - Setup] Install Odigos with default settings"
       try:
         - script:
             timeout: 4m
@@ -47,50 +47,52 @@ spec:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
-    - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
+    - name: "[1 - Setup] Assert - Simple Demo Apps Installed"
       try:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
 
-    - name: '[1 - Setup] Assert Trace DB is up'
+    - name: "[1 - Setup] Assert Trace DB is up"
       try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
 
-    - name: '[1 - Setup] Add Destination'
+    - name: "[1 - Setup] Add Destination"
       try:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
-    - name: '[2 - Instrumentation] Instrument default namespace'
+    - name: "[2 - Instrumentation] Instrument default namespace"
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
 
-    - name: '[2 - Instrumentation] Assert Runtime Detected'
+    - name: "[2 - Instrumentation] Assert Runtime Detected"
       try:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-runtime-detected.yaml
 
-    - name: '[2 - Instrumentation] Odigos pipeline ready'
+    - name: "[2 - Instrumentation] Odigos pipeline ready"
       try:
         - assert:
             timeout: 1m
             file: ../../common/assert/pipeline-ready.yaml
 
-    - name: '[2 - Instrumentation] Wait for rollout'
+    - name: "[2 - Instrumentation] Wait for instrumentation to be active"
       try:
+        - assert:
+            file: ../../common/assert/simple-demo-instrumented.yaml
         - script:
-            timeout: 3m
+            timeout: 2m
             content: ../../common/wait_for_rollout.sh
 
     # Verify that Odigos auto-detected PSA and used init-container mount method.
     # Pods in the PSA-enforced namespace should have the odigos-agents init container
     # with an emptyDir volume, NOT hostPath or device plugin mounts.
-    - name: '[3 - Verification] Verify init container was used (PSA auto-detection)'
+    - name: "[3 - Verification] Verify init container was used (PSA auto-detection)"
       try:
         - script:
             timeout: 2m
@@ -132,7 +134,7 @@ spec:
               echo "=== Instrumentor logs ==="
               kubectl logs -n odigos-test -l app.kubernetes.io/name=odigos-instrumentor --tail=100
 
-    - name: '[4 - Traces] Generate Traffic'
+    - name: "[4 - Traces] Generate Traffic"
       try:
         - apply:
             file: ../../common/apply/generate-traffic-job.yaml
@@ -143,7 +145,7 @@ spec:
         - delete:
             file: ../../common/apply/generate-traffic-job.yaml
 
-    - name: '[4 - Traces] Wait For Trace'
+    - name: "[4 - Traces] Wait For Trace"
       try:
         - script:
             timeout: 1m
@@ -161,7 +163,7 @@ spec:
               java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
               kubectl logs $java_pod_name -n default
 
-    - name: '[4 - Traces] Verify Trace - Context Propagation'
+    - name: "[4 - Traces] Verify Trace - Context Propagation"
       try:
         - script:
             timeout: 3m
@@ -172,7 +174,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: '[4 - Traces] Verify Trace - Resource Attributes'
+    - name: "[4 - Traces] Verify Trace - Resource Attributes"
       try:
         - script:
             timeout: 3m
@@ -183,7 +185,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: '[4 - Traces] Verify Trace - Span Attributes'
+    - name: "[4 - Traces] Verify Trace - Span Attributes"
       try:
         - script:
             timeout: 3m
@@ -194,7 +196,7 @@ spec:
             name: odiglet
             namespace: odigos-test
 
-    - name: 'Uninstall Odigos'
+    - name: "Uninstall Odigos"
       try:
         - script:
             timeout: 2m
@@ -213,7 +215,7 @@ spec:
               echo "Failed to verify Odigos uninstallation after 10 attempts"
               exit 1
 
-    - name: 'Clean up PSA labels'
+    - name: "Clean up PSA labels"
       try:
         - script:
             timeout: 30s
