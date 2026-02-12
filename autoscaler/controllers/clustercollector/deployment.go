@@ -163,10 +163,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		})
 	}
 
-	deploymentName := gateway.Spec.DeploymentName
-	if deploymentName == "" {
-		deploymentName = k8sconsts.OdigosClusterCollectorDeploymentName
-	}
+	deploymentName := commonconfig.GetDeploymentName(gateway)
 
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{

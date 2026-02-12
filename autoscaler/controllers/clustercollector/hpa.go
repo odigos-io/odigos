@@ -88,10 +88,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 		maxReplicas = int32(*gateway.Spec.ResourcesSettings.MaxReplicas)
 	}
 
-	gatewayDeploymentName := gateway.Spec.DeploymentName
-	if gatewayDeploymentName == "" {
-		gatewayDeploymentName = k8sconsts.OdigosClusterCollectorDeploymentName
-	}
+	gatewayDeploymentName := commonconfig.GetDeploymentName(gateway)
 
 	// ----------------------------------------------------------------------
 	// Version switch for Kubernetes compatibility
