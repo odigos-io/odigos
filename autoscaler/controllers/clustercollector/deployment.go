@@ -64,6 +64,11 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 		return nil, errors.Join(getError, errors.New("failed to get gateway deployment"))
 	}
 
+	err = deleteOldDeployments(ctx, c, gateway.Namespace, desiredDeployment.Name)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to delete old deployments"))
+	}
+
 	if apierrors.IsNotFound(getError) {
 		logger.V(0).Info("Creating new gateway deployment")
 		err := c.Create(ctx, desiredDeployment)
@@ -79,6 +84,32 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 		}
 		return newDep, nil
 	}
+}
+
+// users can set the deploymentName of the gateway collector to a custom value.
+// if that happens, the old deployments stays around, so this function takes care of deleting them.
+func deleteOldDeployments(ctx context.Context, c client.Client, namespace string, deploymentName string) error {
+	var deployments appsv1.DeploymentList
+	err := c.List(ctx, &deployments, client.InNamespace(namespace), client.MatchingLabels(ClusterCollectorGateway))
+	if err != nil {
+		return err
+	}
+
+	if len(deployments.Items) == 1 && deployments.Items[0].Name == deploymentName {
+		return nil
+	}
+
+	logger := log.FromContext(ctx)
+	for _, deployment := range deployments.Items {
+		if deployment.Name != deploymentName {
+			logger.V(0).Info("Deleting old gateway deployment pre odigos cluster collector deployment rename", "deployment", deployment.Name)
+			err := c.Delete(ctx, &deployment)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ctx context.Context, c client.Client) (*appsv1.Deployment, error) {
