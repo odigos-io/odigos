@@ -2,6 +2,7 @@ package consts
 
 import (
 	"errors"
+	"time"
 )
 
 const (
@@ -143,9 +144,9 @@ const (
 )
 
 // Auto rollback related consts
-const (
-	DefaultAutoRollbackGraceTime       = "5m"
-	DefaultAutoRollbackStabilityWindow = "1h"
+var (
+	DefaultAutoRollbackGraceTime       = 5 * time.Minute
+	DefaultAutoRollbackStabilityWindow = 1 * time.Hour
 )
 
 // UnixFD related consts

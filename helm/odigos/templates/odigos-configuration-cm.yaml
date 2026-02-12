@@ -192,6 +192,9 @@ data:
       {{- if .Values.rollout.automaticRolloutDisabled }}
       automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
       {{- end }}
+      {{- if .Values.rollout.maxConcurrentRollouts }}
+      maxConcurrentRollouts: {{ .Values.rollout.maxConcurrentRollouts }}
+      {{- end }}
     {{- end }}
     {{- if .Values.clickhouseDestinationJsonType.enabled }}
     clickhouseDestinationJsonType: {{ .Values.clickhouseDestinationJsonType.enabled }}

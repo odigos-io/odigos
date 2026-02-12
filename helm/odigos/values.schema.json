@@ -1410,6 +1410,12 @@
           "default": false,
           "title": "automaticRolloutDisabled",
           "type": "boolean"
+        },
+        "maxConcurrentRollouts": {
+          "default": 0,
+          "description": "MaxConcurrentRollouts is the maximum number of concurrent rollouts allowed. 0 is unlimited, disabling the limit.",
+          "title": "maxConcurrentRollouts",
+          "type": "integer"
         }
       },
       "required": [],
