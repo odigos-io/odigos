@@ -11,8 +11,8 @@ import (
 
 type CollectorsGroupReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	OdigosVersion    string
+	Scheme        *runtime.Scheme
+	OdigosVersion string
 }
 
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

@@ -52,6 +52,11 @@ spec:
                   This can be used to resolve conflicting ports when a collector is using the host network.
                 format: int32
                 type: integer
+              deploymentName:
+                description: |-
+                  Deployment name for the collectors group deployment.
+                  Only relevant for cluster gateway collector.
+                type: string
               enableDataCompression:
                 description: |-
                   Deprecated - use OtlpExporterConfiguration instead.

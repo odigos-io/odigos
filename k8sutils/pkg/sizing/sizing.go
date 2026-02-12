@@ -105,15 +105,14 @@ func ComputeResourceSizePreset(c *common.OdigosConfiguration) ResourceSizePreset
 
 	// start from preset
 	base := configs[Sizing(c.ResourceSizePreset)]
-	gw := base.CollectorGatewayConfig
 	node := base.CollectorNodeConfig
 
 	// overlay user overrides (non-zero only)
-	gw = copyNonZeroGateway(gw, c.CollectorGateway)
+	gw := copyNonZeroGateway(&base.CollectorGatewayConfig, c.CollectorGateway)
 	node = copyNonZeroNode(node, c.CollectorNode)
 
 	return ResourceSizePreset{
-		CollectorGatewayConfig: gw,
+		CollectorGatewayConfig: *gw,
 		CollectorNodeConfig:    node,
 	}
 }
@@ -126,10 +125,10 @@ func MergeSizing(preset string, gwOverride *common.CollectorGatewayConfiguration
 		preset = string(SizeMedium)
 	}
 	base := configs[Sizing(preset)]
-	gw := copyNonZeroGateway(base.CollectorGatewayConfig, gwOverride)
+	gw := copyNonZeroGateway(&base.CollectorGatewayConfig, gwOverride)
 	node := copyNonZeroNode(base.CollectorNodeConfig, nodeOverride)
 	return ResourceSizePreset{
-		CollectorGatewayConfig: gw,
+		CollectorGatewayConfig: *gw,
 		CollectorNodeConfig:    node,
 	}
 }
@@ -156,7 +155,7 @@ func ComputeEffectiveCollectorConfig(c *common.OdigosConfiguration) (
 	effectiveSizing := ComputeResourceSizePreset(c)
 
 	// Merge gateway configuration: preserve existing config, update only sizing fields
-	effectiveGateway := mergeGatewayConfiguration(c.CollectorGateway, effectiveSizing.CollectorGatewayConfig)
+	effectiveGateway := mergeGatewayConfiguration(c.CollectorGateway, &effectiveSizing.CollectorGatewayConfig)
 
 	// Merge node configuration: preserve existing config, update only sizing fields
 	effectiveNode := mergeNodeConfiguration(c.CollectorNode, effectiveSizing.CollectorNodeConfig)
@@ -167,9 +166,9 @@ func ComputeEffectiveCollectorConfig(c *common.OdigosConfiguration) (
 // mergeGatewayConfiguration merges sizing information from SizingPreset into existing gateway configuration
 // while preserving non-sizing configuration fields like ServiceGraphDisabled, ClusterMetricsEnabled, etc.
 func mergeGatewayConfiguration(existing *common.CollectorGatewayConfiguration,
-	sizingPreset common.CollectorGatewayConfiguration) *common.CollectorGatewayConfiguration {
+	sizingPreset *common.CollectorGatewayConfiguration) *common.CollectorGatewayConfiguration {
 	if existing == nil {
-		return &sizingPreset
+		return sizingPreset
 	}
 
 	// Create a copy of existing config to preserve all non-sizing fields
@@ -219,7 +218,7 @@ func mergeNodeConfiguration(existing *common.CollectorNodeConfiguration,
 }
 
 // copyNonZeroGateway overlays only non-zero numeric fields from src onto dst.
-func copyNonZeroGateway(dst common.CollectorGatewayConfiguration, src *common.CollectorGatewayConfiguration) common.CollectorGatewayConfiguration {
+func copyNonZeroGateway(dst *common.CollectorGatewayConfiguration, src *common.CollectorGatewayConfiguration) *common.CollectorGatewayConfiguration {
 	if src == nil {
 		return dst
 	}

@@ -137,7 +137,7 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 					DescribedObject: map[string]string{
 						"kind":      "Deployment",
 						"namespace": namespace,
-						"name":      "odigos-gateway",
+						"name":      k8sconsts.OdigosClusterCollectorDeploymentName,
 					},
 				},
 			},

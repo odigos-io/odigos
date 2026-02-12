@@ -88,6 +88,8 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 		maxReplicas = int32(*gateway.Spec.ResourcesSettings.MaxReplicas)
 	}
 
+	gatewayDeploymentName := commonconfig.GetDeploymentName(gateway)
+
 	// ----------------------------------------------------------------------
 	// Version switch for Kubernetes compatibility
 	// ----------------------------------------------------------------------
@@ -106,7 +108,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				ScaleTargetRef: autoscalingv2beta1.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
-					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
+					Name:       gatewayDeploymentName,
 				},
 				MinReplicas: minReplicas,
 				MaxReplicas: maxReplicas,
@@ -148,7 +150,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
-					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
+					Name:       gatewayDeploymentName,
 				},
 				MinReplicas: minReplicas,
 				MaxReplicas: maxReplicas,
@@ -247,7 +249,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
 					APIVersion: "apps/v1",
 					Kind:       "Deployment",
-					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
+					Name:       gatewayDeploymentName,
 				},
 				MinReplicas: minReplicas,
 				MaxReplicas: maxReplicas,
@@ -340,13 +342,13 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 		return err
 	}
 
-	logger.Info("Successfully applied HPA", "name", k8sconsts.OdigosClusterCollectorDeploymentName, "namespace", gateway.Namespace)
+	logger.Info("Successfully applied HPA", "name", k8sconsts.OdigosClusterCollectorHpaName, "namespace", gateway.Namespace)
 	return nil
 }
 
 func buildHPACommonFields(gateway *odigosv1.CollectorsGroup) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+		Name:      k8sconsts.OdigosClusterCollectorHpaName,
 		Namespace: gateway.Namespace,
 	}
 }
