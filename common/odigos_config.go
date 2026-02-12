@@ -143,6 +143,10 @@ type CollectorGatewayConfiguration struct {
 	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
 	// If no matching nodes exist, the pod will remain Pending.
 	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
+
+	// Deployment name for the cluster gateway collector deployment.
+	// If not set, the default is 'odigos-gateway'.
+	DeploymentName string `json:"deploymentName,omitempty"`
 }
 type UserInstrumentationEnvs struct {
 	Languages map[ProgrammingLanguage]LanguageConfig `json:"languages,omitempty"`

@@ -11,8 +11,8 @@ import (
 
 type InstrumentationConfigReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	OdigosVersion    string
+	Scheme        *runtime.Scheme
+	OdigosVersion string
 }
 
 // Reconcile ensures that any changes to the InstrumentationConfig CRs (creation, deletion, or label modifications)

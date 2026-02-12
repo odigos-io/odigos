@@ -173,7 +173,7 @@ func CommonConfig() config.Config {
 // buildBaseExporterConfig creates a new base exporter configuration
 func buildBaseExporterConfig(odigosNamespace string, compression string) config.GenericMap {
 	return config.GenericMap{
-		"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorDeploymentName, odigosNamespace),
+		"endpoint": fmt.Sprintf("dns:///%s.%s:4317", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace),
 		"tls": config.GenericMap{
 			"insecure": true,
 		},

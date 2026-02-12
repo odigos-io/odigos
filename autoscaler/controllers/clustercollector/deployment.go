@@ -59,9 +59,14 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 	}
 
 	existingDeployment := &appsv1.Deployment{}
-	getError := c.Get(ctx, client.ObjectKey{Name: gateway.Name, Namespace: gateway.Namespace}, existingDeployment)
+	getError := c.Get(ctx, client.ObjectKey{Name: desiredDeployment.Name, Namespace: desiredDeployment.Namespace}, existingDeployment)
 	if getError != nil && !apierrors.IsNotFound(getError) {
 		return nil, errors.Join(getError, errors.New("failed to get gateway deployment"))
+	}
+
+	err = deleteOldDeployments(ctx, c, gateway.Namespace, desiredDeployment.Name)
+	if err != nil {
+		return nil, errors.Join(err, errors.New("failed to delete old deployments"))
 	}
 
 	if apierrors.IsNotFound(getError) {
@@ -79,6 +84,32 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 		}
 		return newDep, nil
 	}
+}
+
+// users can set the deploymentName of the gateway collector to a custom value.
+// if that happens, the old deployments stays around, so this function takes care of deleting them.
+func deleteOldDeployments(ctx context.Context, c client.Client, namespace string, deploymentName string) error {
+	var deployments appsv1.DeploymentList
+	err := c.List(ctx, &deployments, client.InNamespace(namespace), client.MatchingLabels(ClusterCollectorGateway))
+	if err != nil {
+		return err
+	}
+
+	if len(deployments.Items) == 1 && deployments.Items[0].Name == deploymentName {
+		return nil
+	}
+
+	logger := log.FromContext(ctx)
+	for _, deployment := range deployments.Items {
+		if deployment.Name != deploymentName {
+			logger.V(0).Info("Deleting old gateway deployment pre odigos cluster collector deployment rename", "deployment", deployment.Name)
+			err := c.Delete(ctx, &deployment)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ctx context.Context, c client.Client) (*appsv1.Deployment, error) {
@@ -132,9 +163,11 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		})
 	}
 
+	deploymentName := commonconfig.GetDeploymentName(gateway)
+
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+			Name:      deploymentName,
 			Namespace: gateway.Namespace,
 			Labels:    ClusterCollectorGateway,
 		},
@@ -152,7 +185,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector:       *nodeSelector,
-					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
+					ServiceAccountName: k8sconsts.OdigosClusterCollectorServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: boolPtr(true),
 						RunAsUser:    int64Ptr(65534), // nobody user
