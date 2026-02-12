@@ -4,7 +4,7 @@ kubectl port-forward svc/ui -n {{ .Release.Namespace }} 3000:3000
 
 or
 
-brew install odigos-io/homebrew-odigos-cli/odigos
+brew install odigos-io/odigos-cli/odigos
 odigos ui
 
 Then, go to: http://localhost:3000
