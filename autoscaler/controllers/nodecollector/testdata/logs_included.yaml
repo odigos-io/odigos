@@ -60,6 +60,11 @@ processors:
     - action: upsert
       key: k8s.node.name
       value: ${NODE_NAME}
+  resource/odigos-collector-role:
+    attributes:
+    - action: upsert
+      key: odigos.collector.role
+      value: NODE_COLLECTOR
   resource/pod-name:
     attributes:
     - action: upsert
@@ -179,6 +184,7 @@ service:
       - otlp/odigos-own-telemetry-ui
       processors:
       - resource/pod-name
+      - resource/odigos-collector-role
       receivers:
       - prometheus/self-metrics-ui
     traces:

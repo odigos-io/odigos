@@ -112,9 +112,10 @@ func TestAddSelfTelemetryPipeline(t *testing.T) {
 			}
 			assert.NotEmpty(t, c.Receivers["prometheus/self-metrics"])
 			assert.NotEmpty(t, c.Processors["resource/pod-name"])
+			assert.NotEmpty(t, c.Processors["resource/odigos-collector-role"])
 			assert.NotEmpty(t, c.Service.Pipelines["metrics/otelcol"])
 			assert.Equal(t, []string{"prometheus/self-metrics"}, c.Service.Pipelines["metrics/otelcol"].Receivers)
-			assert.Equal(t, []string{"resource/pod-name"}, c.Service.Pipelines["metrics/otelcol"].Processors)
+			assert.Equal(t, []string{"resource/pod-name", "resource/odigos-collector-role"}, c.Service.Pipelines["metrics/otelcol"].Processors)
 			assert.Equal(t, []string{"otlp/odigos-own-telemetry-ui"}, c.Service.Pipelines["metrics/otelcol"].Exporters)
 			pullExporter := c.Service.Telemetry.Metrics.Readers[0]["pull"].(config.GenericMap)["exporter"].(config.GenericMap)
 			port := pullExporter["prometheus"].(config.GenericMap)["port"]
