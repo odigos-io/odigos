@@ -22,6 +22,15 @@ func K8sDeploymentYamlManifest(dep *appsv1.Deployment) (string, error) {
 	return string(yb), nil
 }
 
+func K8sDaemonSetYamlManifest(ds *appsv1.DaemonSet) (string, error) {
+	ds.ObjectMeta.ManagedFields = nil
+	yb, err := syaml.Marshal(ds)
+	if err != nil {
+		return "", err
+	}
+	return string(yb), nil
+}
+
 func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error) {
 	// this can be extended to support other kinds of resources in the future.
 	switch kind {
