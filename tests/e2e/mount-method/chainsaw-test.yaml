@@ -60,10 +60,7 @@ spec:
         - assert:
             file: odiglet-ready.yaml
 
-    - name: '[1 - Setup] Verify Node Odiglet label has been added'
-      try:
-        - assert:
-            file: ../../common/assert/node-odiglet-label.yaml
+    # mount method is k8s-init-container, so node is not labeled by odigos.
 
     - name: '[1 - Setup]Assert Trace DB is up'
       try:
