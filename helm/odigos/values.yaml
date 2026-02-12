@@ -161,6 +161,13 @@ collectorGateway:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # description: |-
+  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
+  #   default is 'odigos-gateway'
+  # @schema
+  # deploymentName: 'odigos-gateway'
+
 # Settings for Odigos data-collection (node) Collectors
 collectorNode:
   # The port to use for exposing the collector's own metrics as a prometheus endpoint.
