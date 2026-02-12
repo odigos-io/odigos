@@ -43,19 +43,12 @@ func podsTransformFunc(obj interface{}) (interface{}, error) {
 			Resources: c.Resources,
 		}
 	}
-
-	// Only keep the specific label needed for agent injection status calculation
-	var minimalLabels map[string]string
-	if agentHashValue, exists := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]; exists {
-		minimalLabels = map[string]string{k8sconsts.OdigosAgentsMetaHashLabel: agentHashValue}
-	}
-
 	minimalPod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:         pod.Namespace,
 			Name:              pod.Name,
 			CreationTimestamp: pod.CreationTimestamp,
-			Labels:            minimalLabels,
+			Labels:            pod.Labels,
 			OwnerReferences:   pod.OwnerReferences,
 		},
 		Spec: corev1.PodSpec{

@@ -14,8 +14,7 @@ import (
 
 func GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error) {
 	ns := env.GetCurrentNamespace()
-	name := k8sconsts.OdigletDaemonSetName
-
+	name := env.GetOdigletDaemonSetNameOrDefault(k8sconsts.OdigletDaemonSetName)
 	ds, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
