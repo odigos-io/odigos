@@ -1,0 +1,1820 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "ResourceSizePreset": {
+      "default": "size_m",
+      "description": "Sizing Configurations size_s, size_m, size_l are pre-defined configurations designed to simplify pipeline configurations.\nThe default value is 'size_m', which is the medium size configuration.\nSee https://docs.odigos.io/pipeline/configuration#1-using-sizing-configuration for more details.",
+      "required": [],
+      "title": "ResourceSizePreset"
+    },
+    "allowConcurrentAgents": {
+      "additionalProperties": false,
+      "description": "Setting for allowing Odigos to run concurrently with other agents",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "allowConcurrentAgents"
+    },
+    "autoRollback": {
+      "additionalProperties": false,
+      "description": "Auto rollback settings\nThe auto‐rollback feature provides a stability window to test instrumented apps.\nAfter an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.\nOnce the grace period has passed and we are within the stability window, we can decide to uninstrument a crashing application.",
+      "properties": {
+        "disabled": {
+          "default": false,
+          "title": "disabled",
+          "type": "boolean"
+        },
+        "graceTime": {
+          "default": "5m",
+          "title": "graceTime",
+          "type": "string"
+        },
+        "stabilityWindowTime": {
+          "default": "1h",
+          "title": "stabilityWindowTime",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "title": "autoRollback"
+    },
+    "autoscaler": {
+      "additionalProperties": false,
+      "description": "Configuration for the autoscaler component.",
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "deploymentName": {
+          "default": "odigos-autoscaler",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-autoscaler'",
+          "required": [],
+          "title": "deploymentName"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "500m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "512Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "10m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "64Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "description": "tolerations for the autoscaler deployment.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "tolerations"
+        }
+      },
+      "required": [],
+      "title": "autoscaler"
+    },
+    "centralProxy": {
+      "additionalProperties": false,
+      "description": "Configuration for the central proxy component.",
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "centralBackendURL": {
+          "default": "",
+          "description": "Central backend URL where this proxy will forward data",
+          "required": [],
+          "title": "centralBackendURL"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "500m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "256Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "100m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "64Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tls": {
+          "additionalProperties": false,
+          "description": "TLS Configuration",
+          "properties": {
+            "caSecretName": {
+              "default": "",
+              "description": "Secret name containing CA certificate (key: 'ca.crt')",
+              "required": [],
+              "title": "caSecretName"
+            },
+            "clientCertSecretName": {
+              "default": "",
+              "description": "Secret name containing client certificate and key for mTLS (keys: 'tls.crt', 'tls.key')",
+              "required": [],
+              "title": "clientCertSecretName"
+            },
+            "skipVerify": {
+              "default": "false",
+              "description": "Skip TLS certificate verification (for testing/self-signed certificates)",
+              "required": [],
+              "title": "skipVerify"
+            }
+          },
+          "required": [],
+          "title": "tls"
+        },
+        "tolerations": {
+          "description": "  kubernetes.io/os: linux",
+          "items": {
+            "required": []
+          },
+          "title": "tolerations",
+          "type": "array"
+        }
+      },
+      "required": [],
+      "title": "centralProxy"
+    },
+    "clickhouseDestinationJsonType": {
+      "additionalProperties": false,
+      "description": "Enable support for ClickHouse JSON column type when storing Odigos data.\nWhen set to true, Odigos will use a new schema with JSON-typed columns (requires ClickHouse v25.3+).\nIf set to false, the default schema using Map-type columns will be used instead.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "clickhouseDestinationJsonType"
+    },
+    "clusterName": {
+      "default": "",
+      "description": "Name of the cluster, will be used to identify this cluster in the centralized backend",
+      "required": [],
+      "title": "clusterName"
+    },
+    "collectorGateway": {
+      "additionalProperties": false,
+      "description": "HYBRID CONFIGURATION APPROACH:\nBy default, all values below are automatically set based on the ResourceSizePreset above.\nUncomment and modify any value to override the automatic sizing for that specific parameter.\n\nIMPORTANT CONSTRAINTS:\n1. minReplicas must be less or equal to maxReplicas\n2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit\n3. If you set requestMemoryMiB without limitMemoryMiB, limit will equal request\n4. Same logic applies to CPU settings",
+      "properties": {
+        "clusterMetricsEnabled": {
+          "default": "false",
+          "description": "Cluster Metrics settings\nCluster Metrics is a feature that allows you to enable the cluster metrics.\n[https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver]\nIt is disabled by default and can be enabled by setting the enabled flag to true.",
+          "required": [],
+          "title": "clusterMetricsEnabled"
+        },
+        "goMemLimitMiB": {
+          "default": "460",
+          "description": "the GOMEMLIMIT environment variable value for the collector gateway deployment.\nthis is when go runtime will start garbage collection.\nif not specified, it will be set to 80% of the hard limit of the memory limiter.",
+          "required": [],
+          "title": "goMemLimitMiB"
+        },
+        "httpsProxyAddress": {
+          "default": "",
+          "description": "for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.\nwhen unset or empty, no proxy will be used.",
+          "required": [],
+          "title": "httpsProxyAddress"
+        },
+        "limitCPUm": {
+          "default": "1000",
+          "description": "the CPU limit for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource limit\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 1000m\nIf you set only limitCPUm, the requestCPUm will be set to the same value.",
+          "required": [],
+          "title": "limitCPUm"
+        },
+        "limitMemoryMiB": {
+          "default": "625",
+          "description": "the memory limit for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource limit\nof the form \"memory: \u003cvalue\u003eMi\".\ndefault value is 625Mi\nIf you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.",
+          "required": [],
+          "title": "limitMemoryMiB"
+        },
+        "maxReplicas": {
+          "default": "10",
+          "description": "The maxReplicas in the HPA config.",
+          "required": [],
+          "title": "maxReplicas"
+        },
+        "memoryLimiterLimitMiB": {
+          "default": "575",
+          "description": "sets the \"limit_mib\" parameter in the memory limiter configuration for the collector gateway.\nit is the hard limit after which a force garbage collection will be performed.\nif not set, it will be 50Mi below the memory limit.",
+          "required": [],
+          "title": "memoryLimiterLimitMiB"
+        },
+        "memoryLimiterSpikeLimitMiB": {
+          "default": "110",
+          "description": "sets the \"spike_limit_mib\" parameter in the memory limiter configuration for the collector gateway.\nnote that this is not the processor soft limit, but the diff in MiB between the hard limit and the soft limit.\nif not specified, this value will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).",
+          "required": [],
+          "title": "memoryLimiterSpikeLimitMiB"
+        },
+        "minReplicas": {
+          "default": "1",
+          "description": "The number of replicas for the cluster gateway collector deployment.\nAlso uses in MinReplicas the HPA config.",
+          "required": [],
+          "title": "minReplicas"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Node selector for the cluster gateway collector deployment.\nUncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "requestCPUm": {
+          "default": "500",
+          "description": "the CPU request for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource request\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 500m\nIf you set only requestCPUm, the limitCPUm will be set to the same value.",
+          "required": [],
+          "title": "requestCPUm"
+        },
+        "requestMemoryMiB": {
+          "default": "625",
+          "description": "the memory request for the cluster gateway collector deployment.\nit will be embedded in the deployment as a resource request\nof the form \"memory: \u003cvalue\u003eMi\".\ndefault value is 500Mi\nIf you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.",
+          "required": [],
+          "title": "requestMemoryMiB"
+        },
+        "serviceGraphDisabled": {
+          "default": "false",
+          "description": "Service Graph settings\nService Graph is a feature that allows you to visualize the service graph of your application.\nIt is enabled by default and can be disabled by setting the disabled flag to true.",
+          "required": [],
+          "title": "serviceGraphDisabled"
+        }
+      },
+      "required": [],
+      "title": "collectorGateway"
+    },
+    "collectorNode": {
+      "additionalProperties": false,
+      "description": "Settings for Odigos data-collection (node) Collectors",
+      "properties": {
+        "collectorOwnMetricsPort": {
+          "default": "55682",
+          "description": "The port to use for exposing the collector's own metrics as a prometheus endpoint.\nThis can be used to resolve conflicting ports when a collector is using the host network.",
+          "required": [],
+          "title": "collectorOwnMetricsPort"
+        },
+        "goMemLimitMiB": {
+          "default": "360",
+          "description": "the GOMEMLIMIT environment variable value for the node collector daemonset.\nthis is when go runtime will start garbage collection.\nif not specified, it will be set to 80% of the hard limit of the memory limiter.",
+          "required": [],
+          "title": "goMemLimitMiB"
+        },
+        "k8sNodeLogsDirectory": {
+          "default": "",
+          "description": "this configuration is used for logs collection where '/var/log' in a k8s node is a symlink\nto some other directory (for example, '/mnt/var/log')",
+          "required": [],
+          "title": "k8sNodeLogsDirectory"
+        },
+        "limitCPUm": {
+          "default": "500",
+          "description": "the CPU limit for the node collector daemonset.\nit will be embedded in the daemonset as a resource limit\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 500m\nIf you set only limitCPUm, the requestCPUm will be set to the same value.",
+          "required": [],
+          "title": "limitCPUm"
+        },
+        "limitMemoryMiB": {
+          "default": "500",
+          "description": "LimitMemoryMiB is the memory limit for the node collector daemonset.\nit will be embedded in the daemonset as a resource limit of the form \"memory: \u003cvalue\u003eMi\"\ndefault value is 500Mi\nIf you set only limitMemoryMiB, the requestMemoryMiB will be set to the same value.",
+          "required": [],
+          "title": "limitMemoryMiB"
+        },
+        "memoryLimit": {
+          "default": "500",
+          "description": "Deprecated: Use limitMemoryMiB instead. Here for backwards compatibility with helm schema.",
+          "required": [],
+          "title": "memoryLimit"
+        },
+        "memoryLimiterLimitMiB": {
+          "default": "450",
+          "description": "this parameter sets the \"limit_mib\" parameter in the memory limiter configuration for the node collector.\nit is the hard limit after which a force garbage collection will be performed.\nif not set, it will be 50Mi below the memory limit.",
+          "required": [],
+          "title": "memoryLimiterLimitMiB"
+        },
+        "memoryLimiterSpikeLimitMiB": {
+          "default": "90",
+          "description": "this parameter sets the \"spike_limit_mib\" parameter in the memory limiter configuration for the node collector.\nnote that this is not the processor soft limit, but the diff in Mib between the hard limit and the soft limit.\nif not set, this will be set to 20% of the hard limit (so the soft limit will be 80% of the hard limit).",
+          "required": [],
+          "title": "memoryLimiterSpikeLimitMiB"
+        },
+        "otlpExporterConfiguration": {
+          "additionalProperties": false,
+          "description": "OTLP exporter configuration for the node collector.",
+          "properties": {
+            "enableDataCompression": {
+              "default": "false",
+              "description": "EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.\nIt is disabled by default and can be enabled by setting the enabled flag to true.",
+              "required": [],
+              "title": "enableDataCompression"
+            },
+            "retryOnFailure": {
+              "additionalProperties": false,
+              "description": "Configuration for retry on failure.",
+              "properties": {
+                "enabled": {
+                  "default": "true",
+                  "description": "Whether to retry on failure, by default it is enabled.",
+                  "required": [],
+                  "title": "enabled"
+                },
+                "initialInterval": {
+                  "default": "5s",
+                  "description": "Time to wait after the first failure before retrying; ignored if `enabled` is `false`.",
+                  "required": [],
+                  "title": "initialInterval"
+                },
+                "maxElapsedTime": {
+                  "default": "300s",
+                  "description": "Is the maximum amount of time spent trying to send a batch; ignored if `enabled` is `false`.\nIf set to 0, the retry will continue indefinitely until the data is sent successfully.",
+                  "required": [],
+                  "title": "maxElapsedTime"
+                },
+                "maxInterval": {
+                  "default": "30s",
+                  "description": "Is the upper bound on backoff; ignored if `enabled` is `false`.",
+                  "required": [],
+                  "title": "maxInterval"
+                }
+              },
+              "required": [],
+              "title": "retryOnFailure"
+            },
+            "timeout": {
+              "default": "5s",
+              "description": "Time to wait per individual attempt to send data to a backend",
+              "required": [],
+              "title": "timeout"
+            }
+          },
+          "required": [],
+          "title": "otlpExporterConfiguration"
+        },
+        "requestCPUm": {
+          "default": "250",
+          "description": "the CPU request for the node collector daemonset.\nit will be embedded in the daemonset as a resource request\nof the form \"cpu: \u003cvalue\u003em\".\ndefault value is 250m\nIf you set only requestCPUm, the limitCPUm will be set to the same value.",
+          "required": [],
+          "title": "requestCPUm"
+        },
+        "requestMemoryMiB": {
+          "default": "250",
+          "description": "RequestMemoryMiB is the memory request for the node collector daemonset.\nit will be embedded in the daemonset as a resource request of the form \"memory: \u003cvalue\u003eMi\"\ndefault value is 250Mi\nIf you set only requestMemoryMiB, the limitMemoryMiB will be set to the same value.",
+          "required": [],
+          "title": "requestMemoryMiB"
+        }
+      },
+      "required": [],
+      "title": "collectorNode"
+    },
+    "externalOnpremTokenSecret": {
+      "default": "false",
+      "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the secret but will still enable Pro features if the secret exists.\nThis is useful for GitOps workflows where secrets are managed separately.",
+      "required": [],
+      "title": "externalOnpremTokenSecret"
+    },
+    "gke": {
+      "additionalProperties": false,
+      "description": "GKE-specific configuration.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "gke"
+    },
+    "global": {
+      "description": "Global values are values that can be accessed from any chart or subchart by exactly the same name.",
+      "required": [],
+      "title": "global",
+      "type": "object"
+    },
+    "goAutoOffsetsCron": {
+      "default": "",
+      "description": "Enable automatic Go library offsets updates.\nSee https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.\ncron schedule for automatic Go offsets updates (e.g. \"0 0 * * *\" for daily at midnight). Set to empty string to disable.\nCustom Offsets support is only available in Odigos pro tier.",
+      "required": [],
+      "title": "goAutoOffsetsCron"
+    },
+    "goAutoOffsetsMode": {
+      "default": "off",
+      "description": "mode for automatic Go offsets updates. Options include direct (pull from cloud server), image (pull from local image) and off (disabled).\nCustom Offsets support is only available in Odigos pro tier.",
+      "required": [],
+      "title": "goAutoOffsetsMode"
+    },
+    "ignoreOdigosNamespace": {
+      "default": "true",
+      "description": "Whether to automatically ignore the namespace where Odigos is installed.\nBy default (true), the Odigos namespace is automatically added to ignoredNamespaces.\nSet to false to allow the Odigos namespace to be visible in the UI.\nDefault: true",
+      "required": [],
+      "title": "ignoreOdigosNamespace"
+    },
+    "ignoredContainers": {
+      "default": "",
+      "description": "container names to never instrument\nuseful for sidecars which are not interesting to be instrumented\nset by default: istio-proxy, vault-agent, filebeat, linkerd-proxy, fluentd, akeyless-init\nyou can add additional container names to ignore by adding them to the list",
+      "required": [],
+      "title": "ignoredContainers"
+    },
+    "ignoredNamespaces": {
+      "default": "",
+      "description": "namespaces list not to show in odigos ui\nset by default: odigos-system, kube-system, local-path-storage, istio-system, linkerd, kube-node-lease\nyou can add additional namespaces to ignore by adding them to the list",
+      "required": [],
+      "title": "ignoredNamespaces"
+    },
+    "image": {
+      "additionalProperties": false,
+      "properties": {
+        "tag": {
+          "default": "",
+          "title": "tag",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "title": "image",
+      "type": "object"
+    },
+    "imagePrefix": {
+      "default": "",
+      "description": "By default, images are pulled from odigos registry at `registry.odigos.io`\nIf you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.\nFor example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-\u003ccomponent\u003e:\u003ctag\u003e`",
+      "required": [],
+      "title": "imagePrefix"
+    },
+    "imagePullSecrets": {
+      "items": {
+        "required": []
+      },
+      "title": "imagePullSecrets",
+      "type": "array"
+    },
+    "images": {
+      "additionalProperties": false,
+      "description": "Per-component image overrides. When set, these full image URLs take precedence over\nthe constructed image name (imagePrefix + component + tag).\nThis is primarily used by the OpenShift operator with RELATED_IMAGE_* env vars.\nExample:\n  images:\n    autoscaler: registry.connect.redhat.com/odigos/odigos-autoscaler-ubi9:v1.0.0\n    collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0\nSupported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,\n  odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents",
+      "required": [],
+      "title": "images"
+    },
+    "instrumentor": {
+      "additionalProperties": false,
+      "description": "Configuration for the instrumentor component.",
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "agentEnvVarsInjectionMethod": {
+          "default": "",
+          "description": "how to add the required environment variables for instrumentation to a container\nloader: only try using the odigos loader which requires setting the LD_PRELOAD env var in the container manifest.\npod-manifest: add the environment variables to the container manifest.\nloader-fallback-to-pod-manifest: try using the odigos loader first, and if it fails, fallback to adding the environment variables to the container manifest.",
+          "required": [],
+          "title": "agentEnvVarsInjectionMethod"
+        },
+        "agentsInitContainerResources": {
+          "additionalProperties": false,
+          "description": "Resource configuration for the init container that is injected into user pods\nwhen using the k8s-init-container mount method.\nThe init container is responsible for copying the instrumentation agents to the shared volume.",
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "300m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "300Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "300m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "300Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "agentsInitContainerResources"
+        },
+        "checkDeviceHealthBeforeInjection": {
+          "default": "false",
+          "description": "checkDeviceHealthBeforeInjection is relevant only when mountMethod is k8s-virtual-device.\nbefore injecting odigos agent into a new pod, it will check that all odiglet \"deviceplugin\"\ncontainers are not in crash loop backoff.\nthis is to avoid adding a device (as resource request on a container)\nwhere an odiglet might not be able to provide the device on the node and fail k8s scheduling for instrumented pods on all nodes.",
+          "required": [],
+          "title": "checkDeviceHealthBeforeInjection"
+        },
+        "deploymentName": {
+          "default": "odigos-instrumentor",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-instrumentor'",
+          "required": [],
+          "title": "deploymentName"
+        },
+        "mountMethod": {
+          "default": "",
+          "description": "which mount method to use for odigos agent directory\nk8s-virtual-device: default method using a virtual device\nk8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)\nk8s-init-container: alternative which uses an init container to copy the agent files to the shared volume",
+          "required": [],
+          "title": "mountMethod"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "podsWebhookTimeoutSeconds": {
+          "default": "25",
+          "description": "the timeout in seconds for the pods webhook.\ndefault is 10 seconds and it is recommended to keep it as is unless you are experiencing issues with the webhook.\nvalue must be 30 seconds max (inforced by kubernetes)\na shorter timeout will relieve API pressure, but may result in more pods failing to instrument",
+          "required": [],
+          "title": "podsWebhookTimeoutSeconds"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "description": "resources for the instrumentor deployment.",
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "500m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "512Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "10m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "64Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources"
+        },
+        "tolerations": {
+          "description": "  kubernetes.io/os: linux",
+          "items": {
+            "required": []
+          },
+          "title": "tolerations",
+          "type": "array"
+        }
+      },
+      "required": [],
+      "title": "instrumentor"
+    },
+    "karpenter": {
+      "additionalProperties": false,
+      "description": "Karpenter settings, before changing to true please modify the karpenter-node-template.yaml file\nto add the odigos-agent startupTaints configuration.\nhttps://docs.odigos.io/setup/odigos-with-karpenter",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "karpenter"
+    },
+    "metricsSources": {
+      "additionalProperties": false,
+      "description": "configuration for metrics sources (where odigos collects metrics from)\nonly relevant when a metrics destination is enabled",
+      "properties": {
+        "agentMetrics": {
+          "additionalProperties": false,
+          "description": "Configuration for agent metrics collection.",
+          "properties": {
+            "runtimeMetrics": {
+              "additionalProperties": false,
+              "description": "Configuration for runtime metrics collection.",
+              "properties": {
+                "java": {
+                  "additionalProperties": false,
+                  "description": "Configuration for Java runtime metrics.",
+                  "properties": {
+                    "disabled": {
+                      "default": "true",
+                      "description": "Global enable/disable for all JVM metrics",
+                      "required": [],
+                      "title": "disabled"
+                    }
+                  },
+                  "required": [],
+                  "title": "java"
+                }
+              },
+              "required": [],
+              "title": "runtimeMetrics"
+            },
+            "spanMetrics": {
+              "default": "",
+              "description": "uncomment the next section to enable computing and reporting\nspan metrics directly in agents that support it.\nthe configuration for agent span metrics is the same as the\nspan metrics collector settings.\nagents have different capabilities and support different configuration options.",
+              "required": [],
+              "title": "spanMetrics"
+            }
+          },
+          "required": [],
+          "title": "agentMetrics"
+        },
+        "hostMetrics": {
+          "additionalProperties": false,
+          "description": "Configuration for host metrics collection.",
+          "properties": {
+            "disabled": {
+              "default": "false",
+              "description": "disable host metrics collection globally",
+              "required": [],
+              "title": "disabled"
+            },
+            "interval": {
+              "default": "10s",
+              "description": "set time interval for host metrics scraping\nformat is duration string (15s, 1m, etc)",
+              "required": [],
+              "title": "interval"
+            }
+          },
+          "required": [],
+          "title": "hostMetrics"
+        },
+        "kubeletStats": {
+          "additionalProperties": false,
+          "description": "Configuration for kubelet stats collection.",
+          "properties": {
+            "disabled": {
+              "default": "false",
+              "description": "disable kubelet stats collection globally",
+              "required": [],
+              "title": "disabled"
+            },
+            "interval": {
+              "default": "10s",
+              "description": "set time interval for kubelet stats scraping\nformat is duration string (15s, 1m, etc)",
+              "required": [],
+              "title": "interval"
+            }
+          },
+          "required": [],
+          "title": "kubeletStats"
+        },
+        "odigosOwnMetrics": {
+          "additionalProperties": false,
+          "description": "Configuration for Odigos own metrics collection.",
+          "properties": {
+            "scrapeInterval": {
+              "default": "10s",
+              "description": "set the interval at which odigos will scrape metrics from itself.\nformat: duration string (15s, 1m, etc).\ndefault is 10s.",
+              "required": [],
+              "title": "scrapeInterval"
+            }
+          },
+          "required": [],
+          "title": "odigosOwnMetrics"
+        },
+        "spanMetrics": {
+          "additionalProperties": false,
+          "description": "Configuration for span metrics collection.",
+          "properties": {
+            "additionalDimensions": {
+              "description": "set additional dimensions for span metrics\nformat is a list of strings",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "additionalDimensions"
+            },
+            "disabled": {
+              "default": "false",
+              "description": "disable span metrics collection globally",
+              "required": [],
+              "title": "disabled"
+            },
+            "excludedResourceAttributes": {
+              "description": "set resource attributes to exclude from the span metrics",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "excludedResourceAttributes"
+            },
+            "explicitHistogramBuckets": {
+              "description": "set explicit histogram buckets for span metrics\nformat is duration string (1us, 2ms, 3s, 4m, 5h, 6d, etc)",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "explicitHistogramBuckets"
+            },
+            "histogramDisabled": {
+              "default": "true",
+              "description": "uncomment the next line to disable histogram metrics collection (while still recording non-histogram span metrics)",
+              "required": [],
+              "title": "histogramDisabled"
+            },
+            "includedProcessInDimensions": {
+              "default": "true",
+              "description": "set if process level dimensions will be included in span metrics\nby default, process level metrics are not included\nwhen set to true - timeseries will be created for each process in a container\nwhen unset or set to false - timeseries will aggregate all processes into a single value per series",
+              "required": [],
+              "title": "includedProcessInDimensions"
+            },
+            "interval": {
+              "default": "60s",
+              "description": "set time interval for span metrics flushing\nformat is duration string (15s, 1m, etc)\ndefault is 60s",
+              "required": [],
+              "title": "interval"
+            },
+            "resourceMetricsKeyAttributes": {
+              "description": "Advanced configuration - avoid using unless you know what you are doing.\nThis list controls which resource attributes are included in the metric stream identity.\nThese attributes are used to determines how span metrics are grouped.",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "resourceMetricsKeyAttributes"
+            }
+          },
+          "required": [],
+          "title": "spanMetrics"
+        }
+      },
+      "required": [],
+      "title": "metricsSources"
+    },
+    "nodeSelector": {
+      "additionalProperties": false,
+      "description": "Global NodeSelector to apply to all Odigos components by default.\nIndividual components can override this by uncommenting their specific nodeSelector configuration.\nNote: Odigos will only be able to instrument workloads on the same nodes.",
+      "properties": {
+        "kubernetes.io/os": {
+          "default": "linux",
+          "title": "kubernetes.io/os",
+          "type": "string"
+        }
+      },
+      "required": [],
+      "title": "nodeSelector"
+    },
+    "odiglet": {
+      "additionalProperties": false,
+      "description": "Configuration for the odiglet component.",
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "customContainerRuntimeSocketPath": {
+          "default": "",
+          "description": "in some environments, such as Rancher installations, the container runtime Unix socket is not located in a standard path.\nIn these cases, you should mount the correct socket location (e.g., /var/lib/rancher/rke2/agent/containerd/containerd.sock)\ninto the Odiglet to ensure it can access the container runtime unix socket.",
+          "required": [],
+          "title": "customContainerRuntimeSocketPath"
+        },
+        "daemonsetName": {
+          "default": "odiglet",
+          "description": "DaemonSet name. if you want the daemonset (and related pods) to have a specific name.\ndefault is 'odiglet'",
+          "required": [],
+          "title": "daemonsetName"
+        },
+        "dataCollection": {
+          "additionalProperties": false,
+          "description": "Configuration for the data-collection container.",
+          "properties": {
+            "capabilities": {
+              "description": "capabilities to add to the data-collection container when running as un privileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "capabilities"
+            }
+          },
+          "required": [],
+          "title": "dataCollection"
+        },
+        "deviceplugin": {
+          "additionalProperties": false,
+          "description": "Configuration for the device plugin.",
+          "properties": {
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "100m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "300Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "40m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "200Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "deviceplugin"
+        },
+        "disableGoCodeAttributes": {
+          "default": "false",
+          "description": "When the code-attributes InstrumentationRule is enabled, you can choose to disable collecting code attributes for Go instrumentation.\nCollecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.\nSet this to true to turn off code attribute recording for Go instrumentation.",
+          "required": [],
+          "title": "disableGoCodeAttributes"
+        },
+        "extended": {
+          "default": "false",
+          "description": "extended controls whether to use the extended odiglet image variant which includes legacy .NET instrumentation.\nWhen true, the image tag will have '-extended' appended (e.g., v1.0.0-extended).\nDefault: false",
+          "required": [],
+          "title": "extended"
+        },
+        "initContainerResources": {
+          "additionalProperties": false,
+          "description": "Odiglet init container resources, the init container is responsible for copying the instrumentation agents to the host.\nThere is a tradeoff of using more resources for the init container, and the time it takes to copy the instrumentation agents to the host.",
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "200m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "200Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "200m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "200Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "initContainerResources"
+        },
+        "noHostNetwork": {
+          "default": "false",
+          "description": "noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.\nfor k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.\nfor k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.",
+          "required": [],
+          "title": "noHostNetwork"
+        },
+        "noHostPathMounts": {
+          "default": "false",
+          "description": "noHostPathMounts can be set to true to avoid using hostPath mounts in the odiglet daemonset.\nWhen set to true, instrumentor.mountMethod must be set to \"k8s-init-container\", since that is the only mount method\nthat does not rely on host mounts to pass the required agents files to instrumented pods.\nby default, odiglet will rely on hostPath mounts in /var/odigos",
+          "required": [],
+          "title": "noHostPathMounts"
+        },
+        "noHostPid": {
+          "default": "false",
+          "description": "noHostPid can be set to true to avoid using hostPID in the odiglet daemonset.\nwhen set to true, odiglet will mount /proc from the host to be able scan running processes and instrument them.\nwhen noHostPid and noHostPathMounts are set to true the /proc host mount must be allowed.\nsetting this to true (i.e avoiding hostPid) may limit some eBPF capabilities, depending on the instrumented workloads.\nby default, odiglet will use hostPID to be able to scan running processes and instrument them.",
+          "required": [],
+          "title": "noHostPid"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Uncomment to override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "odiglet": {
+          "additionalProperties": false,
+          "description": "Configuration for the odiglet container.",
+          "properties": {
+            "appArmorProfile": {
+              "additionalProperties": false,
+              "description": "apparmorProfile for the odiglet container when running as unPrivileged.\nthis will be ignored when running as privileged.",
+              "properties": {
+                "type": {
+                  "default": "Unconfined",
+                  "title": "type",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "appArmorProfile"
+            },
+            "capabilities": {
+              "description": "capabilities to add to the odiglet container when running as unPrivileged - this will be ignored when running as privileged.\nSYS_ADMIN required when running in unprivileged mode if one of the following is true:\n 1. kernel version is older than 5.8 (In \u003e= 5.8 BPF and PERMON were added)\n 2. kernel.perf_event_paranoid sysctl is set to 2 or higher\nIPC_LOCK required for mmap of perf buffers\nSYS_RESOURCE required only for kernels \u003c 5.11, used for setting rlimit for BPF maps",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "required": []
+              },
+              "required": [],
+              "title": "capabilities"
+            },
+            "livenessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "httpGet": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": {
+                      "default": "/healthz",
+                      "title": "path",
+                      "type": "string"
+                    },
+                    "port": {
+                      "default": "55683",
+                      "description": "Prior to Kubernetes v1.26, Odigos uses host networking.\nIn some environments, different ports may already be in use on the host (e.g., due to other daemons or networking constraints).\nUse the following values to configure the readiness and liveness probe ports to avoid conflicts.",
+                      "required": [],
+                      "title": "port"
+                    }
+                  },
+                  "required": [],
+                  "title": "httpGet",
+                  "type": "object"
+                },
+                "initialDelaySeconds": {
+                  "default": 15,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 20,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "livenessProbe",
+              "type": "object"
+            },
+            "readinessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "httpGet": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": {
+                      "default": "/readyz",
+                      "title": "path",
+                      "type": "string"
+                    },
+                    "port": {
+                      "default": 55683,
+                      "title": "port",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [],
+                  "title": "httpGet",
+                  "type": "object"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "readinessProbe",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "odiglet"
+        },
+        "priorityClassName": {
+          "default": "system-node-critical",
+          "description": "Priority class name. Set to empty string to disable.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "default": "",
+          "description": "Resource configuration for the odiglet daemonset",
+          "required": [],
+          "title": "resources"
+        },
+        "tolerations": {
+          "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
+          "items": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "operator": {
+                    "default": "Exists",
+                    "title": "operator",
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              }
+            ],
+            "required": []
+          },
+          "required": [],
+          "title": "tolerations"
+        },
+        "traceIdSuffix": {
+          "default": "AA",
+          "description": "traceIdSuffix is a unique, 1 byte hex constant identifier for timestamp based trace id generation.\nsupported only in odigos pro (not available in community tier)",
+          "required": [],
+          "title": "traceIdSuffix"
+        },
+        "unPrivileged": {
+          "default": "false",
+          "description": "run the odiglet container without privileged containers.\nwhen set to true, odiglet will use the set of capabilities required for eBPF operations.\nby default, odiglet runs as a privileged container.",
+          "required": [],
+          "title": "unPrivileged"
+        }
+      },
+      "required": [],
+      "title": "odiglet"
+    },
+    "onPremToken": {
+      "default": "",
+      "description": "On-prem token for Odigos Pro/Enterprise features.\nWhen set, Odigos will create a secret with this token to enable Pro features.\nLeave empty for community edition.",
+      "required": [],
+      "title": "onPremToken"
+    },
+    "openshift": {
+      "additionalProperties": false,
+      "description": "OpenShift-specific configuration.",
+      "properties": {
+        "certifiedImageTags": {
+          "default": "false",
+          "description": "Controls whether to use Red Hat certified image tags (-certified suffix).\nBy default, this is unset and will inherit the value of openshift.enabled.\nSet to false to explicitly disable certified images even when openshift.enabled is true.\nSet to true to explicitly enable certified images (requires openshift.enabled to also be true).\nNote that certifiedImageTags must be true (either by default or explicitly set) if pulling from the default Red Hat registry\n(registry.connect.redhat.com) which is used when openshift.enabled is true.\nSetting this to false is useful if you are hosting images in your own registry (with imagePrefix set) but\nstill deploying on OpenShift, which requires other settings that are applied by openshift.enabled for OpenShift compatibility.",
+          "required": [],
+          "title": "certifiedImageTags"
+        },
+        "enabled": {
+          "default": "false",
+          "description": "Controls whether to use OpenShift-specific settings and images.",
+          "required": [],
+          "title": "enabled"
+        }
+      },
+      "required": [],
+      "title": "openshift"
+    },
+    "ownTelemetry": {
+      "additionalProperties": false,
+      "description": "experimental configuration for own telemetry of odigos on itself",
+      "properties": {
+        "metricsStore": {
+          "additionalProperties": false,
+          "description": "configuration for the victoriametrics instance that is shipped with odigos for own telemetry",
+          "properties": {
+            "disabled": {
+              "default": "true",
+              "description": "set to true to disable the odigos victoriametrics own metrics store",
+              "required": [],
+              "title": "disabled"
+            }
+          },
+          "required": [],
+          "title": "metricsStore"
+        }
+      },
+      "required": [],
+      "title": "ownTelemetry"
+    },
+    "pdb": {
+      "additionalProperties": false,
+      "description": "Pod Disruption Budgets (PDBs) help ensure high availability during voluntary disruptions like node drains or upgrades.\nWhen enabled, Odigos will deploy PDBs for its components based on their importance:\n- Critical components (e.g., instrumentor) will be protected with stricter disruption limits.\n- Non-critical components will use more relaxed budgets to allow operational flexibility.\nThis reflects Odigos' recommended defaults for maintaining observability continuity without blocking routine maintenance.\nPDBs are disabled by default and can be enabled in production environments where stability during disruptions is important.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "pdb"
+    },
+    "profiles": {
+      "description": "List of profile names (array). Example (YAML): profiles: [PROFILE_NAME] | (CLI): --set profiles={PROFILE_NAME}",
+      "items": {
+        "required": []
+      },
+      "required": [],
+      "title": "profiles"
+    },
+    "psp": {
+      "additionalProperties": false,
+      "description": "Pod Security Policy",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "psp"
+    },
+    "rollout": {
+      "additionalProperties": false,
+      "description": "Odigos automatically triggers a one-time rollout for workloads when instrumenting or uninstrumenting, to apply changes.\nIf workload restarts are sensitive, this setting can be used to disable the automatic rollout.\nWhen disabled, users are responsible for manually triggering rollouts after adding or removing sources.\nAny new pods created after enabling or disabling the agent (via manual rollout, autoscaling, etc.)\nwill still have the agent injected, regardless of this setting.\nWhen set to true, all additional configurations related to automated rollouts or rollbacks are ignored.",
+      "properties": {
+        "automaticRolloutDisabled": {
+          "default": false,
+          "title": "automaticRolloutDisabled",
+          "type": "boolean"
+        },
+        "maxConcurrentRollouts": {
+          "default": 0,
+          "description": "MaxConcurrentRollouts is the maximum number of concurrent rollouts allowed. 0 is unlimited, disabling the limit.",
+          "title": "maxConcurrentRollouts",
+          "type": "integer"
+        }
+      },
+      "required": [],
+      "title": "rollout"
+    },
+    "scheduler": {
+      "additionalProperties": false,
+      "description": "Configuration for the scheduler component.",
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "deploymentName": {
+          "default": "odigos-scheduler",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-scheduler'",
+          "required": [],
+          "title": "deploymentName"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "500m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "512Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "10m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "64Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "description": "tolerations for the scheduler deployment.",
+          "items": {
+            "required": []
+          },
+          "required": [],
+          "title": "tolerations"
+        }
+      },
+      "required": [],
+      "title": "scheduler"
+    },
+    "signals": {
+      "description": "User should be specifying the signals they want to collect.",
+      "items": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "required": []
+      },
+      "required": [],
+      "title": "signals"
+    },
+    "telemetry": {
+      "additionalProperties": false,
+      "description": "Telemetry configuration for Odigos.",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "telemetry"
+    },
+    "topologySpreadConstraints": {
+      "description": "Refer to the official Kubernetes documentation for structure and field details:\nhttps://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/\n\nExample: Odigos components should be evenly spread across zones.\nNo need to set labelSelector manually — the Odigos Helm chart will apply it automatically.\ntopologySpreadConstraints:\n  - maxSkew: 1\n    topologyKey: \"topology.kubernetes.io/zone\"\n    whenUnsatisfiable: \"ScheduleAnyway\"",
+      "items": {
+        "required": []
+      },
+      "required": [],
+      "title": "topologySpreadConstraints"
+    },
+    "ui": {
+      "additionalProperties": false,
+      "description": "Configuration for the UI component.",
+      "properties": {
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "centralBackendURL": {
+          "default": "",
+          "description": "centralBackendURL:\n - This flag sets the URL of the central backend.\n - If not set, the UI will not connect to the central backend.",
+          "required": [],
+          "title": "centralBackendURL"
+        },
+        "deploymentName": {
+          "default": "odigos-ui",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-ui'",
+          "required": [],
+          "title": "deploymentName"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "oidcClientId": {
+          "default": "",
+          "description": "oidcClientId:\n - This flag sets the client ID of the OIDC application.\n - If not set, the UI will not process OIDC authentication.",
+          "required": [],
+          "title": "oidcClientId"
+        },
+        "oidcClientSecret": {
+          "default": "",
+          "description": "oidcClientSecret:\n - This flag sets the client secret of the OIDC application.\n - If not set, the UI will not process OIDC authentication.",
+          "required": [],
+          "title": "oidcClientSecret"
+        },
+        "oidcTenantUrl": {
+          "default": "",
+          "description": "oidcTenantUrl:\n - This flag sets the URL of the OIDC tenant (e.g. https://my-oidc-tenant.com).\n - If not set, the UI will not process OIDC authentication.",
+          "required": [],
+          "title": "oidcTenantUrl"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "500m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "512Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "10m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "64Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "description": "  kubernetes.io/os: linux",
+          "items": {
+            "required": []
+          },
+          "title": "tolerations",
+          "type": "array"
+        },
+        "uiMode": {
+          "default": "default",
+          "description": "uiMode: 'default' or 'readonly'\n - This flag controls whether the UI should be in read-only mode.\n - Setting this to \"readonly\" will disable the ability to create, update, or delete objects in the UI.\n - If not set, the UI will be in default mode.",
+          "required": [],
+          "title": "uiMode"
+        },
+        "uiPaginationLimit": {
+          "default": "0",
+          "description": "uiPaginationLimit:\n - This flag controls the number of items to fetch per paginated-batch in the UI.\n - If not set, the UI will fetch 100 items per paginated-batch.",
+          "required": [],
+          "title": "uiPaginationLimit"
+        },
+        "uiRemoteUrl": {
+          "default": "",
+          "description": "uiRemoteUrl:\n - This flag sets the URL of the remote UI (e.g. https://my-odigos-ui.com).\n - If not set, the UI will default to the local UI.\n - This is useful when you are hosting the Odigos UI on a custom/remote URL, and require OIDC authentication.",
+          "required": [],
+          "title": "uiRemoteUrl"
+        }
+      },
+      "required": [],
+      "title": "ui"
+    },
+    "userInstrumentationEnvs": {
+      "additionalProperties": false,
+      "description": "Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.",
+      "properties": {
+        "languages": {
+          "additionalProperties": false,
+          "description": "Configuration for OpenTelemetry (OTEL) agents instrumentation.\nThese settings enable and configure OTEL agents for programming languages supported by Odigos.\nSee the official OTEL documentation for language-specific configuration details:\nhttps://opentelemetry.io/docs/zero-code/\nExample:\nlanguages:\n  java:\n    enabled: true\n    env:\n      OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_VIEW_TELEMETRY_ENABLED: \"true\"\nNote: For eBPF-based distributions, exporting and batching cannot be configured here, as they are managed by the Odiglet.\nWarning: This is an advanced feature. Only modify these settings if you are familiar with OTEL and its implications.",
+          "properties": {
+            "dotnet": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "env": {
+                  "additionalProperties": false,
+                  "required": [],
+                  "title": "env",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "dotnet",
+              "type": "object"
+            },
+            "go": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "env": {
+                  "additionalProperties": false,
+                  "required": [],
+                  "title": "env",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "go",
+              "type": "object"
+            },
+            "java": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "env": {
+                  "additionalProperties": false,
+                  "required": [],
+                  "title": "env",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "java",
+              "type": "object"
+            },
+            "nodejs": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "env": {
+                  "additionalProperties": false,
+                  "required": [],
+                  "title": "env",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "nodejs",
+              "type": "object"
+            },
+            "php": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "env": {
+                  "additionalProperties": false,
+                  "required": [],
+                  "title": "env",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "php",
+              "type": "object"
+            },
+            "python": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "default": false,
+                  "title": "enabled",
+                  "type": "boolean"
+                },
+                "env": {
+                  "additionalProperties": false,
+                  "required": [],
+                  "title": "env",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "python",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "languages"
+        }
+      },
+      "required": [],
+      "title": "userInstrumentationEnvs"
+    },
+    "wasp": {
+      "additionalProperties": false,
+      "description": "controls the wasp settings",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "wasp"
+    }
+  },
+  "required": [],
+  "type": "object"
+}
