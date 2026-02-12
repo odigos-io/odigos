@@ -199,7 +199,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 							DescribedObject: autoscalingv2beta2.CrossVersionObjectReference{
 								APIVersion: "apps/v1",
 								Kind:       "Deployment",
-								Name:       gatewayDeploymentName,
+								Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
 							},
 							Metric: autoscalingv2beta2.MetricIdentifier{
 								Name: "odigos_gateway_rejections",
@@ -293,7 +293,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 							DescribedObject: autoscalingv2.CrossVersionObjectReference{
 								APIVersion: "apps/v1",
 								Kind:       "Deployment",
-								Name:       gatewayDeploymentName,
+								Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
 							},
 							Metric: autoscalingv2.MetricIdentifier{
 								Name: "odigos_gateway_rejections",
