@@ -64,7 +64,7 @@ spec:
       # if the mountMethod is k8s-init-container, we will pre-pull the agents image here as an init container
       # otherwise, we must be using a mountMethod that allows hostPathMounts and we will use the standard odiglet init
       initContainers:
-      {{- if or (not .Values.odiglet.noHostPathMounts) (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
+      {{- if (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
         - name: init
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
