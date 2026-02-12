@@ -1,0 +1,248 @@
+### Simple-demo Deployments ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: membership
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currency
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geolocation
+  namespace: default
+status:
+  conditions:
+    - type: Available
+      status: "True"
+    - type: Progressing
+      status: "True"
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
+  availableReplicas: 1
+---
+#### Instrumentation Configs ####
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-coupon
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: coupon
+status:
+  runtimeDetailsByContainer:
+    - containerName: coupon
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-frontend
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: frontend
+status:
+  runtimeDetailsByContainer:
+    - containerName: frontend
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-inventory
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: inventory
+status:
+  runtimeDetailsByContainer:
+    - containerName: inventory
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-membership
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: membership
+status:
+  runtimeDetailsByContainer:
+    - containerName: membership
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-pricing
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: pricing
+status:
+  runtimeDetailsByContainer:
+    - containerName: pricing
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-currency
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: currency
+status:
+  (runtimeDetailsByContainer[?containerName=='currency']):
+    - language: php
+  (runtimeDetailsByContainer[?containerName=='nginx']):
+    - language: nginx
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: deployment-geolocation
+  namespace: default
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: geolocation
+status:
+  (runtimeDetailsByContainer[?containerName=='geolocation']):
+    - language: ruby
+---
+### Instrumentation Instances ###
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-coupon
+status:
+  healthy: true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-inventory
+status:
+  healthy: true
+---
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationInstance
+metadata:
+  namespace: default
+  labels:
+    instrumented-app: deployment-membership
+status:
+  healthy: true

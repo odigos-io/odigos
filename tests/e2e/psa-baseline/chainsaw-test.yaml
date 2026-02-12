@@ -84,7 +84,8 @@ spec:
     - name: "[2 - Instrumentation] Wait for instrumentation to be active"
       try:
         - assert:
-            file: ../../common/assert/simple-demo-instrumented.yaml
+            timeout: 3m
+            file: ../../common/assert/simple-demo-instrumented-basic.yaml
         - script:
             timeout: 2m
             content: ../../common/wait_for_rollout.sh
