@@ -268,7 +268,7 @@
           "title": "clusterMetricsEnabled"
         },
         "deploymentName": {
-          "default": "foo",
+          "default": "odigos-gateway",
           "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-gateway'",
           "required": [],
           "title": "deploymentName"
