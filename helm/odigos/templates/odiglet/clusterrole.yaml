@@ -35,8 +35,12 @@ rules:
       - get
       - list
       - watch
+  # with k8s-init-container, we don't run the odiglet init container
+  # and does not update the node label
+  {{- if not (eq .Values.instrumentor.mountMethod "k8s-init-container") }}
       - patch
       - update
+  {{- end }}
   - apiGroups:
       - odigos.io
     resources:
