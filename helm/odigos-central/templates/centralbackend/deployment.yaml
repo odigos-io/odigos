@@ -36,6 +36,10 @@ spec:
                   fieldPath: metadata.namespace
             - name: KEYCLOAK_HOST
               value: "http://keycloak:8080"
+            {{- if .Values.auth.externalUrl }}
+            - name: CENTRAL_BACKEND_HOST
+              value: {{ .Values.auth.externalUrl | quote }}
+            {{- end }}
             - name: USE_K8S_SECRETS
               value: "true"
             - name: KEYCLOAK_SECRET_NAMESPACE

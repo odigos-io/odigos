@@ -161,6 +161,13 @@ spec:
                 sleep 5
               done
 
+    - name: '[2 - Workload Instrumentation] Verify collector metrics survive UI pod restart'
+      try:
+        - script:
+            timeout: 8m
+            content: |
+              ../../common/assert_collector_metrics_survive_ui_restart.sh odigos-test
+
     - name: '[3 - Workload Uninstrumentation] Uninstrument individual deployments'
       try:
         - script:

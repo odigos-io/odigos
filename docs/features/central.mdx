@@ -95,6 +95,7 @@ You can install Odigos Central using the CLI or Helm chart.
     |------|---------|-------------|
     | `--set onPremToken` | (required) | Your Odigos Enterprise license token |
     | `--set centralProxy.centralBackendURL` | (optional) | URL of the central backend |
+    | `--set auth.externalUrl` | `http://localhost:8081` | Browser-accessible URL of the Central Backend for SSO redirect flows |
     | `--set auth.adminPassword` | (auto-generated) | Admin password for Keycloak. If not provided, a random password is generated |
     | `--set auth.adminUsername` | `admin` | Admin username for Keycloak |
     | `--namespace`, `-n` | `odigos-central` | Target namespace for installation |
@@ -134,6 +135,7 @@ You can install Odigos Central using the CLI or Helm chart.
     onPremToken: "<your-token>"
 
     auth:
+      externalUrl: "https://central.example.com"  # Browser-accessible URL for SSO redirects
       adminUsername: admin
       adminPassword: "<your-password>"
       persistence:
@@ -285,46 +287,122 @@ kubectl create secret generic central-client-cert \
 
 ## Authentication
 
-By default, Odigos Central installs **Keycloak** and uses it as the identity provider for the Central UI.
+Odigos Central includes a bundled **Keycloak** instance as its identity provider. Keycloak is **not exposed externally** — the Central Backend acts as a reverse proxy, forwarding all authentication requests (under `/realms/*`) to Keycloak internally. This means you only need to expose the Central Backend and Central UI; no separate ingress or service is needed for Keycloak.
 
-### Okta Authentication (SSO via Keycloak)
+Odigos Central supports two types of external SSO providers:
 
-If your organization uses **Okta**, the recommended setup is to keep the bundled Keycloak and configure **Okta as a SAML Identity Provider in Keycloak** (Keycloak identity brokering).
+- **OIDC** — for providers like Azure AD, Auth0, or any OpenID Connect-compatible IdP
+- **SAML** — for providers like Okta that use SAML 2.0
+
+Both are configured through the Central UI — Odigos will create the required Keycloak configuration automatically.
+
+### Configuring the External URL
+
+For SSO redirects to work, Keycloak and the Central Backend must know the **browser-accessible URL** of the Central Backend. This is set via the `auth.externalUrl` Helm value.
+
+| Environment | `auth.externalUrl` value |
+|---|---|
+| Local dev / port-forward | `http://localhost:8081` (default) |
+| Ingress with HTTPS | `https://central.example.com` |
+| LoadBalancer service | `https://central-lb.prod.internal` |
+
+<Tabs>
+  <Tab title="CLI">
+    ```bash
+    odigos pro central install \
+      --set onPremToken=<token> \
+      --set auth.externalUrl=https://central.example.com
+    ```
+  </Tab>
+  <Tab title="Helm">
+    ```yaml
+    auth:
+      externalUrl: "https://central.example.com"
+    ```
+
+    Or via `--set`:
+
+    ```bash
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --create-namespace \
+      --set onPremToken=<token> \
+      --set auth.externalUrl=https://central.example.com
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+  When `auth.externalUrl` is empty (the default), it falls back to `http://localhost:8081`, which works for local development with `odigos pro central ui` port-forwarding.
+</Info>
+
+### OIDC Provider Setup (Azure AD, Auth0, etc.)
 
 <Steps>
-  <Step title="Create the SAML Identity Provider in the Odigos Central UI">
-    Create the SAML IdP through the **Odigos Central UI** (the same place you'd add an OIDC Identity Provider).
+  <Step title="Create the OIDC Identity Provider in the Central UI">
+    Open the Central UI sign-in page, choose your OIDC provider (e.g., Azure AD), and fill in:
+    - **Client ID** — from your IdP application
+    - **Client Secret** — from your IdP application
+    - **Discovery URL** — your IdP's OpenID Connect discovery endpoint
+    - **Tenant ID** — (if required by the provider)
 
     <Info>
       Odigos Central will create/update the required configuration in the bundled Keycloak for you. Avoid configuring the identity provider directly in Keycloak unless you're troubleshooting.
     </Info>
-
   </Step>
 
-  <Step title="Create an Okta SAML app integration">
-    In Okta, create a **SAML 2.0** app integration.
-
-    <Info>
-      Okta's UI and exact fields vary. The Okta SAML app configuration needs the **Single sign-on URL (ACS URL)** and the **Audience URI (SP Entity ID)** — you'll copy these from the SAML Identity Provider configuration in the Central UI.
-    </Info>
-
-  </Step>
-
-  <Step title="Configure the IdP details and copy the ACS URL / SP Entity ID">
-    In the Central UI, open the SAML Identity Provider you created and configure the IdP details from Okta (for example: **IdP Entity ID / Issuer**, **Single Sign-On Service URL**, and the **X.509 certificate**).
+  <Step title="Copy the Callback URL">
+    After the provider is created successfully, the Central UI will display a **Callback URL**. Copy this URL and add it to your IdP application settings as the **Redirect URI** (or **Callback URL**).
 
     <Warning>
-      The Central UI will show the **ACS URL** and **SP Entity ID** for Odigos Central. Copy those into your Okta SAML app integration as:
-      - **Single sign-on URL** (ACS URL)
-      - **Audience URI (SP Entity ID)**
+      The Login button is disabled until you copy the Callback URL. This ensures you configure your IdP correctly before attempting to sign in.
     </Warning>
-
   </Step>
 
-  <Step title="Verify Central UI login via Okta">
-    Open the Central UI again (via `odigos pro central ui`) and verify that login redirects you to Okta and back to Odigos Central successfully.
+  <Step title="Sign in via your OIDC provider">
+    Click the **Login** button. You will be redirected to your IdP's sign-in page. After authenticating, you will be redirected back to Odigos Central and the first user account will be created as the admin.
   </Step>
 </Steps>
+
+### SAML Provider Setup (Okta, etc.)
+
+<Steps>
+  <Step title="Create the SAML Identity Provider in the Central UI">
+    Open the Central UI sign-in page, choose SAML, and fill in the IdP details from your SAML provider:
+    - **IdP Entity ID / Issuer**
+    - **Single Sign-On Service URL**
+    - **X.509 Signing Certificate**
+
+    <Info>
+      Odigos Central will create/update the required configuration in the bundled Keycloak for you. Avoid configuring the identity provider directly in Keycloak unless you're troubleshooting.
+    </Info>
+  </Step>
+
+  <Step title="Copy the Callback URL (ACS URL)">
+    After the provider is created, the Central UI will display the **Callback URL (ACS URL)**. Copy this URL and configure it in your SAML provider:
+    - **Single sign-on URL** (ACS URL)
+    - **Audience URI (SP Entity ID)** — use the same URL or the realm URL depending on your provider
+
+    <Warning>
+      The Login button is disabled until you copy the Callback URL. Make sure to add it to your SAML application before proceeding.
+    </Warning>
+  </Step>
+
+  <Step title="Sign in via your SAML provider">
+    Click the **Login with SAML** button. You will be redirected to your IdP's sign-in page. After authenticating, you will be redirected back to Odigos Central and the first user account will be created as the admin.
+  </Step>
+</Steps>
+
+### Production Ingress Configuration
+
+When deploying behind an ingress, route traffic to the Central Backend and Central UI services only. Keycloak does **not** need its own ingress — the Central Backend handles all `/realms/*` requests internally.
+
+Example routing:
+
+| Path | Service | Port |
+|---|---|---|
+| `/` | `central-ui` | 3000 |
+| `/api/*`, `/graphql`, `/realms/*` | `central-backend` | 8081 |
 
 <Info>
   If you're looking to enable OIDC for the **non-central** Odigos UI (not Odigos
