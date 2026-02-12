@@ -23,6 +23,8 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -58,13 +60,27 @@ func (r *EffectiveConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	var allErrs error
 	updatedCount := 0
 	for _, ic := range allInstrumentationConfigs.Items {
-		err = updateInstrumentationConfigForWorkload(&ic, instrumentationRules, &conf)
-		if err != nil {
-			allErrs = errors.Join(allErrs, err)
-			continue
+		icName := types.NamespacedName{
+			Name:      ic.Name,
+			Namespace: ic.Namespace,
 		}
 
-		err = r.Client.Update(ctx, &ic)
+		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			// Get the latest version
+			latestIC := &odigosv1.InstrumentationConfig{}
+			if err := r.Client.Get(ctx, icName, latestIC); err != nil {
+				return err
+			}
+
+			// Apply the update logic
+			if err := updateInstrumentationConfigForWorkload(latestIC, instrumentationRules, &conf); err != nil {
+				return err
+			}
+
+			// Attempt to update
+			return r.Client.Update(ctx, latestIC)
+		})
+
 		if err != nil {
 			allErrs = errors.Join(allErrs, err)
 		} else {
