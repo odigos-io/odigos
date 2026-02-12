@@ -2,6 +2,7 @@ package clustercollector
 
 import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	autoscalerpredicate "github.com/odigos-io/odigos/autoscaler/controllers/predicate"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -102,7 +103,7 @@ func SetupWithManager(mgr ctrl.Manager, odigosVersion string) error {
 		ControllerManagedBy(mgr).
 		Named("clustercollector-deployment").
 		For(&appsv1.Deployment{}).
-		WithEventFilter(&odigospredicate.ClusterCollectorDeploymentPredicate).
+		WithEventFilter(&autoscalerpredicate.ClusterCollectorsPredicate{}).
 		Complete(&ClusterCollectorDeploymentReconciler{
 			Client: mgr.GetClient(),
 		})

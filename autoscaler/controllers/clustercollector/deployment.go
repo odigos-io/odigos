@@ -59,7 +59,7 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 	}
 
 	existingDeployment := &appsv1.Deployment{}
-	getError := c.Get(ctx, client.ObjectKey{Name: gateway.Name, Namespace: gateway.Namespace}, existingDeployment)
+	getError := c.Get(ctx, client.ObjectKey{Name: desiredDeployment.Name, Namespace: desiredDeployment.Namespace}, existingDeployment)
 	if getError != nil && !apierrors.IsNotFound(getError) {
 		return nil, errors.Join(getError, errors.New("failed to get gateway deployment"))
 	}
@@ -132,9 +132,14 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 		})
 	}
 
+	deploymentName := gateway.Spec.DeploymentName
+	if deploymentName == "" {
+		deploymentName = k8sconsts.OdigosClusterCollectorDeploymentName
+	}
+
 	desiredDeployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+			Name:      deploymentName,
 			Namespace: gateway.Namespace,
 			Labels:    ClusterCollectorGateway,
 		},
@@ -152,7 +157,7 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 				},
 				Spec: corev1.PodSpec{
 					NodeSelector:       *nodeSelector,
-					ServiceAccountName: k8sconsts.OdigosClusterCollectorDeploymentName,
+					ServiceAccountName: k8sconsts.OdigosClusterCollectorServiceAccountName,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: boolPtr(true),
 						RunAsUser:    int64Ptr(65534), // nobody user

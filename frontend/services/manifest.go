@@ -7,10 +7,20 @@ import (
 
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	syaml "sigs.k8s.io/yaml"
 )
+
+func K8sDeploymentYamlManifest(dep *appsv1.Deployment) (string, error) {
+	dep.ObjectMeta.ManagedFields = nil
+	yb, err := syaml.Marshal(dep)
+	if err != nil {
+		return "", err
+	}
+	return string(yb), nil
+}
 
 func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKind, name string) (string, error) {
 	// this can be extended to support other kinds of resources in the future.
