@@ -1,0 +1,225 @@
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: psa-baseline
+spec:
+  description: This e2e test verifies that Odigos auto-detects PSA baseline enforcement and switches to the init-container mount method
+  skipDelete: true
+  steps:
+    - name: '[1 - Setup] Apply PSA baseline labels to default namespace'
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              kubectl label namespace default pod-security.kubernetes.io/enforce=baseline --overwrite
+              kubectl label namespace default pod-security.kubernetes.io/enforce-version=latest --overwrite
+              kubectl label namespace default pod-security.kubernetes.io/warn=baseline --overwrite
+              kubectl label namespace default pod-security.kubernetes.io/audit=baseline --overwrite
+              echo "PSA baseline labels applied to default namespace"
+              kubectl get namespace default --show-labels
+
+    - name: '[1 - Setup] Install - Simple Demo Apps'
+      try:
+        - apply:
+            file: ../../common/apply/install-simple-demo.yaml
+
+    - name: '[1 - Setup] Prepare destination'
+      try:
+        - apply:
+            file: ../../common/apply/simple-trace-db-deployment.yaml
+
+    # Install Odigos with DEFAULT settings (no explicit mount method).
+    # The webhook should auto-detect PSA baseline on the default namespace
+    # and switch to init-container mount method automatically.
+    - name: '[1 - Setup] Install Odigos with default settings'
+      try:
+        - script:
+            timeout: 4m
+            content: |
+              if [ "$MODE" = "cross-cloud-tests" ]; then
+                ../../../cli/odigos install --ns odigos-test --set image.tag="$COMMIT_HASH" --set imagePrefix=public.ecr.aws/y2v0v6s7
+              else
+                ../../../cli/odigos install --ns odigos-test --set image.tag=e2e-test
+              fi
+              kubectl label namespace odigos-test odigos.io/system-object="true"
+              ../../common/verify_odigos_installation.sh odigos-test
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/odigos-installed.yaml
+
+    - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-installed.yaml
+
+    - name: '[1 - Setup] Assert Trace DB is up'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/simple-trace-db-running.yaml
+
+    - name: '[1 - Setup] Add Destination'
+      try:
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
+
+    - name: '[2 - Instrumentation] Instrument default namespace'
+      try:
+        - apply:
+            file: ../../common/apply/instrument-default-ns.yaml
+
+    - name: '[2 - Instrumentation] Assert Runtime Detected'
+      try:
+        - assert:
+            timeout: 3m
+            file: ../../common/assert/simple-demo-runtime-detected.yaml
+
+    - name: '[2 - Instrumentation] Odigos pipeline ready'
+      try:
+        - assert:
+            timeout: 1m
+            file: ../../common/assert/pipeline-ready.yaml
+
+    - name: '[2 - Instrumentation] Wait for rollout'
+      try:
+        - script:
+            timeout: 3m
+            content: ../../common/wait_for_rollout.sh
+
+    # Verify that Odigos auto-detected PSA and used init-container mount method.
+    # Pods in the PSA-enforced namespace should have the odigos-agents init container
+    # with an emptyDir volume, NOT hostPath or device plugin mounts.
+    - name: '[3 - Verification] Verify init container was used (PSA auto-detection)'
+      try:
+        - script:
+            timeout: 2m
+            content: |
+              echo "Checking that pods in PSA-enforced namespace use init-container mount method..."
+
+              # Check that at least one pod has the odigos-agents init container
+              INIT_PODS=$(kubectl get pods -n default -o jsonpath='{range .items[*]}{.metadata.name}{" initContainers: "}{range .spec.initContainers[*]}{.name}{" "}{end}{"\n"}{end}' | grep "odigos-agents" | wc -l)
+              if [ "$INIT_PODS" -eq 0 ]; then
+                echo "FAIL: No pods found with odigos-agents init container"
+                kubectl get pods -n default -o yaml
+                exit 1
+              fi
+              echo "Found $INIT_PODS pods with odigos-agents init container"
+
+              # Verify emptyDir volume is used (not hostPath)
+              EMPTY_DIR_PODS=$(kubectl get pods -n default -o jsonpath='{range .items[*]}{.metadata.name}{" "}{range .spec.volumes[*]}{.name}{"="}{.emptyDir}{" "}{end}{"\n"}{end}' | grep "odigos-agent={}" | wc -l)
+              if [ "$EMPTY_DIR_PODS" -eq 0 ]; then
+                echo "FAIL: No pods found with emptyDir volume for odigos-agent"
+                exit 1
+              fi
+              echo "Found $EMPTY_DIR_PODS pods with emptyDir volume (init-container mount method confirmed)"
+
+              # Verify NO hostPath volumes are used for odigos
+              HOST_PATH_PODS=$(kubectl get pods -n default -o json | jq '[.items[].spec.volumes[]? | select(.name == "odigos-agent" and .hostPath != null)] | length')
+              if [ "$HOST_PATH_PODS" -ne 0 ]; then
+                echo "FAIL: Found pods with hostPath volume for odigos-agent (PSA incompatible)"
+                exit 1
+              fi
+              echo "Confirmed: no hostPath volumes used for odigos-agent"
+              echo "PSA auto-detection verification PASSED"
+      catch:
+        - script:
+            content: |
+              echo "=== Pod details ==="
+              kubectl get pods -n default -o wide
+              echo "=== Pod specs ==="
+              kubectl get pods -n default -o yaml
+              echo "=== Instrumentor logs ==="
+              kubectl logs -n odigos-test -l app.kubernetes.io/name=odigos-instrumentor --tail=100
+
+    - name: '[4 - Traces] Generate Traffic'
+      try:
+        - apply:
+            file: ../../common/apply/generate-traffic-job.yaml
+        - script:
+            timeout: 1m
+            content: |
+              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
+        - delete:
+            file: ../../common/apply/generate-traffic-job.yaml
+
+    - name: '[4 - Traces] Wait For Trace'
+      try:
+        - script:
+            timeout: 1m
+            content: |
+              while true; do
+                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
+                if [ $? -eq 0 ]; then
+                  break
+                fi
+                sleep 1
+              done
+      catch:
+        - script:
+            content: |
+              java_pod_name=$(kubectl get pods -n default -o jsonpath="{.items[*].metadata.name}" | tr ' ' '\n' | grep ^frontend)
+              kubectl logs $java_pod_name -n default
+
+    - name: '[4 - Traces] Verify Trace - Context Propagation'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/context-propagation.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: '[4 - Traces] Verify Trace - Resource Attributes'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/resource-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: '[4 - Traces] Verify Trace - Span Attributes'
+      try:
+        - script:
+            timeout: 3m
+            content: |
+              ../../common/simple_trace_db_query_runner.sh ../../common/queries/span-attributes.yaml
+      catch:
+        - podLogs:
+            name: odiglet
+            namespace: odigos-test
+
+    - name: 'Uninstall Odigos'
+      try:
+        - script:
+            timeout: 2m
+            content: ../../../cli/odigos uninstall --ns odigos-test
+        - script:
+            timeout: 1m
+            content: |
+              for i in $(seq 1 10); do
+                if ../../common/assert_odigos_uninstalled.sh; then
+                  exit 0
+                fi
+                echo "Attempt $i: Odigos uninstallation verification failed, retrying in 5 seconds..."
+                sleep 5
+              done
+
+              echo "Failed to verify Odigos uninstallation after 10 attempts"
+              exit 1
+
+    - name: 'Clean up PSA labels'
+      try:
+        - script:
+            timeout: 30s
+            content: |
+              kubectl label namespace default pod-security.kubernetes.io/enforce- || true
+              kubectl label namespace default pod-security.kubernetes.io/enforce-version- || true
+              kubectl label namespace default pod-security.kubernetes.io/warn- || true
+              kubectl label namespace default pod-security.kubernetes.io/audit- || true
+              echo "PSA labels removed from default namespace"

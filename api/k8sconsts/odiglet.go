@@ -23,6 +23,16 @@ const (
 	OdigletOSSInstalledLabel          = "odigos.io/odiglet-oss-installed"
 	OdigletEnterpriseInstalledLabel   = "odigos.io/odiglet-enterprise-installed"
 	OdigletInstalledLabelValue        = "true"
+
+	// MountMethodOverrideNodeLabel is set by odiglet on nodes where the default
+	// mount method is known not to work (e.g., Bottlerocket with SELinux).
+	// The webhook reads this label and overrides the mount method accordingly.
+	MountMethodOverrideNodeLabel = "odigos.io/mount-method-override"
+
+	// MountMethodOverrideNSAnnotation allows per-namespace mount method overrides.
+	// Support/customers can set this annotation on a namespace to force a specific
+	// mount method (e.g., "k8s-init-container") without changing global config.
+	MountMethodOverrideNSAnnotation = "odigos.io/mount-method"
 	OdigletDefaultHealthProbeBindPort = 55683
 
 	// ConfigMap used to store custom/updated Go instrumentation offsets

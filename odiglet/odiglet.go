@@ -229,6 +229,15 @@ func OdigletInitPhase(clientset *kubernetes.Clientset) {
 		log.Logger.Info("Successfully prepared node for Odigos installation")
 	}
 
+	// Detect if this node's OS requires a mount method override (e.g., Bottlerocket).
+	// This labels the node so the instrumentor webhook can auto-switch to a compatible
+	// mount method (init-container) for pods on this type of node.
+	if err := k8snode.DetectAndLabelMountMethodOverride(clientset, nn); err != nil {
+		log.Logger.Error(err, "Failed to detect and label mount method override for node")
+		// Non-fatal: continue without the override label. The operator can still
+		// manually set the namespace annotation as an escape hatch.
+	}
+
 	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
 	// executing selinux commands to make agents readable by pods.
 	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {

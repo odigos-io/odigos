@@ -98,6 +98,8 @@ jobs:
           - "env-injection"
           - "data-streams"
           - "mount-method"
+          - "mount-method-override"
+          - "psa-baseline"
           - "argo-rollouts"
         include:
           - kube-version: "1.21.12"
