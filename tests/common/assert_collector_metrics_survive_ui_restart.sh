@@ -16,8 +16,7 @@
 # Flow:
 #   1. Assert collector metrics are already being reported (pre-restart).
 #   2. Rollout-restart the odigos-ui deployment.
-#   3. Wait for the new UI pod to become ready.
-#   4. Assert collector metrics are still being reported (post-restart).
+#   3. Assert collector metrics are still being reported (post-restart).
 
 set -euo pipefail
 
@@ -66,17 +65,9 @@ echo "✅ Step 2 passed: UI deployment rolled out successfully."
 echo ""
 
 # ------------------------------------------------------------------
-# Step 3 – Wait for the new UI pod to be ready
+# Step 3 – Wait for metrics to accumulate, then verify post-restart
 # ------------------------------------------------------------------
-echo "⏳ Step 3: Waiting for the new UI pod to become ready..."
-kubectl wait --for=condition=ready pod -l app=odigos-ui -n "$NAMESPACE" --timeout=120s
-echo "✅ Step 3 passed: UI pod is ready."
-echo ""
-
-# ------------------------------------------------------------------
-# Step 4 – Wait for metrics to accumulate, then verify post-restart
-# ------------------------------------------------------------------
-echo "📊 Step 4: Asserting collector metrics are reported after UI restart..."
+echo "📊 Step 3: Asserting collector metrics are reported after UI restart..."
 echo "⏳ Giving the UI some time to start collecting metrics..."
 
 # The UI needs a bit of time after startup for the OTLP receiver to start
@@ -86,7 +77,7 @@ RETRY_DELAY=10
 for attempt in $(seq 1 $MAX_RETRIES); do
     if "$SCRIPT_DIR/assert_collector_metrics_from_ui.sh" "$NAMESPACE"; then
         echo ""
-        echo "✅ Step 4 passed: Metrics are still being reported after UI restart."
+        echo "✅ Step 3 passed: Metrics are still being reported after UI restart."
         echo ""
         echo "==========================================="
         echo "  ✅ All checks passed!                    "
@@ -96,7 +87,7 @@ for attempt in $(seq 1 $MAX_RETRIES); do
 
     if [[ $attempt -eq $MAX_RETRIES ]]; then
         echo ""
-        echo "❌ Step 4 failed: Metrics were NOT reported after UI restart (exhausted $MAX_RETRIES retries)."
+        echo "❌ Step 3 failed: Metrics were NOT reported after UI restart (exhausted $MAX_RETRIES retries)."
         echo "   This likely means the metric watchers lost track of pre-existing sources after the restart."
         exit 1
     fi
