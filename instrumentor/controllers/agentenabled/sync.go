@@ -47,7 +47,7 @@ type agentInjectedStatusCondition struct {
 	Message string
 }
 
-func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (ctrl.Result, error) {
+func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider, rolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter) (ctrl.Result, error) {
 	allInstrumentationConfigs := odigosv1.InstrumentationConfigList{}
 	listErr := c.List(ctx, &allInstrumentationConfigs)
 	if listErr != nil {
@@ -62,7 +62,7 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	var allErrs error
 	aggregatedResult := ctrl.Result{}
 	for _, ic := range allInstrumentationConfigs.Items {
-		res, workloadErr := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf)
+		res, workloadErr := reconcileWorkload(ctx, c, ic.Name, ic.Namespace, dp, &conf, rolloutConcurrencyLimiter)
 		if workloadErr != nil {
 			allErrs = errors.Join(allErrs, workloadErr)
 		}
@@ -78,7 +78,7 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider) (c
 	return aggregatedResult, allErrs
 }
 
-func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration) (ctrl.Result, error) {
+func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration, rolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
 	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName, namespace)
@@ -93,8 +93,8 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		if apierrors.IsNotFound(err) {
 			// instrumentation config is deleted, trigger a rollout for the associated workload
 			// this should happen once per workload, as the instrumentation config is deleted
-			_, res, err := rollout.Do(ctx, c, nil, pw, conf, distroProvider)
-			return res, err
+			rolloutResult, doErr := rollout.Do(ctx, c, nil, pw, conf, distroProvider, rolloutConcurrencyLimiter)
+			return rolloutResult.Result, doErr
 		}
 		return ctrl.Result{}, err
 	}
@@ -119,17 +119,16 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	}
 
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
-	rolloutChanged, res, err := rollout.Do(ctx, c, &ic, pw, conf, distroProvider)
+	rolloutResult, doErr := rollout.Do(ctx, c, &ic, pw, conf, distroProvider, rolloutConcurrencyLimiter)
 
-	if rolloutChanged || agentEnabledChanged {
+	if rolloutResult.StatusChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
 		if updateErr != nil {
-			// if the update fails, we should not return an error, but rather log it and retry later.
 			return utils.K8SUpdateErrorHandler(updateErr)
 		}
 	}
 
-	return res, err
+	return rolloutResult.Result, doErr
 }
 
 func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfig, newValue string) {
