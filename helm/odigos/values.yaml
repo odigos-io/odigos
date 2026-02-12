@@ -231,6 +231,13 @@ collectorGateway:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # description: |-
+  #   Deployment name. if you want the deployment (and related pods) to have a specific name.
+  #   default is 'odigos-gateway'
+  # @schema
+  # deploymentName: 'odigos-gateway'
+
 # @schema
 # description: Settings for Odigos data-collection (node) Collectors
 # @schema

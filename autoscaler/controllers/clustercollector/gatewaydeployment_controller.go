@@ -30,7 +30,7 @@ func (r *ClusterCollectorDeploymentReconciler) Reconcile(ctx context.Context, re
 	var gatewayCollectorGroup odigosv1.CollectorsGroup
 	if err := r.Get(ctx, types.NamespacedName{
 		Namespace: dep.Namespace,
-		Name:      k8sconsts.OdigosClusterCollectorDeploymentName,
+		Name:      k8sconsts.OdigosClusterCollectorCollectorGroupName,
 	}, &gatewayCollectorGroup); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}

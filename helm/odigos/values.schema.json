@@ -267,6 +267,12 @@
           "required": [],
           "title": "clusterMetricsEnabled"
         },
+        "deploymentName": {
+          "default": "odigos-gateway",
+          "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-gateway'",
+          "required": [],
+          "title": "deploymentName"
+        },
         "goMemLimitMiB": {
           "default": "460",
           "description": "the GOMEMLIMIT environment variable value for the collector gateway deployment.\nthis is when go runtime will start garbage collection.\nif not specified, it will be set to 80% of the hard limit of the memory limiter.",
