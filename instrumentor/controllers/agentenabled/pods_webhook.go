@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -41,6 +43,12 @@ type PodsWebhook struct {
 	// decoder is used to decode the admission request's raw object into a structured corev1.Pod.
 	Decoder     admission.Decoder
 	WaspMutator func(*corev1.Pod, common.OdigosConfiguration) error
+
+	// nodeMountOverrideCache caches the node-level mount method override to avoid
+	// querying node labels on every pod admission request.
+	nodeMountOverrideMu    sync.RWMutex
+	nodeMountOverrideValue common.MountMethod
+	nodeMountOverrideTime  time.Time
 }
 
 var _ admission.Handler = &PodsWebhook{}
@@ -148,6 +156,52 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 		return ErrMountMethodNotSet
 	}
 	mountMethod := *odigosConfiguration.MountMethod
+
+	// Mount method override priority (highest to lowest):
+	// 1. Namespace annotation (explicit per-namespace override by operator)
+	// 2. PSA enforcement label (auto-detected, baseline/restricted require init-container)
+	// 3. Node label (auto-detected, e.g., Bottlerocket nodes)
+	// 4. Global config (default)
+
+	ns := &corev1.Namespace{}
+	if err := p.Get(ctx, client.ObjectKey{Name: pw.Namespace}, ns); err == nil {
+		// Priority 1: Namespace annotation override (explicit escape hatch)
+		if overrideMethod, ok := ns.Annotations[k8sconsts.MountMethodOverrideNSAnnotation]; ok {
+			if override := common.MountMethod(overrideMethod); override == common.K8sInitContainerMountMethod ||
+				override == common.K8sHostPathMountMethod || override == common.K8sVirtualDeviceMountMethod {
+				logger.Info("Namespace mount method override annotation detected",
+					"namespace", pw.Namespace, "overrideMethod", overrideMethod, "originalMethod", string(mountMethod))
+				mountMethod = override
+				odigosConfiguration.MountMethod = &mountMethod
+			}
+		}
+
+		// Priority 2: Auto-detect PSA restrictions on the pod's namespace.
+		// If the namespace enforces "baseline" or "restricted" PSA, hostPath and device plugin
+		// mounts are not allowed, so we override to the init-container (EmptyDir) mount method.
+		if mountMethod != common.K8sInitContainerMountMethod {
+			psaEnforce := ns.Labels["pod-security.kubernetes.io/enforce"]
+			if psaEnforce == "baseline" || psaEnforce == "restricted" {
+				logger.Info("PSA enforce detected, overriding mount method to k8s-init-container",
+					"namespace", pw.Namespace, "psaLevel", psaEnforce, "originalMethod", string(mountMethod))
+				mountMethod = common.K8sInitContainerMountMethod
+				odigosConfiguration.MountMethod = &mountMethod
+			}
+		}
+	}
+
+	// Priority 3: Node-level mount method override.
+	// Odiglet labels nodes where the default mount method is known not to work
+	// (e.g., Bottlerocket with SELinux). Since the webhook runs before scheduling,
+	// we check if ANY node in the cluster has the override label.
+	if mountMethod != common.K8sInitContainerMountMethod {
+		if nodeOverride := p.getNodeMountMethodOverride(ctx); nodeOverride != "" {
+			logger.Info("Node-level mount method override detected",
+				"overrideMethod", nodeOverride, "originalMethod", string(mountMethod))
+			mountMethod = nodeOverride
+			odigosConfiguration.MountMethod = &mountMethod
+		}
+	}
 
 	mountIsVirtualDevice := (mountMethod == common.K8sVirtualDeviceMountMethod)
 	if mountIsVirtualDevice && odigosConfiguration.CheckDeviceHealthBeforeInjection != nil && *odigosConfiguration.CheckDeviceHealthBeforeInjection {
@@ -276,6 +330,59 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod, req admi
 	}
 
 	return pw, nil
+}
+
+const nodeMountOverrideCacheTTL = 60 * time.Second
+
+// getNodeMountMethodOverride checks if any node in the cluster has the
+// mount method override label (set by odiglet on nodes like Bottlerocket).
+// Results are cached for 60 seconds to avoid excessive API calls.
+func (p *PodsWebhook) getNodeMountMethodOverride(ctx context.Context) common.MountMethod {
+	logger := log.FromContext(ctx)
+
+	// Check cache first (read lock)
+	p.nodeMountOverrideMu.RLock()
+	if !p.nodeMountOverrideTime.IsZero() && time.Since(p.nodeMountOverrideTime) < nodeMountOverrideCacheTTL {
+		cached := p.nodeMountOverrideValue
+		p.nodeMountOverrideMu.RUnlock()
+		return cached
+	}
+	p.nodeMountOverrideMu.RUnlock()
+
+	// Cache miss or expired -- query nodes (write lock)
+	p.nodeMountOverrideMu.Lock()
+	defer p.nodeMountOverrideMu.Unlock()
+
+	// Double-check after acquiring write lock (another goroutine may have refreshed)
+	if !p.nodeMountOverrideTime.IsZero() && time.Since(p.nodeMountOverrideTime) < nodeMountOverrideCacheTTL {
+		return p.nodeMountOverrideValue
+	}
+
+	var nodes corev1.NodeList
+	if err := p.List(ctx, &nodes); err != nil {
+		logger.Error(err, "failed to list nodes for mount method override check")
+		// On error, update the cache timestamp to avoid hammering the API
+		p.nodeMountOverrideTime = time.Now()
+		p.nodeMountOverrideValue = ""
+		return ""
+	}
+
+	var override common.MountMethod
+	for i := range nodes.Items {
+		if val, ok := nodes.Items[i].Labels[k8sconsts.MountMethodOverrideNodeLabel]; ok {
+			candidate := common.MountMethod(val)
+			if candidate == common.K8sInitContainerMountMethod ||
+				candidate == common.K8sHostPathMountMethod ||
+				candidate == common.K8sVirtualDeviceMountMethod {
+				override = candidate
+				break
+			}
+		}
+	}
+
+	p.nodeMountOverrideValue = override
+	p.nodeMountOverrideTime = time.Now()
+	return override
 }
 
 func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
@@ -502,6 +609,7 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	// into the shared /var/odigos volume (an EmptyDir). This allows sidecar injection of
 	// required binaries without writing to the host filesystem.
 	falseConst := false
+	trueConst := true
 	agentInitContainer := corev1.Container{
 		Name:            k8sconsts.OdigosInitContainerName,
 		Image:           imageName,
@@ -517,11 +625,21 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 				MountPath: k8sconsts.OdigosAgentsDirectory,
 			},
 		},
-		// explicitly set the privileged field and the allowPrivilegedEscalation fields to false
-		// some security policies may require these fields to be explicitly set to false, and we don't need special permission in this container
+		// Harden the security context to be fully PSA baseline/restricted compliant.
+		// - Privileged and AllowPrivilegeEscalation are explicitly set to false.
+		// - RunAsNonRoot ensures the container cannot run as UID 0.
+		// - SeccompProfile RuntimeDefault is required by the "restricted" PSA level.
+		// - Drop ALL capabilities is required by the "restricted" PSA level.
 		SecurityContext: &corev1.SecurityContext{
 			Privileged:               &falseConst,
 			AllowPrivilegeEscalation: &falseConst,
+			RunAsNonRoot:             &trueConst,
+			SeccompProfile: &corev1.SeccompProfile{
+				Type: corev1.SeccompProfileTypeRuntimeDefault,
+			},
+			Capabilities: &corev1.Capabilities{
+				Drop: []corev1.Capability{"ALL"},
+			},
 		},
 	}
 

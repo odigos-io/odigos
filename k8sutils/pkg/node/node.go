@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -65,6 +66,45 @@ func PrepareNodeForOdigosInstallation(clientset *kubernetes.Clientset, nodeName 
 		}
 
 		node.Labels[labelKey] = k8sconsts.OdigletInstalledLabelValue
+
+		_, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
+		return err
+	})
+}
+
+// DetectAndLabelMountMethodOverride checks if the node's OS requires a mount method
+// override (e.g., Bottlerocket with SELinux where device plugin host mounts may fail).
+// If so, it labels the node with the appropriate override so the instrumentor webhook
+// can automatically switch to a compatible mount method.
+func DetectAndLabelMountMethodOverride(clientset *kubernetes.Clientset, nodeName string) error {
+	ctx := context.Background()
+
+	return retry.OnError(retry.DefaultBackoff, apierrors.IsConflict, func() error {
+		node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to get node %s: %w", nodeName, err)
+		}
+
+		// Check if this node runs Bottlerocket OS.
+		// Bottlerocket's SELinux enforcement can prevent the device plugin from
+		// correctly bind-mounting host directories into containers, causing agent
+		// files at /var/odigos to be inaccessible. The init-container mount method
+		// (which uses emptyDir) avoids this entirely.
+		osImage := node.Status.NodeInfo.OSImage
+		if !strings.Contains(osImage, "Bottlerocket") {
+			// Not Bottlerocket, no override needed
+			return nil
+		}
+
+		// Already labeled -- nothing to do
+		if node.Labels[k8sconsts.MountMethodOverrideNodeLabel] == string(common.K8sInitContainerMountMethod) {
+			return nil
+		}
+
+		if node.Labels == nil {
+			node.Labels = make(map[string]string)
+		}
+		node.Labels[k8sconsts.MountMethodOverrideNodeLabel] = string(common.K8sInitContainerMountMethod)
 
 		_, err = clientset.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
 		return err
