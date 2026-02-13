@@ -350,7 +350,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 		// Run server in background to serve the map FD to relevant data collection client.
 		// The server will continue running until odiglet shuts down, allowing collectors to reconnect after restarts
 		// and ask for a new FD.
-		if err := server.Run(ctx); err != nil {
+		if err := server.Run(errCtx); err != nil {
 			m.logger.Error(err, "unixfd server failed")
 		}
 
