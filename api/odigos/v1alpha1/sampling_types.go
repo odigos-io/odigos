@@ -24,9 +24,19 @@ type Services struct {
 	WorkloadLanguage string `json:"workloadLanguage,omitempty"`
 }
 
+// match operations for tail sampling with the full context of the span.
+// this is used by sampling rules to limit it only to specific operations.
+// if the rule matches a sapn, the behavior is determined by the rule itself.
 type OperationMatcher struct {
+
+	// match http server operations in a generic way.
 	HttpServer *HttpServerOperationMatcher `json:"httpServer,omitempty"`
-	Kafka      *KafkaOperationMatcher      `json:"kafka,omitempty"`
+
+	// match kafka consumer operations (consume spans)
+	KafkaConsumer *KafkaOperationMatcher `json:"kafkaConsumer,omitempty"`
+
+	// match kafka producer operations (produce spans)
+	KafkaProducer *KafkaOperationMatcher `json:"kafkaProducer,omitempty"`
 }
 
 // endpoints which are considered "noise", and provide no or very little observability value.
@@ -36,15 +46,40 @@ type OperationMatcher struct {
 // examples:
 // - health-checks (readiness and liveness probes)
 // - metrics scrape endpoints (promethues /metrics endpoint)
-type NoisyEndpoint struct {
-	Services         []Services `json:"services,omitempty"`
-	HttpRoute        string     `json:"httpRoute,omitempty"`
-	HttpMethod       string     `json:"httpMethod,omitempty"`
-	PercentageAtMost *float64   `json:"percentageAtMost,omitempty"`
-	Notes            string     `json:"notes,omitempty"`
+// - other agents calling home (outgoing http requests to collector.my.vendor.com)
+type NoisyOperations struct {
+	// limit this rule to specific services (by name, namespace, language, etc.)
+	// for example: if other agent is relevant only in java, limit this rule so other languages are not affected
+	// if the list is empty - all services are matched.
+	Services []Services `json:"services,omitempty"`
+
+	// for incoming http requests (http server spans)
+	// for example: /health, /metrics, /my-system-custom-probe, etc.
+	// where only the path is available at decision time,
+	// it will be matched against this route.
+	HttpRoute string `json:"httpRoute,omitempty"`
+
+	// for outgoing http requests (http client spans)
+	// for example: other agent calling home or exporting data
+	ServerAddress string `json:"serverAddress,omitempty"`
+
+	// for both server and client requests as root spans
+	UrlPath    string `json:"httpUrlPath,omitempty"`
+	HttpMethod string `json:"httpMethod,omitempty"`
+
+	// sampling percentage for noisy operations.
+	// if unset, 0% of such the traces will be collected.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	PercentageAtMost *float64 `json:"percentageAtMost,omitempty"`
+
+	// optional free-form text field that allows you to attach notes
+	// for future context and maintenance.
+	// users can write why this rule was added, observations, document considerations, etc.
+	Notes string `json:"notes,omitempty"`
 }
 
-// match only spans with a specific http server operation.
+// match only http server spans for a specific endpoint.
 // user can specify route and method to match, and limit a sampling instruction to only this operation.
 type HttpServerOperationMatcher struct {
 
@@ -58,7 +93,11 @@ type HttpServerOperationMatcher struct {
 	Method string `json:"method,omitempty"`
 }
 
+// match a kafka consumer or producer operation for a specific topic.
 type KafkaOperationMatcher struct {
+
+	// the topic name to match.
+	// if left empty, all topics are matched.
 	KafkaTopic string `json:"kafkaTopic,omitempty"`
 }
 
@@ -86,6 +125,8 @@ type HighlyRelevantOperation struct {
 
 	// traces that contains this operation will be sampled by at least this percentage.
 	// if unset, 100% of such the traces will be sampled.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
 	PercentageAtLeast *float64 `json:"percentageAtLeast,omitempty"`
 
 	// optional free-form text field that allows you to attach notes
@@ -95,10 +136,31 @@ type HighlyRelevantOperation struct {
 }
 
 type CostReductionRule struct {
-	Services         []Services       `json:"services,omitempty"`
-	Operation        OperationMatcher `json:"operation,omitempty"`
-	PercentageAtMost *float64         `json:"percentageAtMost,omitempty"`
-	Notes            string           `json:"notes,omitempty"`
+
+	// limit this rule to specific services by name, namespace, language, etc.
+	// an empty list will match any service.
+	// if multiple items are set, the operation match if any one matches
+	// this relates to the "ResourceAttributes" part of a span.
+	Services []Services `json:"services,omitempty"`
+
+	// limit this rule to specific operations.
+	// for example: specific endpoint or kafka topic.
+	// this field is optional, and if not set, the rule will be applied to all operations.
+	Operation *OperationMatcher `json:"operation,omitempty"`
+
+	// sampling percentage for cost reduction.
+	// this field is required.
+	// the final sampling percentage for traces that match this rule
+	// will be the highest possible, but at most this value.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=100
+	// +kubebuilder:validation:Required
+	PercentageAtMost float64 `json:"percentageAtMost"`
+
+	// optional free-form text field that allows you to attach notes
+	// for future context and maintenance.
+	// users can write why this rule was added, observations, document considerations, etc.
+	Notes string `json:"notes,omitempty"`
 }
 
 // define sampling rules.
@@ -119,7 +181,7 @@ type SamplingSpec struct {
 	// they will not be taken into account for any sampling decisions.
 	// useful if you want to temporarily disable the rules but re-enable them later,
 	Disabled                 bool                      `json:"disabled,omitempty"`
-	NoisyEndpoints           []NoisyEndpoint           `json:"noisyEndpoints,omitempty"`
+	NoisyEndpoints           []NoisyOperations         `json:"noisyEndpoints,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRule       `json:"costReductionRules,omitempty"`
 }

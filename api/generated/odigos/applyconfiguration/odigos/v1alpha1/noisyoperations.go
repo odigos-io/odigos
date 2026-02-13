@@ -17,26 +17,28 @@ limitations under the License.
 
 package v1alpha1
 
-// NoisyEndpointApplyConfiguration represents a declarative configuration of the NoisyEndpoint type for use
+// NoisyOperationsApplyConfiguration represents a declarative configuration of the NoisyOperations type for use
 // with apply.
-type NoisyEndpointApplyConfiguration struct {
+type NoisyOperationsApplyConfiguration struct {
 	Services         []ServicesApplyConfiguration `json:"services,omitempty"`
 	HttpRoute        *string                      `json:"httpRoute,omitempty"`
+	ServerAddress    *string                      `json:"serverAddress,omitempty"`
+	UrlPath          *string                      `json:"httpUrlPath,omitempty"`
 	HttpMethod       *string                      `json:"httpMethod,omitempty"`
 	PercentageAtMost *float64                     `json:"percentageAtMost,omitempty"`
 	Notes            *string                      `json:"notes,omitempty"`
 }
 
-// NoisyEndpointApplyConfiguration constructs a declarative configuration of the NoisyEndpoint type for use with
+// NoisyOperationsApplyConfiguration constructs a declarative configuration of the NoisyOperations type for use with
 // apply.
-func NoisyEndpoint() *NoisyEndpointApplyConfiguration {
-	return &NoisyEndpointApplyConfiguration{}
+func NoisyOperations() *NoisyOperationsApplyConfiguration {
+	return &NoisyOperationsApplyConfiguration{}
 }
 
 // WithServices adds the given value to the Services field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Services field.
-func (b *NoisyEndpointApplyConfiguration) WithServices(values ...*ServicesApplyConfiguration) *NoisyEndpointApplyConfiguration {
+func (b *NoisyOperationsApplyConfiguration) WithServices(values ...*ServicesApplyConfiguration) *NoisyOperationsApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithServices")
@@ -49,15 +51,31 @@ func (b *NoisyEndpointApplyConfiguration) WithServices(values ...*ServicesApplyC
 // WithHttpRoute sets the HttpRoute field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the HttpRoute field is set to the value of the last call.
-func (b *NoisyEndpointApplyConfiguration) WithHttpRoute(value string) *NoisyEndpointApplyConfiguration {
+func (b *NoisyOperationsApplyConfiguration) WithHttpRoute(value string) *NoisyOperationsApplyConfiguration {
 	b.HttpRoute = &value
+	return b
+}
+
+// WithServerAddress sets the ServerAddress field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ServerAddress field is set to the value of the last call.
+func (b *NoisyOperationsApplyConfiguration) WithServerAddress(value string) *NoisyOperationsApplyConfiguration {
+	b.ServerAddress = &value
+	return b
+}
+
+// WithUrlPath sets the UrlPath field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UrlPath field is set to the value of the last call.
+func (b *NoisyOperationsApplyConfiguration) WithUrlPath(value string) *NoisyOperationsApplyConfiguration {
+	b.UrlPath = &value
 	return b
 }
 
 // WithHttpMethod sets the HttpMethod field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the HttpMethod field is set to the value of the last call.
-func (b *NoisyEndpointApplyConfiguration) WithHttpMethod(value string) *NoisyEndpointApplyConfiguration {
+func (b *NoisyOperationsApplyConfiguration) WithHttpMethod(value string) *NoisyOperationsApplyConfiguration {
 	b.HttpMethod = &value
 	return b
 }
@@ -65,7 +83,7 @@ func (b *NoisyEndpointApplyConfiguration) WithHttpMethod(value string) *NoisyEnd
 // WithPercentageAtMost sets the PercentageAtMost field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the PercentageAtMost field is set to the value of the last call.
-func (b *NoisyEndpointApplyConfiguration) WithPercentageAtMost(value float64) *NoisyEndpointApplyConfiguration {
+func (b *NoisyOperationsApplyConfiguration) WithPercentageAtMost(value float64) *NoisyOperationsApplyConfiguration {
 	b.PercentageAtMost = &value
 	return b
 }
@@ -73,7 +91,7 @@ func (b *NoisyEndpointApplyConfiguration) WithPercentageAtMost(value float64) *N
 // WithNotes sets the Notes field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Notes field is set to the value of the last call.
-func (b *NoisyEndpointApplyConfiguration) WithNotes(value string) *NoisyEndpointApplyConfiguration {
+func (b *NoisyOperationsApplyConfiguration) WithNotes(value string) *NoisyOperationsApplyConfiguration {
 	b.Notes = &value
 	return b
 }

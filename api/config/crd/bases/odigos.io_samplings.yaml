@@ -50,10 +50,19 @@ spec:
                 items:
                   properties:
                     notes:
+                      description: |-
+                        optional free-form text field that allows you to attach notes
+                        for future context and maintenance.
+                        users can write why this rule was added, observations, document considerations, etc.
                       type: string
                     operation:
+                      description: |-
+                        limit this rule to specific operations.
+                        for example: specific endpoint or kafka topic.
+                        this field is optional, and if not set, the rule will be applied to all operations.
                       properties:
                         httpServer:
+                          description: match http server operations in a generic way.
                           properties:
                             method:
                               description: optionally limit to specific http method
@@ -65,15 +74,40 @@ spec:
                               description: any route that starts with a specific prefix
                               type: string
                           type: object
-                        kafka:
+                        kafkaConsumer:
+                          description: match kafka consumer operations (consume spans)
                           properties:
                             kafkaTopic:
+                              description: |-
+                                the topic name to match.
+                                if left empty, all topics are matched.
+                              type: string
+                          type: object
+                        kafkaProducer:
+                          description: match kafka producer operations (produce spans)
+                          properties:
+                            kafkaTopic:
+                              description: |-
+                                the topic name to match.
+                                if left empty, all topics are matched.
                               type: string
                           type: object
                       type: object
                     percentageAtMost:
+                      description: |-
+                        sampling percentage for cost reduction.
+                        this field is required.
+                        the final sampling percentage for traces that match this rule
+                        will be the highest possible, but at most this value.
+                      maximum: 100
+                      minimum: 0
                       type: number
                     services:
+                      description: |-
+                        limit this rule to specific services by name, namespace, language, etc.
+                        an empty list will match any service.
+                        if multiple items are set, the operation match if any one matches
+                        this relates to the "ResourceAttributes" part of a span.
                       items:
                         description: |-
                           define conditions to match specific services (containers) in the cluster.
@@ -100,6 +134,8 @@ spec:
                             type: string
                         type: object
                       type: array
+                  required:
+                  - percentageAtMost
                   type: object
                 type: array
               disabled:
@@ -136,6 +172,7 @@ spec:
                         this field is optional, and if not set, the rule will be applied to all operations.
                       properties:
                         httpServer:
+                          description: match http server operations in a generic way.
                           properties:
                             method:
                               description: optionally limit to specific http method
@@ -147,9 +184,22 @@ spec:
                               description: any route that starts with a specific prefix
                               type: string
                           type: object
-                        kafka:
+                        kafkaConsumer:
+                          description: match kafka consumer operations (consume spans)
                           properties:
                             kafkaTopic:
+                              description: |-
+                                the topic name to match.
+                                if left empty, all topics are matched.
+                              type: string
+                          type: object
+                        kafkaProducer:
+                          description: match kafka producer operations (produce spans)
+                          properties:
+                            kafkaTopic:
+                              description: |-
+                                the topic name to match.
+                                if left empty, all topics are matched.
                               type: string
                           type: object
                       type: object
@@ -157,6 +207,8 @@ spec:
                       description: |-
                         traces that contains this operation will be sampled by at least this percentage.
                         if unset, 100% of such the traces will be sampled.
+                      maximum: 100
+                      minimum: 0
                       type: number
                     services:
                       description: |-
@@ -206,16 +258,43 @@ spec:
                     examples:
                     - health-checks (readiness and liveness probes)
                     - metrics scrape endpoints (promethues /metrics endpoint)
+                    - other agents calling home (outgoing http requests to collector.my.vendor.com)
                   properties:
                     httpMethod:
                       type: string
                     httpRoute:
+                      description: |-
+                        for incoming http requests (http server spans)
+                        for example: /health, /metrics, /my-system-custom-probe, etc.
+                        where only the path is available at decision time,
+                        it will be matched against this route.
+                      type: string
+                    httpUrlPath:
+                      description: for both server and client requests as root spans
                       type: string
                     notes:
+                      description: |-
+                        optional free-form text field that allows you to attach notes
+                        for future context and maintenance.
+                        users can write why this rule was added, observations, document considerations, etc.
                       type: string
                     percentageAtMost:
+                      description: |-
+                        sampling percentage for noisy operations.
+                        if unset, 0% of such the traces will be collected.
+                      maximum: 100
+                      minimum: 0
                       type: number
+                    serverAddress:
+                      description: |-
+                        for outgoing http requests (http client spans)
+                        for example: other agent calling home or exporting data
+                      type: string
                     services:
+                      description: |-
+                        limit this rule to specific services (by name, namespace, language, etc.)
+                        for example: if other agent is relevant only in java, limit this rule so other languages are not affected
+                        if the list is empty - all services are matched.
                       items:
                         description: |-
                           define conditions to match specific services (containers) in the cluster.

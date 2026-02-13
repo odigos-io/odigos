@@ -23,7 +23,7 @@ type SamplingSpecApplyConfiguration struct {
 	Name                     *string                                     `json:"name,omitempty"`
 	Notes                    *string                                     `json:"notes,omitempty"`
 	Disabled                 *bool                                       `json:"disabled,omitempty"`
-	NoisyEndpoints           []NoisyEndpointApplyConfiguration           `json:"noisyEndpoints,omitempty"`
+	NoisyEndpoints           []NoisyOperationsApplyConfiguration         `json:"noisyEndpoints,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperationApplyConfiguration `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRuleApplyConfiguration       `json:"costReductionRules,omitempty"`
 }
@@ -61,7 +61,7 @@ func (b *SamplingSpecApplyConfiguration) WithDisabled(value bool) *SamplingSpecA
 // WithNoisyEndpoints adds the given value to the NoisyEndpoints field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the NoisyEndpoints field.
-func (b *SamplingSpecApplyConfiguration) WithNoisyEndpoints(values ...*NoisyEndpointApplyConfiguration) *SamplingSpecApplyConfiguration {
+func (b *SamplingSpecApplyConfiguration) WithNoisyEndpoints(values ...*NoisyOperationsApplyConfiguration) *SamplingSpecApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithNoisyEndpoints")

@@ -20,8 +20,9 @@ package v1alpha1
 // OperationMatcherApplyConfiguration represents a declarative configuration of the OperationMatcher type for use
 // with apply.
 type OperationMatcherApplyConfiguration struct {
-	HttpServer *HttpServerOperationMatcherApplyConfiguration `json:"httpServer,omitempty"`
-	Kafka      *KafkaOperationMatcherApplyConfiguration      `json:"kafka,omitempty"`
+	HttpServer    *HttpServerOperationMatcherApplyConfiguration `json:"httpServer,omitempty"`
+	KafkaConsumer *KafkaOperationMatcherApplyConfiguration      `json:"kafkaConsumer,omitempty"`
+	KafkaProducer *KafkaOperationMatcherApplyConfiguration      `json:"kafkaProducer,omitempty"`
 }
 
 // OperationMatcherApplyConfiguration constructs a declarative configuration of the OperationMatcher type for use with
@@ -38,10 +39,18 @@ func (b *OperationMatcherApplyConfiguration) WithHttpServer(value *HttpServerOpe
 	return b
 }
 
-// WithKafka sets the Kafka field in the declarative configuration to the given value
+// WithKafkaConsumer sets the KafkaConsumer field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Kafka field is set to the value of the last call.
-func (b *OperationMatcherApplyConfiguration) WithKafka(value *KafkaOperationMatcherApplyConfiguration) *OperationMatcherApplyConfiguration {
-	b.Kafka = value
+// If called multiple times, the KafkaConsumer field is set to the value of the last call.
+func (b *OperationMatcherApplyConfiguration) WithKafkaConsumer(value *KafkaOperationMatcherApplyConfiguration) *OperationMatcherApplyConfiguration {
+	b.KafkaConsumer = value
+	return b
+}
+
+// WithKafkaProducer sets the KafkaProducer field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the KafkaProducer field is set to the value of the last call.
+func (b *OperationMatcherApplyConfiguration) WithKafkaProducer(value *KafkaOperationMatcherApplyConfiguration) *OperationMatcherApplyConfiguration {
+	b.KafkaProducer = value
 	return b
 }
