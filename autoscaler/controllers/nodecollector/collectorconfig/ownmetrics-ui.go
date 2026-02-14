@@ -16,10 +16,11 @@ const (
 	// this processor should be added to any user telemetry pipeline to track the amount of data being exported by each source
 	odigosTrafficMetricsProcessorName = "odigostrafficmetrics"
 
-	podNameProcessorName     = "resource/pod-name"
-	ownMetricsUiExporterName = "otlp/odigos-own-telemetry-ui"
-	ownMetricsUiReceiverName = "prometheus/self-metrics-ui"
-	ownMetricsUiPipelineName = "metrics/own-metrics-ui"
+	podNameProcessorName       = "resource/pod-name"
+	collectorRoleProcessorName = "resource/odigos-collector-role"
+	ownMetricsUiExporterName   = "otlp/odigos-own-telemetry-ui"
+	ownMetricsUiReceiverName   = "prometheus/self-metrics-ui"
+	ownMetricsUiPipelineName   = "metrics/own-metrics-ui"
 )
 
 var staticOwnMetricsUiProcessors config.GenericMap
@@ -51,6 +52,13 @@ func init() {
 			"attributes": []config.GenericMap{{
 				"key":    string(semconv.K8SPodNameKey),
 				"value":  "${POD_NAME}",
+				"action": "upsert",
+			}},
+		},
+		collectorRoleProcessorName: config.GenericMap{
+			"attributes": []config.GenericMap{{
+				"key":    "odigos.collector.role",
+				"value":  string(k8sconsts.CollectorsRoleNodeCollector),
 				"action": "upsert",
 			}},
 		},
@@ -138,7 +146,7 @@ func ownMetricsPipelinesUi() map[string]config.Pipeline {
 	return map[string]config.Pipeline{
 		ownMetricsUiPipelineName: {
 			Receivers:  []string{ownMetricsUiReceiverName},
-			Processors: []string{podNameProcessorName},
+			Processors: []string{podNameProcessorName, collectorRoleProcessorName},
 			Exporters:  []string{ownMetricsUiExporterName},
 		},
 	}

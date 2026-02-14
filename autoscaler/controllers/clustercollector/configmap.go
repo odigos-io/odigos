@@ -83,6 +83,15 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 			},
 		},
 	}
+	c.Processors["resource/odigos-collector-role"] = config.GenericMap{
+		"attributes": []config.GenericMap{
+			{
+				"key":    "odigos.collector.role",
+				"value":  string(k8sconsts.CollectorsRoleClusterGateway),
+				"action": "upsert",
+			},
+		},
+	}
 	// odigostrafficmetrics processor should be the last processor in the pipeline
 	// as it helps to calculate the size of the data being exported.
 	// In case of performance impact caused by this processor, we should modify this config to reduce the sampling ratio.
@@ -98,7 +107,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	}
 	c.Service.Pipelines["metrics/otelcol"] = config.Pipeline{
 		Receivers:  []string{"prometheus/self-metrics"},
-		Processors: []string{"resource/pod-name"},
+		Processors: []string{"resource/pod-name", "resource/odigos-collector-role"},
 		Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
 	}
 

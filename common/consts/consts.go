@@ -2,13 +2,13 @@ package consts
 
 import (
 	"errors"
+	"time"
 )
 
 const (
 	CurrentNamespaceEnvVar              = "CURRENT_NS"
 	OdigosVersionEnvVarName             = "ODIGOS_VERSION"
 	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
-	OdigosOdigletDaemonSetNameEnvVar    = "ODIGOS_ODIGLET_DAEMONSET_NAME"
 	OdigosTierEnvVarName                = "ODIGOS_TIER"
 	DefaultOdigosNamespace              = "odigos-system"
 	OdigosConfigurationName             = "odigos-configuration"
@@ -143,9 +143,9 @@ const (
 )
 
 // Auto rollback related consts
-const (
-	DefaultAutoRollbackGraceTime       = "5m"
-	DefaultAutoRollbackStabilityWindow = "1h"
+var (
+	DefaultAutoRollbackGraceTime       = 5 * time.Minute
+	DefaultAutoRollbackStabilityWindow = 1 * time.Hour
 )
 
 // UnixFD related consts

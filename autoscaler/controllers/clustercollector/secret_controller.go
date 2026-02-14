@@ -11,8 +11,8 @@ import (
 
 type SecretReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	OdigosVersion    string
+	Scheme        *runtime.Scheme
+	OdigosVersion string
 }
 
 func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

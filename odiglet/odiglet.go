@@ -142,7 +142,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 	})
 
 	g.Go(func() error {
-		defer close(ebpfDone) // Signal that eBPF manager has exited
+		defer close(ebpfDone)
 		err := o.ebpfManager.Run(groupCtx)
 		if err != nil {
 			log.Logger.Error(err, "Failed to run ebpf manager")
@@ -162,18 +162,16 @@ func (o *Odiglet) Run(ctx context.Context) {
 		return err
 	})
 
-	// start kube manager - wait for eBPF manager to exit first during shutdown
+	// start kube manager
 	g.Go(func() error {
 		// Create a context that will be cancelled when eBPF manager exits during shutdown
 		kubeManagerCtx, kubeManagerCancel := context.WithCancel(context.Background())
 		defer kubeManagerCancel()
 
-		// Monitor for shutdown conditions
 		go func() {
 			select {
 			case <-groupCtx.Done():
 				log.Logger.V(0).Info("Shutdown initiated, waiting for eBPF manager to exit before stopping kube manager")
-				// Group context cancelled, waiting for eBPF manager to exit before cancelling the kube manager context
 				<-ebpfDone
 				log.Logger.V(0).Info("eBPF manager exited, now stopping kube manager")
 				kubeManagerCancel()

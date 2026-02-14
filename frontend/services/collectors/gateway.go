@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -18,18 +19,24 @@ import (
 // GetGatewayDeploymentInfo fetches Deployment/HPA and computes the header info for the gateway deployment.
 func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error) {
 	ns := env.GetCurrentNamespace()
-	name := k8sconsts.OdigosClusterCollectorDeploymentName
 
-	dep, err := kube.DefaultClient.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
+	depList, err := kube.DefaultClient.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(k8sconsts.CollectorsRoleClusterGateway)})
 	if err != nil {
 		return nil, err
 	}
+	if len(depList.Items) == 0 {
+		return nil, fmt.Errorf("no cluster gateway deployment found")
+	}
+	if len(depList.Items) > 1 {
+		return nil, fmt.Errorf("multiple cluster gateway deployments found")
+	}
+	dep := &depList.Items[0]
 
 	var hpa *autoscalingv2.HorizontalPodAutoscaler
-	if h, err := kube.DefaultClient.AutoscalingV2().HorizontalPodAutoscalers(ns).Get(ctx, name, metav1.GetOptions{}); err == nil {
+	if h, err := kube.DefaultClient.AutoscalingV2().HorizontalPodAutoscalers(ns).Get(ctx, k8sconsts.OdigosClusterCollectorHpaName, metav1.GetOptions{}); err == nil {
 		hpa = h
 	} else {
-		log.Printf("failed to get HPA %s/%s: %v", ns, name, err)
+		log.Printf("failed to get HPA %s/%s: %v", ns, k8sconsts.OdigosClusterCollectorHpaName, err)
 	}
 
 	result := &model.GatewayDeploymentInfo{}
@@ -48,7 +55,7 @@ func GetGatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo
 
 	result.LastRolloutAt = services.StringPtr(findLastRolloutTime(ctx, dep))
 
-	manifestYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindDeployment, name)
+	manifestYAML, err := services.K8sDeploymentYamlManifest(dep)
 	if err != nil {
 		return nil, err
 	}

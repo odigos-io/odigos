@@ -24,6 +24,7 @@ import (
 
 type CentralBackendConfig struct {
 	MaxMessageSize string
+	ExternalUrl    string // Browser-accessible URL for SSO redirects (e.g., https://central.example.com)
 }
 
 type centralBackendResourceManager struct {
@@ -96,6 +97,12 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 			Value: config.MaxMessageSize,
 		})
 	}
+	if config.ExternalUrl != "" {
+		dynamicEnv = append(dynamicEnv, corev1.EnvVar{
+			Name:  "CENTRAL_BACKEND_HOST",
+			Value: config.ExternalUrl,
+		})
+	}
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -142,11 +149,11 @@ func NewCentralBackendDeployment(ns, imagePrefix, imageName, version string, ima
 										},
 									},
 								},
-								// Keycloak configuration
-								{
-									Name:  "KEYCLOAK_HOST",
-									Value: fmt.Sprintf("http://%s:%d", k8sconsts.KeycloakServiceName, k8sconsts.KeycloakPort),
-								},
+							// Keycloak configuration
+							{
+								Name:  "KEYCLOAK_HOST",
+								Value: fmt.Sprintf("http://%s:%d", k8sconsts.KeycloakServiceName, k8sconsts.KeycloakPort),
+							},
 								{
 									Name:  "USE_K8S_SECRETS",
 									Value: "true",

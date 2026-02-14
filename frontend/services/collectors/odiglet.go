@@ -2,6 +2,7 @@ package collectors
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -14,26 +15,33 @@ import (
 
 func GetOdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error) {
 	ns := env.GetCurrentNamespace()
-	name := env.GetOdigletDaemonSetNameOrDefault(k8sconsts.OdigletDaemonSetName)
-	ds, err := kube.DefaultClient.AppsV1().DaemonSets(ns).Get(ctx, name, metav1.GetOptions{})
+
+	dsList, err := kube.DefaultClient.AppsV1().DaemonSets(ns).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/name=odiglet"})
 	if err != nil {
 		return nil, err
 	}
+	if len(dsList.Items) == 0 {
+		return nil, fmt.Errorf("no odiglet daemonset found")
+	}
+	if len(dsList.Items) > 1 {
+		return nil, fmt.Errorf("multiple odiglet daemonsets found")
+	}
+	ds := dsList.Items[0]
 
-	status, inProgress := computeDaemonSetStatus(ds)
+	status, inProgress := computeDaemonSetStatus(&ds)
 	nodes := &model.NodesSummary{Desired: int(ds.Status.DesiredNumberScheduled), Ready: int(ds.Status.NumberReady)}
 
-	result := &model.CollectorDaemonSetInfo{Status: status, Nodes: nodes, RolloutInProgress: inProgress, ImageVersion: services.StringPtr(extractImageVersionForContainer(ds.Spec.Template.Spec.Containers, k8sconsts.OdigosNodeCollectorContainerName)), LastRolloutAt: services.StringPtr(findDaemonSetLastRolloutTime(ctx, ds))}
+	result := &model.CollectorDaemonSetInfo{Status: status, Nodes: nodes, RolloutInProgress: inProgress, ImageVersion: services.StringPtr(extractImageVersionForContainer(ds.Spec.Template.Spec.Containers, k8sconsts.OdigosNodeCollectorContainerName)), LastRolloutAt: services.StringPtr(findDaemonSetLastRolloutTime(ctx, &ds))}
 
 	if rr := extractResourcesForContainer(ds.Spec.Template.Spec.Containers, k8sconsts.OdigosNodeCollectorContainerName); rr != nil {
 		result.Resources = rr
 	}
 
-	manifestYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindDaemonSet, name)
+	odigletDsMainfestYaml, err := services.K8sDaemonSetYamlManifest(&ds)
 	if err != nil {
 		return nil, err
 	}
-	result.ManifestYaml = manifestYAML
+	result.ManifestYaml = odigletDsMainfestYaml
 
 	configMapYAML, err := services.K8sManifest(ctx, ns, model.K8sResourceKindConfigMap, k8sconsts.OdigosNodeCollectorConfigMapName)
 	if err != nil {

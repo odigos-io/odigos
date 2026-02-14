@@ -11,8 +11,8 @@ import (
 
 type DestinationReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	OdigosVersion    string
+	Scheme        *runtime.Scheme
+	OdigosVersion string
 }
 
 func (r *DestinationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

@@ -8,11 +8,14 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/distros"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
 	odigospredicate "github.com/odigos-io/odigos/k8sutils/pkg/predicate"
 )
 
 func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
+	// Create the limiter - it will be initialized with config on first use in Do()
+	rolloutConcurrencyLimiter := rollout.NewRolloutConcurrencyLimiter(mgr.GetLogger().WithName("RolloutConcurrencyLimiter"))
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("agentenabled-collectorsgroup").
@@ -25,8 +28,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 			),
 		)).
 		Complete(&CollectorsGroupReconciler{
-			Client:          mgr.GetClient(),
-			DistrosProvider: dp,
+			Client:                    mgr.GetClient(),
+			DistrosProvider:           dp,
+			RolloutConcurrencyLimiter: rolloutConcurrencyLimiter,
 		})
 	if err != nil {
 		return err
@@ -43,8 +47,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 			&instrumentorpredicate.ContainerOverridesChangedPredicate{},
 			odigospredicate.DeletionPredicate{})).
 		Complete(&InstrumentationConfigReconciler{
-			Client:          mgr.GetClient(),
-			DistrosProvider: dp,
+			Client:                    mgr.GetClient(),
+			DistrosProvider:           dp,
+			RolloutConcurrencyLimiter: rolloutConcurrencyLimiter,
 		})
 	if err != nil {
 		return err
@@ -69,8 +74,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(odigospredicate.OdigosEffectiveConfigMapPredicate).
 		Complete(&EffectiveConfigReconciler{
-			Client:          mgr.GetClient(),
-			DistrosProvider: dp,
+			Client:                    mgr.GetClient(),
+			DistrosProvider:           dp,
+			RolloutConcurrencyLimiter: rolloutConcurrencyLimiter,
 		})
 	if err != nil {
 		return err
@@ -82,8 +88,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&odigosv1.Action{}).
 		WithEventFilter(&instrumentorpredicate.AgentInjectionEnabledActionsPredicate{}).
 		Complete(&ActionReconciler{
-			Client:          mgr.GetClient(),
-			DistrosProvider: dp,
+			Client:                    mgr.GetClient(),
+			DistrosProvider:           dp,
+			RolloutConcurrencyLimiter: rolloutConcurrencyLimiter,
 		})
 	if err != nil {
 		return err
