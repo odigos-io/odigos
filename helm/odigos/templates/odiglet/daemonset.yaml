@@ -121,7 +121,7 @@ spec:
         # so it's available in the image cache when user pods need it
         - name: odigos-agents-image-pull
           {{- if include "odigos.secretExists" . }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $imageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $odigletImageTag) }}
           {{- else }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
           {{- end }}
