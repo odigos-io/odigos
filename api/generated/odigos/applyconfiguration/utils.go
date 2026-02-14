@@ -117,6 +117,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("KafkaOperationMatcher"):
 		return &odigosv1alpha1.KafkaOperationMatcherApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperationHttpClientMatcher"):
+		return &odigosv1alpha1.NoisyOperationHttpClientMatcherApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperationHttpServerMatcher"):
+		return &odigosv1alpha1.NoisyOperationHttpServerMatcherApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperations"):
 		return &odigosv1alpha1.NoisyOperationsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OdigosOwnMetricsSettings"):

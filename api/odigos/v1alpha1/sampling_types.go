@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,12 +18,12 @@ import (
 type Services struct {
 	ServiceName string `json:"serviceName,omitempty"`
 
-	WorkloadName      string `json:"workloadName,omitempty"`
-	WorkloadKind      string `json:"workloadKind,omitempty"`
-	WorkloadNamespace string `json:"workloadNamespace,omitempty"`
-	ContainerName     string `json:"containerName,omitempty"`
+	WorkloadName      string                 `json:"workloadName,omitempty"`
+	WorkloadKind      k8sconsts.WorkloadKind `json:"workloadKind,omitempty"`
+	WorkloadNamespace string                 `json:"workloadNamespace,omitempty"`
+	ContainerName     string                 `json:"containerName,omitempty"`
 
-	WorkloadLanguage string `json:"workloadLanguage,omitempty"`
+	WorkloadLanguage common.ProgrammingLanguage `json:"workloadLanguage,omitempty"`
 }
 
 // match operations for tail sampling with the full context of the span.
@@ -39,6 +41,27 @@ type OperationMatcher struct {
 	KafkaProducer *KafkaOperationMatcher `json:"kafkaProducer,omitempty"`
 }
 
+// match http server operations for noisy operations matching (only attributes available at span start time)
+type NoisyOperationHttpServerMatcher struct {
+	// match route exactly
+	Route string `json:"route,omitempty"`
+	// match preffix of route
+	RoutePrefix string `json:"routePrefix,omitempty"`
+	// match method exactly, can be empty to match any method
+	Method string `json:"method,omitempty"`
+}
+
+// match http client operations for noisy operations matching (only attributes available at span start time)
+// can be used to filter out outgoing http requests for other agents calling home or exporting data.
+type NoisyOperationHttpClientMatcher struct {
+	// match server address exactly (e.g. collector.my.vendor.com)
+	ServerAddress string `json:"serverAddress,omitempty"`
+	// match url path exactly (e.g. /api/v1/metrics)
+	UrlPath string `json:"urlPath,omitempty"`
+	// match method exactly, can be empty to match any method
+	Method string `json:"method,omitempty"`
+}
+
 // endpoints which are considered "noise", and provide no or very little observability value.
 // these traces should not be collected at all, or dropped aggresevly.
 // motivation is data sentization and performance improvment (even if cost is not a factor)
@@ -53,19 +76,11 @@ type NoisyOperations struct {
 	// if the list is empty - all services are matched.
 	Services []Services `json:"services,omitempty"`
 
-	// for incoming http requests (http server spans)
-	// for example: /health, /metrics, /my-system-custom-probe, etc.
-	// where only the path is available at decision time,
-	// it will be matched against this route.
-	HttpRoute string `json:"httpRoute,omitempty"`
+	// match http server operations for noisy operations matching (only attributes available at span start time)
+	HttpServer *NoisyOperationHttpServerMatcher `json:"httpServer,omitempty"`
 
-	// for outgoing http requests (http client spans)
-	// for example: other agent calling home or exporting data
-	ServerAddress string `json:"serverAddress,omitempty"`
-
-	// for both server and client requests as root spans
-	UrlPath    string `json:"httpUrlPath,omitempty"`
-	HttpMethod string `json:"httpMethod,omitempty"`
+	// match http client operations for noisy operations matching (only attributes available at span start time)
+	HttpClient *NoisyOperationHttpClientMatcher `json:"httpClient,omitempty"`
 
 	// sampling percentage for noisy operations.
 	// if unset, 0% of such the traces will be collected.
@@ -181,7 +196,7 @@ type SamplingSpec struct {
 	// they will not be taken into account for any sampling decisions.
 	// useful if you want to temporarily disable the rules but re-enable them later,
 	Disabled                 bool                      `json:"disabled,omitempty"`
-	NoisyEndpoints           []NoisyOperations         `json:"noisyEndpoints,omitempty"`
+	NoisyOperations          []NoisyOperations         `json:"noisyEndpoints,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRule       `json:"costReductionRules,omitempty"`
 }

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coupon
+  namespace: default
+  labels:
+    app: coupon
+spec:
+  selector:
+    matchLabels:
+      app: coupon
+  template:
+    metadata:
+      labels:
+        app: coupon
+    spec:
+      containers:
+      - name: coupon
+        image: registry.odigos.io/odigos-demo-coupon:v0.1.31
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MEMBERSHIP_SERVICE_HOST
+          value: membership:8080
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 5

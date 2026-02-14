@@ -20,13 +20,11 @@ package v1alpha1
 // NoisyOperationsApplyConfiguration represents a declarative configuration of the NoisyOperations type for use
 // with apply.
 type NoisyOperationsApplyConfiguration struct {
-	Services         []ServicesApplyConfiguration `json:"services,omitempty"`
-	HttpRoute        *string                      `json:"httpRoute,omitempty"`
-	ServerAddress    *string                      `json:"serverAddress,omitempty"`
-	UrlPath          *string                      `json:"httpUrlPath,omitempty"`
-	HttpMethod       *string                      `json:"httpMethod,omitempty"`
-	PercentageAtMost *float64                     `json:"percentageAtMost,omitempty"`
-	Notes            *string                      `json:"notes,omitempty"`
+	Services         []ServicesApplyConfiguration                       `json:"services,omitempty"`
+	HttpServer       *NoisyOperationHttpServerMatcherApplyConfiguration `json:"httpServer,omitempty"`
+	HttpClient       *NoisyOperationHttpClientMatcherApplyConfiguration `json:"httpClient,omitempty"`
+	PercentageAtMost *float64                                           `json:"percentageAtMost,omitempty"`
+	Notes            *string                                            `json:"notes,omitempty"`
 }
 
 // NoisyOperationsApplyConfiguration constructs a declarative configuration of the NoisyOperations type for use with
@@ -48,35 +46,19 @@ func (b *NoisyOperationsApplyConfiguration) WithServices(values ...*ServicesAppl
 	return b
 }
 
-// WithHttpRoute sets the HttpRoute field in the declarative configuration to the given value
+// WithHttpServer sets the HttpServer field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the HttpRoute field is set to the value of the last call.
-func (b *NoisyOperationsApplyConfiguration) WithHttpRoute(value string) *NoisyOperationsApplyConfiguration {
-	b.HttpRoute = &value
+// If called multiple times, the HttpServer field is set to the value of the last call.
+func (b *NoisyOperationsApplyConfiguration) WithHttpServer(value *NoisyOperationHttpServerMatcherApplyConfiguration) *NoisyOperationsApplyConfiguration {
+	b.HttpServer = value
 	return b
 }
 
-// WithServerAddress sets the ServerAddress field in the declarative configuration to the given value
+// WithHttpClient sets the HttpClient field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ServerAddress field is set to the value of the last call.
-func (b *NoisyOperationsApplyConfiguration) WithServerAddress(value string) *NoisyOperationsApplyConfiguration {
-	b.ServerAddress = &value
-	return b
-}
-
-// WithUrlPath sets the UrlPath field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the UrlPath field is set to the value of the last call.
-func (b *NoisyOperationsApplyConfiguration) WithUrlPath(value string) *NoisyOperationsApplyConfiguration {
-	b.UrlPath = &value
-	return b
-}
-
-// WithHttpMethod sets the HttpMethod field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the HttpMethod field is set to the value of the last call.
-func (b *NoisyOperationsApplyConfiguration) WithHttpMethod(value string) *NoisyOperationsApplyConfiguration {
-	b.HttpMethod = &value
+// If called multiple times, the HttpClient field is set to the value of the last call.
+func (b *NoisyOperationsApplyConfiguration) WithHttpClient(value *NoisyOperationHttpClientMatcherApplyConfiguration) *NoisyOperationsApplyConfiguration {
+	b.HttpClient = value
 	return b
 }
 

@@ -148,7 +148,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
 	logger := log.FromContext(ctx)
-	cg, irls, agentLevelActions, workloadObj, err := getRelevantResources(ctx, c, pw)
+	cg, irls, agentLevelActions, samplingRules, workloadObj, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
 		return nil, err
@@ -217,7 +217,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, workloadObj, pw)
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, samplingRules, workloadObj, pw)
 		containersConfig = append(containersConfig, currentContainerConfig)
 		// if at least one container has agent enabled, and pod manifest injection is required,
 		// then the overall pod manifest injection is required.
@@ -508,6 +508,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	irls *[]odigosv1.InstrumentationRule,
 	containerOverride *odigosv1.ContainerOverride,
 	agentLevelActions *[]odigosv1.Action,
+	samplingRules *[]odigosv1.Sampling,
 	workloadObj workload.Workload,
 	pw k8sconsts.PodWorkload,
 ) odigosv1.ContainerAgentConfig {
@@ -541,7 +542,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 	}
 
 	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, runtimeDetails.Language, pw)
-	ignoreHealthChecks := filterIgnoreHealthChecksForContainer(agentLevelActions, runtimeDetails.Language)
 
 	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {
@@ -551,8 +551,9 @@ func calculateContainerInstrumentationConfig(containerName string,
 
 	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 
+	serviceName := "" // TODO:  populate with the real service name.
 	// at this time, we don't populate the signals specific configs, but we will do it soon
-	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, filteredTemplateRules, ignoreHealthChecks, irls, agentLevelActions, workloadObj, d)
+	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, filteredTemplateRules, irls, agentLevelActions, samplingRules, workloadObj, pw, serviceName, d)
 	if err != nil {
 		return *err
 	}

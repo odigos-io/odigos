@@ -17,15 +17,20 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
+	common "github.com/odigos-io/odigos/common"
+)
+
 // ServicesApplyConfiguration represents a declarative configuration of the Services type for use
 // with apply.
 type ServicesApplyConfiguration struct {
-	ServiceName       *string `json:"serviceName,omitempty"`
-	WorkloadName      *string `json:"workloadName,omitempty"`
-	WorkloadKind      *string `json:"workloadKind,omitempty"`
-	WorkloadNamespace *string `json:"workloadNamespace,omitempty"`
-	ContainerName     *string `json:"containerName,omitempty"`
-	WorkloadLanguage  *string `json:"workloadLanguage,omitempty"`
+	ServiceName       *string                     `json:"serviceName,omitempty"`
+	WorkloadName      *string                     `json:"workloadName,omitempty"`
+	WorkloadKind      *k8sconsts.WorkloadKind     `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                     `json:"workloadNamespace,omitempty"`
+	ContainerName     *string                     `json:"containerName,omitempty"`
+	WorkloadLanguage  *common.ProgrammingLanguage `json:"workloadLanguage,omitempty"`
 }
 
 // ServicesApplyConfiguration constructs a declarative configuration of the Services type for use with
@@ -53,7 +58,7 @@ func (b *ServicesApplyConfiguration) WithWorkloadName(value string) *ServicesApp
 // WithWorkloadKind sets the WorkloadKind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WorkloadKind field is set to the value of the last call.
-func (b *ServicesApplyConfiguration) WithWorkloadKind(value string) *ServicesApplyConfiguration {
+func (b *ServicesApplyConfiguration) WithWorkloadKind(value k8sconsts.WorkloadKind) *ServicesApplyConfiguration {
 	b.WorkloadKind = &value
 	return b
 }
@@ -77,7 +82,7 @@ func (b *ServicesApplyConfiguration) WithContainerName(value string) *ServicesAp
 // WithWorkloadLanguage sets the WorkloadLanguage field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WorkloadLanguage field is set to the value of the last call.
-func (b *ServicesApplyConfiguration) WithWorkloadLanguage(value string) *ServicesApplyConfiguration {
+func (b *ServicesApplyConfiguration) WithWorkloadLanguage(value common.ProgrammingLanguage) *ServicesApplyConfiguration {
 	b.WorkloadLanguage = &value
 	return b
 }

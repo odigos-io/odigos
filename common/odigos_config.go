@@ -383,10 +383,10 @@ type TailSamplingConfiguration struct {
 // it will be used with head sampling where the agent support it.
 // when tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.
 type K8sHealthProbesSamplingConfiguration struct {
-	// if set to true, odigos will not automatically detect and sample out health probes.
-	// this is a global knob to disable health probes auto-detection and sampling completely.
-	// users interested in full observability of health probes can set this to true.
-	Disabled *bool `json:"disabled,omitempty"`
+	// if set to true, odigos will automatically detect and sample out health probes.
+	// this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
+	// users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
+	Enabled *bool `json:"enabled,omitempty"`
 
 	// percentage % (0-100) of health probes to keep.
 	// if not set, it is defaulted to 0% -> all health probes will be sampled out.

@@ -89,5 +89,18 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		return err
 	}
 
+	err = builder.
+		ControllerManagedBy(mgr).
+		Named("agentenabled-sampling").
+		For(&odigosv1.Sampling{}).
+		// No event filtering, all sampling rules are always processed.
+		Complete(&SamplingController{
+			Client:          mgr.GetClient(),
+			DistrosProvider: dp,
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
