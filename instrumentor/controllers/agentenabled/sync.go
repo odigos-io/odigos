@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-version"
-	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
@@ -450,16 +449,6 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 	return &odigosv1.UrlTemplatizationConfig{
 		Rules: rules,
 	}
-}
-
-func filterIgnoreHealthChecksForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage) []actionsv1.IgnoreHealthChecksConfig {
-	ignoredHealthChecksConfigs := []actionsv1.IgnoreHealthChecksConfig{}
-	for _, ignoreHealthCheck := range *agentLevelActions {
-		if ignoreHealthCheck.Spec.Samplers != nil && ignoreHealthCheck.Spec.Samplers.IgnoreHealthChecks != nil {
-			ignoredHealthChecksConfigs = append(ignoredHealthChecksConfigs, *ignoreHealthCheck.Spec.Samplers.IgnoreHealthChecks)
-		}
-	}
-	return ignoredHealthChecksConfigs
 }
 
 // templatizationRulesGroupMatchesContainer checks if a rules group matches the container based on all set filters.
