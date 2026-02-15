@@ -1133,10 +1133,6 @@ func (in *InstrumentationConfigStatus) DeepCopyInto(out *InstrumentationConfigSt
 		in, out := &in.InstrumentationTime, &out.InstrumentationTime
 		*out = (*in).DeepCopy()
 	}
-	if in.RecoveredFromRollbackAt != nil {
-		in, out := &in.RecoveredFromRollbackAt, &out.RecoveredFromRollbackAt
-		*out = (*in).DeepCopy()
-	}
 	if in.PodsManifestInjectionStatus != nil {
 		in, out := &in.PodsManifestInjectionStatus, &out.PodsManifestInjectionStatus
 		*out = new(PodsManifestInjectionStatus)

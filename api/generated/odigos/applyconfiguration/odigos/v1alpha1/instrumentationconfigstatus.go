@@ -30,7 +30,6 @@ type InstrumentationConfigStatusApplyConfiguration struct {
 	WorkloadRolloutHash         *string                                        `json:"workloadRolloutHash,omitempty"`
 	RollbackOccurred            *bool                                          `json:"rollbackOccurred,omitempty"`
 	InstrumentationTime         *metav1.Time                                   `json:"instrumentationTime,omitempty"`
-	RecoveredFromRollbackAt     *metav1.Time                                   `json:"recoveredFromRollbackAt,omitempty"`
 	PodsManifestInjectionStatus *PodsManifestInjectionStatusApplyConfiguration `json:"podsManifestInjectionStatus,omitempty"`
 }
 
@@ -87,14 +86,6 @@ func (b *InstrumentationConfigStatusApplyConfiguration) WithRollbackOccurred(val
 // If called multiple times, the InstrumentationTime field is set to the value of the last call.
 func (b *InstrumentationConfigStatusApplyConfiguration) WithInstrumentationTime(value metav1.Time) *InstrumentationConfigStatusApplyConfiguration {
 	b.InstrumentationTime = &value
-	return b
-}
-
-// WithRecoveredFromRollbackAt sets the RecoveredFromRollbackAt field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the RecoveredFromRollbackAt field is set to the value of the last call.
-func (b *InstrumentationConfigStatusApplyConfiguration) WithRecoveredFromRollbackAt(value metav1.Time) *InstrumentationConfigStatusApplyConfiguration {
-	b.RecoveredFromRollbackAt = &value
 	return b
 }
 

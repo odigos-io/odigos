@@ -803,30 +803,30 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateAction                    func(childComplexity int, action model.ActionInput) int
-		CreateInstrumentationRule       func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
-		CreateNewDestination            func(childComplexity int, destination model.DestinationInput) int
-		DeleteAction                    func(childComplexity int, id string, actionType string) int
-		DeleteCentralProxy              func(childComplexity int) int
-		DeleteDataStream                func(childComplexity int, id string) int
-		DeleteDestination               func(childComplexity int, id string, currentStreamName string) int
-		DeleteInstrumentationRule       func(childComplexity int, ruleID string) int
-		PauseOdigos                     func(childComplexity int) int
-		PersistK8sNamespaces            func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
-		PersistK8sSources               func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
-		RestartPod                      func(childComplexity int, namespace string, name string) int
-		RestartWorkloads                func(childComplexity int, sourceIds []*model.K8sSourceID) int
-		RetryInstrumentationForWorkload func(childComplexity int, sourceID model.K8sSourceID) int
-		TestConnectionForDestination    func(childComplexity int, destination model.DestinationInput) int
-		UninstrumentCluster             func(childComplexity int) int
-		UpdateAPIToken                  func(childComplexity int, token string) int
-		UpdateAction                    func(childComplexity int, id string, action model.ActionInput) int
-		UpdateDataStream                func(childComplexity int, id string, dataStream model.DataStreamInput) int
-		UpdateDestination               func(childComplexity int, id string, destination model.DestinationInput) int
-		UpdateInstrumentationRule       func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
-		UpdateK8sActualSource           func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
-		UpdateLocalUISamplingConfig     func(childComplexity int, config *model.SamplingConfigInput) int
-		UpdateRemoteConfig              func(childComplexity int, config model.RemoteConfigInput) int
+		CreateAction                   func(childComplexity int, action model.ActionInput) int
+		CreateInstrumentationRule      func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
+		CreateNewDestination           func(childComplexity int, destination model.DestinationInput) int
+		DeleteAction                   func(childComplexity int, id string, actionType string) int
+		DeleteCentralProxy             func(childComplexity int) int
+		DeleteDataStream               func(childComplexity int, id string) int
+		DeleteDestination              func(childComplexity int, id string, currentStreamName string) int
+		DeleteInstrumentationRule      func(childComplexity int, ruleID string) int
+		PauseOdigos                    func(childComplexity int) int
+		PersistK8sNamespaces           func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
+		PersistK8sSources              func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
+		RecoverFromRollbackForWorkload func(childComplexity int, sourceID model.K8sSourceID) int
+		RestartPod                     func(childComplexity int, namespace string, name string) int
+		RestartWorkloads               func(childComplexity int, sourceIds []*model.K8sSourceID) int
+		TestConnectionForDestination   func(childComplexity int, destination model.DestinationInput) int
+		UninstrumentCluster            func(childComplexity int) int
+		UpdateAPIToken                 func(childComplexity int, token string) int
+		UpdateAction                   func(childComplexity int, id string, action model.ActionInput) int
+		UpdateDataStream               func(childComplexity int, id string, dataStream model.DataStreamInput) int
+		UpdateDestination              func(childComplexity int, id string, destination model.DestinationInput) int
+		UpdateInstrumentationRule      func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
+		UpdateK8sActualSource          func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
+		UpdateLocalUISamplingConfig    func(childComplexity int, config *model.SamplingConfigInput) int
+		UpdateRemoteConfig             func(childComplexity int, config model.RemoteConfigInput) int
 	}
 
 	NodeCollectorAnalyze struct {
@@ -1193,7 +1193,7 @@ type MutationResolver interface {
 	DeleteDataStream(ctx context.Context, id string) (bool, error)
 	RestartWorkloads(ctx context.Context, sourceIds []*model.K8sSourceID) (bool, error)
 	DeleteCentralProxy(ctx context.Context) (bool, error)
-	RetryInstrumentationForWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error)
+	RecoverFromRollbackForWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error)
 	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (bool, error)
 	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
@@ -4649,6 +4649,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PersistK8sSources(childComplexity, args["sources"].([]*model.PersistNamespaceSourceInput)), true
 
+	case "Mutation.recoverFromRollbackForWorkload":
+		if e.complexity.Mutation.RecoverFromRollbackForWorkload == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_recoverFromRollbackForWorkload_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RecoverFromRollbackForWorkload(childComplexity, args["sourceId"].(model.K8sSourceID)), true
+
 	case "Mutation.restartPod":
 		if e.complexity.Mutation.RestartPod == nil {
 			break
@@ -4672,18 +4684,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RestartWorkloads(childComplexity, args["sourceIds"].([]*model.K8sSourceID)), true
-
-	case "Mutation.retryInstrumentationForWorkload":
-		if e.complexity.Mutation.RetryInstrumentationForWorkload == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_retryInstrumentationForWorkload_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.RetryInstrumentationForWorkload(childComplexity, args["sourceId"].(model.K8sSourceID)), true
 
 	case "Mutation.testConnectionForDestination":
 		if e.complexity.Mutation.TestConnectionForDestination == nil {
@@ -6580,6 +6580,34 @@ func (ec *executionContext) field_Mutation_persistK8sSources_argsSources(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_recoverFromRollbackForWorkload_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_recoverFromRollbackForWorkload_argsSourceID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sourceId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_recoverFromRollbackForWorkload_argsSourceID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.K8sSourceID, error) {
+	if _, ok := rawArgs["sourceId"]; !ok {
+		var zeroVal model.K8sSourceID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceId"))
+	if tmp, ok := rawArgs["sourceId"]; ok {
+		return ec.unmarshalNK8sSourceId2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx, tmp)
+	}
+
+	var zeroVal model.K8sSourceID
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_restartPod_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -6656,34 +6684,6 @@ func (ec *executionContext) field_Mutation_restartWorkloads_argsSourceIds(
 	}
 
 	var zeroVal []*model.K8sSourceID
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_retryInstrumentationForWorkload_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Mutation_retryInstrumentationForWorkload_argsSourceID(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["sourceId"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_Mutation_retryInstrumentationForWorkload_argsSourceID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (model.K8sSourceID, error) {
-	if _, ok := rawArgs["sourceId"]; !ok {
-		var zeroVal model.K8sSourceID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceId"))
-	if tmp, ok := rawArgs["sourceId"]; ok {
-		return ec.unmarshalNK8sSourceId2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sSourceID(ctx, tmp)
-	}
-
-	var zeroVal model.K8sSourceID
 	return zeroVal, nil
 }
 
@@ -30103,8 +30103,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteCentralProxy(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_retryInstrumentationForWorkload(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_retryInstrumentationForWorkload(ctx, field)
+func (ec *executionContext) _Mutation_recoverFromRollbackForWorkload(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_recoverFromRollbackForWorkload(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -30117,7 +30117,7 @@ func (ec *executionContext) _Mutation_retryInstrumentationForWorkload(ctx contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RetryInstrumentationForWorkload(rctx, fc.Args["sourceId"].(model.K8sSourceID))
+		return ec.resolvers.Mutation().RecoverFromRollbackForWorkload(rctx, fc.Args["sourceId"].(model.K8sSourceID))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -30134,7 +30134,7 @@ func (ec *executionContext) _Mutation_retryInstrumentationForWorkload(ctx contex
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_retryInstrumentationForWorkload(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_recoverFromRollbackForWorkload(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -30151,7 +30151,7 @@ func (ec *executionContext) fieldContext_Mutation_retryInstrumentationForWorkloa
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_retryInstrumentationForWorkload_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_recoverFromRollbackForWorkload_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -48518,9 +48518,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "retryInstrumentationForWorkload":
+		case "recoverFromRollbackForWorkload":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_retryInstrumentationForWorkload(ctx, field)
+				return ec._Mutation_recoverFromRollbackForWorkload(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

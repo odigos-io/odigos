@@ -23,6 +23,11 @@ const (
 	// the name of the profile that created them.
 	OdigosProfileAnnotation = "odigos.io/profile"
 
+	// RollbackRecoveryAtAnnotation is set on InstrumentationConfig to record the last
+	// spec timestamp that was processed for rollback recovery. When this matches
+	// IC.Spec.RollbackRecoveryAt, the recovery has been handled.
+	RollbackRecoveryAtAnnotation = "odigos.io/rollback-recovery"
+
 	// This label is used to mark resources that are managed by Helm.
 	AppManagedByHelmLabel = "app.kubernetes.io/managed-by"
 	AppManagedByHelmValue = "Helm"

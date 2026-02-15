@@ -13,8 +13,8 @@ import (
 
 // RecoverFromRollback sets RecoveredFromRollbackAt on the workload's Source with the current timestamp.
 // It flows through the sourceinstrumentation controller to the InstrumentationConfig spec.
-// The agentenabled controller compares spec vs status timestamps: if they differ, it clears
-// RollbackOccurred and copies the timestamp to IC status, allowing a retry.
+// The agentenabled controller compares spec vs annotation timestamps: if they differ, it clears
+// RollbackOccurred and copies the timestamp to the annotation, allowing a retry.
 func RecoverFromRollback(ctx context.Context, kubeClient client.Client, namespace, workloadName, kind string) error {
 	podWorkload := k8sconsts.PodWorkload{
 		Name:      workloadName,

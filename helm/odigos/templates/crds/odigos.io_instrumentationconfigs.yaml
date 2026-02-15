@@ -1425,12 +1425,6 @@ spec:
                       odigos agent injected.
                     type: boolean
                 type: object
-              recoveredFromRollbackAt:
-                description: |-
-                  RecoveredFromRollbackAt records the last spec timestamp that was processed for rollback recovery.
-                  When this matches IC.Spec.RecoveredFromRollbackAt, the recovery has been handled.
-                format: date-time
-                type: string
               rollbackOccurred:
                 description: Check if rollback happened to an application
                 type: boolean

@@ -107,27 +107,39 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		return ctrl.Result{}, err
 	}
 
-	// Check if recovery from rollback is needed by comparing the spec and status timestamps.
+	// Check if recovery from rollback is needed by comparing the spec and annotation timestamps.
 	// If they differ, the Source has requested a new recovery that hasn't been processed yet.
-	needsRecovery := ic.Spec.RecoveredFromRollbackAt != nil &&
-		!ic.Spec.RecoveredFromRollbackAt.Equal(ic.Status.RecoveredFromRollbackAt)
-	rollbackCleared := false
-	if needsRecovery && ic.Status.RollbackOccurred {
-		rollbackCleared = true
+	// Only check for recovery from rollback if the rollback occurred flag is set.
+	rollbackRecoveryChanged := false
+	if ic.Status.RollbackOccurred && ic.Spec.RecoveredFromRollbackAt != nil {
+		specTime := ic.Spec.RecoveredFromRollbackAt.Time
+		annotationRaw := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+		annotationTime, err := time.Parse(time.RFC3339, annotationRaw)
+
+		// Bad annotation time format
+		if err != nil && annotationRaw != "" {
+			logger.Error(err, "Failed to parse rollback recovery annotation", "name", ic.Name, "namespace", ic.Namespace)
+		} else if annotationRaw == "" || !specTime.Equal(annotationTime) {
+			// We need to recover from the rollback
+			if ic.Annotations == nil {
+				ic.Annotations = make(map[string]string)
+			}
+			ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation] = specTime.Format(time.RFC3339)
+			ic.Status.RollbackOccurred = false
+			rollbackRecoveryChanged = true
+		}
 	}
 
+	// c.Update persists spec + metadata (including annotations), but NOT the status subresource.
+	// It also refreshes the in-memory object, overwriting any in-memory status changes.
 	err = c.Update(ctx, &ic)
 	if err != nil {
 		return utils.K8SUpdateErrorHandler(err)
 	}
 
-	// c.Update refreshes the in-memory object from the server response, which only persists spec+metadata (not the status subresource).
-	// This overwrites any in-memory status changes we made above, so we must re-apply them.
-	if rollbackCleared {
+	// Re-apply status changes that were overwritten by c.Update.
+	if rollbackRecoveryChanged {
 		ic.Status.RollbackOccurred = false
-	}
-	if needsRecovery {
-		ic.Status.RecoveredFromRollbackAt = ic.Spec.RecoveredFromRollbackAt
 	}
 
 	cond := metav1.Condition{
@@ -140,7 +152,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
 	rolloutResult, doErr := rollout.Do(ctx, c, &ic, pw, conf, distroProvider, rolloutConcurrencyLimiter)
 
-	if rolloutResult.StatusChanged || agentEnabledChanged || rollbackCleared || needsRecovery {
+	if rolloutResult.StatusChanged || agentEnabledChanged || rollbackRecoveryChanged {
 		updateErr := c.Status().Update(ctx, &ic)
 		if updateErr != nil {
 			return utils.K8SUpdateErrorHandler(updateErr)
@@ -207,10 +219,18 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
 	// instrumentating it and to disable future instrumentation of this service
 	rollbackOccurred := ic.Status.RollbackOccurred
-	if rollbackOccurred && ic.Spec.RecoveredFromRollbackAt != nil &&
-		!ic.Spec.RecoveredFromRollbackAt.Equal(ic.Status.RecoveredFromRollbackAt) {
-		// Settings rollbackOccurred to false clears the rollback state and allows the workload to be instrumented again.
-		rollbackOccurred = false
+	if rollbackOccurred && ic.Spec.RecoveredFromRollbackAt != nil {
+		specTime := ic.Spec.RecoveredFromRollbackAt.Time
+		annotationRaw := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+		annotationTime, err := time.Parse(time.RFC3339, annotationRaw)
+
+		// Bad annotation time format
+		if err != nil && annotationRaw != "" {
+			logger.Error(err, "Failed to parse rollback recovery annotation", "name", ic.Name, "namespace", ic.Namespace)
+		} else if annotationRaw == "" || !specTime.Equal(annotationTime) {
+			// We need to recover from the rollback
+			rollbackOccurred = false
+		}
 	}
 	// Get existing backoff reason from status conditions if available
 	var existingBackoffReason odigosv1.AgentEnabledReason
