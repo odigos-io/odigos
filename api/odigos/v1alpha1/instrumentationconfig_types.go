@@ -274,10 +274,6 @@ type InstrumentationConfigStatus struct {
 	// This allows us to determine whether a crashing application should be rolled back or not
 	InstrumentationTime *metav1.Time `json:"instrumentationTime,omitempty"`
 
-	// RecoveredFromRollbackAt records the last spec timestamp that was processed for rollback recovery.
-	// When this matches IC.Spec.RecoveredFromRollbackAt, the recovery has been handled.
-	RecoveredFromRollbackAt *metav1.Time `json:"recoveredFromRollbackAt,omitempty"`
-
 	// Represents the status of odigos MANIFEST injection to existing pods template.
 	PodsManifestInjectionStatus *PodsManifestInjectionStatus `json:"podsManifestInjectionStatus,omitempty"`
 }
