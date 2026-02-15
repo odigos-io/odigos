@@ -45,6 +45,7 @@ brews:
       owner: odigos-io
       name: '{{ if eq .Env.IS_PRERELEASE "true" }}homebrew-odigos-cli-rc{{ else }}homebrew-odigos-cli{{ end }}'
       token: "{{ .Env.HOMEBREW_GITHUB_API_TOKEN }}"
+    skip_upload: '{{ .Env.SKIP_HOMEBREW_UPDATE }}'
     commit_msg_template: "release: {{ .Tag }}"
     ids:
       - odigos
