@@ -657,6 +657,16 @@ type K8sDesiredSourceInput struct {
 	AutoInstrument *bool   `json:"autoInstrument,omitempty"`
 }
 
+type K8sHealthProbesSamplingConfig struct {
+	Enabled        *bool    `json:"enabled,omitempty"`
+	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
+}
+
+type K8sHealthProbesSamplingConfigInput struct {
+	Enabled        *bool    `json:"enabled,omitempty"`
+	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
+}
+
 type K8sLabelAttribute struct {
 	LabelKey     string              `json:"labelKey"`
 	AttributeKey string              `json:"attributeKey"`
@@ -1133,6 +1143,27 @@ type RuntimeInfoAnalyze struct {
 	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
+type Sampling struct {
+	Configs *SamplingConfigs `json:"configs"`
+}
+
+type SamplingConfig struct {
+	TailSampling            *TailSamplingConfig            `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+type SamplingConfigInput struct {
+	TailSampling            *TailSamplingConfigInput            `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfigInput `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+type SamplingConfigs struct {
+	Effective               *SamplingConfig `json:"effective,omitempty"`
+	HelmDeployment          *SamplingConfig `json:"helmDeployment,omitempty"`
+	RemoteConfigFromCentral *SamplingConfig `json:"remoteConfigFromCentral,omitempty"`
+	LocalUIConfig           *SamplingConfig `json:"localUiConfig,omitempty"`
+}
+
 type ServiceMap struct {
 	Services []*ServiceMapFromSource `json:"services"`
 }
@@ -1232,6 +1263,16 @@ type SupportedSignals struct {
 	Traces  *ObservabilitySignalSupport `json:"traces"`
 	Metrics *ObservabilitySignalSupport `json:"metrics"`
 	Logs    *ObservabilitySignalSupport `json:"logs"`
+}
+
+type TailSamplingConfig struct {
+	Disabled                     *bool   `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+}
+
+type TailSamplingConfigInput struct {
+	Disabled                     *bool   `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
 }
 
 type TestConnectionResponse struct {

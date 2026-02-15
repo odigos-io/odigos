@@ -16,30 +16,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// GetRemoteConfig retrieves the current remote configuration from the odigos-remote-config ConfigMap.
-func GetRemoteConfig(ctx context.Context) (*common.OdigosConfiguration, error) {
-	ns := env.GetCurrentNamespace()
-
-	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosRemoteConfigName, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return &common.OdigosConfiguration{}, nil
-		}
-		return nil, fmt.Errorf("failed to get remote config: %w", err)
-	}
-
-	if cm.Data == nil || cm.Data[consts.OdigosConfigurationFileName] == "" {
-		return &common.OdigosConfiguration{}, nil
-	}
-
-	var config common.OdigosConfiguration
-	if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &config); err != nil {
-		return nil, fmt.Errorf("failed to parse remote config: %w", err)
-	}
-
-	return &config, nil
-}
-
 // UpdateRemoteConfig updates the remote configuration in the odigos-remote-config ConfigMap.
 func UpdateRemoteConfig(ctx context.Context, config *common.OdigosConfiguration) (*common.OdigosConfiguration, error) {
 	ns := env.GetCurrentNamespace()

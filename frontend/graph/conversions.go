@@ -528,6 +528,49 @@ func convertUserInstrumentationEnvsToModel(envs *common.UserInstrumentationEnvs)
 	return result, nil
 }
 
+// convertOdigosConfigToSamplingConfig converts common.OdigosConfiguration (or its Sampling slice) to the GraphQL model.SamplingConfig.
+// Placed here so all common → graph model conversions live in one place.
+func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *model.SamplingConfig {
+	if config == nil || config.Sampling == nil {
+		return nil
+	}
+	s := config.Sampling
+	out := &model.SamplingConfig{}
+	if s.TailSampling != nil {
+		out.TailSampling = &model.TailSamplingConfig{
+			Disabled:                     s.TailSampling.Disabled,
+			TraceAggregationWaitDuration: s.TailSampling.TraceAggregationWaitDuration,
+		}
+	}
+	if s.K8sHealthProbesSampling != nil {
+		out.K8sHealthProbesSampling = &model.K8sHealthProbesSamplingConfig{
+			Enabled:        s.K8sHealthProbesSampling.Enabled,
+			KeepPercentage: s.K8sHealthProbesSampling.KeepPercentage,
+		}
+	}
+	return out
+}
+
+func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput) *common.SamplingConfiguration {
+	if config == nil {
+		return nil
+	}
+	result := &common.SamplingConfiguration{}
+	if config.TailSampling != nil {
+		result.TailSampling = &common.TailSamplingConfiguration{
+			Disabled:                     config.TailSampling.Disabled,
+			TraceAggregationWaitDuration: config.TailSampling.TraceAggregationWaitDuration,
+		}
+	}
+	if config.K8sHealthProbesSampling != nil {
+		result.K8sHealthProbesSampling = &common.K8sHealthProbesSamplingConfiguration{
+			Enabled:        config.K8sHealthProbesSampling.Enabled,
+			KeepPercentage: config.K8sHealthProbesSampling.KeepPercentage,
+		}
+	}
+	return result
+}
+
 func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration) *model.MetricsSourceConfig {
 	if ms == nil {
 		return nil
