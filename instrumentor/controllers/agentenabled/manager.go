@@ -102,8 +102,9 @@ func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 		For(&odigosv1.Sampling{}).
 		// No event filtering, all sampling rules are always processed.
 		Complete(&SamplingController{
-			Client:          mgr.GetClient(),
-			DistrosProvider: dp,
+			Client:                    mgr.GetClient(),
+			DistrosProvider:           dp,
+			RolloutConcurrencyLimiter: rolloutConcurrencyLimiter,
 		})
 	if err != nil {
 		return err
