@@ -49,6 +49,7 @@ type SamplersConfig struct {
 	// automatically sample out health checks by a set fraction.
 	// health checks are discovered based on the livenessProbe and readinessProbe in the workload spec.
 	// if set, health checks are sampled regardless of any other configuration (head sampling at agent level, before traces are pushed into the collector pipeline)
+	// @deprecated: use odigos config to enable/disable this behavior instead.
 	IgnoreHealthChecks *IgnoreHealthChecksConfig `json:"ignoreHealthChecks,omitempty"`
 }
 
@@ -112,6 +113,7 @@ type IgnoreHealthChecksConfig struct {
 	// +kubebuilder:default:=0
 	// +kubebuilder:validation:Minimum:=0
 	// +kubebuilder:validation:Maximum:=1
+	// @deprecated: use odigos config to enable/disable this behavior instead.
 	FractionToRecord float64 `json:"fractionToRecord,omitempty"`
 }
 

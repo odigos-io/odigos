@@ -1142,7 +1142,8 @@ and service match but the span latency is below the threshold.</p>
    <p>FractionToRecord determines the percentage (0–100) of health checks traces to record.
 should be in range [0, 1]
 0 (default) means no health checks traces will be recorded
-1 means all health checks traces will be recorded</p>
+1 means all health checks traces will be recorded
+@deprecated: use odigos config to enable/disable this behavior instead.</p>
 </td>
 </tr>
 </tbody>
@@ -2348,7 +2349,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <td>
    <p>automatically sample out health checks by a set fraction.
 health checks are discovered based on the livenessProbe and readinessProbe in the workload spec.
-if set, health checks are sampled regardless of any other configuration (head sampling at agent level, before traces are pushed into the collector pipeline)</p>
+if set, health checks are sampled regardless of any other configuration (head sampling at agent level, before traces are pushed into the collector pipeline)
+@deprecated: use odigos config to enable/disable this behavior instead.</p>
 </td>
 </tr>
 </tbody>

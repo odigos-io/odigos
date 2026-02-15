@@ -100,3 +100,9 @@ var OdigosDeploymentConfigMapPredicate = ObjectNamePredicate{
 var OdigosRemoteConfigMapPredicate = ObjectNamePredicate{
 	AllowedObjectName: consts.OdigosRemoteConfigName,
 }
+
+// OdigosLocalUiConfigMapPredicate filters events for the odigos-local-ui-config ConfigMap
+// which contains configuration for the local UI.
+var OdigosLocalUiConfigMapPredicate = ObjectNamePredicate{
+	AllowedObjectName: consts.OdigosLocalUiConfigName,
+}

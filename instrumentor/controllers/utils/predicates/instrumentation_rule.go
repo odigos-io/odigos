@@ -17,8 +17,7 @@ func (o AgentInjectionRelevantRulesPredicate) Create(e event.CreateEvent) bool {
 	return instrumentationRule.Spec.OtelSdks != nil ||
 		instrumentationRule.Spec.OtelDistros != nil ||
 		instrumentationRule.Spec.HeadersCollection != nil ||
-		instrumentationRule.Spec.TraceConfig != nil ||
-		instrumentationRule.Spec.HeadSamplingFallbackFraction != nil
+		instrumentationRule.Spec.TraceConfig != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
@@ -33,8 +32,7 @@ func (i AgentInjectionRelevantRulesPredicate) Update(e event.UpdateEvent) bool {
 	return old.Spec.OtelSdks != nil || new.Spec.OtelSdks != nil ||
 		old.Spec.OtelDistros != nil || new.Spec.OtelDistros != nil ||
 		old.Spec.TraceConfig != nil || new.Spec.TraceConfig != nil ||
-		old.Spec.HeadersCollection != nil || new.Spec.HeadersCollection != nil ||
-		old.Spec.HeadSamplingFallbackFraction != nil || new.Spec.HeadSamplingFallbackFraction != nil
+		old.Spec.HeadersCollection != nil || new.Spec.HeadersCollection != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
@@ -47,8 +45,7 @@ func (i AgentInjectionRelevantRulesPredicate) Delete(e event.DeleteEvent) bool {
 	return instrumentationRule.Spec.OtelSdks != nil ||
 		instrumentationRule.Spec.OtelDistros != nil ||
 		instrumentationRule.Spec.TraceConfig != nil ||
-		instrumentationRule.Spec.HeadersCollection != nil ||
-		instrumentationRule.Spec.HeadSamplingFallbackFraction != nil
+		instrumentationRule.Spec.HeadersCollection != nil
 }
 
 func (i AgentInjectionRelevantRulesPredicate) Generic(e event.GenericEvent) bool {

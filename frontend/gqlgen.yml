@@ -110,3 +110,14 @@ models:
 
   K8sActualSource:
     fields:
+
+  SamplingConfigs:
+    fields:
+      effective:
+        resolver: true
+      helmDeployment:
+        resolver: true
+      remoteConfigFromCentral:
+        resolver: true
+      localUiConfig:
+        resolver: true

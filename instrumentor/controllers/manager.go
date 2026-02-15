@@ -152,6 +152,12 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&corev1.Secret{}: {
 					Field: nsSelector,
 				},
+				&odigosv1.Sampling{}: {
+					// currently it is assumed all sampling rules are in the odigos namespace.
+					// this can be extended in the future, to allow sampling in any namespace,
+					// but need to consider the RBAC and semantics of such a change.
+					Field: nsSelector,
+				},
 			},
 		},
 	}

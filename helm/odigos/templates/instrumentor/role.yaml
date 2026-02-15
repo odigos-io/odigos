@@ -60,10 +60,19 @@ rules:
       - odigos.io
     resources:
       - actions
+      - samplings
     verbs:
       - get
       - list
       - watch
+  - apiGroups:
+      - odigos.io
+    resources:
+      - samplings/status
+    verbs:
+      - get
+      - patch
+      - update
   - apiGroups:
       - ''
     resources:

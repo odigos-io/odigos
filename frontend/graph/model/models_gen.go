@@ -657,6 +657,16 @@ type K8sDesiredSourceInput struct {
 	AutoInstrument *bool   `json:"autoInstrument,omitempty"`
 }
 
+type K8sHealthProbesSamplingConfig struct {
+	Enabled        *bool    `json:"enabled,omitempty"`
+	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
+}
+
+type K8sHealthProbesSamplingConfigInput struct {
+	Enabled        *bool    `json:"enabled,omitempty"`
+	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
+}
+
 type K8sLabelAttribute struct {
 	LabelKey     string              `json:"labelKey"`
 	AttributeKey string              `json:"attributeKey"`
@@ -743,7 +753,32 @@ type K8sWorkloadContainer struct {
 	RuntimeInfo      *K8sWorkloadRuntimeInfoContainer                 `json:"runtimeInfo,omitempty"`
 	AgentEnabled     *K8sWorkloadAgentEnabledContainer                `json:"agentEnabled,omitempty"`
 	Overrides        *K8sWorkloadContainerOverrides                   `json:"overrides,omitempty"`
+	AgentConfig      *K8sWorkloadContainerAgentConfig                 `json:"agentConfig,omitempty"`
 	Instrumentations []*K8sWorkloadPodContainerProcessInstrumentation `json:"instrumentations,omitempty"`
+}
+
+type K8sWorkloadContainerAgentConfig struct {
+	Traces *K8sWorkloadContainerAgentConfigTraces `json:"traces,omitempty"`
+}
+
+type K8sWorkloadContainerAgentConfigTraces struct {
+	HeadSampling *K8sWorkloadContainerAgentConfigTracesHeadSampling `json:"headSampling,omitempty"`
+}
+
+type K8sWorkloadContainerAgentConfigTracesHeadSampling struct {
+	Checks             []*K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck `json:"checks,omitempty"`
+	FallbackPercentage float64                                                   `json:"fallbackPercentage"`
+}
+
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck struct {
+	Conditions []*K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition `json:"conditions,omitempty"`
+	Percentage float64                                                            `json:"percentage"`
+}
+
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition struct {
+	Key      string                                                                  `json:"key"`
+	Operator K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator `json:"operator"`
+	Value    string                                                                  `json:"value"`
 }
 
 type K8sWorkloadContainerOverrides struct {
@@ -1133,6 +1168,27 @@ type RuntimeInfoAnalyze struct {
 	Containers []*ContainerRuntimeInfoAnalyze `json:"containers"`
 }
 
+type Sampling struct {
+	Configs *SamplingConfigs `json:"configs"`
+}
+
+type SamplingConfig struct {
+	TailSampling            *TailSamplingConfig            `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfig `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+type SamplingConfigInput struct {
+	TailSampling            *TailSamplingConfigInput            `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfigInput `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+type SamplingConfigs struct {
+	Effective               *SamplingConfig `json:"effective,omitempty"`
+	HelmDeployment          *SamplingConfig `json:"helmDeployment,omitempty"`
+	RemoteConfigFromCentral *SamplingConfig `json:"remoteConfigFromCentral,omitempty"`
+	LocalUIConfig           *SamplingConfig `json:"localUiConfig,omitempty"`
+}
+
 type ServiceMap struct {
 	Services []*ServiceMapFromSource `json:"services"`
 }
@@ -1232,6 +1288,16 @@ type SupportedSignals struct {
 	Traces  *ObservabilitySignalSupport `json:"traces"`
 	Metrics *ObservabilitySignalSupport `json:"metrics"`
 	Logs    *ObservabilitySignalSupport `json:"logs"`
+}
+
+type TailSamplingConfig struct {
+	Disabled                     *bool   `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+}
+
+type TailSamplingConfigInput struct {
+	Disabled                     *bool   `json:"disabled,omitempty"`
+	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
 }
 
 type TestConnectionResponse struct {
@@ -1865,6 +1931,51 @@ func (e *K8sResourceKind) UnmarshalGQL(v any) error {
 }
 
 func (e K8sResourceKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator string
+
+const (
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals    K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "equals"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "notEquals"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith   K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "endWith"
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = "startWith"
+)
+
+var AllK8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator = []K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator{
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals,
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals,
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith,
+	K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith,
+}
+
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) IsValid() bool {
+	switch e {
+	case K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith, K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith:
+		return true
+	}
+	return false
+}
+
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) String() string {
+	return string(e)
+}
+
+func (e *K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator", str)
+	}
+	return nil
+}
+
+func (e K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

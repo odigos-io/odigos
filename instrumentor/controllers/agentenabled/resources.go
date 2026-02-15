@@ -20,6 +20,7 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 	*odigosv1.CollectorsGroup,
 	*[]odigosv1.InstrumentationRule,
 	*[]odigosv1.Action,
+	*[]odigosv1.Sampling,
 	workload.Workload,
 	error) {
 
@@ -27,30 +28,44 @@ func getRelevantResources(ctx context.Context, c client.Client, pw k8sconsts.Pod
 	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	workloadObj, err := workload.ObjectToWorkload(obj)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	cg, err := getCollectorsGroup(ctx, c)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	irls, err := getRelevantInstrumentationRules(ctx, c, pw)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	actions, err := getAgentLevelRelatedActions(ctx, c)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
-	return cg, irls, actions, workloadObj, nil
+	samplings, err := getAllSamplingRules(ctx, c)
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	return cg, irls, actions, samplings, workloadObj, nil
+}
+
+func getAllSamplingRules(ctx context.Context, c client.Client) (*[]odigosv1.Sampling, error) {
+	samplingList := &odigosv1.SamplingList{}
+	err := c.List(ctx, samplingList, &client.ListOptions{Namespace: env.GetCurrentNamespace()})
+	if err != nil {
+		return nil, err
+	}
+	return &samplingList.Items, nil
 }
 
 func getAgentLevelRelatedActions(ctx context.Context, c client.Client) (*[]odigosv1.Action, error) {

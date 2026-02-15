@@ -16,6 +16,7 @@ const (
 	OdigosLegacyConfigName      = "odigos-config"
 	OdigosEffectiveConfigName   = "effective-config"
 	OdigosRemoteConfigName      = "odigos-remote-config"
+	OdigosLocalUiConfigName     = "odigos-local-ui-config"
 	OdigosConfigurationFileName = "config.yaml"
 	OTLPPort                    = 4317
 	OTLPHttpPort                = 4318

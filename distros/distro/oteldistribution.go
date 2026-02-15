@@ -154,6 +154,10 @@ type HeadSampling struct {
 	// the attribute to check for head sampling http.method
 	// support for old semantic convention ("http.method" -> "http.request.method")
 	HttpRequestMethodAttributeKey string `yaml:"httpRequestMethodAttributeKey,omitempty"`
+
+	// the attribute to check for head sampling server.address
+	// support for old semantic convention ("net.peer.name" -> "server.address")
+	ServerAddressAttributeKey string `yaml:"serverAddressAttributeKey,omitempty"`
 }
 
 type HeadersCollection struct {

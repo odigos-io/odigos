@@ -1,0 +1,88 @@
+
+type TailSamplingConfig {
+
+	# if set to true, tail sampling will be disabled globally
+	# regardless of any other configurations or rules set.
+	# can be used to reduce collectors resource usage, troubleshooting, etc,
+	# or when tail-sampling is not needed or desired and should be shut off.
+    disabled: Boolean
+
+	# time to wait from the first span of a trace until a trace is considered completed.
+	# at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+	# introduces this amount of latency in the pipeline and for trace to hit the destination.
+	# also increases memory usage for keeping spans in memory until the wait duration time is reached.
+	# setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+	# and broken traces due to sampling each trace in few pieces.
+	traceAggregationWaitDuration: String
+}
+
+type K8sHealthProbesSamplingConfig {
+    # if set to true, odigos will automatically detect and sample out health probes.
+    # this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
+    # users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
+    enabled: Boolean
+
+    # percentage % (0-100) of health probes to keep.
+    # if not set, it is defaulted to 0% -> all health probes will be sampled out.
+    # set to some low value (like 1%) to still keep some health-probes traces.
+    keepPercentage: Float
+}
+
+type SamplingConfig {
+
+    # configuration for tail sampling.
+    tailSampling: TailSamplingConfig
+
+    # configuration for odigos auto-kubelet-probes detection and sampling.
+    k8sHealthProbesSampling: K8sHealthProbesSamplingConfig
+}
+
+# Input type for mutation arguments (GraphQL only allows input types as operation args).
+input TailSamplingConfigInput {
+    disabled: Boolean
+    traceAggregationWaitDuration: String
+}
+
+input K8sHealthProbesSamplingConfigInput {
+    enabled: Boolean
+    keepPercentage: Float
+}
+
+input SamplingConfigInput {
+    tailSampling: TailSamplingConfigInput
+    k8sHealthProbesSampling: K8sHealthProbesSamplingConfigInput
+}
+
+type SamplingConfigs {
+
+    # shows the effective config which is used in practice in odigos.
+    # this is the merge of all configs and potentially profiles.
+    effective: SamplingConfig
+
+    # shows the config which is used in the helm deployment or cli.
+    helmDeployment: SamplingConfig
+
+    # shows the config which is managed by central-backend.
+    remoteConfigFromCentral: SamplingConfig
+
+    # shows the config which is managed by local ui.
+    localUiConfig: SamplingConfig
+}
+
+type Sampling {
+
+    # show the configs related to sampling.
+    configs: SamplingConfigs!
+}
+
+extend type Query {
+    sampling: Sampling!
+}
+
+extend type Mutation {
+
+    # update the local ui sampling config.
+    # if nil is provided, the local ui config will be reset (using helm deployment, remote config from central, or defaults)
+    # each value in the config is optional, and if not provided, the corresponding config will be left unchanged.
+    updateLocalUiSamplingConfig(config: SamplingConfigInput): Boolean!
+}

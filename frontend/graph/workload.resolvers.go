@@ -264,13 +264,15 @@ func (r *k8sWorkloadResolver) Containers(ctx context.Context, obj *model.K8sWork
 	}
 
 	containerByName := make(map[string]*model.K8sWorkloadContainer)
-	for _, container := range ic.Spec.Containers {
+	for i := range ic.Spec.Containers {
+		container := &ic.Spec.Containers[i]
 		if _, ok := containerByName[container.ContainerName]; !ok {
 			containerByName[container.ContainerName] = &model.K8sWorkloadContainer{
 				ContainerName: container.ContainerName,
 			}
 		}
-		containerByName[container.ContainerName].AgentEnabled = agentEnabledContainersToModel(&container)
+		containerByName[container.ContainerName].AgentEnabled = agentEnabledContainersToModel(container)
+		containerByName[container.ContainerName].AgentConfig = containerAgentConfigToAgentConfigModel(container)
 	}
 
 	for _, container := range ic.Status.RuntimeDetailsByContainer {
