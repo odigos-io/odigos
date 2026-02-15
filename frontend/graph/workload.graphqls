@@ -229,6 +229,66 @@ type K8sWorkloadContainerOverrides {
   runtimeInfo: K8sWorkloadRuntimeInfoContainer
 }
 
+# operators to use to compare the attributes of a span with a value for head sampling.
+enum K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator {
+  equals
+  notEquals
+  endWith
+  startWith
+}
+
+# a single condition to check for head sampling.
+# a condition checks one attribute of a span for head sampling.
+# multiple conditions can be combined to form a single check which is used to determine the sampling decision.
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition {
+
+  # attribute key to check.
+  key: String!
+
+  # operator to use to compare the attribute value
+  # one of: 'equals', 'notEquals', 'endWith', 'startWith'
+  operator: K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator!
+
+  # value to compare the attribute value to.
+  # for example: '/healthz' for 'url.path' and 'GET' for 'http.request.method'
+  value: String!
+}
+
+type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck {
+
+  # all the conditions that must evaluate to true for this check to be used.
+  # for example: 'url.path', 'equals', '/healthz' and 'http.request.method', 'equals', 'GET'
+  conditions: [K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition!]
+
+  # percentage to keep traces if all conditions evaluate to true.
+  percentage: Float!
+}
+
+# configuration for head sampling to apply on traces in instrumentation agent.
+type K8sWorkloadContainerAgentConfigTracesHeadSampling {
+
+  # these are tested one by one, and the first one that evaluates to true is used to determine the sampling decision.
+  checks: [K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck!]
+
+  # if none of the checks above evaluate to true, this fraction of traces will be kept.
+  # defaults to 100% (all traces are kept).
+  fallbackPercentage: Float!
+}
+
+# traces configuration for the instrumentation agent.
+type K8sWorkloadContainerAgentConfigTraces {
+
+  # configuration for head sampling to apply on traces.
+  headSampling: K8sWorkloadContainerAgentConfigTracesHeadSampling
+}
+
+# configuration for the instrumentation agent.
+type K8sWorkloadContainerAgentConfig {
+
+  # configuration for traces.
+  traces: K8sWorkloadContainerAgentConfigTraces
+}
+
 # show all info for a specific workload container (not container instance)
 type K8sWorkloadContainer {
   containerName: String!
@@ -241,6 +301,9 @@ type K8sWorkloadContainer {
 
   # manual overrides for this container info, to set specific values for it or bypass failed detection.
   overrides: K8sWorkloadContainerOverrides
+
+  # configuration for the instrumentation agent for this container.
+  agentConfig: K8sWorkloadContainerAgentConfig
 
   # this part is a summary of all the instrumentations that were found in any process of this container.
   instrumentations: [K8sWorkloadPodContainerProcessInstrumentation!]
