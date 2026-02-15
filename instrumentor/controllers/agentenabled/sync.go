@@ -99,7 +99,6 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		}
 		return ctrl.Result{}, err
 	}
-
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider, conf)
@@ -107,39 +106,9 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		return ctrl.Result{}, err
 	}
 
-	// Check if recovery from rollback is needed by comparing the spec and annotation timestamps.
-	// If they differ, the Source has requested a new recovery that hasn't been processed yet.
-	// Only check for recovery from rollback if the rollback occurred flag is set.
-	rollbackRecoveryChanged := false
-	if ic.Status.RollbackOccurred && ic.Spec.RecoveredFromRollbackAt != nil {
-		specTime := ic.Spec.RecoveredFromRollbackAt.Time
-		annotationRaw := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
-		annotationTime, err := time.Parse(time.RFC3339, annotationRaw)
-
-		// Bad annotation time format
-		if err != nil && annotationRaw != "" {
-			logger.Error(err, "Failed to parse rollback recovery annotation", "name", ic.Name, "namespace", ic.Namespace)
-		} else if annotationRaw == "" || !specTime.Equal(annotationTime) {
-			// We need to recover from the rollback
-			if ic.Annotations == nil {
-				ic.Annotations = make(map[string]string)
-			}
-			ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation] = specTime.Format(time.RFC3339)
-			ic.Status.RollbackOccurred = false
-			rollbackRecoveryChanged = true
-		}
-	}
-
-	// c.Update persists spec + metadata (including annotations), but NOT the status subresource.
-	// It also refreshes the in-memory object, overwriting any in-memory status changes.
 	err = c.Update(ctx, &ic)
 	if err != nil {
 		return utils.K8SUpdateErrorHandler(err)
-	}
-
-	// Re-apply status changes that were overwritten by c.Update.
-	if rollbackRecoveryChanged {
-		ic.Status.RollbackOccurred = false
 	}
 
 	cond := metav1.Condition{
@@ -152,7 +121,7 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 	agentEnabledChanged := meta.SetStatusCondition(&ic.Status.Conditions, cond)
 	rolloutResult, doErr := rollout.Do(ctx, c, &ic, pw, conf, distroProvider, rolloutConcurrencyLimiter)
 
-	if rolloutResult.StatusChanged || agentEnabledChanged || rollbackRecoveryChanged {
+	if rolloutResult.StatusChanged || agentEnabledChanged {
 		updateErr := c.Status().Update(ctx, &ic)
 		if updateErr != nil {
 			return utils.K8SUpdateErrorHandler(updateErr)
@@ -217,21 +186,9 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	distroPerLanguage := calculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
 	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
-	// instrumentating it and to disable future instrumentation of this service
+	// instrumentating it and to disable future instrumentation of this service.
+	// Recovery from rollback is already handled in reconcileWorkload before this function is called.
 	rollbackOccurred := ic.Status.RollbackOccurred
-	if rollbackOccurred && ic.Spec.RecoveredFromRollbackAt != nil {
-		specTime := ic.Spec.RecoveredFromRollbackAt.Time
-		annotationRaw := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
-		annotationTime, err := time.Parse(time.RFC3339, annotationRaw)
-
-		// Bad annotation time format
-		if err != nil && annotationRaw != "" {
-			logger.Error(err, "Failed to parse rollback recovery annotation", "name", ic.Name, "namespace", ic.Namespace)
-		} else if annotationRaw == "" || !specTime.Equal(annotationTime) {
-			// We need to recover from the rollback
-			rollbackOccurred = false
-		}
-	}
 	// Get existing backoff reason from status conditions if available
 	var existingBackoffReason odigosv1.AgentEnabledReason
 	for _, condition := range ic.Status.Conditions {

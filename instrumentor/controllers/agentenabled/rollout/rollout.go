@@ -111,6 +111,23 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return RolloutResult{}, client.IgnoreNotFound(rolloutErr)
 	}
 
+	// Check if recovery from rollback is needed before proceeding with rollout logic.
+	// If recovery is needed, persist the changes and requeue so the next reconcile
+	// recomputes the spec with RollbackOccurred cleared.
+	if recoverFromRollback(ic, logger) {
+		if err := c.Update(ctx, ic); err != nil {
+			_, handledErr := utils.K8SUpdateErrorHandler(err)
+			return RolloutResult{}, handledErr
+		}
+		// c.Update refreshes the in-memory object, overwriting status changes. Re-apply and persist.
+		ic.Status.RollbackOccurred = false
+		if err := c.Status().Update(ctx, ic); err != nil {
+			_, handledErr := utils.K8SUpdateErrorHandler(err)
+			return RolloutResult{}, handledErr
+		}
+		return RolloutResult{Result: ctrl.Result{Requeue: true}}, nil
+	}
+
 	if ic.Spec.PodManifestInjectionOptional {
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
@@ -456,6 +473,37 @@ func shouldTriggerRollback(
 	}
 
 	return true, 0, backOffInfo, nil
+}
+
+// recoverFromRollback checks if a rollback recovery was requested by comparing the spec timestamp
+// to the annotation timestamp. If they differ (or the annotation is empty), it clears RollbackOccurred
+// and updates the annotation to acknowledge the recovery.
+// If the annotation is malformed, it logs an error and skips recovery.
+// Returns true if recovery was applied and the IC was modified.
+func recoverFromRollback(ic *odigosv1alpha1.InstrumentationConfig, logger logr.Logger) bool {
+	if !ic.Status.RollbackOccurred || ic.Spec.RecoveredFromRollbackAt == nil {
+		return false
+	}
+
+	specTimeFormatted := ic.Spec.RecoveredFromRollbackAt.Time.Format(time.RFC3339)
+	annotationRaw := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+
+	if annotationRaw != "" {
+		if _, err := time.Parse(time.RFC3339, annotationRaw); err != nil {
+			logger.Error(err, "Failed to parse rollback recovery annotation, skipping recovery", "name", ic.Name, "namespace", ic.Namespace)
+			return false
+		}
+		if annotationRaw == specTimeFormatted {
+			return false
+		}
+	}
+
+	if ic.Annotations == nil {
+		ic.Annotations = make(map[string]string)
+	}
+	ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation] = specTimeFormatted
+	ic.Status.RollbackOccurred = false
+	return true
 }
 
 // triggerRollback executes the rollback: disables agents, updates IC, and restarts the workload.
