@@ -6,6 +6,8 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 func percentageToFractionOrZero(percentage *float64) float64 {
@@ -53,31 +55,35 @@ func calculateKubeletHttpGetProbePaths(workloadObj workload.Workload, containerN
 	return healthCheckPathsHttpGet
 }
 
-func getDistroPathAndMethodAttributeKeys(distro *distro.OtelDistro) (string, string) {
-	urlPathAttributeKey := "url.path"
+func getDistroPathAndMethodAttributeKeys(distro *distro.OtelDistro) (attribute.Key, attribute.Key, attribute.Key) {
+	urlPathAttributeKey := semconv.URLPathKey
 	if distro.Traces.HeadSampling.UrlPathAttributeKey != "" {
-		urlPathAttributeKey = distro.Traces.HeadSampling.UrlPathAttributeKey
+		urlPathAttributeKey = attribute.Key(distro.Traces.HeadSampling.UrlPathAttributeKey)
 	}
-	httpRequestMethodAttributeKey := "http.request.method"
+	httpRequestMethodAttributeKey := semconv.HTTPRequestMethodKey
 	if distro.Traces.HeadSampling.HttpRequestMethodAttributeKey != "" {
-		httpRequestMethodAttributeKey = distro.Traces.HeadSampling.HttpRequestMethodAttributeKey
+		httpRequestMethodAttributeKey = attribute.Key(distro.Traces.HeadSampling.HttpRequestMethodAttributeKey)
 	}
-	return urlPathAttributeKey, httpRequestMethodAttributeKey
+	serverAddressAttributeKey := semconv.ServerAddressKey
+	if distro.Traces.HeadSampling.ServerAddressAttributeKey != "" {
+		serverAddressAttributeKey = attribute.Key(distro.Traces.HeadSampling.ServerAddressAttributeKey)
+	}
+	return urlPathAttributeKey, httpRequestMethodAttributeKey, serverAddressAttributeKey
 }
 
 func calculateKubeletHttpGetProbeAttributeConditions(distro *distro.OtelDistro, healthCheckPathsHttpGet map[string]struct{}, fraction float64) []odigosv1.AttributesAndSamplerRule {
-	urlPathAttributeKey, httpRequestMethodAttributeKey := getDistroPathAndMethodAttributeKeys(distro)
+	urlPathAttributeKey, httpRequestMethodAttributeKey, _ := getDistroPathAndMethodAttributeKeys(distro)
 	attributesAndSamplerRules := make([]odigosv1.AttributesAndSamplerRule, 0, len(healthCheckPathsHttpGet))
 	for path := range healthCheckPathsHttpGet {
 		attributesAndSamplerRules = append(attributesAndSamplerRules, odigosv1.AttributesAndSamplerRule{
 			AttributeConditions: []odigosv1.AttributeCondition{
 				{
-					Key:      urlPathAttributeKey,
+					Key:      string(urlPathAttributeKey),
 					Val:      path,
 					Operator: odigosv1.Equals,
 				},
 				{
-					Key:      httpRequestMethodAttributeKey,
+					Key:      string(httpRequestMethodAttributeKey),
 					Val:      "GET", // Since this is comming from the HTTPGet probe config, it will be invoked as GET.
 					Operator: odigosv1.Equals,
 				},
@@ -176,25 +182,25 @@ func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOpe
 }
 
 func convertNoisyOperationHttpServerToAttributeConditions(httpServer *odigosv1.NoisyOperationHttpServerMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
-	urlPathAttributeKey, httpRequestMethodAttributeKey := getDistroPathAndMethodAttributeKeys(distro)
+	urlPathAttributeKey, httpRequestMethodAttributeKey, _ := getDistroPathAndMethodAttributeKeys(distro)
 	andConditions := []odigosv1.AttributeCondition{}
 	if httpServer.Route != "" {
 		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      urlPathAttributeKey,
+			Key:      string(urlPathAttributeKey),
 			Val:      httpServer.Route,
 			Operator: odigosv1.Equals,
 		})
 	}
 	if httpServer.RoutePrefix != "" {
 		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      urlPathAttributeKey,
+			Key:      string(urlPathAttributeKey),
 			Val:      httpServer.RoutePrefix,
 			Operator: odigosv1.StartWith,
 		})
 	}
 	if httpServer.Method != "" {
 		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      httpRequestMethodAttributeKey,
+			Key:      string(httpRequestMethodAttributeKey),
 			Val:      httpServer.Method,
 			Operator: odigosv1.Equals,
 		})
@@ -202,25 +208,28 @@ func convertNoisyOperationHttpServerToAttributeConditions(httpServer *odigosv1.N
 	return andConditions
 }
 
-func convertNoisyOperationHttpClientToAttributeConditions(httpClient *odigosv1.NoisyOperationHttpClientMatcher) []odigosv1.AttributeCondition {
+func convertNoisyOperationHttpClientToAttributeConditions(httpClient *odigosv1.NoisyOperationHttpClientMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
+
+	urlPathAttributeKey, httpRequestMethodAttributeKey, serverAddressAttributeKey := getDistroPathAndMethodAttributeKeys(distro)
+
 	andConditions := []odigosv1.AttributeCondition{}
 	if httpClient.ServerAddress != "" {
 		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      "server.address",
+			Key:      string(serverAddressAttributeKey),
 			Val:      httpClient.ServerAddress,
 			Operator: odigosv1.Equals,
 		})
 	}
 	if httpClient.UrlPath != "" {
 		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      "url.path",
+			Key:      string(urlPathAttributeKey),
 			Val:      httpClient.UrlPath,
 			Operator: odigosv1.Equals,
 		})
 	}
 	if httpClient.Method != "" {
 		andConditions = append(andConditions, odigosv1.AttributeCondition{
-			Key:      "http.request.method",
+			Key:      string(httpRequestMethodAttributeKey),
 			Val:      httpClient.Method,
 			Operator: odigosv1.Equals,
 		})
