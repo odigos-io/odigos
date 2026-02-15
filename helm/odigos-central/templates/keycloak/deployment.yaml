@@ -78,6 +78,8 @@ spec:
             {{- end }}
             - name: KC_HOSTNAME_STRICT_HTTPS
               value: "false"
+            - name: KC_HOSTNAME_STRICT_BACKCHANNEL
+              value: "true"
             - name: KC_PROXY
               value: "edge"
           {{- if .Values.auth.persistence.enabled }}
