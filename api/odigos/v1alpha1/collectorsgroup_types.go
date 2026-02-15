@@ -198,6 +198,10 @@ type CollectorsGroupSpec struct {
 	// This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
 	// If no matching nodes exist, the pod will remain Pending.
 	NodeSelector *map[string]string `json:"nodeSelector,omitempty"`
+
+	// Deployment name for the collectors group deployment.
+	// Only relevant for cluster gateway collector.
+	DeploymentName string `json:"deploymentName,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

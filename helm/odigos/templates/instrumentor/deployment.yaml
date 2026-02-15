@@ -58,6 +58,11 @@ spec:
         command:
           - /app
         {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        {{- $extendedSuffix := "" -}}
+        {{- if and .Values.odiglet.extended (include "odigos.secretExists" .) -}}
+          {{- $extendedSuffix = "-extended" -}}
+        {{- end -}}
+        {{- $agentsImageTag := printf "%s%s" $imageTag $extendedSuffix -}}
         {{- if include "odigos.secretExists" . }}
         image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-instrumentor" "Tag" $imageTag) }}
         {{- else }}
@@ -97,7 +102,7 @@ spec:
           {{- end }}
           - name: ODIGOS_INIT_CONTAINER_IMAGE
             {{- if include "odigos.secretExists" . }}
-            value: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $imageTag) }}
+            value: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $agentsImageTag) }}
             {{- else }}
             value: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
             {{- end }}

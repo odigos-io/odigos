@@ -1,0 +1,37 @@
+name: Release Note Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, labeled, unlabeled]
+
+jobs:
+  release-note:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check release note block
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          echo "$PR_BODY" > pr_body.txt
+          
+          if ! grep -q '^```release-note' pr_body.txt; then
+            echo "❌ Missing \`\`\`release-note block"
+            exit 1
+          fi
+
+          # Extract content between fenced blocks
+          CONTENT=$(awk '
+            /^```release-note/ {flag=1; next}
+            /^```/ {flag=0}
+            flag {print}
+          ' pr_body.txt)
+
+          # Trim whitespace
+          CONTENT=$(echo "$CONTENT" | xargs)
+
+          if [ -z "$CONTENT" ]; then
+            echo "❌ release-note block is empty"
+            exit 1
+          fi
+
+          echo "✅ Release note present"

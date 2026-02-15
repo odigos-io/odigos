@@ -70,6 +70,9 @@ data:
       nodeSelector:
         {{- toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- if .Values.collectorGateway.deploymentName }}
+      deploymentName: {{ .Values.collectorGateway.deploymentName }}
+      {{- end }}
     {{- end }}
     {{- if .Values.collectorNode }}
     {{- $nodeLimiter := include "collector.node.memoryLimiter" . | fromYaml }}
@@ -191,6 +194,9 @@ data:
     rollout:
       {{- if .Values.rollout.automaticRolloutDisabled }}
       automaticRolloutDisabled: {{ .Values.rollout.automaticRolloutDisabled }}
+      {{- end }}
+      {{- if .Values.rollout.maxConcurrentRollouts }}
+      maxConcurrentRollouts: {{ .Values.rollout.maxConcurrentRollouts }}
       {{- end }}
     {{- end }}
     {{- if .Values.clickhouseDestinationJsonType.enabled }}

@@ -64,12 +64,12 @@ spec:
       # if the mountMethod is k8s-init-container, we will pre-pull the agents image here as an init container
       # otherwise, we must be using a mountMethod that allows hostPathMounts and we will use the standard odiglet init
       initContainers:
-      {{- if or (not .Values.odiglet.noHostPathMounts) (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
+      {{- if (not (eq .Values.instrumentor.mountMethod "k8s-init-container")) }}
         - name: init
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $odigletImageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
@@ -123,7 +123,7 @@ spec:
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-agents" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $odigletImageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "agents" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           # # it does not run any actual code, just pulls the image
@@ -142,7 +142,7 @@ spec:
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $odigletImageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           args:
             - --health-probe-bind-port={{ .Values.odiglet.odiglet.livenessProbe.httpGet.port }}
@@ -358,7 +358,7 @@ spec:
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
           {{- else }}
-          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $odigletImageTag) }}
+          image: {{ template "utils.imageName" (dict "Values" .Values "Component" "odiglet" "Tag" $imageTag) }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           command:
