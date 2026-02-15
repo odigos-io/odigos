@@ -18,9 +18,9 @@ func TestReplacePlaceholders(t *testing.T) {
 		"key1": "${MY_KEY1}",
 		"key2": 123,
 		"key3": config.GenericMap{
-			"nestedKey1": "${MY_KEY2}", // replaced with MY_VALUE2
-			"nestedKey2": "someValue",  // no replacement
-			"nestedKey3": "${MY_KEY3}", // no replacement
+			"nestedKey1": "${MY_KEY2}",              // replaced with MY_VALUE2
+			"nestedKey2": "someValue",               // no replacement
+			"nestedKey3": "${MY_KEY3}",              // no replacement
 			"nestedKey4": "some prefix: ${MY_KEY2}", // replaced with "some prefix: MY_VALUE2"
 		},
 	}
