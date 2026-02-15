@@ -7,6 +7,30 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 )
 
+// normalizeMap deep-converts a GenericMap so that all nested map values become plain map[string]any.
+// This is needed because confmap's decoder hooks use type assertions on map[string]any,
+// which fail for named types like config.GenericMap or typed maps like map[string]string.
+func normalizeMap(gmap config.GenericMap) map[string]any {
+	out := make(map[string]any, len(gmap))
+	for k, v := range gmap {
+		switch val := v.(type) {
+		case config.GenericMap:
+			out[k] = normalizeMap(val)
+		case map[string]interface{}:
+			out[k] = normalizeMap(val)
+		case map[string]string:
+			m := make(map[string]any, len(val))
+			for mk, mv := range val {
+				m[mk] = mv
+			}
+			out[k] = m
+		default:
+			out[k] = v
+		}
+	}
+	return out
+}
+
 // replacePlaceholders replaces placeholder values in the given GenericMap with values from the fields map.
 // It traverses the GenericMap recursively and processes each string value as a template.
 // If a string value contains placeholders in the format {KEY}, it replaces them with corresponding values from the fields map.
@@ -14,7 +38,7 @@ import (
 func replacePlaceholders(gmap config.GenericMap, fields map[string]string) {
 	// Regular expression to match the ${KEY} pattern
 	re := regexp.MustCompile(`\$\{([^}]+)\}`)
-	
+
 	for key, value := range gmap {
 		switch v := value.(type) {
 		case string:
