@@ -118,16 +118,15 @@ const (
 type WorkloadRolloutReason string
 
 const (
-	WorkloadRolloutReasonTriggeredSuccessfully     WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
-	WorkloadRolloutReasonFailedToPatch             WorkloadRolloutReason = "FailedToPatch"
-	WorkloadRolloutReasonPreviousRolloutOngoing    WorkloadRolloutReason = "PreviousRolloutOngoing"
-	WorkloadRolloutReasonRolloutFinished           WorkloadRolloutReason = "RolloutFinished"
-	WorkloadRolloutReasonDisabled                  WorkloadRolloutReason = "Disabled"
-	WorkloadRolloutReasonNotRequired               WorkloadRolloutReason = "NotRequired"
-	WorkloadRolloutReasonWaitingForRestart         WorkloadRolloutReason = "WaitingForRestart"
-	WorkloadRolloutReasonWorkloadNotSupporting     WorkloadRolloutReason = "WorkloadNotSupporting"
-	WorkloadRolloutReasonRollbackRecoveryTriggered WorkloadRolloutReason = "RollbackRecoveryTriggered"
-	WorkloadRolloutReasonWaitingInQueue            WorkloadRolloutReason = "WaitingInQueue"
+	WorkloadRolloutReasonTriggeredSuccessfully  WorkloadRolloutReason = "RolloutTriggeredSuccessfully"
+	WorkloadRolloutReasonFailedToPatch          WorkloadRolloutReason = "FailedToPatch"
+	WorkloadRolloutReasonPreviousRolloutOngoing WorkloadRolloutReason = "PreviousRolloutOngoing"
+	WorkloadRolloutReasonRolloutFinished        WorkloadRolloutReason = "RolloutFinished"
+	WorkloadRolloutReasonDisabled               WorkloadRolloutReason = "Disabled"
+	WorkloadRolloutReasonNotRequired            WorkloadRolloutReason = "NotRequired"
+	WorkloadRolloutReasonWaitingForRestart      WorkloadRolloutReason = "WaitingForRestart"
+	WorkloadRolloutReasonWorkloadNotSupporting  WorkloadRolloutReason = "WorkloadNotSupporting"
+	WorkloadRolloutReasonWaitingInQueue         WorkloadRolloutReason = "WaitingInQueue"
 )
 
 const (
