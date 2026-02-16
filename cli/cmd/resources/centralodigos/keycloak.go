@@ -161,10 +161,22 @@ func NewKeycloakDeployment(ns string, config AuthConfig, withPvc bool) *appsv1.D
 											Key: k8sconsts.KeycloakAdminPasswordKey,
 										},
 									},
-								},
+							},
 								{
 									Name:  "KC_HOSTNAME",
 									Value: "localhost",
+								},
+								{
+									Name:  "KC_HOSTNAME_STRICT_HTTPS",
+									Value: "false",
+								},
+								{
+									Name:  "KC_HOSTNAME_STRICT_BACKCHANNEL",
+									Value: "true",
+								},
+								{
+									Name:  "KC_PROXY",
+									Value: "edge",
 								},
 							},
 							Ports: []corev1.ContainerPort{

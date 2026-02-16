@@ -119,9 +119,6 @@ jobs:
       - name: Verify Components Image Ready
         run: |
           declare -a REPOS=("odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-enterprise-odiglet" "odigos-ui" "odigos-enterprise-instrumentor" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-central-backend" "odigos-enterprise-central-proxy" "odigos-enterprise-central-ui")
-          for repo in "${REPOS[@]}"; do
-            REPOS+=("${repo}-rhel-certified")
-          done
 
           TAG_TO_CHECK=${{ env.TAG }}
 
@@ -168,6 +165,43 @@ jobs:
         with:
           node-version: 18
 
+      - name: Check if Homebrew tap should be updated
+        run: |
+          # Pre-releases always update their respective tap (homebrew-odigos-cli-rc)
+          if [ "${{ env.IS_PRERELEASE }}" = "true" ]; then
+            echo "Pre-release detected, will update Homebrew RC tap"
+            echo "SKIP_HOMEBREW_UPDATE=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # For stable releases, check if this version is newer than what's currently in the tap.
+          # This prevents older patch releases (e.g. v1.16.9) from overwriting a newer version (e.g. v1.17.0).
+          CURRENT_TAP_VERSION=$(curl -sf https://raw.githubusercontent.com/odigos-io/homebrew-odigos-cli/main/odigos.rb \
+            | grep 'version "' | head -1 | sed 's/.*version "\(.*\)"/\1/')
+
+          if [ -z "$CURRENT_TAP_VERSION" ]; then
+            echo "Could not fetch current tap version, will update Homebrew tap"
+            echo "SKIP_HOMEBREW_UPDATE=false" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # Strip 'v' prefix from release tag for comparison
+          RELEASE_VERSION="${TAG#v}"
+
+          echo "Current Homebrew tap version: $CURRENT_TAP_VERSION"
+          echo "New release version: $RELEASE_VERSION"
+
+          # Use sort -V (version sort) to determine which version is greater
+          HIGHEST=$(printf '%s\n%s' "$CURRENT_TAP_VERSION" "$RELEASE_VERSION" | sort -V | tail -1)
+
+          if [ "$HIGHEST" = "$RELEASE_VERSION" ] && [ "$CURRENT_TAP_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "Release version $RELEASE_VERSION is newer than tap version $CURRENT_TAP_VERSION — will update Homebrew tap"
+            echo "SKIP_HOMEBREW_UPDATE=false" >> $GITHUB_ENV
+          else
+            echo "Release version $RELEASE_VERSION is NOT newer than tap version $CURRENT_TAP_VERSION — skipping Homebrew tap update"
+            echo "SKIP_HOMEBREW_UPDATE=true" >> $GITHUB_ENV
+          fi
+
       - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
@@ -177,6 +211,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_GITHUB_API_TOKEN }}
           IS_PRERELEASE: ${{ env.IS_PRERELEASE }}
+          SKIP_HOMEBREW_UPDATE: ${{ env.SKIP_HOMEBREW_UPDATE }}
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
 
       - uses: ko-build/setup-ko@v0.9

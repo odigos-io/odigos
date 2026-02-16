@@ -215,6 +215,8 @@ jobs:
             keyval/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
             ghcr.io/odigos-io/odigos-${{ matrix.service }}:${{ env.ODIGOS_TAG }}
           build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+            ODIGOS_VERSION=${{ env.ODIGOS_TAG }}
             LD_FLAGS=-s -w
             RHEL=false
           platforms: linux/amd64,linux/arm64

@@ -165,8 +165,10 @@ func TestConnection(ctx context.Context, dest config.ExporterConfigurer) TestCon
 	defaultConfig := factory.CreateDefaultConfig()
 	connectionTester.ModifyConfigForConnectionTest(defaultConfig)
 
-	// convert the user provided fields to a collector config
-	exportersConf := confmap.NewFromStringMap(exporterRawConfig)
+	// convert the user provided fields to a collector config.
+	// normalizeMap converts named map types (like config.GenericMap) to plain map[string]any,
+	// which is required for confmap's decoder hooks to properly handle type assertions.
+	exportersConf := confmap.NewFromStringMap(normalizeMap(exporterRawConfig))
 	if exportersConf == nil {
 		return TestConnectionResult{Succeeded: false, Message: "failed to create exporter config", Reason: InvalidConfig, DestinationType: destType, StatusCode: http.StatusInternalServerError}
 	}
