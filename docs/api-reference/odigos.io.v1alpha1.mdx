@@ -2088,7 +2088,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 </tr>
 <tr>
 <td>
-<code>durationMsAtLeast</code> <B>[Required]</B>
+<code>durationAtLeastMs</code> <B>[Required]</B>
 </td>
 <td>
 <code>int</code>
@@ -3263,7 +3263,9 @@ if the list is empty - all sources are matched.</p>
 </td>
 <td>
    <p>sampling percentage for noisy operations.
-if unset, 0% of such the traces will be collected.</p>
+if unset, 0% of such the traces will be collected.
+this percentage has &quot;at most&quot; semantics - the final sampling percentage for traces that match this rule
+will be the highest possible, but at most this value.</p>
 </td>
 </tr>
 <tr>
