@@ -119,9 +119,18 @@ func TestRecoverFromRollback_SourceNotFound(t *testing.T) {
 	// Act
 	err := RecoverFromRollback(context.Background(), fakeClient, "test-ns", "my-app", "Deployment")
 
-	// Assert: Error - no workload-level Source found
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "no workload-level Source found")
+	// Assert: A new workload Source is created
+	require.NoError(t, err)
+	sourceList := &odigosv1alpha1.SourceList{}
+	require.NoError(t, fakeClient.List(context.Background(), sourceList, client.InNamespace("test-ns")))
+	require.Len(t, sourceList.Items, 1, "expected exactly one Source to be created")
+
+	created := sourceList.Items[0]
+	assert.Equal(t, "my-app", created.Name)
+	assert.Equal(t, "test-ns", created.Namespace)
+	assert.Equal(t, "my-app", created.Spec.Workload.Name)
+	assert.Equal(t, "test-ns", created.Spec.Workload.Namespace)
+	assert.Equal(t, k8sconsts.WorkloadKind("Deployment"), created.Spec.Workload.Kind)
 }
 
 func TestRecoverFromRollback_UpdateFailure(t *testing.T) {
@@ -149,8 +158,9 @@ func TestRecoverFromRollback_UpdateFailure(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to update Source with RecoveredFromRollbackAt")
 }
 
-func TestRecoverFromRollback_NamespaceSourceOnly(t *testing.T) {
-	// Arrange: Only a namespace-level source exists, no workload-level source
+func TestRecoverFromRollback_NamespaceSourceOnly_CreatesWorkloadSource(t *testing.T) {
+	// Arrange: Only a namespace-level source exists, no workload-level source.
+	// This simulates a workload instrumented via a namespace source that needs recovery.
 	scheme := newScheme()
 	nsSource := &odigosv1alpha1.Source{
 		ObjectMeta: metav1.ObjectMeta{
@@ -171,11 +181,36 @@ func TestRecoverFromRollback_NamespaceSourceOnly(t *testing.T) {
 		},
 	}
 	fakeClient := newFakeClient(scheme, []client.Object{nsSource})
+	ctx := context.Background()
 
 	// Act
-	err := RecoverFromRollback(context.Background(), fakeClient, "test-ns", "my-app", "Deployment")
+	err := RecoverFromRollback(ctx, fakeClient, "test-ns", "my-app", "Deployment")
 
-	// Assert: Error - no workload-level Source found (namespace sources don't count)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "no workload-level Source found")
+	// Assert: No error, and a new workload-level Source was created with the correct spec
+	require.NoError(t, err)
+
+	sourceList := &odigosv1alpha1.SourceList{}
+	require.NoError(t, fakeClient.List(ctx, sourceList, client.InNamespace("test-ns")))
+
+	var workloadSource *odigosv1alpha1.Source
+	for i := range sourceList.Items {
+		if sourceList.Items[i].Name == "my-app" {
+			workloadSource = &sourceList.Items[i]
+			break
+		}
+	}
+	require.NotNil(t, workloadSource, "expected a workload-level Source to be created")
+	assert.Equal(t, "my-app", workloadSource.Spec.Workload.Name)
+	assert.Equal(t, "test-ns", workloadSource.Spec.Workload.Namespace)
+	assert.Equal(t, k8sconsts.WorkloadKind("Deployment"), workloadSource.Spec.Workload.Kind)
+
+	// The namespace source should still exist untouched
+	var namespaceSource *odigosv1alpha1.Source
+	for i := range sourceList.Items {
+		if sourceList.Items[i].Name == "test-ns" {
+			namespaceSource = &sourceList.Items[i]
+			break
+		}
+	}
+	require.NotNil(t, namespaceSource, "expected the namespace source to still exist")
 }

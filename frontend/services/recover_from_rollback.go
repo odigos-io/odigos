@@ -26,8 +26,21 @@ func RecoverFromRollback(ctx context.Context, kubeClient client.Client, namespac
 		return fmt.Errorf("failed to get sources for workload %s/%s/%s: %w", namespace, kind, workloadName, err)
 	}
 
+	// If we didn't find any sources, create an empty one so we can update it and retry instrumentation.
 	if sources.Workload == nil {
-		return fmt.Errorf("no workload-level Source found for %s/%s/%s", namespace, kind, workloadName)
+		sources.Workload = &odigosv1alpha1.Source{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      workloadName,
+				Namespace: namespace,
+			},
+			Spec: odigosv1alpha1.SourceSpec{
+				Workload: podWorkload,
+			},
+		}
+		if err := kubeClient.Create(ctx, sources.Workload); err != nil {
+			return fmt.Errorf("failed to create Source for %s/%s/%s: %w", namespace, kind, workloadName, err)
+		}
+		return nil
 	}
 
 	now := metav1.NewTime(time.Now())
