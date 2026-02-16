@@ -19,6 +19,127 @@ env:
   DOCKERHUB_ORG: "keyval"
 
 jobs:
+  generate-release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine Tag Value
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TAG }}
+
+      - name: Fetch main and release branches
+        run: |
+          git fetch origin main
+          git fetch origin 'refs/heads/releases/*:refs/remotes/origin/releases/*' 2>/dev/null || true
+
+      - name: Compute START_SHA and END_SHA
+        id: shas
+        run: |
+          TAG="${{ env.TAG }}"
+          END_SHA=$(git rev-parse HEAD)
+          echo "end_sha=${END_SHA}" >> $GITHUB_OUTPUT
+
+          # Scenario: commit is on main — use most recent release branch by semver as merge-base
+          if git merge-base --is-ancestor HEAD origin/main 2>/dev/null; then
+            LATEST_RELEASE=$(git for-each-ref refs/remotes/origin/releases --format='%(refname:short)' 2>/dev/null | sed 's|origin/releases/||' | sort -V | tail -n 1)
+            if [ -n "$LATEST_RELEASE" ]; then
+              PREV_RELEASE_BRANCH="origin/releases/${LATEST_RELEASE}"
+              START_SHA=$(git merge-base origin/main "$PREV_RELEASE_BRANCH")
+              echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+              echo "Scenario: tag on main, PREV_RELEASE_BRANCH=$PREV_RELEASE_BRANCH (most recent by semver)"
+            else
+              echo "Scenario: tag on main but no release branches found, using fallback"
+              START_SHA=$(git merge-base origin/main HEAD)
+              echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+            fi
+
+          # Scenario 1: rc0 (first release candidate on the release branch)
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc0$ ]]; then
+            BASE_VERSION=$(echo "$TAG" | sed 's/-rc0$//')
+            MINOR=$(echo "$BASE_VERSION" | sed -E 's/^v([0-9]+)\.([0-9]+)\.[0-9]+$/\2/')
+            MAJOR=$(echo "$BASE_VERSION" | sed -E 's/^v([0-9]+)\.([0-9]+)\.[0-9]+$/\1/')
+            PREV_MINOR=$((MINOR - 1))
+            PREV_RELEASE_BRANCH="origin/releases/v${MAJOR}.${PREV_MINOR}.0"
+            START_SHA=$(git merge-base origin/main "$PREV_RELEASE_BRANCH")
+            echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+            echo "Scenario: rc0 (first RC), PREV_RELEASE_BRANCH=$PREV_RELEASE_BRANCH"
+
+          # Scenario 2: rcX (another release candidate, X >= 1)
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc[1-9][0-9]*$ ]]; then
+            PREV_TAG=$(git tag --merged HEAD --sort=-v:refname | sed -n '2p')
+            START_SHA=$(git rev-parse "$PREV_TAG")
+            echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+            echo "Scenario: rcX, PREV_TAG=$PREV_TAG"
+
+          # Scenario 3: Promoting RC to stable (vX.Y.0)
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.0$ ]]; then
+            BASE_VERSION="$TAG"
+            MINOR=$(echo "$BASE_VERSION" | sed -E 's/^v([0-9]+)\.([0-9]+)\.[0-9]+$/\2/')
+            MAJOR=$(echo "$BASE_VERSION" | sed -E 's/^v([0-9]+)\.([0-9]+)\.[0-9]+$/\1/')
+            PREV_MINOR=$((MINOR - 1))
+            PREV_RELEASE_BRANCH="origin/releases/v${MAJOR}.${PREV_MINOR}.0"
+            START_SHA=$(git merge-base origin/main "$PREV_RELEASE_BRANCH")
+            echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+            echo "Scenario: RC to stable, PREV_RELEASE_BRANCH=$PREV_RELEASE_BRANCH"
+
+          # Scenario 4: Patch release (vX.Y.Z, Z >= 1)
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[1-9][0-9]*$ ]]; then
+            PREV_TAG=$(git tag --merged HEAD --sort=-v:refname | sed -n '2p')
+            START_SHA=$(git rev-parse "$PREV_TAG")
+            echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+            echo "Scenario: patch release, PREV_TAG=$PREV_TAG"
+
+          else
+            echo "Unrecognized tag format, using merge-base with main as fallback"
+            START_SHA=$(git merge-base origin/main HEAD)
+            echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+
+      - name: Build release-notes tool
+        run: |
+          git clone --depth 1 --branch release-notes-custom-regex https://github.com/damemi/k8s-release.git /tmp/k8s-release
+          cd /tmp/k8s-release
+          go build -o release-notes ./cmd/release-notes
+          echo "RELEASE_NOTES_BIN=$(pwd)/release-notes" >> $GITHUB_ENV
+
+      - name: Generate release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ${{ env.RELEASE_NOTES_BIN }} \
+            --org='odigos-io' \
+            --repo='odigos' \
+            --required-author='' \
+            --dependencies=false \
+            --release-note-regex='(?sU)```release-notes?\r?\n(?P<note>.+)\r?\n```' \
+            --branch=main \
+            --start-sha=${{ steps.shas.outputs.start_sha }} \
+            --end-sha=${{ steps.shas.outputs.end_sha }} \
+            --output=release-notes.md
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+
   package-helm:
     runs-on: ubuntu-latest
     steps:
@@ -62,7 +183,7 @@ jobs:
           tag: ${{ env.TAG }}
 
   build-cli:
-    needs: package-helm
+    needs: [package-helm, generate-release-notes]
     runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Determine Tag Value
@@ -241,8 +362,42 @@ jobs:
           failure-description: ${{ env.FAILURE_MSG }}
           tag: ${{ env.TAG }}
 
-  publish-helm:
+  update-release-notes:
     needs: build-cli
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine Tag Value
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "TAG=${{ github.event.client_payload.tag }}" >> $GITHUB_ENV
+          else
+            echo "Unknown event type"
+            exit 1
+          fi
+
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+
+      - name: Update GitHub release body
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ env.TAG }}" --repo "${{ github.repository }}" --notes-file release-notes.md
+
+      - name: Notify Slack
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Release notes updated successfully"
+          failure-description: "ERROR: Failed to update release notes"
+          tag: ${{ env.TAG }}
+
+  publish-helm:
+    needs: [build-cli, update-release-notes]
     runs-on: ubuntu-latest
     steps:
       - name: Determine Tag Value
