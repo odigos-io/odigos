@@ -73,6 +73,14 @@ type ProcessorListerExpansion interface{}
 // ProcessorNamespaceLister.
 type ProcessorNamespaceListerExpansion interface{}
 
+// SamplingListerExpansion allows custom methods to be added to
+// SamplingLister.
+type SamplingListerExpansion interface{}
+
+// SamplingNamespaceListerExpansion allows custom methods to be added to
+// SamplingNamespaceLister.
+type SamplingNamespaceListerExpansion interface{}
+
 // SourceListerExpansion allows custom methods to be added to
 // SourceLister.
 type SourceListerExpansion interface{}

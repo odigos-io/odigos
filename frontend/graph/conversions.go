@@ -528,6 +528,98 @@ func convertUserInstrumentationEnvsToModel(envs *common.UserInstrumentationEnvs)
 	return result, nil
 }
 
+// convertOdigosConfigToSamplingConfig converts common.OdigosConfiguration (or its Sampling slice) to the GraphQL model.SamplingConfig.
+// Placed here so all common → graph model conversions live in one place.
+func convertOdigosConfigToSamplingConfig(config *common.OdigosConfiguration) *model.SamplingConfig {
+	if config == nil || config.Sampling == nil {
+		return nil
+	}
+	s := config.Sampling
+	out := &model.SamplingConfig{}
+	if s.TailSampling != nil {
+		out.TailSampling = &model.TailSamplingConfig{
+			Disabled:                     s.TailSampling.Disabled,
+			TraceAggregationWaitDuration: s.TailSampling.TraceAggregationWaitDuration,
+		}
+	}
+	if s.K8sHealthProbesSampling != nil {
+		out.K8sHealthProbesSampling = &model.K8sHealthProbesSamplingConfig{
+			Enabled:        s.K8sHealthProbesSampling.Enabled,
+			KeepPercentage: s.K8sHealthProbesSampling.KeepPercentage,
+		}
+	}
+	return out
+}
+
+func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput) *common.SamplingConfiguration {
+	if config == nil {
+		return nil
+	}
+	result := &common.SamplingConfiguration{}
+	if config.TailSampling != nil {
+		result.TailSampling = &common.TailSamplingConfiguration{
+			Disabled:                     config.TailSampling.Disabled,
+			TraceAggregationWaitDuration: config.TailSampling.TraceAggregationWaitDuration,
+		}
+	}
+	if config.K8sHealthProbesSampling != nil {
+		result.K8sHealthProbesSampling = &common.K8sHealthProbesSamplingConfiguration{
+			Enabled:        config.K8sHealthProbesSampling.Enabled,
+			KeepPercentage: config.K8sHealthProbesSampling.KeepPercentage,
+		}
+	}
+	return result
+}
+
+// headSamplingOperatorToModel maps v1alpha1.Operator to the GraphQL head sampling condition operator enum.
+func headSamplingOperatorToModel(op v1alpha1.Operator) model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator {
+	switch op {
+	case v1alpha1.Equals:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals
+	case v1alpha1.NotEquals:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorNotEquals
+	case v1alpha1.EndWith:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEndWith
+	case v1alpha1.StartWith:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorStartWith
+	default:
+		return model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperatorEquals
+	}
+}
+
+// containerAgentConfigToAgentConfigModel converts InstrumentationConfig container agent config (traces/head sampling) to the GraphQL K8sWorkloadContainerAgentConfig model.
+func containerAgentConfigToAgentConfigModel(c *v1alpha1.ContainerAgentConfig) *model.K8sWorkloadContainerAgentConfig {
+	if c == nil || c.Traces == nil || c.Traces.HeadSampling == nil {
+		return nil
+	}
+	hs := c.Traces.HeadSampling
+	checks := make([]*model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck, 0, len(hs.AttributesAndSamplerRules))
+	for i := range hs.AttributesAndSamplerRules {
+		rule := &hs.AttributesAndSamplerRules[i]
+		conditions := make([]*model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition, 0, len(rule.AttributeConditions))
+		for j := range rule.AttributeConditions {
+			ac := &rule.AttributeConditions[j]
+			conditions = append(conditions, &model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition{
+				Key:      ac.Key,
+				Operator: headSamplingOperatorToModel(ac.Operator),
+				Value:    ac.Val,
+			})
+		}
+		checks = append(checks, &model.K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck{
+			Conditions: conditions,
+			Percentage: rule.Fraction * 100,
+		})
+	}
+	return &model.K8sWorkloadContainerAgentConfig{
+		Traces: &model.K8sWorkloadContainerAgentConfigTraces{
+			HeadSampling: &model.K8sWorkloadContainerAgentConfigTracesHeadSampling{
+				Checks:             checks,
+				FallbackPercentage: hs.FallbackFraction * 100,
+			},
+		},
+	}
+}
+
 func convertMetricsSourcesToModel(ms *common.MetricsSourceConfiguration) *model.MetricsSourceConfig {
 	if ms == nil {
 		return nil

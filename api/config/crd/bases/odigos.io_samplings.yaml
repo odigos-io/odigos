@@ -1,0 +1,466 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  labels:
+    odigos.io/system-object: "true"
+  name: samplings.odigos.io
+spec:
+  group: odigos.io
+  names:
+    kind: Sampling
+    listKind: SamplingList
+    plural: samplings
+    singular: sampling
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Sampling is the Schema for the sampling rules API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              define sampling rules.
+              the rules can be defined as one or multiple objects in kubernetes,
+              and are all joined together to form the global sampling rules.
+              odigos users can group rules based on whatever criteria that makes sense for them,
+              for example - by team, by client, by usecase, admin-policy, etc.
+            properties:
+              costReductionRules:
+                items:
+                  properties:
+                    notes:
+                      description: |-
+                        optional free-form text field that allows you to attach notes
+                        for future context and maintenance.
+                        users can write why this rule was added, observations, document considerations, etc.
+                      type: string
+                    operation:
+                      description: |-
+                        limit this rule to specific operations.
+                        for example: specific endpoint or kafka topic.
+                        this field is optional, and if not set, the rule will be applied to all operations.
+                      properties:
+                        httpServer:
+                          description: match http server operations in a generic way.
+                          properties:
+                            method:
+                              description: optionally limit to specific http method
+                              type: string
+                            route:
+                              description: a specific exact match http route
+                              type: string
+                            routePrefix:
+                              description: any route that starts with a specific prefix
+                              type: string
+                          type: object
+                        kafkaConsumer:
+                          description: match kafka consumer operations (consume spans)
+                          properties:
+                            kafkaTopic:
+                              description: |-
+                                the topic name to match.
+                                if left empty, all topics are matched.
+                              type: string
+                          type: object
+                        kafkaProducer:
+                          description: match kafka producer operations (produce spans)
+                          properties:
+                            kafkaTopic:
+                              description: |-
+                                the topic name to match.
+                                if left empty, all topics are matched.
+                              type: string
+                          type: object
+                      type: object
+                    percentageAtMost:
+                      description: |-
+                        sampling percentage for cost reduction.
+                        this field is required.
+                        the final sampling percentage for traces that match this rule
+                        will be the highest possible, but at most this value.
+                      maximum: 100
+                      minimum: 0
+                      type: number
+                    sourceScopes:
+                      description: |-
+                        limit this rule to specific sources (by name, namespace, language, etc.)
+                        an empty list will match any source.
+                        if multiple items are set, the operation match if any one matches
+                        this relates to the "ResourceAttributes" part of a span.
+                      items:
+                        description: |-
+                          define conditions to match specific sources (containers) managed by odigos.
+                          a source container matches, if ALL non empty fields match (AND semantics)
+
+                          common patterns:
+                          - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName) - all containers (usually there is only one with agent injection)
+                          - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName) - only this container
+                          - All services in a kubernetes namespace (WorkloadNamespace) - all containers in all sources in the namespace
+                          - All services implemented in a specific programming language (WorkloadLanguage) - all container which are running odigos agent for this language
+                        properties:
+                          containerName:
+                            type: string
+                          workloadKind:
+                            description: |-
+                              1. the pascal case representation of the workload kind
+                              it is used in k8s api objects as the `Kind` field.
+                            type: string
+                          workloadLanguage:
+                            enum:
+                            - java
+                            - python
+                            - go
+                            - dotnet
+                            - javascript
+                            - php
+                            - ruby
+                            - rust
+                            - cplusplus
+                            - mysql
+                            - nginx
+                            - redis
+                            - postgres
+                            - unknown
+                            - ignored
+                            type: string
+                          workloadName:
+                            type: string
+                          workloadNamespace:
+                            type: string
+                        type: object
+                      type: array
+                  required:
+                  - percentageAtMost
+                  type: object
+                type: array
+              disabled:
+                description: |-
+                  if set to true, the sampling rules will be disabled,
+                  they will not be taken into account for any sampling decisions.
+                  useful if you want to temporarily disable the rules but re-enable them later,
+                type: boolean
+              highlyRelevantOperations:
+                items:
+                  description: |-
+                    define operations (spans) with high observability value.
+                    if found anywhere in the trace, the entire trace will be kept
+                    regaradless of any cost reduction rules.
+                  properties:
+                    durationAtLeastMs:
+                      description: if Duration is set, only operations with duration
+                        in milli seconds larger then this value are considered
+                      type: integer
+                    error:
+                      description: if "Error" is set to true, only spans with SpanStatus
+                        set to "Error" are considered
+                      type: boolean
+                    notes:
+                      description: |-
+                        optional free-form text field that allows you to attach notes
+                        for future context and maintenance.
+                        users can write why this rule was added, observations, document considerations, etc.
+                      type: string
+                    operation:
+                      description: |-
+                        optionally, limit this rule to specific operations.
+                        for example: specific endpoint or kafka topic.
+                        this field is optional, and if not set, the rule will be applied to all operations.
+                      properties:
+                        httpServer:
+                          description: match http server operations in a generic way.
+                          properties:
+                            method:
+                              description: optionally limit to specific http method
+                              type: string
+                            route:
+                              description: a specific exact match http route
+                              type: string
+                            routePrefix:
+                              description: any route that starts with a specific prefix
+                              type: string
+                          type: object
+                        kafkaConsumer:
+                          description: match kafka consumer operations (consume spans)
+                          properties:
+                            kafkaTopic:
+                              description: |-
+                                the topic name to match.
+                                if left empty, all topics are matched.
+                              type: string
+                          type: object
+                        kafkaProducer:
+                          description: match kafka producer operations (produce spans)
+                          properties:
+                            kafkaTopic:
+                              description: |-
+                                the topic name to match.
+                                if left empty, all topics are matched.
+                              type: string
+                          type: object
+                      type: object
+                    percentageAtLeast:
+                      description: |-
+                        traces that contains this operation will be sampled by at least this percentage.
+                        if unset, 100% of such the traces will be sampled.
+                      maximum: 100
+                      minimum: 0
+                      type: number
+                    sourceScopes:
+                      description: |-
+                        limit the operation to specific sources.
+                        an empty list will match any source.
+                        if multiple items are set, the operation match if any one matches
+                        this relates to the "ResourceAttributes" part of a span.
+                      items:
+                        description: |-
+                          define conditions to match specific sources (containers) managed by odigos.
+                          a source container matches, if ALL non empty fields match (AND semantics)
+
+                          common patterns:
+                          - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName) - all containers (usually there is only one with agent injection)
+                          - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName) - only this container
+                          - All services in a kubernetes namespace (WorkloadNamespace) - all containers in all sources in the namespace
+                          - All services implemented in a specific programming language (WorkloadLanguage) - all container which are running odigos agent for this language
+                        properties:
+                          containerName:
+                            type: string
+                          workloadKind:
+                            description: |-
+                              1. the pascal case representation of the workload kind
+                              it is used in k8s api objects as the `Kind` field.
+                            type: string
+                          workloadLanguage:
+                            enum:
+                            - java
+                            - python
+                            - go
+                            - dotnet
+                            - javascript
+                            - php
+                            - ruby
+                            - rust
+                            - cplusplus
+                            - mysql
+                            - nginx
+                            - redis
+                            - postgres
+                            - unknown
+                            - ignored
+                            type: string
+                          workloadName:
+                            type: string
+                          workloadNamespace:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                type: array
+              name:
+                description: give these sampling rules a name for display, easier
+                  identification and reference.
+                type: string
+              noisyOperations:
+                items:
+                  description: |-
+                    endpoints which are considered "noise", and provide no or very little observability value.
+                    these traces should not be collected at all, or dropped aggresevly.
+                    motivation is data sentization and performance improvment (even if cost is not a factor)
+
+                    examples:
+                    - health-checks (readiness and liveness probes)
+                    - metrics scrape endpoints (promethues /metrics endpoint)
+                    - other agents calling home (outgoing http requests to collector.my.vendor.com)
+                  properties:
+                    httpClient:
+                      description: match http client operations for noisy operations
+                        matching (only attributes available at span start time)
+                      properties:
+                        method:
+                          description: match method exactly, can be empty to match
+                            any method
+                          type: string
+                        serverAddress:
+                          description: match server address exactly (e.g. collector.my.vendor.com)
+                          type: string
+                        urlPath:
+                          description: match url path exactly (e.g. /api/v1/metrics)
+                          type: string
+                      type: object
+                    httpServer:
+                      description: match http server operations for noisy operations
+                        matching (only attributes available at span start time)
+                      properties:
+                        method:
+                          description: match method exactly, can be empty to match
+                            any method
+                          type: string
+                        route:
+                          description: match route exactly
+                          type: string
+                        routePrefix:
+                          description: match preffix of route
+                          type: string
+                      type: object
+                    notes:
+                      description: |-
+                        optional free-form text field that allows you to attach notes
+                        for future context and maintenance.
+                        users can write why this rule was added, observations, document considerations, etc.
+                      type: string
+                    percentageAtMost:
+                      description: |-
+                        sampling percentage for noisy operations.
+                        if unset, 0% of such the traces will be collected.
+                        this percentage has "at most" semantics - the final sampling percentage for traces that match this rule
+                        will be the highest possible, but at most this value.
+                      maximum: 100
+                      minimum: 0
+                      type: number
+                    sourceScopes:
+                      description: |-
+                        limit this rule to specific sources (by name, namespace, language, etc.)
+                        for example: if "other agent" rule for noisty operation is relevant only in java,
+                        limit this rule by setting source scope to java and prevent other languages from being affected
+                        if the list is empty - all sources are matched.
+                      items:
+                        description: |-
+                          define conditions to match specific sources (containers) managed by odigos.
+                          a source container matches, if ALL non empty fields match (AND semantics)
+
+                          common patterns:
+                          - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName) - all containers (usually there is only one with agent injection)
+                          - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName) - only this container
+                          - All services in a kubernetes namespace (WorkloadNamespace) - all containers in all sources in the namespace
+                          - All services implemented in a specific programming language (WorkloadLanguage) - all container which are running odigos agent for this language
+                        properties:
+                          containerName:
+                            type: string
+                          workloadKind:
+                            description: |-
+                              1. the pascal case representation of the workload kind
+                              it is used in k8s api objects as the `Kind` field.
+                            type: string
+                          workloadLanguage:
+                            enum:
+                            - java
+                            - python
+                            - go
+                            - dotnet
+                            - javascript
+                            - php
+                            - ruby
+                            - rust
+                            - cplusplus
+                            - mysql
+                            - nginx
+                            - redis
+                            - postgres
+                            - unknown
+                            - ignored
+                            type: string
+                          workloadName:
+                            type: string
+                          workloadNamespace:
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                type: array
+              notes:
+                description: |-
+                  a free-form text field that allows you to attach notes regardinag the rule for convenience.
+                  Odigos does not use or assume any meaning from this field.
+                type: string
+            type: object
+          status:
+            description: SamplingStatus defines the observed state of Sampling.
+            properties:
+              conditions:
+                description: |-
+                  Represents the observations of a Sampling's current state.
+                  Known .status.conditions.type are: "Available", "Progressing"
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -1182,6 +1182,61 @@ ownTelemetry:
     disabled: true
 
 # @schema
+# description: global configurations for sampling.
+# @schema
+sampling:
+
+  # @schema
+  # description: configuration for tail sampling.
+  # @schema
+  tailSampling:
+
+    # @schema
+    # description: |-
+    #   if set to true, tail sampling will be disabled globally
+    #   regardless of any other configurations or rules set.
+    #   can be used to reduce collectors resource usage, troubleshooting, etc,
+    #   or when tail-sampling is not needed or desired and should be shut off.
+    # @schema
+    # disabled: true
+
+    # @schema
+    # description: |-
+    #   time to wait from the first span of a trace until a trace is considered completed.
+    #   at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+    #   introduces this amount of latency in the pipeline and for trace to hit the destination.
+    #   also increases memory usage for keeping spans in memory until the wait duration time is reached.
+    #   setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+    #   and broken traces due to sampling each trace in few pieces.
+    # @schema
+    # traceAggregationWaitDuration: '30s'
+
+  # @schema
+  # description: |-
+  #   configuration for odigos auto-kubelet-probes detection and sampling.
+  #   odigos can automatically pick up health probes from the k8s manifest,
+  #   and treat them as "noisy endpoints" to be sampled out.
+  #   most users get little or no value from tracing health probes,
+  #   and it is recommended to enable and use it.
+  #   it will be used with head sampling where the agent support it.
+  #   when tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.
+  # @schema
+  k8sHealthProbesSampling:
+
+    # @schema
+    # description: |-
+    #   if set to true, odigos will automatically detect and sample out health probes.
+    #   this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
+    #   users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
+    # @schema
+    # enabled: true
+
+    # @schema
+    # description: percentage % (0-100) of health probes to keep.
+    # @schema
+    # keepPercentage: 2
+    
+# @schema
 # description: |-
 #   On-prem token for Odigos Pro/Enterprise features.
 #   When set, Odigos will create a secret with this token to enable Pro features.

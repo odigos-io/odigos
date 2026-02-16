@@ -38,7 +38,7 @@ func (r *queryResolver) Config(ctx context.Context) (*model.Config, error) {
 
 // RemoteConfig is the resolver for the remoteConfig field.
 func (r *queryResolver) RemoteConfig(ctx context.Context) (*model.RemoteConfig, error) {
-	config, err := services.GetRemoteConfig(ctx)
+	config, err := services.GetRemoteConfig(ctx, r.K8sCacheClient)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (r *queryResolver) RemoteConfig(ctx context.Context) (*model.RemoteConfig, 
 
 // EffectiveConfig is the resolver for the effectiveConfig field.
 func (r *queryResolver) EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error) {
-	config, err := services.GetEffectiveConfig(ctx)
+	config, err := services.GetEffectiveConfig(ctx, r.K8sCacheClient)
 	if err != nil {
 		return nil, err
 	}

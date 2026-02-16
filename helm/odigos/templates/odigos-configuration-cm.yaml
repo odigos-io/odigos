@@ -229,3 +229,24 @@ data:
     imagePullSecrets:
       {{- toYaml .Values.imagePullSecrets | nindent 6 }}
     {{- end }}
+    {{- if or .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
+    sampling:
+      {{- if .Values.sampling.tailSampling }}
+      tailSampling:
+        {{- if .Values.sampling.tailSampling.disabled }}
+        disabled: {{ .Values.sampling.tailSampling.disabled }}
+        {{- end }}
+        {{- if .Values.sampling.tailSampling.traceAggregationWaitDuration }}
+        traceAggregationWaitDuration: {{ .Values.sampling.tailSampling.traceAggregationWaitDuration | quote }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.sampling.k8sHealthProbesSampling }}
+      k8sHealthProbesSampling:
+        {{- if .Values.sampling.k8sHealthProbesSampling.enabled }}
+        enabled: {{ .Values.sampling.k8sHealthProbesSampling.enabled }}
+        {{- end }}
+        {{- if .Values.sampling.k8sHealthProbesSampling.keepPercentage }}
+        keepPercentage: {{ .Values.sampling.k8sHealthProbesSampling.keepPercentage }}
+        {{- end }}
+      {{- end }}
+    {{- end }}

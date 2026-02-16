@@ -62,12 +62,22 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 
 	// Read and merge remote config (from central-backend) if it exists
 	// Remote config takes precedence over helm-managed config
-	remoteConfig, err := r.getRemoteConfig(ctx)
+	remoteConfig, err := r.getAdditionalConfig(ctx, consts.OdigosRemoteConfigName)
 	if err != nil {
 		logger.Error(err, "Failed to get remote config, using only helm-managed config")
 	} else if remoteConfig != nil {
-		mergeRemoteConfig(&odigosConfiguration, remoteConfig)
+		mergeConfigs(&odigosConfiguration, remoteConfig)
 		logger.V(1).Info("Merged remote config into effective config")
+	}
+
+	// Read and merge local ui config (from local ui) if it exists
+	// Local ui config takes precedence over helm-managed config and remote config
+	localUiConfig, err := r.getAdditionalConfig(ctx, consts.OdigosLocalUiConfigName)
+	if err != nil {
+		logger.Error(err, "Failed to get local ui config, using only helm-managed config")
+	} else if localUiConfig != nil {
+		mergeConfigs(&odigosConfiguration, localUiConfig)
+		logger.V(1).Info("Merged local ui config into effective config")
 	}
 
 	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
@@ -146,14 +156,14 @@ func (r *odigosConfigurationController) getOdigosConfigMap(ctx context.Context) 
 	return &configMap, nil
 }
 
-// getRemoteConfig reads the odigos-remote-config ConfigMap which contains
+// getAdditionalConfig reads the odigos-remote-config ConfigMap which contains
 // configuration managed by the central-backend. This config takes precedence
 // over helm-managed configuration for supported fields.
-func (r *odigosConfigurationController) getRemoteConfig(ctx context.Context) (*common.OdigosConfiguration, error) {
+func (r *odigosConfigurationController) getAdditionalConfig(ctx context.Context, configMapName string) (*common.OdigosConfiguration, error) {
 	var configMap corev1.ConfigMap
 	odigosNs := env.GetCurrentNamespace()
 
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: consts.OdigosRemoteConfigName}, &configMap)
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: odigosNs, Name: configMapName}, &configMap)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Remote config doesn't exist - this is expected for most deployments
@@ -167,28 +177,60 @@ func (r *odigosConfigurationController) getRemoteConfig(ctx context.Context) (*c
 		return nil, nil
 	}
 
-	remoteConfig := &common.OdigosConfiguration{}
-	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), remoteConfig)
+	additionalConfig := &common.OdigosConfiguration{}
+	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), additionalConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse remote config: %w", err)
+		return nil, fmt.Errorf("failed to parse additional config: %w", err)
 	}
 
-	return remoteConfig, nil
+	return additionalConfig, nil
 }
 
-// mergeRemoteConfig merges the remote configuration (from central-backend) into the base configuration.
-// Remote config values take precedence over helm-managed values for supported fields.
-func mergeRemoteConfig(baseConfig *common.OdigosConfiguration, remoteConfig *common.OdigosConfiguration) {
-	if remoteConfig == nil {
+// mergeConfigs merges an "additional" configuration into the base configuration.
+// for supported fields, the additional config values, if set, take precedence over the base configuration values.
+// can be called multiple times with different additional configs to merge them into the base configuration,
+// in which case, most important config should be merged last.
+func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *common.OdigosConfiguration) {
+	if addtionalConfig == nil {
 		return
 	}
 
-	if remoteConfig.Rollout != nil {
+	if addtionalConfig.Rollout != nil {
 		if baseConfig.Rollout == nil {
 			baseConfig.Rollout = &common.RolloutConfiguration{}
 		}
-		if remoteConfig.Rollout.AutomaticRolloutDisabled != nil {
-			baseConfig.Rollout.AutomaticRolloutDisabled = remoteConfig.Rollout.AutomaticRolloutDisabled
+		if addtionalConfig.Rollout.AutomaticRolloutDisabled != nil {
+			baseConfig.Rollout.AutomaticRolloutDisabled = addtionalConfig.Rollout.AutomaticRolloutDisabled
+		}
+	}
+
+	// merge the entire remote sampling configuration (if exists) into the base configuration.
+	// this allows local ui / central to set dynamic configs which were not specified in helm during deployment.
+	if addtionalConfig.Sampling != nil {
+		if baseConfig.Sampling == nil {
+			baseConfig.Sampling = &common.SamplingConfiguration{}
+		}
+		if addtionalConfig.Sampling.TailSampling != nil {
+			if baseConfig.Sampling.TailSampling == nil {
+				baseConfig.Sampling.TailSampling = &common.TailSamplingConfiguration{}
+			}
+			if addtionalConfig.Sampling.TailSampling.Disabled != nil {
+				baseConfig.Sampling.TailSampling.Disabled = addtionalConfig.Sampling.TailSampling.Disabled
+			}
+			if addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
+				baseConfig.Sampling.TailSampling.TraceAggregationWaitDuration = addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration
+			}
+		}
+		if addtionalConfig.Sampling.K8sHealthProbesSampling != nil {
+			if baseConfig.Sampling.K8sHealthProbesSampling == nil {
+				baseConfig.Sampling.K8sHealthProbesSampling = &common.K8sHealthProbesSamplingConfiguration{}
+			}
+			if addtionalConfig.Sampling.K8sHealthProbesSampling.Enabled != nil {
+				baseConfig.Sampling.K8sHealthProbesSampling.Enabled = addtionalConfig.Sampling.K8sHealthProbesSampling.Enabled
+			}
+			if addtionalConfig.Sampling.K8sHealthProbesSampling.KeepPercentage != nil {
+				baseConfig.Sampling.K8sHealthProbesSampling.KeepPercentage = addtionalConfig.Sampling.K8sHealthProbesSampling.KeepPercentage
+			}
 		}
 	}
 

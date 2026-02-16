@@ -55,6 +55,10 @@ func (c *FakeOdigosV1alpha1) Processors(namespace string) v1alpha1.ProcessorInte
 	return newFakeProcessors(c, namespace)
 }
 
+func (c *FakeOdigosV1alpha1) Samplings(namespace string) v1alpha1.SamplingInterface {
+	return newFakeSamplings(c, namespace)
+}
+
 func (c *FakeOdigosV1alpha1) Sources(namespace string) v1alpha1.SourceInterface {
 	return newFakeSources(c, namespace)
 }
