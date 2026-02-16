@@ -23,7 +23,6 @@ func CalculateTracesConfig(
 	samplingRules *[]odigosv1.Sampling,
 	workloadObj workload.Workload,
 	pw k8sconsts.PodWorkload,
-	serviceName string,
 	distro *distro.OtelDistro) (*odigosv1.AgentTracesConfig, *odigosv1.ContainerAgentConfig) {
 
 	if !tracesEnabled {
@@ -53,7 +52,7 @@ func CalculateTracesConfig(
 
 	tracesConfig.UrlTemplatization = urlTemplatizationConfig
 	tracesConfig.HeadersCollection = calculateHeaderCollectionConfig(distro, irls)
-	tracesConfig.HeadSampling = calculateHeadSamplingConfig(distro, workloadObj, containerName, effectiveConfig, samplingRules, pw, serviceName)
+	tracesConfig.HeadSampling = calculateHeadSamplingConfig(distro, workloadObj, containerName, effectiveConfig, samplingRules, pw)
 	tracesConfig.SpanRenamer = filterSpanRenamerForContainer(agentLevelActions, programmingLanguage)
 
 	return tracesConfig, nil

@@ -6,18 +6,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// define conditions to match specific services (containers) in the cluster.
-// a service matches, if ALL non empty fields match (AND semantics)
+// define conditions to match specific sources (containers) managed by odigos.
+// a source container matches, if ALL non empty fields match (AND semantics)
 //
 // common patterns:
-// - Specific service by name (service.name)
-// - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName)
-// - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName)
-// - All services in a kubernetes namespace (WorkloadNamespace)
-// - All services implemented in a specific programming language
-type Services struct {
-	ServiceName string `json:"serviceName,omitempty"`
-
+// - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName) - all containers (usually there is only one with agent injection)
+// - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName) - only this container
+// - All services in a kubernetes namespace (WorkloadNamespace) - all containers in all sources in the namespace
+// - All services implemented in a specific programming language (WorkloadLanguage) - all container which are running odigos agent for this language
+type SourcesScope struct {
 	WorkloadName      string                 `json:"workloadName,omitempty"`
 	WorkloadKind      k8sconsts.WorkloadKind `json:"workloadKind,omitempty"`
 	WorkloadNamespace string                 `json:"workloadNamespace,omitempty"`
@@ -71,10 +68,11 @@ type NoisyOperationHttpClientMatcher struct {
 // - metrics scrape endpoints (promethues /metrics endpoint)
 // - other agents calling home (outgoing http requests to collector.my.vendor.com)
 type NoisyOperations struct {
-	// limit this rule to specific services (by name, namespace, language, etc.)
-	// for example: if other agent is relevant only in java, limit this rule so other languages are not affected
-	// if the list is empty - all services are matched.
-	Services []Services `json:"services,omitempty"`
+	// limit this rule to specific sources (by name, namespace, language, etc.)
+	// for example: if "other agent" rule for noisty operation is relevant only in java,
+	// limit this rule by setting source scope to java and prevent other languages from being affected
+	// if the list is empty - all sources are matched.
+	SourceScopes []SourcesScope `json:"sourceScopes,omitempty"`
 
 	// match http server operations for noisy operations matching (only attributes available at span start time)
 	HttpServer *NoisyOperationHttpServerMatcher `json:"httpServer,omitempty"`
@@ -84,6 +82,8 @@ type NoisyOperations struct {
 
 	// sampling percentage for noisy operations.
 	// if unset, 0% of such the traces will be collected.
+	// this percentage has "at most" semantics - the final sampling percentage for traces that match this rule
+	// will be the highest possible, but at most this value.
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=100
 	PercentageAtMost *float64 `json:"percentageAtMost,omitempty"`
@@ -121,17 +121,17 @@ type KafkaOperationMatcher struct {
 // regaradless of any cost reduction rules.
 type HighlyRelevantOperation struct {
 
-	// limit the operation to specific services.
-	// an empty list will match any service.
+	// limit the operation to specific sources.
+	// an empty list will match any source.
 	// if multiple items are set, the operation match if any one matches
 	// this relates to the "ResourceAttributes" part of a span.
-	Services []Services `json:"services,omitempty"`
+	SourceScopes []SourcesScope `json:"sourceScopes,omitempty"`
 
 	// if "Error" is set to true, only spans with SpanStatus set to "Error" are considered
 	Error bool `json:"error,omitempty"`
 
 	// if Duration is set, only operations with duration in milli seconds larger then this value are considered
-	DurationMsAtLeast *int `json:"durationMsAtLeast,omitempty"`
+	DurationAtLeastMs *int `json:"durationAtLeastMs,omitempty"`
 
 	// optionally, limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
@@ -152,11 +152,11 @@ type HighlyRelevantOperation struct {
 
 type CostReductionRule struct {
 
-	// limit this rule to specific services by name, namespace, language, etc.
-	// an empty list will match any service.
+	// limit this rule to specific sources (by name, namespace, language, etc.)
+	// an empty list will match any source.
 	// if multiple items are set, the operation match if any one matches
 	// this relates to the "ResourceAttributes" part of a span.
-	Services []Services `json:"services,omitempty"`
+	SourceScopes []SourcesScope `json:"sourceScopes,omitempty"`
 
 	// limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
@@ -196,7 +196,7 @@ type SamplingSpec struct {
 	// they will not be taken into account for any sampling decisions.
 	// useful if you want to temporarily disable the rules but re-enable them later,
 	Disabled                 bool                      `json:"disabled,omitempty"`
-	NoisyOperations          []NoisyOperations         `json:"noisyEndpoints,omitempty"`
+	NoisyOperations          []NoisyOperations         `json:"noisyOperations,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRule       `json:"costReductionRules,omitempty"`
 }

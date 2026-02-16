@@ -20,9 +20,9 @@ package v1alpha1
 // HighlyRelevantOperationApplyConfiguration represents a declarative configuration of the HighlyRelevantOperation type for use
 // with apply.
 type HighlyRelevantOperationApplyConfiguration struct {
-	Services          []ServicesApplyConfiguration        `json:"services,omitempty"`
+	SourceScopes      []SourcesScopeApplyConfiguration    `json:"sourceScopes,omitempty"`
 	Error             *bool                               `json:"error,omitempty"`
-	DurationMsAtLeast *int                                `json:"durationMsAtLeast,omitempty"`
+	DurationAtLeastMs *int                                `json:"durationAtLeastMs,omitempty"`
 	Operation         *OperationMatcherApplyConfiguration `json:"operation,omitempty"`
 	PercentageAtLeast *float64                            `json:"percentageAtLeast,omitempty"`
 	Notes             *string                             `json:"notes,omitempty"`
@@ -34,15 +34,15 @@ func HighlyRelevantOperation() *HighlyRelevantOperationApplyConfiguration {
 	return &HighlyRelevantOperationApplyConfiguration{}
 }
 
-// WithServices adds the given value to the Services field in the declarative configuration
+// WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Services field.
-func (b *HighlyRelevantOperationApplyConfiguration) WithServices(values ...*ServicesApplyConfiguration) *HighlyRelevantOperationApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the SourceScopes field.
+func (b *HighlyRelevantOperationApplyConfiguration) WithSourceScopes(values ...*SourcesScopeApplyConfiguration) *HighlyRelevantOperationApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithServices")
+			panic("nil value passed to WithSourceScopes")
 		}
-		b.Services = append(b.Services, *values[i])
+		b.SourceScopes = append(b.SourceScopes, *values[i])
 	}
 	return b
 }
@@ -55,11 +55,11 @@ func (b *HighlyRelevantOperationApplyConfiguration) WithError(value bool) *Highl
 	return b
 }
 
-// WithDurationMsAtLeast sets the DurationMsAtLeast field in the declarative configuration to the given value
+// WithDurationAtLeastMs sets the DurationAtLeastMs field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DurationMsAtLeast field is set to the value of the last call.
-func (b *HighlyRelevantOperationApplyConfiguration) WithDurationMsAtLeast(value int) *HighlyRelevantOperationApplyConfiguration {
-	b.DurationMsAtLeast = &value
+// If called multiple times, the DurationAtLeastMs field is set to the value of the last call.
+func (b *HighlyRelevantOperationApplyConfiguration) WithDurationAtLeastMs(value int) *HighlyRelevantOperationApplyConfiguration {
+	b.DurationAtLeastMs = &value
 	return b
 }
 

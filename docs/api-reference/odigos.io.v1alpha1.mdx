@@ -1659,14 +1659,14 @@ if the programmin language is incorrect, the runtime info can be overridden to m
   
 <tr>
 <td>
-<code>services</code> <B>[Required]</B>
+<code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-Services"><code>[]Services</code></a>
+<a href="#odigos-io-v1alpha1-SourcesScope"><code>[]SourcesScope</code></a>
 </td>
 <td>
-   <p>limit this rule to specific services by name, namespace, language, etc.
-an empty list will match any service.
+   <p>limit this rule to specific sources (by name, namespace, language, etc.)
+an empty list will match any source.
 if multiple items are set, the operation match if any one matches
 this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 </td>
@@ -2063,14 +2063,14 @@ regaradless of any cost reduction rules.</p>
   
 <tr>
 <td>
-<code>services</code> <B>[Required]</B>
+<code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-Services"><code>[]Services</code></a>
+<a href="#odigos-io-v1alpha1-SourcesScope"><code>[]SourcesScope</code></a>
 </td>
 <td>
-   <p>limit the operation to specific services.
-an empty list will match any service.
+   <p>limit the operation to specific sources.
+an empty list will match any source.
 if multiple items are set, the operation match if any one matches
 this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 </td>
@@ -3220,15 +3220,16 @@ motivation is data sentization and performance improvment (even if cost is not a
   
 <tr>
 <td>
-<code>services</code> <B>[Required]</B>
+<code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-Services"><code>[]Services</code></a>
+<a href="#odigos-io-v1alpha1-SourcesScope"><code>[]SourcesScope</code></a>
 </td>
 <td>
-   <p>limit this rule to specific services (by name, namespace, language, etc.)
-for example: if other agent is relevant only in java, limit this rule so other languages are not affected
-if the list is empty - all services are matched.</p>
+   <p>limit this rule to specific sources (by name, namespace, language, etc.)
+for example: if &quot;other agent&quot; rule for noisty operation is relevant only in java,
+limit this rule by setting source scope to java and prevent other languages from being affected
+if the list is empty - all sources are matched.</p>
 </td>
 </tr>
 <tr>
@@ -3802,7 +3803,7 @@ useful if you want to temporarily disable the rules but re-enable them later,</p
 </tr>
 <tr>
 <td>
-<code>noisyEndpoints</code> <B>[Required]</B>
+<code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>
 <a href="#odigos-io-v1alpha1-NoisyOperations"><code>[]NoisyOperations</code></a>
@@ -3991,100 +3992,6 @@ these are language-specific metrics like JVM metrics for Java, CLR metrics for .
 
 
 
-## `Services` <a id="odigos-io-v1alpha1-Services"></a>
-    
-
-**Appears in:**
-
-- [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
-- [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
-- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
-
-<p>define conditions to match specific services (containers) in the cluster.
-a service matches, if ALL non empty fields match (AND semantics)</p>
-<p>common patterns:</p>
-<ul>
-<li>Specific service by name (service.name)</li>
-<li>Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName)</li>
-<li>Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName)</li>
-<li>All services in a kubernetes namespace (WorkloadNamespace)</li>
-<li>All services implemented in a specific programming language</li>
-</ul>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>serviceName</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>workloadName</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>workloadKind</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#WorkloadKind"><code>k8sconsts.WorkloadKind</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>workloadNamespace</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>containerName</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>workloadLanguage</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ProgrammingLanguage"><code>common.ProgrammingLanguage</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
 ## `SourceSelector` <a id="odigos-io-v1alpha1-SourceSelector"></a>
     
 
@@ -4231,6 +4138,88 @@ Not valid for namespace sources.</p>
    <p>Represents the observations of a source's current state.
 Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `SourcesScope` <a id="odigos-io-v1alpha1-SourcesScope"></a>
+    
+
+**Appears in:**
+
+- [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
+- [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
+- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
+
+<p>define conditions to match specific sources (containers) managed by odigos.
+a source container matches, if ALL non empty fields match (AND semantics)</p>
+<p>common patterns:</p>
+<ul>
+<li>Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName) - all containers (usually there is only one with agent injection)</li>
+<li>Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName) - only this container</li>
+<li>All services in a kubernetes namespace (WorkloadNamespace) - all containers in all sources in the namespace</li>
+<li>All services implemented in a specific programming language (WorkloadLanguage) - all container which are running odigos agent for this language</li>
+</ul>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>workloadName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>workloadKind</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#WorkloadKind"><code>k8sconsts.WorkloadKind</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>workloadNamespace</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>workloadLanguage</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ProgrammingLanguage"><code>common.ProgrammingLanguage</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>

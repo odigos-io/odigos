@@ -20,7 +20,7 @@ package v1alpha1
 // CostReductionRuleApplyConfiguration represents a declarative configuration of the CostReductionRule type for use
 // with apply.
 type CostReductionRuleApplyConfiguration struct {
-	Services         []ServicesApplyConfiguration        `json:"services,omitempty"`
+	SourceScopes     []SourcesScopeApplyConfiguration    `json:"sourceScopes,omitempty"`
 	Operation        *OperationMatcherApplyConfiguration `json:"operation,omitempty"`
 	PercentageAtMost *float64                            `json:"percentageAtMost,omitempty"`
 	Notes            *string                             `json:"notes,omitempty"`
@@ -32,15 +32,15 @@ func CostReductionRule() *CostReductionRuleApplyConfiguration {
 	return &CostReductionRuleApplyConfiguration{}
 }
 
-// WithServices adds the given value to the Services field in the declarative configuration
+// WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Services field.
-func (b *CostReductionRuleApplyConfiguration) WithServices(values ...*ServicesApplyConfiguration) *CostReductionRuleApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the SourceScopes field.
+func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(values ...*SourcesScopeApplyConfiguration) *CostReductionRuleApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithServices")
+			panic("nil value passed to WithSourceScopes")
 		}
-		b.Services = append(b.Services, *values[i])
+		b.SourceScopes = append(b.SourceScopes, *values[i])
 	}
 	return b
 }

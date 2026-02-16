@@ -20,7 +20,7 @@ package v1alpha1
 // NoisyOperationsApplyConfiguration represents a declarative configuration of the NoisyOperations type for use
 // with apply.
 type NoisyOperationsApplyConfiguration struct {
-	Services         []ServicesApplyConfiguration                       `json:"services,omitempty"`
+	SourceScopes     []SourcesScopeApplyConfiguration                   `json:"sourceScopes,omitempty"`
 	HttpServer       *NoisyOperationHttpServerMatcherApplyConfiguration `json:"httpServer,omitempty"`
 	HttpClient       *NoisyOperationHttpClientMatcherApplyConfiguration `json:"httpClient,omitempty"`
 	PercentageAtMost *float64                                           `json:"percentageAtMost,omitempty"`
@@ -33,15 +33,15 @@ func NoisyOperations() *NoisyOperationsApplyConfiguration {
 	return &NoisyOperationsApplyConfiguration{}
 }
 
-// WithServices adds the given value to the Services field in the declarative configuration
+// WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Services field.
-func (b *NoisyOperationsApplyConfiguration) WithServices(values ...*ServicesApplyConfiguration) *NoisyOperationsApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the SourceScopes field.
+func (b *NoisyOperationsApplyConfiguration) WithSourceScopes(values ...*SourcesScopeApplyConfiguration) *NoisyOperationsApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithServices")
+			panic("nil value passed to WithSourceScopes")
 		}
-		b.Services = append(b.Services, *values[i])
+		b.SourceScopes = append(b.SourceScopes, *values[i])
 	}
 	return b
 }

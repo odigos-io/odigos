@@ -23,7 +23,7 @@ type SamplingSpecApplyConfiguration struct {
 	Name                     *string                                     `json:"name,omitempty"`
 	Notes                    *string                                     `json:"notes,omitempty"`
 	Disabled                 *bool                                       `json:"disabled,omitempty"`
-	NoisyOperations          []NoisyOperationsApplyConfiguration         `json:"noisyEndpoints,omitempty"`
+	NoisyOperations          []NoisyOperationsApplyConfiguration         `json:"noisyOperations,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperationApplyConfiguration `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRuleApplyConfiguration       `json:"costReductionRules,omitempty"`
 }

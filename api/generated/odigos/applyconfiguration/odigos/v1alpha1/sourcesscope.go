@@ -22,10 +22,9 @@ import (
 	common "github.com/odigos-io/odigos/common"
 )
 
-// ServicesApplyConfiguration represents a declarative configuration of the Services type for use
+// SourcesScopeApplyConfiguration represents a declarative configuration of the SourcesScope type for use
 // with apply.
-type ServicesApplyConfiguration struct {
-	ServiceName       *string                     `json:"serviceName,omitempty"`
+type SourcesScopeApplyConfiguration struct {
 	WorkloadName      *string                     `json:"workloadName,omitempty"`
 	WorkloadKind      *k8sconsts.WorkloadKind     `json:"workloadKind,omitempty"`
 	WorkloadNamespace *string                     `json:"workloadNamespace,omitempty"`
@@ -33,24 +32,16 @@ type ServicesApplyConfiguration struct {
 	WorkloadLanguage  *common.ProgrammingLanguage `json:"workloadLanguage,omitempty"`
 }
 
-// ServicesApplyConfiguration constructs a declarative configuration of the Services type for use with
+// SourcesScopeApplyConfiguration constructs a declarative configuration of the SourcesScope type for use with
 // apply.
-func Services() *ServicesApplyConfiguration {
-	return &ServicesApplyConfiguration{}
-}
-
-// WithServiceName sets the ServiceName field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ServiceName field is set to the value of the last call.
-func (b *ServicesApplyConfiguration) WithServiceName(value string) *ServicesApplyConfiguration {
-	b.ServiceName = &value
-	return b
+func SourcesScope() *SourcesScopeApplyConfiguration {
+	return &SourcesScopeApplyConfiguration{}
 }
 
 // WithWorkloadName sets the WorkloadName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WorkloadName field is set to the value of the last call.
-func (b *ServicesApplyConfiguration) WithWorkloadName(value string) *ServicesApplyConfiguration {
+func (b *SourcesScopeApplyConfiguration) WithWorkloadName(value string) *SourcesScopeApplyConfiguration {
 	b.WorkloadName = &value
 	return b
 }
@@ -58,7 +49,7 @@ func (b *ServicesApplyConfiguration) WithWorkloadName(value string) *ServicesApp
 // WithWorkloadKind sets the WorkloadKind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WorkloadKind field is set to the value of the last call.
-func (b *ServicesApplyConfiguration) WithWorkloadKind(value k8sconsts.WorkloadKind) *ServicesApplyConfiguration {
+func (b *SourcesScopeApplyConfiguration) WithWorkloadKind(value k8sconsts.WorkloadKind) *SourcesScopeApplyConfiguration {
 	b.WorkloadKind = &value
 	return b
 }
@@ -66,7 +57,7 @@ func (b *ServicesApplyConfiguration) WithWorkloadKind(value k8sconsts.WorkloadKi
 // WithWorkloadNamespace sets the WorkloadNamespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WorkloadNamespace field is set to the value of the last call.
-func (b *ServicesApplyConfiguration) WithWorkloadNamespace(value string) *ServicesApplyConfiguration {
+func (b *SourcesScopeApplyConfiguration) WithWorkloadNamespace(value string) *SourcesScopeApplyConfiguration {
 	b.WorkloadNamespace = &value
 	return b
 }
@@ -74,7 +65,7 @@ func (b *ServicesApplyConfiguration) WithWorkloadNamespace(value string) *Servic
 // WithContainerName sets the ContainerName field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ContainerName field is set to the value of the last call.
-func (b *ServicesApplyConfiguration) WithContainerName(value string) *ServicesApplyConfiguration {
+func (b *SourcesScopeApplyConfiguration) WithContainerName(value string) *SourcesScopeApplyConfiguration {
 	b.ContainerName = &value
 	return b
 }
@@ -82,7 +73,7 @@ func (b *ServicesApplyConfiguration) WithContainerName(value string) *ServicesAp
 // WithWorkloadLanguage sets the WorkloadLanguage field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WorkloadLanguage field is set to the value of the last call.
-func (b *ServicesApplyConfiguration) WithWorkloadLanguage(value common.ProgrammingLanguage) *ServicesApplyConfiguration {
+func (b *SourcesScopeApplyConfiguration) WithWorkloadLanguage(value common.ProgrammingLanguage) *SourcesScopeApplyConfiguration {
 	b.WorkloadLanguage = &value
 	return b
 }

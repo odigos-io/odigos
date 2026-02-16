@@ -117,7 +117,7 @@ func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosCon
 }
 
 // givin a specific container in a workload, matched to a distro, calculate it's head sampling based on odigos config and sampling rules.
-func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, effectiveConfig *common.OdigosConfiguration, samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload, serviceName string) *odigosv1.HeadSamplingConfig {
+func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, effectiveConfig *common.OdigosConfiguration, samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload) *odigosv1.HeadSamplingConfig {
 
 	// only calculate head sampling config if the distro supports it
 	if distro.Traces == nil || distro.Traces.HeadSampling == nil || !distro.Traces.HeadSampling.Supported {
@@ -125,7 +125,7 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 	}
 
 	kubeletHealthProbesRules := calculateKubeletHealthProbesSamplingRules(effectiveConfig, distro, workloadObj, containerName)
-	customSamplingRules, ambientFraction := convertSamplingRulesToHeadSamplingConfig(samplingRules, pw, containerName, serviceName, distro)
+	customSamplingRules, ambientFraction := convertSamplingRulesToHeadSamplingConfig(samplingRules, pw, containerName, distro)
 
 	// if no rules are found, disable the head sampling (unused)
 	if len(customSamplingRules) == 0 && len(kubeletHealthProbesRules) == 0 {
@@ -140,16 +140,13 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 	}
 }
 
-func isServiceParticipatingInSamplingRule(services []odigosv1.Services, serviceName string, pw k8sconsts.PodWorkload, containerName string, containerLanguage common.ProgrammingLanguage) bool {
+func isServiceInRuleScope(services []odigosv1.SourcesScope, pw k8sconsts.PodWorkload, containerName string, containerLanguage common.ProgrammingLanguage) bool {
 	if len(services) == 0 {
 		// empty list means all services are matched
 		return true
 	}
 	for _, service := range services {
 		// check any service field if set
-		if service.ServiceName != "" && service.ServiceName != serviceName {
-			continue
-		}
 		if service.WorkloadName != "" && service.WorkloadName != pw.Name {
 			continue
 		}
@@ -176,7 +173,7 @@ func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOpe
 		return convertNoisyOperationHttpServerToAttributeConditions(noisyOperation.HttpServer, distro)
 	}
 	if noisyOperation.HttpClient != nil {
-		return convertNoisyOperationHttpClientToAttributeConditions(noisyOperation.HttpClient)
+		return convertNoisyOperationHttpClientToAttributeConditions(noisyOperation.HttpClient, distro)
 	}
 	return nil
 }
@@ -237,7 +234,7 @@ func convertNoisyOperationHttpClientToAttributeConditions(httpClient *odigosv1.N
 	return andConditions
 }
 
-func convertSamplingRulesToHeadSamplingConfig(samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload, containerName string, serviceName string, distro *distro.OtelDistro) ([]odigosv1.AttributesAndSamplerRule, float64) {
+func convertSamplingRulesToHeadSamplingConfig(samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload, containerName string, distro *distro.OtelDistro) ([]odigosv1.AttributesAndSamplerRule, float64) {
 	headSamplingRules := []odigosv1.AttributesAndSamplerRule{}
 
 	// ambient fraction is the fraction of spans that are dropped by head sampling regardless of any span properties.
@@ -255,7 +252,7 @@ func convertSamplingRulesToHeadSamplingConfig(samplingRules *[]odigosv1.Sampling
 		for _, noisyOperation := range samplingRule.Spec.NoisyOperations {
 
 			// only take into account operations that are relevant to the current source and container
-			if !isServiceParticipatingInSamplingRule(noisyOperation.Services, serviceName, pw, containerName, distro.Language) {
+			if !isServiceInRuleScope(noisyOperation.SourceScopes, pw, containerName, distro.Language) {
 				continue
 			}
 
