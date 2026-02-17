@@ -978,9 +978,8 @@ spec:
                         applies.
                       type: string
                     samplingCollectorConfig:
-                      description: |-
-                        The sampling configuration that relevant for the collector [tailsampling, and the "headsampling"
-                        config for language that not supported it in the agent level].
+                      description: The sampling configuration that relevant for the
+                        collector (tailsampling).
                       properties:
                         costReductionRules:
                           items:
