@@ -30,10 +30,6 @@ func getResourceAttributes(podWorkload k8sconsts.PodWorkload, containerName stri
 			Value: "$(ODIGOS_POD_NAME)",
 		},
 		{
-			Key:   semconv.ServiceInstanceIDKey,
-			Value: "$(ODIGOS_POD_NAME)",
-		},
-		{
 			Key:   semconv.K8SContainerNameKey,
 			Value: containerName,
 		},
