@@ -338,11 +338,11 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		var recoveredFromRollbackAt *metav1.Time
+		var rollbackRecoveryAtAnnotation string
 		if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
-			recoveredFromRollbackAt = sources.Workload.Spec.RecoveredFromRollbackAt
+			rollbackRecoveryAtAnnotation = sources.Workload.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
 		}
-		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName, desiredDataStreamsLabels, recoveredFromRollbackAt)
+		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName, desiredDataStreamsLabels, rollbackRecoveryAtAnnotation)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
@@ -381,24 +381,30 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, recoveredFromRollbackAt *metav1.Time) (*odigosv1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, rollbackRecoveryAtAnnotation string) (*odigosv1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
+
+	annotations := map[string]string{}
+	if rollbackRecoveryAtAnnotation != "" {
+		annotations[k8sconsts.RollbackRecoveryAtAnnotation] = rollbackRecoveryAtAnnotation
+	}
+
 	instConfig := odigosv1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
 			Kind:       "InstrumentationConfig",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instConfigName,
-			Namespace: namespace,
-			Labels:    desiredDataStreamsLabels,
+			Name:        instConfigName,
+			Namespace:   namespace,
+			Labels:      desiredDataStreamsLabels,
+			Annotations: annotations,
 		},
 	}
 
 	instConfig.Spec.ServiceName = serviceName
 	instConfig.Spec.ContainersOverrides = containers
 	instConfig.Spec.ContainerOverridesHash = containersOverridesHash
-	instConfig.Spec.RecoveredFromRollbackAt = recoveredFromRollbackAt
 
 	if err := ctrl.SetControllerReference(obj, &instConfig, scheme); err != nil {
 		logger.Error(err, "Failed to set controller reference", "name", instConfigName, "namespace", namespace)
@@ -487,12 +493,20 @@ func updateServiceName(ic *odigosv1.InstrumentationConfig, desiredServiceName st
 }
 
 func updateRecoveredFromRollbackAt(ic *odigosv1.InstrumentationConfig, sources *odigosv1.WorkloadSources) (updated bool) {
-	var desired *metav1.Time
+	var desired string
 	if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
-		desired = sources.Workload.Spec.RecoveredFromRollbackAt
+		desired = sources.Workload.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
 	}
-	if !ic.Spec.RecoveredFromRollbackAt.Equal(desired) {
-		ic.Spec.RecoveredFromRollbackAt = desired
+	current := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+	if current != desired {
+		if ic.Annotations == nil {
+			ic.Annotations = make(map[string]string)
+		}
+		if desired == "" {
+			delete(ic.Annotations, k8sconsts.RollbackRecoveryAtAnnotation)
+		} else {
+			ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation] = desired
+		}
 		return true
 	}
 	return false

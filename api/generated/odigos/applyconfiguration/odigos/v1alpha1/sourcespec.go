@@ -19,7 +19,6 @@ package v1alpha1
 
 import (
 	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SourceSpecApplyConfiguration represents a declarative configuration of the SourceSpec type for use
@@ -30,7 +29,6 @@ type SourceSpecApplyConfiguration struct {
 	OtelServiceName          *string                               `json:"otelServiceName,omitempty"`
 	ContainerOverrides       []ContainerOverrideApplyConfiguration `json:"containerOverrides,omitempty"`
 	MatchWorkloadNameAsRegex *bool                                 `json:"matchWorkloadNameAsRegex,omitempty"`
-	RecoveredFromRollbackAt  *v1.Time                              `json:"recoveredFromRollbackAt,omitempty"`
 }
 
 // SourceSpecApplyConfiguration constructs a declarative configuration of the SourceSpec type for use with
@@ -81,13 +79,5 @@ func (b *SourceSpecApplyConfiguration) WithContainerOverrides(values ...*Contain
 // If called multiple times, the MatchWorkloadNameAsRegex field is set to the value of the last call.
 func (b *SourceSpecApplyConfiguration) WithMatchWorkloadNameAsRegex(value bool) *SourceSpecApplyConfiguration {
 	b.MatchWorkloadNameAsRegex = &value
-	return b
-}
-
-// WithRecoveredFromRollbackAt sets the RecoveredFromRollbackAt field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the RecoveredFromRollbackAt field is set to the value of the last call.
-func (b *SourceSpecApplyConfiguration) WithRecoveredFromRollbackAt(value v1.Time) *SourceSpecApplyConfiguration {
-	b.RecoveredFromRollbackAt = &value
 	return b
 }

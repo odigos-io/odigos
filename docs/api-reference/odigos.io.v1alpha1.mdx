@@ -2449,20 +2449,6 @@ The SDKs are identified by the programming language they are written in.
 TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>recoveredFromRollbackAt</code> <B>[Required]</B>
-</td>
-<td>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
-</td>
-<td>
-   <p>RecoveredFromRollbackAt is a timestamp propagated from the Source spec.
-The agentenabled controller compares this with the status timestamp: if they differ,
-it clears RollbackOccurred and copies this value to the status, allowing a retry.
-Setting a new timestamp on the Source triggers another recovery.</p>
-</td>
-</tr>
 </tbody>
 </table>
 
@@ -4226,20 +4212,6 @@ All containers not listed will retain their default behavior.</p>
    <p>MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
 When true, spec.workload.name is treated as a regular expression pattern.
 This allows matching multiple workloads with a single Source CRD.
-Not valid for namespace sources.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>recoveredFromRollbackAt</code>
-</td>
-<td>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
-</td>
-<td>
-   <p>RecoveredFromRollbackAt is a timestamp signal to recover from a rollback and retry instrumentation.
-When set, it propagates to the InstrumentationConfig spec, and is used to determine if recovery from rollback is needed.
-Setting a new timestamp triggers another recovery attempt.
 Not valid for namespace sources.</p>
 </td>
 </tr>

@@ -497,12 +497,6 @@ type InstrumentationConfigSpec struct {
 	// The SDKs are identified by the programming language they are written in.
 	// TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.
 	SdkConfigs []SdkConfig `json:"sdkConfigs,omitempty"`
-
-	// RecoveredFromRollbackAt is a timestamp propagated from the Source spec.
-	// The agentenabled controller compares this with the status timestamp: if they differ,
-	// it clears RollbackOccurred and copies this value to the status, allowing a retry.
-	// Setting a new timestamp on the Source triggers another recovery.
-	RecoveredFromRollbackAt *metav1.Time `json:"recoveredFromRollbackAt,omitempty"`
 }
 
 func (in *InstrumentationConfigSpec) GetContainerAgentConfig(containerName string) *ContainerAgentConfig {

@@ -178,14 +178,6 @@ spec:
                   If not set, the workload name will be used.
                   It is not valid for namespace sources.
                 type: string
-              recoveredFromRollbackAt:
-                description: |-
-                  RecoveredFromRollbackAt is a timestamp signal to recover from a rollback and retry instrumentation.
-                  When set, it propagates to the InstrumentationConfig spec, and is used to determine if recovery from rollback is needed.
-                  Setting a new timestamp triggers another recovery attempt.
-                  Not valid for namespace sources.
-                format: date-time
-                type: string
               workload:
                 description: |-
                   Workload represents the workload or namespace to be instrumented.

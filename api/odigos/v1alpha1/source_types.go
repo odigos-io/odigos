@@ -93,14 +93,6 @@ type SourceSpec struct {
 	// +kubebuilder:validation:Optional
 	// +optional
 	MatchWorkloadNameAsRegex bool `json:"matchWorkloadNameAsRegex,omitempty"`
-
-	// RecoveredFromRollbackAt is a timestamp signal to recover from a rollback and retry instrumentation.
-	// When set, it propagates to the InstrumentationConfig spec, and is used to determine if recovery from rollback is needed.
-	// Setting a new timestamp triggers another recovery attempt.
-	// Not valid for namespace sources.
-	// +kubebuilder:validation:Optional
-	// +optional
-	RecoveredFromRollbackAt *metav1.Time `json:"recoveredFromRollbackAt,omitempty"`
 }
 
 type SourceStatus struct {

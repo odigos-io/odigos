@@ -8,7 +8,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -20,9 +19,11 @@ func Test_Do_Recovery_RecoveryNeeded_RequeuesAfterPersisting(t *testing.T) {
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(deployment))
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
-	now := metav1.Now()
+	now := time.Now().Format(time.RFC3339)
 	ic.Status.RollbackOccurred = true
-	ic.Spec.RecoveredFromRollbackAt = &now
+	ic.Annotations = map[string]string{
+		k8sconsts.RollbackRecoveryAtAnnotation: now,
+	}
 
 	fakeClient := s.newFakeClientWithStatus([]client.Object{deployment, ic}, ic)
 	rateLimiter := newRolloutConcurrencyLimiterNoLimit()
@@ -33,7 +34,7 @@ func Test_Do_Recovery_RecoveryNeeded_RequeuesAfterPersisting(t *testing.T) {
 	// Assert: Recovery persisted, requeued for re-reconcile.
 	assert.NoError(t, err)
 	assert.False(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be cleared after recovery")
-	assert.Equal(t, now.Time.Format(time.RFC3339), ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation])
+	assert.Equal(t, now, ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation])
 	assert.Equal(t, reconcile.Result{Requeue: true}, rolloutResult.Result, "expected requeue after recovery")
 }
 
@@ -44,11 +45,11 @@ func Test_Do_Recovery_NoRecoveryNeeded_ProceedsNormally(t *testing.T) {
 	ic := mockICMidRollout(testutil.NewMockInstrumentationConfig(deployment))
 	pw := k8sconsts.PodWorkload{Name: deployment.Name, Namespace: deployment.Namespace, Kind: k8sconsts.WorkloadKindDeployment}
 
-	now := metav1.Now()
+	now := time.Now().Format(time.RFC3339)
 	ic.Status.RollbackOccurred = true
-	ic.Spec.RecoveredFromRollbackAt = &now
 	ic.Annotations = map[string]string{
-		k8sconsts.RollbackRecoveryAtAnnotation: now.Time.Format(time.RFC3339),
+		k8sconsts.RollbackRecoveryAtAnnotation:          now,
+		k8sconsts.RollbackRecoveryProcessedAtAnnotation: now,
 	}
 
 	fakeClient := s.newFakeClient(deployment, ic)

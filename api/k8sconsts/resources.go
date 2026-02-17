@@ -23,10 +23,16 @@ const (
 	// the name of the profile that created them.
 	OdigosProfileAnnotation = "odigos.io/profile"
 
-	// RollbackRecoveryAtAnnotation is set on InstrumentationConfig to record the last
-	// spec timestamp that was processed for rollback recovery. When this matches
-	// IC.Spec.RollbackRecoveryAt, the recovery has been handled.
+	// RollbackRecoveryAtAnnotation is set on a Source to request recovery from a rollback.
+	// The sourceinstrumentation controller copies it to the InstrumentationConfig annotation.
+	// The rollout controller compares it with RollbackRecoveryProcessedAtAnnotation to decide
+	// whether recovery is needed.
 	RollbackRecoveryAtAnnotation = "odigos.io/rollback-recovery"
+
+	// RollbackRecoveryProcessedAtAnnotation is set on InstrumentationConfig by the rollout
+	// controller to record the last recovery timestamp that was processed. When this matches
+	// RollbackRecoveryAtAnnotation on the same IC, the recovery has been handled.
+	RollbackRecoveryProcessedAtAnnotation = "odigos.io/rollback-recovery-processed"
 
 	// This label is used to mark resources that are managed by Helm.
 	AppManagedByHelmLabel = "app.kubernetes.io/managed-by"

@@ -483,14 +483,6 @@ spec:
                   can be enabled without pod manifest changes.
                   if false, at least one container requires pod manifest changes to enable agent injection.
                 type: boolean
-              recoveredFromRollbackAt:
-                description: |-
-                  RecoveredFromRollbackAt is a timestamp propagated from the Source spec.
-                  The agentenabled controller compares this with the status timestamp: if they differ,
-                  it clears RollbackOccurred and copies this value to the status, allowing a retry.
-                  Setting a new timestamp on the Source triggers another recovery.
-                format: date-time
-                type: string
               sdkConfigs:
                 description: |-
                   Configuration for the OpenTelemetry SDKs that this workload should use.

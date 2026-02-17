@@ -1,6 +1,7 @@
 package predicates
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -88,23 +89,17 @@ func (p RecoveredFromRollbackAtChangedPredicate) Create(e event.CreateEvent) boo
 	if e.Object == nil {
 		return false
 	}
-	ic, ok := e.Object.(*odigosv1.InstrumentationConfig)
-	if !ok {
-		return false
-	}
-	return ic.Spec.RecoveredFromRollbackAt != nil
+	annotations := e.Object.GetAnnotations()
+	return annotations[k8sconsts.RollbackRecoveryAtAnnotation] != ""
 }
 
 func (p RecoveredFromRollbackAtChangedPredicate) Update(e event.UpdateEvent) bool {
 	if e.ObjectOld == nil || e.ObjectNew == nil {
 		return false
 	}
-	oldIC, oldOK := e.ObjectOld.(*odigosv1.InstrumentationConfig)
-	newIC, newOK := e.ObjectNew.(*odigosv1.InstrumentationConfig)
-	if !oldOK || !newOK {
-		return false
-	}
-	return !oldIC.Spec.RecoveredFromRollbackAt.Equal(newIC.Spec.RecoveredFromRollbackAt)
+	oldAnnotations := e.ObjectOld.GetAnnotations()
+	newAnnotations := e.ObjectNew.GetAnnotations()
+	return oldAnnotations[k8sconsts.RollbackRecoveryAtAnnotation] != newAnnotations[k8sconsts.RollbackRecoveryAtAnnotation]
 }
 
 func (p RecoveredFromRollbackAtChangedPredicate) Delete(e event.DeleteEvent) bool {

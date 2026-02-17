@@ -63,38 +63,45 @@ func TestRecoverFromRollback_Success(t *testing.T) {
 	// Act
 	err := RecoverFromRollback(context.Background(), fakeClient, "test-ns", "my-app", "Deployment")
 
-	// Assert: RecoveredFromRollbackAt is set on the Source
+	// Assert: RollbackRecoveryAtAnnotation is set on the Source
 	require.NoError(t, err)
 	updatedSource := &odigosv1alpha1.Source{}
 	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKeyFromObject(source), updatedSource))
-	assert.NotNil(t, updatedSource.Spec.RecoveredFromRollbackAt, "expected RecoveredFromRollbackAt to be set")
+	assert.NotEmpty(t, updatedSource.Annotations[k8sconsts.RollbackRecoveryAtAnnotation], "expected rollback recovery annotation to be set")
 }
 
 func TestRecoverFromRollback_AlreadySet(t *testing.T) {
-	// Arrange: Source already has a recovery timestamp from 1 minute ago
+	// Arrange: Source already has a recovery annotation from 1 minute ago
 	scheme := newScheme()
 	source := newWorkloadSource("test-ns", "my-app", "Deployment")
-	oldTime := metav1.NewTime(time.Now().Add(-time.Minute))
-	source.Spec.RecoveredFromRollbackAt = &oldTime
+	oldTime := time.Now().Add(-time.Minute)
+	source.Annotations = map[string]string{
+		k8sconsts.RollbackRecoveryAtAnnotation: oldTime.Format(time.RFC3339),
+	}
 	fakeClient := newFakeClient(scheme, []client.Object{source})
 
 	// Act
 	err := RecoverFromRollback(context.Background(), fakeClient, "test-ns", "my-app", "Deployment")
 
-	// Assert: Timestamp is updated to a newer value
+	// Assert: Annotation is updated to a newer value
 	require.NoError(t, err)
 	updatedSource := &odigosv1alpha1.Source{}
 	require.NoError(t, fakeClient.Get(context.Background(), client.ObjectKeyFromObject(source), updatedSource))
-	assert.NotNil(t, updatedSource.Spec.RecoveredFromRollbackAt, "expected RecoveredFromRollbackAt to be set")
-	assert.True(t, updatedSource.Spec.RecoveredFromRollbackAt.After(oldTime.Time), "expected a newer timestamp")
+	newAnnotation := updatedSource.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+	assert.NotEmpty(t, newAnnotation, "expected rollback recovery annotation to be set")
+	newTime, parseErr := time.Parse(time.RFC3339, newAnnotation)
+	require.NoError(t, parseErr)
+	assert.True(t, newTime.After(oldTime), "expected a newer timestamp")
 }
 
 func TestRecoverFromRollback_ReRecovery(t *testing.T) {
-	// Arrange: Source with a previous recovery timestamp, simulating recover -> rollback -> recover again
+	// Arrange: Source with a previous recovery annotation, simulating recover -> rollback -> recover again
 	scheme := newScheme()
 	source := newWorkloadSource("test-ns", "my-app", "Deployment")
-	firstTimestamp := metav1.NewTime(time.Now().Add(-time.Minute))
-	source.Spec.RecoveredFromRollbackAt = &firstTimestamp
+	firstTimestamp := time.Now().Add(-time.Minute)
+	source.Annotations = map[string]string{
+		k8sconsts.RollbackRecoveryAtAnnotation: firstTimestamp.Format(time.RFC3339),
+	}
 	fakeClient := newFakeClient(scheme, []client.Object{source})
 	ctx := context.Background()
 	sourceKey := client.ObjectKeyFromObject(source)
@@ -102,12 +109,14 @@ func TestRecoverFromRollback_ReRecovery(t *testing.T) {
 	// Act
 	require.NoError(t, RecoverFromRollback(ctx, fakeClient, "test-ns", "my-app", "Deployment"))
 
-	// Assert: New timestamp is strictly after the first, signaling a fresh recovery to the instrumentor
+	// Assert: New annotation is strictly after the first, signaling a fresh recovery to the instrumentor
 	updatedSource := &odigosv1alpha1.Source{}
 	require.NoError(t, fakeClient.Get(ctx, sourceKey, updatedSource))
-	secondTimestamp := updatedSource.Spec.RecoveredFromRollbackAt
-	require.NotNil(t, secondTimestamp, "expected second recovery timestamp to be set")
-	assert.True(t, secondTimestamp.After(firstTimestamp.Time),
+	secondAnnotation := updatedSource.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+	require.NotEmpty(t, secondAnnotation, "expected second recovery annotation to be set")
+	secondTimestamp, parseErr := time.Parse(time.RFC3339, secondAnnotation)
+	require.NoError(t, parseErr)
+	assert.True(t, secondTimestamp.After(firstTimestamp),
 		"second recovery timestamp should be strictly after the first")
 }
 
@@ -155,7 +164,7 @@ func TestRecoverFromRollback_UpdateFailure(t *testing.T) {
 
 	// Assert: Error - update failed
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to update Source with RecoveredFromRollbackAt")
+	assert.Contains(t, err.Error(), "simulated update error")
 }
 
 func TestRecoverFromRollback_NamespaceSourceOnly_CreatesWorkloadSource(t *testing.T) {
