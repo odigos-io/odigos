@@ -1,4 +1,4 @@
-package signalconfig
+package sampling
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -117,7 +117,7 @@ func calculateKubeletHealthProbesSamplingRules(effectiveConfig *common.OdigosCon
 }
 
 // givin a specific container in a workload, matched to a distro, calculate it's head sampling based on odigos config and sampling rules.
-func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, effectiveConfig *common.OdigosConfiguration, samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload) *odigosv1.HeadSamplingConfig {
+func CalculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload.Workload, containerName string, effectiveConfig *common.OdigosConfiguration, samplingRules *[]odigosv1.Sampling, pw k8sconsts.PodWorkload) *odigosv1.HeadSamplingConfig {
 
 	// only calculate head sampling config if the distro supports it
 	if distro.Traces == nil || distro.Traces.HeadSampling == nil || !distro.Traces.HeadSampling.Supported {
@@ -138,34 +138,6 @@ func calculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 		AttributesAndSamplerRules: attributesAndSamplerRules,
 		FallbackFraction:          ambientFraction,
 	}
-}
-
-func isServiceInRuleScope(services []odigosv1.SourcesScope, pw k8sconsts.PodWorkload, containerName string, containerLanguage common.ProgrammingLanguage) bool {
-	if len(services) == 0 {
-		// empty list means all services are matched
-		return true
-	}
-	for _, service := range services {
-		// check any service field if set
-		if service.WorkloadName != "" && service.WorkloadName != pw.Name {
-			continue
-		}
-		if service.WorkloadKind != "" && service.WorkloadKind != pw.Kind {
-			continue
-		}
-		if service.WorkloadNamespace != "" && service.WorkloadNamespace != pw.Namespace {
-			continue
-		}
-		if service.ContainerName != "" && service.ContainerName != containerName {
-			continue
-		}
-		if service.WorkloadLanguage != "" && service.WorkloadLanguage != containerLanguage {
-			continue
-		}
-		// if all fields matched, this source container matches the services filters in the rule and should be taken
-		return true
-	}
-	return false
 }
 
 func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOperations, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
@@ -252,7 +224,7 @@ func convertSamplingRulesToHeadSamplingConfig(samplingRules *[]odigosv1.Sampling
 		for _, noisyOperation := range samplingRule.Spec.NoisyOperations {
 
 			// only take into account operations that are relevant to the current source and container
-			if !isServiceInRuleScope(noisyOperation.SourceScopes, pw, containerName, distro.Language) {
+			if !IsServiceInRuleScope(noisyOperation.SourceScopes, pw, containerName, distro.Language) {
 				continue
 			}
 
