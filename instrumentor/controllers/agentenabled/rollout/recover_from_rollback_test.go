@@ -30,7 +30,7 @@ func Test_recoverFromRollback_FirstRecovery_ClearsRollbackAndSetsAnnotation(t *t
 	changed := recoverFromRollback(ic)
 
 	assert.True(t, changed, "expected recovery to be applied")
-	assert.False(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be cleared")
+	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to remain true — caller clears it")
 	assert.Equal(t, now, ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation])
 }
 
@@ -47,7 +47,7 @@ func Test_recoverFromRollback_SecondRecovery_UpdatesAnnotation(t *testing.T) {
 	changed := recoverFromRollback(ic)
 
 	assert.True(t, changed, "expected recovery to be applied")
-	assert.False(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be cleared")
+	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to remain true — caller clears it")
 	assert.Equal(t, newTime, ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation])
 }
 
@@ -100,7 +100,7 @@ func Test_recoverFromRollback_MalformedProcessedAnnotation_OverwritesAndRecovers
 	changed := recoverFromRollback(ic)
 
 	assert.True(t, changed, "expected recovery — processed differs from desired")
-	assert.False(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to be cleared")
+	assert.True(t, ic.Status.RollbackOccurred, "expected RollbackOccurred to remain true — caller clears it")
 	assert.Equal(t, now, ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation],
 		"expected processed annotation to be overwritten with the desired value")
 }

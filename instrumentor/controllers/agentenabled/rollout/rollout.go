@@ -495,7 +495,6 @@ func recoverFromRollback(ic *odigosv1alpha1.InstrumentationConfig) bool {
 		ic.Annotations = make(map[string]string)
 	}
 	ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation] = currentRecoveryAt
-	ic.Status.RollbackOccurred = false
 	return true
 }
 
