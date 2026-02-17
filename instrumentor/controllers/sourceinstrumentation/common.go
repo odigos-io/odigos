@@ -334,14 +334,16 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 	ic := &odigosv1.InstrumentationConfig{}
 	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: pw.Namespace}, ic)
+
+	var rollbackRecoveryAtAnnotation string
+	if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
+		rollbackRecoveryAtAnnotation = sources.Workload.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+	}
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		var rollbackRecoveryAtAnnotation string
-		if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
-			rollbackRecoveryAtAnnotation = sources.Workload.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
-		}
+
 		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName, desiredDataStreamsLabels, rollbackRecoveryAtAnnotation)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
@@ -355,7 +357,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		dataStreamsChanged := updateDatastreamLabels(ic, desiredDataStreamsLabels)
 		containerOverridesChanged := updateContainerOverride(ic, containers, hashString)
 		serviceNameChanged := updateServiceName(ic, desiredServiceName)
-		recoveredFromRollbackAtChanged := updateRecoveredFromRollbackAt(ic, sources)
+		recoveredFromRollbackAtChanged := updateRecoveredFromRollbackAt(ic, rollbackRecoveryAtAnnotation)
 		if containerOverridesChanged || dataStreamsChanged || serviceNameChanged || recoveredFromRollbackAtChanged {
 			err = k8sClient.Update(ctx, ic)
 			if err != nil {
@@ -492,11 +494,8 @@ func updateServiceName(ic *odigosv1.InstrumentationConfig, desiredServiceName st
 	return false
 }
 
-func updateRecoveredFromRollbackAt(ic *odigosv1.InstrumentationConfig, sources *odigosv1.WorkloadSources) (updated bool) {
-	var desired string
-	if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
-		desired = sources.Workload.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
-	}
+func updateRecoveredFromRollbackAt(ic *odigosv1.InstrumentationConfig, sourceRollbackRecoveryAtAnnotation string) (updated bool) {
+	desired := sourceRollbackRecoveryAtAnnotation
 	current := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
 	if current != desired {
 		if ic.Annotations == nil {

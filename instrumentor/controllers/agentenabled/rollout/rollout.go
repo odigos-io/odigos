@@ -116,14 +116,14 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	// recomputes the spec with RollbackOccurred cleared.
 	if recoverFromRollback(ic) {
 		if err := c.Update(ctx, ic); err != nil {
-			_, handledErr := utils.K8SUpdateErrorHandler(err)
-			return RolloutResult{}, handledErr
+			result, handledErr := utils.K8SUpdateErrorHandler(err)
+			return RolloutResult{Result: result}, handledErr
 		}
 		// c.Update refreshes the in-memory object, overwriting status changes. Re-apply and persist.
 		ic.Status.RollbackOccurred = false
 		if err := c.Status().Update(ctx, ic); err != nil {
-			_, handledErr := utils.K8SUpdateErrorHandler(err)
-			return RolloutResult{}, handledErr
+			result, handledErr := utils.K8SUpdateErrorHandler(err)
+			return RolloutResult{Result: result}, handledErr
 		}
 		return RolloutResult{Result: ctrl.Result{Requeue: true}}, nil
 	}
