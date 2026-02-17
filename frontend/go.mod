@@ -206,3 +206,5 @@ replace (
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth
 )
+
+replace github.com/go-viper/mapstructure/v2 => github.com/go-viper/mapstructure/v2 v2.4.0
