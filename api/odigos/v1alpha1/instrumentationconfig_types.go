@@ -398,6 +398,24 @@ type AgentMetricsConfig struct {
 // The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.
 type AgentLogsConfig struct{}
 
+// ContainerCollectorConfig is a configuration for a specific container in a workload.
+type ContainerCollectorConfig struct {
+	// The name of the container to which this configuration applies.
+	ContainerName string `json:"containerName"`
+
+	// The sampling configuration that relevant for the collector (tailsampling).
+	TailSampling *SamplingCollectorConfig `json:"samplingCollectorConfig,omitempty"`
+
+	// Later we can add here any relevant collector configuration in the scope of the container.
+	// e.g url-templatization
+}
+
+type SamplingCollectorConfig struct {
+	NoisyOperations          []NoisyOperations         `json:"noisyOperations,omitempty"`
+	HighlyRelevantOperations []HighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
+	CostReductionRules       []CostReductionRule       `json:"costReductionRules,omitempty"`
+}
+
 // ContainerAgentConfig is a configuration for a specific container in a workload.
 type ContainerAgentConfig struct {
 	// The name of the container to which this configuration applies.
@@ -453,6 +471,8 @@ type InstrumentationConfigSpec struct {
 
 	// configuration for each instrumented container in the workload
 	Containers []ContainerAgentConfig `json:"containers,omitempty"`
+
+	WorkloadCollectorConfig []ContainerCollectorConfig `json:"workloadCollectorConfig,omitempty"`
 
 	// will always list all containers of this workload by name,
 	// and override data in case it is configured on the source.
