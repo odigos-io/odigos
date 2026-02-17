@@ -99,7 +99,6 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		}
 		return ctrl.Result{}, err
 	}
-
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider, conf)
@@ -187,7 +186,8 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	distroPerLanguage := calculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
 	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
-	// instrumentating it and to disable future instrumentation of this service
+	// instrumentating it and to disable future instrumentation of this service.
+	// Recovery from rollback is already handled in reconcileWorkload before this function is called.
 	rollbackOccurred := ic.Status.RollbackOccurred
 	// Get existing backoff reason from status conditions if available
 	var existingBackoffReason odigosv1.AgentEnabledReason
@@ -208,6 +208,10 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 				break
 			}
 		}
+	}
+	// If not found in containers and we are in rollback state, default to CrashLoopBackOff
+	if rollbackOccurred && existingBackoffReason == "" {
+		existingBackoffReason = odigosv1.AgentEnabledReasonCrashLoopBackOff
 	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
 	collectorConfig := make([]odigosv1.ContainerCollectorConfig, 0, len(ic.Spec.Containers))

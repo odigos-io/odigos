@@ -1,6 +1,7 @@
 package predicates
 
 import (
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -77,6 +78,35 @@ func (i RuntimeDetailsChangedPredicate) Delete(e event.DeleteEvent) bool {
 }
 
 func (i RuntimeDetailsChangedPredicate) Generic(e event.GenericEvent) bool {
+	return false
+}
+
+type RecoveredFromRollbackAtChangedPredicate struct{}
+
+var _ predicate.Predicate = &RecoveredFromRollbackAtChangedPredicate{}
+
+func (p RecoveredFromRollbackAtChangedPredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		return false
+	}
+	annotations := e.Object.GetAnnotations()
+	return annotations[k8sconsts.RollbackRecoveryAtAnnotation] != ""
+}
+
+func (p RecoveredFromRollbackAtChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+	oldAnnotations := e.ObjectOld.GetAnnotations()
+	newAnnotations := e.ObjectNew.GetAnnotations()
+	return oldAnnotations[k8sconsts.RollbackRecoveryAtAnnotation] != newAnnotations[k8sconsts.RollbackRecoveryAtAnnotation]
+}
+
+func (p RecoveredFromRollbackAtChangedPredicate) Delete(e event.DeleteEvent) bool {
+	return false
+}
+
+func (p RecoveredFromRollbackAtChangedPredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
