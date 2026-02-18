@@ -1,0 +1,108 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+<Tip>
+  It is recommended to use the [`odigos describe`](/cli/odigos_describe) command to get detailed information in one command.
+</Tip>
+
+## Check is Source Created?
+
+A `Source` object is required for Odigos to instrument the workload or namespace, such as:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example
+  namespace: foo
+spec:
+  workload:
+    name: myapp
+    namespace: foo
+    kind: StatefulSet
+```
+
+If you expect to see data from a workload but don't, check if the `Source` object exists:
+
+<CodeGroup>
+  ```shell get all in namespace
+  kubectl get sources -n <namespace>
+  ```
+  ```shell get by deployment name
+  kubectl get sources -n <namespace> -l odigos.io/workload-name=<deployment-name>
+  ```
+  ```shell get by deployment kind
+  kubectl get sources -n <namespace> -l odigos.io/workload-kind=<deployment-kind>
+  ```
+</CodeGroup>
+
+## Check is Language Detected?
+
+After a `Source` object is created, Odigos will attempt to detect the programming language of the containers in the workload pods, and write the detected language to an `InstrumentationConfig` object in the same namespace.
+
+The resulting language is used to determine which instrumentation to apply.
+
+If a `Source` object exists, verify that the `InstrumentationConfig` also exists:
+
+<CodeGroup>
+  ```shell get all in namespace
+  kubectl get instrumentationconfigs -n <namespace>
+  ```
+  ```shell get by crd name
+  kubectl get instrumentationconfigs -n <namespace> <crd-name> -o yaml
+  ```
+</CodeGroup>
+
+If an `InstrumentationConfig` object exists, verify that the `status.runtimeDetailsByContainer` array contains the expected languages, for example:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: InstrumentationConfig
+metadata:
+  name: example
+  namespace: foo
+spec:
+  serviceName: example
+status:
+  runtimeDetailsByContainer:
+  - containerName: example
+    language: go
+    runtimeVersion: 1.21.2
+```
+
+## Check is Device Instrumented?
+
+Once an `InstrumentationConfig` object is created, and the supported language is detected, Odigos will wait until a [destination](/backends-overview) is added, and OpenTelemetry Collectors are deployed to the cluster (which will receive the telemetry data).
+
+To inject the instrumentation agents into the pods, Odigos will patch the workload template containers with a resource based on the detected language.
+
+If an `InstrumentationConfig` object exists, and the languages are detected, verify that the `Deployment` object contains the expected instrumentation devices:
+
+<CodeGroup>
+  ```shell get all in namespace
+  kubectl get deployments -n <namespace>
+  ```
+  ```shell get by deployment name
+  kubectl get deployments -n <namespace> <deployment-name> -o yaml
+  ```
+</CodeGroup>
+
+It should look something like this:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example
+  namespace: foo
+spec:
+  template:
+    spec:
+      containers:
+      - resources:
+          limits:
+            instrumentation.odigos.io/go-ebpf-community: "1"
+```
+
+The `instrumentation.odigos.io/go-ebpf-community` resource-limit instructs Odigos on how to mount the relevant OpenTelemetry agents and environment variables into the container, and which processes should be instrumented with eBPF.
+
+<GettingHelp />

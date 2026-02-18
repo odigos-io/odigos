@@ -1,0 +1,14 @@
+## With CLI
+
+```shell
+odigos uninstall
+```
+
+## Uninstall Existing Odigos Installation with Helm
+
+If you installed Odigos using Helm, you can uninstall it by running the following commands:
+
+```shell
+helm delete odigos -n odigos-system
+kubectl delete ns odigos-system
+```

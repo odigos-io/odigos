@@ -1,0 +1,86 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/blobstorage.svg" alt="azureblob" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+Odigos exports data to Azure Blob Storage in [OTLP format](https://opentelemetry.io/docs/specs/otlp/). Data can be exported either in JSON format or in binary format (protobuf).
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ✅ Logs
+</Accordion>
+
+- **AZURE_BLOB_ACCOUNT_NAME** `string` : Account Name.
+  - This field is required
+- **AZURE_BLOB_CONTAINER_NAME** `string` : Container Name.
+  - This field is required
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Azure Blob Storage` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `azureblob.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: azureblob-example
+      namespace: odigos-system
+    spec:
+      data:
+        AZURE_BLOB_ACCOUNT_NAME: <Account Name>
+        AZURE_BLOB_CONTAINER_NAME: <Container Name>
+      destinationName: azureblob
+      signals:
+      - TRACES
+      - LOGS
+      type: azureblob
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f azureblob.yaml
+    ```
+  </Step>
+</Steps>

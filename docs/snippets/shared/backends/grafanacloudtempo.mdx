@@ -1,0 +1,118 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/grafana.svg" alt="grafanacloudtempo" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<Note>
+  These instructions are for the Grafana Cloud **managed** Tempo service. If you run a self hosted Tempo instance, please follow the instructions on the [Tempo](/backends/tempo) page.
+</Note>
+
+You can use Grafana Cloud managed service as a backend for Odigos to store your logs, metrics, and traces. This page describes how to configure Odigos to use Grafana Cloud Tempo as a **trace** backend.
+
+All the connection details can be found at [grafana.com](https://grafana.com) under **My Account**
+
+<Frame>
+  <img src="/backends/images/grafanacloud1.png" alt="Grafana labs website" />
+</Frame>
+
+Then, under the "GRAFANA CLOUD" title, select your Grafana Stuck, browser to the "Tempo" card and click "Send Traces"
+
+<Frame>
+  <img src="/backends/images/grafanacloud4.png" alt="Tempo managed service configuration" />
+</Frame>
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ❌ Logs
+</Accordion>
+
+- **GRAFANA_CLOUD_TEMPO_ENDPOINT** `string` : Endpoint. This is the URL of the Tempo service, in the form of `host:port`. You can find the endpoint under the "Sending data to Tempo" section.
+  - This field is required
+  - Example: `tempo-us-central1.grafana.net:443`
+- **GRAFANA_CLOUD_TEMPO_USERNAME** `string` : Username. You can find the username in the "Sending data to Tempo" section under the "basic_auth" yaml field. The username is a number.
+  - This field is required
+- **GRAFANA_CLOUD_TEMPO_PASSWORD** `string` : Password (Api Token). This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `traces:write` scope.
+  - This field is required
+  - Example: `glc_eyJvIj...`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Grafana Cloud Tempo` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `grafanacloudtempo.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: grafanacloudtempo-example
+      namespace: odigos-system
+    spec:
+      data:
+        GRAFANA_CLOUD_TEMPO_ENDPOINT: <Endpoint>
+        GRAFANA_CLOUD_TEMPO_USERNAME: <Username>
+      destinationName: grafanacloudtempo
+      secretRef:
+        name: grafanacloudtempo-secret
+      signals:
+      - TRACES
+      type: grafanacloudtempo
+
+    ---
+
+    apiVersion: v1
+    data:
+      GRAFANA_CLOUD_TEMPO_PASSWORD: <Base64 Password (Api Token)>
+    kind: Secret
+    metadata:
+      name: grafanacloudtempo-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f grafanacloudtempo.yaml
+    ```
+  </Step>
+</Steps>

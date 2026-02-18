@@ -1,0 +1,70 @@
+<Info>
+  Native Instrumentation is currently the default setting of Odigos **Open-Source** version.
+
+  eBPF-Based Instrumentation is currently not supported for this language.
+</Info>
+
+## Supported Versions
+
+The minimal supported version of .NET Framework is **4.6.2**.
+
+The following CPU architectures are supported:
+- amd64 (x86_64)
+- arm64
+
+## Instrumentation Libraries
+
+The following .NET modules will be auto instrumented by Odigos:
+
+### Application Frameworks
+
+| Framework                                                                                               | Tracing Support | Metrics Support | Notes                                                                                                    |
+|---------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------:|:-----------------------------------------------------------------------------:|----------------------------------------------------------------------------------------------------------|
+| [ASP.NET](https://docs.microsoft.com/aspnet/overview)                                                   |                                     Yes                                      |                                      Yes                                      |                                                                                                          |
+| [ASP.NET Core](https://docs.microsoft.com/aspnet/core/introduction-to-aspnet-core?view=aspnetcore-6.0)  |                                     Yes                                      |                                      Yes                                      |                                                                                                          |
+
+### Databases
+
+| Library                                                                                            | Tracing Support | Metrics Support | Notes                                                                                                                                                                             |
+|----------------------------------------------------------------------------------------------------|-----------------|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Microsoft.Data.SqlClient](https://www.nuget.org/packages/Microsoft.Data.SqlClient)                | Yes             |       |                                                                                                                                                                              |
+| [System.Data.SqlClient](https://www.nuget.org/packages/System.Data.SqlClient)                      | Yes             |       |                                                                                                                                                                              |
+| MySql.Data           | Partial         |       | This is the official MySQL library.                                                                                                                |
+| [MySqlConnector](https://mysqlconnector.net/)                                                      | Yes             |       | Seems to be the [recommended library for MariaDB](https://mariadb.com/docs/connectors/mariadb-connector-net/mariadb-connector-net-guide).                                                                    |
+| [Npgsql](https://www.npgsql.org/)                                                                  | Yes             |       |                                                                                                                                                                              |
+| [Microsoft.Data.SqlLite](https://docs.microsoft.com/dotnet/standard/data/sqlite/?tabs=netcore-cli) |                 |       |                                                                                                                                                                              |
+| [MongoDB.Driver](https://www.nuget.org/packages/mongodb.driver)                                    | Yes             |       |                                                                                                                                                                              |
+| [StackExchange.Redis](https://stackexchange.github.io/StackExchange.Redis/)                        | Partial         |       |                                                                                                                                                                              |
+| [Elasticsearch-net](https://github.com/elastic/elasticsearch-net)                                  | Yes             |       | 8.0.0+ only.                                                                                                         |
+| [Oracle.ManagedDataAccess.Core](https://www.nuget.org/packages/Oracle.ManagedDataAccess.Core)      | Yes             |       | 23.4.0+ only.                                                                                                      |
+| [Oracle.ManagedDataAccess](https://www.nuget.org/packages/Oracle.ManagedDataAccess)                | Yes             |       | 23.4.0+ only.                                                                                                      |
+| [AWSSDK.DynamoDBv2](https://www.nuget.org/packages/AWSSDK.DynamoDBv2)                              |                 |       |                                                                                                                                                                              |
+| [Microsoft.Azure.Cosmos](https://www.nuget.org/packages/Microsoft.Azure.Cosmos)                    |                 |       |                                                                                                                                                                              |
+
+### Inter-process communication (IPC)
+
+| Library                                                                           | Tracing Support                                 | Metrics Support | Notes                                                                                                  |
+|-----------------------------------------------------------------------------------|-------------------------------------------------|-----------------|--------------------------------------------------------------------------------------------------------|
+| [HttpClient](https://docs.microsoft.com/dotnet/api/system.net.http.httpclient)    | Yes                                             | Yes             |                                                                                                        |
+| [HttpWebRequest](https://docs.microsoft.com/dotnet/api/system.net.httpwebrequest) | Yes                                             | Yes             |                                                                                                        |
+| [WCF](https://docs.microsoft.com/dotnet/framework/wcf/whats-wcf)                  | Yes (Client adn Service side on .NET Framework) |                 |                                                                                                        |
+| [CoreWCF](https://github.com/CoreWCF/CoreWCF)                                     |                                                 |                 |                                                                                                        |
+| [RestSharp](https://restsharp.dev/)                                               |                                                 |                 | This library may be implicitly supported by instrumenting the underlying HttpClient or HttpWebRequest. |
+| [gRPC-dotnet](https://github.com/grpc/grpc-dotnet)                                | Partial                                         |                 | Client and service support should be added.                                                            |
+| [GraphQL](https://www.nuget.org/packages/GraphQL/)                                | Partial                                         |                 |                                                                                                        |
+| [GraphQL Client](https://github.com/graphql-dotnet/graphql-client)                |                                                 |                 |                                                                                                        |
+| [RabbitMQ](https://www.nuget.org/packages/RabbitMQ.Client)                        | Yes                                             |                 | `RabbitMQ.Client` 7.0.0+ has native support for traces.                                                |
+| [Kafka](https://www.nuget.org/packages/Confluent.Kafka)                           |                                                 |                 |                                                                                                        |
+| [NServiceBus](https://docs.particular.net/nservicebus/)                           | Yes                                             | Yes             |                                                                                                        |
+| [MassTransit](https://masstransit-project.com/)                                   | Yes                                             |                 |                                                                                                        |
+
+## Automatic Testing
+
+The following scenarios are automatically tested with every release:
+
+| .NET Version | LibC type | CPU   |
+|--------------|-----------|-------|
+| 6.0          | glibc     | amd64 |
+| 6.0          | musl      | amd64 |
+| 8.0          | glibc     | amd64 |
+| 8.0          | musl      | amd64 |

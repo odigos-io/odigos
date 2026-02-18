@@ -1,0 +1,81 @@
+## Supported Versions
+
+Odigos uses the official OpenTelemetry instrumentation libraries and SDK components, thus it supports the same Java versions as this project.
+
+- Java Virtual Machine runtime versions **8** and above are supported.
+
+## Traces
+
+Odigos will automatically instrument your Java sources to record and collect spans for distributed tracing, by utilizing the OpenTelemetry Java Official Instrumentation Libraries.
+
+If you use one of the supported logger libraries, the trace id and span id will be auto-injected into your log records allowing signals correlations between logs and traces.
+
+## Instrumentation Libraries
+
+The following Java modules will be auto instrumented by Odigos:
+
+### HTTP Frameworks
+
+- [`play-ws`](https://central.sonatype.com/artifact/com.typesafe.play/play-ws_3) `versions >=1.0.0 <2.1.0`
+- [`jaxrs`](https://central.sonatype.com/artifact/com.jslsolucoes/jaxrs) `versions >=0.5`
+- [`resteasy-jaxrs`](https://central.sonatype.com/artifact/org.jboss.resteasy/resteasy-jaxrs) `versions >=3.0.0 <4.0.0`
+- [`jersey-server`](https://central.sonatype.com/artifact/com.sun.jersey/jersey-server) `versions >=2.0.0 <3.0.0`
+- [`jersey-container-servlet`](https://central.sonatype.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet) `versions >=2.0.0 <3.0.0`
+- [`spring-web`](https://central.sonatype.com/artifact/org.springframework/spring-web) `versions >=3.1.0`
+- [`spring-webflux`](https://central.sonatype.com/artifact/org.springframework/spring-webflux) `versions >=5.0.0`
+- [`spring-webmvc`](https://central.sonatype.com/artifact/org.springframework/spring-webmvc) `versions >=3.1.0`
+- [`javalin`](https://central.sonatype.com/artifact/io.javalin/javalin) `versions >=5.0.0`
+- [`finatra-http`](https://central.sonatype.com/artifact/com.twitter/finatra-http_2.13) `versions >=2.9.0`
+- [`ktor-server-core`](https://central.sonatype.com/artifact/io.ktor/ktor-server-core) `versions >=2.0.0`
+
+### HTTP Clients
+
+- [`okhttp`](https://central.sonatype.com/artifact/com.squareup.okhttp/okhttp) `versions >=3.0.0`
+- [`httpasyncclient`](https://central.sonatype.com/artifact/org.apache.httpcomponents/httpasyncclient) `versions >=4.1`
+- [`reactor-netty-http`](https://central.sonatype.com/artifact/io.projectreactor.netty/reactor-netty-http) `versions >=1.0.0`
+- [`cxf-rt-frontend-jaxrs`](https://central.sonatype.com/artifact/org.apache.cxf/cxf-rt-frontend-jaxrs) `versions >=3.2 <4.0.0`
+
+### Database Clients, ORMs, and Data Access Libraries
+
+- [`jedis`](https://central.sonatype.com/artifact/redis.clients/jedis) `versions >=1.4.0 <4.0.0`
+- [`couchbase-java-client`](https://central.sonatype.com/artifact/org.testcontainers/couchbase) `versions >=2.0.0`
+- [`spring-data-commons`](https://central.sonatype.com/artifact/org.springframework.data/spring-data-commons) `versions >=1.8.0`
+- [`spring-batch-core`](https://central.sonatype.com/artifact/org.springframework.batch/spring-batch-core) `versions >=3.0.0 <5.0.0`
+- [`elasticsearch-java`](https://central.sonatype.com/artifact/co.elastic.clients/elasticsearch-java) `versions >=7.16 <7.17.20`, `versions >=8 <8.10`
+- [`elasticsearch-rest-client`](https://central.sonatype.com/artifact/org.elasticsearch.client/elasticsearch-rest-client) `versions >=6.4 <7.0`
+- [`elasticsearch-transport`](https://central.sonatype.com/artifact/org.elasticsearch/elasticsearch-transport-wares) `versions >=5.0 <8.0`
+- [`elasticsearch-rest`](https://central.sonatype.com/artifact/org.apache.camel/camel-elasticsearch-rest) `versions >=7.0`
+
+### Messaging Systems Clients
+
+- [`spring-rabbit`](https://central.sonatype.com/artifact/org.springframework.amqp/spring-rabbit) `versions >=1.6.4 <2.1.1`
+- [`spring-kafka`](https://central.sonatype.com/artifact/org.springframework.kafka/spring-kafka) `versions >=2.7`
+- [`rocketmq-client-java`](https://central.sonatype.com/artifact/org.apache.rocketmq/rocketmq-client-java) `versions >=4.0.0`
+- [`reactor-kafka`](https://central.sonatype.com/artifact/io.projectreactor.kafka/reactor-kafka) `versions >=1.0.0`
+- [`spring-jms`](https://central.sonatype.com/artifact/org.springframework/spring-jms) `versions >=2.0`
+
+### RPC (Remote Procedure Call)
+
+- [`dubbo`](https://central.sonatype.com/artifact/com.alibaba/dubbo) `versions >=2.7`
+- [`grpc-core`](https://central.sonatype.com/artifact/io.grpc/grpc-core) `versions >=1.6.0`
+- [`finagle-http`](https://central.sonatype.com/artifact/com.twitter/finagle-http_2.12) `versions >=23.11.0`
+
+### Security
+
+- [`spring-security-config`](https://central.sonatype.com/artifact/org.springframework.security/spring-security-config) `versions >=6.0.0`
+
+### Container Orchestration
+
+- [`kubernetes-client`](https://central.sonatype.com/artifact/io.fabric8/kubernetes-client) `versions >=7.0.0`
+
+### Java Core Modules
+
+- [`spring-aop`](https://central.sonatype.com/artifact/org.springframework/spring-aop) `versions >=1.2`
+- [`spring-context`](https://central.sonatype.com/artifact/org.springframework/spring-context) `versions >=4.0.0 <6.0.0`
+- [`spring-core`](https://central.sonatype.com/artifact/org.springframework/spring-core) `versions >=2.0.`
+- [`spring-boot-actuator-autoconfigure`](https://central.sonatype.com/artifact/org.springframework.boot/spring-boot-actuator-autoconfigure) `versions >=2.0.0`
+- [`spring-cloud-gateway-core`](https://central.sonatype.com/artifact/org.springframework.cloud/spring-cloud-gateway-core) `versions >=2.0.0`
+- [`spring-ws-core`](https://central.sonatype.com/artifact/org.springframework.ws/spring-ws-core) `versions >=2.0.0`
+- [`spring-integration-core`](https://central.sonatype.com/artifact/org.springframework.integration/spring-integration-core) `versions >=4.1.0`
+- [`reactor-core`](https://central.sonatype.com/artifact/io.projectreactor/reactor-core) `versions >=3.1.0`
+- [`reactor-netty`](https://central.sonatype.com/artifact/io.projectreactor.netty/reactor-netty) `versions >=0.7.0`

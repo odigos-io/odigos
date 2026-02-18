@@ -1,0 +1,100 @@
+## With Odigos UI
+
+The easiest way to add a source to Odigos is to use the Odigos UI.<br />
+After [installing Odigos CLI](/setup/installation), run the following command to start the Odigos UI:
+
+```shell
+odigos ui
+```
+
+And then, in the setup page or the sources page, select the workloads / namespaces for which you want telemetry collection to be enabled.
+
+To include all the workloads in a namespace as sources, and automatically add future-new workloads, enable the `Future Apps` toggle in the UI.
+Otherwise, you can enable the `Select All` toggle to include all the workloads in the namespace as sources, excluding future-new workloads.
+
+## With Odigos CLI
+
+See the [CLI documentation on Sources](/cli/odigos_sources) for detailed command documentation for manipulating Sources.
+
+## Kubernetes Manifests
+
+If you prefer to use kubectl or GitOps to manage your Kubernetes workloads, you can add a source to Odigos by creating a Source object.
+
+<Warning>
+  Only one Source object may exist for a given workload, except in namespace instrumentation.
+</Warning>
+
+### Workload Source
+
+The following Source object enables instrumentation for a Deployment named `frontend` in the `default` namespace and belong to Datastream `example`.
+
+> **Note:** Sources that do not have a Datastream label will be automatically attached to the default Datastream.
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example-source
+  namespace: default
+  labels:
+    odigos.io/data-stream-example: "true"
+spec:
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
+```
+
+### Namespace Source
+
+The following Source object enables instrumentation for all the workloads in the `default` namespace:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: namespace-source
+  namespace: default
+spec:
+  workload:
+    name: default
+    namespace: default
+    kind: Namespace
+```
+
+Namespace Sources must have the following fields:<br />
+- `spec.workload.name == spec.workload.namespace`
+- `spec.workload.kind: Namespace`
+
+### Disable Workload Source in Namespace
+
+You can have a namespace Source and a workload Source that both enable instrumentation for a workload. In this case, if one is deleted, the other will persist instrumentation for the workload.
+
+To exclude specific workloads from namespace instrumentation, set `disableInstrumentation: true` on the workload Source. For example:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: namespace-source
+  namespace: default
+spec:
+  workload:
+    name: default
+    namespace: default
+    kind: Namespace
+---
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example-source
+  namespace: default
+spec:
+  disableInstrumentation: true
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
+```
+
+In this example, all workloads in the `default` namespace will be instrumented except for the `frontend` Deployment. If `example-source` is deleted (or `disableInstrumentation` is set to `false`), the `frontend` Deployment will be instrumented.

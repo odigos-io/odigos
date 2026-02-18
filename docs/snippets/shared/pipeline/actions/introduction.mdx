@@ -1,0 +1,60 @@
+## What are Processors?
+
+Under the hood, Odigos uses the [OpenTelemetry Collector Processors](https://opentelemetry.io/docs/collector/configuration/#processors) to implement actions.
+
+Processors are a class of OpenTelemetry Collector component. They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your [destinations](/backends-overview).
+
+## Benefits
+
+- Odigos Actions are language agnostic. They run in the OpenTelemetry collectors and can act on any data type (traces, metrics, logs) no matter the source or the programming language of your service.
+- Processing the data on the k8s node or the cluster level reduces the load on your services and allows you to apply the same processing rules to all your services and signals.
+- Applying actions in your cluster can reduce the volume of data sent to your backend, which can reduce your costs.
+- OpenTelemetry maintains a large collection of processors, which are ready to use and can be configured to your needs.
+
+Actions are a powerful tool to help you manage your observability data and ensure that you are sending the right data to your backend.
+
+## Action Types
+
+### Attribute Actions
+
+Attribute Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your destinations.
+  - [Add Cluster Info](/pipeline/actions/attributes/addclusterinfo)
+  - [Delete Attribute](/pipeline/actions/attributes/deleteattribute)
+  - [Rename Attribute](/pipeline/actions/attributes/renameattribute)
+  - [Pii Masking](/pipeline/actions/attributes/piimasking)
+  - [Kubernetes Attributes](/pipeline/actions/attributes/k8sattributes)
+
+### Sampling Actions
+
+Sampling Actions allow you to configure various types of sampling methods before exporting traces to your destinations.
+  - [Error Sampler](/pipeline/actions/sampling/errorsampler)
+  - [Ignore Health Checks](/pipeline/actions/sampling/ignorehealthchecks)
+  - [Latency Sampler](/pipeline/actions/sampling/latencysampler)
+  - [Service Name Sampler](/pipeline/actions/sampling/servicenamesampler)
+  - [Span Attribute Sampler](/pipeline/actions/sampling/spanattributesampler)
+  - [Probabilistic Sampler](/pipeline/actions/sampling/probabilisticsampler)
+
+<AccordionGroup>
+  <Accordion title="Scope Categories">
+    Odigos Sampling actions are divided into three main categories, each representing the action's scope. The action scope defines the range that the sampler covers. The categories are:
+
+    1. **Global Actions**: These actions sample all data without specificity. All traces flowing through Odigos will be sampled regardless of their source. For example, ErrorSampler.
+    2. **Service Actions**: These sample actions are applied only to traces coming from a specified service.
+    3. **Endpoint Actions**: These sample actions are applied to traces coming from a specific service and a specific endpoint. For example, LatencySampler.
+  </Accordion>
+  <Accordion title="Relation Between Sampling Actions">
+    When multiple sampling actions are configured, the most specific rule applies. For example:
+
+    - If two rules are configured: an Endpoint action for `Service: Frontend, Endpoint: /buy` with a latency threshold of 1 second and a fallback of 50%, and a Global ErrorSampler with a fallback of 20%:
+      1. Error traces will always be sampled due to the Global ErrorSampler, regardless of any Service or Endpoint rule.
+      2. Traces from `Frontend /buy` below 1 second latency will fall under the Endpoint action's fallback and retain 50% of these traces.
+      3. Traces from `Frontend /buy` above 1 second latency will always be retained.
+      4. Any other non-error traces that are not from `Frontend /buy` will be sampled at 20%.
+
+    Each rule ensures you get the specified sampling behavior for your conditions.
+  </Accordion>
+</AccordionGroup>
+
+### Custom Actions
+
+Odigos also supports adding OpenTelemetry processors with [Kuberenetes CRDs](/pipeline/actions/crd) which you can apply manually, or through a GitOps workflow.

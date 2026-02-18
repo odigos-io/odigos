@@ -1,0 +1,182 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/awscloudwatch.svg" alt="cloudwatch" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+import AwsCredentials from '/snippets/shared/aws-credentials.mdx';
+
+<AwsCredentials />
+
+**Setting up the IAM policy**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PushLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:<Region>:<AccountId>:log-group:<LogGroupName>:log-stream:<LogStreamName>"
+    },
+    {
+      "Sid": "CreateLogGroup",
+      "Effect": "Allow",
+      "Action": "logs:CreateLogGroup",
+      "Resource": "arn:aws:logs:<Region>:<AccountId>:log-group:<LogGroupName>"
+    },
+    {
+      "Sid": "DescribeLogGroups",
+      "Effect": "Allow",
+      "Action": "logs:DescribeLogGroups",
+      "Resource": "arn:aws:logs:<Region>:<AccountId>:log-group:<LogGroupName>"
+    }
+  ]
+}
+```
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
+
+- **AWS_CLOUDWATCH_LOG_GROUP_NAME** `string` : Log Group Name. The group name of the CloudWatch Logs. If it does not exist it will be created automatically.
+  - This field is required
+- **AWS_CLOUDWATCH_LOG_STREAM_NAME** `string` : Log Stream Name. The stream name of the CloudWatch Logs. If it does not exist it will be created automatically.
+  - This field is required
+- **AWS_CLOUDWATCH_REGION** `string` : Region. The AWS region where the log stream is in. Region must be specified if it is not already set in the default credential chain.
+  - This field is optional
+- **AWS_CLOUDWATCH_ENDPOINT** `string` : Endpoint. The CloudWatch Logs service endpoint which the requests are forwarded to.
+  - This field is optional
+- **AWS_CLOUDWATCH_LOG_RETENTION** `string` : Log Retention. LogRetention is the option to set the log retention policy for only newly created CloudWatch Log Groups. The value is in days, 0 = Never Expire. This value can also be changed later-on via the AWS console (UI) or AWS API, it's not a permanent decision once set. Also, the value here might not reflect the actual retention value in the destination if it was modified or some automatic policy is applied.
+  - This field is optional and defaults to `0`
+- **AWS_CLOUDWATCH_TAGS** `{ key: string; value: string; }[]` : Tags. Tags is the option to set tags for the CloudWatch Log Group. If specified, please add at most 50 tags. Keys must be between 1-128 characters and follow the pattern: (alphanumerics, whitespace, and _.:/=+-!). Values must be between 1-256 characters and follow the pattern: (alphanumerics, whitespace, and _.:/=+-!).
+  - This field is optional
+- **AWS_CLOUDWATCH_RAW_LOG** `boolean` : Raw Log. If set to true, only the log message will be exported to CloudWatch Logs. This needs to be set to true for EMF logs.
+  - This field is optional and defaults to `False`
+- **AWS_CLOUDWATCH_METRICS_NAMESPACE** `string` : Metrics Namespace. Customized CloudWatch metrics namespace. Metrics in different namespaces are isolated from each other. Please note this is not a cluster namespace.
+  - This field is optional and defaults to `Odigos`
+- **AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP** `string` : Metrics Dimension Rollup. The option for metrics dimension rollup.
+  - This field is optional and defaults to `NoDimensionRollup`
+- **AWS_CLOUDWATCH_METRICS_DETAILED** `boolean` : Detailed Metrics. Retain detailed datapoint values in exported metrics (e.g instead of exporting a quantile as a statistical value, preserve the quantile's population).
+  - This field is optional and defaults to `False`
+- **AWS_CLOUDWATCH_RETAIN_INITIAL_VALUE_OF_DELTA_METRIC** `boolean` : Retain Initial Value of Delta Metric. This option specifies how the first value of a metric is handled. AWS EMF expects metric values to only contain deltas to the previous value. In the default case the first received value is therefor not sent to AWS but only used as a baseline for follow up changes to this metric. This is fine for high throughput metrics with stable labels. In this case it does not matter if the first value of this metric is discarded. However when your metric describes infrequent events or events with high label cardinality, then the exporter in default configuration would still drop the first occurrence of this metric. With this configuration value set to true the first value of all metrics will instead be send to AWS.
+  - This field is optional and defaults to `False`
+
+<Note>
+  - If the log group and/or log stream are specified in an EMF log, that EMF log will be exported to that log group and/or log stream (i.e. ignores the log group and log stream defined in the configuration).
+    - The log group and log stream will also be created automatically if they do not already exist.
+    - Example of an EMF log with log group and log stream:
+    ```json
+    {
+      "_aws": {
+        "Timestamp": 1574109732004,
+        "LogGroupName": "Foo",
+        "LogStreamName": "Bar",
+        "CloudWatchMetrics": [
+          {
+            "Namespace": "MyApp",
+            "Dimensions": [
+              [
+                "Operation"
+              ]
+            ],
+            "Metrics": [
+              {
+                "Name": "ProcessingLatency",
+                "Unit": "Milliseconds",
+                "StorageResolution": 60
+              }
+            ]
+          }
+        ]
+      },
+      "Operation": "Aggregator",
+      "ProcessingLatency": 100
+    }
+    ```
+  - Resource ARNs (Amazon Resource Name (ARN) of the AWS resource running the collector) are currently not supported with the CloudWatch Logs Exporter.
+</Note>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `AWS CloudWatch` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `cloudwatch.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: cloudwatch-example
+      namespace: odigos-system
+    spec:
+      data:
+        AWS_CLOUDWATCH_LOG_GROUP_NAME: <Log Group Name>
+        AWS_CLOUDWATCH_LOG_STREAM_NAME: <Log Stream Name>
+        # Note: The commented fields below are optional.
+        # AWS_CLOUDWATCH_REGION: <Region (options: [af-south-1, ap-east-1, ap-northeast-1, ap-northeast-2, ap-northeast-3, ap-south-1, ap-south-2, ap-southeast-1, ap-southeast-2, ap-southeast-3, ap-southeast-4, ap-southeast-5, ap-southeast-7, ca-central-1, ca-west-1, eu-central-1, eu-central-2, eu-north-1, eu-south-1, eu-south-2, eu-west-1, eu-west-2, eu-west-3, il-central-1, me-central-1, me-south-1, mx-central-1, sa-east-1, us-east-1, us-east-2, us-gov-east-1, us-gov-west-1, us-west-1, us-west-2])>
+        # AWS_CLOUDWATCH_ENDPOINT: <Endpoint (options: [logs.af-south-1.amazonaws.com, logs.af-south-1.api.aws, logs.ap-east-1.amazonaws.com, logs.ap-east-1.api.aws, logs.ap-northeast-1.amazonaws.com, logs.ap-northeast-1.api.aws, logs.ap-northeast-2.amazonaws.com, logs.ap-northeast-2.api.aws, logs.ap-northeast-3.amazonaws.com, logs.ap-northeast-3.api.aws, logs.ap-south-1.amazonaws.com, logs.ap-south-1.api.aws, logs.ap-south-2.amazonaws.com, logs.ap-south-2.api.aws, logs.ap-southeast-1.amazonaws.com, logs.ap-southeast-1.api.aws, logs.ap-southeast-2.amazonaws.com, logs.ap-southeast-2.api.aws, logs.ap-southeast-3.amazonaws.com, logs.ap-southeast-3.api.aws, logs.ap-southeast-4.amazonaws.com, logs.ap-southeast-4.api.aws, logs.ap-southeast-5.amazonaws.com, logs.ap-southeast-5.api.aws, logs.ap-southeast-7.amazonaws.com, logs.ap-southeast-7.api.aws, logs.ca-central-1.amazonaws.com, logs.ca-central-1.api.aws, logs-fips.ca-central-1.amazonaws.com, logs.ca-west-1.amazonaws.com, logs.ca-west-1.api.aws, logs-fips.ca-west-1.amazonaws.com, logs.eu-central-1.amazonaws.com, logs.eu-central-1.api.aws, logs.eu-central-2.amazonaws.com, logs.eu-central-2.api.aws, logs.eu-north-1.amazonaws.com, logs.eu-north-1.api.aws, logs.eu-south-1.amazonaws.com, logs.eu-south-1.api.aws, logs.eu-south-2.amazonaws.com, logs.eu-south-2.api.aws, logs.eu-west-1.amazonaws.com, logs.eu-west-1.api.aws, logs.eu-west-2.amazonaws.com, logs.eu-west-2.api.aws, logs.eu-west-3.amazonaws.com, logs.eu-west-3.api.aws, logs.il-central-1.amazonaws.com, logs.il-central-1.api.aws, logs.me-central-1.amazonaws.com, logs.me-central-1.api.aws, logs.me-south-1.amazonaws.com, logs.me-south-1.api.aws, logs.mx-central-1.amazonaws.com, logs.mx-central-1.api.aws, logs.sa-east-1.amazonaws.com, logs.sa-east-1.api.aws, logs.us-east-1.amazonaws.com, logs-fips.us-east-1.amazonaws.com, logs.us-east-1.api.aws, logs.us-east-2.amazonaws.com, logs.us-east-2.api.aws, logs-fips.us-east-2.amazonaws.com, logs.us-gov-east-1.amazonaws.com, logs.us-gov-west-1.amazonaws.com, logs.us-west-1.amazonaws.com, logs.us-west-1.api.aws, logs-fips.us-west-1.amazonaws.com, logs.us-west-2.amazonaws.com, logs-fips.us-west-2.amazonaws.com, logs.us-west-2.api.aws])>
+        # AWS_CLOUDWATCH_LOG_RETENTION: <Log Retention (default: 0) (options: [0, 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 2192, 2557, 2922, 3288, 3653])>
+        # AWS_CLOUDWATCH_TAGS: <Tags>
+        # AWS_CLOUDWATCH_RAW_LOG: <Raw Log>
+        # AWS_CLOUDWATCH_METRICS_NAMESPACE: <Metrics Namespace (default: Odigos)>
+        # AWS_CLOUDWATCH_METRICS_DIMENSION_ROLLUP: <Metrics Dimension Rollup (default: NoDimensionRollup) (options: [NoDimensionRollup, SingleDimensionRollupOnly, ZeroAndSingleDimensionRollup])>
+        # AWS_CLOUDWATCH_METRICS_DETAILED: <Detailed Metrics>
+        # AWS_CLOUDWATCH_RETAIN_INITIAL_VALUE_OF_DELTA_METRIC: <Retain Initial Value of Delta Metric>
+      destinationName: cloudwatch
+      signals:
+      - METRICS
+      - LOGS
+      type: cloudwatch
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f cloudwatch.yaml
+    ```
+  </Step>
+</Steps>

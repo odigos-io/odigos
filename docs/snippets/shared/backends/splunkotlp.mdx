@@ -1,0 +1,109 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/splunk.svg" alt="splunkotlp" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ❌ Logs
+</Accordion>
+
+- **SPLUNK_ACCESS_TOKEN** `string` : Access Token.
+  - This field is required
+- **SPLUNK_REALM** `string` : Realm. The Splunk realm in use. This is the second part of the URL you use to access Splunk/SignalFX. For example, if you access Splunk at `https://app.us1.signalfx.com`, then the realm is `us1`.
+  - This field is required
+- **SPLUNK_OTLP_COMPRESSION** `string` : Compression Type. Compression type to use for the destination. The default is `none`.
+  - This field is optional and defaults to `none`
+- **SPLUNK_OTLP_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
+  - This field is optional and defaults to `False`
+- **SPLUNK_OTLP_CA_PEM** `string` : Certificate Authority. When using TLS, provide the CA certificate in PEM format to verify the server. If empty uses system root CA
+  - This field is optional
+  - Example: `-----BEGIN CERTIFICATE-----`
+- **SPLUNK_OTLP_INSECURE_SKIP_VERIFY** `boolean` : Insecure Skip Verify. Skip TLS certificate verification
+  - This field is optional and defaults to `False`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Splunk (OTLP)` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `splunkotlp.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: splunkotlp-example
+      namespace: odigos-system
+    spec:
+      data:
+        SPLUNK_REALM: <Realm>
+        # Note: The commented fields below are optional.
+        # SPLUNK_OTLP_COMPRESSION: <Compression Type (default: none) (options: [none, gzip])>
+        # SPLUNK_OTLP_TLS_ENABLED: <Enable TLS>
+        # SPLUNK_OTLP_CA_PEM: <Certificate Authority>
+        # SPLUNK_OTLP_INSECURE_SKIP_VERIFY: <Insecure Skip Verify>
+      destinationName: splunkotlp
+      secretRef:
+        name: splunkotlp-secret
+      signals:
+      - TRACES
+      type: splunkotlp
+
+    ---
+
+    apiVersion: v1
+    data:
+      SPLUNK_ACCESS_TOKEN: <Base64 Access Token>
+    kind: Secret
+    metadata:
+      name: splunkotlp-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f splunkotlp.yaml
+    ```
+  </Step>
+</Steps>

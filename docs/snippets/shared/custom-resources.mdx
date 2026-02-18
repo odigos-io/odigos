@@ -1,0 +1,49 @@
+The different components of the Odigos observability control plane work together
+to achieve observability for the cluster. The interaction between the components
+is performed via the Kubernetes API server.
+
+The autoscaler, instrumentor and scheduler are
+[Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+They coordinate by writing and watching the odigos custom resources in the
+Kubernetes API server.
+
+Odigos adds the following custom resources to the Kubernetes API server:
+
+## Source
+
+This resource defines namespaces and workloads to instrument. It has the following `spec` fields:
+
+|Field|Description|Type|Default|Required|
+|----|------|-----|-----|----|
+|`disableInstrumentation`|Excludes the specified workload from instrumentation.|`bool`|`false`|Optional|
+|`workload.name`|Name of the workload for this Source.|`string`|n/a|Required|
+|`workload.namespace`|Namespace of the workload for this Source.|`string`|n/a|Required|
+|`workload.kind`|Kind of the workload for this Source.|`WorkloadKind`|n/a|Required|
+
+Valid values for `WorkloadKind` are:
+
+* `Deployment`
+* `DaemonSet`
+* `StatefulSet`
+* `Namespace`
+
+These values are case-sensitive.
+
+## Destination
+
+This custom resource is used to define the backend destinations for the
+observability data. Destinations can be either vendors (Datadog, Honeycomb, etc)
+or on premise.
+
+The destination object holds any data that is needed to connect to the backend
+system. Notice that sensitive fields such as API keys are stored in a Kubernetes
+secret and referenced by the destination object.
+
+
+## CollectorsGroup
+
+The CollectorsGroup object is used to define a group of collectors that have a
+shared role. For example, a collectors group might include collectors that are
+deployed as DaemonSet that are responsible for collecting telemetry data, or
+collectors that are deployed as Deployment and are responsible for shipping the
+data to the selected destinations.
