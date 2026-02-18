@@ -36,6 +36,13 @@ type StaticEnvironmentVariable struct {
 	// The value of the environment variable to set.
 	EnvValue string `yaml:"envValue"`
 
+	// When true, if the env var already exists in the container manifest, the value is
+	// appended (string concatenation) to the existing value rather than being skipped.
+	// When the env var is absent from the manifest but a CRI-detected runtime value exists
+	// in distroParams (keyed by EnvName), that runtime value is prepended to the rendered value.
+	// This is useful for colon-separated path variables like PHP_INI_SCAN_DIR.
+	AppendToExisting bool `yaml:"appendToExisting,omitempty"`
+
 	// pre-parsed template that is ready to be executed with the relevant parameters.
 	// if the EnvValue field is templated (e.g. contains {{.PARAM_NAME}}), this field is set.
 	// it indicates that the value should be templated with the relevant parameters.

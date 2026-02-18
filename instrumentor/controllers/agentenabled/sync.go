@@ -420,7 +420,7 @@ func getEnvInjectionDecision(
 	distroHasAppendEnvVar := len(distro.EnvironmentVariables.AppendOdigosVariables) > 0
 	if !distroHasAppendEnvVar {
 		// this is a common case, where a distro doesn't support nor loader or append env var injection.
-		// at the time of writing, this is golang, dotnet, php, ruby.
+		// at the time of writing, this is golang, dotnet, ruby.
 		// for those we mark env injection as nil to denote "no injection"
 		// and return err as nil to denote "no error".
 		return nil, nil
