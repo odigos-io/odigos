@@ -219,23 +219,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 
 	var metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings
 
-	ownMetricsInterval := "10s"
-	if odigosConfiguration.MetricsSources != nil &&
-		odigosConfiguration.MetricsSources.OdigosOwnMetrics != nil &&
-		odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval != "" {
-
-		ownMetricsInterval = odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval
-	}
-
-	ownMetricsLocalStorageEnabled := false
-	if odigosConfiguration.OdigosOwnTelemetryStore == nil ||
-		odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled == nil ||
-		!*odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled {
-
-		ownMetricsLocalStorageEnabled = true
-	}
-
-	ownMetricsSendToMetricsDestinations := false
 	for _, destination := range allDestinations.Items {
 		if destination.Spec.Disabled != nil && *destination.Spec.Disabled {
 			// skip disabled destinations
@@ -251,11 +234,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 
 		if !slices.Contains(destination.Spec.Signals, common.MetricsObservabilitySignal) {
 			continue
-		}
-
-		// only collect own metrics to destination if at least one destination is interested in collecting them
-		if destination.Spec.MetricsSettings != nil && destination.Spec.MetricsSettings.CollectOdigosOwnMetrics != nil && *destination.Spec.MetricsSettings.CollectOdigosOwnMetrics {
-			ownMetricsSendToMetricsDestinations = true
 		}
 
 		if metricsConfig == nil {
@@ -281,18 +259,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 	if otlpExporterConfiguration == nil {
 		otlpExporterConfiguration = &common.OtlpExporterConfiguration{
 			EnableDataCompression: odigosConfiguration.CollectorNode.EnableDataCompression,
-		}
-	}
-
-	// set the own metrics on metrics config if enabled
-	if ownMetricsLocalStorageEnabled || ownMetricsSendToMetricsDestinations {
-		if metricsConfig == nil {
-			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
-		}
-		metricsConfig.OdigosOwnMetrics = &odigosv1.OdigosOwnMetricsSettings{
-			SendToMetricsDestinations: ownMetricsSendToMetricsDestinations,
-			SendToOdigosMetricsStore:  ownMetricsLocalStorageEnabled,
-			Interval:                  ownMetricsInterval,
 		}
 	}
 

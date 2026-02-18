@@ -160,9 +160,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
+			// Creating a metric pipeline (throughput metrics) for the gateway to be sent to the UI
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err
 			}
+			// Create pipeline for metrics from other Odigos components that are sending to the gateway
 			if gateway.Spec.Metrics != nil && gateway.Spec.Metrics.OdigosOwnMetrics != nil {
 				ownMetricsConfig := gateway.Spec.Metrics.OdigosOwnMetrics
 				if ownMetricsConfig.SendToMetricsDestinations || ownMetricsConfig.SendToOdigosMetricsStore {

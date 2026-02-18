@@ -16,14 +16,9 @@ const (
 
 func receiversConfigForOwnMetricsPrometheus() config.GenericMap {
 	return config.GenericMap{
-		odigosOwnTelemetryOtlpReceiverName: config.GenericMap{
-			"protocols": config.GenericMap{
-				"grpc": config.GenericMap{
-					"endpoint": "0.0.0.0:44317",
-				},
-				"http": config.GenericMap{
-					"endpoint": "0.0.0.0:44318",
-				},
+		"protocols": config.GenericMap{
+			"http": config.GenericMap{
+				"endpoint": "0.0.0.0:44318",
 			},
 		},
 	}
@@ -32,30 +27,25 @@ func receiversConfigForOwnMetricsPrometheus() config.GenericMap {
 func victoriaMetricsExporter(odigosNamespace string) config.GenericMap {
 	endpoint := fmt.Sprintf("http://odigos-victoriametrics.%s:8428/opentelemetry", odigosNamespace)
 	return config.GenericMap{
-		odigosVictoriametricsExporterName: config.GenericMap{
-			"endpoint": endpoint,
-			"retry_on_failure": config.GenericMap{
-				"enabled": false,
-			},
-			"tls": config.GenericMap{
-				"insecure": true,
-			},
+		"endpoint": endpoint,
+		"retry_on_failure": config.GenericMap{
+			"enabled": false,
+		},
+		"tls": config.GenericMap{
+			"insecure": true,
 		},
 	}
 }
 
 // addOwnMetricsPipeline integrates own-metrics collection into the gateway config.
 func addOwnMetricsPipeline(c *config.Config, ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string, ownTelemetryPort int32, destinationPipelineNames []string) error {
-	for name, receiverConfig := range receiversConfigForOwnMetricsPrometheus() {
-		c.Receivers[name] = receiverConfig
-	}
+	c.Receivers[odigosOwnTelemetryOtlpReceiverName] = receiversConfigForOwnMetricsPrometheus()
 
 	exporters := []string{}
 
 	if ownMetricsConfig.SendToOdigosMetricsStore {
-		for name, exporterConfig := range victoriaMetricsExporter(odigosNamespace) {
-			c.Exporters[name] = exporterConfig
-		}
+		c.Exporters[odigosVictoriametricsExporterName] = victoriaMetricsExporter(odigosNamespace)
+
 		exporters = append(exporters, odigosVictoriametricsExporterName)
 	}
 
