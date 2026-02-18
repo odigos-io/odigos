@@ -96,7 +96,7 @@ jobs:
 
       # Ensure the chart is here to be embedded in the CLI
       - name: Download packaged chart artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: odigos-chart
           path: cli/pkg/helm/embedded
@@ -288,7 +288,7 @@ jobs:
           version: v3.15.2
 
       - name: Download packaged chart artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: odigos-chart
           path: helm/
