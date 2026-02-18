@@ -7,6 +7,7 @@ on:
 jobs:
   release-note:
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'prerelease') }}
     steps:
       - name: Check release note block
         env:
@@ -26,10 +27,8 @@ jobs:
             flag {print}
           ' pr_body.txt)
 
-          # Trim whitespace
-          CONTENT=$(echo "$CONTENT" | xargs)
-
-          if [ -z "$CONTENT" ]; then
+          # Block must contain at least one non-whitespace character
+          if ! echo "$CONTENT" | grep -q '[^[:space:]]'; then
             echo "❌ release-note block is empty"
             exit 1
           fi
