@@ -21,8 +21,9 @@ jobs:
 
       - name: Extract tag from commit message
         id: extract_tag
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
           echo "Commit message: $COMMIT_MSG"
 
           # Extract the tag version from the message (e.g., v1.1.1, v1.2.3-rc4, v1.2.3-foobar)
