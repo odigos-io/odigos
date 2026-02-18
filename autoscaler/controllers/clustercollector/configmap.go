@@ -160,7 +160,18 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
 		func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error {
-			return addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines)
+			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
+				return err
+			}
+			if gateway.Spec.Metrics != nil && gateway.Spec.Metrics.OdigosOwnMetrics != nil {
+				ownMetricsConfig := gateway.Spec.Metrics.OdigosOwnMetrics
+				if ownMetricsConfig.SendToMetricsDestinations || ownMetricsConfig.SendToOdigosMetricsStore {
+					if err := addOwnMetricsPipeline(c, ownMetricsConfig, env.GetCurrentNamespace(), gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
 		},
 		dataStreams, gatewayOptions,
 	)
