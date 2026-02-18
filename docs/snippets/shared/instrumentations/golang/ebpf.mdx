@@ -1,0 +1,110 @@
+import EbpfKernelVersionNote from '/snippets/shared/ebpf-kernel-version-note.mdx';
+
+## Supported Versions
+
+Odigos uses the official [opentelemetry-go-instrumentation](https://github.com/open-telemetry/opentelemetry-go-instrumentation) OpenTelemetry Auto Instrumentation using eBPF, thus it supports the same golang versions as this project.
+
+- Go runtime versions **1.19** and above are supported.
+
+<EbpfKernelVersionNote />
+
+## Traces
+
+Odigos will automatically instrument your golang services to record and collect spans for distributed tracing, by utilizing the OpenTelemetry Go official auto Instrumentation Libraries.
+
+## Instrumentation Libraries
+
+The following go modules will be auto instrumented by Odigos:
+
+### HTTP Frameworks
+
+- [`github.com/gin-gonic/gin`](https://pkg.go.dev/github.com/gin-gonic/gin) HTTP web framework ⭐️
+- [`net/http`](https://pkg.go.dev/net/http) go standard library for http server and client
+
+<Info>
+  Please note that in order for the `http.route` parameter to be properly extracted by Go auto instrumentation, you should use Go 1.22 or above and
+  declare a template handler as described in [this article](https://go.dev/blog/routing-enhancements).
+</Info>
+
+### HTTP Clients
+
+- [`net/http`](https://pkg.go.dev/net/http) go standard library for http server and client
+
+### Database Clients, ORMs, and data access libraries
+
+- [`github.com/gocql/gocql`](https://pkg.go.dev/github.com/gocql/gocql) ⭐️ versions `>= v1.0.0`. database client library for Apache Cassandra
+- [`github.com/elastic/go-elasticsearch/v8`](https://pkg.go.dev/github.com/elastic/go-elasticsearch/v8) ⭐️ versions >= v8.0.0
+- [`database/sql`](https://pkg.go.dev/database/sql) go standard library for SQL database access
+
+### Messaging Systems Clients
+
+- [`github.com/rabbitmq/amqp091-go`](https://pkg.go.dev/github.com/rabbitmq/amqp091-go) ⭐️ versions `>= v1.4.0`. messaging client for RabbitMQ
+- [`github.com/segmentio/kafka-go`](https://pkg.go.dev/github.com/segmentio/kafka-go) versions `>= v0.4.1`. messaging client for Apache Kafka
+- [`github.com/apache/pulsar-client-go`](https://pkg.go.dev/github.com/apache/pulsar-client-go) ⭐️ versions `>= v0.12.0`. messaging client for Apache Pulsar
+- [`github.com/IBM/sarama`](https://github.com/IBM/sarama) ⭐️ versions `>= v1.40.0`. messaging client for Apache Kafka
+
+### RPC (Remote Procedure Call)
+
+- [`google.golang.org/grpc`](https://pkg.go.dev/google.golang.org/grpc) versions `>= v1.14.0`. rpc client and server for gRPC framework
+
+## Custom Instrumentations
+We support adding custom eBPF-based instrumentations for arbitrary Go functions and invokable sites that exist in your application code or its dependencies.
+By defining custom instrumentation rules, you can extend Odigos's auto-instrumentation capabilities and cover your specific use cases and application logic.
+To learn more about creating custom eBPF-based instrumentations for Go applications, refer to the [Custom eBPF Instrumentation for Go Applications](/pipeline/rules/custominstrumentation) guide.
+
+## About Go Offsets
+
+Auto-instrumentation for Go with eBPF works by using eBPF uprobes to dynamically read variables in memory at runtime. For example,
+when instrumenting the `net/http` package Odigos is able to determine the `http.request.method` by probing the [`Method`](https://pkg.go.dev/net/http#Request)
+field in the current `Request`.
+
+Doing so relies on knowing the exact memory location of this field. This is known as the field's "offset" (because it refers to the field's location as a
+number of bytes offset from the start of the current struct). With this information, our eBPF code can access the value directly.
+
+However, most production Go programs do not preserve this offset information at compile time. Only Go programs compiled with [debug information](https://go.dev/doc/gdb)
+will include this information by default. To work with all Go programs, Odigos ships with a precompiled list of known offsets for all currently supported
+versions of instrumented libraries.
+
+This precompiled list is updated to be up-to-date with every release of Odigos. But, this means that you may encounter errors instrumenting applications
+that use very newly released versions of dependencies. If this occurs, it will be resolved by updating to the next release of Odigos, or alternatively
+upgrading the locally-stored offsets with the [`odigos pro update-offsets`](/cli/odigos_pro_update-offsets) command.
+
+### Updating Offsets Between Versions
+
+It is possible to pull the latest Go library support for Odigos without updating the entire Odigos installation. There are 3 ways to do so:
+
+1. Manual updates (with [`odigos pro update-offsets`](/cli/odigos_pro_update-offsets)).
+2. Direct automatic updates (recommended, see below).
+3. Mirrored image automatic updates (for disconnected environments, see below).
+
+In both automatic modes, a Kubernetes CronJob is created which updates the locally stored Go library offsets used by the Odiglet. The differences
+between these modes and how to enable them are described below.
+
+#### Direct automatic updates
+
+In "direct" mode, the CronJob will pull the latest Go library offsets directly from the Odigos cloud server and apply it to the cluster. This
+option consumes the fewest resources but requires that your cluster has direct internet access to this file hosted on the web. If you have
+restricted Internet egress policies, see "mirrored image updates" below.
+
+Enable automatic updates on any standard cron schedule by setting the `goAutoOffsetsCron` option during installation or upgrade.
+For example, enable nightly updates at midnight with `odigos install --set goAutoOffsetsCron="0 0 * * *"`.
+
+To disable automatic updates, set the cron value to an empty string with `odigos install --set goAutoOffsetsCron=""`.
+
+Alternatively, you can set these values in your `values.yaml` file for Helm installations:
+```yaml
+goAutoOffsetsCron: "0 0 * * *"  # Enable nightly updates at midnight
+goAutoOffsetsMode: "direct"     # Use direct mode
+```
+
+#### Mirrored image automatic updates
+
+For clusters with restricted traffic policies, you have the option to [mirror the Go library updates as an image](/setup/docker-registry#install-odigos-images-from-a-custom-docker-registry).
+In this mode, the CronJob will run an image that contains the latest Go library offsets bundled into the image itself. This mode
+does not require direct Internet access from the cluster, but it does require you to mirror this image into your own registry and maintain
+the latest version on your nodes.
+
+To enable mirrored image updates, run `odigos install --set goAutoOffsetsMode="image"`. Then use the `goAutoOffsetsCron` option described above to set the schedule.
+
+To disable mirrored image updates, run `odigos install --set goAutoOffsetsMode="direct"` (to switch back to direct mode), or set the `goAutoOffsetsCron` setting
+to an empty string (`""`) as described above to disable automatic updates entirely.

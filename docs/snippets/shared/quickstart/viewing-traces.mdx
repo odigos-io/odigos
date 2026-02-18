@@ -1,0 +1,12 @@
+Now that we have some traces, let's view them!
+Access the Jaeger UI by running the following command:
+
+```bash
+kubectl port-forward -n tracing svc/jaeger 16686:16686
+```
+
+Then, open [http://localhost:16686](http://localhost:16686) in your browser and explore the traces.
+
+<Frame>
+    <img src="/images/jaeger_ui.png" alt="Jaeger UI" />
+</Frame>

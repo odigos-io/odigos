@@ -1,0 +1,94 @@
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+## Rule Types:
+
+- [Code Attributes](codeattributes)
+- [Headers Collection](headerscollection)
+- [Payload Collection](payloadcollection)
+- [Custom Instrumentations](custominstrumentation)
+- [HeadSamplingFallbackFraction](headsamplingfallbackfraction)
+
+## Configuration Options
+
+<AccordionGroup>
+  <Accordion title="ruleName">
+    **ruleName** `string` : Allows you to attach a meaningful name to the rule for convenience and documentation.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the rule for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the rule, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="workloads">
+    **workloads** `[namespace, name, kind]` : Allows you to apply/limit the rule to specific workloads. If not specified, the rule will be applied to all workloads.
+    - This field is *optional*, and defaults to `nil` (all workloads)
+    - <Icon icon="triangle-exclamation" iconType="solid" color="red" /> Empty array will make the rule ineffective
+    <AccordionGroup>
+      <Accordion title="namespace">
+        **namespace** `string` - The name of the Kubernetes namespace.
+        - This field is *required*
+      </Accordion>
+      <Accordion title="name">
+        **name** `string` - The name of the Kubernetes workload.
+        - This field is *required*
+      </Accordion>
+      <Accordion title="kind">
+        **kind** `string` - The kind of the Kubernetes workload.
+        - This field is *required*
+        - Supported values: `Deployment`, `DaemonSet`, `StatefulSet`
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+  <Accordion title="instrumentationLibraries">
+    **instrumentationLibraries** `[name, language, spanKind]` : Allows you to apply/limit the rule to specific instrumentation libraries. If not specified, the rule will be applied to all instrumentation libraries.
+    - This field is *optional*, and defaults to `nil` (all libraries)
+    - <Icon icon="triangle-exclamation" iconType="solid" color="red" /> Empty array will make the rule ineffective
+    <AccordionGroup>
+      <Accordion title="name">
+        **name** `string` - The unique name of the instrumentation library.
+        - This field is *required*
+      </Accordion>
+      <Accordion title="language">
+        **language** `string` - The programming language of the instrumentation library.
+        - This field is *required*
+        - Alphabetical, lowercase, and no spaces
+      </Accordion>
+      <Accordion title="spanKind">
+        **spanKind** `string` - The span kind of the instrumentation library.
+        - This field is *required*
+        - Supported values: `client`, `server`, `producer`, `consumer`, `internal`
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Apply to Sources
+
+Odigos allows you to apply/limit rules to specific sources.
+
+- To apply a rule to all sources, omit the `workloads` field.
+- To apply a rule to specific sources, provide an array of workload objects (identified by it's namespace, name, and kind).
+
+<Info>
+  Odigos allows you to define multiple rules, and will merge them together to create a single rule per source. Conflicting options will be resolved by choosing to record the attribute, if it's specified by one rule (at least).
+</Info>
+
+## Apply to Instrumentation Libraries
+
+Odigos allows you to apply/limit rules to specific instrumentation libraries.
+
+- To apply a rule to all instrumentation libraries, omit the `instrumentationLibraries` field.
+- To apply a rule to specific instrumentation libraries, provide an array of instrumentation libraries (identified by it's unique name, language, and span kind for golang).
+
+<Info>
+  Any rule for a specific instrumentation library will take precedence over a rule that does not specify a library.
+</Info>
+<Tip>
+  This is an advanced feature. It is recommended to set the same rules for all instrumentation libraries, and only use this feature when you need fine-grained control.
+</Tip>

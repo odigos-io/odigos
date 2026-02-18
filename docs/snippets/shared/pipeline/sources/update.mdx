@@ -1,0 +1,98 @@
+Beyond just enabling or disabling instrumentation, Source objects can be used to configure instrumentation settings as well.
+
+All Source settings can be configured with the Odigos CLI (see [CLI documentation on updating Sources](/cli/odigos_sources_update)) or Kubernetes-native tools like `kubectl`.
+
+## service.name
+
+The `service.name` attribute is a fundamental resource attribute in [OpenTelemetry](https://opentelemetry.io/docs/specs/semconv/resource/#service).<br />
+It is required, and is reported in all telemetry data.<br />
+It is used to identify the service that emitted a span, metric or log record.
+
+Odigos will automatically populate this attribute based on the name of the workload. If there are multiple containers in the workload, the `service.name` will be set to the container name.
+
+If you want to override the default value, you can also set the `service.name` attribute by adding the `otelServiceName` attribute to an exiting Source, or by creating a `Source` with that attribute:
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example-source
+  namespace: default
+spec:
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
+  otelServiceName: my-custom-service-name
+```
+
+Namespace Sources do not support the `otelServiceName` attribute. If a namespace is instrumented, and a Source for a specific workload is not present, a specific source for that workload will need to be created including the desired `otelServiceName`.
+
+### From Odigos UI
+
+
+The easiest way to update a source from Odigos is to use the Odigos UI.<br />
+After [installing Odigos CLI](/setup/installation), run the following command to start the Odigos UI:
+
+```shell
+odigos ui
+```
+
+And then, in the sources page, select the source you want to edit and fill in the value for the `service.name` field.
+To undo the override, simply erase the value from the `service.name` field.
+
+### Odigos CLI
+
+To set the `service.name` using the Odigos CLI, use the `odigos sources update` command ([see documentation](/cli/odigos_sources_update)).
+
+If you know the name of the Source object to update, pass that to `odigos sources update` along with the `--otel-service` flag:
+
+```shell
+odigos sources update <mysource> --otel-service=my-service-name -n <namespace>
+```
+
+If you don't know the name of the Source object to update, you can provide flags to `odigos sources update` to identify the Source by workload:
+
+```shell
+odigos sources update --workload-kind=<Deployment/StatefulSet/DaemonSet> \
+--workload-name=<my-workload> \
+--workload-namespace=<namespace> \
+--otel-service=my-service-name
+```
+
+### Kubernetes Manifest
+
+If you prefer to use kubectl or GitOps to manage your Kubernetes workloads, you can can set the `service.name` attribute by updating the corresponding Source.
+
+For example, to set the `service.name` attribute in telemetry for an existing source:
+
+To get the relevant Source for your workload you can either use:
+```shell
+kubectl get sources -n <source namespace> \
+-l odigos.io/workload-kind=<Deployment/DaemonSet/StatefulSet/Namespace> \
+-l odigos.io/workload-name=<Workload name> \
+-l odigos.io/workload-namespace=<source namespace>
+```
+
+or list the sources in the relevant namespace:
+
+```shell
+kubectl get sources -n <namespace>
+```
+
+After we have the desired Source we can patch it:
+
+```shell
+kubectl patch source/<source-name> -n <namespace> --type=merge -p '{"spec":{"otelServiceName":"<serviceName>"}}'
+```
+
+If you don't know the name of a Source object (such as when a Source
+is automatically created by instrumentation done via the UI), you can
+combine the use of Source labels with the `kubectl patch` command. For
+example:
+
+```shell
+kubectl patch source \
+$(kubectl get source -l 'odigos.io/workload-name=<workloadName>,odigos.io/workload-kind=<Deployment/StatefulSet/DaemonSet>' --no-headers -o custom-columns=":metadata.name") \
+--type=merge \
+-p '{"spec":{"otelServiceName":"<serviceName>"}}'
+```
