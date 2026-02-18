@@ -1,0 +1,102 @@
+---
+title: 'Installation'
+description: 'Install Odigos Central using the CLI or Helm chart to manage multi-cluster observability from a single control plane.'
+sidebarTitle: 'Installation'
+---
+
+You can install Odigos Central using the CLI or Helm chart.
+
+<Tabs>
+  <Tab title="CLI">
+    Use the `odigos pro central install` command with `--set` flags:
+
+    ```bash
+    odigos pro central install --set onPremToken=<token>
+    ```
+
+    This installs:
+    - central-backend
+    - central-ui
+    - redis (for state)
+    - keycloak (as identity provider)
+
+    ### CLI Flags
+
+    | Flag | Default | Description |
+    |------|---------|-------------|
+    | `--set onPremToken` | (required) | Your Odigos Enterprise license token |
+    | `--set centralProxy.centralBackendURL` | (optional) | URL of the central backend |
+    | `--set auth.externalUrl` | `http://localhost:8081` | Browser-accessible URL of the Central Backend for SSO redirect flows |
+    | `--set auth.adminPassword` | (auto-generated) | Admin password for Keycloak. If not provided, a random password is generated |
+    | `--set auth.adminUsername` | `admin` | Admin username for Keycloak |
+    | `--namespace`, `-n` | `odigos-central` | Target namespace for installation |
+    | `--version` | (current) | Specify a specific version to install |
+
+    **Example with all options:**
+    ```bash
+    odigos pro central install \
+      --set onPremToken=<token> \
+      --namespace odigos-central \
+      --version v1.0.0
+    ```
+
+  </Tab>
+  <Tab title="Helm">
+    Add the Odigos Helm repository and install:
+
+    ```bash
+    helm repo add odigos https://odigos-io.github.io/odigos/
+    helm repo update
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --create-namespace \
+      --set onPremToken=<token>
+    ```
+
+    For production deployments, consider using a `values.yaml` file:
+
+    ```yaml
+    onPremToken: "<your-token>"
+
+    auth:
+      externalUrl: "https://central.example.com"  # Browser-accessible URL for SSO redirects
+      adminUsername: admin
+      adminPassword: "<your-password>"
+      persistence:
+        enabled: true
+        size: 2Gi
+        storageClassName: "gp3"
+
+    centralBackend:
+      autoscaling:
+        enabled: true
+        minReplicas: 2
+        maxReplicas: 10
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+
+    centralUI:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    ```
+
+    Then install with:
+    ```bash
+    helm upgrade --install odigos-central odigos/odigos-central \
+      --namespace odigos-central \
+      --create-namespace \
+      -f values.yaml
+    ```
+
+  </Tab>
+</Tabs>

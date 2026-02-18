@@ -1,0 +1,95 @@
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+## Considerations
+
+<Warning>
+  Before enabling **pii masking**, please note the following:
+  - This action masks span attribute values by replacing only the sensitive portions with `****`, while leaving the rest of the value intact.
+  - The regex used for masking are predefined for each PII category and cannot be configured.
+  - Currently, only trace signals are supported.
+  - All span attribute values in every span will be examined and masked accordingly.
+</Warning>
+
+## Use Cases
+
+**Security**
+
+- By default, OpenTelemetry should not record PII (Personally Identifiable Information) or sensitive data such as passwords, api tokens, etc. However, if the data is accidentally added to the telemetry signals, or if a manual instrumentation recorded it into an attribute, this action can be used to mask such data.
+
+**Legal and Compliance**
+
+- Ensure compliance with legal and privacy.
+    - Payment Card Industry (PCI) Data Security Standards prohibit logging certain things or storing them unencrypted.
+
+## Configuration Options
+
+The PiiMasking action is configured using the `odigos.io/v1alpha1.Action` CRD with the `piiMasking` configuration section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the action will operate on.
+    - This field is *required*
+    - Supported values: `TRACES`
+  </Accordion>
+  <Accordion title="piiMasking *">
+    **piiMasking** `object` : Configuration for the PiiMasking action.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="piiCategories *">
+        **piiCategories** `string[]` : An array of strings representing the PII Category you want to mask.
+        - This field is *required*
+        - The available PII categories are:
+          - `CREDIT_CARD` - mask Visa and MasterCard credit card numbers
+        <Note>
+          Can't find the PII category you need? Please Contact us and we will add it for you
+        </Note>
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example demonstrates how to configure the Pii Masking action to mask Visa and MasterCard credit card numbers from span attribute values using the new Action CRD.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml pii-masking.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: pii-masking
+      namespace: odigos-system
+    spec:
+      actionName: PII Masking
+      signals:
+        - TRACES
+      piiMasking:
+        piiCategories:
+          - CREDIT_CARD
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f pii-masking.yaml
+    ```
+  </Step>
+</Steps>

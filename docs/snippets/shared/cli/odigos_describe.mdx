@@ -1,0 +1,83 @@
+## odigos describe
+
+Show details of a specific odigos entity
+
+### Synopsis
+
+This command can be used for troubleshooting and observing odigos state for its various entities.<br />It is similar to `kubectl describe` but for Odigos entities.
+
+```
+odigos describe [flags]
+```
+
+### Examples
+
+```
+
+# Describe a source of kind deployment and name myservice in the default namespace
+odigos describe source deployment myservice -n default
+
+# Describe a source of kind deploymentconfig and name myservice in the default namespace (OpenShift)
+odigos describe source deploymentconfig myservice -n default
+
+Output:
+
+Name:  myservice
+Kind:  deployment
+Namespace:  default
+
+Labels:
+  Instrumented:  true
+  Workload:  instrumented
+  Namespace: unset
+  Decision: Workload is instrumented because there is an enabled Source for this workload
+  Troubleshooting: https://docs.odigos.io/architecture/troubleshooting#1-source-configuration
+
+Instrumentation Config:
+  Created at 2024-07-30 19:00:40 +0300 IDT
+
+Runtime inspection details:
+  Created at 2024-07-30 19:00:40 +0300 IDT
+  Detected Containers:
+    - Container Name: myservice
+      Language:       javascript
+      Relevant Environment Variables:
+        - NODE_OPTIONS : --require /var/odigos/nodejs/autoinstrumentation.js
+
+Instrumentation Device:
+  Status: Successfully applied instrumentation device to pod template
+  - Container Name: myservice
+    Instrumentation Devices: javascript-native-community
+
+Pods (Total 1, Running 1):
+  Pod Name: myservice-ffd68d8c-qqmxl
+  Pod Phase: Running
+  Pod Node Name: kind-control-plane
+  Containers:
+  - Container Name: myservice
+    Instrumentation Devices: javascript-native-community
+    Instrumentation Instances:
+    - Healthy: true
+      Reason: Healthy
+
+```
+
+### Options
+
+```
+  -h, --help     help for describe
+  -r, --remote   use odigos ui service in the cluster to describe the entity
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes
+* [odigos describe source](/cli/odigos_describe_source)	 - Show details of a specific odigos source

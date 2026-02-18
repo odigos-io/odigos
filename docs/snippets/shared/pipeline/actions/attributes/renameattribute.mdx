@@ -1,0 +1,74 @@
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+## Configuration Options
+
+The RenameAttribute action is configured using the `odigos.io/v1alpha1.Action` CRD with the `renameAttribute` configuration section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the action will operate on.
+    - This field is *required*
+    - Supported values: `TRACES`, `METRICS`, `LOGS`
+  </Accordion>
+  <Accordion title="renameAttribute *">
+    **renameAttribute** `object` : Configuration for the RenameAttribute action.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="renames *">
+        **renames** `object` : A map of strings, key representing the name of the attribute to rename and values the desired name.
+        - This field is *required*
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example demonstrates how to rename the deprecated `net.peer.address` attribute to stable `network.peer.address` in all telemetry signals using the new Action CRD.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml rename-net-to-network.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: rename-net-to-network
+      namespace: odigos-system
+    spec:
+      actionName: Rename network attributes
+      signals:
+        - LOGS
+        - METRICS
+        - TRACES
+      renameAttribute:
+        renames:
+          net.peer.address: network.peer.address
+          net.local.address: network.local.address
+          net.peer.ip: network.peer.address
+          net.host.ip: network.local.address
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f rename-net-to-network.yaml
+    ```
+  </Step>
+</Steps>

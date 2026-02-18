@@ -1,0 +1,180 @@
+## Considerations
+
+<Warning>
+  Before enabling **payload collection**, please note the following:
+  - PII (Personally Identifiable Information) and other potentially sensitive data may be present in the payload. Evaluate the risk of collecting this data, and consider using the [PII Masking Action](/pipeline/actions/attributes/piimasking) to mask sensitive data.
+  - Payload data can be large and may increase the size of your spans. This can impact the performance of your application and the cost of processing, storing and analyzing traces.
+  - The support for payload collection varies between instrumentation libraries and languages. Not all libraries support payload collection, and the supported payload types and formats may differ. Consult the documentation of the instrumentation library you are using for more information.
+</Warning>
+
+## Configuration Options
+
+<AccordionGroup>
+  <Accordion title="httpRequest">
+    **httpRequest** `object` : Collect HTTP request payload data when available. Can be a client (outgoing) request or a server (incoming) request, depending on the instrumentation library.
+    - This field is *optional*
+    <AccordionGroup>
+      <Accordion title="mimeTypes">
+        **mimeTypes** `string[]` : Limit payload collection to specific mime types based on the content-type header.
+        - This field is *optional*, and defaults to `nil` (all mime types)
+        - <Icon icon="triangle-exclamation" iconType="solid" color="red" /> Empty array will make the rule ineffective
+      </Accordion>
+      <Accordion title="maxPayloadLength">
+        **maxPayloadLength** `number` : Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads`.
+        - This field is *optional*
+      </Accordion>
+      <Accordion title="dropPartialPayloads">
+        **dropPartialPayloads** `boolean` : If the payload is larger than the `maxPayloadLength`, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+        - This field is *optional*, and defaults to `false`
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+  <Accordion title="httpResponse">
+    **httpResponse** `object` : Collect HTTP response payload data when available. Can be a client (incoming) response or a server (outgoing) response, depending on the instrumentation library
+    - This field is *optional*
+    <AccordionGroup>
+      <Accordion title="mimeTypes">
+        **mimeTypes** `string[]` : Limit payload collection to specific mime types based on the content-type header.
+        - This field is *optional*, and defaults to `nil` (all mime types)
+        - <Icon icon="triangle-exclamation" iconType="solid" color="red" /> Empty array will make the rule ineffective
+      </Accordion>
+      <Accordion title="maxPayloadLength">
+        **maxPayloadLength** `number` : Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads`.
+        - This field is *optional*
+      </Accordion>
+      <Accordion title="dropPartialPayloads">
+        **dropPartialPayloads** `boolean` : If the payload is larger than the `maxPayloadLength`, this parameter will determine if the payload should be partially collected up to the allowed length, or not collected at all. This is useful if you require some decoding of the payload (like json) and having it partially is not useful.
+        - This field is *optional*, and defaults to `false`
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+  <Accordion title="dbQuery">
+    **dbQuery** `object` : Collect database query payload info when available.
+    - This field is *optional*
+    <AccordionGroup>
+      <Accordion title="mimeTypes">
+        **mimeTypes** `string[]` : Limit payload collection to specific mime types based on the content-type header.
+        - This field is *optional*, and defaults to `nil` (all mime types)
+        - <Icon icon="triangle-exclamation" iconType="solid" color="red" /> Empty array will make the rule ineffective
+      </Accordion>
+      <Accordion title="maxPayloadLength">
+        **maxPayloadLength** `number` : Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads`.
+        - This field is *optional*
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+  <Accordion title="messaging">
+    **messaging** `object` : Collect messaging system operation payload info when available.
+    - This field is *optional*
+    <AccordionGroup>
+      <Accordion title="mimeTypes">
+        **mimeTypes** `string[]` : Limit payload collection to specific mime types based on the content-type header.
+        - This field is *optional*, and defaults to `nil` (all mime types)
+        - <Icon icon="triangle-exclamation" iconType="solid" color="red" /> Empty array will make the rule ineffective
+      </Accordion>
+      <Accordion title="maxPayloadLength">
+        **maxPayloadLength** `number` : Maximum length of the payload to collect. If the payload is longer than this value, it will be truncated or dropped, based on the value of `dropPartialPayloads`.
+        - This field is *optional*
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  Any unspecified options will fallback to a reasonable default value provided by the instrumentation library (recommended).
+</Note>
+
+## Basic Example
+
+The following example demonstrates how to enable payload collection for all supported workloads and instrumentation libraries in the cluster.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml payload-collection.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: InstrumentationRule
+    metadata:
+      name: collect-all-payloads
+      namespace: odigos-system
+    spec:
+      ruleName: "collect all supported payloads"
+      payloadCollection:
+        httpRequest: {}
+        httpResponse: {}
+        dbQuery: {}
+        messaging: {}
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```shell
+    kubectl apply -f payload-collection.yaml
+    ```
+  </Step>
+</Steps>
+
+
+## Full Example
+
+The following example is a demonstration of all the options available in the "Payload Collection" Rule.
+It is not meant to be used "as is", but rather as a reference to customize the rule to your needs.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml payload-collection.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: InstrumentationRule
+    metadata:
+      name: full-payload-collection-example
+      namespace: odigos-system
+    spec:
+      ruleName: "Full example for payload collection"
+      disabled: false
+      notes: "This rule showcase all the options available for payload collection rule"
+      workloads:
+        - kind: Deployment
+          name: example-deployment
+          namespace: default
+        - kind: DaemonSet
+          name: example-ds
+          namespace: default
+      instrumentationLibraries:
+        - language: go
+          name: "net/http"
+          spanKind: server
+        - language: go
+          name: "database/sql"
+          spanKind: client
+      payloadCollection:
+        httpRequest:
+            mimeTypes:
+            - "application/json"
+            maxPayloadLength: 2048
+            dropPartialPayloads: true
+        httpResponse:
+            mimeTypes:
+            - "application/json"
+            - "text/plain"
+            maxPayloadLength: 8096
+            dropPartialPayloads: true
+        dbQuery:
+            maxPayloadLength: 1024
+            dropPartialPayloads: true
+        messaging:
+            maxPayloadLength: 512
+            dropPartialPayloads: false
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```shell
+    kubectl apply -f payload-collection.yaml
+    ```
+  </Step>
+</Steps>

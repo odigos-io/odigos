@@ -1,0 +1,136 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/gcp.svg" alt="googlecloud" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+### Google Cloud Trace API
+
+This destination uses the [Google Cloud Trace API](https://cloud.google.com/trace/docs/reference).
+It is different from the [Google CLoud Telemetry (OTLP) API destination](https://docs.odigos.io/backends/googlecloudotlp).
+
+On GCP, Odigos currently supports Standard (non-Autopilot) GKE clusters.
+
+### Authenticating with Google Cloud
+
+When running the Google Cloud Exporter on GKE, by default the OpenTelemetry Collector will attempt to use
+[Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials)
+to authenticate to the Google Cloud Observability backend. This means that for most use cases running on GCP,
+there is not authentication or service account token required as your workloads are automatically authenticated.
+
+However, to authenticate with Cloud Observability when running off-GKE (for example, on a local machine for another
+cloud provider) you must provide a [service account key](https://cloud.google.com/iam/docs/keys-create-delete#iam-service-account-keys-create-console)
+for the OpenTelemetry Collector Exporter. In Odigos, this can be provided in the Application Credentials field of the
+Google Cloud destination.
+
+When the Application Credentials field is set in the UI, the Odigos UI will save the contents of that field as a Kubernetes Secret
+which is mounted as a volume into the Collector Pod. The location of that volume is then set as the `GOOGLE_APPLICATION_CREDENTIALS`
+environment variable, instructing the Google Cloud Exporter where to look for its credentials.
+
+When creating the destination as a YAML manifest off-GKE, the SecretRef must point to a Secret containing the Service Account token.
+The token must be set as the `GCP_APPLICATION_CREDENTIALS` key in the referenced Secret.
+
+The `GCP_APPLICATION_CREDENTIALS` field does not need to be set on the YAML manifest destination CRD, only in the referenced Secret.
+This field is used internally by Odigos when creating GCP destinations from the UI.
+
+Currently, only one Google Cloud destination can be configured with Application Credentials.
+
+See the [Google Cloud OpenTelemetry Collector Exporter docs](https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/tree/1ea43a4534606df1d91ee1754e6c5bc31ee8664d/exporter/collector#prerequisite-authenticating)
+for more information on authentication.
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ✅ Logs
+</Accordion>
+
+- **GCP_TIMEOUT** `string` : Timeout. The request timeout in seconds for the Google Cloud Monitoring API. Defaults to 10 seconds. Increasing this value can help with deadline exceeded errors.
+  - This field is optional
+  - Example: `10s`
+- **GCP_PROJECT_ID** `string` : Project ID. The project ID for the Google Cloud Monitoring API to send data to. Required if running Odigos outside of Google Cloud. Defaults to the detected project ID when running on GCP.
+  - This field is optional
+  - Example: `project-id`
+- **GCP_APPLICATION_CREDENTIALS** `string` : Application Credentials. The JSON GCP Application Credentials file for the GCP project. Either a Workload Identity Federation config file or Service Account Key. Required if running Odigos outside of Google Cloud.
+  - This field is optional
+  - Example: `Credentials config... (optional)`
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Google Cloud Monitoring` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `googlecloud.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: googlecloud-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: googlecloud
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: googlecloud-secret
+      signals:
+      - TRACES
+      - LOGS
+      type: googlecloud
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   GCP_APPLICATION_CREDENTIALS: <Base64 Application Credentials>
+    # kind: Secret
+    # metadata:
+    #   name: googlecloud-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f googlecloud.yaml
+    ```
+  </Step>
+</Steps>

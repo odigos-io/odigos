@@ -1,0 +1,101 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/seq.svg" alt="seq" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+- [Deploy Seq into Kubernetes using Docker](https://docs.datalust.co/docs/getting-started-with-docker)
+- [Deploy Seq into Kubernetes using Helm](https://docs.datalust.co/docs/using-helm)
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ✅ Logs
+</Accordion>
+
+- **SEQ_ENDPOINT** `string` : OTLP HTTP Endpoint. The format is `http://host:port`, `host` is required and equals the cluster internal DNS record of the Seq instance, `port` is required and equals any of the exposed ports of the Seq instance (defaults to 5341), do not add the rest of the path `/ingest/otlp/v1/*`.
+  - This field is required
+- **SEQ_API_KEY** `string` : API Key. The API key is generated in the Seq instance. The API key must have the `Ingest` permission.
+  - This field is optional
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Seq` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `seq.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: seq-example
+      namespace: odigos-system
+    spec:
+      data:
+        SEQ_ENDPOINT: <OTLP HTTP Endpoint>
+      destinationName: seq
+      # Uncomment the 'secretRef' below if you are using the optional Secret.
+      # secretRef:
+      #   name: seq-secret
+      signals:
+      - TRACES
+      - LOGS
+      type: seq
+
+    ---
+
+    # The following Secret is optional. Uncomment the entire block if you need to use it.
+    # apiVersion: v1
+    # data:
+    #   SEQ_API_KEY: <Base64 API Key>
+    # kind: Secret
+    # metadata:
+    #   name: seq-secret
+    #   namespace: odigos-system
+    # type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f seq.yaml
+    ```
+  </Step>
+</Steps>

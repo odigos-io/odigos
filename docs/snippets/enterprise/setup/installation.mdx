@@ -1,0 +1,117 @@
+<Tip>
+  Installation issues? Need help? Message us on [Slack](https://join.slack.com/t/odigos/shared_invite/zt-24u91yknm-0fLXu6qnqYfNHS_GSUgTJw)
+</Tip>
+
+Checkout the [installation options](/enterprise/setup/installation-options) to customize your installation.
+
+There are 3 ways to install odigos in your kubernetes cluster:
+- [Odigos CLI](#odigos-cli)
+- [Helm Chart](#helm-chart)
+- [OpenShift Operator](#openshift-operator)
+
+All install methods will deploy and configure resources in the active Kubernetes cluster as per the current context.
+Before proceeding with the installation, ensure that you are targeting the correct cluster with `kubectl config current-context`.
+
+<Info>
+  Odigos enterprise data collection is done using eBPF, so Odigos requires, at minimum, platforms that have underlying Linux kernel versions of 5.4.0.
+</Info>
+
+## Odigos CLI
+
+### Install the CLI
+
+<Tabs>
+  <Tab title="Homebrew">
+    If you are on MacOS, you can install Odigos CLI using Homebrew:
+
+    ```bash
+    brew install odigos-io/odigos-cli/odigos
+    ```
+  </Tab>
+  <Tab title="GitHub Releases">
+  1. Download the Latest Version: Head over to the [Odigos GitHub Releases](https://github.com/odigos-io/odigos/releases) page and click on the latest version available. You'll see a list of files—choose the one that matches your operating system (Windows, macOS, or Linux).
+
+  2. Extract the Downloaded File: Once the file is downloaded, it will likely be in a compressed format like `.zip` or `.tar.gz`. To use the program, you'll first need to extract (or unzip) it. Right-click on the file and select "Extract Here" or use a similar option, depending on your operating system.
+
+  3. Move the File to a Folder in Your `PATH`. You'll need to move this file to a folder where your computer looks for programs, known as your "PATH".
+
+   - For Windows: Move the extracted file to a folder like `C:\Windows\System32` or any folder listed in your system's PATH. You can find out where by typing echo `%PATH%` in Command Prompt.
+
+   - For macOS/Linux: Move the file to a folder like `/usr/local/bin/` or `/usr/bin/`, both of which are common folders included in the PATH. You can check your PATH by opening the terminal and typing `echo $PATH`.
+
+  4. Verify It's Working: Once the file is in the correct folder, open a terminal or command prompt and type the name of the program (e.g., odigos). If it runs, you've successfully installed it! If not, double-check that you moved the file to a folder included in your PATH.
+  </Tab>
+  <Tab title="Windows">
+1. Download the Latest Version: Go to the [Odigos GitHub Releases](https://github.com/odigos-io/odigos/releases) page. Look for the latest version and download the file that matches your system (typically, this will be a `.zip` file for Windows).
+
+2. Extract the Downloaded File: Once the download is complete, locate the `.zip` file in your Downloads folder. Right-click on it and choose "Extract All." Select a location on your computer where you'd like to save the extracted files.
+
+3. Move the Binary to a Folder in Your PATH: Windows has specific folders where it looks for programs to run, called the "PATH". To make Odigos work from anywhere on your system, you'll need to move the program (binary) into one of these folders. Here's how:
+
+   - **Option 1**:
+     Move the file to a folder already in the PATH, such as `C:\Windows\System32`. Simply drag the extracted file (often named something like `odigos.exe`) into that folder.
+
+   - **Option 2**:
+     Add the folder containing the extracted binary to your PATH manually:
+     1. Right-click the **Start** button and select **System**.
+     2. Click **Advanced system settings** on the left.
+     3. In the **System Properties** window, click **Environment Variables** at the bottom.
+     4. In the **System Variables** section, scroll down and find the variable named `Path`. Select it and click **Edit**.
+     5. In the **Edit Environment Variables** window, click **New**, and then add the folder where you saved the extracted file.
+     6. Click **OK** to close all windows.
+
+4. Verify Installation: Open the **Command Prompt** by searching for `cmd` in the Start menu. Type the name of the program, like `odigos.exe`, and press Enter. If the program runs, then you've successfully installed it. If it doesn't, double-check that you either moved the file to a folder in your PATH or correctly added the folder where the file is located.
+
+  </Tab>
+</Tabs>
+
+### Install Odigos
+
+The enterprise version of Odigos requires a license token. Please contact the Odigos team to inquire about access to the Enterprise version.
+
+```shell
+odigos install --onprem-token $ODIGOS_TOKEN
+```
+
+This will install odigos in the `odigos-system` namespace in your kubernetes cluster.
+
+At this point, odigos is installed in your cluster. You can now add sources and destinations to instrument your cluster with OpenTelemetry.
+
+## Helm Chart
+
+### Add Helm Repoistory
+
+```shell
+helm repo add odigos https://odigos-io.github.io/odigos/
+```
+
+### Install Odigos
+
+The enterprise version of Odigos requires a license token. Please contact the Odigos team to inquire about access to the Enterprise version.
+
+```shell
+helm repo update
+helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace --set onPremToken=$ODIGOS_TOKEN
+```
+
+The license token can also be provided by creating a secret in kubernetes before installing Odigos.
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: odigos-pro
+  namespace: odigos-system
+  labels:
+    odigos.io/system-object: "true"
+stringData:
+  odigos-onprem-token: <TOKEN>
+```
+
+Once the Odigos pods are online, simply run the following command to launch the Odigos UI.
+```shell
+odigos ui
+```
+
+## OpenShift Operator
+
+For Operator installation steps, see the docs on: [OpenShift Installation](/enterprise/setup/installation-options#openshift-installation)

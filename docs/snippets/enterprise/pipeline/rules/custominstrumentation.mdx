@@ -1,0 +1,93 @@
+## Considerations
+If you wish to create custom eBPF-based instrumentations for Go or Java applications, you can define a "Custom Instrumentation" rule via the Odigos InstrumentationRule CRD or the Odigos UI.
+
+This feature is a great way to extend Odigos's auto-instrumentation capabilities to cover your specific use cases and application logic.
+
+## Configuration Options
+<AccordionGroup>
+    <Accordion title="Golang">
+    <Warning>
+  When `function` is specified, `receiverName` and `receiverMethodName` must NOT be specified, and vice versa, if `receiverName` and `receiverMethodName` are specified, `function` must NOT be specified.
+
+  `PackageName` is required in all cases.
+    </Warning>
+        <AccordionGroup>
+                    <Accordion title="packageName">
+                        **packageName** `string` - The name of the package containing the function to instrument.
+                        - This field is *required*
+                    </Accordion>
+                    <Accordion title="functionName">
+                        **functionName** `string` - The name of the function to instrument.
+                        - This field is *optional*
+                    </Accordion>
+                    <Accordion title="receiverName">
+                        **receiverName** `string` - The name of the receiver type if the function is a method.
+                        - This field is *optional*
+                    </Accordion>
+                    <Accordion title="receiverMethodName">
+                        **receiverMethodName** `string` - The name of the method receiver if the function is a method.
+                        - This field is *optional*
+                    </Accordion>
+        </AccordionGroup>
+    </Accordion>
+    <Accordion title="Java">
+        <AccordionGroup>
+                    <Accordion title="class">
+                        **class** `string` - The fully qualified name of the class containing the method to instrument.
+                        - This field is *required*
+                    </Accordion>
+                    <Accordion title="method">
+                        **method** `string` - The name of the method to instrument.
+                        - This field is *required*
+                    </Accordion>
+        </AccordionGroup>
+    </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example shows how to create a "Custom Instrumentation" rule that instruments a function named `ProcessOrder` in the `github.com/example/ecommerce` package.
+
+<Steps>
+    <Step>
+        Create a YAML file named `custom-instrumentation.yaml` with the following content:
+        <Accordion title="Package and function(golang)">
+        ```yaml
+        apiVersion: odigos.io/v1alpha1
+        kind: InstrumentationRule
+        metadata:
+            name: custom-instrumentation-rule
+            namespace: odigos-system
+        spec:
+            ruleName: "Custom Instrumentation for ProcessOrder"
+            customInstrumentation:
+                golang:
+                    packageName: "github.com/example/ecommerce"
+                    functionName: "ProcessOrder"
+        ```
+        </Accordion>
+        <Accordion title="Receiver method(golang)">
+        ```yaml
+        apiVersion: odigos.io/v1alpha1
+        kind: InstrumentationRule
+        metadata:
+            name: custom-instrumentation-rule
+            namespace: odigos-system
+        spec:
+            ruleName: "Custom Instrumentation for ProcessOrder Method"
+            customInstrumentation:
+                golang:
+                    packageName: "github.com/example/ecommerce"
+                    receiverName: "OrderProcessor"
+                    receiverMethodName: "ProcessOrder"
+        ```
+        </Accordion>
+    </Step>
+    <Step>
+    Apply the action to the cluster:
+
+    ```shell
+    kubectl apply -f custom-instrumentation.yaml
+    ```
+    </Step>
+</Steps>

@@ -1,0 +1,120 @@
+## Tagging and Pushing Images
+
+
+### Step 1: Set Environment Variables
+First, export the `VERSION` and `CUSTOM-DOCKER-REGISTRY` environment variables in your shell:
+
+```bash
+export VERSION=<YOUR-DESIRED-VERSION>
+export CUSTOM_DOCKER_REGISTRY=<YOUR-CUSTOM-DOCKER-REGISTRY>
+export PLATFORM=<YOUR-PLATFORM-ARCHITECTURE>
+```
+Replace `<YOUR-DESIRED-VERSION>` with the version of the Odigos images you want to use, `<YOUR-CUSTOM-DOCKER-REGISTRY>` with the URL of your custom Docker registry, and `<YOUR-PLATFORM-ARCHITECTURE>` with the platform architecture of the environment where you are deploying Odigos (linux/amd64, linux/arm64).
+
+---
+
+### Step 2: Pull the Images
+Start by pulling the required images from the official Odigos registry onto your local machine or CI environment:
+
+```bash
+docker pull registry.odigos.io/odigos-scheduler:$VERSION
+docker pull registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
+docker pull registry.odigos.io/odigos-ui:$VERSION
+docker pull registry.odigos.io/odigos-autoscaler:$VERSION
+docker pull registry.odigos.io/odigos-enterprise-odiglet:$VERSION
+docker pull registry.odigos.io/odigos-collector:$VERSION
+```
+
+If you are using the [k8s-init-container](/enterprise/instrumentations/configuration/mount-method#3-InitContainer) mount method
+make sure the odigos-agents image is also pulled, as it's required by the injected InitContainer.
+**This is not the default configuration**, if you're unsure what this means, you can safely ignore this step and continue with the standard setup.
+
+```bash
+docker pull registry.odigos.io/odigos-enterprise-agents:$VERSION
+```
+
+
+<Warning>
+Odigos component images are published in multi-arch for ARM64 and AMD64 architectures. When pulling these images, be sure to specify the correct architecture *for the environment they will be deployed*.
+</Warning>
+
+```bash
+docker pull --platform $PLATFORM registry.odigos.io/odigos-scheduler:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-instrumentor:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-ui:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-autoscaler:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-enterprise-odiglet:$VERSION
+docker pull --platform $PLATFORM registry.odigos.io/odigos-collector:$VERSION
+```
+
+### Step 3: Tag the Images
+Next, Tag each image with your custom Docker registry prefix:
+
+```bash
+docker tag registry.odigos.io/odigos-scheduler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
+docker tag registry.odigos.io/odigos-enterprise-instrumentor:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
+docker tag registry.odigos.io/odigos-ui:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
+docker tag registry.odigos.io/odigos-autoscaler:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
+docker tag registry.odigos.io/odigos-enterprise-odiglet:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
+docker tag registry.odigos.io/odigos-collector:$VERSION $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+```
+
+
+> **Note:** Prior to v1.0.155, Odigos images were prefixed with `keyval/` (such as `keyval/odigos-scheduler`) In v1.0.155+, this is no longer the case, and Odigos does not assume this prefix. If you were hosting custom images prior to this version, you may have to re-tag your images to remove the `keyval/` prefix.
+
+### Step 4: Push the Images
+Now, push the tagged images to your custom Docker registry:
+```bash
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-scheduler:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-instrumentor:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-ui:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-autoscaler:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-enterprise-odiglet:$VERSION
+docker push $CUSTOM_DOCKER_REGISTRY/odigos-collector:$VERSION
+```
+
+### Step 5: Configure Access for Private Registries
+
+If your Docker registry is private, configure your Kubernetes cluster to pull images from it. Refer to the official Kubernetes documentation for guidance: [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+
+> **Note: To ensure your Odigos deployments and daemonsets can pull images from a private registry, patch them to add the image pull secret.**
+>
+> **Use the following commands:**
+> ```
+> export ODIGOS_NAMESPACE=<NAMESPACE-WHERE-ODIGOS-IS-INSTALLED>
+> export IMAGE_PULL_SECRET=<NAME-OF-IMAGE-PULL-SECRET>
+> kubectl patch deployment odigos-ui -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> kubectl patch deployment odigos-scheduler -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> kubectl patch deployment odigos-instrumentor -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> kubectl patch deployment odigos-autoscaler -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> kubectl patch deployment odigos-gateway -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> kubectl patch daemonset odiglet -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> kubectl patch daemonset odigos-data-collection -n $ODIGOS_NAMESPACE \
+> --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": '$IMAGE_PULL_SECRET'}]}]'
+> ```
+
+### Step 6: Install Odigos Using Custom Images
+Finally, install Odigos using the images from your custom Docker registry:
+
+
+<Tabs>
+  <Tab title="Odigos CLI">
+```bash
+odigos install --image-prefix=$CUSTOM_DOCKER_REGISTRY --onprem-token $ODIGOS_TOKEN
+```
+  </Tab>
+  <Tab title="Helm Chart">
+```bash
+helm repo update
+helm upgrade --install odigos odigos/odigos --namespace odigos-system --create-namespace --set imagePrefix=$CUSTOM_DOCKER_REGISTRY --set onPremToken=$ODIGOS_TOKEN
+kubectl label namespace odigos-system odigos.io/system-object="true"
+```
+  </Tab>
+
+</Tabs>

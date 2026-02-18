@@ -1,0 +1,111 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/instana.svg" alt="instana" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+**Creating Account**<br />
+Go to the **[🔗 Website](https://www.ibm.com/products/instana?mhsrc=ibmsearch_a&mhq=instana) > Account** and click **Log In**
+
+**Obtaining Endpoint**<br />
+Go to the **[📖 Docs](https://www.ibm.com/docs/en/instana-observability/current?topic=instana-backend#endpoints-of-the-instana-backend-otlp-acceptor) > Endpoints of the Instana backend otlp-acceptor** and find your **Endpoint**
+
+**Obtaining Agent Key**<br />
+Go to your **📩 Email > Instana Login Details** and copy **Agent-Key**
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
+
+- **INSTANA_ENDPOINT** `string` : OTLP gRPC Endpoint. Domain name of the otlp-acceptor component of the Instana backend.
+  - This field is required
+  - Example: `otlp-{color}-saas.instana.io`
+- **INSTANA_AGENT_KEY** `string` : Agent Key. The agent key of the Instana for targeting the Instana backend.
+  - This field is required
+
+<Warning>
+  For ingesting logs via OpenTelemetry, an add-on to the Instana license is required. It’s advisable to contact your IBM Sales representative to include this add-on in your account.
+</Warning>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `IBM Instana` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `instana.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: instana-example
+      namespace: odigos-system
+    spec:
+      data:
+        INSTANA_ENDPOINT: <OTLP gRPC Endpoint>
+      destinationName: instana
+      secretRef:
+        name: instana-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: instana
+
+    ---
+
+    apiVersion: v1
+    data:
+      INSTANA_AGENT_KEY: <Base64 Agent Key>
+    kind: Secret
+    metadata:
+      name: instana-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f instana.yaml
+    ```
+  </Step>
+</Steps>

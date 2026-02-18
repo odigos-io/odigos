@@ -1,0 +1,4313 @@
+<p>Package v1alpha1 is the v1alpha1 version of the API.</p>
+
+
+## Resource Types 
+
+
+- [Action](#odigos-io-v1alpha1-Action)
+- [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)
+- [Destination](#odigos-io-v1alpha1-Destination)
+- [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
+- [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
+- [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+- [Processor](#odigos-io-v1alpha1-Processor)
+- [Sampling](#odigos-io-v1alpha1-Sampling)
+- [Source](#odigos-io-v1alpha1-Source)
+  
+
+## `Action` <a id="odigos-io-v1alpha1-Action"></a>
+    
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>Action</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ActionSpec"><code>ActionSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ActionStatus"><code>ActionStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroup` <a id="odigos-io-v1alpha1-CollectorsGroup"></a>
+    
+<p>CollectorsGroup is the Schema for the collectors API</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>CollectorsGroup</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupSpec"><code>CollectorsGroupSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupStatus"><code>CollectorsGroupStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `Destination` <a id="odigos-io-v1alpha1-Destination"></a>
+    
+<p>Destination is the Schema for the destinations API</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>Destination</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-DestinationSpec"><code>DestinationSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-DestinationStatus"><code>DestinationStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationConfig` <a id="odigos-io-v1alpha1-InstrumentationConfig"></a>
+    
+<p>InstrumentationConfig is the Schema for the instrumentationconfig API</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>InstrumentationConfig</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationConfigSpec"><code>InstrumentationConfigSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationConfigStatus"><code>InstrumentationConfigStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationInstance` <a id="odigos-io-v1alpha1-InstrumentationInstance"></a>
+    
+<p>InstrumentationInstance is the Schema for the InstrumentationInstances API</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>InstrumentationInstance</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationInstanceSpec"><code>InstrumentationInstanceSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationInstanceStatus"><code>InstrumentationInstanceStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationRule` <a id="odigos-io-v1alpha1-InstrumentationRule"></a>
+    
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>InstrumentationRule</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationRuleSpec"><code>InstrumentationRuleSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationRuleStatus"><code>InstrumentationRuleStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `Processor` <a id="odigos-io-v1alpha1-Processor"></a>
+    
+<p>Processor is the Schema for an Opentelemetry Collector Processor that is added to Odigos pipeline</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>Processor</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ProcessorSpec"><code>ProcessorSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ProcessorStatus"><code>ProcessorStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `Sampling` <a id="odigos-io-v1alpha1-Sampling"></a>
+    
+<p>Sampling is the Schema for the sampling rules API.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>Sampling</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SamplingSpec"><code>SamplingSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SamplingStatus"><code>SamplingStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `Source` <a id="odigos-io-v1alpha1-Source"></a>
+    
+<p>Source configures an application for auto-instrumentation.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>odigos.io/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>Source</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SourceSpec"><code>SourceSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SourceStatus"><code>SourceStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `ActionSpec` <a id="odigos-io-v1alpha1-ActionSpec"></a>
+    
+
+**Appears in:**
+
+- [Action](#odigos-io-v1alpha1-Action)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Allows you to attach a meaningful name to the action for convenience. Odigos does not use or assume any meaning from this field.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>A free-form text field that allows you to attach notes regarding the action for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>A boolean field allowing to temporarily disable the action, but keep it around for future use</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <p>Which signals should this action operate on.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>addClusterInfo</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.AddClusterInfoConfig</code>
+</td>
+<td>
+   <p>AddClusterInfo is the config for the AddClusterInfo Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deleteAttribute</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.DeleteAttributeConfig</code>
+</td>
+<td>
+   <p>DeleteAttribute is the config for the DeleteAttribute Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>renameAttribute</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.RenameAttributeConfig</code>
+</td>
+<td>
+   <p>RenameAttribute is the config for the RenameAttribute Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>piiMasking</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.PiiMaskingConfig</code>
+</td>
+<td>
+   <p>PiiMasking is the config for the PiiMasking Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>k8sAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.K8sAttributesConfig</code>
+</td>
+<td>
+   <p>K8sAttributes is the config for the K8sAttributes Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>samplers</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions/v1alpha1.SamplersConfig</code>
+</td>
+<td>
+   <p>Samplers is the config for the Samplers Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>urlTemplatization</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions.URLTemplatizationConfig</code>
+</td>
+<td>
+   <p>URLTemplatization is the config for the URLTemplatization Action.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>spanRenamer</code> <B>[Required]</B>
+</td>
+<td>
+<code>actions.SpanRenamerConfig</code>
+</td>
+<td>
+   <p>SpanRenamer is the config for the SpanRenamer Action.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ActionStatus` <a id="odigos-io-v1alpha1-ActionStatus"></a>
+    
+
+**Appears in:**
+
+- [Action](#odigos-io-v1alpha1-Action)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a action's current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `AgentEnabledReason` <a id="odigos-io-v1alpha1-AgentEnabledReason"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+
+
+## `AgentLogsConfig` <a id="odigos-io-v1alpha1-AgentLogsConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;logs&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that logs collection is enabled for this container.</p>
+
+
+
+## `AgentMetricsConfig` <a id="odigos-io-v1alpha1-AgentMetricsConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;metrics&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that metrics collection is enabled for this container.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentSpanMetricsConfig"><code>AgentSpanMetricsConfig</code></a>
+</td>
+<td>
+   <p>if not nil, it means agent should report span metrics,
+calculated directly in the agent.
+this is most accurate as it includes any sampled spans,
+and is not affected if spans are dropped anywhere in the pipeline.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtimeMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceAgentRuntimeMetricsConfiguration"><code>common.MetricsSourceAgentRuntimeMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil, it means agent should report runtime metrics,
+such as JVM metrics for Java applications.
+these metrics provide insights into the runtime environment performance.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `AgentSpanMetricsConfig` <a id="odigos-io-v1alpha1-AgentSpanMetricsConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentMetricsConfig](#odigos-io-v1alpha1-AgentMetricsConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>dimensions</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>additional dimensions to add for the span metrics.
+for example, if you add <code>http.method</code> to the dimensions,
+then the span metrics data points will include the <code>http.method</code> in the attributes,
+and different values of <code>http.method</code> will be aggregated into different time series.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>intervalMs</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>time interval in miliseconds for flushing the span metrics.
+defaults: 60000 (60 seconds, 1 minute)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>histogramBucketsMs</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]int</code>
+</td>
+<td>
+   <p>explicit buckets list for the histogram metrics in ms</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `AgentTracesConfig` <a id="odigos-io-v1alpha1-AgentTracesConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerAgentConfig](#odigos-io-v1alpha1-ContainerAgentConfig)
+
+<p>all &quot;traces&quot; related configuration for an agent running on any process in a specific container.
+The presence of this struct (as opposed to nil) means that trace collection is enabled for this container.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>idGenerator</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-IdGeneratorConfig"><code>IdGeneratorConfig</code></a>
+</td>
+<td>
+   <p>id generator configuration for the traces.
+if not specified, the default random id generator will be used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>urlTemplatization</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-UrlTemplatizationConfig"><code>UrlTemplatizationConfig</code></a>
+</td>
+<td>
+   <p>A list of URL templatization configurations to be applied to the traces.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headersCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadersCollectionConfig"><code>HeadersCollectionConfig</code></a>
+</td>
+<td>
+   <p>Configuration for headers collection. If not specified, no headers will be collected.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headSampling</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadSamplingConfig"><code>HeadSamplingConfig</code></a>
+</td>
+<td>
+   <p>HeadSamplingConfig is a set sampling rules.
+This config currently only applies to root spans.
+In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>spanRenamer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SpanRenamerConfig"><code>SpanRenamerConfig</code></a>
+</td>
+<td>
+   <p>Configuration for span renamer.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `AgentsTelemetrySettings` <a id="odigos-io-v1alpha1-AgentsTelemetrySettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+
+
+## `Attribute` <a id="odigos-io-v1alpha1-Attribute"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationInstanceStatus](#odigos-io-v1alpha1-InstrumentationInstanceStatus)
+- [InstrumentationLibraryStatus](#odigos-io-v1alpha1-InstrumentationLibraryStatus)
+
+<p>Attribute is a key-value pair that describes a component or instrumentation</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>key</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>value</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `AttributeCondition` <a id="odigos-io-v1alpha1-AttributeCondition"></a>
+    
+
+**Appears in:**
+
+- [AttributesAndSamplerRule](#odigos-io-v1alpha1-AttributesAndSamplerRule)
+
+<p>'Operand' represents the attributes and values that an operator acts upon in an expression</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>key</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>attribute key (e.g. &quot;url.path&quot;)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>val</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>currently only string values are supported.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>operator</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-Operator"><code>Operator</code></a>
+</td>
+<td>
+   <p>The operator to use to compare the attribute value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `AttributesAndSamplerRule` <a id="odigos-io-v1alpha1-AttributesAndSamplerRule"></a>
+    
+
+**Appears in:**
+
+- [HeadSamplingConfig](#odigos-io-v1alpha1-HeadSamplingConfig)
+
+<p>AttributesAndSamplerRule is a set of AttributeCondition that are ANDed together.
+If all attribute conditions evaluate to true, the AND sampler evaluates to true,
+and the fraction is used to determine the sampling decision.
+If any of the attribute compare samplers evaluate to false,
+the fraction is not used and the rule is skipped.
+An &quot;empty&quot; AttributesAndSamplerRule with no attribute conditions is considered to always evaluate to true.
+and the fraction is used to determine the sampling decision.
+This entity is refered to a rule in Odigos terminology for head-sampling.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>attributeConditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AttributeCondition"><code>[]AttributeCondition</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>fraction</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>The fraction of spans to sample, in the range [0, 1].
+If the fraction is 0, no spans are sampled.
+If the fraction is 1, all spans are sampled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroupMetricsCollectionSettings` <a id="odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceSpanMetricsConfiguration"><code>common.MetricsSourceSpanMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means span to metrics is enabled,
+and the node collector should set it up in the pipeline.
+span to metrics is the ability to calculate metrics like http requests/errors/duration etc
+from the individual spans recorded for relevant operation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hostMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceHostMetricsConfiguration"><code>common.MetricsSourceHostMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means host metrics is enabled,
+and the opentelemetry collector &quot;hostmetrics&quot; receiver should be included in the pipeline.
+host metrics are metrics that are collected from the host node,
+such as cpu, memory, disk, network, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kubeletStats</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceKubeletStatsConfiguration"><code>common.MetricsSourceKubeletStatsConfiguration</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means kubelet stats is enabled,
+and the opentelemetry collector &quot;kubeletstats&quot; receiver should be included in the pipeline.
+kubelet stats are metrics that are collected from the kubelet point of view,
+such as cpu, memory, disk, network, per pod, node and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceGraph</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ServiceGraphSettings"><code>ServiceGraphSettings</code></a>
+</td>
+<td>
+   <p>if not nil for cluster collector, it means service graph is enabled,
+and metrics for the &quot;connectivity&quot; between services should be calculated
+to be exported to metrics destinations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>odigosOwnMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-OdigosOwnMetricsSettings"><code>OdigosOwnMetricsSettings</code></a>
+</td>
+<td>
+   <p>if not nil for node collector, it means that some metric destinations are
+intresseted in collecting metrics about: odigos, the collected data, and the pipeline itself.
+this allows for users to monitor and operate odigos within their existing system,
+create dashboards, alerting, and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentsTelemetry</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentsTelemetrySettings"><code>AgentsTelemetrySettings</code></a>
+</td>
+<td>
+   <p>this part controls the metrics which are received from agents in the otlp receiver.
+it is generally enabled when we want to record metrics, and listed here for completeness.
+any &quot;otlp receiver&quot; specific settings can go here</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroupResourcesSettings` <a id="odigos-io-v1alpha1-CollectorsGroupResourcesSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+
+<p>The raw values to control the collectors group resources and behavior.
+any defaulting, validations and calculations should be done in the controllers
+that create this CR.
+Values will be used as is without any further processing.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>minReplicas</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>Minumum + Maximum number of replicas for the collector - these relevant only for gateway.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>maxReplicas</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>memoryRequestMiB</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>MemoryRequestMiB is the memory resource request to be used on the pod template.
+it will be embedded in the as a resource request of the form <code>memory: &lt;value&gt;Mi</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>memoryLimitMiB</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>This option sets the limit on the memory usage of the collector.
+since the memory limiter mechanism is heuristic, and operates on fixed intervals,
+while it cannot fully prevent OOMs, it can help in reducing the chances of OOMs in edge cases.
+the settings should prevent the collector from exceeding the memory request,
+so one can set this to the same value as the memory request or higher to allow for some buffer for bursts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cpuRequestMillicores</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>CPU resource request to be used on the pod template.
+it will be embedded in the as a resource request of the form <code>cpu: &lt;value&gt;m</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>cpuLimitMillicores</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>CPU resource limit to be used on the pod template.
+it will be embedded in the as a resource limit of the form <code>cpu: &lt;value&gt;m</code></p>
+</td>
+</tr>
+<tr>
+<td>
+<code>memoryLimiterLimitMiB</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>this parameter sets the &quot;limit_mib&quot; parameter in the memory limiter configuration for the collector.
+it is the hard limit after which a force garbage collection will be performed.
+this value will end up comparing against the go runtime reported heap Alloc value.
+According to the memory limiter docs:</p>
+<blockquote>
+<p>Note that typically the total memory usage of process will be about 50MiB higher than this value
+a test from nov 2024 showed that fresh odigos collector with no traffic takes 38MiB,
+thus the 50MiB is a good value to start with.</p>
+</blockquote>
+</td>
+</tr>
+<tr>
+<td>
+<code>memoryLimiterSpikeLimitMiB</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>this parameter sets the &quot;spike_limit_mib&quot; parameter in the memory limiter configuration for the collector memory limiter.
+note that this is not the processor soft limit itself, but the diff in Mib between the hard limit and the soft limit.
+according to the memory limiter docs, it is recommended to set this to 20% of the hard limit.
+changing this value allows trade-offs between memory usage and resiliency to bursts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>gomemlimitMiB</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>the GOMEMLIMIT environment variable value for the collector pod.
+this is when go runtime will start garbage collection.
+it is recommended to be set to 80% of the hard limit of the memory limiter.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroupRole` <a id="odigos-io-v1alpha1-CollectorsGroupRole"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [CollectorsGroupSpec](#odigos-io-v1alpha1-CollectorsGroupSpec)
+- [ProcessorSpec](#odigos-io-v1alpha1-ProcessorSpec)
+
+
+
+## `CollectorsGroupSpec` <a id="odigos-io-v1alpha1-CollectorsGroupSpec"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)
+
+<p>CollectorsGroupSpec defines the desired state of Collector</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>role</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupRole"><code>CollectorsGroupRole</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>collectorOwnMetricsPort</code> <B>[Required]</B>
+</td>
+<td>
+<code>int32</code>
+</td>
+<td>
+   <p>The port to use for exposing the collector's own metrics as a prometheus endpoint.
+This can be used to resolve conflicting ports when a collector is using the host network.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>k8sNodeLogsDirectory</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Additional directory to mount in the node collector pod for logs.
+This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>resourcesSettings</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupResourcesSettings"><code>CollectorsGroupResourcesSettings</code></a>
+</td>
+<td>
+   <p>Resources [memory/cpu] settings for the collectors group.
+these settings are used to protect the collectors instances from:</p>
+<ul>
+<li>running out of memory and being killed by the k8s OOM killer</li>
+<li>consuming all available memory on the node which can lead to node instability</li>
+<li>pushing back pressure to the instrumented applications</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceGraphDisabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
+It is enabled by default and can be disabled by setting the enabled flag to false.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>enableDataCompression</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Deprecated - use OtlpExporterConfiguration instead.
+EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
+It is disabled by default and can be enabled by setting the enabled flag to true.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otlpExporterConfiguration</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#OtlpExporterConfiguration"><code>common.OtlpExporterConfiguration</code></a>
+</td>
+<td>
+   <p>OtlpExporterConfiguration is the configuration for the OTLP exporter from node collector to cluster gateway collector.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>clusterMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
+It is disabled by default and can be enabled by setting the enabled flag to true.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpsProxyAddress</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
+when unset or empty, no proxy will be used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>metrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings"><code>CollectorsGroupMetricsCollectionSettings</code></a>
+</td>
+<td>
+   <p>configuration for metrics handling in this collectors group
+if metric collection is disabled, this will be nil
+the content is populated only if relevant to this collectors group
+it's being calculated based on active destinations and their settings,
+and global settings provided in the odigos configuration or instrumentation rules.
+it allows for the collector group reconciler to be simplified,
+and for visibility into the aggregated settings being used to derive configurations deployments and rollouts.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSelector</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>Node selector for the collectors group deployment.
+Use this to force the gateway to run only on nodes with specific labels.
+This is a hard requirement: the pod will be scheduled ONLY on nodes that match all labels.
+If no matching nodes exist, the pod will remain Pending.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>deploymentName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Deployment name for the collectors group deployment.
+Only relevant for cluster gateway collector.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CollectorsGroupStatus` <a id="odigos-io-v1alpha1-CollectorsGroupStatus"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroup](#odigos-io-v1alpha1-CollectorsGroup)
+
+<p>CollectorsGroupStatus defines the observed state of Collector</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>ready</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>receiverSignals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <p>Receiver Signals are the signals (trace, metrics, logs) that the collector has setup
+an otlp receiver for, thus it can accept data from an upstream component.
+this is used to determine if a workload should export each signal or not.
+this list is calculated based on the odigos destinations that were configured</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a collectorsroup's current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ContainerAgentConfig` <a id="odigos-io-v1alpha1-ContainerAgentConfig"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+
+<p>ContainerAgentConfig is a configuration for a specific container in a workload.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the container to which this configuration applies.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>boolean flag to indicate if the agent should be enabled for this container.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentEnabledReason</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentEnabledReason"><code>AgentEnabledReason</code></a>
+</td>
+<td>
+   <p>An enum reason for the agent injection decision.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentEnabledMessage</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>free text message to provide more information about the instrumentation decision.
+can be left empty if reason is self-explanatory.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podManifestInjectionOptional</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>set to true if the agent used in this container can be injected without pod manifest changes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistroName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the otel distribution to use for this container.
+if the name is empty, this container should not be instrumented.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>distroParams</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <p>Additional parameters to the distro that controls how it's being applied.
+Keys are parameter names (like &quot;libc&quot;) and values are the value to use for that parameter (glibc / musl)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>envInjectionMethod</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#EnvInjectionDecision"><code>common.EnvInjectionDecision</code></a>
+</td>
+<td>
+   <p>What method to use for injecting the agent environment variables (just those covered by the loader (PYTHONPATH, JAVA_TOOLS_OPTIONS, NODE_OPTIONS))
+Can be either &quot;loader&quot; or &quot;pod-manifest&quot;.
+The injection should still check the actual values in the container manifest before injecting.
+Nil means that this container should not have env injection (agent should not be injected, or distro does not specify &quot;loader&quot; injection envs).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>traces</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentTracesConfig"><code>AgentTracesConfig</code></a>
+</td>
+<td>
+   <p>Each enabled signal must be set with a non-nil value (even if the config content is empty).
+nil means that the signal is disabled and should not be instrumented/collected by the agent.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>metrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentMetricsConfig"><code>AgentMetricsConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>logs</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AgentLogsConfig"><code>AgentLogsConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `ContainerOverride` <a id="odigos-io-v1alpha1-ContainerOverride"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+- [SourceSpec](#odigos-io-v1alpha1-SourceSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the container to override.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtimeInfo</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-RuntimeDetailsByContainer"><code>RuntimeDetailsByContainer</code></a>
+</td>
+<td>
+   <p>RuntimeInfo to use for agent enabling.
+If set for a container, the automatic detection will not be used for this container,
+and the distro to use will be calculated based on this value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistroName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>select one specific otel distro to use for this container.
+the selected distro must match the programming language and any constraints of the distro.
+if the programmin language is incorrect, the runtime info can be overridden to match</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `CostReductionRule` <a id="odigos-io-v1alpha1-CostReductionRule"></a>
+    
+
+**Appears in:**
+
+- [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sourceScopes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SourcesScope"><code>[]SourcesScope</code></a>
+</td>
+<td>
+   <p>limit this rule to specific sources (by name, namespace, language, etc.)
+an empty list will match any source.
+if multiple items are set, the operation match if any one matches
+this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-OperationMatcher"><code>OperationMatcher</code></a>
+</td>
+<td>
+   <p>limit this rule to specific operations.
+for example: specific endpoint or kafka topic.
+this field is optional, and if not set, the rule will be applied to all operations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>percentageAtMost</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>sampling percentage for cost reduction.
+this field is required.
+the final sampling percentage for traces that match this rule
+will be the highest possible, but at most this value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>optional free-form text field that allows you to attach notes
+for future context and maintenance.
+users can write why this rule was added, observations, document considerations, etc.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `DestinationMetricsSettings` <a id="odigos-io-v1alpha1-DestinationMetricsSettings"></a>
+    
+
+**Appears in:**
+
+- [DestinationSpec](#odigos-io-v1alpha1-DestinationSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>spanMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>following settings enables/disables specific metric sources
+true - collect and send this metric source
+false - do not collect and send this metric source
+nil - use the default setting (from destination manifest, or cluster global setting)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hostMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>kubeletStatsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>serviceGraphEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>odigosOwnMetricsEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>agentsTelemetryEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `DestinationSpec` <a id="odigos-io-v1alpha1-DestinationSpec"></a>
+    
+
+**Appears in:**
+
+- [Destination](#odigos-io-v1alpha1-Destination)
+
+<p>DestinationSpec defines the desired state of Destination</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>type</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#DestinationType"><code>common.DestinationType</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>destinationName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>data</code> <B>[Required]</B>
+</td>
+<td>
+<code>map[string]string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#localobjectreference-v1-core"><code>core/v1.LocalObjectReference</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>metricsSettings</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-DestinationMetricsSettings"><code>DestinationMetricsSettings</code></a>
+</td>
+<td>
+   <p>MetricsSettings defines the metrics settings for this destination.
+ignored if destination does not support metrics or metrics are not enabled in signals</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sourceSelector</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SourceSelector"><code>SourceSelector</code></a>
+</td>
+<td>
+   <p>SourceSelector defines which sources can send data to this destination.
+If not specified, defaults to &quot;all&quot;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `DestinationStatus` <a id="odigos-io-v1alpha1-DestinationStatus"></a>
+    
+
+**Appears in:**
+
+- [Destination](#odigos-io-v1alpha1-Destination)
+
+<p>DestinationStatus defines the observed state of Destination</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a destination's current state.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `EnvVar` <a id="odigos-io-v1alpha1-EnvVar"></a>
+    
+
+**Appears in:**
+
+- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>value</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `HeadSamplingConfig` <a id="odigos-io-v1alpha1-HeadSamplingConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
+
+<p>HeadSamplingConfig is a set of attribute rules.
+The first attribute rule that evaluates to true is used to determine the sampling decision based on its fraction.</p>
+<p>If none of the rules evaluate to true, the fallback fraction is used to determine the sampling decision.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>attributesAndSamplerRules</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-AttributesAndSamplerRule"><code>[]AttributesAndSamplerRule</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>fallbackFraction</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>Used as a fallback if all rules evaluate to false,
+it may be empty - in this case the default value will be 1 - all spans are sampled.
+it should be a float value in the range [0, 1] - the fraction of spans to sample.
+a value of 0 means no spans are sampled if none of the rules evaluate to true.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `HeadersCollectionConfig` <a id="odigos-io-v1alpha1-HeadersCollectionConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+
+<p>HeadersCollectionConfig represents configuration for HTTP headers collection.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>httpHeaderKeys</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>Limit HTTP headers collection to specific header keys.
+if unset, no HTTP headers will be collected.
+HTTP headers cannot be collected as wildcard, to avoid leaking sensitive information.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `HighlyRelevantOperation` <a id="odigos-io-v1alpha1-HighlyRelevantOperation"></a>
+    
+
+**Appears in:**
+
+- [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
+
+<p>define operations (spans) with high observability value.
+if found anywhere in the trace, the entire trace will be kept
+regaradless of any cost reduction rules.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sourceScopes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SourcesScope"><code>[]SourcesScope</code></a>
+</td>
+<td>
+   <p>limit the operation to specific sources.
+an empty list will match any source.
+if multiple items are set, the operation match if any one matches
+this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>error</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if &quot;Error&quot; is set to true, only spans with SpanStatus set to &quot;Error&quot; are considered</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>durationAtLeastMs</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>if Duration is set, only operations with duration in milli seconds larger then this value are considered</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-OperationMatcher"><code>OperationMatcher</code></a>
+</td>
+<td>
+   <p>optionally, limit this rule to specific operations.
+for example: specific endpoint or kafka topic.
+this field is optional, and if not set, the rule will be applied to all operations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>percentageAtLeast</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>traces that contains this operation will be sampled by at least this percentage.
+if unset, 100% of such the traces will be sampled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>optional free-form text field that allows you to attach notes
+for future context and maintenance.
+users can write why this rule was added, observations, document considerations, etc.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `HttpServerOperationMatcher` <a id="odigos-io-v1alpha1-HttpServerOperationMatcher"></a>
+    
+
+**Appears in:**
+
+- [OperationMatcher](#odigos-io-v1alpha1-OperationMatcher)
+
+<p>match only http server spans for a specific endpoint.
+user can specify route and method to match, and limit a sampling instruction to only this operation.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>route</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>a specific exact match http route</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>routePrefix</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>any route that starts with a specific prefix</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>method</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>optionally limit to specific http method</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `IdGeneratorConfig` <a id="odigos-io-v1alpha1-IdGeneratorConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+
+<p>id generator configuration for the traces</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>random</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-IdGeneratorRandomConfig"><code>IdGeneratorRandomConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>timedWall</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-IdGeneratorTimedWallConfig"><code>IdGeneratorTimedWallConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `IdGeneratorRandomConfig` <a id="odigos-io-v1alpha1-IdGeneratorRandomConfig"></a>
+    
+
+**Appears in:**
+
+- [IdGeneratorConfig](#odigos-io-v1alpha1-IdGeneratorConfig)
+
+<p>random id generator is the default, and most common.
+it creates span ids and trace ids using random bytes.
+It has no configuration.</p>
+
+
+
+## `IdGeneratorTimedWallConfig` <a id="odigos-io-v1alpha1-IdGeneratorTimedWallConfig"></a>
+    
+
+**Appears in:**
+
+- [IdGeneratorConfig](#odigos-io-v1alpha1-IdGeneratorConfig)
+
+<p>trace id includes timestamp, source id byte, and random number bytes.
+this id generator can be leveraged by databases to do efficient indexing.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sourceId</code> <B>[Required]</B>
+</td>
+<td>
+<code>byte</code>
+</td>
+<td>
+   <p>sourceId is a number between 0-255 (8 bits) written into the 8th byte of the trace id.
+if timedWall is specified, the sourceId is required.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationConfigSpec` <a id="odigos-io-v1alpha1-InstrumentationConfigSpec"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
+
+<p>Config for the OpenTelemeetry SDKs that should be applied to a workload.
+The workload is identified by the owner reference</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>serviceName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>the service.name property is used to populate the <code>service.name</code> resource attribute in the telemetry generated by this workload</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentInjectionEnabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>determines if odigos should inject agents to pods of this workload.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podManifestInjectionOptional</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>true if all containers with agent injection enabled in this source
+can be enabled without pod manifest changes.
+if false, at least one container requires pod manifest changes to enable agent injection.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containers</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ContainerAgentConfig"><code>[]ContainerAgentConfig</code></a>
+</td>
+<td>
+   <p>configuration for each instrumented container in the workload</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containersOverrides</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ContainerOverride"><code>[]ContainerOverride</code></a>
+</td>
+<td>
+   <p>will always list all containers of this workload by name,
+and override data in case it is configured on the source.
+this peoperty can be used to know all container names in the workload, even if other controllers did not yet run.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containerOverridesHash</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>An hash of the containers overrides, used to determine if the overrides have changed for event filtering.
+this is updated only when the overrides are changed, and not when some other change in the source occurs.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentsMetaHash</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>this hash is used to determine the deployment of the agents.
+e.g. when the distro for container changes, or it's compatibility version,
+or something else that requires rollout, the hash change will indicate that.
+if the hash is empty, it means that no agent should be enabled in any pod container.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>agentsMetaHashChangedTime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>The last time at which the agents meta hash value was changed.
+Pods created before this time may not be in alignment with the AgentsMetaHash.
+e.g. can lack the odigos label, or have a different value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sdkConfigs</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SdkConfig"><code>[]SdkConfig</code></a>
+</td>
+<td>
+   <p>Configuration for the OpenTelemetry SDKs that this workload should use.
+The SDKs are identified by the programming language they are written in.
+TODO: consider adding more granular control over the SDKs, such as community/enterprise, native/ebpf.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationConfigStatus` <a id="odigos-io-v1alpha1-InstrumentationConfigStatus"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfig](#odigos-io-v1alpha1-InstrumentationConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>runtimeDetailsByContainer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-RuntimeDetailsByContainer"><code>[]RuntimeDetailsByContainer</code></a>
+</td>
+<td>
+   <p>Capture Runtime Details for the workloads that this CR applies to.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a InstrumentationConfig's current state.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>workloadRolloutHash</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>This hash is recorded only after the rollout took place.
+it allows us to determine if the workload needs to be rollout based on previous rollout and the current config.
+if this field is different than the spec.AgentsDeploymentHash it means rollout is needed or not yet updated.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>rollbackOccurred</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Check if rollback happened to an application</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instrumentationTime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <p>This time recorded only after the rollout took place.
+This allows us to determine whether a crashing application should be rolled back or not</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>podsManifestInjectionStatus</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-PodsManifestInjectionStatus"><code>PodsManifestInjectionStatus</code></a>
+</td>
+<td>
+   <p>Represents the status of odigos MANIFEST injection to existing pods template.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationInstanceSpec` <a id="odigos-io-v1alpha1-InstrumentationInstanceSpec"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>stores the name of the container in the pod where the SDK is running.
+The pod details can be found as the owner reference on the CR.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationInstanceStatus` <a id="odigos-io-v1alpha1-InstrumentationInstanceStatus"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationInstance](#odigos-io-v1alpha1-InstrumentationInstance)
+
+<p>InstrumentationInstanceStatus defines the observed state of InstrumentationInstance
+If the instrumentation is not active, this CR should be deleted</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>identifyingAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-Attribute"><code>[]Attribute</code></a>
+</td>
+<td>
+   <p>Attributes that identify the SDK and are reported as resource attributes in the generated telemetry.
+One can identify if an arbitrary telemetry is generated by this SDK by checking those resource attributes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nonIdentifyingAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-Attribute"><code>[]Attribute</code></a>
+</td>
+<td>
+   <p>Attributes that are not reported as resource attributes but useful to describe characteristics of the SDK.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>healthy</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Healthy true means that the odigos agent has started the SDK, and there are no errors. User can expect telemetry to be generated.
+Healthy false means that the agent has stopped and telemetry data is not expected to be generated.
+Healthy nil means that the agent did not report any health status yet (prefer to always report health status).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>message</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>message is a human readable message indicating details about the SDK general health.
+can be omitted if healthy is true</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reason</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>reason contains a programmatic identifier indicating the reason for the component status.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastStatusTime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>components</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationLibraryStatus"><code>[]InstrumentationLibraryStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationLibraryConfig` <a id="odigos-io-v1alpha1-InstrumentationLibraryConfig"></a>
+    
+
+**Appears in:**
+
+- [SdkConfig](#odigos-io-v1alpha1-SdkConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>libraryId</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationLibraryId"><code>InstrumentationLibraryId</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationLibraryConfigTraces"><code>InstrumentationLibraryConfigTraces</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>payloadCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>codeAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+</td>
+<td>
+   <p>code attributes configuration for a specific library.
+if not set, the default code attributes configuration for the workload will be used.
+if set, but internal fields are empty, those fields will be used from the default configuration.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headersCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationLibraryConfigTraces` <a id="odigos-io-v1alpha1-InstrumentationLibraryConfigTraces"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationLibraryConfig](#odigos-io-v1alpha1-InstrumentationLibraryConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>enabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Whether the instrumentation library is enabled to record traces.
+When false, it is expected that the instrumentation library does not produce any spans regardless of any other configuration.
+When true, the instrumentation library should produce spans according to the other configuration options.
+If not specified, the default value for this signal should be used (whether to enable libraries by default or not).</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationLibraryId` <a id="odigos-io-v1alpha1-InstrumentationLibraryId"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationLibraryConfig](#odigos-io-v1alpha1-InstrumentationLibraryConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>libraryName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the instrumentation library</p>
+<ul>
+<li>Node.js: The name of the npm package: <code>@opentelemetry/instrumentation-&lt;name&gt;</code></li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<code>spanKind</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#SpanKind"><code>common.SpanKind</code></a>
+</td>
+<td>
+   <p>SpanKind is only supported by Golang and will be ignored for any other SDK language.
+In Go, SpanKind is used because the same instrumentation library can be utilized for different span kinds (e.g., client/server).</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationLibraryStatus` <a id="odigos-io-v1alpha1-InstrumentationLibraryStatus"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationInstanceStatus](#odigos-io-v1alpha1-InstrumentationInstanceStatus)
+
+<p>InstrumentationLibraryStatus defines the observed state of an InstrumentationLibrary.
+if a library is not active/disable, it should not be included in the status</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>for example (&quot;net/http&quot;, &quot;@opentelemetry/instrumentation-redis&quot;)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>type</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationLibraryType"><code>InstrumentationLibraryType</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>identifyingAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-Attribute"><code>[]Attribute</code></a>
+</td>
+<td>
+   <p>Attributes that identify the component.
+The combination of (Name, Type, IdentifyingAttributes) must be unique.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nonIdentifyingAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-Attribute"><code>[]Attribute</code></a>
+</td>
+<td>
+   <p>Attributes that do not necessarily identify the component but help describe
+its characteristics.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>healthy</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>message</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>message is a human readable message indicating details about the component health.
+can be omitted if healthy is true</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>reason</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>reason contains a programmatic identifier indicating the reason for the SDK status.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastStatusTime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#time-v1-meta"><code>meta/v1.Time</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationLibraryType` <a id="odigos-io-v1alpha1-InstrumentationLibraryType"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [InstrumentationLibraryStatus](#odigos-io-v1alpha1-InstrumentationLibraryStatus)
+
+
+
+## `InstrumentationRuleSpec` <a id="odigos-io-v1alpha1-InstrumentationRuleSpec"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>ruleName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Allows you to attach a meaningful name to the rule for convenience. Odigos does not use or assume any meaning from this field.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>A free-form text field that allows you to attach notes regarding the rule for convenience. For example: why it was added. Odigos does not use or assume any meaning from this field.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>A boolean field allowing to temporarily disable the rule, but keep it around for future use</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>workloads</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]github.com/odigos-io/odigos/api/k8sconsts.PodWorkload</code>
+</td>
+<td>
+   <p>An array of workload objects (name, namespace, kind) to which the rule should be applied. If not specified, the rule will be applied to all workloads. empty array will render the rule inactive.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instrumentationLibraries</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-[]github-com-odigos-io-odigos-api-odigos-v1alpha1-InstrumentationLibraryGlobalId"><code>[]github.com/odigos-io/odigos/api/odigos/v1alpha1.InstrumentationLibraryGlobalId</code></a>
+</td>
+<td>
+   <p>For fine grained control, the user can specify the instrumentation library to use.
+One can specify same rule for multiple languages and libraries at the same time.
+If nil, all instrumentation libraries will be used.
+If empty, no instrumentation libraries will be used.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>payloadCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+</td>
+<td>
+   <p>Allows to configure payload collection aspects for different types of payloads.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelSdks</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelSdks"><code>instrumentationrules.OtelSdks</code></a>
+</td>
+<td>
+   <p>Deprecated: use OtelDistros instead.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelDistros</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#OtelDistros"><code>instrumentationrules.OtelDistros</code></a>
+</td>
+<td>
+   <p>Set the otel distros to use instead of the defaults.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>codeAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+</td>
+<td>
+   <p>Configure which code attributes should be recorded as span attributes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headersCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+</td>
+<td>
+   <p>Allows to configure the collection of http headers for different types of payloads.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>Configure the tracing configuration for the library.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>customInstrumentations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+</td>
+<td>
+   <p>Add custom instrumentation probes</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headSamplingFallbackFraction</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HeadSamplingFallbackFraction"><code>instrumentationrules.HeadSamplingFallbackFraction</code></a>
+</td>
+<td>
+   <p>Configure general fraction of traces to record if none of the rules evaluate to true.
+this can help in reducing very noisy and heavy traffic services.
+note that traces will be dropped regardless of thier attributes/errors/importance.
+@deprecated: use odigos config to set this value instead.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `InstrumentationRuleStatus` <a id="odigos-io-v1alpha1-InstrumentationRuleStatus"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationRule](#odigos-io-v1alpha1-InstrumentationRule)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a instrumentationrule's current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `KafkaOperationMatcher` <a id="odigos-io-v1alpha1-KafkaOperationMatcher"></a>
+    
+
+**Appears in:**
+
+- [OperationMatcher](#odigos-io-v1alpha1-OperationMatcher)
+
+<p>match a kafka consumer or producer operation for a specific topic.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>kafkaTopic</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>the topic name to match.
+if left empty, all topics are matched.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `NoisyOperationHttpClientMatcher` <a id="odigos-io-v1alpha1-NoisyOperationHttpClientMatcher"></a>
+    
+
+**Appears in:**
+
+- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
+
+<p>match http client operations for noisy operations matching (only attributes available at span start time)
+can be used to filter out outgoing http requests for other agents calling home or exporting data.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>serverAddress</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match server address exactly (e.g. collector.my.vendor.com)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>urlPath</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match url path exactly (e.g. /api/v1/metrics)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>method</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match method exactly, can be empty to match any method</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `NoisyOperationHttpServerMatcher` <a id="odigos-io-v1alpha1-NoisyOperationHttpServerMatcher"></a>
+    
+
+**Appears in:**
+
+- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
+
+<p>match http server operations for noisy operations matching (only attributes available at span start time)</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>route</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match route exactly</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>routePrefix</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match preffix of route</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>method</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match method exactly, can be empty to match any method</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `NoisyOperations` <a id="odigos-io-v1alpha1-NoisyOperations"></a>
+    
+
+**Appears in:**
+
+- [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
+
+<p>endpoints which are considered &quot;noise&quot;, and provide no or very little observability value.
+these traces should not be collected at all, or dropped aggresevly.
+motivation is data sentization and performance improvment (even if cost is not a factor)</p>
+<p>examples:</p>
+<ul>
+<li>health-checks (readiness and liveness probes)</li>
+<li>metrics scrape endpoints (promethues /metrics endpoint)</li>
+<li>other agents calling home (outgoing http requests to collector.my.vendor.com)</li>
+</ul>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sourceScopes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SourcesScope"><code>[]SourcesScope</code></a>
+</td>
+<td>
+   <p>limit this rule to specific sources (by name, namespace, language, etc.)
+for example: if &quot;other agent&quot; rule for noisty operation is relevant only in java,
+limit this rule by setting source scope to java and prevent other languages from being affected
+if the list is empty - all sources are matched.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpServer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-NoisyOperationHttpServerMatcher"><code>NoisyOperationHttpServerMatcher</code></a>
+</td>
+<td>
+   <p>match http server operations for noisy operations matching (only attributes available at span start time)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpClient</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-NoisyOperationHttpClientMatcher"><code>NoisyOperationHttpClientMatcher</code></a>
+</td>
+<td>
+   <p>match http client operations for noisy operations matching (only attributes available at span start time)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>percentageAtMost</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>sampling percentage for noisy operations.
+if unset, 0% of such the traces will be collected.
+this percentage has &quot;at most&quot; semantics - the final sampling percentage for traces that match this rule
+will be the highest possible, but at most this value.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>optional free-form text field that allows you to attach notes
+for future context and maintenance.
+users can write why this rule was added, observations, document considerations, etc.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `OdigosOwnMetricsSettings` <a id="odigos-io-v1alpha1-OdigosOwnMetricsSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+<p>configuration for collecting and exporting odigos own metrics.
+e.g. metrics about odigos components, and not about the user's application.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>sendToMetricsDestinations</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if true, odigos will send all the metrics it collects about itself to the metrics pipeline,
+which will make them available to the metrics destinations.
+users can troubleshoot odigos itself by monitoring these metrics in their existing systems,
+and create their own dashboards, alerting, and more.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>sendToOdigosMetricsStore</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if true, odigos will send all the metrics it collects about itself to the odigos metrics store,
+which is available to odigos UI.
+it can help in presenting a consistent view of odigos itself, without relying on user system and integrations.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>interval</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>time interval for flusing metrics (format: 15s, 1m etc). defaults: 10s</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `OperationMatcher` <a id="odigos-io-v1alpha1-OperationMatcher"></a>
+    
+
+**Appears in:**
+
+- [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
+- [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
+
+<p>match operations for tail sampling with the full context of the span.
+this is used by sampling rules to limit it only to specific operations.
+if the rule matches a sapn, the behavior is determined by the rule itself.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>httpServer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HttpServerOperationMatcher"><code>HttpServerOperationMatcher</code></a>
+</td>
+<td>
+   <p>match http server operations in a generic way.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kafkaConsumer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-KafkaOperationMatcher"><code>KafkaOperationMatcher</code></a>
+</td>
+<td>
+   <p>match kafka consumer operations (consume spans)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kafkaProducer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-KafkaOperationMatcher"><code>KafkaOperationMatcher</code></a>
+</td>
+<td>
+   <p>match kafka producer operations (produce spans)</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `Operator` <a id="odigos-io-v1alpha1-Operator"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [AttributeCondition](#odigos-io-v1alpha1-AttributeCondition)
+
+
+
+## `OtherAgent` <a id="odigos-io-v1alpha1-OtherAgent"></a>
+    
+
+**Appears in:**
+
+- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `PodsManifestInjectionStatus` <a id="odigos-io-v1alpha1-PodsManifestInjectionStatus"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigStatus](#odigos-io-v1alpha1-InstrumentationConfigStatus)
+
+<p>represents the status of odigos MANIFEST injection to existing pods template.
+each pod can be in one of 3 states: injected and up-to-date, injected and out-of-date, or not injected.
+actual agent in pod container can be injected or not regardless of the pod manifest injection status.
+status only shows if pods exists from each category and not count, to avoid frequent (noisy/expensive) updates in steady state</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>hasInjectedUpToDatePods</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if the source has any pods which are using the latest agent deployment setup.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hasInjectedOutOfDatePods</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if the source has any pods which are using an outdated agent deployment setup.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>hasUninjectedPods</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if the source has any pods which do not have the odigos agent injected.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ProcessingState` <a id="odigos-io-v1alpha1-ProcessingState"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [RuntimeDetailsByContainer](#odigos-io-v1alpha1-RuntimeDetailsByContainer)
+
+
+
+## `ProcessorSpec` <a id="odigos-io-v1alpha1-ProcessorSpec"></a>
+    
+
+**Appears in:**
+
+- [Processor](#odigos-io-v1alpha1-Processor)
+
+<p>ProcessorSpec defines the an OpenTelemetry Collector processor in odigos telemetry pipeline</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>type</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>type of the processor (batch, attributes, etc).
+this field is only the type, not it's instance name in the collector configuration yaml</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>processorName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>this name is solely for the user convenience, to attach a meaningful name to the processor.
+odigos must not assume any semantics from this name.
+odigos cannot assume this name is unique, not empty, exclude spaces or dots, limited in length, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>user can attach notes to the processor, to document its purpose, usage, etc.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>disable is a flag to enable or disable the processor.
+if the processor is disabled, it will not be included in the collector configuration yaml.
+this allows the user to keep the processor configuration in the CR, but disable it temporarily.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <p>signals can be used to control which observability signals are processed by the processor.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectorRoles</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CollectorsGroupRole"><code>[]CollectorsGroupRole</code></a>
+</td>
+<td>
+   <p>control which collector roles in odigos pipeline this processor is attached to.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>orderHint</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>control the order of processors.
+a processor with lower order hint value will be placed before other processors with higher value.
+if 2 processors have the same value, the order is arbitrary.
+if the value is missing (or 0) the processor can be placed anywhere in the pipeline</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>processorConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime/#RawExtension"><code>k8s.io/apimachinery/pkg/runtime.RawExtension</code></a>
+</td>
+<td>
+   <p>this it the configuration of the opentelemetry collector processor component with the type specified in 'type'.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ProcessorStatus` <a id="odigos-io-v1alpha1-ProcessorStatus"></a>
+    
+
+**Appears in:**
+
+- [Processor](#odigos-io-v1alpha1-Processor)
+
+<p>ProcessorStatus defines the observed state of the processor</p>
+
+
+
+## `RuntimeDetailsByContainer` <a id="odigos-io-v1alpha1-RuntimeDetailsByContainer"></a>
+    
+
+**Appears in:**
+
+- [ContainerOverride](#odigos-io-v1alpha1-ContainerOverride)
+- [InstrumentationConfigStatus](#odigos-io-v1alpha1-InstrumentationConfigStatus)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>language</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ProgrammingLanguage"><code>common.ProgrammingLanguage</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>runtimeVersion</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>envVars</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-EnvVar"><code>[]EnvVar</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>otherAgent</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-OtherAgent"><code>OtherAgent</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>libCType</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#LibCType"><code>common.LibCType</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>secureExecutionMode</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Indicates whether the target process is running is secure-execution mode.
+nil means we were unable to determine the secure-execution mode.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>criErrorMessage</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>CriErrorMessage is set if the value in EnvFromContainerRuntime was not computed correctly and cannot be used safely.
+Sometimes, even if CRI check failed, it is possible to tell that relevant env vars are not coming from container runtime.
+Thus, this field is set only when there is:</p>
+<ul>
+<li>Actual CRI check failed</li>
+<li>The observed environment variables might come from container runtime</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<code>envFromContainerRuntime</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-EnvVar"><code>[]EnvVar</code></a>
+</td>
+<td>
+   <p>Holds the environment variables retrieved from the container runtime.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtimeUpdateState</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ProcessingState"><code>ProcessingState</code></a>
+</td>
+<td>
+   <p>A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SamplingSpec` <a id="odigos-io-v1alpha1-SamplingSpec"></a>
+    
+
+**Appears in:**
+
+- [Sampling](#odigos-io-v1alpha1-Sampling)
+
+<p>define sampling rules.
+the rules can be defined as one or multiple objects in kubernetes,
+and are all joined together to form the global sampling rules.
+odigos users can group rules based on whatever criteria that makes sense for them,
+for example - by team, by client, by usecase, admin-policy, etc.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>give these sampling rules a name for display, easier identification and reference.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>a free-form text field that allows you to attach notes regardinag the rule for convenience.
+Odigos does not use or assume any meaning from this field.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if set to true, the sampling rules will be disabled,
+they will not be taken into account for any sampling decisions.
+useful if you want to temporarily disable the rules but re-enable them later,</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>noisyOperations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-NoisyOperations"><code>[]NoisyOperations</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>highlyRelevantOperations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HighlyRelevantOperation"><code>[]HighlyRelevantOperation</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>costReductionRules</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CostReductionRule"><code>[]CostReductionRule</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `SamplingStatus` <a id="odigos-io-v1alpha1-SamplingStatus"></a>
+    
+
+**Appears in:**
+
+- [Sampling](#odigos-io-v1alpha1-Sampling)
+
+<p>SamplingStatus defines the observed state of Sampling.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a Sampling's current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SdkConfig` <a id="odigos-io-v1alpha1-SdkConfig"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>language</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ProgrammingLanguage"><code>common.ProgrammingLanguage</code></a>
+</td>
+<td>
+   <p>The language of the SDK being configured</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>instrumentationLibraryConfigs</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-InstrumentationLibraryConfig"><code>[]InstrumentationLibraryConfig</code></a>
+</td>
+<td>
+   <p>configurations for the instrumentation libraries the the SDK should use</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headSamplerConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadSamplingConfig"><code>HeadSamplingConfig</code></a>
+</td>
+<td>
+   <p>HeadSamplingConfig is a set sampling rules.
+This config currently only applies to root spans.
+In the Future we might add another level of configuration base on the parent span (ParentBased Sampling)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>payloadCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#PayloadCollection"><code>instrumentationrules.PayloadCollection</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>codeAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CodeAttributes"><code>instrumentationrules.CodeAttributes</code></a>
+</td>
+<td>
+   <p>default configuration for collecting code attributes, in case the instrumentation library does not provide a configuration.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>headersCollection</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#HttpHeadersCollection"><code>instrumentationrules.HttpHeadersCollection</code></a>
+</td>
+<td>
+   <p>default configuration for collecting http headers, in case the instrumentation library does not provide a configuration.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>traceConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#TraceConfig"><code>instrumentationrules.TraceConfig</code></a>
+</td>
+<td>
+   <p>default configuration for library tracing.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>customInstrumentations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules#CustomInstrumentations"><code>instrumentationrules.CustomInstrumentations</code></a>
+</td>
+<td>
+   <p>list of the custom instrumentation probes the SDK should use.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>runtimeMetrics</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#MetricsSourceAgentRuntimeMetricsConfiguration"><code>common.MetricsSourceAgentRuntimeMetricsConfiguration</code></a>
+</td>
+<td>
+   <p>configuration for runtime metrics that the SDK should generate.
+these are language-specific metrics like JVM metrics for Java, CLR metrics for .NET, etc.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ServiceGraphSettings` <a id="odigos-io-v1alpha1-ServiceGraphSettings"></a>
+    
+
+**Appears in:**
+
+- [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
+
+
+
+## `SourceSelector` <a id="odigos-io-v1alpha1-SourceSelector"></a>
+    
+
+**Appears in:**
+
+- [DestinationSpec](#odigos-io-v1alpha1-DestinationSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>namespaces</code>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>If a namespace is specified, all workloads (sources) within that namespace are allowed to send data.
+Example:
+namespaces: [&quot;default&quot;, &quot;production&quot;]
+This means the destination will receive data from all sources in &quot;default&quot; and &quot;production&quot; namespaces.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dataStreams</code>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>Workloads (sources) are assigned to Datastreams via labels (odigos.io/data-stream: true), allowing a more flexible selection mechanism.
+Example:
+dataStreams: [&quot;backend&quot;, &quot;monitoring&quot;]
+This means the destination will receive data only from sources labeled with &quot;backend&quot; or &quot;monitoring&quot;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SourceSpec` <a id="odigos-io-v1alpha1-SourceSpec"></a>
+    
+
+**Appears in:**
+
+- [Source](#odigos-io-v1alpha1-Source)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>workload</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#PodWorkload"><code>k8sconsts.PodWorkload</code></a>
+</td>
+<td>
+   <p>Workload represents the workload or namespace to be instrumented.
+This field is required upon creation and cannot be modified.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disableInstrumentation</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>DisableInstrumentation excludes this workload from auto-instrumentation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>otelServiceName</code>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>OtelServiceName determines the &quot;service.name&quot; resource attribute which will be reported by the instrumentations of this source.
+If not set, the workload name will be used.
+It is not valid for namespace sources.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>containerOverrides</code>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ContainerOverride"><code>[]ContainerOverride</code></a>
+</td>
+<td>
+   <p>Specify specific override values for containers in a workload source.
+Not valid for namespace sources.
+Can be used to set the runtime info in case the automatic detection fails or produce wrong results.
+Containers are identified by their names.
+All containers not listed will retain their default behavior.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>matchWorkloadNameAsRegex</code>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>MatchWorkloadNameAsRegex indicates that the workload name should be matched using regex.
+When true, spec.workload.name is treated as a regular expression pattern.
+This allows matching multiple workloads with a single Source CRD.
+Not valid for namespace sources.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SourceStatus` <a id="odigos-io-v1alpha1-SourceStatus"></a>
+    
+
+**Appears in:**
+
+- [Source](#odigos-io-v1alpha1-Source)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a source's current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SourcesScope` <a id="odigos-io-v1alpha1-SourcesScope"></a>
+    
+
+**Appears in:**
+
+- [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
+- [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
+- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
+
+<p>define conditions to match specific sources (containers) managed by odigos.
+a source container matches, if ALL non empty fields match (AND semantics)</p>
+<p>common patterns:</p>
+<ul>
+<li>Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName) - all containers (usually there is only one with agent injection)</li>
+<li>Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName) - only this container</li>
+<li>All services in a kubernetes namespace (WorkloadNamespace) - all containers in all sources in the namespace</li>
+<li>All services implemented in a specific programming language (WorkloadLanguage) - all container which are running odigos agent for this language</li>
+</ul>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>workloadName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>workloadKind</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/api/k8sconsts#WorkloadKind"><code>k8sconsts.WorkloadKind</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>workloadNamespace</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>workloadLanguage</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ProgrammingLanguage"><code>common.ProgrammingLanguage</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `SpanRenamerConfig` <a id="odigos-io-v1alpha1-SpanRenamerConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>scopeRules</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SpanRenamerScopeRules"><code>[]SpanRenamerScopeRules</code></a>
+</td>
+<td>
+   <p>list of scope rules to be applied to the span name.
+all options are always tried, regardless of whether the previous options have matched or not.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `SpanRenamerScopeRules` <a id="odigos-io-v1alpha1-SpanRenamerScopeRules"></a>
+    
+
+**Appears in:**
+
+- [SpanRenamerConfig](#odigos-io-v1alpha1-SpanRenamerConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>scopeName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>the name of the opentelemetry intrumentation scope which the renamed spans are written in.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>regexReplacements</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]actions.SpanRenamerRegexReplacement</code>
+</td>
+<td>
+   <p>list of regex replacements to be applied to the span name.
+all options are always tried, regardless of whether the previous options have matched or not.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `UrlTemplatizationConfig` <a id="odigos-io-v1alpha1-UrlTemplatizationConfig"></a>
+    
+
+**Appears in:**
+
+- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>templatizationRules</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <p>Rule is the template rule to be applied to URLs</p>
+</td>
+</tr>
+</tbody>
+</table>
+  

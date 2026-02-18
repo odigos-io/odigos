@@ -1,0 +1,98 @@
+import BetaWarning from '/snippets/shared/beta-warning.mdx';
+
+<BetaWarning />
+
+# Introduction
+Odigos supports Datastreams, a powerful feature that allows you to split telemetry sources into multiple logical streams. Each stream can be independently routed to different destinations and have specific actions applied—such as sampling, attribute enrichment, masking rules, and more.
+
+# Motivation
+There are many use cases for adopting Datastreams, including:
+
+1. **Cost optimization** - Route lower-priority services (like internal or backoffice apps) to more cost-effective destinations, such as Parquet files stored in S3.
+
+2. **Targeted processing** - Apply custom processing (e.g., sampling, enrichment) to only a subset of services.
+
+3. **Gradual migration** - Test a new destination on specific services before committing to a full migration.
+
+4. **Organizational segmentation** - Split data based on development teams, product areas, or environments.
+
+# Creating Datastreams
+
+<Tabs>
+
+<Tab title="UI">
+After [installing Odigos CLI](/setup/installation), run the following command to start the Odigos UI:
+```bash
+odigos ui
+```
+### In a new Odigos install
+You'll be taken to the Setup page. This is where your journey with Odigos begins, and you'll be asked to provide a few initial details:
+
+2. Provide a name for the Datastream
+3. Select the telemetry [Sources](/pipeline/sources/introduction) to include
+4. Choose the [destination(s)](/backends-overview) to send the data to
+5. Click **Done**
+
+### In an existing Odigos install
+You can create a new Datastream from the Overview page. Click the `+ NEW` button at the top-left (under the current Datastream views) and follow the same steps as in the setup phase.
+</Tab>
+
+<Tab title="Kubernetes Manifests">
+This example demonstrates how to configure `example-source` to send telemetry to `jaeger-example` through the `example` Datastream.
+
+1. Create or update a Source custom resource with the Datastream label, as described in the [linked documentation](/pipeline/sources/create#workload-source).
+
+*For example:*
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Source
+metadata:
+  name: example-source
+  namespace: default
+  labels:
+    odigos.io/data-stream-example: "true"
+spec:
+  workload:
+    name: frontend
+    namespace: default
+    kind: Deployment
+```
+2. Create or Update a [destination](/backends-overview) custom resource spec with the Datastream source selector.
+
+
+*For example:*
+```yaml
+  sourceSelector:
+    dataStreams:
+    - example
+```
+
+Now let's take [Jaeger](/backends/jaeger) as complete example here:
+
+```yaml
+apiVersion: odigos.io/v1alpha1
+kind: Destination
+metadata:
+  name: jaeger-example
+  namespace: odigos-system
+spec:
+  data:
+    JAEGER_URL: <Jaeger OTLP gRPC Endpoint>
+  destinationName: jaeger
+  signals:
+  - TRACES
+  type: jaeger
+  sourceSelector:
+    dataStreams:
+    - example
+```
+
+> 💡 Tip: Even if you configure datastreams via manifests, you can still view and manage them through the Odigos UI for better visibility.
+
+</Tab>
+</Tabs>
+
+# Caveats and Considerations
+1. **Trace integrity** - Distributed traces often span multiple services that participate in the same operation. If you assign these services to different datastreams, the trace will be broken across destinations. Each destination will only receive part of the trace, making it incomplete and harder to troubleshoot. To preserve trace integrity, keep all services involved in a single transaction within the same datastream.
+
+2. **Action support** - At present, actions defined in Odigos are applied globally to all streams. Stream-specific actions (e.g., custom sampling rules per datastream) are not yet supported but will be in a future release.

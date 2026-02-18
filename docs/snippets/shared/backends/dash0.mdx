@@ -1,0 +1,97 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/dash0.svg" alt="dash0" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ✅ Metrics
+  ✅ Logs
+</Accordion>
+
+- **DASH0_ENDPOINT** `string` : Dash0 OTLP gRPC Endpoint. The format is `host:port`. Host is required, located in Dash0 UI (OpenTelemetry Collector). Port is optional and defaults to the default OTLP gRPC port `4317`.
+  - This field is required
+- **DASH0_TOKEN** `string` : Dash0 Bearer Token. Located in Dash0 UI (OpenTelemetry Collector).
+  - This field is required
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Dash0` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `dash0.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: dash0-example
+      namespace: odigos-system
+    spec:
+      data:
+        DASH0_ENDPOINT: <Dash0 OTLP gRPC Endpoint>
+      destinationName: dash0
+      secretRef:
+        name: dash0-secret
+      signals:
+      - TRACES
+      - METRICS
+      - LOGS
+      type: dash0
+
+    ---
+
+    apiVersion: v1
+    data:
+      DASH0_TOKEN: <Base64 Dash0 Bearer Token>
+    kind: Secret
+    metadata:
+      name: dash0-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f dash0.yaml
+    ```
+  </Step>
+</Steps>

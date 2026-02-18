@@ -1,0 +1,89 @@
+import KernelVersion from '/snippets/shared/ebpf-kernel-version-note.mdx'
+
+## Kubernetes Version
+
+Odigos requires Kubernetes version 1.23.0 or higher.
+
+<KernelVersion />
+
+**What to expect if some nodes don't meet the Kernel requirement:**
+
+- eBPF Agents: If a node's kernel version is below 5.4.0, eBPF-based data collection will not be applied to workloads on that node. An error will appear in the UI for any source running on unsupported nodes, indicating that instrumentation was not possible.
+- Non-eBPF Agents: Non-eBPF-based agents are not affected by kernel version requirements and will run and instrument workloads on any Linux version.
+
+This allows users to maintain observability on nodes that meet the requirements without needing to upgrade all cluster nodes immediately.
+
+## Kubernetes Cluster Types
+
+- [Kind](https://kind.sigs.k8s.io)
+- [Minikube](https://minikube.sigs.k8s.io/docs/start)
+- [K3s](https://k3s.io)
+- [Red Hat OpenShift](https://catalog.redhat.com/software/container-stacks/detail/675201b3ade18c062e2efc0b) (see [how to install on OpenShift](/setup/installation-options#openshift-installation))
+- [Amazon Elastic Kubernetes Service (EKS)](https://aws.amazon.com/eks/)
+- [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine)
+- [Azure Kubernetes Service (AKS)](https://azure.microsoft.com/en-us/products/kubernetes-service)
+
+## Resource Requirements
+
+To achieve its functionality Odigos uses a set of Deployments and Daemonsets.
+
+### Cluster
+
+The following components runs as Deployment and request the following resources **(per pod)**:
+
+| Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|---------------|---------------|-------------|------------|----------|
+| odigos-autoscaler      | 64Mi         | 512Mi       | 10m       | 500m     |
+| odigos-instrumentor (2 replicas)       | 64Mi         | 512Mi       | 10m       | 500m     |
+| odigos-schedualer      | 64Mi         | 512Mi       | 10m       | 500m     |
+| odigos-ui | 64Mi         | 512Mi       | 10m       | 500m     |
+
+In addition, Odigos deploys OpenTelemetry Collector Deployment,
+with auto scaling (multiple replicas) and configurable resources requests and limits.
+The default values (unless overridden) are:
+
+| Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|---------------|---------------|-------------|------------|----------|
+| odigos-gateway      | 300Mi         | 300Mi       | 150m       | 300m     |
+
+Read more [here](/enterprise/pipeline/configuration).
+
+### Per Node
+
+2 Daemonsets are deployed on each node in the cluster and consumes resources as follows:
+
+- **odiglet** - Does not set requests and limits. it will consume resources as needed depending on the number of pods running on the node and the amount of data being recorded.
+- **odigos-data-collection** - cpu and memory limits and requests are set by default to:
+
+| Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|---------------|---------------|-------------|------------|----------|
+| odigos-data-collection | 150Mi         | 300Mi       | 150m       | 300m     |
+
+You can override these values by providing a custom configuration (read more [here](/enterprise/pipeline/configuration)).
+
+
+## Network Requirements
+
+<Warning>
+Ensure that any network-layer components are properly configured to allow the required connectivity between Odigos components. Improper configuration may impact the correct operation of Odigos.
+</Warning>
+To ensure proper operation of Odigos components and instrumented applications, the following network connectivity must be allowed inside the Kubernetes cluster:
+
+### Core Network Connectivity
+
+| Source | Destination Service | Ports | Purpose |
+|--------|----------------------|-------|---------|
+| Instrumented Application Pods | `odiglet-local` | `4320` | Retrieve instrumentation configuration from Odiglet |
+| Instrumented Application Pods | `odigos-data-collection-local-traffic` | `4317` (gRPC), `4318` (HTTP) | Export application telemetry data (OTLP protocol) |
+| Odiglet Pods | `odigos-data-collection-local-traffic` | `4318` | Export eBPF-collected telemetry data |
+
+
+### Network Layer Considerations
+
+In some environments, the following network components may affect traffic between these services:
+
+- Service meshes (e.g. Istio, Linkerd, Cilium, Consul)
+- HTTP proxies or egress gateways
+- Transparent proxies (corporate or cluster-level)
+- Network security appliances (WAFs, L7 firewalls, DPI systems)
+- Kubernetes NetworkPolicies

@@ -1,0 +1,45 @@
+## odigos sources
+
+Manage Odigos Sources in a cluster
+
+### Synopsis
+
+This command can be used to create, delete, or update Sources to configure workload or namespace auto-instrumentation
+
+### Examples
+
+```
+# Create a Source "foo-source" for deployment "foo" in namespace "default"
+odigos sources create foo-source --workload-kind=Deployment --workload-name=foo --workload-namespace=default -n default
+
+# Update all existing Sources in namespace "default" to disable instrumentation
+odigos sources update --disable-instrumentation -n default
+
+# Delete all Sources in group "mygroup"
+odigos sources delete --group mygroup --all-namespaces
+	
+```
+
+### Options
+
+```
+  -h, --help   help for sources
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes
+* [odigos sources create](/cli/odigos_sources_create)	 - Create an Odigos Source
+* [odigos sources delete](/cli/odigos_sources_delete)	 - Delete Odigos Sources
+* [odigos sources disable](/cli/odigos_sources_disable)	 - Disable a source for Odigos instrumentation.
+* [odigos sources enable](/cli/odigos_sources_enable)	 - Enable a source for Odigos instrumentation.
+* [odigos sources status](/cli/odigos_sources_status)	 - Show the status of all Odigos Sources
+* [odigos sources update](/cli/odigos_sources_update)	 - Update Odigos Sources

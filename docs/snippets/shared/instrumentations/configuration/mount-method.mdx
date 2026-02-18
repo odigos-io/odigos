@@ -1,0 +1,116 @@
+## Mount Method
+
+<Warning>
+This section is for advanced users and odigos administrators.
+
+It is recommended to use the default settings, unless you have specific requirements or run into an issue.
+</Warning>
+
+## Supported Mount Methods
+
+Odigos supports 3 mount methods, which can be used depending on the user preference, cluster policies, integration with existing tools, etc.
+
+### 1. VirtualDevice
+
+<Info>
+This is the default mount method
+</Info>
+
+#### Pod Manifest Additions
+
+For agents and languages that requires filesystem mounts, odigos webhook will add the following:
+
+- For each instrumented container in the pod spec, odigos will add a resource requirement under the `spec.containers[].resources` field:
+
+```yaml
+    resources:
+      limits:
+        instrumentation.odigos.io/generic: "1"
+      requests:
+        instrumentation.odigos.io/generic: "1"
+```
+
+#### Caveats
+
+- May sometimes not integrate well with node auto-scaling tools like [Karpenter](https://karpenter.sh/).
+- Odiglet daemonset needs to be running on a node for instrumented pods to be scheduled on that node.
+
+### 2. HostPath
+
+This method is an opt-in configuration option which can be used if the virtual device method is not suitable for your cluster.
+
+If it is supported in the cluster, it is preferred to use over the VirtualDevice method which requires odiglet component to run.
+
+**Enabling HostPath**
+
+- Profile: `odigos profile add mount-method-k8s-host-path`
+
+- Odigos CLI: `odigos install --set instrumentor.mountMethod=k8s-host-path`
+
+- Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-host-path`, or use helm cli `--set instrumentor.mountMethod=k8s-host-path` flag with helm upgrade.
+
+- Kubernetes Manifest: under the `odigos-configuration` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-host-path`.
+
+#### Pod Manifest Additions
+
+For agents and languages that requires filesystem mounts, odigos webhook will add the following:
+
+- Volume to the pod spec, under the `spec.volumes` field:
+
+```yaml
+  - hostPath:
+      path: /var/odigos
+      type: ""
+    name: odigos-agent
+```
+
+- VolumeMount to the instrumented container specs, under the `spec.containers[].volumeMounts` field:
+
+```yaml
+    - mountPath: /var/odigos/{agent_sub_dir}
+      name: odigos-agent
+      readOnly: true
+      subPath: {agent_sub_dir}
+```
+
+#### Caveats
+
+The "HostPath" option should be enabled in the cluster. Some policy tools may block this, like:
+
+- [Open Policy Agent](https://www.openpolicyagent.org/)
+- [Kyverno](https://kyverno.io/)
+
+If your cluster enforces such policies, you have the following options:
+
+- Use the VirtualDevice method.
+- Request the cluster administrator to whitelist the Odigos agent host path in the policy tool.
+
+
+### 3. InitContainer
+
+This is an opt-in configuration method designed for scenarios where using hostPath is not feasible due to security policies or virtual device limitations.
+
+For agents and languages that require filesystem mounts, Odigos will inject an InitContainer that copies the necessary files into a shared volume mounted by the application container.
+
+**Enabling InitContainer**
+
+- Odigos CLI: `odigos install --set instrumentor.mountMethod=k8s-init-container`
+- Helm Chart: in your values file, set `instrumentor.mountMethod` to `k8s-init-container`, or use helm cli `--set instrumentor.mountMethod=k8s-init-container` flag with helm upgrade.
+- Kubernetes Manifest: under the `odigos-configuration` ConfigMap in odigos namespace, set the value in the `mountMethod` field of `config.yaml` to `k8s-init-container`.
+
+#### Pod Manifest Additions
+Odigos will add an InitContainer that copies the necessary files for instrumentation, depending on the application language. These files will be placed into a shared volume that is also mounted by the application container.
+
+- Volume to the pod spec, under the `spec.volumes` field:
+
+```yaml
+  - hostPath:
+      path: /var/odigos
+      type: ""
+    name: odigos-agent
+```
+
+#### Caveats
+
+The InitContainer method must be enabled in the cluster and introduces a slight delay during pod initialization.
+This approach is ideal for users who prioritize avoiding hostPath or virtual device usage over startup speed.

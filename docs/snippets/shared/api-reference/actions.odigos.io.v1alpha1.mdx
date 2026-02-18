@@ -1,0 +1,1545 @@
+
+
+## Resource Types 
+
+
+- [AddClusterInfo](#AddClusterInfo)
+- [DeleteAttribute](#DeleteAttribute)
+- [ErrorSampler](#ErrorSampler)
+- [K8sAttributesResolver](#K8sAttributesResolver)
+- [LatencySampler](#LatencySampler)
+- [PiiMasking](#PiiMasking)
+- [ProbabilisticSampler](#ProbabilisticSampler)
+- [RenameAttribute](#RenameAttribute)
+- [ServiceNameSampler](#ServiceNameSampler)
+- [SpanAttributeSampler](#SpanAttributeSampler)
+  
+    
+    
+
+## `AddClusterInfo` <a id="AddClusterInfo"></a>
+    
+<p>AddClusterInfo is the Schema for the addclusterinfo odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>AddClusterInfo</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#AddClusterInfoSpec"><code>AddClusterInfoSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#AddClusterInfoStatus"><code>AddClusterInfoStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `DeleteAttribute` <a id="DeleteAttribute"></a>
+    
+<p>DeleteAttribute is the Schema for the DeleteAttribute odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>DeleteAttribute</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#DeleteAttributeSpec"><code>DeleteAttributeSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#DeleteAttributeStatus"><code>DeleteAttributeStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `ErrorSampler` <a id="ErrorSampler"></a>
+    
+<p>ErrorSampler is the Schema for the ErrorSampler CRD.
+It defines sampling logic that always retains traces with errors, and optionally samples
+non-error traces based on the fallback ratio.
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>ErrorSampler</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ErrorSamplerSpec"><code>ErrorSamplerSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ErrorSamplerStatus"><code>ErrorSamplerStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAttributesResolver` <a id="K8sAttributesResolver"></a>
+    
+<p>K8sAttributesResolver allows adding an action to collect k8s attributes.
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>K8sAttributesResolver</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributesSpec"><code>K8sAttributesSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributesStatus"><code>K8sAttributesStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `LatencySampler` <a id="LatencySampler"></a>
+    
+<p>LatencySampler is the Schema for defining latency-based trace sampling rules.
+It supports targeting specific services and HTTP routes and applying latency thresholds
+to determine sampling eligibility.
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>LatencySampler</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#LatencySamplerSpec"><code>LatencySamplerSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#LatencySamplerStatus"><code>LatencySamplerStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `PiiMasking` <a id="PiiMasking"></a>
+    
+<p>PiiMasking is the Schema for the PiiMasking odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>PiiMasking</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#PiiMaskingSpec"><code>PiiMaskingSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#PiiMaskingStatus"><code>PiiMaskingStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `ProbabilisticSampler` <a id="ProbabilisticSampler"></a>
+    
+<p>ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>ProbabilisticSampler</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ProbabilisticSamplerSpec"><code>ProbabilisticSamplerSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ProbabilisticSamplerStatus"><code>ProbabilisticSamplerStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `RenameAttribute` <a id="RenameAttribute"></a>
+    
+<p>RenameAttribute is the Schema for the RenameAttribute odigos action API
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>RenameAttribute</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#RenameAttributeSpec"><code>RenameAttributeSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#RenameAttributeStatus"><code>RenameAttributeStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `ServiceNameSampler` <a id="ServiceNameSampler"></a>
+    
+<p>ServiceNameSampler is the Schema for the servicenamesamplers API.
+It enables trace sampling based on whether specific services appear within a trace.
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>ServiceNameSampler</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ServiceNameSamplerSpec"><code>ServiceNameSamplerSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#ServiceNameSamplerStatus"><code>ServiceNameSamplerStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `SpanAttributeSampler` <a id="SpanAttributeSampler"></a>
+    
+<p>SpanAttributeSampler is the Schema for the spanattributesamplers API.
+It holds the specification for sampling spans based on attribute conditions,
+as well as the sampler's current status.
+DEPRECATED: Use odigosv1.Action instead</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+<tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
+<tr><td><code>kind</code></td><td>string</td><td><code>SpanAttributeSampler</code></td></tr>
+    
+  
+<tr>
+<td>
+<code>metadata</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#objectmeta-v1-meta"><code>meta/v1.ObjectMeta</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   Refer to the Kubernetes API documentation for the fields of the <code>metadata</code> field.
+   </td>
+</tr>
+<tr>
+<td>
+<code>spec</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#SpanAttributeSamplerSpec"><code>SpanAttributeSamplerSpec</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>status</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#SpanAttributeSamplerStatus"><code>SpanAttributeSamplerStatus</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `AddClusterInfoConfig` <a id="AddClusterInfoConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>clusterAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>overwriteExistingValues</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `AddClusterInfoSpec` <a id="AddClusterInfoSpec"></a>
+    
+
+**Appears in:**
+
+- [AddClusterInfo](#AddClusterInfo)
+
+<p>AddClusterInfoSpec defines the desired state of AddClusterInfo action</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>clusterAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#OtelAttributeWithValue"><code>[]OtelAttributeWithValue</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>overwriteExistingValues</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `AddClusterInfoStatus` <a id="AddClusterInfoStatus"></a>
+    
+
+**Appears in:**
+
+- [AddClusterInfo](#AddClusterInfo)
+
+<p>AddClusterInfoStatus defines the observed state of AddClusterInfo action</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a addclusterinfo's current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `AttributeCondition` <a id="AttributeCondition"></a>
+    
+
+**Appears in:**
+
+- [SpanAttributeFilter](#SpanAttributeFilter)
+
+<p>AttributeCondition wraps different condition types so that only one type
+of condition needs to be specified. This makes it explicit which data type
+the attribute is expected to have.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>string_condition</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#StringAttributeCondition"><code>StringAttributeCondition</code></a>
+</td>
+<td>
+   <p>StringCondition applies to string-type attributes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>number_condition</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#NumberAttributeCondition"><code>NumberAttributeCondition</code></a>
+</td>
+<td>
+   <p>NumberCondition applies to numeric attributes (int, long, float, double).</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>boolean_condition</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#BooleanAttributeCondition"><code>BooleanAttributeCondition</code></a>
+</td>
+<td>
+   <p>BooleanCondition applies to boolean attributes.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>json_condition</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#JsonAttributeCondition"><code>JsonAttributeCondition</code></a>
+</td>
+<td>
+   <p>JsonCondition applies to attributes that are JSON-encoded strings.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `BooleanAttributeCondition` <a id="BooleanAttributeCondition"></a>
+    
+
+**Appears in:**
+
+- [AttributeCondition](#AttributeCondition)
+
+<p>BooleanAttributeCondition defines a check against a boolean attribute.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Operation can be:</p>
+<ul>
+<li>&quot;exists&quot;: Checks that the boolean attribute is present.</li>
+<li>&quot;equals&quot;: Checks if the attribute exactly matches ExpectedValue.</li>
+</ul>
+<p>ExpectedValue is required only for the &quot;equals&quot; operation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>expected_value</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>ExpectedValue is only used if Operation == &quot;equals&quot;.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `DefaultSamplerConfig` <a id="DefaultSamplerConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<p>DefaultSamplerConfig is a base config for all samplers.</p>
+
+
+
+## `DeleteAttributeConfig` <a id="DeleteAttributeConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>attributeNamesToDelete</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `DeleteAttributeSpec` <a id="DeleteAttributeSpec"></a>
+    
+
+**Appears in:**
+
+- [DeleteAttribute](#DeleteAttribute)
+
+<p>DeleteAttributeSpec defines the desired state of DeleteAttribute action</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>attributeNamesToDelete</code> <B>[Required]</B>
+</td>
+<td>
+<code>[]string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `DeleteAttributeStatus` <a id="DeleteAttributeStatus"></a>
+    
+
+**Appears in:**
+
+- [DeleteAttribute](#DeleteAttribute)
+
+<p>DeleteAttributeStatus defines the observed state of DeleteAttribute action</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Represents the observations of a DeleteAttribute's current state.
+Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ErrorSamplerConfig` <a id="ErrorSamplerConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<p>ErrorSamplerConfig defines the configuration for the ErrorSampler action.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>fallback_sampling_ratio</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>FallbackSamplingRatio determines the percentage (0–100) of non-error traces
+that should be sampled. Error traces are always sampled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ErrorSamplerSpec` <a id="ErrorSamplerSpec"></a>
+    
+
+**Appears in:**
+
+- [ErrorSampler](#ErrorSampler)
+
+<p>ErrorSamplerSpec defines the configuration for an ErrorSampler action.
+This sampler prioritizes traces that contain errors, and allows specifying a fallback sampling ratio
+for traces that do not include any errors.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>ActionName is an optional identifier for this sampler rule.
+It can be used for referencing, labeling, or displaying the rule in UIs.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Notes provides free-form documentation or context for the user.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Disabled indicates whether the sampler is currently active.
+When true, the sampler will not be evaluated or applied.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <p>Signals specifies the types of telemetry data this sampler should apply to.
+Typically, this includes &quot;traces&quot;, but may also include &quot;logs&quot; or &quot;metrics&quot;.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fallback_sampling_ratio</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>FallbackSamplingRatio determines the percentage (0–100) of non-error traces
+that should be sampled. Error traces are always sampled.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ErrorSamplerStatus` <a id="ErrorSamplerStatus"></a>
+    
+
+**Appears in:**
+
+- [ErrorSampler](#ErrorSampler)
+
+<p>ErrorSamplerStatus defines the runtime state and observed conditions of an ErrorSampler.
+It may include conditions such as &quot;Available&quot; or &quot;Progressing&quot;.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>conditions</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#condition-v1-meta"><code>[]meta/v1.Condition</code></a>
+</td>
+<td>
+   <p>Conditions captures the current operational state of the sampler.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `HttpRouteFilter` <a id="HttpRouteFilter"></a>
+    
+
+**Appears in:**
+
+- [LatencySamplerConfig](#LatencySamplerConfig)
+- [LatencySamplerSpec](#LatencySamplerSpec)
+
+<p>HttpRouteFilter defines a single latency-based sampling rule for an HTTP route.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>http_route</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>HttpRoute is the route name (from span attribute &quot;http.route&quot;) that this rule applies to.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>service_name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>ServiceName specifies the service that must emit the span for this rule to apply.
+Matches the value of the &quot;service.name&quot; attribute in the span.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>minimum_latency_threshold</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <p>MinimumLatencyThreshold is the latency in milliseconds that spans must exceed
+to be considered for sampling. Spans with latency &gt;= this value are eligible.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fallback_sampling_ratio</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>FallbackSamplingRatio is the percentage (0–100) of traces to sample if the route
+and service match but the span latency is below the threshold.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `IgnoreHealthChecksConfig` <a id="IgnoreHealthChecksConfig"></a>
+    
+
+**Appears in:**
+
+- [SamplersConfig](#SamplersConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>fractionToRecord</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <p>FractionToRecord determines the percentage (0–100) of health checks traces to record.
+should be in range [0, 1]
+0 (default) means no health checks traces will be recorded
+1 means all health checks traces will be recorded
+@deprecated: use odigos config to enable/disable this behavior instead.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `JsonAttributeCondition` <a id="JsonAttributeCondition"></a>
+    
+
+**Appears in:**
+
+- [AttributeCondition](#AttributeCondition)
+
+<p>JsonAttributeCondition defines conditions for evaluating JSON-encoded span attributes.
+It supports structural and value-based filtering using key lookups and JSONPath expressions.</p>
+<p>Supported operations:</p>
+<ul>
+<li>&quot;exists&quot;: Checks that the attribute is a non-empty string.</li>
+<li>&quot;is_valid_json&quot;: Ensures the string parses as valid JSON.</li>
+<li>&quot;is_invalid_json&quot;: Ensures the string is not valid JSON.</li>
+<li>&quot;equals&quot;: Compares the full JSON string to expected_value.</li>
+<li>&quot;not_equals&quot;: Verifies the full JSON string is not equal to expected_value.</li>
+<li>&quot;jsonpath_exists&quot;: Asserts that the specified json_path resolves to a non-empty result.</li>
+<li>&quot;key_equals&quot;: Compares the value at json_path to expected_value.</li>
+<li>&quot;key_not_equals&quot;: Verifies the value at json_path is not equal to expected_value.</li>
+</ul>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>Operation defines the evaluation logic applied to the JSON value.</p>
+<p>Supported values:</p>
+<ul>
+<li>is_valid_json</li>
+<li>is_invalid_json</li>
+<li>equals</li>
+<li>not_equals</li>
+<li>jsonpath_exists</li>
+<li>key_equals</li>
+<li>key_not_equals</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td>
+<code>json_path</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>JsonPath is required for:</p>
+<ul>
+<li>jsonpath_exists</li>
+<li>key_equals</li>
+<li>key_not_equals</li>
+</ul>
+<p>It is a JSONPath expression used to navigate the JSON structure.
+Example: $.user.role or $.events[0].code</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>expected_value</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>ExpectedValue is required for:</p>
+<ul>
+<li>equals</li>
+<li>not_equals</li>
+<li>key_equals</li>
+<li>key_not_equals</li>
+</ul>
+<p>The value to compare against during evaluation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAnnotationAttribute` <a id="K8sAnnotationAttribute"></a>
+    
+
+**Appears in:**
+
+- [K8sAttributesConfig](#K8sAttributesConfig)
+- [K8sAttributesSpec](#K8sAttributesSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>annotationKey</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The annotation name to be extracted.
+e.g. &quot;kubectl.kubernetes.io/restartedAt&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>attributeKey</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The attribute key to be used for the resource attribute created from the annotation.
+e.g. &quot;kubectl.kubernetes.restartedAt&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>from</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The source of the annotation.
+e.g. &quot;pod&quot; or &quot;namespace&quot;
+Deprecated: Use FromSources instead for specifying multiple sources with precedence.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>fromSources</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#K8sAttributeSource"><code>[]K8sAttributeSource</code></a>
+</td>
+<td>
+   <p>The sources from which to extract the annotation, in order of precedence (most specific first).
+When multiple sources are specified, the most specific source (e.g., pod) takes precedence
+over less specific sources (e.g., namespace).
+If an annotation exists in multiple sources, the value from the most specific source will be used.
+Supported sources: &quot;pod&quot;, &quot;namespace&quot;, &quot;node&quot;</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAttributeSource` <a id="K8sAttributeSource"></a>
+    
+(Alias of `string`)
+
+**Appears in:**
+
+- [K8sAnnotationAttribute](#K8sAnnotationAttribute)
+- [K8sLabelAttribute](#K8sLabelAttribute)
+
+
+
+## `K8sAttributesConfig` <a id="K8sAttributesConfig"></a>
+    
+
+**Appears in:**
+
+- [ActionSpec](#odigos-io-v1alpha1-ActionSpec)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>collectContainerAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following container related attributes:
+k8s.container.name
+container.id
+container.image.name
+container.image.tag</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectReplicaSetAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>collect replicaset related attributes (when relevant, e.g. for deployments):
+k8s.replicaset.name
+if CollectWorkloadUID is set, also collect:
+k8s.replicaset.uid
+DEPRECATED: ReplicaSet attributes are now collected by default during instrumentation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectWorkloadUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following workload UID attributes:
+k8s.deployment.uid
+k8s.daemonset.uid
+k8s.statefulset.uid
+DEPRECATED: Workload UID attributes are now collected by default during instrumentation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectClusterUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace &quot;kube-system&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>labelsAttributes</code>
+</td>
+<td>
+<a href="#K8sLabelAttribute"><code>[]K8sLabelAttribute</code></a>
+</td>
+<td>
+   <p>list of labels to be extracted from the pod, and the attribute key to be used for the resource attribute created from each label.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotationsAttributes</code>
+</td>
+<td>
+<a href="#K8sAnnotationAttribute"><code>[]K8sAnnotationAttribute</code></a>
+</td>
+<td>
+   <p>list of annotations to be extracted from the pod, and the attribute key to be used for the resource attribute created from each annotation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `K8sAttributesSpec` <a id="K8sAttributesSpec"></a>
+    
+
+**Appears in:**
+
+- [K8sAttributesResolver](#K8sAttributesResolver)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>actionName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>notes</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>signals</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ObservabilitySignal"><code>[]common.ObservabilitySignal</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>collectContainerAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following container related attributes:
+k8s.container.name
+container.id
+container.image.name
+container.image.tag</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectReplicaSetAttributes</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>collect replicaset related attributes (when relevant, e.g. for deployments):
+k8s.replicaset.name
+if CollectWorkloadUID is set, also collect:
+k8s.replicaset.uid
+DEPRECATED: ReplicaSet attributes are now collected by default during instrumentation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectWorkloadUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the following workload UID attributes:
+k8s.deployment.uid
+k8s.daemonset.uid
+k8s.statefulset.uid
+DEPRECATED: Workload UID attributes are now collected by default during instrumentation.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>collectClusterUID</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>Collect the k8s.cluster.uid attribute, which is set to the uid of the namespace &quot;kube-system&quot;</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>labelsAttributes</code>
+</td>
+<td>
+<a href="#K8sLabelAttribute"><code>[]K8sLabelAttribute</code></a>
+</td>
+<td>
+   <p>list of labels to be extracted from the pod, and the attribute key to be used for the resource attribute created from each label.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>annotationsAttributes</code>
+</td>
+<td>
+<a href="#K8sAnnotationAttribute"><code>[]K8sAnnotationAttribute</code></a>
+</td>
+<td>
+   <p>list of annotations to be extracted from the pod, and the attribute key to be used for the resource attribute created from each annotation.</p>
+</td>
+</tr>
+</tbody>
+</table>

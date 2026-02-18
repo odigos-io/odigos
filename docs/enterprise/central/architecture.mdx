@@ -1,0 +1,43 @@
+---
+title: 'Architecture'
+description: 'Learn about the architecture of Odigos Central, including the central cluster components and remote cluster proxies.'
+sidebarTitle: 'Architecture'
+---
+
+Odigos Central consists of components deployed in a **central (management) cluster** and a lightweight proxy in each **remote cluster**.
+
+```mermaid
+flowchart TB
+    subgraph central [Central Cluster]
+        UI[Central UI<br/>Port 3000]
+        Backend[Central Backend<br/>Port 8081]
+        Redis[Redis<br/>Port 6379]
+        Keycloak[Keycloak<br/>Port 8080]
+        UI --> Backend
+        Backend --> Redis
+        Backend --> Keycloak
+    end
+
+    subgraph remote1 [Remote Cluster 1]
+        Proxy1[Central Proxy]
+        Odigos1[Odigos Components]
+        Proxy1 --> Odigos1
+    end
+
+    subgraph remote2 [Remote Cluster 2]
+        Proxy2[Central Proxy]
+        Odigos2[Odigos Components]
+        Proxy2 --> Odigos2
+    end
+
+    Backend <-->|WebSocket| Proxy1
+    Backend <-->|WebSocket| Proxy2
+```
+
+## Components
+
+| Component           | Description                                                                                                     |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Central UI**      | Web interface for managing all connected clusters, sources, destinations, and sampling configurations           |
+| **Central Backend** | API server that stores configuration in Redis and communicates with remote clusters via WebSocket               |
+| **Central Proxy**   | Lightweight service deployed in each remote cluster that bridges the central backend to local Odigos components |

@@ -1,0 +1,108 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/splunk.svg" alt="splunk" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+**Obtaining Access Token**<br />
+Go to **Settings** then **Access Tokens**. and click **Create New Token**
+
+<Frame>
+  <img src="/backends/images/splunk1.png" alt="Splunk Access Tokens menu" />
+</Frame>
+
+Give the token a name and select **Ingest Token** for the authorization scope and click create.
+
+<Frame>
+  <img src="/backends/images/splunk2.png" alt="Create Access Token form in Splunk" />
+</Frame>
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ❌ Logs
+</Accordion>
+
+- **SPLUNK_ACCESS_TOKEN** `string` : Access Token.
+  - This field is required
+- **SPLUNK_REALM** `string` : Realm. The Splunk realm in use. This is the second part of the URL you use to access Splunk/SignalFX. For example, if you access Splunk at `https://app.us1.signalfx.com`, then the realm is `us1`.
+  - This field is required
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Splunk (SAPM) (Deprecated)` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `splunk.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: splunk-example
+      namespace: odigos-system
+    spec:
+      data:
+        SPLUNK_REALM: <Realm>
+      destinationName: splunk
+      secretRef:
+        name: splunk-secret
+      signals:
+      - TRACES
+      type: splunk
+
+    ---
+
+    apiVersion: v1
+    data:
+      SPLUNK_ACCESS_TOKEN: <Base64 Access Token>
+    kind: Secret
+    metadata:
+      name: splunk-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f splunk.yaml
+    ```
+  </Step>
+</Steps>

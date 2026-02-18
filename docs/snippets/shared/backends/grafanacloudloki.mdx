@@ -1,0 +1,131 @@
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/grafana.svg" alt="grafanacloudloki" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+<Note>
+  These instructions are for the Grafana Cloud **managed** Loki service. If you run a self hosted Loki instance, please follow the instructions on the [Loki](/backends/loki) page.
+</Note>
+
+You can use Grafana Cloud managed service as a backend for Odigos to store your logs, metrics, and traces. This page describes how to configure Odigos to use Grafana Cloud Loki as a **logs** backend.
+
+All the connection details can be found at [grafana.com](https://grafana.com) under **My Account**
+
+<Frame>
+  <img src="/backends/images/grafanacloud1.png" alt="Grafana labs website" />
+</Frame>
+
+Then, under the "GRAFANA CLOUD" title, select your Grafana Stuck, browser to the "Loki" card and click "Send Logs"
+
+<Frame>
+  <img src="/backends/images/grafanacloud2.png" alt="Loki managed service configuration" />
+</Frame>
+
+**Loki Labels**
+
+Read about setting grafana loki labels in the [Loki](/backends/loki#loki-labels) page.
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ❌ Traces
+  ❌ Metrics
+  ✅ Logs
+</Accordion>
+
+- **GRAFANA_CLOUD_LOKI_ENDPOINT** `string` : Endpoint. The endpoint of your Grafana Cloud Loki instance
+  - This field is required
+  - Example: `https://logs-prod-{REGION/SHARD}.grafana.net/otlp`
+- **GRAFANA_CLOUD_LOKI_USERNAME** `string` : Username. You can find the loki username in the "Grafana Data Source settings" section as "User" value. The username is a number.
+  - This field is required
+  - Example: `1234567`
+- **GRAFANA_CLOUD_LOKI_PASSWORD** `string` : Password (Api Token). This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `logs:write` scope
+  - This field is required
+  - Example: `glc_eyJvIj...`
+- **GRAFANA_CLOUD_LOKI_LABELS** `string[]` : Labels. Use these OpenTelemetry resource attributes as Loki labels for each log record
+  - This field is optional and defaults to `["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"]`
+
+<Info>
+  The supported Loki version is V3. Please make sure you are using the correct version, and that you have enabled native OTLP support. As part of this version, the path `/loki/api/v1/push` has been deprecated and replaced with `/otlp`.
+</Info>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Grafana Cloud Loki` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `grafanacloudloki.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: grafanacloudloki-example
+      namespace: odigos-system
+    spec:
+      data:
+        GRAFANA_CLOUD_LOKI_ENDPOINT: <Endpoint>
+        GRAFANA_CLOUD_LOKI_USERNAME: <Username>
+        # Note: The commented fields below are optional.
+        # GRAFANA_CLOUD_LOKI_LABELS: <Labels (default: ["k8s.container.name", "k8s.pod.name", "k8s.namespace.name"])>
+      destinationName: grafanacloudloki
+      secretRef:
+        name: grafanacloudloki-secret
+      signals:
+      - LOGS
+      type: grafanacloudloki
+
+    ---
+
+    apiVersion: v1
+    data:
+      GRAFANA_CLOUD_LOKI_PASSWORD: <Base64 Password (Api Token)>
+    kind: Secret
+    metadata:
+      name: grafanacloudloki-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f grafanacloudloki.yaml
+    ```
+  </Step>
+</Steps>

@@ -1,0 +1,38 @@
+## odigos diagnose
+
+Diagnose Client Cluster
+
+### Synopsis
+
+Retrieves Logs of all Odigos components in the odigos-system namespace and CRDs of Actions, instrumentation resources and more.
+The results will be saved in a compressed file for further troubleshooting.
+The file will be saved in this format: odigos_debug_ddmmyyyyhhmmss.tar.gz
+
+```
+odigos diagnose [flags]
+```
+
+### Options
+
+```
+      --all-workload-namespaces              Collect instrumented source workloads from all namespaces
+  -h, --help                                 help for diagnose
+      --odigos-configmaps                    Include Odigos ConfigMaps in the diagnose output (default true)
+      --odigos-crds                          Include Odigos CRDs in the diagnose output (default true)
+      --odigos-logs                          Include Odigos component pod logs in the diagnose output (default true)
+      --odigos-metrics                       Include Odigos Prometheus metrics in the diagnose output (default true)
+      --odigos-profiles                      Include Odigos pprof profiles in the diagnose output (default true)
+      --source-workload-namespaces strings   Collect instrumented source workloads from specific namespaces (comma-separated)
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos](/cli/odigos)	 - Automate OpenTelemetry Observability in Kubernetes

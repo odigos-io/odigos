@@ -12,7 +12,7 @@ TODO: add support for other languages and types of instrumentation libraries.
 """
 
 
-instrumentations_dir = './instrumentations'
+instrumentations_dir = './snippets/shared/instrumentations'
 
 api_dependency_key = '@opentelemetry/api'
 instrumentation_dependency_prefix = ['@opentelemetry/instrumentation-', '@odigos/instrumentation-']
