@@ -3,23 +3,24 @@ package php
 import (
 	"bytes"
 	"debug/elf"
+	"path/filepath"
 	"regexp"
 
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/utils"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
 type PhpInspector struct{}
 
 var (
-	processNames  = []string{"php", "php-fpm"}
-	versionRegex  = regexp.MustCompile(`X-Powered-By:\s*PHP/(\d+\.\d+\.\d+)`)
-	versionPrefix = "X-Powered-By: PHP/"
+	// Matches "php", "php-cgi", "php-fpm", and versions like "php7.4", "php8.0", "php-fpm82"
+	phpExecutableRegex = regexp.MustCompile("^php(-cgi|-fpm)?[0-9.]*$")
+	versionRegex       = regexp.MustCompile(`X-Powered-By:\s*PHP/(\d+\.\d+\.\d+)`)
+	versionPrefix      = "X-Powered-By: PHP/"
 )
 
 func (n *PhpInspector) QuickScan(pcx *process.ProcessContext) (common.ProgrammingLanguage, bool) {
-	if utils.IsProcessEqualProcessNames(pcx, processNames) {
+	if phpExecutableRegex.MatchString(filepath.Base(pcx.ExePath)) {
 		return common.PhpProgrammingLanguage, true
 	}
 
