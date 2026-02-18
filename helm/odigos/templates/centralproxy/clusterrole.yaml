@@ -16,7 +16,7 @@ rules:
     resources: ["cronjobs"]
     verbs: ["list", "watch"]
   - apiGroups: ["odigos.io"]
-    resources: ["instrumentationconfigs"]
+    resources: ["instrumentationconfigs", "sources"]
     verbs: ["list", "watch"]
   - apiGroups: [""]
     resources: ["configmaps"]
