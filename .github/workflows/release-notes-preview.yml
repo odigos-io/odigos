@@ -1,0 +1,108 @@
+# Temporary workflow for testing release notes generation on pull requests.
+# Run this workflow on a PR to preview what release notes would be generated
+# for commits in the PR (from merge-base with main to PR head).
+# Remove or disable when no longer needed.
+name: Release Notes Preview (PR)
+
+on:
+  pull_request:
+    branches: [main, 'releases/**']
+
+permissions:
+  contents: read
+
+jobs:
+  release-notes-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch and release branches
+        run: |
+          # PR base = branch this PR is targeting (e.g. main or releases/v1.17.0)
+          BASE_REF="${{ github.base_ref }}"
+          git fetch origin "${BASE_REF}"
+          git fetch origin 'refs/heads/releases/*:refs/remotes/origin/releases/*' 2>/dev/null || true
+
+      - name: Compute START_SHA and END_SHA
+        id: shas
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          END_SHA=$(git rev-parse HEAD)
+          echo "end_sha=${END_SHA}" >> $GITHUB_OUTPUT
+          echo "base_ref=${BASE_REF}" >> $GITHUB_OUTPUT
+
+          echo "PR is targeting branch: ${BASE_REF}"
+          echo "PR head (END_SHA): ${END_SHA}"
+
+          # When the PR targets main, use most recent release branch by semver as merge-base
+          # (same as release.yml "commit on main" scenario)
+          if [ "$BASE_REF" = "main" ]; then
+            LATEST_RELEASE=$(git for-each-ref refs/remotes/origin/releases --format='%(refname:short)' 2>/dev/null | sed 's|origin/releases/||' | sort -V | tail -n 1)
+            if [ -n "$LATEST_RELEASE" ]; then
+              PREV_RELEASE_BRANCH="origin/releases/${LATEST_RELEASE}"
+              START_SHA=$(git merge-base origin/main "$PREV_RELEASE_BRANCH")
+              echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+              echo "Scenario: PR targets main → using PREV_RELEASE_BRANCH=$PREV_RELEASE_BRANCH (most recent by semver)"
+            else
+              START_SHA=$(git merge-base origin/main HEAD)
+              echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+              echo "Scenario: PR targets main but no release branches found → using merge-base(origin/main, PR head)"
+            fi
+          else
+            # PR targets a release branch (e.g. releases/v1.17.0): use merge-base of base and PR head
+            START_SHA=$(git merge-base "origin/${BASE_REF}" HEAD)
+            echo "start_sha=${START_SHA}" >> $GITHUB_OUTPUT
+            echo "Scenario: PR targets ${BASE_REF} → using merge-base(origin/${BASE_REF}, PR head)"
+          fi
+
+          echo "Previewing release notes for commits from ${START_SHA} to ${END_SHA}"
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+
+      - name: Build release-notes tool
+        run: |
+          git clone --depth 1 --branch release-notes-custom-regex https://github.com/damemi/k8s-release.git /tmp/k8s-release
+          cd /tmp/k8s-release
+          go build -o release-notes ./cmd/release-notes
+          echo "RELEASE_NOTES_BIN=$(pwd)/release-notes" >> $GITHUB_ENV
+
+      - name: Generate release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ${{ env.RELEASE_NOTES_BIN }} \
+            --org='odigos-io' \
+            --repo='odigos' \
+            --required-author='' \
+            --dependencies=false \
+            --release-note-regex='(?sU)```release-notes?\r?\n(?P<note>.+)\r?\n```' \
+            --branch=main \
+            --start-sha=${{ steps.shas.outputs.start_sha }} \
+            --end-sha=${{ steps.shas.outputs.end_sha }} \
+            --output=release-notes.md
+
+      - name: Print release notes
+        run: |
+          echo "## Release notes preview" >> $GITHUB_STEP_SUMMARY
+          echo "**PR target branch:** \`${{ steps.shas.outputs.base_ref }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat release-notes.md >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "---"
+          echo "## Generated release notes (from merge-base with main to PR head)"
+          echo ""
+          cat release-notes.md
+
+      - name: Upload release notes as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-preview
+          path: release-notes.md
