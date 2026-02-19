@@ -17,16 +17,23 @@ spec:
     otlpHttpLocalNode: true
     signalsAsStaticOtelEnvVars: true
     staticVariables:
-      # How to use PHP_INI_SCAN_DIR env with colon (:) separator...
+      # PHP_INI_SCAN_DIR uses appendToExisting so that:
+      # 1. If the user already sets it in their pod manifest, we append our path.
+      # 2. If the container image sets it at runtime (detected via CRI), we prepend that value.
+      # 3. If neither is set, the leading ":" preserves the compile-time default scan directory.
       # See https://github.com/odigos-io/opentelemetry-php?tab=readme-ov-file#deploying-an-agent
       - envName: PHP_INI_SCAN_DIR
         envValue: ':/var/odigos/php/{{.RUNTIME_VERSION_MAJOR_MINOR}}'
+        appendToExisting: true
       - envName: OTEL_PHP_AUTOLOAD_ENABLED
         envValue: 'true'
       - envName: OTEL_EXPORTER_OTLP_PROTOCOL
         envValue: 'http/protobuf'
       - envName: OTEL_PROPAGATORS
         envValue: 'tracecontext,baggage'
+    appendOdigosVariables:
+      - envName: PHP_INI_SCAN_DIR
+        replacePattern: '{{ORIGINAL_ENV_VALUE}}:/var/odigos/php'
   runtimeAgent:
     directoryNames:
       - '{{ODIGOS_AGENTS_DIR}}/php'

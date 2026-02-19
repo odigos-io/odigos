@@ -3,6 +3,7 @@ package podswebhook
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -96,16 +97,66 @@ func InjectOtlpHttpEndpointEnvVar(existingEnvNames EnvVarNamesMap, container *co
 
 func InjectStaticEnvVarsToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVars []distro.StaticEnvironmentVariable, distroParams map[string]string) (EnvVarNamesMap, error) {
 	for _, envVar := range envVars {
-		if envVar.Template == nil {
+		if envVar.AppendToExisting {
+			var err error
+			existingEnvNames, err = appendEnvVarToPodContainer(existingEnvNames, container, envVar, distroParams)
+			if err != nil {
+				return existingEnvNames, fmt.Errorf("failed to inject static environment variable %s: %w", envVar.EnvName, err)
+			}
+		} else if envVar.Template == nil {
 			existingEnvNames = InjectConstEnvVarToPodContainer(existingEnvNames, container, envVar.EnvName, envVar.EnvValue)
 		} else {
-			var err error // make sure we don't shadow the error or the existingEnvNames
+			var err error
 			existingEnvNames, err = InjectTemplatedEnvVarToPodContainer(existingEnvNames, container, envVar.EnvName, envVar.Template, distroParams)
 			if err != nil {
 				return existingEnvNames, fmt.Errorf("failed to inject static environment variable %s: %w", envVar.EnvName, err)
 			}
 		}
 	}
+	return existingEnvNames, nil
+}
+
+// appendEnvVarToPodContainer handles env vars with AppendToExisting semantics.
+// If the env var already exists in the container manifest, the rendered value is
+// appended to it (e.g. "/user/path" + ":/odigos/path" = "/user/path:/odigos/path").
+// If the env var is absent, but a CRI-detected runtime value exists in distroParams
+// (keyed by the env var name), that value is prepended to the rendered value.
+// Otherwise the rendered value is set directly (preserving any leading delimiter
+// like the ":" prefix that PHP_INI_SCAN_DIR uses to retain the default scan dir).
+func appendEnvVarToPodContainer(existingEnvNames EnvVarNamesMap, container *corev1.Container, envVar distro.StaticEnvironmentVariable, distroParams map[string]string) (EnvVarNamesMap, error) {
+	var resolvedValue string
+	if envVar.Template != nil {
+		var buf bytes.Buffer
+		if err := envVar.Template.Execute(&buf, distroParams); err != nil {
+			return existingEnvNames, err
+		}
+		resolvedValue = buf.String()
+	} else {
+		resolvedValue = envVar.EnvValue
+	}
+
+	for i := range container.Env {
+		if container.Env[i].Name != envVar.EnvName {
+			continue
+		}
+		if strings.Contains(container.Env[i].Value, resolvedValue) {
+			return existingEnvNames, nil
+		}
+		container.Env[i].Value += resolvedValue
+		return existingEnvNames, nil
+	}
+
+	if criValue, ok := distroParams[envVar.EnvName]; ok && criValue != "" {
+		if !strings.Contains(criValue, resolvedValue) {
+			resolvedValue = criValue + resolvedValue
+		}
+	}
+
+	container.Env = append(container.Env, corev1.EnvVar{
+		Name:  envVar.EnvName,
+		Value: resolvedValue,
+	})
+	existingEnvNames[envVar.EnvName] = struct{}{}
 	return existingEnvNames, nil
 }
 
