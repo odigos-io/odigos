@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = 10 * time.Second
+
 func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup) error {
 
@@ -233,7 +235,8 @@ func calculateCollectorConfigDomains(
 func ownMetricsTelemetryConfig(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string) (config.Config, error) {
 	duration, err := time.ParseDuration(ownMetricsConfig.Interval)
 	if err != nil {
-		return config.Config{}, fmt.Errorf("failed to parse own metrics interval %q: %w", ownMetricsConfig.Interval, err)
+		// Default to 10 seconds if the interval is not set
+		duration = DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL
 	}
 
 	clusterCollectorEndpoint := fmt.Sprintf("%s.%s:44318", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)

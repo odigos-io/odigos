@@ -43,6 +43,8 @@ const (
 	defaultRequestCPUm = 250
 	// the default CPU limit in millicores
 	defaultLimitCPUm = 500
+
+	DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = "10s"
 )
 
 func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
@@ -215,6 +217,29 @@ func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroup
 	}
 }
 
+// getOwnMetricsSettings returns the own metrics settings for the node collector group.
+// Returns nil if own metrics collection is disabled.
+// The node collector only needs the interval since the cluster collector handles routing to destinations.
+func getOwnMetricsSettings(odigosConfiguration *common.OdigosConfiguration) *odigosv1.OdigosOwnMetricsSettings {
+	ownMetricsEnabled := odigosConfiguration.OdigosOwnTelemetryStore == nil ||
+		odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled == nil ||
+		!*odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled
+	if !ownMetricsEnabled {
+		return nil
+	}
+
+	ownMetricsInterval := DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL
+	if odigosConfiguration.MetricsSources != nil &&
+		odigosConfiguration.MetricsSources.OdigosOwnMetrics != nil &&
+		odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval != "" {
+		ownMetricsInterval = odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval
+	}
+
+	return &odigosv1.OdigosOwnMetricsSettings{
+		Interval: ownMetricsInterval,
+	}
+}
+
 func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDestinations odigosv1.DestinationList) *odigosv1.CollectorsGroup {
 
 	var metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings
@@ -241,6 +266,14 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
 		}
 		updateMetricsSettingsForDestination(metricsConfig, &odigosConfiguration, destination, destinationTypeManifest)
+	}
+
+	ownMetricsSettings := getOwnMetricsSettings(&odigosConfiguration)
+	if ownMetricsSettings != nil {
+		if metricsConfig == nil {
+			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
+		}
+		metricsConfig.OdigosOwnMetrics = ownMetricsSettings
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
@@ -327,3 +360,4 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 
 	return nil
 }
+
