@@ -1,8 +1,6 @@
 ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.10
 
 ######### python Native Community Agent #########
-# IMPORTANT: If changing the Python version below, update the Python dependency shared object filenames
-# in odiglet/pkg/instrumentation/fs/agents.go (e.g., cpython-311 must match the Python version).
 FROM python:3.11.9 AS python-builder
 ARG ODIGOS_VERSION
 WORKDIR /python-instrumentation

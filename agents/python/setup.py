@@ -3,10 +3,10 @@ from setuptools import setup, find_packages
 index_url = None
 
 # DEV - Local Uncomment to develop locally \/
-# index_url = 'http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.63-py3-none-any.whl'
+# index_url = 'http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.56-py3-none-any.whl'
 
 install_requires = [
-    f"odigos-opentelemetry-python @ {index_url}" if index_url else "odigos-opentelemetry-python==1.0.63"
+    f"odigos-opentelemetry-python @ {index_url}" if index_url else "odigos-opentelemetry-python==1.0.56"
 ]
 
 setup(
