@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/distros/distro"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/sampling"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
@@ -52,7 +53,7 @@ func CalculateTracesConfig(
 
 	tracesConfig.UrlTemplatization = urlTemplatizationConfig
 	tracesConfig.HeadersCollection = calculateHeaderCollectionConfig(distro, irls)
-	tracesConfig.HeadSampling = calculateHeadSamplingConfig(distro, workloadObj, containerName, effectiveConfig, samplingRules, pw)
+	tracesConfig.HeadSampling = sampling.CalculateHeadSamplingConfig(distro, workloadObj, containerName, effectiveConfig, samplingRules, pw)
 	tracesConfig.SpanRenamer = filterSpanRenamerForContainer(agentLevelActions, programmingLanguage)
 
 	return tracesConfig, nil

@@ -24,15 +24,16 @@ import (
 // InstrumentationConfigSpecApplyConfiguration represents a declarative configuration of the InstrumentationConfigSpec type for use
 // with apply.
 type InstrumentationConfigSpecApplyConfiguration struct {
-	ServiceName                  *string                                  `json:"serviceName,omitempty"`
-	AgentInjectionEnabled        *bool                                    `json:"agentInjectionEnabled,omitempty"`
-	PodManifestInjectionOptional *bool                                    `json:"podManifestInjectionOptional,omitempty"`
-	Containers                   []ContainerAgentConfigApplyConfiguration `json:"containers,omitempty"`
-	ContainersOverrides          []ContainerOverrideApplyConfiguration    `json:"containersOverrides,omitempty"`
-	ContainerOverridesHash       *string                                  `json:"containerOverridesHash,omitempty"`
-	AgentsMetaHash               *string                                  `json:"agentsMetaHash,omitempty"`
-	AgentsMetaHashChangedTime    *v1.Time                                 `json:"agentsMetaHashChangedTime,omitempty"`
-	SdkConfigs                   []SdkConfigApplyConfiguration            `json:"sdkConfigs,omitempty"`
+	ServiceName                  *string                                      `json:"serviceName,omitempty"`
+	AgentInjectionEnabled        *bool                                        `json:"agentInjectionEnabled,omitempty"`
+	PodManifestInjectionOptional *bool                                        `json:"podManifestInjectionOptional,omitempty"`
+	Containers                   []ContainerAgentConfigApplyConfiguration     `json:"containers,omitempty"`
+	WorkloadCollectorConfig      []ContainerCollectorConfigApplyConfiguration `json:"workloadCollectorConfig,omitempty"`
+	ContainersOverrides          []ContainerOverrideApplyConfiguration        `json:"containersOverrides,omitempty"`
+	ContainerOverridesHash       *string                                      `json:"containerOverridesHash,omitempty"`
+	AgentsMetaHash               *string                                      `json:"agentsMetaHash,omitempty"`
+	AgentsMetaHashChangedTime    *v1.Time                                     `json:"agentsMetaHashChangedTime,omitempty"`
+	SdkConfigs                   []SdkConfigApplyConfiguration                `json:"sdkConfigs,omitempty"`
 }
 
 // InstrumentationConfigSpecApplyConfiguration constructs a declarative configuration of the InstrumentationConfigSpec type for use with
@@ -74,6 +75,19 @@ func (b *InstrumentationConfigSpecApplyConfiguration) WithContainers(values ...*
 			panic("nil value passed to WithContainers")
 		}
 		b.Containers = append(b.Containers, *values[i])
+	}
+	return b
+}
+
+// WithWorkloadCollectorConfig adds the given value to the WorkloadCollectorConfig field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the WorkloadCollectorConfig field.
+func (b *InstrumentationConfigSpecApplyConfiguration) WithWorkloadCollectorConfig(values ...*ContainerCollectorConfigApplyConfiguration) *InstrumentationConfigSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithWorkloadCollectorConfig")
+		}
+		b.WorkloadCollectorConfig = append(b.WorkloadCollectorConfig, *values[i])
 	}
 	return b
 }

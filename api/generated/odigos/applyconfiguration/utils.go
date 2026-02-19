@@ -61,6 +61,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.CollectorsGroupStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ContainerAgentConfig"):
 		return &odigosv1alpha1.ContainerAgentConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ContainerCollectorConfig"):
+		return &odigosv1alpha1.ContainerCollectorConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ContainerOverride"):
 		return &odigosv1alpha1.ContainerOverrideApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CostReductionRule"):
@@ -139,6 +141,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.RuntimeDetailsByContainerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Sampling"):
 		return &odigosv1alpha1.SamplingApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SamplingCollectorConfig"):
+		return &odigosv1alpha1.SamplingCollectorConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SamplingSpec"):
 		return &odigosv1alpha1.SamplingSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SamplingStatus"):

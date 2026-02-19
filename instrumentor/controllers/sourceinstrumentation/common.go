@@ -334,11 +334,17 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	instConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 	ic := &odigosv1.InstrumentationConfig{}
 	err = k8sClient.Get(ctx, types.NamespacedName{Name: instConfigName, Namespace: pw.Namespace}, ic)
+
+	var rollbackRecoveryAtAnnotation string
+	if sources.Workload != nil && !k8sutils.IsTerminating(sources.Workload) {
+		rollbackRecoveryAtAnnotation = sources.Workload.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+	}
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName, desiredDataStreamsLabels)
+
+		ic, err = createInstrumentationConfigForWorkload(ctx, k8sClient, instConfigName, pw.Namespace, obj, scheme, containers, hashString, desiredServiceName, desiredDataStreamsLabels, rollbackRecoveryAtAnnotation)
 		if err != nil {
 			if apierrors.IsAlreadyExists(err) {
 				// If we hit AlreadyExists here, we just hit a race in the api/cache and want to requeue. No need to log an error
@@ -351,7 +357,8 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 		dataStreamsChanged := updateDatastreamLabels(ic, desiredDataStreamsLabels)
 		containerOverridesChanged := updateContainerOverride(ic, containers, hashString)
 		serviceNameChanged := updateServiceName(ic, desiredServiceName)
-		if containerOverridesChanged || dataStreamsChanged || serviceNameChanged {
+		recoveredFromRollbackAtChanged := updateRecoveredFromRollbackAt(ic, rollbackRecoveryAtAnnotation)
+		if containerOverridesChanged || dataStreamsChanged || serviceNameChanged || recoveredFromRollbackAtChanged {
 			err = k8sClient.Update(ctx, ic)
 			if err != nil {
 				return k8sutils.K8SUpdateErrorHandler(err)
@@ -376,17 +383,24 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 	return ctrl.Result{}, nil
 }
 
-func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string) (*odigosv1.InstrumentationConfig, error) {
+func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, rollbackRecoveryAtAnnotation string) (*odigosv1.InstrumentationConfig, error) {
 	logger := log.FromContext(ctx)
+
+	annotations := map[string]string{}
+	if rollbackRecoveryAtAnnotation != "" {
+		annotations[k8sconsts.RollbackRecoveryAtAnnotation] = rollbackRecoveryAtAnnotation
+	}
+
 	instConfig := odigosv1.InstrumentationConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "odigos.io/v1alpha1",
 			Kind:       "InstrumentationConfig",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      instConfigName,
-			Namespace: namespace,
-			Labels:    desiredDataStreamsLabels,
+			Name:        instConfigName,
+			Namespace:   namespace,
+			Labels:      desiredDataStreamsLabels,
+			Annotations: annotations,
 		},
 	}
 
@@ -475,6 +489,23 @@ func calculateDesiredServiceName(pw k8sconsts.PodWorkload, sources *odigosv1.Wor
 func updateServiceName(ic *odigosv1.InstrumentationConfig, desiredServiceName string) (updated bool) {
 	if desiredServiceName != ic.Spec.ServiceName {
 		ic.Spec.ServiceName = desiredServiceName
+		return true
+	}
+	return false
+}
+
+func updateRecoveredFromRollbackAt(ic *odigosv1.InstrumentationConfig, sourceRollbackRecoveryAtAnnotation string) (updated bool) {
+	desired := sourceRollbackRecoveryAtAnnotation
+	current := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+	if current != desired {
+		if ic.Annotations == nil {
+			ic.Annotations = make(map[string]string)
+		}
+		if desired == "" {
+			delete(ic.Annotations, k8sconsts.RollbackRecoveryAtAnnotation)
+		} else {
+			ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation] = desired
+		}
 		return true
 	}
 	return false

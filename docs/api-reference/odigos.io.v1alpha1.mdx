@@ -1592,6 +1592,45 @@ nil means that the signal is disabled and should not be instrumented/collected b
 </tbody>
 </table>
 
+## `ContainerCollectorConfig` <a id="odigos-io-v1alpha1-ContainerCollectorConfig"></a>
+    
+
+**Appears in:**
+
+- [InstrumentationConfigSpec](#odigos-io-v1alpha1-InstrumentationConfigSpec)
+
+<p>ContainerCollectorConfig is a configuration for a specific container in a workload.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>containerName</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>The name of the container to which this configuration applies.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>samplingCollectorConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-SamplingCollectorConfig"><code>SamplingCollectorConfig</code></a>
+</td>
+<td>
+   <p>The sampling configuration that relevant for the collector (tailsampling).</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `ContainerOverride` <a id="odigos-io-v1alpha1-ContainerOverride"></a>
     
 
@@ -1650,6 +1689,7 @@ if the programmin language is incorrect, the runtime info can be overridden to m
 
 **Appears in:**
 
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
 - [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
 
 <table class="table">
@@ -2050,6 +2090,7 @@ HTTP headers cannot be collected as wildcard, to avoid leaking sensitive informa
 
 **Appears in:**
 
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
 - [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
 
 <p>define operations (spans) with high observability value.
@@ -2331,6 +2372,17 @@ if false, at least one container requires pod manifest changes to enable agent i
 <td>
    <p>configuration for each instrumented container in the workload</p>
 </td>
+</tr>
+<tr>
+<td>
+<code>workloadCollectorConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-ContainerCollectorConfig"><code>[]ContainerCollectorConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 <tr>
 <td>
@@ -3201,6 +3253,7 @@ can be used to filter out outgoing http requests for other agents calling home o
 
 **Appears in:**
 
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
 - [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
 
 <p>endpoints which are considered &quot;noise&quot;, and provide no or very little observability value.
@@ -3745,6 +3798,54 @@ Thus, this field is set only when there is:</p>
 <td>
    <p>A temporary variable used during migration to track whether the new runtime detection process has been executed. If empty, it indicates the process has not yet been run. This field may be removed later.</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `SamplingCollectorConfig` <a id="odigos-io-v1alpha1-SamplingCollectorConfig"></a>
+    
+
+**Appears in:**
+
+- [ContainerCollectorConfig](#odigos-io-v1alpha1-ContainerCollectorConfig)
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>noisyOperations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-NoisyOperations"><code>[]NoisyOperations</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>highlyRelevantOperations</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HighlyRelevantOperation"><code>[]HighlyRelevantOperation</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>costReductionRules</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-CostReductionRule"><code>[]CostReductionRule</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>

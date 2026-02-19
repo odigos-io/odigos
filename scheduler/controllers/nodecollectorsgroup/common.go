@@ -43,6 +43,8 @@ const (
 	defaultRequestCPUm = 250
 	// the default CPU limit in millicores
 	defaultLimitCPUm = 500
+
+	DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = "10s"
 )
 
 func getResourceSettings(odigosConfiguration common.OdigosConfiguration) odigosv1.CollectorsGroupResourcesSettings {
@@ -215,27 +217,33 @@ func updateMetricsSettingsForDestination(metricsConfig *odigosv1.CollectorsGroup
 	}
 }
 
+// getOwnMetricsSettings returns the own metrics settings for the node collector group.
+// Returns nil if own metrics collection is disabled.
+// The node collector only needs the interval since the cluster collector handles routing to destinations.
+func getOwnMetricsSettings(odigosConfiguration *common.OdigosConfiguration) *odigosv1.OdigosOwnMetricsSettings {
+	ownMetricsEnabled := odigosConfiguration.OdigosOwnTelemetryStore == nil ||
+		odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled == nil ||
+		!*odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled
+	if !ownMetricsEnabled {
+		return nil
+	}
+
+	ownMetricsInterval := DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL
+	if odigosConfiguration.MetricsSources != nil &&
+		odigosConfiguration.MetricsSources.OdigosOwnMetrics != nil &&
+		odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval != "" {
+		ownMetricsInterval = odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval
+	}
+
+	return &odigosv1.OdigosOwnMetricsSettings{
+		Interval: ownMetricsInterval,
+	}
+}
+
 func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDestinations odigosv1.DestinationList) *odigosv1.CollectorsGroup {
 
 	var metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings
 
-	ownMetricsInterval := "10s"
-	if odigosConfiguration.MetricsSources != nil &&
-		odigosConfiguration.MetricsSources.OdigosOwnMetrics != nil &&
-		odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval != "" {
-
-		ownMetricsInterval = odigosConfiguration.MetricsSources.OdigosOwnMetrics.Interval
-	}
-
-	ownMetricsLocalStorageEnabled := false
-	if odigosConfiguration.OdigosOwnTelemetryStore == nil ||
-		odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled == nil ||
-		!*odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled {
-
-		ownMetricsLocalStorageEnabled = true
-	}
-
-	ownMetricsSendToMetricsDestinations := false
 	for _, destination := range allDestinations.Items {
 		if destination.Spec.Disabled != nil && *destination.Spec.Disabled {
 			// skip disabled destinations
@@ -253,16 +261,19 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 			continue
 		}
 
-		// only collect own metrics to destination if at least one destination is interested in collecting them
-		if destination.Spec.MetricsSettings != nil && destination.Spec.MetricsSettings.CollectOdigosOwnMetrics != nil && *destination.Spec.MetricsSettings.CollectOdigosOwnMetrics {
-			ownMetricsSendToMetricsDestinations = true
-		}
-
 		if metricsConfig == nil {
 			// setting it to non null is an indicator that metrics are enabled
 			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
 		}
 		updateMetricsSettingsForDestination(metricsConfig, &odigosConfiguration, destination, destinationTypeManifest)
+	}
+
+	ownMetricsSettings := getOwnMetricsSettings(&odigosConfiguration)
+	if ownMetricsSettings != nil {
+		if metricsConfig == nil {
+			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
+		}
+		metricsConfig.OdigosOwnMetrics = ownMetricsSettings
 	}
 
 	ownMetricsPort := k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault
@@ -281,18 +292,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 	if otlpExporterConfiguration == nil {
 		otlpExporterConfiguration = &common.OtlpExporterConfiguration{
 			EnableDataCompression: odigosConfiguration.CollectorNode.EnableDataCompression,
-		}
-	}
-
-	// set the own metrics on metrics config if enabled
-	if ownMetricsLocalStorageEnabled || ownMetricsSendToMetricsDestinations {
-		if metricsConfig == nil {
-			metricsConfig = &odigosv1.CollectorsGroupMetricsCollectionSettings{}
-		}
-		metricsConfig.OdigosOwnMetrics = &odigosv1.OdigosOwnMetricsSettings{
-			SendToMetricsDestinations: ownMetricsSendToMetricsDestinations,
-			SendToOdigosMetricsStore:  ownMetricsLocalStorageEnabled,
-			Interval:                  ownMetricsInterval,
 		}
 	}
 
@@ -361,3 +360,4 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 
 	return nil
 }
+

@@ -111,6 +111,23 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		return RolloutResult{}, client.IgnoreNotFound(rolloutErr)
 	}
 
+	// Check if recovery from rollback is needed before proceeding with rollout logic.
+	// If recovery is needed, persist the changes and requeue so the next reconcile
+	// recomputes the spec with RollbackOccurred cleared.
+	if recoverFromRollback(ic) {
+		if err := c.Update(ctx, ic); err != nil {
+			result, handledErr := utils.K8SUpdateErrorHandler(err)
+			return RolloutResult{Result: result}, handledErr
+		}
+		// c.Update refreshes the in-memory object, overwriting status changes. Re-apply and persist.
+		ic.Status.RollbackOccurred = false
+		if err := c.Status().Update(ctx, ic); err != nil {
+			result, handledErr := utils.K8SUpdateErrorHandler(err)
+			return RolloutResult{Result: result}, handledErr
+		}
+		return RolloutResult{Result: ctrl.Result{Requeue: true}}, nil
+	}
+
 	if ic.Spec.PodManifestInjectionOptional {
 		// all distributions used by this workload do not require a restart
 		// thus, no rollout is needed
@@ -456,6 +473,29 @@ func shouldTriggerRollback(
 	}
 
 	return true, 0, backOffInfo, nil
+}
+
+// recoverFromRollback checks if a rollback recovery was requested by comparing the
+// RollbackRecoveryAtAnnotation (desired, propagated from Source) with the
+// RollbackRecoveryProcessedAtAnnotation (last processed). If they differ, it clears
+// RollbackOccurred and updates the processed annotation.
+// Returns true if recovery was applied and the IC was modified.
+func recoverFromRollback(ic *odigosv1alpha1.InstrumentationConfig) bool {
+	currentRecoveryAt := ic.Annotations[k8sconsts.RollbackRecoveryAtAnnotation]
+	if !ic.Status.RollbackOccurred || currentRecoveryAt == "" {
+		return false
+	}
+
+	processedRecoveryAt := ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation]
+	if processedRecoveryAt == currentRecoveryAt {
+		return false
+	}
+
+	if ic.Annotations == nil {
+		ic.Annotations = make(map[string]string)
+	}
+	ic.Annotations[k8sconsts.RollbackRecoveryProcessedAtAnnotation] = currentRecoveryAt
+	return true
 }
 
 // triggerRollback executes the rollback: disables agents, updates IC, and restarts the workload.

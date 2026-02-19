@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
+	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/sampling"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signalconfig"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -97,7 +99,6 @@ func reconcileWorkload(ctx context.Context, c client.Client, icName string, name
 		}
 		return ctrl.Result{}, err
 	}
-
 	logger.Info("Reconciling workload for InstrumentationConfig object agent enabling", "name", ic.Name, "namespace", ic.Namespace, "instrumentationConfigName", ic.Name)
 
 	condition, err := updateInstrumentationConfigSpec(ctx, c, pw, &ic, distroProvider, conf)
@@ -185,7 +186,8 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 	distroPerLanguage := calculateDefaultDistroPerLanguage(defaultDistrosPerLanguage, irls, distroProvider.Getter)
 
 	// If the source was already marked for instrumentation, but has caused a CrashLoopBackOff or ImagePullBackOff we'd like to stop
-	// instrumentating it and to disable future instrumentation of this service
+	// instrumentating it and to disable future instrumentation of this service.
+	// Recovery from rollback is already handled in reconcileWorkload before this function is called.
 	rollbackOccurred := ic.Status.RollbackOccurred
 	// Get existing backoff reason from status conditions if available
 	var existingBackoffReason odigosv1.AgentEnabledReason
@@ -207,7 +209,12 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			}
 		}
 	}
+	// If not found in containers and we are in rollback state, default to CrashLoopBackOff
+	if rollbackOccurred && existingBackoffReason == "" {
+		existingBackoffReason = odigosv1.AgentEnabledReasonCrashLoopBackOff
+	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
+	collectorConfig := make([]odigosv1.ContainerCollectorConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
 	podManifestInjectionOptional := true // pod manifest is optional, unless some container agent requires it
 
@@ -222,10 +229,16 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		if currentContainerConfig.AgentEnabled && !currentContainerConfig.PodManifestInjectionOptional {
 			podManifestInjectionOptional = false
 		}
+		// calculate the relevant collector configurations for the container.
+		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, samplingRules, pw)
+		if currentContainerCollectorConfig != nil {
+			collectorConfig = append(collectorConfig, *currentContainerCollectorConfig)
+		}
 	}
+
 	ic.Spec.Containers = containersConfig
 	ic.Spec.PodManifestInjectionOptional = podManifestInjectionOptional
-
+	ic.Spec.WorkloadCollectorConfig = collectorConfig
 	// after updating the container configs, we can go over them and produce a useful aggregated status for the user
 	// if any container is instrumented, we can set the status to true
 	// if all containers are not instrumented, we can set the status to false and provide a reason
@@ -483,6 +496,49 @@ func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizati
 	}
 
 	return true
+}
+
+func calculateContainerCollectorConfig(containerName string,
+	effectiveConfig *common.OdigosConfiguration,
+	runtimeDetails *odigosv1.RuntimeDetailsByContainer,
+	distroPerLanguage map[common.ProgrammingLanguage]string,
+	distroGetter *distros.Getter,
+	containerOverride *odigosv1.ContainerOverride,
+	samplingRules *[]odigosv1.Sampling,
+	pw k8sconsts.PodWorkload,
+) *odigosv1.ContainerCollectorConfig {
+
+	// If this container is ignored, runtime details are unavailable, or language is not supported,
+	// we don't need to add any sampling rules for it.
+	if slices.Contains(effectiveConfig.IgnoredContainers, containerName) {
+		return nil
+	}
+
+	if runtimeDetails == nil {
+		return nil
+	}
+
+	if runtimeDetails.Language == common.UnknownProgrammingLanguage {
+		return nil
+	}
+
+	containerDistro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
+	// This is not a real error but a containerAgentConfig pointer with the appropriate reason and message for the failure.
+	// In this case, we are not updating the ContainerAgentConfig so we can continue with the next container.
+	if err != nil {
+		return nil
+	}
+
+	noisyOps, relevantOps, costRules := sampling.FilterTailSamplingRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, containerDistro)
+
+	return &odigosv1.ContainerCollectorConfig{
+		ContainerName: containerName,
+		TailSampling: &odigosv1.SamplingCollectorConfig{
+			NoisyOperations:          noisyOps,
+			HighlyRelevantOperations: relevantOps,
+			CostReductionRules:       costRules,
+		},
+	}
 }
 
 func calculateContainerInstrumentationConfig(containerName string,

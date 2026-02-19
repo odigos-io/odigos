@@ -105,6 +105,7 @@ rules:
       - instrumentationinstances
       - sources
     verbs:
+      - update
       - patch
       - create
       - delete
