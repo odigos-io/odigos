@@ -44,20 +44,19 @@ The default values (unless overridden) are:
 
 | Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
 |---------------|---------------|-------------|------------|----------|
-| odigos-gateway      | 300Mi         | 300Mi       | 150m       | 300m     |
+| odigos-gateway      | 600Mi         | 600Mi       | 1m       | 1m     |
 
 Read more [here](/enterprise/pipeline/configuration).
 
 ### Per Node
 
-2 Daemonsets are deployed on each node in the cluster and consumes resources as follows:
-
-- **odiglet** - Does not set requests and limits. it will consume resources as needed depending on the number of pods running on the node and the amount of data being recorded.
-- **odigos-data-collection** - cpu and memory limits and requests are set by default to:
+3 DaemonSets are running on every node in the cluster, consuming resources as outlined below:
 
 | Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
 |---------------|---------------|-------------|------------|----------|
-| odigos-data-collection | 150Mi         | 300Mi       | 150m       | 300m     |
+| odiglet | 500Mi         | 500Mi       | 500m       | 500m     |
+| data-collection | 250Mi         | 500Mi       | 250m       | 500m     |
+| deviceplugin | 200Mi         | 300Mi       | 40m       | 100m     |
 
 You can override these values by providing a custom configuration (read more [here](/enterprise/pipeline/configuration)).
 
