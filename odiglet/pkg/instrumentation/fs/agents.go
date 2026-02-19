@@ -47,7 +47,8 @@ func CopyAgentsDirectoryToHost() error {
 		// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.
 		// These files are versioned and renamed when their respective library versions change.
 		"/var/odigos/python/google/_upb/_message.abi3.so":                     {}, // Google protobuf library
-		"/var/odigos/python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {}, // Wrapt library
+		"/var/odigos/python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {}, // Wrapt library on arm64
+		"/var/odigos/python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":  {}, // Wrapt library on x86_64
 	}
 	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
