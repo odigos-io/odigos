@@ -1,0 +1,51 @@
+package odigosconfigextension
+
+import (
+	"context"
+
+	"go.opentelemetry.io/collector/component"
+	"go.uber.org/zap"
+)
+
+// OdigosConfig is an extension that runs a dynamic informer for InstrumentationConfigs
+// and maintains a cache of workload sampling config keyed by namespace/kind/name.
+type OdigosConfig struct {
+	cache  *Cache
+	logger *zap.Logger
+	cancel context.CancelFunc
+}
+
+// NewOdigosConfig creates a new OdigosConfig extension.
+func NewOdigosConfig(settings component.TelemetrySettings) (*OdigosConfig, error) {
+	return &OdigosConfig{
+		cache:  NewCache(),
+		logger: settings.Logger,
+	}, nil
+}
+
+// Start starts the dynamic informer for InstrumentationConfigs. The informer
+// fills the cache with workload sampling configs (key = namespace/kind/name).
+func (o *OdigosConfig) Start(ctx context.Context, _ component.Host) error {
+	ctx, o.cancel = context.WithCancel(ctx)
+	return o.startInformer(ctx)
+}
+
+// Shutdown stops the informer and clears the cache.
+func (o *OdigosConfig) Shutdown(ctx context.Context) error {
+	if o.cancel != nil {
+		o.cancel()
+	}
+	return nil
+}
+
+// GetWorkloadSamplingConfig returns the sampling config for the given workload key
+// (format "namespace/kind/name"), or (nil, false) if not found.
+func (o *OdigosConfig) GetWorkloadSamplingConfig(workloadKey string) (*WorkloadSamplingConfig, bool) {
+	return o.cache.Get(workloadKey)
+}
+
+// Cache returns the underlying cache for advanced use (e.g. iteration).
+// Do not modify the cache directly; use GetWorkloadSamplingConfig for reads.
+func (o *OdigosConfig) Cache() *Cache {
+	return o.cache
+}

@@ -14,6 +14,7 @@ extensions:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.141.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.141.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.141.0
+  - gomod: github.com/odigos-io/odigos/collector/extension/odigosconfigextension v0.141.0
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.141.0
@@ -130,3 +131,4 @@ replaces:
   - github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver => ../receivers/odigosebpfreceiver
   - github.com/odigos-io/odigos/common => ../../common
   - go.opentelemetry.io/collector/config/configgrpc => ../config/configgrpc
+  - github.com/odigos-io/odigos/collector/extension/odigosconfigextension => ../extension/odigosconfigextension
