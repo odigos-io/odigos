@@ -14,4 +14,6 @@ const (
 	OdigosDeploymentConfigMapOnPremTokenExpKey       = "onprem-token-expiration"
 	OdigosDeploymentConfigMapOnPremClientProfilesKey = "onprem-profiles"
 	OdigosDeploymentConfigMapOdigosDeploymentIDKey   = "odigos-deployment-id"
+
+	OdigosLocalUiInstallationStatusKey = "installation-status"
 )

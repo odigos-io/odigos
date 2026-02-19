@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -14,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -67,12 +69,7 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	} else {
 		response.IsCentralProxyRunning = nil
 	}
-	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
-	if isNewInstallation {
-		response.InstallationStatus = model.InstallationStatus(NewInstallation)
-	} else {
-		response.InstallationStatus = model.InstallationStatus(Finished)
-	}
+	response.InstallationStatus = getInstallationStatus(ctx)
 	return response
 }
 
@@ -131,6 +128,90 @@ func isCentralProxyRunning(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+// getInstallationStatus reads the persisted installation status from the
+// odigos-local-ui-config ConfigMap. If not yet persisted, it falls back to
+// computing the status from cluster state and persists the result for future calls.
+func getInstallationStatus(ctx context.Context) model.InstallationStatus {
+	status, err := readInstallationStatus(ctx)
+	if err != nil {
+		log.Printf("Error reading installation status: %v\n", err)
+	}
+	if status != "" {
+		return model.InstallationStatus(status)
+	}
+
+	// Fallback: compute from cluster state (runs at most once per cluster lifetime)
+	isNew := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
+	if isNew {
+		return model.InstallationStatus(NewInstallation)
+	}
+
+	if err := persistInstallationStatus(ctx, string(Finished)); err != nil {
+		log.Printf("Error persisting installation status: %v\n", err)
+	}
+	return model.InstallationStatus(Finished)
+}
+
+func readInstallationStatus(ctx context.Context) (string, error) {
+	ns := env.GetCurrentNamespace()
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLocalUiConfigName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return "", nil
+		}
+		return "", fmt.Errorf("failed to get local ui config: %w", err)
+	}
+	return cm.Data[k8sconsts.OdigosLocalUiInstallationStatusKey], nil
+}
+
+func persistInstallationStatus(ctx context.Context, status string) error {
+	ns := env.GetCurrentNamespace()
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLocalUiConfigName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			ownerCm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to get odigos-configuration for owner reference: %w", err)
+			}
+
+			cm = &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      consts.OdigosLocalUiConfigName,
+					Namespace: ns,
+					Labels: map[string]string{
+						k8sconsts.OdigosSystemConfigLabelKey: "local-ui",
+					},
+					OwnerReferences: []metav1.OwnerReference{{
+						APIVersion: "v1",
+						Kind:       "ConfigMap",
+						Name:       ownerCm.Name,
+						UID:        ownerCm.UID,
+					}},
+				},
+				Data: map[string]string{
+					k8sconsts.OdigosLocalUiInstallationStatusKey: status,
+				},
+			}
+			_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Create(ctx, cm, metav1.CreateOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to create local ui config ConfigMap: %w", err)
+			}
+			return nil
+		}
+		return fmt.Errorf("failed to get local ui config: %w", err)
+	}
+
+	if cm.Data == nil {
+		cm.Data = make(map[string]string)
+	}
+	cm.Data[k8sconsts.OdigosLocalUiInstallationStatusKey] = status
+	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to update local ui config ConfigMap: %w", err)
+	}
+	return nil
+}
+
 func isSourceCreated(ctx context.Context) bool {
 	ns := env.GetCurrentNamespace()
 
@@ -148,18 +229,10 @@ func isSourceCreated(ctx context.Context) bool {
 		}
 
 		if len(sourceList.Items) > 0 {
-			allDisabled := true
-
 			for _, source := range sourceList.Items {
 				if !source.Spec.DisableInstrumentation {
-					// Found an enabled source, no need to keep checking
 					return true
 				}
-			}
-
-			// If we get here, all sources were disabled
-			if allDisabled {
-				continue
 			}
 		}
 	}
