@@ -3,8 +3,10 @@ package nodecollector
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -21,6 +23,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
+
+const DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL = 10 * time.Second
 
 func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources *odigosv1.InstrumentationConfigList, clusterCollectorGroup odigosv1.CollectorsGroup, allProcessors *odigosv1.ProcessorList,
 	datacollection *odigosv1.CollectorsGroup) error {
@@ -158,14 +162,6 @@ func calculateCollectorConfigDomains(
 		return configDomains, string(mergedConfigYaml), nil
 	}
 
-	additionalMetricsReceivers := []string{}
-	if nodeCG.Spec.Metrics != nil {
-		ownMetricsConfig := nodeCG.Spec.Metrics.OdigosOwnMetrics
-		if ownMetricsConfig != nil {
-			configDomains["own_metrics"], additionalMetricsReceivers = collectorconfig.OwnMetricsConfigPrometheus(ownMetricsConfig, odigosNamespace)
-		}
-	}
-
 	// processors from k8s "Processor" custom resource
 	processorsResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range processorsResults.Errs {
@@ -194,8 +190,17 @@ func calculateCollectorConfigDomains(
 			configDomains["span_metrics"] = spanMetricsConfig
 		}
 
-		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, processorsResults.MetricsProcessors, additionalMetricsReceivers, metricsConfigSettings)
+		metricsConfig := collectorconfig.MetricsConfig(nodeCG, odigosNamespace, processorsResults.MetricsProcessors, metricsConfigSettings)
 		configDomains["metrics"] = metricsConfig
+	}
+
+	// ownmetrics - report the node collector's own telemetry to the cluster collector
+	if nodeCG.Spec.Metrics != nil && nodeCG.Spec.Metrics.OdigosOwnMetrics != nil {
+		ownMetricsConfig, err := ownMetricsTelemetryConfig(nodeCG.Spec.Metrics.OdigosOwnMetrics, odigosNamespace)
+		if err != nil {
+			return nil, "", errors.Join(err, errors.New("failed to calculate own metrics config"))
+		}
+		configDomains["own_metrics"] = ownMetricsConfig
 	}
 
 	// traces
@@ -225,6 +230,39 @@ func calculateCollectorConfigDomains(
 	}
 
 	return configDomains, string(mergedConfigYaml), nil
+}
+
+func ownMetricsTelemetryConfig(ownMetricsConfig *odigosv1.OdigosOwnMetricsSettings, odigosNamespace string) (config.Config, error) {
+	duration, err := time.ParseDuration(ownMetricsConfig.Interval)
+	if err != nil {
+		// Default to 10 seconds if the interval is not set
+		duration = DEFAULT_OWNMETRICS_PERIODIC_READER_SCRAPE_INTERVAL
+	}
+
+	clusterCollectorEndpoint := fmt.Sprintf("%s.%s:44318", k8sconsts.OdigosClusterCollectorServiceName, odigosNamespace)
+
+	reader := config.GenericMap{
+		"periodic": config.GenericMap{
+			"interval": int64(duration.Milliseconds()),
+			"exporter": config.GenericMap{
+				"otlp": config.GenericMap{
+					"endpoint": clusterCollectorEndpoint,
+					"insecure": true,
+					"protocol": "http/protobuf",
+				},
+			},
+		},
+	}
+
+	return config.Config{
+		Service: config.Service{
+			Telemetry: config.Telemetry{
+				Metrics: config.MetricsConfig{
+					Readers: []config.GenericMap{reader},
+				},
+			},
+		},
+	}, nil
 }
 
 func getConfigMap(ctx context.Context, c client.Client, namespace string) (*v1.ConfigMap, error) {
