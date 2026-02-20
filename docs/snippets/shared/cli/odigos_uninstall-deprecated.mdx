@@ -1,0 +1,53 @@
+## odigos uninstall-deprecated
+
+Revert all the changes made by the `odigos install` command.
+This command will uninstall Odigos from your cluster. It will delete all Odigos objects
+and rollback any metadata changes made to your objects.
+
+```
+odigos uninstall-deprecated [flags]
+```
+
+### Examples
+
+```
+
+# Uninstall Odigos open-source or cloud from the cluster in your kubeconfig active context.
+odigos uninstall
+
+# Uninstall Odigos without confirmation
+odigos uninstall --yes
+
+# Uninstall Odigos without waiting for pods to rollout without instrumentation
+odigos uninstall --no-wait
+
+# Uninstall Odigos cloud from a specific cluster
+odigos uninstall --kubeconfig <path-to-kubeconfig>
+
+# Install a fresh setup of Odigos
+odigos uninstall
+odigos install
+
+```
+
+### Options
+
+```
+  -h, --help                   help for uninstall-deprecated
+      --instrumentation-only   only remove instrumentation from workloads, without removing the entire Odigos setup
+      --namespace string       namespace to uninstall Odigos from (overrides auto-detection)
+      --no-wait                skip waiting for pods to rollout without instrumentation
+      --yes                    skip the confirmation prompt
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos](./odigos)	 - Automate OpenTelemetry Observability in Kubernetes

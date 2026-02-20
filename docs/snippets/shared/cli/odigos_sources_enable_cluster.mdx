@@ -1,0 +1,80 @@
+## odigos sources enable cluster
+
+Enable an entire cluster for Odigos instrumentation
+
+### Synopsis
+
+This command enables the cluster for Odigos instrumentation. It will create Source objects for all apps in the cluster, except those that are excluded or in system namespaces.
+
+```
+odigos sources enable cluster [flags]
+```
+
+### Examples
+
+```
+
+# Enable the cluster for Odigos instrumentation
+odigos sources enable cluster
+
+# Enable the cluster for Odigos instrumentation, but dry run (don't actually create any Sources)
+odigos sources enable cluster --dry-run
+
+# Enable the cluster for Odigos instrumentation with excluded namespaces
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt
+
+# Enable the cluster for Odigos instrumentation with excluded workloads
+odigos sources enable cluster --exclude-workloads-file=excluded-workloads.txt
+
+# Enable the cluster for Odigos instrumentation with excluded namespaces and workloads
+odigos sources enable cluster --exclude-namespaces-file=excluded-namespaces.txt --exclude-workloads-file=excluded-workloads.txt
+
+For example, excluded-namespaces.txt:
+namespace1
+namespace2
+
+For example, excluded-workloads.txt (supports three formats):
+# Format 1: <namespace>/<kind>/<name> - most specific
+production/Deployment/my-app
+
+# Format 2: <kind>/<name> - excludes in all namespaces
+StatefulSet/redis
+
+# Format 3: <name> - excludes workload with this name regardless of kind or namespace
+nginx
+
+# Note: Kind matching is case-insensitive (deployment, Deployment, DEPLOYMENT all work)
+test/dePloyMent/my-other-app
+
+Workloads can be Deployments, DaemonSets, StatefulSets, CronJobs, or Jobs.
+
+```
+
+### Options
+
+```
+      --dry-run                             dry run
+      --exclude-namespaces-file string      Path to file containing namespaces to exclude
+      --exclude-workloads-file string       Path to file containing workloads to exclude
+  -h, --help                                help for cluster
+      --instrumentation-cool-off duration   Cool-off period for instrumentation. Time format is 1h30m
+      --local-address string                Local address to forward to the remote UI (default "localhost")
+      --local-port string                   Local port to forward to the remote UI (defaults to 0=random) (default "0")
+      --only-deployment string              Name of the deployment to instrument (must be used with --only-namespace)
+      --only-namespace string               Namespace of the deployment to instrument (must be used with --only-deployment)
+      --remote                              remote
+      --remote-port string                  Remote port to forward to the local UI (default "3000")
+      --skip-preflight-checks               Skip preflight checks
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos sources enable](./odigos_sources_enable)	 - Enable a source for Odigos instrumentation.

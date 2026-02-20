@@ -1,0 +1,307 @@
+---
+title: 'Step-by-Step Installation Guide'
+sidebarTitle: 'Step-by-Step Installation Guide'
+---
+
+This guide is perfect for you if:
+
+- You're new to tech tools but curious about ways to understand how your computer systems work. Maybe you've heard about "observability" and want to see what it's all about, without getting lost in technical jargon.
+- You're a software developer or work in IT, and while you're comfortable with computers, you're new to kubernetes. You're looking for a clear, step-by-step guide that doesn't assume you're already an expert.
+- You're simply interested in Odigos and want to give it a try but don't have previous experience with CLI. This guide will walk you through the process without assuming any prior knowledge.
+
+<Info>
+  If you find this guide too basic for you please refer to the main [Quick Start guide](../quickstart/introduction) article.
+</Info>
+
+Before installing Odigos, you need to set up some tools on your computer. These are one-time installations that prepare your computer for running Odigos.
+You will only need to install these tools once on your computer. Next time you want to run the demo, you can skip this step and go directly to the next one.
+
+### Required Tools to Get Started
+
+#### 1. Install Homebrew
+
+    Homebrew is a package manager for macOS that simplifies the installation of software packages. We will use Homebrew to install Docker Desktop, KinD (Kubernetes in Docker), and the Odigos CLI.
+
+    a. Locate and open the Terminal application:
+
+    - Click on the magnifying glass icon (🔍) in the top right corner of your screen.
+    - Type "Terminal" into the search bar that appears.
+    - Click on the Terminal application icon (it looks like a black box with a command prompt ">_").
+
+    b. When the Terminal window opens, you'll see a prompt where you can type commands. It might look something like this:
+
+    ```bash
+    YourComputerName:~ YourUsername$
+    ```
+
+    c. Check if Homebrew is already installed:
+
+    ```bash
+    brew --version
+    ```
+
+    If you see a version number, Homebrew is already installed and you can skip to step 2. If not, continue with the following steps.
+
+d. Copy the following command:
+
+    ```bash
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    ```
+
+e. Paste this command into the Terminal (use Command+V) and press the `Enter` key.
+
+f. The Terminal will display text as it runs the command. This is normal.
+
+g. If prompted, enter your computer's password. As you type, no characters will appear – this is a security feature. Press `Enter` after typing your password.
+
+h. The installation may take several minutes. It's complete when you see the command prompt again.
+
+i. After installation, you need to add Homebrew to your PATH. The Terminal will display instructions for this. It typically involves running two commands like these:
+
+    ```
+    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    ```
+
+    Copy and run these commands as displayed in your Terminal.
+
+j. Close the Terminal window.
+
+k. Open a new Terminal window to ensure the installation takes effect.
+
+l. Verify the installation by running:
+
+    ```bash
+    brew --version
+    ```
+
+If you see a version number, Homebrew has been successfully installed.
+
+    #### 2. Install Docker Desktop
+
+    Docker Desktop creates a special environment on your computer where Odigos can run.
+
+    a. In the new Terminal window, copy and paste the following command, then press `Enter`:
+
+    ```bash
+    brew install --cask docker
+    ```
+
+    b. Wait for the installation to complete. You'll know it's done when you see the command prompt again.
+
+    c. Once the installation is complete, you need to open Docker Desktop:
+
+    - Click on the magnifying glass icon (🔍) in the top right corner of your screen.
+    - Type "Docker" into the search bar.
+    - Click on the Docker application icon (it looks like a whale carrying boxes).
+
+    d. When Docker starts for the first time, you may see a box asking for your computer's password. Enter your password and click `OK`.
+
+    e. You may see a welcome screen or tutorial from Docker.
+
+    f. Docker Desktop will ask you to login or create an account if this is the first time you use it. Follow the instruction to register an account and login to Docker Desktop once you register your account.
+
+    g. Wait until you see a green dot next to "Docker Desktop is running" in the Docker Dashboard.
+
+    #### 3. Install KinD
+
+    <Warning>
+      **Mac users**: please avoid using Docker Desktop built-in Kubernetes cluster as it [does not](https://docs.docker.com/storage/bind-mounts/#configure-bind-propagation) support bind propagation.
+    </Warning>
+
+    KinD (Kubernetes in Docker) helps set up a test environment for Odigos.
+
+    a. Go back to your Terminal window (or open a new one if you closed it).
+
+    b. Copy and paste the following command, then press `Enter`:
+
+    ```bash
+    brew install kind
+    ```
+
+    c. Wait for the installation to complete. You'll know it's done when you see the command prompt again.
+
+This is the end of the one-time installations and the following steps will be required every time:
+
+    ### Setting up the cluster
+    Now that you have Kind installed, let's create a Kubernetes cluster:
+
+    1. In the Terminal, copy and paste the following command and press `Enter`:
+
+    ```bash
+    kind delete cluster --name odigos-demo
+    ```
+
+    This removes any existing test environment with the same name. If this is your first time, you'll see a message saying the cluster doesn't exist, which is fine.
+
+    2. Create a new cluster by running:
+
+    ```bash
+    kind create cluster --name odigos-demo
+    ```
+
+    This command creates a new Kubernetes cluster named "odigos-demo". You'll see a lot of text appear in the Terminal. This is normal. Wait until you see a message that says "Your Kubernetes control-plane has initialized successfully!" and the command prompt appears again.
+
+    3. Verify that the cluster is running:
+
+    ```bash
+    kubectl cluster-info --context kind-odigos-demo
+    ```
+
+    This should display information about your cluster, including the Kubernetes master and CoreDNS.
+
+    ### Install the demo application
+    With our Kubernetes cluster running, we'll now deploy a demo application consisting of 5 microservices written in Go, Java, Python, .NET, and Node.js:
+
+    1. Deploy the application using the following command:
+
+    ```bash
+    kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/deployment.yaml
+    ```
+
+    This command applies the Kubernetes configuration file that defines our demo application.
+    2. Wait for all the pods to be in the 'Running' state:
+
+    ```bash
+    kubectl get pods --watch
+    ```
+
+    Press Ctrl+C to exit the watch mode once all pods are running.
+
+    3. Verify that all services are running:
+
+    ```bash
+    kubectl get services
+    ```
+
+    You should see a list of services including frontend, inventory, membership, coupon, and pricing.
+
+    4. Set up port forwarding to the frontend service:
+
+    ```bash
+    kubectl port-forward svc/frontend 8080:8080
+    ```
+
+    This command forwards local port 8080 to port 8080 of the frontend service in the cluster.
+
+    5. Open your web browser and navigate to http://localhost:8080
+
+    You should now see the demo application running in your browser. You can interact with it to generate some traffic and data for Odigos to observe.
+
+    ### Setting Up Jaeger as a Destination in Odigos
+
+    For this demo, we'll use Jaeger, a popular open-source tool for tracing in distributed systems. Here's how to set it up:
+
+    #### 1. Install Jaeger
+
+    a. Open your Terminal application.
+
+    b. Run the following command to install a lightweight Jaeger instance in your Kubernetes cluster:
+
+      ```
+      kubectl apply -f https://raw.githubusercontent.com/odigos-io/simple-demo/main/kubernetes/jaeger.yaml
+      ```
+
+    c. Wait for the Jaeger deployment to be ready by running:
+
+      ```
+      kubectl wait --for=condition=available --timeout=300s deployment jaeger -n tracing
+      ```
+
+    #### 2. Access the Jaeger UI
+
+    a. To access the Jaeger UI, run this command in your terminal:
+
+      ```
+      kubectl port-forward -n tracing svc/jaeger 16686:16686
+      ```
+
+    b. Open your web browser and go to: http://localhost:16686
+
+      You should see the Jaeger UI. Keep this terminal window open to maintain access to Jaeger.
+
+    ### Installing Odigos
+
+
+    #### 1. Install the Odigos CLI tool
+
+    The Odigos CLI (Command Line Interface) tool allows you to manage Odigos from the Terminal.
+
+    a. In the Terminal, copy and paste the following command and press `Enter`:
+
+    ```
+    brew install odigos-io/odigos-cli/odigos
+    ```
+
+    b. Wait for the installation to complete. You'll know it's done when you see the command prompt again.
+
+    #### 2. Install Odigos in your test environment
+
+    a. In the Terminal, copy and paste the following command and press `Enter`:
+
+    ```
+    odigos install
+    ```
+
+    b. This step may take several minutes. You'll see a lot of text appear in the Terminal – this is normal.
+
+    c. You'll know it's done when you see a message saying "SUCCESS: Odigos installed." and the command prompt appears again.
+
+    #### 3. Open the Odigos control panel
+
+    a. In the Terminal, copy and paste the following command and press `Enter`:
+
+    ```
+    odigos ui
+    ```
+
+    After you run this command, the Terminal will look like it's frozen. This is normal – it's running a program in the background.
+
+    b. Open your web browser (like Safari or Chrome).
+
+    c. In the address bar at the top of the browser window, type exactly this:
+
+    ```
+    http://localhost:3000
+    ```
+
+    Then press `Enter`.
+
+    d. The Odigos control panel should now open in your browser. It might take a few seconds to load.
+
+    #### 4. Set up Odigos
+
+    a. In the Odigos control panel, you'll see a page titled "Select Sources". Sources are the things Odigos can collect data from.
+
+    b. Click the checkbox next to each Source you want to monitor. If you're not sure, you can select all of them.
+
+    c. Click the blue "Next" button at the bottom right of the page.
+
+    d. You'll now see a page titled "Add Destinations". Destinations are places where Odigos can send its information.
+
+    e. Click on one of the destination options (for example, "Jaeger").
+
+    f. If you're using "Jaeger", fill in the following details:
+
+      - Destination Name: Enter "jaeger-demo" (or any name you prefer)
+      - Endpoint: Enter "jaeger.tracing"
+
+    g. Click the blue "Create Destination" button.
+
+    h. You should now see an overview page showing your selected Sources and Destinations.
+
+    Congratulations! You've now installed and set up Odigos on your Mac.
+
+### Next Steps: Building Your First Observability Pipeline
+
+Congratulations! You've successfully installed Odigos and set up Jaeger as your observability destination. This is a great first step towards gaining deeper insights into your systems and applications.
+But the journey doesn't stop here. Now that you have the foundation in place, it's time to harness the full power of Odigos by building your first observability pipeline.
+
+In the next article, [Building a Pipeline](../quickstart/building-a-pipeline), you'll learn how to:
+
+- Configure data sources for your observability pipeline
+- Set up data processing and filtering
+- Direct your observability data to Jaeger and other potential destinations
+- Customize your pipeline to meet your specific needs
+
+By building a pipeline, you'll be able to collect, process, and analyze data from your applications more effectively, giving you a comprehensive view of your system's performance and behavior.

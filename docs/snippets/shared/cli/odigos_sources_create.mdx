@@ -1,0 +1,36 @@
+## odigos sources create
+
+Create an Odigos Source
+
+### Synopsis
+
+This command will create the named Source object for the provided workload.
+
+```
+odigos sources create [name] [flags]
+```
+
+### Options
+
+```
+      --disable-instrumentation     Disable instrumentation for Source
+      --group string                Name of Source group to use
+  -h, --help                        help for create
+  -n, --namespace string            Kubernetes Namespace for Source (default "default")
+      --otel-service string         OpenTelemetry service name to use for the Source
+      --workload-kind string        Kubernetes Kind for entity (one of: Deployment, DaemonSet, StatefulSet, Namespace, DeploymentConfig)
+      --workload-name string        Name of entity for Source
+      --workload-namespace string   Namespace of entity for Source
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos sources](./odigos_sources)	 - Manage Odigos Sources in a cluster

@@ -18,7 +18,7 @@
 */}
 
 <Note>
-  These instructions are for the Grafana Cloud **managed** Loki service. If you run a self hosted Loki instance, please follow the instructions on the [Loki](/backends/loki) page.
+  These instructions are for the Grafana Cloud **managed** Loki service. If you run a self hosted Loki instance, please follow the instructions on the [Loki](../backends/loki) page.
 </Note>
 
 You can use Grafana Cloud managed service as a backend for Odigos to store your logs, metrics, and traces. This page describes how to configure Odigos to use Grafana Cloud Loki as a **logs** backend.
@@ -26,18 +26,18 @@ You can use Grafana Cloud managed service as a backend for Odigos to store your 
 All the connection details can be found at [grafana.com](https://grafana.com) under **My Account**
 
 <Frame>
-  <img src="/backends/images/grafanacloud1.png" alt="Grafana labs website" />
+  <img src="../backends/images/grafanacloud1.png" alt="Grafana labs website" />
 </Frame>
 
 Then, under the "GRAFANA CLOUD" title, select your Grafana Stuck, browser to the "Loki" card and click "Send Logs"
 
 <Frame>
-  <img src="/backends/images/grafanacloud2.png" alt="Loki managed service configuration" />
+  <img src="../backends/images/grafanacloud2.png" alt="Loki managed service configuration" />
 </Frame>
 
 **Loki Labels**
 
-Read about setting grafana loki labels in the [Loki](/backends/loki#loki-labels) page.
+Read about setting grafana loki labels in the [Loki](../backends/loki#loki-labels) page.
 
 {/*
     !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
@@ -76,7 +76,7 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    Use the [Odigos CLI](../cli/odigos_ui) to access the UI
     ```bash
     odigos ui
     ```

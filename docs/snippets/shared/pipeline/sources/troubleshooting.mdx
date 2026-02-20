@@ -1,7 +1,7 @@
 import GettingHelp from '/snippets/shared/getting-help-section.mdx'
 
 <Tip>
-  It is recommended to use the [`odigos describe`](/cli/odigos_describe) command to get detailed information in one command.
+  It is recommended to use the [`odigos describe`](../../cli/odigos_describe) command to get detailed information in one command.
 </Tip>
 
 ## Check is Source Created?
@@ -71,7 +71,7 @@ status:
 
 ## Check is Device Instrumented?
 
-Once an `InstrumentationConfig` object is created, and the supported language is detected, Odigos will wait until a [destination](/backends-overview) is added, and OpenTelemetry Collectors are deployed to the cluster (which will receive the telemetry data).
+Once an `InstrumentationConfig` object is created, and the supported language is detected, Odigos will wait until a [destination](../../backends-overview) is added, and OpenTelemetry Collectors are deployed to the cluster (which will receive the telemetry data).
 
 To inject the instrumentation agents into the pods, Odigos will patch the workload template containers with a resource based on the detected language.
 

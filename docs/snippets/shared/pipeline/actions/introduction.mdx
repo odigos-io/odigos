@@ -2,7 +2,7 @@
 
 Under the hood, Odigos uses the [OpenTelemetry Collector Processors](https://opentelemetry.io/docs/collector/configuration/#processors) to implement actions.
 
-Processors are a class of OpenTelemetry Collector component. They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your [destinations](/backends-overview).
+Processors are a class of OpenTelemetry Collector component. They are used to transform, filter, or enrich your OpenTelemetry data before it is sent to your [destinations](../../backends-overview).
 
 ## Benefits
 
@@ -18,21 +18,21 @@ Actions are a powerful tool to help you manage your observability data and ensur
 ### Attribute Actions
 
 Attribute Actions are a way to modify the OpenTelemetry data recorded by Odigos Sources, before it is exported to your destinations.
-  - [Add Cluster Info](/pipeline/actions/attributes/addclusterinfo)
-  - [Delete Attribute](/pipeline/actions/attributes/deleteattribute)
-  - [Rename Attribute](/pipeline/actions/attributes/renameattribute)
-  - [Pii Masking](/pipeline/actions/attributes/piimasking)
-  - [Kubernetes Attributes](/pipeline/actions/attributes/k8sattributes)
+  - [Add Cluster Info](../../pipeline/actions/attributes/addclusterinfo)
+  - [Delete Attribute](../../pipeline/actions/attributes/deleteattribute)
+  - [Rename Attribute](../../pipeline/actions/attributes/renameattribute)
+  - [Pii Masking](../../pipeline/actions/attributes/piimasking)
+  - [Kubernetes Attributes](../../pipeline/actions/attributes/k8sattributes)
 
 ### Sampling Actions
 
 Sampling Actions allow you to configure various types of sampling methods before exporting traces to your destinations.
-  - [Error Sampler](/pipeline/actions/sampling/errorsampler)
-  - [Ignore Health Checks](/pipeline/actions/sampling/ignorehealthchecks)
-  - [Latency Sampler](/pipeline/actions/sampling/latencysampler)
-  - [Service Name Sampler](/pipeline/actions/sampling/servicenamesampler)
-  - [Span Attribute Sampler](/pipeline/actions/sampling/spanattributesampler)
-  - [Probabilistic Sampler](/pipeline/actions/sampling/probabilisticsampler)
+  - [Error Sampler](../../pipeline/actions/sampling/errorsampler)
+  - [Ignore Health Checks](../../pipeline/actions/sampling/ignorehealthchecks)
+  - [Latency Sampler](../../pipeline/actions/sampling/latencysampler)
+  - [Service Name Sampler](../../pipeline/actions/sampling/servicenamesampler)
+  - [Span Attribute Sampler](../../pipeline/actions/sampling/spanattributesampler)
+  - [Probabilistic Sampler](../../pipeline/actions/sampling/probabilisticsampler)
 
 <AccordionGroup>
   <Accordion title="Scope Categories">
@@ -57,4 +57,4 @@ Sampling Actions allow you to configure various types of sampling methods before
 
 ### Custom Actions
 
-Odigos also supports adding OpenTelemetry processors with [Kuberenetes CRDs](/pipeline/actions/crd) which you can apply manually, or through a GitOps workflow.
+Odigos also supports adding OpenTelemetry processors with [Kuberenetes CRDs](../../pipeline/actions/crd) which you can apply manually, or through a GitOps workflow.

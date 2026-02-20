@@ -1,0 +1,41 @@
+## odigos pro central install
+
+Install Odigos Central backend and UI components
+
+```
+odigos pro central install [flags]
+```
+
+### Examples
+
+```
+
+# Install Odigos Central
+odigos pro central install
+
+```
+
+### Options
+
+```
+      --chart string              Helm chart to install (repo/name, local path, or URL) (default "odigos/odigos-central")
+  -h, --help                      help for install
+  -n, --namespace string          Target namespace for Odigos Central installation (default "odigos-central")
+      --release-name string       Helm release name (default "odigos-central")
+      --reset-then-reuse-values   Reset to chart defaults, then reuse values from the previous release (default: true). (default true)
+      --set strings               Set values on the command line (key=value)
+  -f, --values string             Path to a custom values.yaml file
+      --version string            Specify version to upgrade to
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos pro central](/cli/odigos_pro_central)	 - Manage Odigos Central (Enterprise tier)

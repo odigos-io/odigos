@@ -25,7 +25,7 @@ docker pull registry.odigos.io/odigos-odiglet:$VERSION
 docker pull registry.odigos.io/odigos-collector:$VERSION
 ```
 
-If you are using the [k8s-init-container](/instrumentations/configuration/mount-method#3-InitContainer) mount method
+If you are using the [k8s-init-container](../instrumentations/configuration/mount-method#3-InitContainer) mount method
 make sure the odigos-agents image is also pulled, as it's required by the injected InitContainer.
 **This is not the default configuration**, if you're unsure what this means, you can safely ignore this step and continue with the standard setup.
 
@@ -33,7 +33,7 @@ make sure the odigos-agents image is also pulled, as it's required by the inject
 docker pull registry.odigos.io/odigos-agents:$VERSION
 ```
 
-If you are using [image mirrored Go offsets updates](/instrumentations/golang/ebpf#about-go-offsets), also mirror the offsets image:
+If you are using [image mirrored Go offsets updates](../instrumentations/golang/ebpf#about-go-offsets), also mirror the offsets image:
 
 ```
 docker pull registry.odigos.io/cli-offsets:latest
