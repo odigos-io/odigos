@@ -111,8 +111,8 @@ In the above example, these are `main.main.LoggerMiddleware.func2` and `main.mai
 
 ## Example Application
 
-First, follow the steps in the [Quickstart](/quickstart/introduction) to set up a Kind cluster,
-install Jaeger, and [install Odigos](/quickstart/installation) (note: Go hooks are only available with
+First, follow the steps in the [Quickstart](../../quickstart/introduction) to set up a Kind cluster,
+install Jaeger, and [install Odigos](../../quickstart/installation) (note: Go hooks are only available with
 an enterprise token, which you can set in this walkthrough by installing with `--onprem-token=<YOUR_TOKEN>`).
 
 Next create a folder for your sample app and initialize the Go module:
@@ -261,7 +261,7 @@ Apply the deployment using the `IMAGE_TAG` environment variable you defined abov
 envsubst < deployment.yaml | kubectl apply -f -
 ```
 
-Now, follow the Quickstart steps to [Build a pipeline](/quickstart/building-a-pipeline) in order to
+Now, follow the Quickstart steps to [Build a pipeline](../../quickstart/building-a-pipeline) in order to
 instrument the sample application.
 
 To generate traces, connect to the service with `kubectl port-forward`:
