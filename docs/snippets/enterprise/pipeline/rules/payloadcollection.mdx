@@ -2,7 +2,7 @@
 
 <Warning>
   Before enabling **payload collection**, please note the following:
-  - PII (Personally Identifiable Information) and other potentially sensitive data may be present in the payload. Evaluate the risk of collecting this data, and consider using the [PII Masking Action](/pipeline/actions/attributes/piimasking) to mask sensitive data.
+  - PII (Personally Identifiable Information) and other potentially sensitive data may be present in the payload. Evaluate the risk of collecting this data, and consider using the [PII Masking Action](../../pipeline/actions/attributes/piimasking) to mask sensitive data.
   - Payload data can be large and may increase the size of your spans. This can impact the performance of your application and the cost of processing, storing and analyzing traces.
   - The support for payload collection varies between instrumentation libraries and languages. Not all libraries support payload collection, and the supported payload types and formats may differ. Consult the documentation of the instrumentation library you are using for more information.
 </Warning>
