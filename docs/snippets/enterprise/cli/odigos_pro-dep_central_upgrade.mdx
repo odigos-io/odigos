@@ -1,0 +1,31 @@
+## odigos pro-dep central upgrade
+
+Upgrade Odigos Central UI in the central namespace
+
+```
+odigos pro-dep central upgrade [flags]
+```
+
+### Options
+
+```
+      --central-max-message-size string   Maximum message size in bytes for gRPC messages (empty = use default)
+  -h, --help                              help for upgrade
+      --image-pull-secrets strings        Secret names for imagePullSecrets (repeat or comma-separated)
+  -n, --namespace string                  Target namespace for Odigos Central upgrade (default "odigos-central")
+      --version string                    Specify version to upgrade to
+      --yes                               Confirm the upgrade without prompting
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -r, --remote                use odigos ui service in the cluster to update the onprem token
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos pro-dep central](/cli/odigos_pro-dep_central)	 - Manage Odigos Central (Enterprise tier)

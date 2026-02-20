@@ -1,6 +1,6 @@
 Beyond just enabling or disabling instrumentation, Source objects can be used to configure instrumentation settings as well.
 
-All Source settings can be configured with the Odigos CLI (see [CLI documentation on updating Sources](/cli/odigos_sources_update)) or Kubernetes-native tools like `kubectl`.
+All Source settings can be configured with the Odigos CLI (see [CLI documentation on updating Sources](../../cli/odigos_sources_update)) or Kubernetes-native tools like `kubectl`.
 
 ## service.name
 
@@ -31,7 +31,7 @@ Namespace Sources do not support the `otelServiceName` attribute. If a namespace
 
 
 The easiest way to update a source from Odigos is to use the Odigos UI.<br />
-After [installing Odigos CLI](/setup/installation), run the following command to start the Odigos UI:
+After [installing Odigos CLI](../../setup/installation), run the following command to start the Odigos UI:
 
 ```shell
 odigos ui
@@ -42,7 +42,7 @@ To undo the override, simply erase the value from the `service.name` field.
 
 ### Odigos CLI
 
-To set the `service.name` using the Odigos CLI, use the `odigos sources update` command ([see documentation](/cli/odigos_sources_update)).
+To set the `service.name` using the Odigos CLI, use the `odigos sources update` command ([see documentation](../../cli/odigos_sources_update)).
 
 If you know the name of the Source object to update, pass that to `odigos sources update` along with the `--otel-service` flag:
 

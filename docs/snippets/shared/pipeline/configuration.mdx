@@ -17,10 +17,12 @@ Odigos offers two main options for configuring the pipeline:
 
 #### 1. Using Sizing Configuration
 
-To set the sizing config, you need to use the [Odigos CLI Command for ](/cli/odigos_config_set).<br />
-This simplifies the setup process and ensures optimized settings for typical use cases.
+To configure resource sizing at install time, set the `ResourceSizePreset` value in your Helm chart when installing Odigos—either in your `values.yaml` file or by using `--set ResourceSizePreset=<preset>` in the `helm install` command.
 
-Available Sizing config `size_s`, `size_m`, `size_l` are pre-defined configurations designed to simplify pipeline configurations. Each profile specifies the following parameters:
+This approach streamlines the setup process and applies optimized defaults for common use cases.
+
+The available sizing options—`size_s`, `size_m`, `size_l`, and `size_xl`—are predefined profiles designed to simplify pipeline configuration. Each profile specifies a defined set of parameters, as detailed below:
+
 
 **Cluster Gateway Collector**:
 
