@@ -50,7 +50,7 @@ The following go modules will be auto instrumented by Odigos:
 ## Custom Instrumentations
 We support adding custom eBPF-based instrumentations for arbitrary Go functions and invokable sites that exist in your application code or its dependencies.
 By defining custom instrumentation rules, you can extend Odigos's auto-instrumentation capabilities and cover your specific use cases and application logic.
-To learn more about creating custom eBPF-based instrumentations for Go applications, refer to the [Custom eBPF Instrumentation for Go Applications](/pipeline/rules/custominstrumentation) guide.
+To learn more about creating custom eBPF-based instrumentations for Go applications, refer to the [Custom eBPF Instrumentation for Go Applications](../../pipeline/rules/custominstrumentation) guide.
 
 ## About Go Offsets
 
@@ -67,13 +67,13 @@ versions of instrumented libraries.
 
 This precompiled list is updated to be up-to-date with every release of Odigos. But, this means that you may encounter errors instrumenting applications
 that use very newly released versions of dependencies. If this occurs, it will be resolved by updating to the next release of Odigos, or alternatively
-upgrading the locally-stored offsets with the [`odigos pro update-offsets`](/cli/odigos_pro_update-offsets) command.
+upgrading the locally-stored offsets with the [`odigos pro update-offsets`](../../../enterprise/cli/odigos_pro_update-offsets) command.
 
 ### Updating Offsets Between Versions
 
 It is possible to pull the latest Go library support for Odigos without updating the entire Odigos installation. There are 3 ways to do so:
 
-1. Manual updates (with [`odigos pro update-offsets`](/cli/odigos_pro_update-offsets)).
+1. Manual updates (with [`odigos pro update-offsets`](../../../enterprise/cli/odigos_pro_update-offsets)).
 2. Direct automatic updates (recommended, see below).
 3. Mirrored image automatic updates (for disconnected environments, see below).
 

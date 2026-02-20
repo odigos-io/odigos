@@ -1,0 +1,31 @@
+## odigos sources enable rollout
+
+enable a Rollout for Odigos instrumentation
+
+### Synopsis
+
+This command enables the provided Rollout for Odigos instrumentatin. It will create a Source object if one does not already exists, or update the existing one if it does.
+
+```
+odigos sources enable rollout [name] [flags]
+```
+
+### Options
+
+```
+      --dry-run            dry run
+  -h, --help               help for rollout
+  -n, --namespace string   Kubernetes Namespace for Source (default "default")
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos sources enable](./odigos_sources_enable)	 - Enable a source for Odigos instrumentation.

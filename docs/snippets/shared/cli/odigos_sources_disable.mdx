@@ -1,0 +1,47 @@
+## odigos sources disable
+
+Disable a source for Odigos instrumentation.
+
+### Synopsis
+
+This command disables the given workload for Odigos instrumentation. It will create a Source object (if one does not already exist)
+
+### Examples
+
+```
+
+# Disable deployment "foo" in namespace "default"
+odigos sources disable deployment foo
+
+# Disable namespace "bar"
+odigos sources disable namespace bar
+
+# Disable statefulset "foo" in namespace "bar"
+odigos sources disable statefulset foo -n bar
+
+```
+
+### Options
+
+```
+  -h, --help   help for disable
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos sources](./odigos_sources)	 - Manage Odigos Sources in a cluster
+* [odigos sources disable cronjob](./odigos_sources_disable_cronjob)	 - disable a CronJob for Odigos instrumentation
+* [odigos sources disable daemonset](./odigos_sources_disable_daemonset)	 - disable a DaemonSet for Odigos instrumentation
+* [odigos sources disable deployment](./odigos_sources_disable_deployment)	 - disable a Deployment for Odigos instrumentation
+* [odigos sources disable deploymentconfig](./odigos_sources_disable_deploymentconfig)	 - disable a DeploymentConfig for Odigos instrumentation
+* [odigos sources disable namespace](./odigos_sources_disable_namespace)	 - disable a Namespace for Odigos instrumentation
+* [odigos sources disable rollout](./odigos_sources_disable_rollout)	 - disable a Rollout for Odigos instrumentation
+* [odigos sources disable statefulset](./odigos_sources_disable_statefulset)	 - disable a StatefulSet for Odigos instrumentation

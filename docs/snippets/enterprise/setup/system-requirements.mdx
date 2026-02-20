@@ -2,7 +2,7 @@ import KernelVersion from '/snippets/shared/ebpf-kernel-version-note.mdx'
 
 ## Kubernetes Version
 
-Odigos requires Kubernetes version 1.23.0 or higher.
+Odigos requires Kubernetes version 1.21.12 or higher.
 
 <KernelVersion />
 
@@ -44,13 +44,13 @@ The default values (unless overridden) are:
 
 | Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
 |---------------|---------------|-------------|------------|----------|
-| odigos-gateway      | 600Mi         | 600Mi       | 1m       | 1m     |
+| odigos-gateway      | 600Mi         | 600Mi       | 1000m       | 1000m     |
 
 Read more [here](/enterprise/pipeline/configuration).
 
 ### Per Node
 
-3 DaemonSets are running on every node in the cluster, consuming resources as outlined below:
+A DaemonSet running on every node in the cluster, consuming resources as outlined below:
 
 | Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
 |---------------|---------------|-------------|------------|----------|

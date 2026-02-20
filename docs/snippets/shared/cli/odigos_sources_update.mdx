@@ -1,0 +1,74 @@
+## odigos sources update
+
+Update Odigos Sources
+
+### Synopsis
+
+This command will update the named Source object or any Source objects that match the provided Workload info.
+If a [name] is provided, that Source object will be updated in the given namespace using the --namespace (-n) flag.
+
+```
+odigos sources update [name] [flags]
+```
+
+### Examples
+
+```
+For example, to update the Source named "mysource-abc123" in namespace "myapp", run:
+
+$ odigos sources update mysource-abc123 -n myapp <flags>
+
+Multiple Source objects can be updated at once using the --workload-name, --workload-kind, and --workload-namespace flags.
+These flags are AND-ed so that if any of these flags are provided, all Sources that match the given flags will be updated.
+
+For example, to update all Sources for StatefulSet workloads in the cluster, run:
+
+$ odigos sources update --workload-kind=StatefulSet --all-namespaces <flags>
+
+To update all Deployment Sources in namespace Foobar, run:
+
+$ odigos sources update --workload-kind=Deployment --workload-namespace=Foobar <flags>
+
+or
+
+$ odigos sources update --workload-kind=Deployment -n Foobar <flags>
+
+These flags can be used to batch update Sources, or as an alternative to updating a Source by name (for instance, when
+the name of the Source might not be known, but the Workload information is known). For example:
+
+$ odigos sources update --workload-kind=Deployment --workload-name=myapp -n myapp-namespace <flags>
+
+This command will update any Sources in the namespace "myapp-namespace" that instrument a Deployment named "myapp"
+
+It is important to note that if a Source [name] is provided, all --workload-* flags will be ignored to update only the named Source.
+
+```
+
+### Options
+
+```
+      --all-namespaces              apply to all Kubernetes namespaces
+      --disable-instrumentation     Disable instrumentation for Source
+      --group string                Name of Source group to use
+  -h, --help                        help for update
+  -n, --namespace string            Kubernetes Namespace for Source (default "default")
+      --otel-service string         OpenTelemetry service name to use for the Source
+      --remove-group string         Group name to be removed from the Source (if set)
+      --set-group string            Group name to be applied to the Source
+      --workload-kind string        Kubernetes Kind for entity (one of: Deployment, DaemonSet, StatefulSet, Namespace, DeploymentConfig)
+      --workload-name string        Name of entity for Source
+      --workload-namespace string   Namespace of entity for Source
+      --yes                         skip the confirmation prompt
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos sources](./odigos_sources)	 - Manage Odigos Sources in a cluster
