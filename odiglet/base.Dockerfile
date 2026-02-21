@@ -23,7 +23,7 @@ RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz 
     && cd .. \
     && rm -rf rsync-${RSYNC_VERSION}*
 
-FROM golang:1.25.3-trixie
+FROM golang:1.26.0-trixie
 
 # fury is our registry for linux packages
 RUN echo "deb [trusted=yes] https://apt.fury.io/cli/ * *" > /etc/apt/sources.list.d/fury-cli.list
