@@ -42,11 +42,19 @@ func CopyAgentsDirectoryToHost() error {
 		"/var/odigos/java-ext-ebpf/otel_agent_extension.jar":                                           {},
 		"/var/odigos/python-ebpf/pythonUSDT.abi3.so":                                                   {},
 		"/var/odigos/loader/loader.so":                                                                 {},
-		// Google protobuf library shared object loaded by Python processes.
-		// This file gets mapped into process memory and cannot be replaced while loaded.
-		// Therefore, we need to keep this file in the host filesystem to avoid removing it.
-		// This file is versioned and renamed if changed (python protobuf library version changes).
-		"/var/odigos/python/google/_upb/_message.abi3.so": {},
+		// Python dependency shared objects - special handling:
+		// These shared objects (.so files) are loaded by Python processes and mapped into process memory.
+		// They cannot be replaced while loaded, so we must keep them in the host filesystem to avoid removal.
+		// These files are versioned and renamed when their respective library versions change.
+		"/var/odigos/python/google/_upb/_message.abi3.so":                     {}, // Google protobuf library
+		"/var/odigos/python/wrapt/_wrappers.cpython-311-aarch64-linux-gnu.so": {}, // Wrapt library on arm64
+		"/var/odigos/python/wrapt/_wrappers.cpython-311-x86_64-linux-gnu.so":  {}, // Wrapt library on x86_64
+		// PHP native extension loaded by the PHP runtime via dlopen().
+		// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
+		"/var/odigos/php/8.1/opentelemetry.so": {},
+		"/var/odigos/php/8.2/opentelemetry.so": {},
+		"/var/odigos/php/8.3/opentelemetry.so": {},
+		"/var/odigos/php/8.4/opentelemetry.so": {},
 	}
 	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
