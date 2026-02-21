@@ -1,0 +1,9 @@
+type: odigos_config
+github_project: odigos-io/odigos
+
+status:
+  class: extension
+  stability:
+    development: [extension]
+  codeowners:
+    active: [damemi]
