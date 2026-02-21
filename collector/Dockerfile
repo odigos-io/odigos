@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.25-trixie AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-trixie AS builder
 COPY ./collector/ /go/src/collector
 # Need to copy the common folder to the collector for custom connector that uses it
 COPY ./common/ /go/src/common

@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/odiglet
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836

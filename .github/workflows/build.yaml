@@ -149,7 +149,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.25.0"
+          go-version: "1.26.0"
       - name: Build Instrumentor Image
         uses: docker/build-push-action@v6
         with:
@@ -453,7 +453,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.25.0"
+          go-version: "1.26.0"
       - name: Set up Goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -466,7 +466,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.25.0"
+          go-version: "1.26.0"
       - name: Test k8sutils module
         working-directory: ./k8sutils
         run: |
@@ -478,7 +478,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.25.0"
+          go-version: "1.26.0"
       - name: Test common module
         working-directory: ./common
         run: |
@@ -490,7 +490,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.25.0"
+          go-version: "1.26.0"
       - name: Test procdiscovery module
         working-directory: ./procdiscovery
         run: |
