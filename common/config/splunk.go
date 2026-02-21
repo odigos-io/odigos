@@ -16,6 +16,7 @@ const (
 )
 
 // Splunk configures the SAPM collector exporter.
+//
 // Deprecated: This exporter is deprecated upstream in favor of the OTLPHTTP exporter.
 type Splunk struct{}
 

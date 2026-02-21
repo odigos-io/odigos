@@ -20,5 +20,5 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.5.0
+          version: v2.10.1
           working-directory: ${{ matrix.modules }}
