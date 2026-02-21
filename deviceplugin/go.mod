@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/deviceplugin
 
-go 1.25.0
+go 1.26.0
 
 replace (
 	github.com/odigos-io/odigos/api => ../api

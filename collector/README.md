@@ -14,7 +14,7 @@ make genodigoscol
 - Run `make genodigoscol` using the go version specify in odigosotelcol/go.mod toolchain.
 - If the local Go version is not matching the one specified in the collector build, the above command can be run inside a container:
 ```bash
-docker run -it -v $(pwd):/app golang:1.25.0 bash
+docker run -it -v $(pwd):/app golang:1.26.0 bash
 root@...:/go# cd /app
 root@...:/app# make genodigoscol
 ```
