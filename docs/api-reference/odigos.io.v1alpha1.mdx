@@ -1628,6 +1628,17 @@ nil means that the signal is disabled and should not be instrumented/collected b
    <p>The sampling configuration that relevant for the collector (tailsampling).</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>urlTemplatization</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-UrlTemplatizationConfig"><code>UrlTemplatizationConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
 </tbody>
 </table>
 
@@ -1689,7 +1700,6 @@ if the programmin language is incorrect, the runtime info can be overridden to m
 
 **Appears in:**
 
-- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
 - [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
 
 <table class="table">
@@ -1716,7 +1726,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-OperationMatcher"><code>OperationMatcher</code></a>
+<a href="#odigos-io-v1alpha1-TailSamplingOperationMatcher"><code>TailSamplingOperationMatcher</code></a>
 </td>
 <td>
    <p>limit this rule to specific operations.
@@ -2055,6 +2065,150 @@ a value of 0 means no spans are sampled if none of the rules evaluate to true.</
 </tbody>
 </table>
 
+## `HeadSamplingHttpClientOperationMatcher` <a id="odigos-io-v1alpha1-HeadSamplingHttpClientOperationMatcher"></a>
+    
+
+**Appears in:**
+
+- [HeadSamplingOperationMatcher](#odigos-io-v1alpha1-HeadSamplingOperationMatcher)
+
+<p>match http client operations for noisy operations matching (only attributes available at span start time)
+can be used to filter out outgoing http requests for other agents calling home or exporting data.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>serverAddress</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match server address exactly (e.g. collector.my.vendor.com)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>urlPath</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match url path exactly (e.g. /api/v1/metrics)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>method</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match method exactly, can be empty to match any method</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `HeadSamplingHttpServerOperationMatcher` <a id="odigos-io-v1alpha1-HeadSamplingHttpServerOperationMatcher"></a>
+    
+
+**Appears in:**
+
+- [HeadSamplingOperationMatcher](#odigos-io-v1alpha1-HeadSamplingOperationMatcher)
+
+<p>match http server operations for noisy operations matching (only attributes available at span start time)</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>route</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match route exactly</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>routePrefix</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match preffix of route</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>method</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>match method exactly, can be empty to match any method</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `HeadSamplingOperationMatcher` <a id="odigos-io-v1alpha1-HeadSamplingOperationMatcher"></a>
+    
+
+**Appears in:**
+
+- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
+- [SourceNoisyOperation](#odigos-io-v1alpha1-SourceNoisyOperation)
+
+<p>can match a specific operation for head sampling.
+head sampling has access only to the attributes available at span start time,
+and sampling decisions can only be based on the root span of the trace.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>httpServer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadSamplingHttpServerOperationMatcher"><code>HeadSamplingHttpServerOperationMatcher</code></a>
+</td>
+<td>
+   <p>match http server operation (trace that starts with an http endpoint)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>httpClient</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadSamplingHttpClientOperationMatcher"><code>HeadSamplingHttpClientOperationMatcher</code></a>
+</td>
+<td>
+   <p>match http client operation (trace that starts with an http client operation)
+common for agents that are internally calling home over http, and exporting data.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `HeadersCollectionConfig` <a id="odigos-io-v1alpha1-HeadersCollectionConfig"></a>
     
 
@@ -2090,7 +2244,6 @@ HTTP headers cannot be collected as wildcard, to avoid leaking sensitive informa
 
 **Appears in:**
 
-- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
 - [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
 
 <p>define operations (spans) with high observability value.
@@ -2143,7 +2296,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-OperationMatcher"><code>OperationMatcher</code></a>
+<a href="#odigos-io-v1alpha1-TailSamplingOperationMatcher"><code>TailSamplingOperationMatcher</code></a>
 </td>
 <td>
    <p>optionally, limit this rule to specific operations.
@@ -2184,7 +2337,7 @@ users can write why this rule was added, observations, document considerations, 
 
 **Appears in:**
 
-- [OperationMatcher](#odigos-io-v1alpha1-OperationMatcher)
+- [TailSamplingOperationMatcher](#odigos-io-v1alpha1-TailSamplingOperationMatcher)
 
 <p>match only http server spans for a specific endpoint.
 user can specify route and method to match, and limit a sampling instruction to only this operation.</p>
@@ -3123,7 +3276,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 **Appears in:**
 
-- [OperationMatcher](#odigos-io-v1alpha1-OperationMatcher)
+- [TailSamplingOperationMatcher](#odigos-io-v1alpha1-TailSamplingOperationMatcher)
 
 <p>match a kafka consumer or producer operation for a specific topic.</p>
 
@@ -3147,113 +3300,11 @@ if left empty, all topics are matched.</p>
 </tbody>
 </table>
 
-## `NoisyOperationHttpClientMatcher` <a id="odigos-io-v1alpha1-NoisyOperationHttpClientMatcher"></a>
-    
-
-**Appears in:**
-
-- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
-
-<p>match http client operations for noisy operations matching (only attributes available at span start time)
-can be used to filter out outgoing http requests for other agents calling home or exporting data.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>serverAddress</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match server address exactly (e.g. collector.my.vendor.com)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>urlPath</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match url path exactly (e.g. /api/v1/metrics)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>method</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match method exactly, can be empty to match any method</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `NoisyOperationHttpServerMatcher` <a id="odigos-io-v1alpha1-NoisyOperationHttpServerMatcher"></a>
-    
-
-**Appears in:**
-
-- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
-
-<p>match http server operations for noisy operations matching (only attributes available at span start time)</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>route</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match route exactly</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>routePrefix</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match preffix of route</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>method</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match method exactly, can be empty to match any method</p>
-</td>
-</tr>
-</tbody>
-</table>
-
 ## `NoisyOperations` <a id="odigos-io-v1alpha1-NoisyOperations"></a>
     
 
 **Appears in:**
 
-- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
 - [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
 
 <p>endpoints which are considered &quot;noise&quot;, and provide no or very little observability value.
@@ -3287,24 +3338,15 @@ if the list is empty - all sources are matched.</p>
 </tr>
 <tr>
 <td>
-<code>httpServer</code> <B>[Required]</B>
+<code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-NoisyOperationHttpServerMatcher"><code>NoisyOperationHttpServerMatcher</code></a>
+<a href="#odigos-io-v1alpha1-HeadSamplingOperationMatcher"><code>HeadSamplingOperationMatcher</code></a>
 </td>
 <td>
-   <p>match http server operations for noisy operations matching (only attributes available at span start time)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>httpClient</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-NoisyOperationHttpClientMatcher"><code>NoisyOperationHttpClientMatcher</code></a>
-</td>
-<td>
-   <p>match http client operations for noisy operations matching (only attributes available at span start time)</p>
+   <p>limit this rule to specific operations.
+for example: specific http server endpoint (GET &quot;/healthz&quot; as an example).
+this field is optional, and if not set, the rule will be applied to all operations.</p>
 </td>
 </tr>
 <tr>
@@ -3388,59 +3430,6 @@ it can help in presenting a consistent view of odigos itself, without relying on
 </td>
 <td>
    <p>time interval for flusing metrics (format: 15s, 1m etc). defaults: 10s</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `OperationMatcher` <a id="odigos-io-v1alpha1-OperationMatcher"></a>
-    
-
-**Appears in:**
-
-- [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
-- [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
-
-<p>match operations for tail sampling with the full context of the span.
-this is used by sampling rules to limit it only to specific operations.
-if the rule matches a sapn, the behavior is determined by the rule itself.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>httpServer</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-HttpServerOperationMatcher"><code>HttpServerOperationMatcher</code></a>
-</td>
-<td>
-   <p>match http server operations in a generic way.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>kafkaConsumer</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-KafkaOperationMatcher"><code>KafkaOperationMatcher</code></a>
-</td>
-<td>
-   <p>match kafka consumer operations (consume spans)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>kafkaProducer</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-KafkaOperationMatcher"><code>KafkaOperationMatcher</code></a>
-</td>
-<td>
-   <p>match kafka producer operations (produce spans)</p>
 </td>
 </tr>
 </tbody>
@@ -3819,7 +3808,7 @@ Thus, this field is set only when there is:</p>
 <code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-NoisyOperations"><code>[]NoisyOperations</code></a>
+<a href="#odigos-io-v1alpha1-SourceNoisyOperation"><code>[]SourceNoisyOperation</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -3830,7 +3819,7 @@ Thus, this field is set only when there is:</p>
 <code>highlyRelevantOperations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-HighlyRelevantOperation"><code>[]HighlyRelevantOperation</code></a>
+<a href="#odigos-io-v1alpha1-SourceHighlyRelevantOperation"><code>[]SourceHighlyRelevantOperation</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -3841,7 +3830,7 @@ Thus, this field is set only when there is:</p>
 <code>costReductionRules</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-CostReductionRule"><code>[]CostReductionRule</code></a>
+<a href="#odigos-io-v1alpha1-SourceCostReductionRule"><code>[]SourceCostReductionRule</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -4094,6 +4083,181 @@ these are language-specific metrics like JVM metrics for Java, CLR metrics for .
 - [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
 
 
+
+## `SourceCostReductionRule` <a id="odigos-io-v1alpha1-SourceCostReductionRule"></a>
+    
+
+**Appears in:**
+
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
+
+<p>cost reduction rule configuration used by the instrumentation config.
+it is similar to the CostReductionRule struct, but includes a rule id and excludes irrelevant fields</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>id</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TailSamplingOperationMatcher"><code>TailSamplingOperationMatcher</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>percentageAtMost</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `SourceHighlyRelevantOperation` <a id="odigos-io-v1alpha1-SourceHighlyRelevantOperation"></a>
+    
+
+**Appears in:**
+
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
+
+<p>highly relevant operation configuration used by the instrumentation config.
+it is similar to the HighlyRelevantOperation struct, but includes a rule id and excludes irrelevant fields</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>id</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>error</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>durationAtLeastMs</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TailSamplingOperationMatcher"><code>TailSamplingOperationMatcher</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>percentageAtLeast</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `SourceNoisyOperation` <a id="odigos-io-v1alpha1-SourceNoisyOperation"></a>
+    
+
+**Appears in:**
+
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
+
+<p>noisy operation configuration used by the instrumentation config.
+it is similar to the NoisyOperations struct, but includes a rule id and excludes irrelevant fields</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>id</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadSamplingOperationMatcher"><code>HeadSamplingOperationMatcher</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>percentageAtMost</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
 
 ## `SourceSelector` <a id="odigos-io-v1alpha1-SourceSelector"></a>
     
@@ -4392,12 +4556,68 @@ all options are always tried, regardless of whether the previous options have ma
 </tbody>
 </table>
 
+## `TailSamplingOperationMatcher` <a id="odigos-io-v1alpha1-TailSamplingOperationMatcher"></a>
+    
+
+**Appears in:**
+
+- [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
+- [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
+- [SourceCostReductionRule](#odigos-io-v1alpha1-SourceCostReductionRule)
+- [SourceHighlyRelevantOperation](#odigos-io-v1alpha1-SourceHighlyRelevantOperation)
+
+<p>match operations for tail sampling with the full context of the span.
+this is used by sampling rules to limit it only to specific operations.
+if the rule matches a sapn, the behavior is determined by the rule itself.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>httpServer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HttpServerOperationMatcher"><code>HttpServerOperationMatcher</code></a>
+</td>
+<td>
+   <p>match http server operations in a generic way.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kafkaConsumer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-KafkaOperationMatcher"><code>KafkaOperationMatcher</code></a>
+</td>
+<td>
+   <p>match kafka consumer operations (consume spans)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>kafkaProducer</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-KafkaOperationMatcher"><code>KafkaOperationMatcher</code></a>
+</td>
+<td>
+   <p>match kafka producer operations (produce spans)</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `UrlTemplatizationConfig` <a id="odigos-io-v1alpha1-UrlTemplatizationConfig"></a>
     
 
 **Appears in:**
 
 - [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
+- [ContainerCollectorConfig](#odigos-io-v1alpha1-ContainerCollectorConfig)
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
