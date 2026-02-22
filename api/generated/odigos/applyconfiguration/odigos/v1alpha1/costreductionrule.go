@@ -20,10 +20,10 @@ package v1alpha1
 // CostReductionRuleApplyConfiguration represents a declarative configuration of the CostReductionRule type for use
 // with apply.
 type CostReductionRuleApplyConfiguration struct {
-	SourceScopes     []SourcesScopeApplyConfiguration    `json:"sourceScopes,omitempty"`
-	Operation        *OperationMatcherApplyConfiguration `json:"operation,omitempty"`
-	PercentageAtMost *float64                            `json:"percentageAtMost,omitempty"`
-	Notes            *string                             `json:"notes,omitempty"`
+	SourceScopes     []SourcesScopeApplyConfiguration                `json:"sourceScopes,omitempty"`
+	Operation        *TailSamplingOperationMatcherApplyConfiguration `json:"operation,omitempty"`
+	PercentageAtMost *float64                                        `json:"percentageAtMost,omitempty"`
+	Notes            *string                                         `json:"notes,omitempty"`
 }
 
 // CostReductionRuleApplyConfiguration constructs a declarative configuration of the CostReductionRule type for use with
@@ -48,7 +48,7 @@ func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(values ...*Source
 // WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operation field is set to the value of the last call.
-func (b *CostReductionRuleApplyConfiguration) WithOperation(value *OperationMatcherApplyConfiguration) *CostReductionRuleApplyConfiguration {
+func (b *CostReductionRuleApplyConfiguration) WithOperation(value *TailSamplingOperationMatcherApplyConfiguration) *CostReductionRuleApplyConfiguration {
 	b.Operation = value
 	return b
 }

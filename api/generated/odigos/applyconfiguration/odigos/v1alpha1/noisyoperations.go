@@ -20,11 +20,10 @@ package v1alpha1
 // NoisyOperationsApplyConfiguration represents a declarative configuration of the NoisyOperations type for use
 // with apply.
 type NoisyOperationsApplyConfiguration struct {
-	SourceScopes     []SourcesScopeApplyConfiguration                   `json:"sourceScopes,omitempty"`
-	HttpServer       *NoisyOperationHttpServerMatcherApplyConfiguration `json:"httpServer,omitempty"`
-	HttpClient       *NoisyOperationHttpClientMatcherApplyConfiguration `json:"httpClient,omitempty"`
-	PercentageAtMost *float64                                           `json:"percentageAtMost,omitempty"`
-	Notes            *string                                            `json:"notes,omitempty"`
+	SourceScopes     []SourcesScopeApplyConfiguration                `json:"sourceScopes,omitempty"`
+	Operation        *HeadSamplingOperationMatcherApplyConfiguration `json:"operation,omitempty"`
+	PercentageAtMost *float64                                        `json:"percentageAtMost,omitempty"`
+	Notes            *string                                         `json:"notes,omitempty"`
 }
 
 // NoisyOperationsApplyConfiguration constructs a declarative configuration of the NoisyOperations type for use with
@@ -46,19 +45,11 @@ func (b *NoisyOperationsApplyConfiguration) WithSourceScopes(values ...*SourcesS
 	return b
 }
 
-// WithHttpServer sets the HttpServer field in the declarative configuration to the given value
+// WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the HttpServer field is set to the value of the last call.
-func (b *NoisyOperationsApplyConfiguration) WithHttpServer(value *NoisyOperationHttpServerMatcherApplyConfiguration) *NoisyOperationsApplyConfiguration {
-	b.HttpServer = value
-	return b
-}
-
-// WithHttpClient sets the HttpClient field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the HttpClient field is set to the value of the last call.
-func (b *NoisyOperationsApplyConfiguration) WithHttpClient(value *NoisyOperationHttpClientMatcherApplyConfiguration) *NoisyOperationsApplyConfiguration {
-	b.HttpClient = value
+// If called multiple times, the Operation field is set to the value of the last call.
+func (b *NoisyOperationsApplyConfiguration) WithOperation(value *HeadSamplingOperationMatcherApplyConfiguration) *NoisyOperationsApplyConfiguration {
+	b.Operation = value
 	return b
 }
 

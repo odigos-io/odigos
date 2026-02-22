@@ -1228,45 +1228,52 @@ spec:
                               - metrics scrape endpoints (promethues /metrics endpoint)
                               - other agents calling home (outgoing http requests to collector.my.vendor.com)
                             properties:
-                              httpClient:
-                                description: match http client operations for noisy
-                                  operations matching (only attributes available at
-                                  span start time)
-                                properties:
-                                  method:
-                                    description: match method exactly, can be empty
-                                      to match any method
-                                    type: string
-                                  serverAddress:
-                                    description: match server address exactly (e.g.
-                                      collector.my.vendor.com)
-                                    type: string
-                                  urlPath:
-                                    description: match url path exactly (e.g. /api/v1/metrics)
-                                    type: string
-                                type: object
-                              httpServer:
-                                description: match http server operations for noisy
-                                  operations matching (only attributes available at
-                                  span start time)
-                                properties:
-                                  method:
-                                    description: match method exactly, can be empty
-                                      to match any method
-                                    type: string
-                                  route:
-                                    description: match route exactly
-                                    type: string
-                                  routePrefix:
-                                    description: match preffix of route
-                                    type: string
-                                type: object
                               notes:
                                 description: |-
                                   optional free-form text field that allows you to attach notes
                                   for future context and maintenance.
                                   users can write why this rule was added, observations, document considerations, etc.
                                 type: string
+                              operation:
+                                description: |-
+                                  limit this rule to specific operations.
+                                  for example: specific http server endpoint (GET "/healthz" as an example).
+                                  this field is optional, and if not set, the rule will be applied to all operations.
+                                properties:
+                                  httpClient:
+                                    description: |-
+                                      match http client operation (trace that starts with an http client operation)
+                                      common for agents that are internally calling home over http, and exporting data.
+                                    properties:
+                                      method:
+                                        description: match method exactly, can be
+                                          empty to match any method
+                                        type: string
+                                      serverAddress:
+                                        description: match server address exactly
+                                          (e.g. collector.my.vendor.com)
+                                        type: string
+                                      urlPath:
+                                        description: match url path exactly (e.g.
+                                          /api/v1/metrics)
+                                        type: string
+                                    type: object
+                                  httpServer:
+                                    description: match http server operation (trace
+                                      that starts with an http endpoint)
+                                    properties:
+                                      method:
+                                        description: match method exactly, can be
+                                          empty to match any method
+                                        type: string
+                                      route:
+                                        description: match route exactly
+                                        type: string
+                                      routePrefix:
+                                        description: match preffix of route
+                                        type: string
+                                    type: object
+                                type: object
                               percentageAtMost:
                                 description: |-
                                   sampling percentage for noisy operations.

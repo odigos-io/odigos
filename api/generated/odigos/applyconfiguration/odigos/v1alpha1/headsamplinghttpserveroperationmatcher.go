@@ -17,24 +17,24 @@ limitations under the License.
 
 package v1alpha1
 
-// NoisyOperationHttpServerMatcherApplyConfiguration represents a declarative configuration of the NoisyOperationHttpServerMatcher type for use
+// HeadSamplingHttpServerOperationMatcherApplyConfiguration represents a declarative configuration of the HeadSamplingHttpServerOperationMatcher type for use
 // with apply.
-type NoisyOperationHttpServerMatcherApplyConfiguration struct {
+type HeadSamplingHttpServerOperationMatcherApplyConfiguration struct {
 	Route       *string `json:"route,omitempty"`
 	RoutePrefix *string `json:"routePrefix,omitempty"`
 	Method      *string `json:"method,omitempty"`
 }
 
-// NoisyOperationHttpServerMatcherApplyConfiguration constructs a declarative configuration of the NoisyOperationHttpServerMatcher type for use with
+// HeadSamplingHttpServerOperationMatcherApplyConfiguration constructs a declarative configuration of the HeadSamplingHttpServerOperationMatcher type for use with
 // apply.
-func NoisyOperationHttpServerMatcher() *NoisyOperationHttpServerMatcherApplyConfiguration {
-	return &NoisyOperationHttpServerMatcherApplyConfiguration{}
+func HeadSamplingHttpServerOperationMatcher() *HeadSamplingHttpServerOperationMatcherApplyConfiguration {
+	return &HeadSamplingHttpServerOperationMatcherApplyConfiguration{}
 }
 
 // WithRoute sets the Route field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Route field is set to the value of the last call.
-func (b *NoisyOperationHttpServerMatcherApplyConfiguration) WithRoute(value string) *NoisyOperationHttpServerMatcherApplyConfiguration {
+func (b *HeadSamplingHttpServerOperationMatcherApplyConfiguration) WithRoute(value string) *HeadSamplingHttpServerOperationMatcherApplyConfiguration {
 	b.Route = &value
 	return b
 }
@@ -42,7 +42,7 @@ func (b *NoisyOperationHttpServerMatcherApplyConfiguration) WithRoute(value stri
 // WithRoutePrefix sets the RoutePrefix field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the RoutePrefix field is set to the value of the last call.
-func (b *NoisyOperationHttpServerMatcherApplyConfiguration) WithRoutePrefix(value string) *NoisyOperationHttpServerMatcherApplyConfiguration {
+func (b *HeadSamplingHttpServerOperationMatcherApplyConfiguration) WithRoutePrefix(value string) *HeadSamplingHttpServerOperationMatcherApplyConfiguration {
 	b.RoutePrefix = &value
 	return b
 }
@@ -50,7 +50,7 @@ func (b *NoisyOperationHttpServerMatcherApplyConfiguration) WithRoutePrefix(valu
 // WithMethod sets the Method field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Method field is set to the value of the last call.
-func (b *NoisyOperationHttpServerMatcherApplyConfiguration) WithMethod(value string) *NoisyOperationHttpServerMatcherApplyConfiguration {
+func (b *HeadSamplingHttpServerOperationMatcherApplyConfiguration) WithMethod(value string) *HeadSamplingHttpServerOperationMatcherApplyConfiguration {
 	b.Method = &value
 	return b
 }

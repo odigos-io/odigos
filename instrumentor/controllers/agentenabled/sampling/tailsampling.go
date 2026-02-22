@@ -23,8 +23,7 @@ func FilterTailSamplingRulesForContainer(samplingRules *[]odigosv1.Sampling, lan
 			for _, noisyOp := range samplingRule.Spec.NoisyOperations {
 				if IsServiceInRuleScope(noisyOp.SourceScopes, pw, containerName, language) {
 					filteredNoisyOps = append(filteredNoisyOps, odigosv1.NoisyOperations{
-						HttpServer:       noisyOp.HttpServer,
-						HttpClient:       noisyOp.HttpClient,
+						Operation:        noisyOp.Operation,
 						PercentageAtMost: noisyOp.PercentageAtMost,
 					})
 				}

@@ -1,6 +1,10 @@
 package v1alpha1
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +30,7 @@ type SourcesScope struct {
 // match operations for tail sampling with the full context of the span.
 // this is used by sampling rules to limit it only to specific operations.
 // if the rule matches a sapn, the behavior is determined by the rule itself.
-type OperationMatcher struct {
+type TailSamplingOperationMatcher struct {
 
 	// match http server operations in a generic way.
 	HttpServer *HttpServerOperationMatcher `json:"httpServer,omitempty"`
@@ -38,8 +42,20 @@ type OperationMatcher struct {
 	KafkaProducer *KafkaOperationMatcher `json:"kafkaProducer,omitempty"`
 }
 
+// can match a specific operation for head sampling.
+// head sampling has access only to the attributes available at span start time,
+// and sampling decisions can only be based on the root span of the trace.
+type HeadSamplingOperationMatcher struct {
+	// match http server operation (trace that starts with an http endpoint)
+	HttpServer *HeadSamplingHttpServerOperationMatcher `json:"httpServer,omitempty"`
+
+	// match http client operation (trace that starts with an http client operation)
+	// common for agents that are internally calling home over http, and exporting data.
+	HttpClient *HeadSamplingHttpClientOperationMatcher `json:"httpClient,omitempty"`
+}
+
 // match http server operations for noisy operations matching (only attributes available at span start time)
-type NoisyOperationHttpServerMatcher struct {
+type HeadSamplingHttpServerOperationMatcher struct {
 	// match route exactly
 	Route string `json:"route,omitempty"`
 	// match preffix of route
@@ -50,7 +66,7 @@ type NoisyOperationHttpServerMatcher struct {
 
 // match http client operations for noisy operations matching (only attributes available at span start time)
 // can be used to filter out outgoing http requests for other agents calling home or exporting data.
-type NoisyOperationHttpClientMatcher struct {
+type HeadSamplingHttpClientOperationMatcher struct {
 	// match server address exactly (e.g. collector.my.vendor.com)
 	ServerAddress string `json:"serverAddress,omitempty"`
 	// match url path exactly (e.g. /api/v1/metrics)
@@ -74,11 +90,10 @@ type NoisyOperations struct {
 	// if the list is empty - all sources are matched.
 	SourceScopes []SourcesScope `json:"sourceScopes,omitempty"`
 
-	// match http server operations for noisy operations matching (only attributes available at span start time)
-	HttpServer *NoisyOperationHttpServerMatcher `json:"httpServer,omitempty"`
-
-	// match http client operations for noisy operations matching (only attributes available at span start time)
-	HttpClient *NoisyOperationHttpClientMatcher `json:"httpClient,omitempty"`
+	// limit this rule to specific operations.
+	// for example: specific http server endpoint (GET "/healthz" as an example).
+	// this field is optional, and if not set, the rule will be applied to all operations.
+	Operation *HeadSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for noisy operations.
 	// if unset, 0% of such the traces will be collected.
@@ -136,7 +151,7 @@ type HighlyRelevantOperation struct {
 	// optionally, limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *OperationMatcher `json:"operation,omitempty"`
+	Operation *TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// traces that contains this operation will be sampled by at least this percentage.
 	// if unset, 100% of such the traces will be sampled.
@@ -161,7 +176,7 @@ type CostReductionRule struct {
 	// limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *OperationMatcher `json:"operation,omitempty"`
+	Operation *TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for cost reduction.
 	// this field is required.
@@ -237,4 +252,47 @@ type SamplingList struct {
 
 func init() {
 	SchemeBuilder.Register(&Sampling{}, &SamplingList{})
+}
+
+func ComputeNoisyOperationHash(rule *NoisyOperations) string {
+	ruleFields := NoisyOperations{
+		SourceScopes: rule.SourceScopes,
+		Operation:    rule.Operation,
+		// PercentageAtMost can be changed without affecting the rule id
+		// notes are not effecting the rule id
+	}
+	uniqueRuleBytes, _ := json.Marshal(ruleFields)
+	h := sha256.New()
+	return hex.EncodeToString(h.Sum(uniqueRuleBytes))
+}
+
+// compute unique id for the rule - which can be used to reference.
+func ComputeHighlyRelevantOperationHash(rule *HighlyRelevantOperation) string {
+
+	// copy just those fields that are relevant for the rule id
+	ruleFields := HighlyRelevantOperation{
+		SourceScopes:      rule.SourceScopes,
+		Error:             rule.Error,
+		DurationAtLeastMs: rule.DurationAtLeastMs,
+		Operation:         rule.Operation,
+		// PercentageAtLeast can be changed without affecting the rule id
+		// notes are not effecting the rule id
+	}
+
+	uniqueRuleBytes, _ := json.Marshal(ruleFields)
+	h := sha256.New()
+	return hex.EncodeToString(h.Sum(uniqueRuleBytes))
+}
+
+// compute unique id for the rule - which can be used to reference.
+func ComputeCostReductionRuleHash(rule *CostReductionRule) string {
+	ruleFields := CostReductionRule{
+		SourceScopes: rule.SourceScopes,
+		Operation:    rule.Operation,
+		// PercentageAtMost can be changed without affecting the rule id
+		// notes are not effecting the rule id
+	}
+	uniqueRuleBytes, _ := json.Marshal(ruleFields)
+	h := sha256.New()
+	return hex.EncodeToString(h.Sum(uniqueRuleBytes))
 }
