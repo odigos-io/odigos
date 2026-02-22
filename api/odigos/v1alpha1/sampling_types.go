@@ -263,7 +263,8 @@ func ComputeNoisyOperationHash(rule *NoisyOperations) string {
 	}
 	uniqueRuleBytes, _ := json.Marshal(ruleFields)
 	h := sha256.New()
-	return hex.EncodeToString(h.Sum(uniqueRuleBytes))
+	h.Write(uniqueRuleBytes)
+	return hex.EncodeToString(h.Sum(nil)[:8])
 }
 
 // compute unique id for the rule - which can be used to reference.
@@ -281,7 +282,8 @@ func ComputeHighlyRelevantOperationHash(rule *HighlyRelevantOperation) string {
 
 	uniqueRuleBytes, _ := json.Marshal(ruleFields)
 	h := sha256.New()
-	return hex.EncodeToString(h.Sum(uniqueRuleBytes))
+	h.Write(uniqueRuleBytes)
+	return hex.EncodeToString(h.Sum(nil)[:8])
 }
 
 // compute unique id for the rule - which can be used to reference.
@@ -294,5 +296,6 @@ func ComputeCostReductionRuleHash(rule *CostReductionRule) string {
 	}
 	uniqueRuleBytes, _ := json.Marshal(ruleFields)
 	h := sha256.New()
-	return hex.EncodeToString(h.Sum(uniqueRuleBytes))
+	h.Write(uniqueRuleBytes)
+	return hex.EncodeToString(h.Sum(nil)[:8])
 }
