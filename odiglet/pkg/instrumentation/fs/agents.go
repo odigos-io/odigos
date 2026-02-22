@@ -47,6 +47,12 @@ func CopyAgentsDirectoryToHost() error {
 		// Therefore, we need to keep this file in the host filesystem to avoid removing it.
 		// This file is versioned and renamed if changed (python protobuf library version changes).
 		"/var/odigos/python/google/_upb/_message.abi3.so": {},
+		// PHP native extension loaded by the PHP runtime via dlopen().
+		// Must be preserved during upgrades to avoid crashing running PHP-FPM processes.
+		"/var/odigos/php/8.1/opentelemetry.so": {},
+		"/var/odigos/php/8.2/opentelemetry.so": {},
+		"/var/odigos/php/8.3/opentelemetry.so": {},
+		"/var/odigos/php/8.4/opentelemetry.so": {},
 	}
 	empty, err := isDirEmptyOrNotExist(k8sconsts.OdigosAgentsDirectory)
 	if err != nil {
