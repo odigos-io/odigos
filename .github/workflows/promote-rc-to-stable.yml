@@ -154,6 +154,20 @@ jobs:
               done
             done
 
+            # Handle extended tag variants for agents and odiglet (e.g. v1.0.0-rc1-extended -> v1.0.0-extended)
+            EXTENDED_IMAGE_NAMES=("odigos-enterprise-agents" "odigos-enterprise-odiglet")
+            for IMAGE_NAME in "${EXTENDED_IMAGE_NAMES[@]}"; do
+              for REPO in "${GCR_REPO}" "${DOCKERHUB_REPO}"; do
+                echo "Copying ${REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended to ${REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended"
+                if ! crane copy ${REPO}/${IMAGE_NAME}:${{ env.RC_TAG }}-extended ${REPO}/${IMAGE_NAME}:${{ env.STABLE_TAG }}-extended; then
+                  echo "ERROR: Failed to copy ${REPO}/${IMAGE_NAME} extended"
+                  FAILED_COPIES+=("${REPO}/${IMAGE_NAME}-extended")
+                else
+                  echo "Successfully copied ${REPO}/${IMAGE_NAME} extended"
+                fi
+              done
+            done
+
             # Check if any copies failed
             if [ ${#FAILED_COPIES[@]} -gt 0 ]; then
               echo "ERROR: The following image copies failed:"
