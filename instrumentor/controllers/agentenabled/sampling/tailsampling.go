@@ -8,11 +8,11 @@ import (
 )
 
 func FilterTailSamplingRulesForContainer(samplingRules *[]odigosv1.Sampling, language common.ProgrammingLanguage,
-	pw k8sconsts.PodWorkload, containerName string, distro *distro.OtelDistro) ([]odigosv1.NoisyOperations, []odigosv1.HighlyRelevantOperation, []odigosv1.CostReductionRule) {
+	pw k8sconsts.PodWorkload, containerName string, distro *distro.OtelDistro) ([]odigosv1.SourceNoisyOperation, []odigosv1.SourceHighlyRelevantOperation, []odigosv1.SourceCostReductionRule) {
 
-	var filteredNoisyOps []odigosv1.NoisyOperations
-	var filteredRelevantOps []odigosv1.HighlyRelevantOperation
-	var filteredCostRules []odigosv1.CostReductionRule
+	var filteredNoisyOps []odigosv1.SourceNoisyOperation
+	var filteredRelevantOps []odigosv1.SourceHighlyRelevantOperation
+	var filteredCostRules []odigosv1.SourceCostReductionRule
 
 	for _, samplingRule := range *samplingRules {
 		// Filter and convert NoisyOperations, HighlyRelevantOperations, CostReductionRules.
@@ -22,7 +22,8 @@ func FilterTailSamplingRulesForContainer(samplingRules *[]odigosv1.Sampling, lan
 		if distro.Traces == nil || distro.Traces.HeadSampling == nil || !distro.Traces.HeadSampling.Supported {
 			for _, noisyOp := range samplingRule.Spec.NoisyOperations {
 				if IsServiceInRuleScope(noisyOp.SourceScopes, pw, containerName, language) {
-					filteredNoisyOps = append(filteredNoisyOps, odigosv1.NoisyOperations{
+					filteredNoisyOps = append(filteredNoisyOps, odigosv1.SourceNoisyOperation{
+						Id:               odigosv1.ComputeNoisyOperationHash(&noisyOp),
 						Operation:        noisyOp.Operation,
 						PercentageAtMost: noisyOp.PercentageAtMost,
 					})
@@ -33,7 +34,8 @@ func FilterTailSamplingRulesForContainer(samplingRules *[]odigosv1.Sampling, lan
 		// Filter and convert HighlyRelevantOperations - exclude SourceScopes and Notes
 		for _, relevantOp := range samplingRule.Spec.HighlyRelevantOperations {
 			if IsServiceInRuleScope(relevantOp.SourceScopes, pw, containerName, language) {
-				filteredRelevantOps = append(filteredRelevantOps, odigosv1.HighlyRelevantOperation{
+				filteredRelevantOps = append(filteredRelevantOps, odigosv1.SourceHighlyRelevantOperation{
+					Id:                odigosv1.ComputeHighlyRelevantOperationHash(&relevantOp),
 					Error:             relevantOp.Error,
 					DurationAtLeastMs: relevantOp.DurationAtLeastMs,
 					Operation:         relevantOp.Operation,
@@ -44,7 +46,8 @@ func FilterTailSamplingRulesForContainer(samplingRules *[]odigosv1.Sampling, lan
 
 		for _, costRule := range samplingRule.Spec.CostReductionRules {
 			if IsServiceInRuleScope(costRule.SourceScopes, pw, containerName, language) {
-				filteredCostRules = append(filteredCostRules, odigosv1.CostReductionRule{
+				filteredCostRules = append(filteredCostRules, odigosv1.SourceCostReductionRule{
+					Id:               odigosv1.ComputeCostReductionRuleHash(&costRule),
 					Operation:        costRule.Operation,
 					PercentageAtMost: costRule.PercentageAtMost,
 				})

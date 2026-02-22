@@ -151,6 +151,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SdkConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Source"):
 		return &odigosv1alpha1.SourceApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SourceCostReductionRule"):
+		return &odigosv1alpha1.SourceCostReductionRuleApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SourceHighlyRelevantOperation"):
+		return &odigosv1alpha1.SourceHighlyRelevantOperationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("SourceNoisyOperation"):
+		return &odigosv1alpha1.SourceNoisyOperationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceSelector"):
 		return &odigosv1alpha1.SourceSelectorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceSpec"):

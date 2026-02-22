@@ -20,8 +20,9 @@ package v1alpha1
 // ContainerCollectorConfigApplyConfiguration represents a declarative configuration of the ContainerCollectorConfig type for use
 // with apply.
 type ContainerCollectorConfigApplyConfiguration struct {
-	ContainerName *string                                    `json:"containerName,omitempty"`
-	TailSampling  *SamplingCollectorConfigApplyConfiguration `json:"samplingCollectorConfig,omitempty"`
+	ContainerName     *string                                    `json:"containerName,omitempty"`
+	TailSampling      *SamplingCollectorConfigApplyConfiguration `json:"samplingCollectorConfig,omitempty"`
+	UrlTemplatization *UrlTemplatizationConfigApplyConfiguration `json:"urlTemplatization,omitempty"`
 }
 
 // ContainerCollectorConfigApplyConfiguration constructs a declarative configuration of the ContainerCollectorConfig type for use with
@@ -43,5 +44,13 @@ func (b *ContainerCollectorConfigApplyConfiguration) WithContainerName(value str
 // If called multiple times, the TailSampling field is set to the value of the last call.
 func (b *ContainerCollectorConfigApplyConfiguration) WithTailSampling(value *SamplingCollectorConfigApplyConfiguration) *ContainerCollectorConfigApplyConfiguration {
 	b.TailSampling = value
+	return b
+}
+
+// WithUrlTemplatization sets the UrlTemplatization field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the UrlTemplatization field is set to the value of the last call.
+func (b *ContainerCollectorConfigApplyConfiguration) WithUrlTemplatization(value *UrlTemplatizationConfigApplyConfiguration) *ContainerCollectorConfigApplyConfiguration {
+	b.UrlTemplatization = value
 	return b
 }
