@@ -2172,7 +2172,7 @@ can be used to filter out outgoing http requests for other agents calling home o
 **Appears in:**
 
 - [NoisyOperation](#odigos-io-v1alpha1-NoisyOperation)
-- [SourceNoisyOperation](#odigos-io-v1alpha1-SourceNoisyOperation)
+- [WorkloadNoisyOperation](#odigos-io-v1alpha1-WorkloadNoisyOperation)
 
 <p>can match a specific operation for head sampling.
 head sampling has access only to the attributes available at span start time,
@@ -3808,7 +3808,7 @@ Thus, this field is set only when there is:</p>
 <code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-SourceNoisyOperation"><code>[]SourceNoisyOperation</code></a>
+<a href="#odigos-io-v1alpha1-WorkloadNoisyOperation"><code>[]WorkloadNoisyOperation</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -3819,7 +3819,7 @@ Thus, this field is set only when there is:</p>
 <code>highlyRelevantOperations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-SourceHighlyRelevantOperation"><code>[]SourceHighlyRelevantOperation</code></a>
+<a href="#odigos-io-v1alpha1-WorkloadHighlyRelevantOperation"><code>[]WorkloadHighlyRelevantOperation</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -3830,7 +3830,7 @@ Thus, this field is set only when there is:</p>
 <code>costReductionRules</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-SourceCostReductionRule"><code>[]SourceCostReductionRule</code></a>
+<a href="#odigos-io-v1alpha1-WorkloadCostReductionRule"><code>[]WorkloadCostReductionRule</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -4083,181 +4083,6 @@ these are language-specific metrics like JVM metrics for Java, CLR metrics for .
 - [CollectorsGroupMetricsCollectionSettings](#odigos-io-v1alpha1-CollectorsGroupMetricsCollectionSettings)
 
 
-
-## `SourceCostReductionRule` <a id="odigos-io-v1alpha1-SourceCostReductionRule"></a>
-    
-
-**Appears in:**
-
-- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
-
-<p>cost reduction rule configuration used by the instrumentation config.
-it is similar to the CostReductionRule struct, but includes a rule id and excludes irrelevant fields</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>id</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>operation</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-TailSamplingOperationMatcher"><code>TailSamplingOperationMatcher</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>percentageAtMost</code> <B>[Required]</B>
-</td>
-<td>
-<code>float64</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
-## `SourceHighlyRelevantOperation` <a id="odigos-io-v1alpha1-SourceHighlyRelevantOperation"></a>
-    
-
-**Appears in:**
-
-- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
-
-<p>highly relevant operation configuration used by the instrumentation config.
-it is similar to the HighlyRelevantOperation struct, but includes a rule id and excludes irrelevant fields</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>id</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>error</code> <B>[Required]</B>
-</td>
-<td>
-<code>bool</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>durationAtLeastMs</code> <B>[Required]</B>
-</td>
-<td>
-<code>int</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>operation</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-TailSamplingOperationMatcher"><code>TailSamplingOperationMatcher</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>percentageAtLeast</code> <B>[Required]</B>
-</td>
-<td>
-<code>float64</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
-
-## `SourceNoisyOperation` <a id="odigos-io-v1alpha1-SourceNoisyOperation"></a>
-    
-
-**Appears in:**
-
-- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
-
-<p>noisy operation configuration used by the instrumentation config.
-it is similar to the NoisyOperations struct, but includes a rule id and excludes irrelevant fields</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>id</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>operation</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-HeadSamplingOperationMatcher"><code>HeadSamplingOperationMatcher</code></a>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-<tr>
-<td>
-<code>percentageAtMost</code> <B>[Required]</B>
-</td>
-<td>
-<code>float64</code>
-</td>
-<td>
-   <span class="text-muted">No description provided.</span>
-   </td>
-</tr>
-</tbody>
-</table>
 
 ## `SourceSelector` <a id="odigos-io-v1alpha1-SourceSelector"></a>
     
@@ -4563,8 +4388,8 @@ all options are always tried, regardless of whether the previous options have ma
 
 - [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
 - [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
-- [SourceCostReductionRule](#odigos-io-v1alpha1-SourceCostReductionRule)
-- [SourceHighlyRelevantOperation](#odigos-io-v1alpha1-SourceHighlyRelevantOperation)
+- [WorkloadCostReductionRule](#odigos-io-v1alpha1-WorkloadCostReductionRule)
+- [WorkloadHighlyRelevantOperation](#odigos-io-v1alpha1-WorkloadHighlyRelevantOperation)
 
 <p>match operations for tail sampling with the full context of the span.
 this is used by sampling rules to limit it only to specific operations.
@@ -4634,6 +4459,184 @@ if the rule matches a sapn, the behavior is determined by the rule itself.</p>
 <td>
    <p>Rule is the template rule to be applied to URLs</p>
 </td>
+</tr>
+</tbody>
+</table>
+
+## `WorkloadCostReductionRule` <a id="odigos-io-v1alpha1-WorkloadCostReductionRule"></a>
+    
+
+**Appears in:**
+
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
+
+<p>cost reduction rule configuration used by the instrumentation config.
+it is similar to the CostReductionRule struct, but includes a rule id and excludes irrelevant fields
+the original struct cannot be used as the id property is internal and should not appear in user-facing API.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>id</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TailSamplingOperationMatcher"><code>TailSamplingOperationMatcher</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>percentageAtMost</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `WorkloadHighlyRelevantOperation` <a id="odigos-io-v1alpha1-WorkloadHighlyRelevantOperation"></a>
+    
+
+**Appears in:**
+
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
+
+<p>highly relevant operation configuration used by the instrumentation config.
+it is similar to the HighlyRelevantOperation struct, but includes a rule id and excludes irrelevant fields
+the original struct cannot be used as the id property is internal and should not appear in user-facing API.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>id</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>error</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>durationAtLeastMs</code> <B>[Required]</B>
+</td>
+<td>
+<code>int</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-TailSamplingOperationMatcher"><code>TailSamplingOperationMatcher</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>percentageAtLeast</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+</tbody>
+</table>
+
+## `WorkloadNoisyOperation` <a id="odigos-io-v1alpha1-WorkloadNoisyOperation"></a>
+    
+
+**Appears in:**
+
+- [SamplingCollectorConfig](#odigos-io-v1alpha1-SamplingCollectorConfig)
+
+<p>noisy operation configuration used by the instrumentation config.
+it is similar to the NoisyOperation struct, but includes a rule id and excludes irrelevant fields
+the original struct cannot be used as the id property is internal and should not appear in user-facing API.</p>
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr>
+<td>
+<code>id</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>operation</code> <B>[Required]</B>
+</td>
+<td>
+<a href="#odigos-io-v1alpha1-HeadSamplingOperationMatcher"><code>HeadSamplingOperationMatcher</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
+</tr>
+<tr>
+<td>
+<code>percentageAtMost</code> <B>[Required]</B>
+</td>
+<td>
+<code>float64</code>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 </tbody>
 </table>

@@ -17,9 +17,9 @@ limitations under the License.
 
 package v1alpha1
 
-// SourceHighlyRelevantOperationApplyConfiguration represents a declarative configuration of the SourceHighlyRelevantOperation type for use
+// WorkloadHighlyRelevantOperationApplyConfiguration represents a declarative configuration of the WorkloadHighlyRelevantOperation type for use
 // with apply.
-type SourceHighlyRelevantOperationApplyConfiguration struct {
+type WorkloadHighlyRelevantOperationApplyConfiguration struct {
 	Id                *string                                         `json:"id,omitempty"`
 	Error             *bool                                           `json:"error,omitempty"`
 	DurationAtLeastMs *int                                            `json:"durationAtLeastMs,omitempty"`
@@ -27,16 +27,16 @@ type SourceHighlyRelevantOperationApplyConfiguration struct {
 	PercentageAtLeast *float64                                        `json:"percentageAtLeast,omitempty"`
 }
 
-// SourceHighlyRelevantOperationApplyConfiguration constructs a declarative configuration of the SourceHighlyRelevantOperation type for use with
+// WorkloadHighlyRelevantOperationApplyConfiguration constructs a declarative configuration of the WorkloadHighlyRelevantOperation type for use with
 // apply.
-func SourceHighlyRelevantOperation() *SourceHighlyRelevantOperationApplyConfiguration {
-	return &SourceHighlyRelevantOperationApplyConfiguration{}
+func WorkloadHighlyRelevantOperation() *WorkloadHighlyRelevantOperationApplyConfiguration {
+	return &WorkloadHighlyRelevantOperationApplyConfiguration{}
 }
 
 // WithId sets the Id field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Id field is set to the value of the last call.
-func (b *SourceHighlyRelevantOperationApplyConfiguration) WithId(value string) *SourceHighlyRelevantOperationApplyConfiguration {
+func (b *WorkloadHighlyRelevantOperationApplyConfiguration) WithId(value string) *WorkloadHighlyRelevantOperationApplyConfiguration {
 	b.Id = &value
 	return b
 }
@@ -44,7 +44,7 @@ func (b *SourceHighlyRelevantOperationApplyConfiguration) WithId(value string) *
 // WithError sets the Error field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Error field is set to the value of the last call.
-func (b *SourceHighlyRelevantOperationApplyConfiguration) WithError(value bool) *SourceHighlyRelevantOperationApplyConfiguration {
+func (b *WorkloadHighlyRelevantOperationApplyConfiguration) WithError(value bool) *WorkloadHighlyRelevantOperationApplyConfiguration {
 	b.Error = &value
 	return b
 }
@@ -52,7 +52,7 @@ func (b *SourceHighlyRelevantOperationApplyConfiguration) WithError(value bool) 
 // WithDurationAtLeastMs sets the DurationAtLeastMs field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DurationAtLeastMs field is set to the value of the last call.
-func (b *SourceHighlyRelevantOperationApplyConfiguration) WithDurationAtLeastMs(value int) *SourceHighlyRelevantOperationApplyConfiguration {
+func (b *WorkloadHighlyRelevantOperationApplyConfiguration) WithDurationAtLeastMs(value int) *WorkloadHighlyRelevantOperationApplyConfiguration {
 	b.DurationAtLeastMs = &value
 	return b
 }
@@ -60,7 +60,7 @@ func (b *SourceHighlyRelevantOperationApplyConfiguration) WithDurationAtLeastMs(
 // WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operation field is set to the value of the last call.
-func (b *SourceHighlyRelevantOperationApplyConfiguration) WithOperation(value *TailSamplingOperationMatcherApplyConfiguration) *SourceHighlyRelevantOperationApplyConfiguration {
+func (b *WorkloadHighlyRelevantOperationApplyConfiguration) WithOperation(value *TailSamplingOperationMatcherApplyConfiguration) *WorkloadHighlyRelevantOperationApplyConfiguration {
 	b.Operation = value
 	return b
 }
@@ -68,7 +68,7 @@ func (b *SourceHighlyRelevantOperationApplyConfiguration) WithOperation(value *T
 // WithPercentageAtLeast sets the PercentageAtLeast field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the PercentageAtLeast field is set to the value of the last call.
-func (b *SourceHighlyRelevantOperationApplyConfiguration) WithPercentageAtLeast(value float64) *SourceHighlyRelevantOperationApplyConfiguration {
+func (b *WorkloadHighlyRelevantOperationApplyConfiguration) WithPercentageAtLeast(value float64) *WorkloadHighlyRelevantOperationApplyConfiguration {
 	b.PercentageAtLeast = &value
 	return b
 }

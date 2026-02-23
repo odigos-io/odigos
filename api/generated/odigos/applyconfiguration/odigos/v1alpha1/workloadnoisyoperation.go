@@ -17,24 +17,24 @@ limitations under the License.
 
 package v1alpha1
 
-// SourceCostReductionRuleApplyConfiguration represents a declarative configuration of the SourceCostReductionRule type for use
+// WorkloadNoisyOperationApplyConfiguration represents a declarative configuration of the WorkloadNoisyOperation type for use
 // with apply.
-type SourceCostReductionRuleApplyConfiguration struct {
+type WorkloadNoisyOperationApplyConfiguration struct {
 	Id               *string                                         `json:"id,omitempty"`
-	Operation        *TailSamplingOperationMatcherApplyConfiguration `json:"operation,omitempty"`
+	Operation        *HeadSamplingOperationMatcherApplyConfiguration `json:"operation,omitempty"`
 	PercentageAtMost *float64                                        `json:"percentageAtMost,omitempty"`
 }
 
-// SourceCostReductionRuleApplyConfiguration constructs a declarative configuration of the SourceCostReductionRule type for use with
+// WorkloadNoisyOperationApplyConfiguration constructs a declarative configuration of the WorkloadNoisyOperation type for use with
 // apply.
-func SourceCostReductionRule() *SourceCostReductionRuleApplyConfiguration {
-	return &SourceCostReductionRuleApplyConfiguration{}
+func WorkloadNoisyOperation() *WorkloadNoisyOperationApplyConfiguration {
+	return &WorkloadNoisyOperationApplyConfiguration{}
 }
 
 // WithId sets the Id field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Id field is set to the value of the last call.
-func (b *SourceCostReductionRuleApplyConfiguration) WithId(value string) *SourceCostReductionRuleApplyConfiguration {
+func (b *WorkloadNoisyOperationApplyConfiguration) WithId(value string) *WorkloadNoisyOperationApplyConfiguration {
 	b.Id = &value
 	return b
 }
@@ -42,7 +42,7 @@ func (b *SourceCostReductionRuleApplyConfiguration) WithId(value string) *Source
 // WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operation field is set to the value of the last call.
-func (b *SourceCostReductionRuleApplyConfiguration) WithOperation(value *TailSamplingOperationMatcherApplyConfiguration) *SourceCostReductionRuleApplyConfiguration {
+func (b *WorkloadNoisyOperationApplyConfiguration) WithOperation(value *HeadSamplingOperationMatcherApplyConfiguration) *WorkloadNoisyOperationApplyConfiguration {
 	b.Operation = value
 	return b
 }
@@ -50,7 +50,7 @@ func (b *SourceCostReductionRuleApplyConfiguration) WithOperation(value *TailSam
 // WithPercentageAtMost sets the PercentageAtMost field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the PercentageAtMost field is set to the value of the last call.
-func (b *SourceCostReductionRuleApplyConfiguration) WithPercentageAtMost(value float64) *SourceCostReductionRuleApplyConfiguration {
+func (b *WorkloadNoisyOperationApplyConfiguration) WithPercentageAtMost(value float64) *WorkloadNoisyOperationApplyConfiguration {
 	b.PercentageAtMost = &value
 	return b
 }
