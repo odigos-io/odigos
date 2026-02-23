@@ -81,6 +81,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.HeadersCollectionConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingConfig"):
 		return &odigosv1alpha1.HeadSamplingConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingHttpClientOperationMatcher"):
+		return &odigosv1alpha1.HeadSamplingHttpClientOperationMatcherApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingHttpServerOperationMatcher"):
+		return &odigosv1alpha1.HeadSamplingHttpServerOperationMatcherApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("HeadSamplingOperationMatcher"):
+		return &odigosv1alpha1.HeadSamplingOperationMatcherApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HighlyRelevantOperation"):
 		return &odigosv1alpha1.HighlyRelevantOperationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("HttpServerOperationMatcher"):
@@ -119,16 +125,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("KafkaOperationMatcher"):
 		return &odigosv1alpha1.KafkaOperationMatcherApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperationHttpClientMatcher"):
-		return &odigosv1alpha1.NoisyOperationHttpClientMatcherApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperationHttpServerMatcher"):
-		return &odigosv1alpha1.NoisyOperationHttpServerMatcherApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperations"):
-		return &odigosv1alpha1.NoisyOperationsApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperation"):
+		return &odigosv1alpha1.NoisyOperationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OdigosOwnMetricsSettings"):
 		return &odigosv1alpha1.OdigosOwnMetricsSettingsApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("OperationMatcher"):
-		return &odigosv1alpha1.OperationMatcherApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtherAgent"):
 		return &odigosv1alpha1.OtherAgentApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PodsManifestInjectionStatus"):
@@ -163,8 +163,16 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SpanRenamerConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SpanRenamerScopeRules"):
 		return &odigosv1alpha1.SpanRenamerScopeRulesApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TailSamplingOperationMatcher"):
+		return &odigosv1alpha1.TailSamplingOperationMatcherApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("UrlTemplatizationConfig"):
 		return &odigosv1alpha1.UrlTemplatizationConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("WorkloadCostReductionRule"):
+		return &odigosv1alpha1.WorkloadCostReductionRuleApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("WorkloadHighlyRelevantOperation"):
+		return &odigosv1alpha1.WorkloadHighlyRelevantOperationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("WorkloadNoisyOperation"):
+		return &odigosv1alpha1.WorkloadNoisyOperationApplyConfiguration{}
 
 	}
 	return nil
