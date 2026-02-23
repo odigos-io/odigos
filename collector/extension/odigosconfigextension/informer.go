@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+
+	commonapi "github.com/odigos-io/odigos/common/api"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -13,8 +16,6 @@ import (
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/rest"
 	k8scache "k8s.io/client-go/tools/cache"
-
-	"github.com/odigos-io/odigos/collector/extension/odigosconfigextension/api"
 )
 
 const (
@@ -106,23 +107,25 @@ func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (work
 	if !ok || len(specMap) == 0 {
 		return key, &WorkloadSamplingConfig{}
 	}
-	var spec api.InstrumentationConfigSpec
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(specMap, &spec); err != nil {
+	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
+	if !ok || len(workloadCollectorConfigSlice) == 0 {
 		return key, &WorkloadSamplingConfig{}
 	}
-
-	cfg = &WorkloadSamplingConfig{
-		ContainersHeadSampling: make(map[string]*api.HeadSamplingConfig),
-	}
-	for _, c := range spec.Containers {
-		if c.ContainerName == "" {
+	var workloadCollectorConfig []commonapi.ContainerCollectorConfig
+	for _, item := range workloadCollectorConfigSlice {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
 			continue
 		}
-		if c.Traces != nil && c.Traces.HeadSampling != nil {
-			cfg.ContainersHeadSampling[c.ContainerName] = c.Traces.HeadSampling
+		var c commonapi.ContainerCollectorConfig
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(itemMap, &c); err != nil {
+			continue
 		}
+		workloadCollectorConfig = append(workloadCollectorConfig, c)
 	}
-	cfg.WorkloadCollectorConfig = spec.WorkloadCollectorConfig
+	cfg = &WorkloadSamplingConfig{
+		WorkloadCollectorConfig: workloadCollectorConfig,
+	}
 	return key, cfg
 }
 

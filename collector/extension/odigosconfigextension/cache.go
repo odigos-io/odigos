@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/odigos-io/odigos/collector/extension/odigosconfigextension/api"
+	commonapi "github.com/odigos-io/odigos/common/api"
 )
 
 // WorkloadCacheKey returns the cache key for a workload: "namespace/kind/name".
@@ -17,10 +17,8 @@ func WorkloadCacheKey(namespace, kind, name string) string {
 // WorkloadSamplingConfig holds the sampling configuration for a single workload,
 // derived from an InstrumentationConfig. Uses api mirror types for head sampling and collector config.
 type WorkloadSamplingConfig struct {
-	// ContainersHeadSampling maps container name to head sampling config (agent/SDK).
-	ContainersHeadSampling map[string]*api.HeadSamplingConfig `json:"containersHeadSampling,omitempty"`
 	// WorkloadCollectorConfig is the collector config (e.g. tail sampling) per container.
-	WorkloadCollectorConfig []api.ContainerCollectorConfig `json:"workloadCollectorConfig,omitempty"`
+	WorkloadCollectorConfig []commonapi.ContainerCollectorConfig `json:"workloadCollectorConfig,omitempty"`
 }
 
 // Cache stores workload sampling config by key (namespace/kind/name).

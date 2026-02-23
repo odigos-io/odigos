@@ -8,6 +8,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/sampling"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -18,7 +19,7 @@ func CalculateTracesConfig(
 	effectiveConfig *common.OdigosConfiguration,
 	containerName string,
 	programmingLanguage common.ProgrammingLanguage,
-	urlTemplatizationConfig *odigosv1.UrlTemplatizationConfig,
+	urlTemplatizationConfig *commonapi.UrlTemplatizationConfig,
 	irls *[]odigosv1.InstrumentationRule,
 	agentLevelActions *[]odigosv1.Action,
 	samplingRules *[]odigosv1.Sampling,
