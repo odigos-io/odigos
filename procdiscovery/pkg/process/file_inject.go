@@ -103,13 +103,13 @@ func copyFile(sourcePath, destPath string, perm os.FileMode) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %s - %w", sourcePath, err)
 	}
-	defer sourceFile.Close()
+	defer sourceFile.Close() // nolint:gocritic,errcheck
 
 	targetFile, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
 		return fmt.Errorf("failed to open target file: %s - %w", destPath, err)
 	}
-	defer targetFile.Close()
+	defer targetFile.Close() // nolint:gocritic,errcheck
 
 	// ReadFrom use copy_file_range or splice under the hood for zero-copy file transfer
 	// see https://man7.org/linux/man-pages/man2/copy_file_range.2.html#ERRORS
