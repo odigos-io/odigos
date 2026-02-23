@@ -283,7 +283,7 @@ spec:
               noisyOperations:
                 items:
                   description: |-
-                    endpoints which are considered "noise", and provide no or very little observability value.
+                    endpoints (or other operations) which are considered "noise", and provide no or very little observability value.
                     these traces should not be collected at all, or dropped aggresevly.
                     motivation is data sentization and performance improvment (even if cost is not a factor)
 

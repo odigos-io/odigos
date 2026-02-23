@@ -125,8 +125,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.InstrumentationRuleStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("KafkaOperationMatcher"):
 		return &odigosv1alpha1.KafkaOperationMatcherApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperations"):
-		return &odigosv1alpha1.NoisyOperationsApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("NoisyOperation"):
+		return &odigosv1alpha1.NoisyOperationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OdigosOwnMetricsSettings"):
 		return &odigosv1alpha1.OdigosOwnMetricsSettingsApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("OtherAgent"):

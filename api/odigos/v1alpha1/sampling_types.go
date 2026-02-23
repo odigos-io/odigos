@@ -75,7 +75,7 @@ type HeadSamplingHttpClientOperationMatcher struct {
 	Method string `json:"method,omitempty"`
 }
 
-// endpoints which are considered "noise", and provide no or very little observability value.
+// endpoints (or other operations) which are considered "noise", and provide no or very little observability value.
 // these traces should not be collected at all, or dropped aggresevly.
 // motivation is data sentization and performance improvment (even if cost is not a factor)
 //
@@ -83,7 +83,7 @@ type HeadSamplingHttpClientOperationMatcher struct {
 // - health-checks (readiness and liveness probes)
 // - metrics scrape endpoints (promethues /metrics endpoint)
 // - other agents calling home (outgoing http requests to collector.my.vendor.com)
-type NoisyOperations struct {
+type NoisyOperation struct {
 	// limit this rule to specific sources (by name, namespace, language, etc.)
 	// for example: if "other agent" rule for noisty operation is relevant only in java,
 	// limit this rule by setting source scope to java and prevent other languages from being affected
@@ -211,7 +211,7 @@ type SamplingSpec struct {
 	// they will not be taken into account for any sampling decisions.
 	// useful if you want to temporarily disable the rules but re-enable them later,
 	Disabled                 bool                      `json:"disabled,omitempty"`
-	NoisyOperations          []NoisyOperations         `json:"noisyOperations,omitempty"`
+	NoisyOperations          []NoisyOperation          `json:"noisyOperations,omitempty"`
 	HighlyRelevantOperations []HighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
 	CostReductionRules       []CostReductionRule       `json:"costReductionRules,omitempty"`
 }
@@ -254,8 +254,8 @@ func init() {
 	SchemeBuilder.Register(&Sampling{}, &SamplingList{})
 }
 
-func ComputeNoisyOperationHash(rule *NoisyOperations) string {
-	ruleFields := NoisyOperations{
+func ComputeNoisyOperationHash(rule *NoisyOperation) string {
+	ruleFields := NoisyOperation{
 		SourceScopes: rule.SourceScopes,
 		Operation:    rule.Operation,
 		// PercentageAtMost can be changed without affecting the rule id

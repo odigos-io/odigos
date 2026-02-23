@@ -2171,7 +2171,7 @@ can be used to filter out outgoing http requests for other agents calling home o
 
 **Appears in:**
 
-- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
+- [NoisyOperation](#odigos-io-v1alpha1-NoisyOperation)
 - [SourceNoisyOperation](#odigos-io-v1alpha1-SourceNoisyOperation)
 
 <p>can match a specific operation for head sampling.
@@ -3300,14 +3300,14 @@ if left empty, all topics are matched.</p>
 </tbody>
 </table>
 
-## `NoisyOperations` <a id="odigos-io-v1alpha1-NoisyOperations"></a>
+## `NoisyOperation` <a id="odigos-io-v1alpha1-NoisyOperation"></a>
     
 
 **Appears in:**
 
 - [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
 
-<p>endpoints which are considered &quot;noise&quot;, and provide no or very little observability value.
+<p>endpoints (or other operations) which are considered &quot;noise&quot;, and provide no or very little observability value.
 these traces should not be collected at all, or dropped aggresevly.
 motivation is data sentization and performance improvment (even if cost is not a factor)</p>
 <p>examples:</p>
@@ -3898,7 +3898,7 @@ useful if you want to temporarily disable the rules but re-enable them later,</p
 <code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-NoisyOperations"><code>[]NoisyOperations</code></a>
+<a href="#odigos-io-v1alpha1-NoisyOperation"><code>[]NoisyOperation</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -4416,7 +4416,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 - [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
 - [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
-- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
+- [NoisyOperation](#odigos-io-v1alpha1-NoisyOperation)
 
 <p>define conditions to match specific sources (containers) managed by odigos.
 a source container matches, if ALL non empty fields match (AND semantics)</p>
