@@ -140,7 +140,7 @@ func CalculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 	}
 }
 
-func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOperations, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
+func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOperation, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
 	if noisyOperation.Operation != nil && noisyOperation.Operation.HttpServer != nil {
 		return convertNoisyOperationHttpServerToAttributeConditions(noisyOperation.Operation.HttpServer, distro)
 	}
