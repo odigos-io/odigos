@@ -112,7 +112,8 @@ jobs:
 
             DOCKERHUB_IMAGE_NAMES=("odigos-agents" "odigos-autoscaler" "odigos-scheduler" "odigos-instrumentor" "odigos-odiglet" "odigos-collector" "odigos-ui" "odigos-operator" "odigos-enterprise-agents" "odigos-enterprise-instrumentor" "odigos-enterprise-odiglet")
 
-            IMAGE_SUFFIXES=("" "-rhel-certified")
+            // Keep this empty for now to support another image SUFFIXES in the future if needed (e.g. rhel-certified)
+            IMAGE_SUFFIXES=("")
             # Track failed copies for potential rollback
             FAILED_COPIES=()
 
