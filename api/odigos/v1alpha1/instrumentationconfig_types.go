@@ -415,7 +415,7 @@ type ContainerCollectorConfig struct {
 // noisy operation configuration used by the instrumentation config.
 // it is similar to the NoisyOperation struct, but includes a rule id and excludes irrelevant fields
 // the original struct cannot be used as the id property is internal and should not appear in user-facing API.
-type SourceNoisyOperation struct {
+type WorkloadNoisyOperation struct {
 	Id               string                        `json:"id"`
 	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
 	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
@@ -424,7 +424,7 @@ type SourceNoisyOperation struct {
 // highly relevant operation configuration used by the instrumentation config.
 // it is similar to the HighlyRelevantOperation struct, but includes a rule id and excludes irrelevant fields
 // the original struct cannot be used as the id property is internal and should not appear in user-facing API.
-type SourceHighlyRelevantOperation struct {
+type WorkloadHighlyRelevantOperation struct {
 	Id                string                        `json:"id"`
 	Error             bool                          `json:"error,omitempty"`
 	DurationAtLeastMs *int                          `json:"durationAtLeastMs,omitempty"`
@@ -435,16 +435,16 @@ type SourceHighlyRelevantOperation struct {
 // cost reduction rule configuration used by the instrumentation config.
 // it is similar to the CostReductionRule struct, but includes a rule id and excludes irrelevant fields
 // the original struct cannot be used as the id property is internal and should not appear in user-facing API.
-type SourceCostReductionRule struct {
+type WorkloadCostReductionRule struct {
 	Id               string                        `json:"id"`
 	Operation        *TailSamplingOperationMatcher `json:"operation,omitempty"`
 	PercentageAtMost float64                       `json:"percentageAtMost"`
 }
 
 type SamplingCollectorConfig struct {
-	NoisyOperations          []SourceNoisyOperation          `json:"noisyOperations,omitempty"`
-	HighlyRelevantOperations []SourceHighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
-	CostReductionRules       []SourceCostReductionRule       `json:"costReductionRules,omitempty"`
+	NoisyOperations          []WorkloadNoisyOperation          `json:"noisyOperations,omitempty"`
+	HighlyRelevantOperations []WorkloadHighlyRelevantOperation `json:"highlyRelevantOperations,omitempty"`
+	CostReductionRules       []WorkloadCostReductionRule       `json:"costReductionRules,omitempty"`
 }
 
 // ContainerAgentConfig is a configuration for a specific container in a workload.
