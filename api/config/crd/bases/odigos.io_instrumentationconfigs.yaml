@@ -986,6 +986,7 @@ spec:
                             description: |-
                               cost reduction rule configuration used by the instrumentation config.
                               it is similar to the CostReductionRule struct, but includes a rule id and excludes irrelevant fields
+                              the original struct cannot be used as the id property is internal and should not appear in user-facing API.
                             properties:
                               id:
                                 type: string
@@ -1044,6 +1045,7 @@ spec:
                             description: |-
                               highly relevant operation configuration used by the instrumentation config.
                               it is similar to the HighlyRelevantOperation struct, but includes a rule id and excludes irrelevant fields
+                              the original struct cannot be used as the id property is internal and should not appear in user-facing API.
                             properties:
                               durationAtLeastMs:
                                 type: integer
@@ -1104,7 +1106,8 @@ spec:
                           items:
                             description: |-
                               noisy operation configuration used by the instrumentation config.
-                              it is similar to the NoisyOperations struct, but includes a rule id and excludes irrelevant fields
+                              it is similar to the NoisyOperation struct, but includes a rule id and excludes irrelevant fields
+                              the original struct cannot be used as the id property is internal and should not appear in user-facing API.
                             properties:
                               id:
                                 type: string

@@ -413,7 +413,8 @@ type ContainerCollectorConfig struct {
 }
 
 // noisy operation configuration used by the instrumentation config.
-// it is similar to the NoisyOperations struct, but includes a rule id and excludes irrelevant fields
+// it is similar to the NoisyOperation struct, but includes a rule id and excludes irrelevant fields
+// the original struct cannot be used as the id property is internal and should not appear in user-facing API.
 type SourceNoisyOperation struct {
 	Id               string                        `json:"id"`
 	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
@@ -422,6 +423,7 @@ type SourceNoisyOperation struct {
 
 // highly relevant operation configuration used by the instrumentation config.
 // it is similar to the HighlyRelevantOperation struct, but includes a rule id and excludes irrelevant fields
+// the original struct cannot be used as the id property is internal and should not appear in user-facing API.
 type SourceHighlyRelevantOperation struct {
 	Id                string                        `json:"id"`
 	Error             bool                          `json:"error,omitempty"`
@@ -432,6 +434,7 @@ type SourceHighlyRelevantOperation struct {
 
 // cost reduction rule configuration used by the instrumentation config.
 // it is similar to the CostReductionRule struct, but includes a rule id and excludes irrelevant fields
+// the original struct cannot be used as the id property is internal and should not appear in user-facing API.
 type SourceCostReductionRule struct {
 	Id               string                        `json:"id"`
 	Operation        *TailSamplingOperationMatcher `json:"operation,omitempty"`
