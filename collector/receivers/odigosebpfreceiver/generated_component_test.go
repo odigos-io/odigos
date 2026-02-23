@@ -46,6 +46,13 @@ func TestComponentLifecycle(t *testing.T) {
 				return factory.CreateTraces(ctx, set, cfg, consumertest.NewNop())
 			},
 		},
+
+		{
+			name: "logs",
+			createFn: func(ctx context.Context, set receiver.Settings, cfg component.Config) (component.Component, error) {
+				return factory.CreateLogs(ctx, set, cfg, consumertest.NewNop())
+			},
+		},
 	}
 
 	cm, err := confmaptest.LoadConf("metadata.yaml")
