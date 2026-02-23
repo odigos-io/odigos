@@ -63,6 +63,8 @@ func (r *ebpfReceiver) Start(ctx context.Context, host component.Host) error {
 		r.startTracesReceiver(ctx)
 	case ReceiverTypeMetrics:
 		r.startMetricsReceiver(ctx)
+	case ReceiverTypeLogs:
+		r.startLogsReceiver(ctx)
 	}
 
 	return nil
@@ -314,6 +316,102 @@ func (r *ebpfReceiver) startMetricsReceiver(ctx context.Context) {
 
 		if err != nil && ctx.Err() == nil {
 			r.logger.Error("metrics FD client failed", zap.Error(err))
+		}
+	}()
+}
+
+// startLogsReceiver sets up a single FD client and map manager for logs.
+// Follows the same two-goroutine pattern as traces: one goroutine manages the map lifecycle,
+// and another connects to odiglet to receive FDs.
+func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
+	updates := make(chan *ebpf.Map, 1)
+
+	// Map manager: manages the lifecycle of the logs eBPF map.
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+
+		var (
+			currentMap   *ebpf.Map
+			readerCancel context.CancelFunc
+			readerWg     sync.WaitGroup
+		)
+
+		defer func() {
+			if readerCancel != nil {
+				readerCancel()
+				readerWg.Wait()
+			}
+			if currentMap != nil {
+				currentMap.Close()
+			}
+		}()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case newMap, ok := <-updates:
+				if !ok {
+					return
+				}
+				if readerCancel != nil {
+					readerCancel()
+					readerWg.Wait()
+				}
+				if currentMap != nil {
+					currentMap.Close()
+				}
+
+				currentMap = newMap
+				readerCtx, cancel := context.WithCancel(ctx)
+				readerCancel = cancel
+
+				r.logger.Info("switched to new eBPF logs map", zap.Int("fd", newMap.FD()))
+
+				readerWg.Add(1)
+				go func() {
+					defer func() {
+						r.logger.Info("logs reader stopped")
+						readerWg.Done()
+					}()
+
+					if err := r.logsReadLoop(readerCtx, newMap); err != nil {
+						r.logger.Error("logsReadLoop failed", zap.Error(err))
+					}
+				}()
+			}
+		}
+	}()
+
+	// FD client: connects to odiglet and receives FDs for logs eBPF maps.
+	r.wg.Add(1)
+	go func() {
+		defer r.wg.Done()
+		defer close(updates)
+
+		r.logger.Info("starting logs FD client")
+
+		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, unixfd.ReqGetLogsFD, r.logger, func(fd int) {
+			r.logger.Info("received new logs FD from odiglet", zap.Int("fd", fd))
+
+			newMap, err := ebpf.NewMapFromFD(fd)
+			if err != nil {
+				r.logger.Error("failed to create map from FD", zap.Error(err), zap.Int("fd", fd))
+				unix.Close(fd)
+				return
+			}
+
+			select {
+			case updates <- newMap:
+				r.logger.Info("queued new logs map for processing")
+			case <-ctx.Done():
+				newMap.Close()
+			}
+		})
+
+		if err != nil && ctx.Err() == nil {
+			r.logger.Error("logs FD client failed", zap.Error(err))
 		}
 	}()
 }

@@ -81,7 +81,7 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manife
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				logsPipelineName: {
-					Receivers:  []string{filelogReceiverName},
+					Receivers:  []string{filelogReceiverName, odigosEbpfReceiverName},
 					Processors: pipelineProcessors,
 					Exporters:  []string{clusterCollectorLogsExporterName},
 				},

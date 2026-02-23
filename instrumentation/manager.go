@@ -101,6 +101,9 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 	// MetricsAttributesMap is the optional eBPF Hash map for UUID -> packed resource attributes.
 	// Used alongside MetricsMap to store resource attributes separately from the metrics hash key.
 	MetricsAttributesMap *cilumebpf.Map
+
+	// LogsMap is the optional common eBPF map that will be used to send log events from eBPF probes.
+	LogsMap *cilumebpf.Map
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -141,6 +144,7 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 	tracesMap            *cilumebpf.Map
 	metricsMap           *cilumebpf.Map
 	metricsAttributesMap *cilumebpf.Map
+	logsMap              *cilumebpf.Map
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -192,6 +196,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		tracesMap:             options.TracesMap,
 		metricsMap:            options.MetricsMap,
 		metricsAttributesMap:  options.MetricsAttributesMap,
+		logsMap:               options.LogsMap,
 	}, nil
 }
 
@@ -345,6 +350,9 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 				}
 				return fds
 			},
+			LogsFDProvider: func() int {
+				return m.logsMap.FD()
+			},
 		}
 
 		// Run server in background to serve the map FD to relevant data collection client.
@@ -464,6 +472,11 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	settings.MetricsMap = MetricsMap{
 		HashMapOfMaps: m.metricsMap,
 		AttributesMap: m.metricsAttributesMap,
+	}
+
+	settings.LogsMap = ReaderMap{
+		Map:            m.logsMap,
+		ExternalReader: true,
 	}
 
 	inst, initErr := factory.CreateInstrumentation(ctx, pid, settings)

@@ -139,6 +139,23 @@ func NewManager(
 		return nil, fmt.Errorf("failed to create metrics attributes eBPF map: %w", err)
 	}
 
+	// Create the logs eBPF map - same type as traces (RingBuf or PerfEventArray depending on kernel support)
+	logsSpec := &cilumebpf.MapSpec{
+		Type: mapType,
+		Name: "logs",
+	}
+	if ringEn {
+		logsSpec.MaxEntries = uint32(numOfPages * os.Getpagesize())
+	}
+
+	logsMap, err := cilumebpf.NewMap(logsSpec)
+	if err != nil {
+		tracesMap.Close()
+		metricsMap.Close()
+		metricsAttributesMap.Close()
+		return nil, fmt.Errorf("failed to create logs eBPF map: %w", err)
+	}
+
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
 
 		Logger:                  logger,
@@ -150,6 +167,7 @@ func NewManager(
 		TracesMap:               tracesMap,
 		MetricsMap:              metricsMap,
 		MetricsAttributesMap:    metricsAttributesMap,
+		LogsMap:                 logsMap,
 	}
 
 	// Add file open triggers from all distributions.

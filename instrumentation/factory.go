@@ -24,6 +24,8 @@ type Settings struct {
 	TracesMap ReaderMap
 	// MetricsMap is the optional common eBPF map that will be used to send metric events from eBPF probes.
 	MetricsMap MetricsMap
+	// LogsMap is the optional common eBPF map that will be used to send log events from eBPF probes.
+	LogsMap ReaderMap
 }
 
 type ReaderMap struct {
