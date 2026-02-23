@@ -254,7 +254,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    deployment.Status.AvailableReplicas,
 				Selector:             deployment.Spec.Selector,
-				PodTemplateSpec:      &deployment.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
@@ -283,7 +282,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    daemonset.Status.NumberReady,
 				Selector:             daemonset.Spec.Selector,
-				PodTemplateSpec:      &daemonset.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
@@ -312,7 +310,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    statefulset.Status.ReadyReplicas,
 				Selector:             statefulset.Spec.Selector,
-				PodTemplateSpec:      &statefulset.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
@@ -341,7 +338,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    int32(len(cronjob.Status.Active)),
 				Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
-				PodTemplateSpec:      &cronjob.Spec.JobTemplate.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
@@ -394,7 +390,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    unstructuredDC.Status.AvailableReplicas,
 				Selector:             labelSelector,
-				PodTemplateSpec:      unstructuredDC.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
@@ -437,7 +432,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    rollout.Status.AvailableReplicas,
 				Selector:             rollout.Spec.Selector,
-				PodTemplateSpec:      &rollout.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
@@ -477,7 +471,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    deployment.Status.AvailableReplicas,
 				Selector:             deployment.Spec.Selector,
-				PodTemplateSpec:      &deployment.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
@@ -504,7 +497,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    daemonset.Status.NumberReady,
 				Selector:             daemonset.Spec.Selector,
-				PodTemplateSpec:      &daemonset.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
@@ -531,7 +523,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    statefulset.Status.ReadyReplicas,
 				Selector:             statefulset.Spec.Selector,
-				PodTemplateSpec:      &statefulset.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
@@ -558,7 +549,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    int32(len(cronjob.Status.Active)),
 				Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
-				PodTemplateSpec:      &cronjob.Spec.JobTemplate.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
@@ -620,7 +610,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    dc.Status.AvailableReplicas,
 				Selector:             labelSelector,
-				PodTemplateSpec:      dc.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
@@ -673,7 +662,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    rollout.Status.AvailableReplicas,
 				Selector:             rollout.Spec.Selector,
-				PodTemplateSpec:      &rollout.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
