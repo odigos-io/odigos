@@ -162,6 +162,10 @@ func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *c
 		return false
 	}
 
+	if len(samplingList.Items) == 0 {
+		return false
+	}
+
 	for _, s := range samplingList.Items {
 		if !s.Spec.Disabled {
 			return true
