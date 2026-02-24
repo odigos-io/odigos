@@ -40,7 +40,7 @@ You can create a new Datastream from the Overview page. Click the `+ NEW` button
 <Tab title="Kubernetes Manifests">
 This example demonstrates how to configure `example-source` to send telemetry to `jaeger-example` through the `example` Datastream.
 
-1. Create or update a Source custom resource with the Datastream label, as described in the [linked documentation](/pipeline/sources/create#workload-source).
+1. Create or update a Source custom resource with the Datastream label, as described in the [linked documentation](../../pipeline/sources/create#workload-source).
 
 *For example:*
 ```yaml
@@ -57,7 +57,7 @@ spec:
     namespace: default
     kind: Deployment
 ```
-2. Create or Update a [destination](/backends-overview) custom resource spec with the Datastream source selector.
+2. Create or Update a [destination](../../backends-overview) custom resource spec with the Datastream source selector.
 
 
 *For example:*
@@ -67,7 +67,7 @@ spec:
     - example
 ```
 
-Now let's take [Jaeger](/backends/jaeger) as complete example here:
+Now let's take [Jaeger](../../backends/jaeger) as complete example here:
 
 ```yaml
 apiVersion: odigos.io/v1alpha1

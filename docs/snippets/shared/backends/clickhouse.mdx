@@ -21,10 +21,10 @@ ClickHouse is very popular database for storing telemetry data and running effic
 
 **Use Cases**
 
-- Clickhouse can handle all 3 signals (metrics, logs, traces) in one single database. less overhead to manage multiple databases.
-- Clickhouse is a columnar database, which is optimized for time-series immutable data like OpenTelemetry telemetry data.
-- Clickhouse is a distributed database, which can scale horizontally and handle large amounts of data with efficient storage and query performance.
-- Clickhouse is open-source and has a large community.
+- ClickHouse can handle all 3 signals (metrics, logs, traces) in one single database. less overhead to manage multiple databases.
+- ClickHouse is a columnar database, which is optimized for time-series immutable data like OpenTelemetry telemetry data.
+- ClickHouse is a distributed database, which can scale horizontally and handle large amounts of data with efficient storage and query performance.
+- ClickHouse is open-source and has a large community.
 
 **Prerequisites**
 
@@ -107,13 +107,13 @@ Important Settings:
 - **CLICKHOUSE_ENDPOINT** `string` : Endpoint. The ClickHouse endpoint is the URL where the ClickHouse server is listening for incoming connections.
   - This field is required
   - Example: `http://host:port`
-- **CLICKHOUSE_USERNAME** `string` : Username. If Clickhouse Authentication is used, provide the username
+- **CLICKHOUSE_USERNAME** `string` : Username. If ClickHouse Authentication is used, provide the username
   - This field is optional
-- **CLICKHOUSE_PASSWORD** `string` : Password. If Clickhouse Authentication is used, provide the password
+- **CLICKHOUSE_PASSWORD** `string` : Password. If ClickHouse Authentication is used, provide the password
   - This field is optional
 - **CLICKHOUSE_CREATE_SCHEME** `boolean` : Create Schema. Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you
   - This field is required and defaults to `True`
-- **CLICKHOUSE_DATABASE_NAME** `string` : Database Name. The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before
+- **CLICKHOUSE_DATABASE_NAME** `string` : Database Name. The name of the ClickHouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before
   - This field is required and defaults to `otel`
 - **CLICKHOUSE_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
   - This field is optional and defaults to `False`
@@ -155,7 +155,7 @@ There are two primary methods for configuring destinations in Odigos:
     ```
   </Step>
   <Step>
-    Click on `Add Destination`, select `Clickhouse` and follow the on-screen instructions
+    Click on `Add Destination`, select `ClickHouse` and follow the on-screen instructions
   </Step>
 </Steps>
 

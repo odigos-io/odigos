@@ -99,7 +99,7 @@ goAutoOffsetsMode: "direct"     # Use direct mode
 
 #### Mirrored image automatic updates
 
-For clusters with restricted traffic policies, you have the option to [mirror the Go library updates as an image](/setup/docker-registry#install-odigos-images-from-a-custom-docker-registry).
+For clusters with restricted traffic policies, you have the option to [mirror the Go library updates as an image](../../../setup/docker-registry#install-odigos-images-from-a-custom-docker-registry).
 In this mode, the CronJob will run an image that contains the latest Go library offsets bundled into the image itself. This mode
 does not require direct Internet access from the cluster, but it does require you to mirror this image into your own registry and maintain
 the latest version on your nodes.

@@ -62,7 +62,7 @@ You can set static labels for each metric data pointsent exported to Grafana Clo
 - **GRAFANA_CLOUD_PROMETHEUS_USERNAME** `string` : Username / Instance ID. You can find the Username / Instance ID on the Prometheus page. Value is a number.
   - This field is required
   - Example: `12345678`
-- **GRAFANA_CLOUD_PROMETHEUS_PASSWORD** `string` : Password / Api Token. This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `metrics:write` scope.
+- **GRAFANA_CLOUD_PROMETHEUS_PASSWORD** `string` : Password / Api Token. This field is referred to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `metrics:write` scope.
   - This field is required
   - Example: `glc_eyJvIj...`
 - **PROMETHEUS_RESOURCE_ATTRIBUTES_LABELS** `string[]` : Resource Attributes Labels. use these OpenTelemetry resource attributes as prometheus labels for each metric data point

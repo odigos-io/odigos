@@ -58,7 +58,7 @@ Read about setting grafana loki labels in the [Loki](../backends/loki#loki-label
 - **GRAFANA_CLOUD_LOKI_USERNAME** `string` : Username. You can find the loki username in the "Grafana Data Source settings" section as "User" value. The username is a number.
   - This field is required
   - Example: `1234567`
-- **GRAFANA_CLOUD_LOKI_PASSWORD** `string` : Password (Api Token). This field is refered to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `logs:write` scope
+- **GRAFANA_CLOUD_LOKI_PASSWORD** `string` : Password (Api Token). This field is referred to as "password" or "Grafana.com API Token" in the Grafana Cloud UI. You can manage tokens in your "Account Settings" page under the "SECURITY" section in the "Access Policies" page. Make sure your token scope includes `logs:write` scope
   - This field is required
   - Example: `glc_eyJvIj...`
 - **GRAFANA_CLOUD_LOKI_LABELS** `string[]` : Labels. Use these OpenTelemetry resource attributes as Loki labels for each log record
