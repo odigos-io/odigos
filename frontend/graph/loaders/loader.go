@@ -128,7 +128,7 @@ func (l *Loaders) loadWorkloadManifests(ctx context.Context) error {
 	if l.workloadManifestsFetched {
 		return nil
 	}
-	workloadManifests, err := fetchWorkloadManifests(ctx, l.logger, l.workloadFilter)
+	workloadManifests, err := fetchWorkloadManifests(ctx, l.logger, l.workloadFilter, l.k8sCacheClient)
 	if err != nil {
 		return err
 	}
