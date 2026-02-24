@@ -17,24 +17,24 @@ limitations under the License.
 
 package v1alpha1
 
-// OperationMatcherApplyConfiguration represents a declarative configuration of the OperationMatcher type for use
+// TailSamplingOperationMatcherApplyConfiguration represents a declarative configuration of the TailSamplingOperationMatcher type for use
 // with apply.
-type OperationMatcherApplyConfiguration struct {
+type TailSamplingOperationMatcherApplyConfiguration struct {
 	HttpServer    *HttpServerOperationMatcherApplyConfiguration `json:"httpServer,omitempty"`
 	KafkaConsumer *KafkaOperationMatcherApplyConfiguration      `json:"kafkaConsumer,omitempty"`
 	KafkaProducer *KafkaOperationMatcherApplyConfiguration      `json:"kafkaProducer,omitempty"`
 }
 
-// OperationMatcherApplyConfiguration constructs a declarative configuration of the OperationMatcher type for use with
+// TailSamplingOperationMatcherApplyConfiguration constructs a declarative configuration of the TailSamplingOperationMatcher type for use with
 // apply.
-func OperationMatcher() *OperationMatcherApplyConfiguration {
-	return &OperationMatcherApplyConfiguration{}
+func TailSamplingOperationMatcher() *TailSamplingOperationMatcherApplyConfiguration {
+	return &TailSamplingOperationMatcherApplyConfiguration{}
 }
 
 // WithHttpServer sets the HttpServer field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the HttpServer field is set to the value of the last call.
-func (b *OperationMatcherApplyConfiguration) WithHttpServer(value *HttpServerOperationMatcherApplyConfiguration) *OperationMatcherApplyConfiguration {
+func (b *TailSamplingOperationMatcherApplyConfiguration) WithHttpServer(value *HttpServerOperationMatcherApplyConfiguration) *TailSamplingOperationMatcherApplyConfiguration {
 	b.HttpServer = value
 	return b
 }
@@ -42,7 +42,7 @@ func (b *OperationMatcherApplyConfiguration) WithHttpServer(value *HttpServerOpe
 // WithKafkaConsumer sets the KafkaConsumer field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the KafkaConsumer field is set to the value of the last call.
-func (b *OperationMatcherApplyConfiguration) WithKafkaConsumer(value *KafkaOperationMatcherApplyConfiguration) *OperationMatcherApplyConfiguration {
+func (b *TailSamplingOperationMatcherApplyConfiguration) WithKafkaConsumer(value *KafkaOperationMatcherApplyConfiguration) *TailSamplingOperationMatcherApplyConfiguration {
 	b.KafkaConsumer = value
 	return b
 }
@@ -50,7 +50,7 @@ func (b *OperationMatcherApplyConfiguration) WithKafkaConsumer(value *KafkaOpera
 // WithKafkaProducer sets the KafkaProducer field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the KafkaProducer field is set to the value of the last call.
-func (b *OperationMatcherApplyConfiguration) WithKafkaProducer(value *KafkaOperationMatcherApplyConfiguration) *OperationMatcherApplyConfiguration {
+func (b *TailSamplingOperationMatcherApplyConfiguration) WithKafkaProducer(value *KafkaOperationMatcherApplyConfiguration) *TailSamplingOperationMatcherApplyConfiguration {
 	b.KafkaProducer = value
 	return b
 }

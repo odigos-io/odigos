@@ -302,6 +302,14 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 	if err != nil {
 		return err
 	}
+	refCountGauge, err := meter.Int64ObservableGauge(
+		"bpf_maps_ref_count",
+		metric.WithDescription("Reference count of each bpf map"),
+		metric.WithUnit("{ref}"),
+	)
+	if err != nil {
+		return err
+	}
 	// The callback that runs everytime /metrics is scraped from odiglet, collects data and refreshes gauges
 	_, err = meter.RegisterCallback(
 		func(ctx context.Context, observer metric.Observer) error {
@@ -320,8 +328,12 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 					metric.WithAttributes(
 						attribute.String("name", eBPFMapMetrics.name),
 						attribute.String("map_type", eBPFMapMetrics.mapType),
-						attribute.Int("ref_count", int(eBPFMapMetrics.refCnt)),
 						semconv.K8SNodeName(mc.nodeName),
+					),
+				)
+				observer.ObserveInt64(refCountGauge, int64(eBPFMapMetrics.refCnt),
+					metric.WithAttributes(
+						attribute.String("name", eBPFMapMetrics.name),
 					),
 				)
 			}
@@ -339,6 +351,7 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 		totalMapsMemGauge,
 		mapCountGauge,
 		programCountGauge,
+		refCountGauge,
 	)
 
 	return err

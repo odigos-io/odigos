@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/scheduler
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/go-logr/zapr v1.3.0

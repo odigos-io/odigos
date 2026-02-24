@@ -17,24 +17,24 @@ limitations under the License.
 
 package v1alpha1
 
-// NoisyOperationHttpClientMatcherApplyConfiguration represents a declarative configuration of the NoisyOperationHttpClientMatcher type for use
+// HeadSamplingHttpClientOperationMatcherApplyConfiguration represents a declarative configuration of the HeadSamplingHttpClientOperationMatcher type for use
 // with apply.
-type NoisyOperationHttpClientMatcherApplyConfiguration struct {
+type HeadSamplingHttpClientOperationMatcherApplyConfiguration struct {
 	ServerAddress *string `json:"serverAddress,omitempty"`
 	UrlPath       *string `json:"urlPath,omitempty"`
 	Method        *string `json:"method,omitempty"`
 }
 
-// NoisyOperationHttpClientMatcherApplyConfiguration constructs a declarative configuration of the NoisyOperationHttpClientMatcher type for use with
+// HeadSamplingHttpClientOperationMatcherApplyConfiguration constructs a declarative configuration of the HeadSamplingHttpClientOperationMatcher type for use with
 // apply.
-func NoisyOperationHttpClientMatcher() *NoisyOperationHttpClientMatcherApplyConfiguration {
-	return &NoisyOperationHttpClientMatcherApplyConfiguration{}
+func HeadSamplingHttpClientOperationMatcher() *HeadSamplingHttpClientOperationMatcherApplyConfiguration {
+	return &HeadSamplingHttpClientOperationMatcherApplyConfiguration{}
 }
 
 // WithServerAddress sets the ServerAddress field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ServerAddress field is set to the value of the last call.
-func (b *NoisyOperationHttpClientMatcherApplyConfiguration) WithServerAddress(value string) *NoisyOperationHttpClientMatcherApplyConfiguration {
+func (b *HeadSamplingHttpClientOperationMatcherApplyConfiguration) WithServerAddress(value string) *HeadSamplingHttpClientOperationMatcherApplyConfiguration {
 	b.ServerAddress = &value
 	return b
 }
@@ -42,7 +42,7 @@ func (b *NoisyOperationHttpClientMatcherApplyConfiguration) WithServerAddress(va
 // WithUrlPath sets the UrlPath field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UrlPath field is set to the value of the last call.
-func (b *NoisyOperationHttpClientMatcherApplyConfiguration) WithUrlPath(value string) *NoisyOperationHttpClientMatcherApplyConfiguration {
+func (b *HeadSamplingHttpClientOperationMatcherApplyConfiguration) WithUrlPath(value string) *HeadSamplingHttpClientOperationMatcherApplyConfiguration {
 	b.UrlPath = &value
 	return b
 }
@@ -50,7 +50,7 @@ func (b *NoisyOperationHttpClientMatcherApplyConfiguration) WithUrlPath(value st
 // WithMethod sets the Method field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Method field is set to the value of the last call.
-func (b *NoisyOperationHttpClientMatcherApplyConfiguration) WithMethod(value string) *NoisyOperationHttpClientMatcherApplyConfiguration {
+func (b *HeadSamplingHttpClientOperationMatcherApplyConfiguration) WithMethod(value string) *HeadSamplingHttpClientOperationMatcherApplyConfiguration {
 	b.Method = &value
 	return b
 }

@@ -20,9 +20,9 @@ package v1alpha1
 // SamplingCollectorConfigApplyConfiguration represents a declarative configuration of the SamplingCollectorConfig type for use
 // with apply.
 type SamplingCollectorConfigApplyConfiguration struct {
-	NoisyOperations          []NoisyOperationsApplyConfiguration         `json:"noisyOperations,omitempty"`
-	HighlyRelevantOperations []HighlyRelevantOperationApplyConfiguration `json:"highlyRelevantOperations,omitempty"`
-	CostReductionRules       []CostReductionRuleApplyConfiguration       `json:"costReductionRules,omitempty"`
+	NoisyOperations          []WorkloadNoisyOperationApplyConfiguration          `json:"noisyOperations,omitempty"`
+	HighlyRelevantOperations []WorkloadHighlyRelevantOperationApplyConfiguration `json:"highlyRelevantOperations,omitempty"`
+	CostReductionRules       []WorkloadCostReductionRuleApplyConfiguration       `json:"costReductionRules,omitempty"`
 }
 
 // SamplingCollectorConfigApplyConfiguration constructs a declarative configuration of the SamplingCollectorConfig type for use with
@@ -34,7 +34,7 @@ func SamplingCollectorConfig() *SamplingCollectorConfigApplyConfiguration {
 // WithNoisyOperations adds the given value to the NoisyOperations field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the NoisyOperations field.
-func (b *SamplingCollectorConfigApplyConfiguration) WithNoisyOperations(values ...*NoisyOperationsApplyConfiguration) *SamplingCollectorConfigApplyConfiguration {
+func (b *SamplingCollectorConfigApplyConfiguration) WithNoisyOperations(values ...*WorkloadNoisyOperationApplyConfiguration) *SamplingCollectorConfigApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithNoisyOperations")
@@ -47,7 +47,7 @@ func (b *SamplingCollectorConfigApplyConfiguration) WithNoisyOperations(values .
 // WithHighlyRelevantOperations adds the given value to the HighlyRelevantOperations field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the HighlyRelevantOperations field.
-func (b *SamplingCollectorConfigApplyConfiguration) WithHighlyRelevantOperations(values ...*HighlyRelevantOperationApplyConfiguration) *SamplingCollectorConfigApplyConfiguration {
+func (b *SamplingCollectorConfigApplyConfiguration) WithHighlyRelevantOperations(values ...*WorkloadHighlyRelevantOperationApplyConfiguration) *SamplingCollectorConfigApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithHighlyRelevantOperations")
@@ -60,7 +60,7 @@ func (b *SamplingCollectorConfigApplyConfiguration) WithHighlyRelevantOperations
 // WithCostReductionRules adds the given value to the CostReductionRules field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the CostReductionRules field.
-func (b *SamplingCollectorConfigApplyConfiguration) WithCostReductionRules(values ...*CostReductionRuleApplyConfiguration) *SamplingCollectorConfigApplyConfiguration {
+func (b *SamplingCollectorConfigApplyConfiguration) WithCostReductionRules(values ...*WorkloadCostReductionRuleApplyConfiguration) *SamplingCollectorConfigApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithCostReductionRules")

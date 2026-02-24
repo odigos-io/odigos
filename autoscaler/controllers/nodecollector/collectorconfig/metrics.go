@@ -73,7 +73,7 @@ func metricsReceivers(metricsConfigSettings *odigosv1.CollectorsGroupMetricsColl
 	return receivers, pipelineReceiverNames
 }
 
-func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, additionalMetricsRecivers []string, metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) config.Config {
+func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, metricsConfigSettings *odigosv1.CollectorsGroupMetricsCollectionSettings) config.Config {
 
 	metricsPipelineProcessors := append([]string{
 		batchProcessorName,         // always start with batch
@@ -84,7 +84,6 @@ func MetricsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, man
 	metricsPipelineProcessors = append(metricsPipelineProcessors, odigosTrafficMetricsProcessorName) // keep traffic metrics last for most accurate tracking
 
 	receivers, pipelineReceiverNames := metricsReceivers(metricsConfigSettings)
-	pipelineReceiverNames = append(pipelineReceiverNames, additionalMetricsRecivers...)
 	if len(pipelineReceiverNames) == 0 {
 		// if all metrics sources are not enabled, skip the metrics pipeline generation as it has no receivers and will fail the collector
 		return config.Config{}

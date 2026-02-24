@@ -82,6 +82,12 @@ func updateGatewaySvc(svc *v1.Service, collectorsGroup *odigosv1.CollectorsGroup
 			TargetPort: intstr.FromInt(4318),
 		},
 		{
+			Name:       "own-metrics-http",
+			Protocol:   "TCP",
+			Port:       44318,
+			TargetPort: intstr.FromInt(44318),
+		},
+		{
 			Name: "metrics",
 			Port: collectorsGroup.Spec.CollectorOwnMetricsPort,
 		},

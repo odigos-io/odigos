@@ -57,7 +57,7 @@ vet: ## Run go vet against code.
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 # https://github.com/golang/go/issues/75031#issuecomment-3195256688
-	go env -w GOTOOLCHAIN=go1.25.0+auto && \
+	go env -w GOTOOLCHAIN=go1.26.0+auto && \
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
