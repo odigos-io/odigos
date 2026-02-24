@@ -2,9 +2,11 @@ package kube
 
 import (
 	"fmt"
+	"maps"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -35,12 +37,22 @@ func podsTransformFunc(obj interface{}) (interface{}, error) {
 			Resources: c.Resources,
 		}
 	}
+
+	annotations := map[string]string{}
+	labels := pod.Labels
+	if workload.IsStaticPod(pod) {
+		annotations = pod.Annotations
+		labels = maps.Clone(labels)
+		labels[k8sconsts.OdigosVirtualStaticPodNameLabel] = pod.Name // this is a virtual, computed value that lives only in the cache
+	}
+
 	minimalPod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:         pod.Namespace,
 			Name:              pod.Name,
 			CreationTimestamp: pod.CreationTimestamp,
-			Labels:            pod.Labels,          // to select only relevant pods for a workload by the selector
+			Annotations:       annotations,
+			Labels:            labels,              // to follow the selector and get pods from workload
 			OwnerReferences:   pod.OwnerReferences, // needed to discover the workload from the pod
 		},
 		Spec: corev1.PodSpec{

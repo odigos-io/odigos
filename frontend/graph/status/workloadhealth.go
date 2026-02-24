@@ -414,3 +414,23 @@ func CalculateRolloutHealthStatus(rolloutStatus argorolloutsv1alpha1.RolloutStat
 		Message:    "All Argo Rollout replicas are available and ready",
 	}
 }
+
+func CalculateStaticPodHealthStatus(staticPodStatus corev1.PodStatus) *model.DesiredConditionStatus {
+	if staticPodStatus.Phase != corev1.PodRunning {
+		reasonStr := string(WorkloadHealthStatusReasonProgressing)
+		return &model.DesiredConditionStatus{
+			Name:       WorkloadHealthStatus,
+			ReasonEnum: &reasonStr,
+			Status:     model.DesiredStateProgressWaiting,
+			Message:    "StaticPod is not running",
+		}
+	}
+
+	reasonStr := string(WorkloadHealthStatusReasonHealthy)
+	return &model.DesiredConditionStatus{
+		Name:       WorkloadHealthStatus,
+		ReasonEnum: &reasonStr,
+		Status:     model.DesiredStateProgressSuccess,
+		Message:    "StaticPod is running",
+	}
+}

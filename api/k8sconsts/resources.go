@@ -34,6 +34,10 @@ const (
 	// RollbackRecoveryAtAnnotation on the same IC, the recovery has been handled.
 	RollbackRecoveryProcessedAtAnnotation = "odigos.io/rollback-recovery-processed"
 
+	// this label is not used in the api server, it is injected only into the controller-runtime cache object,
+	// and allows efficient listing of static pods based on the label.
+	OdigosVirtualStaticPodNameLabel = "odigos.io/virtual-static-pod-name"
+
 	// This label is used to mark resources that are managed by Helm.
 	AppManagedByHelmLabel = "app.kubernetes.io/managed-by"
 	AppManagedByHelmValue = "Helm"

@@ -370,6 +370,37 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}
 			return workloadManifests, nil
 
+		case k8sconsts.WorkloadKindStaticPod:
+			staticPod := &corev1.Pod{}
+			err := k8sCacheClient.Get(ctx, client.ObjectKey{
+				Namespace: filters.NamespaceString,
+				Name:      filters.SingleWorkload.WorkloadName,
+			}, staticPod)
+			if err != nil {
+				return nil, client.IgnoreNotFound(err)
+			}
+
+			// if this is a pod, but not static, skip it.
+			if !workload.IsStaticPod(staticPod) {
+				return nil, nil
+			}
+
+			workloadHealthStatus := status.CalculateStaticPodHealthStatus(staticPod.Status)
+			workloadManifests[model.K8sWorkloadID{
+				Namespace: staticPod.Namespace,
+				Kind:      model.K8sResourceKindStaticPod,
+				Name:      staticPod.Name,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas: 1, // static pod always have 1 instance
+				Selector: &metav1.LabelSelector{ // use selector so it works the same way as other workloads
+					MatchLabels: map[string]string{
+						k8sconsts.OdigosVirtualStaticPodNameLabel: staticPod.Name,
+					},
+				},
+				WorkloadHealthStatus: workloadHealthStatus,
+			}
+			return workloadManifests, nil
+
 		default:
 			return nil, fmt.Errorf("invalid workload kind: %s", filters.SingleWorkload.WorkloadKind)
 		}
@@ -428,6 +459,29 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		}] = &computed.CachedWorkloadManifest{
 			AvailableReplicas:    statefulset.Status.ReadyReplicas,
 			Selector:             statefulset.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
+	}
+
+	staticPodsList := &corev1.PodList{}
+	err = k8sCacheClient.List(ctx, staticPodsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{k8sconsts.OdigosVirtualStaticPodNameLabel: "true"}))
+	if err != nil {
+		return nil, err
+	}
+	staticPodsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, staticPod := range staticPodsList.Items {
+		workloadHealthStatus := status.CalculateStaticPodHealthStatus(staticPod.Status)
+		staticPodsMap[model.K8sWorkloadID{
+			Namespace: staticPod.Namespace,
+			Kind:      model.K8sResourceKindStaticPod,
+			Name:      staticPod.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas: 1, // static pod always have 1 instance
+			Selector: &metav1.LabelSelector{ // use selector so it works the same way as other workloads
+				MatchLabels: map[string]string{
+					k8sconsts.OdigosVirtualStaticPodNameLabel: staticPod.Name,
+				},
+			},
 			WorkloadHealthStatus: workloadHealthStatus,
 		}
 	}
@@ -563,6 +617,12 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		workloadManifests[id] = manifest
 	}
 	for id, manifest := range rolloutsMap {
+		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+			continue
+		}
+		workloadManifests[id] = manifest
+	}
+	for id, manifest := range staticPodsMap {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
