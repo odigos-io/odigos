@@ -205,7 +205,7 @@ type CollectorsGroupSpec struct {
 
 	// Sampling holds the sampling configuration derived from the OdigosConfiguration.
 	// Currently this is only relevant for the cluster gateway collector.
-	Sampling *common.SamplingConfiguration `json:"sampling,omitempty"`
+	TailSampling *common.TailSamplingConfiguration `json:"tailSampling,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

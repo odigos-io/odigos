@@ -16,10 +16,9 @@ import (
 func IsSamplingV2Enabled(ctx context.Context, gateway *odigosv1.CollectorsGroup, c client.Client) bool {
 	logger := log.FromContext(ctx)
 
-	if gateway.Spec.Sampling != nil &&
-		gateway.Spec.Sampling.TailSampling != nil &&
-		gateway.Spec.Sampling.TailSampling.Disabled != nil &&
-		*gateway.Spec.Sampling.TailSampling.Disabled {
+	if gateway.Spec.TailSampling != nil &&
+		gateway.Spec.TailSampling.Disabled != nil &&
+		*gateway.Spec.TailSampling.Disabled {
 		return false
 	}
 

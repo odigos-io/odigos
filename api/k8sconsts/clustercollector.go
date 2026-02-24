@@ -23,5 +23,5 @@ const (
 	// Thus it cannot collide with other ports on the same node, and we can use an handy default port.
 	OdigosClusterCollectorOwnTelemetryPortDefault = int32(8888)
 
-	OdigosClusterCollectorTraceAggregationWaitDurationDefault = "20s"
+	OdigosClusterCollectorTraceAggregationWaitDurationDefault = "30s"
 )

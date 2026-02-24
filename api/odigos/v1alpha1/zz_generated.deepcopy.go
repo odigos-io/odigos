@@ -516,9 +516,9 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 			}
 		}
 	}
-	if in.Sampling != nil {
-		in, out := &in.Sampling, &out.Sampling
-		*out = new(common.SamplingConfiguration)
+	if in.TailSampling != nil {
+		in, out := &in.TailSampling, &out.TailSampling
+		*out = new(common.TailSamplingConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
 }

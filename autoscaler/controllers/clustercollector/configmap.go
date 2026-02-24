@@ -167,10 +167,9 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		// If not configured, or invalid, use the default.
 		resolvedDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
 
-		if gateway.Spec.Sampling != nil &&
-			gateway.Spec.Sampling.TailSampling != nil &&
-			gateway.Spec.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
-			configured := *gateway.Spec.Sampling.TailSampling.TraceAggregationWaitDuration
+		if gateway.Spec.TailSampling != nil &&
+			gateway.Spec.TailSampling.TraceAggregationWaitDuration != nil {
+			configured := *gateway.Spec.TailSampling.TraceAggregationWaitDuration
 
 			if duration, err := time.ParseDuration(configured); err != nil || duration <= 0 {
 				logger.Info("invalid TraceAggregationWaitDuration, using default", "configured", configured, "default", resolvedDuration)
