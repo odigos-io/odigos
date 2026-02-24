@@ -170,7 +170,6 @@ func persistInstallationStatus(ctx context.Context, status string) error {
 func isSourceCreated(ctx context.Context) bool {
 	sourceList, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{Limit: 1})
 	if err != nil {
-
 		return false
 	}
 
