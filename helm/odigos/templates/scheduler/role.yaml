@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: odigos-scheduler
-  namespace: odigos-system
+  namespace: '{{ .Release.Namespace }}'
   labels:
     odigos.io/system-object: "true"
 rules:
@@ -107,6 +107,7 @@ rules:
     resources:
       - 'deployments'
     resourceNames:
+      - {{ .Values.scheduler.deploymentName | default "odigos-scheduler" | quote }}
     verbs:
       - 'get'
       - 'list'
@@ -119,11 +120,11 @@ rules:
       - 'get'
       - 'list'
       - 'watch'
+{{- if .Values.openshift.enabled }}
   - apiGroups:
-      - 'odigos.io'
+      - 'apps'
     resources:
-      - 'samplings'
+      - deployments/finalizers
     verbs:
-      - 'get'
-      - 'list'
-      - 'watch'
+      - update
+{{- end }}
