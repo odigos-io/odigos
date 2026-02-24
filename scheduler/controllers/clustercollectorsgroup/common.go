@@ -3,6 +3,7 @@ package clustercollectorsgroup
 import (
 	"context"
 	"slices"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func getOwnMetricsConfig(odigosConfiguration *common.OdigosConfiguration, allDestinations *odigosv1.DestinationList) *odigosv1.CollectorsGroupMetricsCollectionSettings {
@@ -119,8 +121,8 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	ownMetricsConfig := getOwnMetricsConfig(&odigosConfiguration, allDestinations)
 
 	var tailSampling *common.TailSamplingConfiguration
-	if odigosConfiguration.Sampling != nil {
-		tailSampling = odigosConfiguration.Sampling.TailSampling
+	if isTailSamplingEnabled(ctx, c, &odigosConfiguration) {
+		tailSampling = resolveTailSamplingConfig(ctx, &odigosConfiguration, true)
 	}
 
 	// cluster collector is always set and never deleted at the moment.
@@ -140,4 +142,56 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	}
 
 	return nil
+}
+
+// isTailSamplingEnabled returns true if tail sampling is not globally disabled
+// and at least one non-disabled Sampling CR exists.
+func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *common.OdigosConfiguration) bool {
+	logger := log.FromContext(ctx)
+
+	if odigosConfig.Sampling != nil &&
+		odigosConfig.Sampling.TailSampling != nil &&
+		odigosConfig.Sampling.TailSampling.Disabled != nil &&
+		*odigosConfig.Sampling.TailSampling.Disabled {
+		return false
+	}
+
+	samplingList := &odigosv1.SamplingList{}
+	if err := c.List(ctx, samplingList, &client.ListOptions{Namespace: env.GetCurrentNamespace()}); err != nil {
+		logger.Error(err, "Failed to list Sampling CRs, tail sampling will be disabled")
+		return false
+	}
+
+	for _, s := range samplingList.Items {
+		if !s.Spec.Disabled {
+			return true
+		}
+	}
+
+	return false
+}
+
+// resolveTailSamplingConfig returns a fully resolved TailSamplingConfiguration,
+// reading TraceAggregationWaitDuration from odigosConfig if valid, otherwise using the default.
+func resolveTailSamplingConfig(ctx context.Context, odigosConfig *common.OdigosConfiguration, enabled bool) *common.TailSamplingConfiguration {
+	logger := log.FromContext(ctx)
+
+	resolvedDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
+	if odigosConfig.Sampling != nil &&
+		odigosConfig.Sampling.TailSampling != nil &&
+		odigosConfig.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
+		configured := *odigosConfig.Sampling.TailSampling.TraceAggregationWaitDuration
+		if d, err := time.ParseDuration(configured); err != nil || d <= 0 {
+			logger.Info("invalid TraceAggregationWaitDuration, using default",
+				"configured", configured, "default", resolvedDuration)
+		} else {
+			resolvedDuration = configured
+		}
+	}
+
+	disabled := !enabled
+	return &common.TailSamplingConfiguration{
+		TraceAggregationWaitDuration: &resolvedDuration,
+		Disabled:                     &disabled,
+	}
 }
