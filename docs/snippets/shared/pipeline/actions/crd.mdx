@@ -1,12 +1,12 @@
 <Note>
-  This option is for advanced users who are familiar with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/), it's [configuration](https://opentelemetry.io/docs/collector/configuration/), and with [Kubernetes CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
+  This option is for advanced users who are familiar with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/), its [configuration](https://opentelemetry.io/docs/collector/configuration/), and with [Kubernetes CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).
 </Note>
 
 You can browse the full list of processors that Odigos includes [here](https://github.com/odigos-io/odigos/blob/main/collector/builder-config.yaml#L61).
 
 To view the configuration for each processor, it is recommended to visit the README of this component in [OpenTelemetry Collector Contrib codebase](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor).
 
-Adding a processor to your Odigos pipeline can be done by creating a `Processor` custom resource in your Kuberenetes cluster under the `odigos-system` namespace:
+Adding a processor to your Odigos pipeline can be done by creating a `Processor` custom resource in your Kubernetes cluster under the `odigos-system` namespace:
 
 ## Configuration Options
 

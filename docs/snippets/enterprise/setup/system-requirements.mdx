@@ -25,17 +25,17 @@ This allows users to maintain observability on nodes that meet the requirements 
 
 ## Resource Requirements
 
-To achieve its functionality Odigos uses a set of Deployments and Daemonsets.
+To achieve its functionality Odigos uses a set of Deployments and DaemonSets.
 
 ### Cluster
 
-The following components runs as Deployment and request the following resources **(per pod)**:
+The following components run as Deployment and request the following resources **(per pod)**:
 
 | Component Name | Memory Request | Memory Limit | CPU Request | CPU Limit |
 |---------------|---------------|-------------|------------|----------|
 | odigos-autoscaler      | 64Mi         | 512Mi       | 10m       | 500m     |
 | odigos-instrumentor (2 replicas)       | 64Mi         | 512Mi       | 10m       | 500m     |
-| odigos-schedualer      | 64Mi         | 512Mi       | 10m       | 500m     |
+| odigos-scheduler      | 64Mi         | 512Mi       | 10m       | 500m     |
 | odigos-ui | 64Mi         | 512Mi       | 10m       | 500m     |
 
 In addition, Odigos deploys OpenTelemetry Collector Deployment,

@@ -6,7 +6,6 @@ import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
 - [Headers Collection](./headerscollection)
 - [Payload Collection](./payloadcollection)
 - [Custom Instrumentations](./custominstrumentation)
-- [HeadSamplingFallbackFraction](./headsamplingfallbackfraction)
 
 ## Configuration Options
 
@@ -73,7 +72,7 @@ import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
 Odigos allows you to apply/limit rules to specific sources.
 
 - To apply a rule to all sources, omit the `workloads` field.
-- To apply a rule to specific sources, provide an array of workload objects (identified by it's namespace, name, and kind).
+- To apply a rule to specific sources, provide an array of workload objects (identified by its namespace, name, and kind).
 
 <Info>
   Odigos allows you to define multiple rules, and will merge them together to create a single rule per source. Conflicting options will be resolved by choosing to record the attribute, if it's specified by one rule (at least).
@@ -84,7 +83,7 @@ Odigos allows you to apply/limit rules to specific sources.
 Odigos allows you to apply/limit rules to specific instrumentation libraries.
 
 - To apply a rule to all instrumentation libraries, omit the `instrumentationLibraries` field.
-- To apply a rule to specific instrumentation libraries, provide an array of instrumentation libraries (identified by it's unique name, language, and span kind for golang).
+- To apply a rule to specific instrumentation libraries, provide an array of instrumentation libraries (identified by its unique name, language, and span kind for golang).
 
 <Info>
   Any rule for a specific instrumentation library will take precedence over a rule that does not specify a library.
