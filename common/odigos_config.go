@@ -365,6 +365,7 @@ type OdigosOwnTelemetryConfiguration struct {
 	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
 }
 
+// +kubebuilder:object:generate=true
 type TailSamplingConfiguration struct {
 
 	// if set to true, tail sampling will be disabled globally
