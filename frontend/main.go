@@ -88,7 +88,7 @@ func initKubernetesClient(flags *Flags) error {
 	}
 
 	kube.SetDefaultClient(client)
-	kube.InitArgoRolloutAvailability()
+	kube.InitWorkloadKindsAvailability()
 	return nil
 }
 
@@ -194,10 +194,10 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 
 	gqlExecutableSchema := graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
-			MetricsConsumer:   odigosMetrics,
-			Logger:            logger,
-			PromAPI:           promAPI,
-			K8sCacheClient:    k8sCacheClient,
+			MetricsConsumer: odigosMetrics,
+			Logger:          logger,
+			PromAPI:         promAPI,
+			K8sCacheClient:  k8sCacheClient,
 		},
 	})
 	gqlExecutor := executor.New(gqlExecutableSchema)
