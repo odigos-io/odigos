@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -157,28 +156,15 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		OdigosNamespace:       env.GetCurrentNamespace(),
 	}
 
-	samplingv2Enabled := common.IsSamplingV2Enabled(ctx, gateway, c)
-
-	if samplingv2Enabled {
-		// In use by the pipeline generation [GetGatewayConfig()].
-		gatewayOptions.SamplingEnabled = &samplingv2Enabled
-
-		// Resolve the trace aggregation wait duration.
-		// If not configured, or invalid, use the default.
-		resolvedDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
-
-		if gateway.Spec.TailSampling != nil &&
-			gateway.Spec.TailSampling.TraceAggregationWaitDuration != nil {
-			configured := *gateway.Spec.TailSampling.TraceAggregationWaitDuration
-
-			if duration, err := time.ParseDuration(configured); err != nil || duration <= 0 {
-				logger.Info("invalid TraceAggregationWaitDuration, using default", "configured", configured, "default", resolvedDuration)
-			} else {
-				resolvedDuration = configured
-			}
+	// TailSampling is nil when inactive, non-nil when the scheduler has resolved it as active.
+	// TraceAggregationWaitDuration is already validated and defaulted by the scheduler.
+	if gateway.Spec.TailSampling != nil {
+		if gateway.Spec.TailSampling.Disabled != nil {
+			disabled := *gateway.Spec.TailSampling.Disabled
+			enabled := !disabled
+			gatewayOptions.SamplingEnabled = &enabled
 		}
-
-		gatewayOptions.TraceAggregationWaitDuration = &resolvedDuration
+		gatewayOptions.TraceAggregationWaitDuration = gateway.Spec.TailSampling.TraceAggregationWaitDuration
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(

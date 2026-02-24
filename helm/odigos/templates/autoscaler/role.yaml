@@ -190,14 +190,6 @@ rules:
       - get
       - patch
       - update
-  - apiGroups:
-      - odigos.io
-    resources:
-      - samplings
-    verbs:
-      - get
-      - list
-      - watch
 {{- if .Values.openshift.enabled }}
   - apiGroups:
       - 'apps'

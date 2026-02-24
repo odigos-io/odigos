@@ -134,6 +134,15 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		return ctrl.Result{}, reconcile.TerminalError(err)
 	}
 
+	if isTailSamplingEnabled(ctx, r.Client, &odigosConfiguration) {
+		enabled := true
+		resolveTailSamplingConfig(ctx, &odigosConfiguration, enabled)
+	} else {
+		if odigosConfiguration.Sampling != nil {
+			odigosConfiguration.Sampling.TailSampling = nil
+		}
+	}
+
 	err = r.persistEffectiveConfig(ctx, &odigosConfiguration, odigosConfigMap)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -570,4 +579,58 @@ func verifyMetricsConfig(odigosConfiguration *common.OdigosConfiguration) error 
 	}
 
 	return nil
+}
+
+// Return true if tail sampling is not globally disabled and at least one non-disabled Sampling CR exists.
+func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *common.OdigosConfiguration) bool {
+	logger := log.FromContext(ctx)
+
+	if odigosConfig.Sampling != nil &&
+		odigosConfig.Sampling.TailSampling != nil &&
+		odigosConfig.Sampling.TailSampling.Disabled != nil &&
+		*odigosConfig.Sampling.TailSampling.Disabled {
+		return false
+	}
+
+	samplingList := &odigosv1alpha1.SamplingList{}
+	if err := c.List(ctx, samplingList, &client.ListOptions{Namespace: env.GetCurrentNamespace()}); err != nil {
+		logger.Error(err, "Failed to list Sampling CRs, tail sampling will be disabled")
+		return false
+	}
+
+	for _, s := range samplingList.Items {
+		if !s.Spec.Disabled {
+			return true
+		}
+	}
+
+	return false
+}
+
+// resolveTailSamplingConfig sets odigosConfig.Sampling.TailSampling to a fully resolved config.
+func resolveTailSamplingConfig(ctx context.Context, odigosConfig *common.OdigosConfiguration, enabled bool) {
+	logger := log.FromContext(ctx)
+
+	if odigosConfig.Sampling == nil {
+		odigosConfig.Sampling = &common.SamplingConfiguration{}
+	}
+
+	resolvedDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
+	if odigosConfig.Sampling.TailSampling != nil &&
+		odigosConfig.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
+		configured := *odigosConfig.Sampling.TailSampling.TraceAggregationWaitDuration
+		if d, err := time.ParseDuration(configured); err != nil || d <= 0 {
+			logger.Info("invalid TraceAggregationWaitDuration, using default",
+				"configured", configured, "default", resolvedDuration)
+		} else {
+			resolvedDuration = configured
+		}
+	}
+
+	disabled := !enabled
+
+	odigosConfig.Sampling.TailSampling = &common.TailSamplingConfiguration{
+		Disabled:                     &disabled,
+		TraceAggregationWaitDuration: &resolvedDuration,
+	}
 }
