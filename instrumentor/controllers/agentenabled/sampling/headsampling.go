@@ -140,17 +140,17 @@ func CalculateHeadSamplingConfig(distro *distro.OtelDistro, workloadObj workload
 	}
 }
 
-func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOperations, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
-	if noisyOperation.HttpServer != nil {
-		return convertNoisyOperationHttpServerToAttributeConditions(noisyOperation.HttpServer, distro)
+func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOperation, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
+	if noisyOperation.Operation != nil && noisyOperation.Operation.HttpServer != nil {
+		return convertNoisyOperationHttpServerToAttributeConditions(noisyOperation.Operation.HttpServer, distro)
 	}
-	if noisyOperation.HttpClient != nil {
-		return convertNoisyOperationHttpClientToAttributeConditions(noisyOperation.HttpClient, distro)
+	if noisyOperation.Operation != nil && noisyOperation.Operation.HttpClient != nil {
+		return convertNoisyOperationHttpClientToAttributeConditions(noisyOperation.Operation.HttpClient, distro)
 	}
 	return nil
 }
 
-func convertNoisyOperationHttpServerToAttributeConditions(httpServer *odigosv1.NoisyOperationHttpServerMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
+func convertNoisyOperationHttpServerToAttributeConditions(httpServer *odigosv1.HeadSamplingHttpServerOperationMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
 	urlPathAttributeKey, httpRequestMethodAttributeKey, _ := getDistroPathAndMethodAttributeKeys(distro)
 	andConditions := []odigosv1.AttributeCondition{}
 	if httpServer.Route != "" {
@@ -177,7 +177,7 @@ func convertNoisyOperationHttpServerToAttributeConditions(httpServer *odigosv1.N
 	return andConditions
 }
 
-func convertNoisyOperationHttpClientToAttributeConditions(httpClient *odigosv1.NoisyOperationHttpClientMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
+func convertNoisyOperationHttpClientToAttributeConditions(httpClient *odigosv1.HeadSamplingHttpClientOperationMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
 
 	urlPathAttributeKey, httpRequestMethodAttributeKey, serverAddressAttributeKey := getDistroPathAndMethodAttributeKeys(distro)
 

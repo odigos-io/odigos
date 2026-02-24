@@ -17,25 +17,25 @@ limitations under the License.
 
 package v1alpha1
 
-// CostReductionRuleApplyConfiguration represents a declarative configuration of the CostReductionRule type for use
+// NoisyOperationApplyConfiguration represents a declarative configuration of the NoisyOperation type for use
 // with apply.
-type CostReductionRuleApplyConfiguration struct {
+type NoisyOperationApplyConfiguration struct {
 	SourceScopes     []SourcesScopeApplyConfiguration                `json:"sourceScopes,omitempty"`
-	Operation        *TailSamplingOperationMatcherApplyConfiguration `json:"operation,omitempty"`
+	Operation        *HeadSamplingOperationMatcherApplyConfiguration `json:"operation,omitempty"`
 	PercentageAtMost *float64                                        `json:"percentageAtMost,omitempty"`
 	Notes            *string                                         `json:"notes,omitempty"`
 }
 
-// CostReductionRuleApplyConfiguration constructs a declarative configuration of the CostReductionRule type for use with
+// NoisyOperationApplyConfiguration constructs a declarative configuration of the NoisyOperation type for use with
 // apply.
-func CostReductionRule() *CostReductionRuleApplyConfiguration {
-	return &CostReductionRuleApplyConfiguration{}
+func NoisyOperation() *NoisyOperationApplyConfiguration {
+	return &NoisyOperationApplyConfiguration{}
 }
 
 // WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the SourceScopes field.
-func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(values ...*SourcesScopeApplyConfiguration) *CostReductionRuleApplyConfiguration {
+func (b *NoisyOperationApplyConfiguration) WithSourceScopes(values ...*SourcesScopeApplyConfiguration) *NoisyOperationApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithSourceScopes")
@@ -48,7 +48,7 @@ func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(values ...*Source
 // WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operation field is set to the value of the last call.
-func (b *CostReductionRuleApplyConfiguration) WithOperation(value *TailSamplingOperationMatcherApplyConfiguration) *CostReductionRuleApplyConfiguration {
+func (b *NoisyOperationApplyConfiguration) WithOperation(value *HeadSamplingOperationMatcherApplyConfiguration) *NoisyOperationApplyConfiguration {
 	b.Operation = value
 	return b
 }
@@ -56,7 +56,7 @@ func (b *CostReductionRuleApplyConfiguration) WithOperation(value *TailSamplingO
 // WithPercentageAtMost sets the PercentageAtMost field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the PercentageAtMost field is set to the value of the last call.
-func (b *CostReductionRuleApplyConfiguration) WithPercentageAtMost(value float64) *CostReductionRuleApplyConfiguration {
+func (b *NoisyOperationApplyConfiguration) WithPercentageAtMost(value float64) *NoisyOperationApplyConfiguration {
 	b.PercentageAtMost = &value
 	return b
 }
@@ -64,7 +64,7 @@ func (b *CostReductionRuleApplyConfiguration) WithPercentageAtMost(value float64
 // WithNotes sets the Notes field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Notes field is set to the value of the last call.
-func (b *CostReductionRuleApplyConfiguration) WithNotes(value string) *CostReductionRuleApplyConfiguration {
+func (b *NoisyOperationApplyConfiguration) WithNotes(value string) *NoisyOperationApplyConfiguration {
 	b.Notes = &value
 	return b
 }
