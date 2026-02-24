@@ -171,7 +171,7 @@ func TestInjectDirToProcessTempDir(t *testing.T) {
 	sourceDir := setupTestDirectory(t)
 	pid := startTestProcess(t)
 
-	if err := InjectDirToProcessTempDir(pid, sourceDir); err != nil {
+	if err := InjectDirToProcessTempDir(pid, sourceDir, false); err != nil {
 		t.Fatalf("InjectDirToProcessTempDir failed: %v", err)
 	}
 
@@ -293,7 +293,7 @@ func TestInjectDirToProcessTempDir_SourceNotDirectory(t *testing.T) {
 
 	pid := startTestProcess(t)
 
-	err := InjectDirToProcessTempDir(pid, sourceFile)
+	err := InjectDirToProcessTempDir(pid, sourceFile, false)
 	if err == nil {
 		t.Error("expected error for non-directory source, got nil")
 	}
@@ -305,7 +305,7 @@ func TestInjectDirToProcessTempDir_SourceNotDirectory(t *testing.T) {
 func TestInjectDirToProcessTempDir_SourceNotExist(t *testing.T) {
 	pid := startTestProcess(t)
 
-	err := InjectDirToProcessTempDir(pid, "/non/existent/directory")
+	err := InjectDirToProcessTempDir(pid, "/non/existent/directory", false)
 	if err == nil {
 		t.Error("expected error for non-existent source, got nil")
 	}
@@ -314,9 +314,98 @@ func TestInjectDirToProcessTempDir_SourceNotExist(t *testing.T) {
 	}
 }
 
+func TestInjectDirToProcessTempDir_NoOverrideSkipsExisting(t *testing.T) {
+	tmpDir := t.TempDir()
+	sourceDir := filepath.Join(tmpDir, "test-dir-no-override")
+
+	// Create initial directory structure
+	initialStructure := map[string]fileSpec{
+		"file1.txt":        {content: "original content", perm: 0o644},
+		"subdir/file2.txt": {content: "original nested", perm: 0o644},
+	}
+
+	if err := os.Mkdir(sourceDir, 0o755); err != nil {
+		t.Fatalf("failed to create source dir: %v", err)
+	}
+
+	for path, spec := range initialStructure {
+		fullPath := filepath.Join(sourceDir, path)
+		dir := filepath.Dir(fullPath)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatalf("failed to create directory %s: %v", dir, err)
+		}
+		if err := os.WriteFile(fullPath, []byte(spec.content), spec.perm); err != nil {
+			t.Fatalf("failed to create file %s: %v", path, err)
+		}
+	}
+
+	pid := startTestProcess(t)
+
+	if err := InjectDirToProcessTempDir(pid, sourceDir, false); err != nil {
+		t.Fatalf("first injection failed: %v", err)
+	}
+
+	procTmpDir := filepath.Join("/proc", fmt.Sprintf("%d", pid), "root", os.TempDir())
+	destDir := filepath.Join(procTmpDir, filepath.Base(sourceDir))
+
+	// Verify initial content was copied
+	content, err := os.ReadFile(filepath.Join(destDir, "file1.txt"))
+	if err != nil {
+		t.Fatalf("failed to read file1.txt after first injection: %v", err)
+	}
+	if string(content) != "original content" {
+		t.Fatalf("unexpected content after first injection: got %q, want %q", content, "original content")
+	}
+
+	// Modify source files
+	if err := os.WriteFile(filepath.Join(sourceDir, "file1.txt"), []byte("modified content"), 0o644); err != nil {
+		t.Fatalf("failed to modify file1: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(sourceDir, "file3.txt"), []byte("new file"), 0o644); err != nil {
+		t.Fatalf("failed to create file3: %v", err)
+	}
+
+	// Second injection with override=false - should be a no-op since directory exists
+	if err := InjectDirToProcessTempDir(pid, sourceDir, false); err != nil {
+		t.Fatalf("second injection failed: %v", err)
+	}
+
+	// Verify destination still has ORIGINAL content (not modified)
+	checks := []struct {
+		path            string
+		shouldExist     bool
+		expectedContent string
+	}{
+		{path: "file1.txt", shouldExist: true, expectedContent: "original content"},      // Should NOT be modified
+		{path: "subdir/file2.txt", shouldExist: true, expectedContent: "original nested"}, // Should remain
+		{path: "file3.txt", shouldExist: false, expectedContent: ""},                      // Should NOT exist (new file not copied)
+	}
+
+	for _, check := range checks {
+		fullPath := filepath.Join(destDir, check.path)
+		content, err := os.ReadFile(fullPath)
+
+		if check.shouldExist {
+			if err != nil {
+				t.Errorf("path %s: expected to exist but not found: %v", check.path, err)
+				continue
+			}
+			if string(content) != check.expectedContent {
+				t.Errorf("path %s: content mismatch: got %q, want %q (override=false should preserve original)",
+					check.path, content, check.expectedContent)
+			}
+		} else {
+			if err == nil {
+				t.Errorf("path %s: expected not to exist but found with content %q (override=false should not copy new files)",
+					check.path, content)
+			}
+		}
+	}
+}
+
 func TestInjectDirToProcessTempDir_DirectoryAlreadyExists(t *testing.T) {
 	tmpDir := t.TempDir()
-	sourceDir := filepath.Join(tmpDir, "test-dir")
+	sourceDir := filepath.Join(tmpDir, "test-dir-override-test")
 
 	// Create initial directory structure
 	initialStructure := map[string]fileSpec{
@@ -343,7 +432,7 @@ func TestInjectDirToProcessTempDir_DirectoryAlreadyExists(t *testing.T) {
 	pid := startTestProcess(t)
 
 	// First injection
-	if err := InjectDirToProcessTempDir(pid, sourceDir); err != nil {
+	if err := InjectDirToProcessTempDir(pid, sourceDir, true); err != nil {
 		t.Fatalf("first injection failed: %v", err)
 	}
 
@@ -367,8 +456,8 @@ func TestInjectDirToProcessTempDir_DirectoryAlreadyExists(t *testing.T) {
 		t.Fatalf("failed to create file4: %v", err)
 	}
 
-	// Second injection
-	if err := InjectDirToProcessTempDir(pid, sourceDir); err != nil {
+	// Second injection, test overwrite behavior
+	if err := InjectDirToProcessTempDir(pid, sourceDir, true); err != nil {
 		t.Fatalf("second injection failed: %v", err)
 	}
 

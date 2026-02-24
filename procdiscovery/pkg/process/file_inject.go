@@ -45,10 +45,11 @@ func InjectFileToProcessTempDir(pid int, sourcePath string) error {
 }
 
 // InjectDirToProcessTempDir copies a complete directory to the process's temp directory.
-// It preserves directory structure and file permissions. If the destination directory
-// already exists, files are merged (existing files are overwritten, new files are added,
+// It preserves directory structure and file permissions.
+// if override is true, existing files are overwritten with the source files
+// if override is false, and the target directory exists, this is a no-op.
 // and files not in the source are preserved).
-func InjectDirToProcessTempDir(pid int, sourceDirPath string) error {
+func InjectDirToProcessTempDir(pid int, sourceDirPath string, override bool) error {
 	info, err := os.Stat(sourceDirPath)
 	if err != nil {
 		return fmt.Errorf("failed to stat source directory: %s - %w", sourceDirPath, err)
@@ -57,13 +58,20 @@ func InjectDirToProcessTempDir(pid int, sourceDirPath string) error {
 		return fmt.Errorf("source path is not a directory: %s", sourceDirPath)
 	}
 
+	// tmp fs location inside the process's root
 	destTempPath, err := procTempPath(pid)
 	if err != nil {
 		return err
 	}
 
-	// Create the destination directory with the same name as source
 	destDirPath := filepath.Join(destTempPath, filepath.Base(sourceDirPath))
+	if !override {
+		if info, err := os.Stat(destDirPath); err == nil && info.IsDir() {
+			// target directory already exists and override is false, so we skip copying
+			return nil
+		}
+	}
+	// Create the destination directory with the same name as source
 	if err := os.MkdirAll(destDirPath, info.Mode().Perm()); err != nil {
 		return fmt.Errorf("failed to create target directory: %s - %w", destDirPath, err)
 	}
