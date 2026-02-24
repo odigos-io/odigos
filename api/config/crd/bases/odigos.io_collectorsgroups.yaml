@@ -341,6 +341,51 @@ spec:
                 - CLUSTER_GATEWAY
                 - NODE_COLLECTOR
                 type: string
+              sampling:
+                description: |-
+                  Sampling holds the sampling configuration derived from the OdigosConfiguration.
+                  It is propagated here so the autoscaler can read it without re-fetching the odigos config,
+                  and so future sampling fields are automatically available without changing the function signature.
+                  Currently this is only relevant for the cluster gateway collector.
+                properties:
+                  k8sHealthProbesSampling:
+                    description: configuration for odigos auto-kubelet-probes detection
+                      and sampling.
+                    properties:
+                      enabled:
+                        description: |-
+                          if set to true, odigos will automatically detect and sample out health probes.
+                          this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
+                          users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
+                        type: boolean
+                      keepPercentage:
+                        description: |-
+                          percentage % (0-100) of health probes to keep.
+                          if not set, it is defaulted to 0% -> all health probes will be sampled out.
+                          set to some low value (like 1%) to still keep some health-probes traces.
+                        type: number
+                    type: object
+                  tailSampling:
+                    description: configuration for tail sampling.
+                    properties:
+                      disabled:
+                        description: |-
+                          if set to true, tail sampling will be disabled globally
+                          regardless of any other configurations or rules set.
+                          can be used to reduce collectors resource usage, troubleshooting, etc,
+                          or when tail-sampling is not needed or desired and should be shut off.
+                        type: boolean
+                      traceAggregationWaitDuration:
+                        description: |-
+                          time to wait from the first span of a trace until a trace is considered completed.
+                          at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+                          introduces this amount of latency in the pipeline and for trace to hit the destination.
+                          also increases memory usage for keeping spans in memory until the wait duration time is reached.
+                          setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+                          and broken traces due to sampling each trace in few pieces.
+                        type: string
+                    type: object
+                type: object
               serviceGraphDisabled:
                 description: |-
                   ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.

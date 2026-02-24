@@ -202,6 +202,10 @@ type CollectorsGroupSpec struct {
 	// Deployment name for the collectors group deployment.
 	// Only relevant for cluster gateway collector.
 	DeploymentName string `json:"deploymentName,omitempty"`
+
+	// Sampling holds the sampling configuration derived from the OdigosConfiguration.
+	// Currently this is only relevant for the cluster gateway collector.
+	Sampling *common.SamplingConfiguration `json:"sampling,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

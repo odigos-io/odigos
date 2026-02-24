@@ -37,6 +37,7 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
 	NodeSelector              *map[string]string                                          `json:"nodeSelector,omitempty"`
 	DeploymentName            *string                                                     `json:"deploymentName,omitempty"`
+	Sampling                  *common.SamplingConfiguration                               `json:"sampling,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -138,5 +139,13 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithNodeSelector(value map[strin
 // If called multiple times, the DeploymentName field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithDeploymentName(value string) *CollectorsGroupSpecApplyConfiguration {
 	b.DeploymentName = &value
+	return b
+}
+
+// WithSampling sets the Sampling field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Sampling field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithSampling(value common.SamplingConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.Sampling = &value
 	return b
 }

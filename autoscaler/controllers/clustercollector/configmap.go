@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -154,6 +155,28 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		ServiceGraphDisabled:  gateway.Spec.ServiceGraphDisabled,
 		ClusterMetricsEnabled: gateway.Spec.ClusterMetricsEnabled,
 		OdigosNamespace:       env.GetCurrentNamespace(),
+	}
+
+	samplingv2Enabled := common.IsSamplingV2Enabled(ctx, gateway, c)
+
+	if samplingv2Enabled {
+		// Sampling v2 is enabled, will be used in the pipeline generation.
+		gatewayOptions.SamplingEnabled = &samplingv2Enabled
+
+		resolvedDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
+		if gateway.Spec.Sampling != nil &&
+			gateway.Spec.Sampling.TailSampling != nil &&
+			gateway.Spec.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
+			configured := *gateway.Spec.Sampling.TailSampling.TraceAggregationWaitDuration
+
+			if duration, err := time.ParseDuration(configured); err != nil || duration <= 0 {
+				logger.Info("invalid TraceAggregationWaitDuration, using default", "configured", configured, "default", resolvedDuration)
+			} else {
+				resolvedDuration = configured
+			}
+		}
+
+		gatewayOptions.TraceAggregationWaitDuration = &resolvedDuration
 	}
 
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
