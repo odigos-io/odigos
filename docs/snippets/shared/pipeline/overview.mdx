@@ -6,10 +6,10 @@
 
 The Odigos Pipeline is composed of the following components:
 
-- **Instrumentations** - code that record OpenTelemetry signals from your application. It can be code in your application native programming language or eBPF programs that record OpenTelemetry data from the linux kernel.
+- **Instrumentations** - code that records OpenTelemetry signals from your application. It can be code in your application native programming language or eBPF programs that record OpenTelemetry data from the linux kernel.
 - **OpenTelemetry SDK** - a library that runs in each instrumented process. It receives the OpenTelemetry data from instrumentations and export it out of the process boundary.
-- **Node Collector** - also refered to as `data-collection collector`. Each node in the cluster runs a single instance of this OpenTelemetry collector (DaemonSet). It receives the opentelemetry data from the OpenTelemetry SDKs, process it, and export it to the next component in the pipeline.
-- **Cluster Gateway Collector** - a collector that runs as a k8s Deployment. It receives the opentelemetry data from the Node Collectors, process it, and export it to the next component in the pipeline.
+- **Node Collector** - also referred to as `data-collection collector`. Each node in the cluster runs a single instance of this OpenTelemetry collector (DaemonSet). It receives the OpenTelemetry data from the OpenTelemetry SDKs, process it, and exports it to the next component in the pipeline.
+- **Cluster Gateway Collector** - a collector that runs as a k8s Deployment. It receives the OpenTelemetry data from the Node Collectors, process it, and export it to the next component in the pipeline.
 
 ## Component types:
 

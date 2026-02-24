@@ -624,15 +624,15 @@
           {
             "group": "Odigos Central",
             "pages": [
-              "enterprise/central/overview",
-              "enterprise/central/architecture",
-              "enterprise/central/prerequisites",
-              "enterprise/central/installation",
-              "enterprise/central/ui",
-              "enterprise/central/remote-clusters",
-              "enterprise/central/authentication",
-              "enterprise/central/upgrade",
-              "enterprise/central/uninstall"
+              "central/overview",
+              "central/architecture",
+              "central/prerequisites",
+              "central/installation",
+              "central/ui",
+              "central/remote-clusters",
+              "central/authentication",
+              "central/upgrade",
+              "central/uninstall"
             ]
           }
         ]

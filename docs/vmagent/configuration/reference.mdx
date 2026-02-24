@@ -3,7 +3,7 @@ title: "Reference"
 sidebarTitle: "Reference"
 ---
 
-Odigos VM Agent reads it's configuration from `/etc/odigos-vmagent/agent.yaml`. This file controls the following aspects of the agent:
+Odigos VM Agent reads its configuration from `/etc/odigos-vmagent/agent.yaml`. This file controls the following aspects of the agent:
 
 - Sources - list of systemd services to auto-instrument.
 - Processors - modify telemetry data before sending it to the destination.
@@ -51,13 +51,13 @@ The `sources` section of the `agent.yaml` file contains the following fields:
 - `systemd` - systemd sources configuration.
   - `services` - configuration of specific systemd services by name.
     - `service_name` - name of the systemd service. Do not include the `.service` suffix if present (e.g. `my-app` instead of `my-app.service`).
-    - `instrumentation_disabled` (optional) - by default all services in the config are auto-instrumented. Set to `false` to disable that for a specific service.
+    - `instrumentation_disabled` (optional) - by default all services in the config are auto-instrumented. Set to `true` to disable that for a specific service.
   - `ignored_service_names` - list of systemd services to ignore, useful for excluding os services like `ssh`, `rsyslog`, etc.
 
 ## Processors
 
 The `processors` section of the `agent.yaml` file contains a list of OpenTelemetry Collector processors to include in the pipeline.
-You can read more about it [here](/pipeline/actions/introduction).
+You can read more about it [here](../../enterprise/pipeline/actions/introduction).
 
 The configuration is a list with the following characteristics:
 - Each entry in the list will be included in the agent OpenTelemetry Collector pipeline. To disable a processor, remove it from the list or turn it into a comment.
@@ -65,7 +65,7 @@ The configuration is a list with the following characteristics:
 
 For each processor, the following fields are configurable:
 - `name` (optional): Allows you to attach a meaningful name to a processor for convenience. Odigos does not use or assume any meaning from this field.
-- `type` (require): The type of the processor. This is the name of the processor you want to use, as defined in the OpenTelemetry Collector (batch, attributes, etc).
+- `type` (required): The type of the processor. This is the name of the processor you want to use, as defined in the OpenTelemetry Collector (batch, attributes, etc).
 - `config` (optional): A field to pass configuration to the processor. The structure of this field is specific to each processor, and you can find the configuration options for each processor in the OpenTelemetry Collector Contrib codebase.
 - `signals` (required): An array with the signals that the processor will act on (`TRACES`, `METRICS`, `LOGS`).
 
