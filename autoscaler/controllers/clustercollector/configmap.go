@@ -160,10 +160,13 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	samplingv2Enabled := common.IsSamplingV2Enabled(ctx, gateway, c)
 
 	if samplingv2Enabled {
-		// Sampling v2 is enabled, will be used in the pipeline generation.
+		// In use by the pipeline generation [GetGatewayConfig()].
 		gatewayOptions.SamplingEnabled = &samplingv2Enabled
 
+		// Resolve the trace aggregation wait duration.
+		// If not configured, or invalid, use the default.
 		resolvedDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
+
 		if gateway.Spec.Sampling != nil &&
 			gateway.Spec.Sampling.TailSampling != nil &&
 			gateway.Spec.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
