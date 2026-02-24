@@ -147,6 +147,12 @@ func getInstallationStatus(ctx context.Context, deploymentData map[string]string
 	return model.InstallationStatus(computed)
 }
 
+func MarkInstallationFinished(ctx context.Context) {
+	if err := persistInstallationStatus(ctx, string(Finished)); err != nil {
+		log.Printf("Error marking installation as finished: %v\n", err)
+	}
+}
+
 func persistInstallationStatus(ctx context.Context, status string) error {
 	ns := env.GetCurrentNamespace()
 	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
