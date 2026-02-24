@@ -15,7 +15,6 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/installationmethod"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -69,7 +68,7 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	} else {
 		response.IsCentralProxyRunning = nil
 	}
-	response.InstallationStatus = getInstallationStatus(ctx)
+	response.InstallationStatus = getInstallationStatus(ctx, deploymentData)
 	return response
 }
 
@@ -128,116 +127,48 @@ func isCentralProxyRunning(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-// getInstallationStatus reads the persisted installation status from the
-// odigos-local-ui-config ConfigMap. If not yet persisted, it falls back to
-// computing the status from cluster state and persists the result for future calls.
-func getInstallationStatus(ctx context.Context) model.InstallationStatus {
-	status, err := readInstallationStatus(ctx)
-	if err != nil {
-		log.Printf("Error reading installation status: %v\n", err)
-	}
-	if status != "" {
+// getInstallationStatus reads the installation status from the already-fetched
+// odigos-deployment ConfigMap data. If not yet persisted, it computes the status
+// from cluster state and persists the result for future calls.
+func getInstallationStatus(ctx context.Context, deploymentData map[string]string) model.InstallationStatus {
+	if status := deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey]; status != "" {
 		return model.InstallationStatus(status)
 	}
 
-	// Fallback: compute from cluster state (runs at most once per cluster lifetime)
-	isNew := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
-	if isNew {
-		return model.InstallationStatus(NewInstallation)
+	// Compute from cluster state and persist the result
+	computed := string(NewInstallation)
+	if isSourceCreated(ctx) || isDestinationConnected(ctx) {
+		computed = string(Finished)
 	}
 
-	if err := persistInstallationStatus(ctx, string(Finished)); err != nil {
+	if err := persistInstallationStatus(ctx, computed); err != nil {
 		log.Printf("Error persisting installation status: %v\n", err)
 	}
-	return model.InstallationStatus(Finished)
-}
-
-func readInstallationStatus(ctx context.Context) (string, error) {
-	ns := env.GetCurrentNamespace()
-	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLocalUiConfigName, metav1.GetOptions{})
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return "", nil
-		}
-		return "", fmt.Errorf("failed to get local ui config: %w", err)
-	}
-	return cm.Data[k8sconsts.OdigosLocalUiInstallationStatusKey], nil
+	return model.InstallationStatus(computed)
 }
 
 func persistInstallationStatus(ctx context.Context, status string) error {
 	ns := env.GetCurrentNamespace()
-	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosLocalUiConfigName, metav1.GetOptions{})
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			ownerCm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, consts.OdigosConfigurationName, metav1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to get odigos-configuration for owner reference: %w", err)
-			}
-
-			cm = &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      consts.OdigosLocalUiConfigName,
-					Namespace: ns,
-					Labels: map[string]string{
-						k8sconsts.OdigosSystemConfigLabelKey: "local-ui",
-					},
-					OwnerReferences: []metav1.OwnerReference{{
-						APIVersion: "v1",
-						Kind:       "ConfigMap",
-						Name:       ownerCm.Name,
-						UID:        ownerCm.UID,
-					}},
-				},
-				Data: map[string]string{
-					k8sconsts.OdigosLocalUiInstallationStatusKey: status,
-				},
-			}
-			_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Create(ctx, cm, metav1.CreateOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to create local ui config ConfigMap: %w", err)
-			}
-			return nil
-		}
-		return fmt.Errorf("failed to get local ui config: %w", err)
+		return fmt.Errorf("failed to get odigos-deployment: %w", err)
 	}
-
 	if cm.Data == nil {
 		cm.Data = make(map[string]string)
 	}
-	cm.Data[k8sconsts.OdigosLocalUiInstallationStatusKey] = status
+	cm.Data[k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey] = status
 	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to update local ui config ConfigMap: %w", err)
-	}
-	return nil
+	return err
 }
 
 func isSourceCreated(ctx context.Context) bool {
-	ns := env.GetCurrentNamespace()
-
-	nsList, err := getRelevantNameSpaces(ctx, ns)
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{Limit: 1})
 	if err != nil {
-		log.Printf("Error listing namespaces: %v\n", err)
+
 		return false
 	}
 
-	for _, ns := range nsList {
-		sourceList, err := kube.DefaultClient.OdigosClient.Sources(ns.Namespace).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			log.Printf("Error listing sources: %v\n", err)
-			return false
-		}
-
-		if len(sourceList.Items) > 0 {
-			for _, source := range sourceList.Items {
-				if !source.Spec.DisableInstrumentation {
-					return true
-				}
-			}
-		}
-	}
-
-	return false
+	return len(sourceList.Items) > 0
 }
 
 func isDestinationConnected(ctx context.Context) bool {
