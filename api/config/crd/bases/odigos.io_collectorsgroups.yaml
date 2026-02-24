@@ -346,6 +346,28 @@ spec:
                   ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
                   It is enabled by default and can be disabled by setting the enabled flag to false.
                 type: boolean
+              tailSampling:
+                description: |-
+                  Sampling holds the sampling configuration derived from the OdigosConfiguration.
+                  Currently this is only relevant for the cluster gateway collector.
+                properties:
+                  disabled:
+                    description: |-
+                      if set to true, tail sampling will be disabled globally
+                      regardless of any other configurations or rules set.
+                      can be used to reduce collectors resource usage, troubleshooting, etc,
+                      or when tail-sampling is not needed or desired and should be shut off.
+                    type: boolean
+                  traceAggregationWaitDuration:
+                    description: |-
+                      time to wait from the first span of a trace until a trace is considered completed.
+                      at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+                      introduces this amount of latency in the pipeline and for trace to hit the destination.
+                      also increases memory usage for keeping spans in memory until the wait duration time is reached.
+                      setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+                      and broken traces due to sampling each trace in few pieces.
+                    type: string
+                type: object
             required:
             - collectorOwnMetricsPort
             - resourcesSettings

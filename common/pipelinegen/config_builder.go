@@ -17,6 +17,10 @@ type GatewayConfigOptions struct {
 	ServiceGraphDisabled  *bool
 	ClusterMetricsEnabled *bool
 	OdigosNamespace       string
+
+	// Sampling config option
+	SamplingEnabled              *bool
+	TraceAggregationWaitDuration *string
 }
 
 func GetGatewayConfig(
@@ -72,6 +76,17 @@ func CalculateGatewayConfig(
 	for processorKey, processorCfg := range processorsResults.ProcessorsConfig.Processors {
 		currentConfig.Processors[processorKey] = processorCfg
 	}
+
+	// If sampling v2 is enabled, we need to add the groupbytrace processor to the traces processors.
+	if gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled {
+		groupbytraceProcessor := config.GenericMap{
+			"wait_duration": gatewayOptions.TraceAggregationWaitDuration,
+		}
+		currentConfig.Processors[consts.GroupByTraceProcessorV2] = groupbytraceProcessor
+		// add the groupbytrace processor to the beginning of the traces processors
+		processorsResults.TracesProcessors = append([]string{consts.GroupByTraceProcessorV2}, processorsResults.TracesProcessors...)
+	}
+
 	allTracesProcessors := make([]string, 0, len(processorsResults.TracesProcessors)+len(processorsResults.TracesProcessorsPostSpanMetrics))
 	allTracesProcessors = append(allTracesProcessors, processorsResults.TracesProcessors...)
 	allTracesProcessors = append(allTracesProcessors, processorsResults.TracesProcessorsPostSpanMetrics...)

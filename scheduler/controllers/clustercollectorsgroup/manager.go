@@ -34,5 +34,17 @@ func SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
+	err = ctrl.NewControllerManagedBy(mgr).
+		For(&odigosv1.Sampling{}).
+		Named("clustercollectorgroup-sampling").
+		WithEventFilter(&predicate.GenerationChangedPredicate{}).
+		Complete(&samplingController{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

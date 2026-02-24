@@ -156,6 +156,17 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		OdigosNamespace:       env.GetCurrentNamespace(),
 	}
 
+	// TailSampling is nil when inactive, non-nil when the scheduler has resolved it as active.
+	// TraceAggregationWaitDuration is already validated and defaulted by the scheduler.
+	if gateway.Spec.TailSampling != nil {
+		if gateway.Spec.TailSampling.Disabled != nil {
+			disabled := *gateway.Spec.TailSampling.Disabled
+			enabled := !disabled
+			gatewayOptions.SamplingEnabled = &enabled
+		}
+		gatewayOptions.TraceAggregationWaitDuration = gateway.Spec.TailSampling.TraceAggregationWaitDuration
+	}
+
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
