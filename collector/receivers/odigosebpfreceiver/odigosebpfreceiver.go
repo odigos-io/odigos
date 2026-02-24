@@ -320,21 +320,29 @@ func (r *ebpfReceiver) startMetricsReceiver(ctx context.Context) {
 	}()
 }
 
-// startLogsReceiver sets up a single FD client and map manager for logs.
-// Follows the same two-goroutine pattern as traces: one goroutine manages the map lifecycle,
-// and another connects to odiglet to receive FDs.
-func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
-	updates := make(chan *ebpf.Map, 1)
+// logsMapPair holds both logs eBPF maps received atomically from a single FD exchange.
+type logsMapPair struct {
+	ringBuf       *ebpf.Map
+	attributesMap *ebpf.Map
+}
 
-	// Map manager: manages the lifecycle of the logs eBPF map.
+// startLogsReceiver sets up a single FD client that receives both the ring buffer and
+// attributes map file descriptors in a single message, and a map manager that restarts
+// the logs read loop when new maps arrive.
+func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
+	updates := make(chan logsMapPair, 1)
+
+	// Map manager: manages the lifecycle of both the ring buffer and attributes map,
+	// which arrive atomically via a single FD exchange.
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
 
 		var (
-			currentMap   *ebpf.Map
-			readerCancel context.CancelFunc
-			readerWg     sync.WaitGroup
+			currentRingBuf       *ebpf.Map
+			currentAttributesMap *ebpf.Map
+			readerCancel         context.CancelFunc
+			readerWg             sync.WaitGroup
 		)
 
 		defer func() {
@@ -342,8 +350,11 @@ func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
 				readerCancel()
 				readerWg.Wait()
 			}
-			if currentMap != nil {
-				currentMap.Close()
+			if currentRingBuf != nil {
+				currentRingBuf.Close()
+			}
+			if currentAttributesMap != nil {
+				currentAttributesMap.Close()
 			}
 		}()
 
@@ -351,24 +362,34 @@ func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case newMap, ok := <-updates:
+			case pair, ok := <-updates:
 				if !ok {
 					return
 				}
+
 				if readerCancel != nil {
 					readerCancel()
 					readerWg.Wait()
 				}
-				if currentMap != nil {
-					currentMap.Close()
+				if currentRingBuf != nil {
+					currentRingBuf.Close()
+				}
+				if currentAttributesMap != nil {
+					currentAttributesMap.Close()
 				}
 
-				currentMap = newMap
+				currentRingBuf = pair.ringBuf
+				currentAttributesMap = pair.attributesMap
+
+				r.logger.Info("received new logs maps",
+					zap.Int("ringBuf_fd", currentRingBuf.FD()),
+					zap.Int("attributesMap_fd", currentAttributesMap.FD()))
+
 				readerCtx, cancel := context.WithCancel(ctx)
 				readerCancel = cancel
 
-				r.logger.Info("switched to new eBPF logs map", zap.Int("fd", newMap.FD()))
-
+				ringBuf := currentRingBuf
+				attributesMap := currentAttributesMap
 				readerWg.Add(1)
 				go func() {
 					defer func() {
@@ -376,7 +397,7 @@ func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
 						readerWg.Done()
 					}()
 
-					if err := r.logsReadLoop(readerCtx, newMap); err != nil {
+					if err := r.logsReadLoop(readerCtx, ringBuf, attributesMap); err != nil {
 						r.logger.Error("logsReadLoop failed", zap.Error(err))
 					}
 				}()
@@ -384,7 +405,7 @@ func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
 		}
 	}()
 
-	// FD client: connects to odiglet and receives FDs for logs eBPF maps.
+	// FD client: connects to odiglet and receives both logs FDs via ConnectAndListenMulti.
 	r.wg.Add(1)
 	go func() {
 		defer r.wg.Done()
@@ -392,21 +413,42 @@ func (r *ebpfReceiver) startLogsReceiver(ctx context.Context) {
 
 		r.logger.Info("starting logs FD client")
 
-		err := unixfd.ConnectAndListen(ctx, unixfd.DefaultSocketPath, unixfd.ReqGetLogsFD, r.logger, func(fd int) {
-			r.logger.Info("received new logs FD from odiglet", zap.Int("fd", fd))
+		err := unixfd.ConnectAndListenMulti(ctx, unixfd.DefaultSocketPath, unixfd.ReqGetLogsFD, r.logger, func(fds []int) {
+			if len(fds) != 2 {
+				r.logger.Error("expected 2 logs FDs, closing all",
+					zap.Int("received", len(fds)))
+				for _, fd := range fds {
+					unix.Close(fd)
+				}
+				return
+			}
 
-			newMap, err := ebpf.NewMapFromFD(fd)
+			r.logger.Info("received logs FDs from odiglet",
+				zap.Int("ringBuf_fd", fds[0]),
+				zap.Int("attributesMap_fd", fds[1]))
+
+			ringBuf, err := ebpf.NewMapFromFD(fds[0])
 			if err != nil {
-				r.logger.Error("failed to create map from FD", zap.Error(err), zap.Int("fd", fd))
-				unix.Close(fd)
+				r.logger.Error("failed to create ring buffer map from FD", zap.Error(err), zap.Int("fd", fds[0]))
+				unix.Close(fds[0])
+				unix.Close(fds[1])
+				return
+			}
+
+			attrMap, err := ebpf.NewMapFromFD(fds[1])
+			if err != nil {
+				r.logger.Error("failed to create attributes map from FD", zap.Error(err), zap.Int("fd", fds[1]))
+				ringBuf.Close()
+				unix.Close(fds[1])
 				return
 			}
 
 			select {
-			case updates <- newMap:
-				r.logger.Info("queued new logs map for processing")
+			case updates <- logsMapPair{ringBuf: ringBuf, attributesMap: attrMap}:
+				r.logger.Info("queued new logs maps for processing")
 			case <-ctx.Done():
-				newMap.Close()
+				ringBuf.Close()
+				attrMap.Close()
 			}
 		})
 
