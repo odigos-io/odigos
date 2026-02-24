@@ -15,6 +15,4 @@ const (
 	OdigosDeploymentConfigMapOnPremClientProfilesKey = "onprem-profiles"
 	OdigosDeploymentConfigMapOdigosDeploymentIDKey   = "odigos-deployment-id"
 	OdigosDeploymentConfigMapInstallationStatusKey   = "installation-status"
-
-	OdigosLocalUiInstallationStatusKey = "installation-status"
 )
