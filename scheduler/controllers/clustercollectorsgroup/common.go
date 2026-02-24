@@ -118,12 +118,17 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 
 	ownMetricsConfig := getOwnMetricsConfig(&odigosConfiguration, allDestinations)
 
+	var tailSampling *common.TailSamplingConfiguration
+	if odigosConfiguration.Sampling != nil {
+		tailSampling = odigosConfiguration.Sampling.TailSampling
+	}
+
 	// cluster collector is always set and never deleted at the moment.
 	// this is to accelerate spinup time and avoid errors while things are gradually being reconciled
 	// and started.
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
-	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress, nodeSelector, deploymentName, ownMetricsConfig, odigosConfiguration.Sampling.TailSampling)
+	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress, nodeSelector, deploymentName, ownMetricsConfig, tailSampling)
 	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
 		return err

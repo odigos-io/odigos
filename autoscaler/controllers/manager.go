@@ -154,9 +154,6 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				&odigosv1.Action{}: {
 					Field: nsSelector,
 				},
-				&odigosv1.Sampling{}: {
-					Field: nsSelector,
-				},
 				&odigosv1.InstrumentationConfig{}: {},
 			},
 		},
