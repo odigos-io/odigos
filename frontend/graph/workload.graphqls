@@ -535,4 +535,8 @@ type K8sWorkload {
   # the telemetry metrics for this source 
   # e.g. how much data is generated from this source as counted in the node collector.
   telemetryMetrics: [K8sWorkloadTelemetryMetrics!]!
+
+  # indicates if a rollback has occurred for this workload due to instrumentation causing a crash.
+  # when true, the workload's instrumentation was rolled back and recovery action is available.
+  rollbackOccurred: Boolean!
 }

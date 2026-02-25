@@ -19,6 +19,7 @@ export const GET_WORKLOADS = gql`
         status
         message
       }
+      rollbackOccurred
     }
   }
 `;

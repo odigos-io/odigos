@@ -521,6 +521,19 @@ func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K
 	}, nil
 }
 
+// RollbackOccurred is the resolver for the rollbackOccurred field.
+func (r *k8sWorkloadResolver) RollbackOccurred(ctx context.Context, obj *model.K8sWorkload) (bool, error) {
+	l := loaders.For(ctx)
+	ic, err := l.GetInstrumentationConfig(ctx, *obj.ID)
+	if err != nil {
+		return false, err
+	}
+	if ic == nil {
+		return false, nil
+	}
+	return ic.Status.RollbackOccurred, nil
+}
+
 // Processes is the resolver for the processes field.
 func (r *k8sWorkloadPodContainerResolver) Processes(ctx context.Context, obj *model.K8sWorkloadPodContainer) ([]*model.K8sWorkloadPodContainerProcess, error) {
 	l := loaders.For(ctx)

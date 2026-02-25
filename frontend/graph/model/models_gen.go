@@ -707,6 +707,7 @@ type K8sWorkload struct {
 	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus,omitempty"`
 	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
 	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
+	RollbackOccurred           bool                                 `json:"rollbackOccurred"`
 }
 
 type K8sWorkloadAgentEnabled struct {

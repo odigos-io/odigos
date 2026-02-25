@@ -828,6 +828,7 @@ func (r *mutationResolver) DeleteCentralProxy(ctx context.Context) (bool, error)
 	return services.DeleteCentralProxy(ctx)
 }
 
+// RecoverFromRollbackForWorkload is the resolver for the recoverFromRollbackForWorkload field.
 func (r *mutationResolver) RecoverFromRollbackForWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error) {
 	if err := services.RecoverFromRollback(ctx, kube.CacheClient, sourceID.Namespace, sourceID.Name, string(sourceID.Kind)); err != nil {
 		return false, err

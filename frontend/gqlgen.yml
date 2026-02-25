@@ -97,6 +97,8 @@ models:
         resolver: true
       telemetryMetrics:
         resolver: true
+      rollbackOccurred:
+        resolver: true
 
   K8sWorkloadTelemetryMetrics:
     fields:
