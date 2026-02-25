@@ -8,7 +8,7 @@ import (
 )
 
 // OdigosWorkloadConfig is an extension that runs a dynamic informer for InstrumentationConfigs
-// and maintains a cache of workload sampling config keyed by namespace/kind/name.
+// and maintains a cache of workload sampling config keyed by WorkloadKey (namespace, kind, name).
 type OdigosWorkloadConfig struct {
 	cache  *Cache
 	logger *zap.Logger
@@ -24,7 +24,7 @@ func NewOdigosConfig(settings component.TelemetrySettings) (*OdigosWorkloadConfi
 }
 
 // Start starts the dynamic informer for InstrumentationConfigs. The informer
-// fills the cache with workload sampling configs (key = namespace/kind/name).
+// fills the cache with workload sampling configs keyed by WorkloadKey.
 func (o *OdigosWorkloadConfig) Start(ctx context.Context, _ component.Host) error {
 	ctx, o.cancel = context.WithCancel(ctx)
 	return o.startInformer(ctx)
@@ -38,10 +38,9 @@ func (o *OdigosWorkloadConfig) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// GetWorkloadSamplingConfig returns the sampling config for the given workload key
-// (format "namespace/kind/name"), or (nil, false) if not found.
-func (o *OdigosWorkloadConfig) GetWorkloadSamplingConfig(workloadKey string) (*WorkloadSamplingConfig, bool) {
-	return o.cache.Get(workloadKey)
+// GetWorkloadSamplingConfig returns the sampling config for the given workload key, or (nil, false) if not found.
+func (o *OdigosWorkloadConfig) GetWorkloadSamplingConfig(key WorkloadKey) (*WorkloadSamplingConfig, bool) {
+	return o.cache.Get(key)
 }
 
 // Cache returns the underlying cache for advanced use (e.g. iteration).

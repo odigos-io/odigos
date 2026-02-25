@@ -3,13 +3,13 @@ package odigosworkloadconfigextension
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
 
 	commonapi "github.com/odigos-io/odigos/common/api"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -33,7 +33,7 @@ var instrumentationConfigGVR = schema.GroupVersionResource{
 }
 
 // startInformer starts a dynamic informer for InstrumentationConfigs and updates the extension's cache.
-// It runs until ctx is cancelled. The cache is keyed by workload (namespace/kind/name).
+// It runs until ctx is cancelled. The cache is keyed by WorkloadKey (namespace, kind, name).
 // If not running in a cluster (e.g. InClusterConfig fails), the informer is not started
 // and the cache remains empty; the extension still starts successfully.
 func (o *OdigosWorkloadConfig) startInformer(ctx context.Context) error {
@@ -76,12 +76,12 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 		o.logger.Debug("informer received non-unstructured object", zap.String("type", fmt.Sprintf("%T", obj)))
 		return
 	}
-	key, cfg := instrumentationConfigToWorkloadSampling(u)
-	if key == "" {
+	key, ok, cfg := instrumentationConfigToWorkloadSampling(u)
+	if !ok {
 		return
 	}
 	o.cache.Set(key, cfg)
-	o.logger.Debug("updated workload sampling cache", zap.String("workload", key))
+	o.logger.Debug("updated workload sampling cache", zap.String("namespace", key.Namespace), zap.String("kind", key.Kind), zap.String("name", key.Name))
 }
 
 func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}) {
@@ -92,25 +92,25 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 		}
 		return
 	}
-	key := workloadKeyFromOwnerRef(u)
-	if key != "" {
+	key, ok := workloadKeyFromObject(u)
+	if ok {
 		o.cache.Delete(key)
-		o.logger.Debug("removed workload from sampling cache", zap.String("workload", key))
+		o.logger.Debug("removed workload from sampling cache", zap.String("namespace", key.Namespace), zap.String("kind", key.Kind), zap.String("name", key.Name))
 	}
 }
 
-func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (workloadKey string, cfg *WorkloadSamplingConfig) {
-	key := workloadKeyFromOwnerRef(u)
-	if key == "" {
-		return "", nil
+func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (key WorkloadKey, ok bool, cfg *WorkloadSamplingConfig) {
+	key, ok = workloadKeyFromObject(u)
+	if !ok {
+		return key, false, nil
 	}
 	specMap, ok, _ := unstructured.NestedMap(u.Object, "spec")
 	if !ok || len(specMap) == 0 {
-		return key, &WorkloadSamplingConfig{}
+		return key, true, &WorkloadSamplingConfig{}
 	}
 	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
 	if !ok || len(workloadCollectorConfigSlice) == 0 {
-		return key, &WorkloadSamplingConfig{}
+		return key, true, &WorkloadSamplingConfig{}
 	}
 	var workloadCollectorConfig []commonapi.ContainerCollectorConfig
 	for _, item := range workloadCollectorConfigSlice {
@@ -127,28 +127,56 @@ func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (work
 	cfg = &WorkloadSamplingConfig{
 		WorkloadCollectorConfig: workloadCollectorConfig,
 	}
-	return key, cfg
+	return key, true, cfg
 }
 
-func workloadKeyFromOwnerRef(u *unstructured.Unstructured) string {
+// workloadKeyFromObject returns a WorkloadKey from the InstrumentationConfig's metadata.
+// The object name format is <workload-kind>-<workload-name> (e.g. deployment-myapp).
+// kindFromInstrumentationConfigName is a local copy of the parsing logic from
+// k8sutils/pkg/workload/runtimeobjects.ExtractWorkloadInfoFromRuntimeObjectName and
+// workloadkinds.WorkloadKindFromLowerCase. It is duplicated here temporarily to avoid
+// coupling the collector extension to k8sutils and the odigos api package.
+func workloadKeyFromObject(u *unstructured.Unstructured) (WorkloadKey, bool) {
 	namespace, _, _ := unstructured.NestedString(u.Object, "metadata", "namespace")
-	ownerRefs, ok, _ := unstructured.NestedSlice(u.Object, "metadata", "ownerReferences")
-	if !ok || len(ownerRefs) == 0 {
+	runtimeObjectName, _, _ := unstructured.NestedString(u.Object, "metadata", "name")
+	if namespace == "" || runtimeObjectName == "" {
+		return WorkloadKey{}, false
+	}
+	parts := strings.SplitN(runtimeObjectName, "-", 2)
+	if len(parts) != 2 {
+		return WorkloadKey{}, false
+	}
+	kind := kindFromInstrumentationConfigName(parts[0])
+	if kind == "" {
+		return WorkloadKey{}, false
+	}
+	return WorkloadKey{Namespace: namespace, Kind: kind, Name: parts[1]}, true
+}
+
+// kindFromInstrumentationConfigName maps lowercase workload kind (from InstrumentationConfig
+// name prefix) to PascalCase Kubernetes Kind. Mirrors k8sutils/pkg/workload/workloadkinds
+// and api/k8sconsts.WorkloadKindLowerCase/WorkloadKind. Returns "" for unsupported kinds.
+func kindFromInstrumentationConfigName(lowercase string) string {
+	switch strings.ToLower(lowercase) {
+	case "deployment":
+		return "Deployment"
+	case "daemonset":
+		return "DaemonSet"
+	case "statefulset":
+		return "StatefulSet"
+	case "namespace":
+		return "Namespace"
+	case "staticpod":
+		return "StaticPod"
+	case "cronjob":
+		return "CronJob"
+	case "job":
+		return "Job"
+	case "deploymentconfig":
+		return "DeploymentConfig"
+	case "rollout":
+		return "Rollout"
+	default:
 		return ""
 	}
-	for _, r := range ownerRefs {
-		refMap, ok := r.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		var ref metav1.OwnerReference
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(refMap, &ref); err != nil {
-			continue
-		}
-		if ref.Controller == nil || !*ref.Controller || ref.Kind == "" || ref.Name == "" {
-			continue
-		}
-		return WorkloadCacheKey(namespace, ref.Kind, ref.Name)
-	}
-	return ""
 }
