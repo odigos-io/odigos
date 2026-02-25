@@ -47,6 +47,10 @@ type InstrumentationManagerOptions struct {
 	// It allows callers (e.g. enterprise odiglet) to receive the map for use with
 	// external reader mode in the log capture BPF programs.
 	OnLogsMapCreated func(*cilumebpf.Map)
+	// OnLogsExtMapCreated is an optional callback invoked after the logs ext (attributes) eBPF map is created.
+	// It allows callers (e.g. enterprise odiglet) to receive the map for passing per-process
+	// resource attributes alongside log events.
+	OnLogsExtMapCreated func(*cilumebpf.Map)
 }
 
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
@@ -166,6 +170,30 @@ func NewManager(
 		opts.OnLogsMapCreated(logsMap)
 	}
 
+	// Create the logs ext (attributes) eBPF map — a simple Hash map for TGID -> packed resource attributes.
+	// This map stores per-process resource attributes that the receiver uses to enrich log events,
+	// allowing the gateway's router to route eBPF-captured logs correctly.
+	logsExtSpec := &cilumebpf.MapSpec{
+		Type:       cilumebpf.Hash,
+		Name:       "logs_ext",
+		KeySize:    4,                   // uint32 TGID
+		ValueSize:  AttributesValueSize, // 1024 bytes packed attributes
+		MaxEntries: MaxProcessesCount,   // 512
+	}
+
+	logsExtMap, err := cilumebpf.NewMap(logsExtSpec)
+	if err != nil {
+		tracesMap.Close()
+		metricsMap.Close()
+		metricsAttributesMap.Close()
+		logsMap.Close()
+		return nil, fmt.Errorf("failed to create logs ext eBPF map: %w", err)
+	}
+
+	if opts.OnLogsExtMapCreated != nil {
+		opts.OnLogsExtMapCreated(logsExtMap)
+	}
+
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
 
 		Logger:                  logger,
@@ -178,6 +206,7 @@ func NewManager(
 		MetricsMap:              metricsMap,
 		MetricsAttributesMap:    metricsAttributesMap,
 		LogsMap:                 logsMap,
+		LogsExtMap:              logsExtMap,
 	}
 
 	// Add file open triggers from all distributions.

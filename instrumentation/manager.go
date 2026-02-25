@@ -104,6 +104,10 @@ type ManagerOptions[processGroup ProcessGroup, configGroup ConfigGroup, processD
 
 	// LogsMap is the optional common eBPF map that will be used to send log events from eBPF probes.
 	LogsMap *cilumebpf.Map
+
+	// LogsExtMap is the optional eBPF Hash map for TGID -> packed resource attributes.
+	// Used alongside LogsMap to store per-process resource attributes that enrich log events.
+	LogsExtMap *cilumebpf.Map
 }
 
 // Manager is used to orchestrate the ebpf instrumentations lifecycle.
@@ -145,6 +149,7 @@ type manager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails 
 	metricsMap           *cilumebpf.Map
 	metricsAttributesMap *cilumebpf.Map
 	logsMap              *cilumebpf.Map
+	logsExtMap           *cilumebpf.Map
 }
 
 func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetails ProcessDetails[processGroup, configGroup]](options ManagerOptions[processGroup, configGroup, processDetails]) (Manager, error) {
@@ -197,6 +202,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		metricsMap:            options.MetricsMap,
 		metricsAttributesMap:  options.MetricsAttributesMap,
 		logsMap:               options.LogsMap,
+		logsExtMap:            options.LogsExtMap,
 	}, nil
 }
 
@@ -350,8 +356,15 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 				}
 				return fds
 			},
-			LogsFDProvider: func() int {
-				return m.logsMap.FD()
+			LogsFDsProvider: func() []int {
+				var fds []int
+				if m.logsMap != nil {
+					fds = append(fds, m.logsMap.FD())
+				}
+				if m.logsExtMap != nil {
+					fds = append(fds, m.logsExtMap.FD())
+				}
+				return fds
 			},
 		}
 

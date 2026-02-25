@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"sync"
 	"time"
 
 	"github.com/cilium/ebpf"
@@ -64,12 +65,81 @@ func (e *logEvent) streamString() string {
 	}
 }
 
-func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map) error {
+// logsAttrCache is a thread-safe cache of TGID -> packed resource attributes.
+// It is built from the attributesMap at startup and refreshed on cache misses
+// by doing a direct map lookup.
+type logsAttrCache struct {
+	mu    sync.RWMutex
+	cache map[uint32]string
+}
+
+func newLogsAttrCache() *logsAttrCache {
+	return &logsAttrCache{cache: make(map[uint32]string)}
+}
+
+func (c *logsAttrCache) get(tgid uint32) (string, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	v, ok := c.cache[tgid]
+	return v, ok
+}
+
+func (c *logsAttrCache) set(tgid uint32, attrs string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.cache[tgid] = attrs
+}
+
+// buildLogsAttrCache populates the cache by iterating over the entire attributesMap.
+func buildLogsAttrCache(attributesMap *ebpf.Map, logger *zap.Logger) *logsAttrCache {
+	ac := newLogsAttrCache()
+
+	var tgidKey uint32
+	var attrValue [1024]byte
+
+	iter := attributesMap.Iterate()
+	for iter.Next(&tgidKey, &attrValue) {
+		attrStr := string(bytes.TrimRight(attrValue[:], "\x00"))
+		if attrStr != "" {
+			ac.cache[tgidKey] = attrStr
+		}
+	}
+	if err := iter.Err(); err != nil {
+		logger.Error("logs attributes map iterator error", zap.Error(err))
+	}
+
+	logger.Debug("logs attributes cache built", zap.Int("entries", len(ac.cache)))
+	return ac
+}
+
+// lookupAttrs looks up attributes for a TGID, first from cache, then from the eBPF map on miss.
+func lookupAttrs(ac *logsAttrCache, attributesMap *ebpf.Map, tgid uint32) string {
+	if attrs, ok := ac.get(tgid); ok {
+		return attrs
+	}
+
+	// Cache miss — try direct map lookup (new process registered since cache was built)
+	var attrValue [1024]byte
+	if err := attributesMap.Lookup(tgid, &attrValue); err == nil {
+		attrStr := string(bytes.TrimRight(attrValue[:], "\x00"))
+		if attrStr != "" {
+			ac.set(tgid, attrStr)
+			return attrStr
+		}
+	}
+
+	return ""
+}
+
+func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attributesMap *ebpf.Map) error {
 	reader, err := NewBufferReader(m, r.logger)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
+
+	// Build initial TGID -> packed attributes cache from the ext map
+	attrCache := buildLogsAttrCache(attributesMap, r.logger)
 
 	var record BufferRecord
 
@@ -117,7 +187,18 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map) error {
 			continue
 		}
 
+		// Look up resource attributes for this process
+		packedAttrs := lookupAttrs(attrCache, attributesMap, event.TGID)
+
 		ld := logEventToPdata(&event)
+
+		// Add resource attributes from packed attrs if available
+		if packedAttrs != "" && ld.ResourceLogs().Len() > 0 {
+			resourceAttrs := ld.ResourceLogs().At(0).Resource().Attributes()
+			if err := r.parseResourceAttributes(resourceAttrs, packedAttrs, ",", ":"); err != nil {
+				r.logger.Debug("failed to parse log resource attributes", zap.Error(err))
+			}
+		}
 
 		err = r.nextLogs.ConsumeLogs(ctx, ld)
 		if err != nil {
