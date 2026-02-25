@@ -17,6 +17,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/executor"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -126,7 +127,7 @@ func startDatabase() error {
 
 // Serve React app (if page not found serve index.html)
 func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
-	r.NoRoute(func(c *gin.Context) {
+	r.NoRoute(gzip.Gzip(gzip.DefaultCompression), func(c *gin.Context) {
 		// Apply OIDC middleware only for routes serving the frontend (GraphQL & Apollo cannot redirect)
 		middlewares.OidcMiddleware(ctx)(c)
 		if c.IsAborted() {

@@ -77,7 +77,7 @@ spec:
               value: {{ regexReplaceAll "^[^:]*:" $hostWithPort "" | quote }}
             {{- end }}
             - name: KC_HOSTNAME_STRICT_HTTPS
-              value: "false"
+              value: {{ ternary "true" "false" (hasPrefix "https" $externalUrl) | quote }}
             - name: KC_HOSTNAME_STRICT_BACKCHANNEL
               value: "true"
             - name: KC_PROXY
