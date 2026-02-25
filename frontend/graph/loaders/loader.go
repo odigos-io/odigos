@@ -48,6 +48,11 @@ type Loaders struct {
 	workloadFilter      *WorkloadFilter
 	odigosConfiguration *common.OdigosConfiguration
 
+	// list of all the (non-ignored) namespaces in the cluster.
+	namespacesMutex   sync.Mutex
+	namespacesFetched bool
+	namespaces        []string
+
 	workloadIds    []model.K8sWorkloadID
 	workloadIdsMap map[k8sconsts.PodWorkload]struct{}
 
@@ -93,6 +98,26 @@ func (l *Loaders) GetWorkloadIds() []model.K8sWorkloadID {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return l.workloadIds
+}
+
+func (l *Loaders) loadNamespaces(ctx context.Context) error {
+	if l.namespacesFetched {
+		return nil
+	}
+	namespaces, err := fetchNamespaces(ctx, l.k8sCacheClient)
+	if err != nil {
+		return err
+	}
+
+	filteredNamespaces := make([]string, 0, len(namespaces.Items))
+	for _, namespace := range namespaces.Items {
+		if _, ok := l.workloadFilter.IgnoredNamespaces[namespace.Name]; !ok {
+			filteredNamespaces = append(filteredNamespaces, namespace.Name)
+		}
+	}
+	l.namespaces = filteredNamespaces
+	l.namespacesFetched = true
+	return nil
 }
 
 // if the instrumentation configs are not fetched yet, fetch them and cache them.

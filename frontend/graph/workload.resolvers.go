@@ -19,6 +19,27 @@ import (
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 )
 
+// MarkedForInstrumentation is the resolver for the markedForInstrumentation field.
+func (r *k8sNamespaceResolver) MarkedForInstrumentation(ctx context.Context, obj *model.K8sNamespace) (bool, error) {
+	l := loaders.For(ctx)
+	source, err := l.GetNamespaceSource(ctx, obj.Name)
+	if err != nil {
+		return false, err
+	}
+
+	// if there is no ns source - the namespace is not marked for instrumentation.
+	if source == nil {
+		return false, nil
+	}
+
+	// if the ns source is disabling instrumentation - the namespace is not marked for instrumentation.
+	if source.Spec.DisableInstrumentation {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 // ServiceName is the resolver for the serviceName field.
 func (r *k8sWorkloadResolver) ServiceName(ctx context.Context, obj *model.K8sWorkload) (*string, error) {
 	l := loaders.For(ctx)
@@ -627,6 +648,47 @@ func (r *k8sWorkloadTelemetryMetricsResolver) ExpectingTelemetry(ctx context.Con
 	return status.CalculateExpectingTelemetryStatus(ic, pods, obj.TotalDataSentBytes), nil
 }
 
+// Workloads is the resolver for the workloads field.
+func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error) {
+	l := loaders.For(ctx)
+	err := l.SetFilters(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	sources := make([]*model.K8sWorkload, 0)
+	for _, sourceId := range l.GetWorkloadIds() {
+		sources = append(sources, &model.K8sWorkload{
+			ID: &sourceId,
+		})
+	}
+	return sources, nil
+}
+
+// Namespaces is the resolver for the namespaces field.
+func (r *queryResolver) Namespaces(ctx context.Context) ([]*model.K8sNamespace, error) {
+	l := loaders.For(ctx)
+	err := l.SetFilters(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	nss, err := l.GetNamespaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	gqlNss := make([]*model.K8sNamespace, 0, len(nss))
+	for _, nsName := range nss {
+		gqlNss = append(gqlNss, &model.K8sNamespace{
+			Name: nsName,
+		})
+	}
+	return gqlNss, nil
+}
+
+// K8sNamespace returns K8sNamespaceResolver implementation.
+func (r *Resolver) K8sNamespace() K8sNamespaceResolver { return &k8sNamespaceResolver{r} }
+
 // K8sWorkload returns K8sWorkloadResolver implementation.
 func (r *Resolver) K8sWorkload() K8sWorkloadResolver { return &k8sWorkloadResolver{r} }
 
@@ -640,6 +702,7 @@ func (r *Resolver) K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsReso
 	return &k8sWorkloadTelemetryMetricsResolver{r}
 }
 
+type k8sNamespaceResolver struct{ *Resolver }
 type k8sWorkloadResolver struct{ *Resolver }
 type k8sWorkloadPodContainerResolver struct{ *Resolver }
 type k8sWorkloadTelemetryMetricsResolver struct{ *Resolver }

@@ -916,9 +916,6 @@ type Query {
     name: String!
   ): [InstrumentationInstanceComponent!]!
 
-  # get all sources that match the filter
-  workloads(filter: WorkloadFilter): [K8sWorkload!]!
-
   # Diagnose - collect diagnostic data from Odigos components
   # If dryRun is true, returns only stats without generating the file
   # If dryRun is false, generates the file and returns a download URL

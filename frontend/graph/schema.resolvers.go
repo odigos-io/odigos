@@ -13,7 +13,6 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/frontend/services"
@@ -826,6 +825,7 @@ func (r *mutationResolver) DeleteCentralProxy(ctx context.Context) (bool, error)
 	return services.DeleteCentralProxy(ctx)
 }
 
+// RecoverFromRollbackForWorkload is the resolver for the recoverFromRollbackForWorkload field.
 func (r *mutationResolver) RecoverFromRollbackForWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error) {
 	if err := services.RecoverFromRollback(ctx, kube.CacheClient, sourceID.Namespace, sourceID.Name, string(sourceID.Kind)); err != nil {
 		return false, err
@@ -1013,22 +1013,6 @@ func (r *queryResolver) InstrumentationInstanceComponents(ctx context.Context, n
 	}
 
 	return components, nil
-}
-
-// Workloads is the resolver for the workloads field.
-func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error) {
-	l := loaders.For(ctx)
-	err := l.SetFilters(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	sources := make([]*model.K8sWorkload, 0)
-	for _, sourceId := range l.GetWorkloadIds() {
-		sources = append(sources, &model.K8sWorkload{
-			ID: &sourceId,
-		})
-	}
-	return sources, nil
 }
 
 // Diagnose is the resolver for the diagnose field.
