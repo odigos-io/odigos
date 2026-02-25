@@ -60,14 +60,30 @@ func (o *OdigosWorkloadConfig) startInformer(ctx context.Context) error {
 		return err
 	}
 
+	o.informerFactory = factory
 	factory.Start(ctx.Done())
+	// Do not call WaitForCacheSync here; Start() returns immediately so the collector
+	// does not block. Dependent components call WaitForCacheSync themselves.
+	return nil
+}
 
-	synced := factory.WaitForCacheSync(ctx.Done())
+// WaitForCacheSync blocks until the InstrumentationConfig informer cache has synced
+// or ctx is done. It returns true if the cache synced successfully, false if the
+// context was cancelled or the extension is not running in-cluster (in which case
+// the cache is empty and callers may treat true as "ready"). Start() does not block
+// on sync; components that depend on the cache should call WaitForCacheSync before
+// relying on GetWorkloadSamplingConfig (e.g. in a goroutine so the collector stays
+// non-blocking).
+func (o *OdigosWorkloadConfig) WaitForCacheSync(ctx context.Context) bool {
+	if o.informerFactory == nil {
+		return true // not in-cluster; cache is empty, consider "ready"
+	}
+	synced := o.informerFactory.WaitForCacheSync(ctx.Done())
 	if !synced[instrumentationConfigGVR] {
 		o.logger.Warn("instrumentationconfig informer cache sync did not complete")
+		return false
 	}
-
-	return nil
+	return true
 }
 
 func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {

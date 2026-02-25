@@ -5,14 +5,17 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.uber.org/zap"
+
+	"k8s.io/client-go/dynamic/dynamicinformer"
 )
 
 // OdigosWorkloadConfig is an extension that runs a dynamic informer for InstrumentationConfigs
 // and maintains a cache of workload sampling config keyed by WorkloadKey (namespace, kind, name).
 type OdigosWorkloadConfig struct {
-	cache  *Cache
-	logger *zap.Logger
-	cancel context.CancelFunc
+	cache           *Cache
+	logger          *zap.Logger
+	cancel          context.CancelFunc
+	informerFactory dynamicinformer.DynamicSharedInformerFactory // set when in-cluster; nil otherwise
 }
 
 // NewOdigosConfig creates a new OdigosConfig extension.
@@ -45,6 +48,3 @@ func (o *OdigosWorkloadConfig) GetWorkloadSamplingConfig(key WorkloadKey) (*Work
 
 // Cache returns the underlying cache for advanced use (e.g. iteration).
 // Do not modify the cache directly; use GetWorkloadSamplingConfig for reads.
-func (o *OdigosWorkloadConfig) Cache() *Cache {
-	return o.cache
-}

@@ -10,6 +10,8 @@ An OpenTelemetry Collector extension that watches Kubernetes InstrumentationConf
 
 When not running in a cluster (e.g. local dev), the extension still starts; the informer is skipped and the cache remains empty.
 
+**Non-blocking startup:** The extension’s `Start()` returns immediately and does **not** wait for the informer cache to sync, so the collector does not block. Components that depend on the cache should call `WaitForCacheSync(ctx)` (e.g. in a goroutine) and only rely on `GetWorkloadSamplingConfig` after sync completes or use a “ready” flag so processing can start without blocking the collector.
+
 ## Configuration
 
 The extension has no configuration options. Add it under `extensions` and reference it from your pipeline:
@@ -62,7 +64,53 @@ func (p *myProcessor) Start(ctx context.Context, host component.Host) error {
 }
 ```
 
-### 3. Build a WorkloadKey from resource attributes
+### 3. Wait for cache sync before using the config (non-blocking)
+
+The extension does not block `Start()` on informer cache sync. Processors that rely on workload config should call `WaitForCacheSync` so they only use the cache after it is populated, without blocking the collector startup.
+
+**Option A – goroutine and ready flag:** Start a goroutine that waits for sync and sets a flag; in your processing path, check the flag and use defaults or skip lookups until ready:
+
+```go
+import (
+    "context"
+    "sync/atomic"
+    "time"
+    "go.opentelemetry.io/collector/component"
+    "go.opentelemetry.io/collector/pdata/pcommon"
+    odigosworkloadconfigextension "github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension"
+)
+
+// In your processor struct, add:
+//   cacheReady atomic.Bool
+
+func (p *myProcessor) Start(ctx context.Context, host component.Host) error {
+    // ... obtain p.workloadConfig as in step 2 ...
+
+    go func() {
+        syncCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+        defer cancel()
+        if p.workloadConfig.WaitForCacheSync(syncCtx) {
+            p.cacheReady.Store(true)
+        }
+    }()
+    return nil
+}
+
+// When processing (e.g. ConsumeTraces):
+func (p *myProcessor) process(resource pcommon.Resource) {
+    if !p.cacheReady.Load() {
+        // Cache not ready yet; use defaults or skip workload-based config.
+        return
+    }
+    key := odigosworkloadconfigextension.WorkloadKeyFromResourceAttributes(resource.Attributes())
+    cfg, ok := p.workloadConfig.GetWorkloadSamplingConfig(key)
+    // ...
+}
+```
+
+**Option B – wait once at first use:** On the first batch, call `WaitForCacheSync` with a short timeout (or background context), then set a “synced” flag and use the cache for subsequent data.
+
+### 4. Build a WorkloadKey from resource attributes
 
 Use the helper that parses standard Kubernetes resource attributes (e.g. from OTLP resources):
 
@@ -83,7 +131,7 @@ key := odigosworkloadconfigextension.WorkloadKeyFromResourceAttributes(resource.
 
 Any missing attribute leaves that field empty. If you already have namespace/kind/name from elsewhere, you can build `odigosworkloadconfigextension.WorkloadKey{Namespace: ns, Kind: kind, Name: name}` directly.
 
-### 4. Look up workload config
+### 5. Look up workload config
 
 ```go
 cfg, ok := p.workloadConfig.GetWorkloadSamplingConfig(key)
@@ -98,7 +146,7 @@ if !ok {
 
 - **WorkloadCollectorConfig** – slice of collector config (e.g. tail sampling) per container, as defined on the InstrumentationConfig spec.
 
-### 5. Optional: iterate over cached keys
+### 6. Optional: iterate over cached keys
 
 For debugging or batch use, you can access the underlying cache:
 
@@ -119,6 +167,7 @@ Do not modify the cache; use `GetWorkloadSamplingConfig` for reads.
 | `WorkloadKey` | Identifies a workload: `Namespace`, `Kind`, `Name` (e.g. Deployment, StatefulSet). Fields may be empty. |
 | `WorkloadSamplingConfig` | Sampling/collector config for a workload; contains `WorkloadCollectorConfig` (per-container config). |
 | `WorkloadKeyFromResourceAttributes(attrs pcommon.Map) WorkloadKey` | Builds a `WorkloadKey` from OTel resource attributes when present. |
+| `WaitForCacheSync(ctx context.Context) bool` | Blocks until the informer cache has synced or ctx is done. Returns true if synced. Call this before relying on `GetWorkloadSamplingConfig` so the collector stays non-blocking. |
 
 ## Requirements
 
