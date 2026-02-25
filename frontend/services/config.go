@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -67,12 +68,7 @@ func buildConfigResponse(ctx context.Context, deploymentData map[string]string) 
 	} else {
 		response.IsCentralProxyRunning = nil
 	}
-	isNewInstallation := !isSourceCreated(ctx) && !isDestinationConnected(ctx)
-	if isNewInstallation {
-		response.InstallationStatus = model.InstallationStatus(NewInstallation)
-	} else {
-		response.InstallationStatus = model.InstallationStatus(Finished)
-	}
+	response.InstallationStatus = getInstallationStatus(ctx, deploymentData)
 	return response
 }
 
@@ -131,40 +127,53 @@ func isCentralProxyRunning(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func isSourceCreated(ctx context.Context) bool {
-	ns := env.GetCurrentNamespace()
+// getInstallationStatus reads the installation status from the already-fetched
+// odigos-deployment ConfigMap data. If not yet persisted, it computes the status
+// from cluster state and persists the result for future calls.
+func getInstallationStatus(ctx context.Context, deploymentData map[string]string) model.InstallationStatus {
+	if status := deploymentData[k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey]; status != "" {
+		return model.InstallationStatus(status)
+	}
 
-	nsList, err := getRelevantNameSpaces(ctx, ns)
+	// Compute from cluster state and persist the result
+	computed := string(NewInstallation)
+	if isSourceCreated(ctx) || isDestinationConnected(ctx) {
+		computed = string(Finished)
+	}
+
+	if err := persistInstallationStatus(ctx, computed); err != nil {
+		log.Printf("Error persisting installation status: %v\n", err)
+	}
+	return model.InstallationStatus(computed)
+}
+
+func MarkInstallationFinished(ctx context.Context) {
+	if err := persistInstallationStatus(ctx, string(Finished)); err != nil {
+		log.Printf("Error marking installation as finished: %v\n", err)
+	}
+}
+
+func persistInstallationStatus(ctx context.Context, status string) error {
+	ns := env.GetCurrentNamespace()
+	cm, err := kube.DefaultClient.CoreV1().ConfigMaps(ns).Get(ctx, k8sconsts.OdigosDeploymentConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		log.Printf("Error listing namespaces: %v\n", err)
+		return fmt.Errorf("failed to get odigos-deployment: %w", err)
+	}
+	if cm.Data == nil {
+		cm.Data = make(map[string]string)
+	}
+	cm.Data[k8sconsts.OdigosDeploymentConfigMapInstallationStatusKey] = status
+	_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Update(ctx, cm, metav1.UpdateOptions{})
+	return err
+}
+
+func isSourceCreated(ctx context.Context) bool {
+	sourceList, err := kube.DefaultClient.OdigosClient.Sources("").List(ctx, metav1.ListOptions{Limit: 1})
+	if err != nil {
 		return false
 	}
 
-	for _, ns := range nsList {
-		sourceList, err := kube.DefaultClient.OdigosClient.Sources(ns.Namespace).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			log.Printf("Error listing sources: %v\n", err)
-			return false
-		}
-
-		if len(sourceList.Items) > 0 {
-			allDisabled := true
-
-			for _, source := range sourceList.Items {
-				if !source.Spec.DisableInstrumentation {
-					// Found an enabled source, no need to keep checking
-					return true
-				}
-			}
-
-			// If we get here, all sources were disabled
-			if allDisabled {
-				continue
-			}
-		}
-	}
-
-	return false
+	return len(sourceList.Items) > 0
 }
 
 func isDestinationConnected(ctx context.Context) bool {

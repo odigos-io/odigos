@@ -342,6 +342,8 @@ func (r *mutationResolver) PersistK8sSources(ctx context.Context, sources []*mod
 		return false, fmt.Errorf("failed to sync workloads: %v", err)
 	}
 
+	services.MarkInstallationFinished(ctx)
+
 	return true, nil
 }
 
