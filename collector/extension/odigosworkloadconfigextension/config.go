@@ -1,4 +1,4 @@
-package odigosconfigextension
+package odigosworkloadconfigextension
 
 import "go.opentelemetry.io/collector/component"
 

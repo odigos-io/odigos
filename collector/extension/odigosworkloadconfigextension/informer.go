@@ -1,4 +1,4 @@
-package odigosconfigextension
+package odigosworkloadconfigextension
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 	commonapi "github.com/odigos-io/odigos/common/api"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -35,7 +36,7 @@ var instrumentationConfigGVR = schema.GroupVersionResource{
 // It runs until ctx is cancelled. The cache is keyed by workload (namespace/kind/name).
 // If not running in a cluster (e.g. InClusterConfig fails), the informer is not started
 // and the cache remains empty; the extension still starts successfully.
-func (o *OdigosConfig) startInformer(ctx context.Context) error {
+func (o *OdigosWorkloadConfig) startInformer(ctx context.Context) error {
 	restConfig, err := rest.InClusterConfig()
 	if err != nil {
 		o.logger.Warn("not running in-cluster, instrumentation config cache will be empty", zap.Error(err))
@@ -69,7 +70,7 @@ func (o *OdigosConfig) startInformer(ctx context.Context) error {
 	return nil
 }
 
-func (o *OdigosConfig) handleInstrumentationConfig(obj interface{}) {
+func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		o.logger.Debug("informer received non-unstructured object", zap.String("type", fmt.Sprintf("%T", obj)))
@@ -83,7 +84,7 @@ func (o *OdigosConfig) handleInstrumentationConfig(obj interface{}) {
 	o.logger.Debug("updated workload sampling cache", zap.String("workload", key))
 }
 
-func (o *OdigosConfig) handleInstrumentationConfigDelete(obj interface{}) {
+func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}) {
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		if deleted, ok := obj.(k8scache.DeletedFinalStateUnknown); ok {
@@ -129,13 +130,6 @@ func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (work
 	return key, cfg
 }
 
-// ownerRefView is used to unmarshal a single entry from metadata.ownerReferences.
-type ownerRefView struct {
-	Controller *bool  `json:"controller,omitempty"`
-	Kind       string `json:"kind,omitempty"`
-	Name       string `json:"name,omitempty"`
-}
-
 func workloadKeyFromOwnerRef(u *unstructured.Unstructured) string {
 	namespace, _, _ := unstructured.NestedString(u.Object, "metadata", "namespace")
 	ownerRefs, ok, _ := unstructured.NestedSlice(u.Object, "metadata", "ownerReferences")
@@ -147,7 +141,7 @@ func workloadKeyFromOwnerRef(u *unstructured.Unstructured) string {
 		if !ok {
 			continue
 		}
-		var ref ownerRefView
+		var ref metav1.OwnerReference
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(refMap, &ref); err != nil {
 			continue
 		}

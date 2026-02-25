@@ -1,4 +1,4 @@
-type: odigos_config
+type: odigos_workload_config
 github_project: odigos-io/odigos
 
 status:

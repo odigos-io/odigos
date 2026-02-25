@@ -1,4 +1,4 @@
-module github.com/odigos-io/odigos/collector/extension/odigosconfigextension
+module github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension
 
 go 1.26.0
 

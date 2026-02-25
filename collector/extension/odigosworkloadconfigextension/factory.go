@@ -1,4 +1,4 @@
-package odigosconfigextension
+package odigosworkloadconfigextension
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/extension"
 
-	"github.com/odigos-io/odigos/collector/extension/odigosconfigextension/internal/metadata"
+	"github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension/internal/metadata"
 )
 
 //go:generate mdatagen metadata.yaml

@@ -1,4 +1,4 @@
-package odigosconfigextension
+package odigosworkloadconfigextension
 
 import (
 	"fmt"
@@ -44,10 +44,6 @@ func (c *Cache) Get(key string) (*WorkloadSamplingConfig, bool) {
 func (c *Cache) Set(key string, cfg *WorkloadSamplingConfig) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if cfg == nil {
-		delete(c.data, key)
-		return
-	}
 	c.data[key] = cfg
 }
 
