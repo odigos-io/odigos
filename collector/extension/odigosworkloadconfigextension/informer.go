@@ -115,18 +115,18 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 	}
 }
 
-func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (key WorkloadKey, ok bool, cfg *WorkloadSamplingConfig) {
+func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (key WorkloadKey, ok bool, cfg *WorkloadConfig) {
 	key, ok = workloadKeyFromObject(u)
 	if !ok {
 		return key, false, nil
 	}
 	specMap, ok, _ := unstructured.NestedMap(u.Object, "spec")
 	if !ok || len(specMap) == 0 {
-		return key, true, &WorkloadSamplingConfig{}
+		return key, true, &WorkloadConfig{}
 	}
 	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
 	if !ok || len(workloadCollectorConfigSlice) == 0 {
-		return key, true, &WorkloadSamplingConfig{}
+		return key, true, &WorkloadConfig{}
 	}
 	var workloadCollectorConfig []commonapi.ContainerCollectorConfig
 	for _, item := range workloadCollectorConfigSlice {
@@ -140,7 +140,7 @@ func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (key 
 		}
 		workloadCollectorConfig = append(workloadCollectorConfig, c)
 	}
-	cfg = &WorkloadSamplingConfig{
+	cfg = &WorkloadConfig{
 		WorkloadCollectorConfig: workloadCollectorConfig,
 	}
 	return key, true, cfg

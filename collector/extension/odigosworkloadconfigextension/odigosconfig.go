@@ -42,7 +42,7 @@ func (o *OdigosWorkloadConfig) Shutdown(ctx context.Context) error {
 }
 
 // GetWorkloadSamplingConfig returns the sampling config for the given workload key, or (nil, false) if not found.
-func (o *OdigosWorkloadConfig) GetWorkloadSamplingConfig(key WorkloadKey) (*WorkloadSamplingConfig, bool) {
+func (o *OdigosWorkloadConfig) GetWorkloadSamplingConfig(key WorkloadKey) (*WorkloadConfig, bool) {
 	return o.cache.Get(key)
 }
 

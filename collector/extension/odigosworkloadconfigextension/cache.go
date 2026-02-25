@@ -15,9 +15,9 @@ type WorkloadKey struct {
 	Name      string
 }
 
-// WorkloadSamplingConfig holds the sampling configuration for a single workload,
+// WorkloadConfig holds the sampling configuration for a single workload,
 // derived from an InstrumentationConfig. Uses api mirror types for head sampling and collector config.
-type WorkloadSamplingConfig struct {
+type WorkloadConfig struct {
 	// WorkloadCollectorConfig is the collector config (e.g. tail sampling) per container.
 	WorkloadCollectorConfig []commonapi.ContainerCollectorConfig `json:"workloadCollectorConfig,omitempty"`
 }
@@ -25,19 +25,19 @@ type WorkloadSamplingConfig struct {
 // Cache stores workload sampling config by WorkloadKey.
 type Cache struct {
 	mu   sync.RWMutex
-	data map[WorkloadKey]*WorkloadSamplingConfig
+	data map[WorkloadKey]*WorkloadConfig
 }
 
 // NewCache creates a new empty cache.
 func NewCache() *Cache {
-	return &Cache{data: make(map[WorkloadKey]*WorkloadSamplingConfig)}
+	return &Cache{data: make(map[WorkloadKey]*WorkloadConfig)}
 }
 
 // Get returns the WorkloadSamplingConfig for the given workload key, and true if found.
 // If the exact key is not found and key has a non-empty Kind, Get also tries a key with
 // empty Kind so that lookups from resource attributes (with Kind) match entries stored
 // from InstrumentationConfig metadata (namespace and name only).
-func (c *Cache) Get(key WorkloadKey) (*WorkloadSamplingConfig, bool) {
+func (c *Cache) Get(key WorkloadKey) (*WorkloadConfig, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if cfg, ok := c.data[key]; ok {
@@ -53,7 +53,7 @@ func (c *Cache) Get(key WorkloadKey) (*WorkloadSamplingConfig, bool) {
 }
 
 // Set stores the sampling config for the given workload key.
-func (c *Cache) Set(key WorkloadKey, cfg *WorkloadSamplingConfig) {
+func (c *Cache) Set(key WorkloadKey, cfg *WorkloadConfig) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data[key] = cfg
