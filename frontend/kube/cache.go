@@ -44,6 +44,8 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(odigosv1.AddToScheme(scheme))
 	utilruntime.Must(actionsv1.AddToScheme(scheme))
+	utilruntime.Must(argorolloutsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(openshiftappsv1.AddToScheme(scheme))
 
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
 	// Create cache options

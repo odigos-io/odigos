@@ -305,7 +305,7 @@ func main() {
 	// from all namespaces, providing fast read access without hitting the Kubernetes API
 	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
 	if err != nil {
-		log.Fatalf("Error setting up Source cache: %s", err)
+		log.Fatalf("Error setting up kubernetes objects cache: %s", err)
 	}
 
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
