@@ -87,10 +87,10 @@ Below are the ClusterRoles used by Odigos components.
 | APIGroups | Resources | Resource Names | Verbs |
 |---|---|---|---|
 | \* | namespaces | \* | get<br />list<br />watch<br />patch |
-| apps | deployments<br />statefulsets<br />daemonsets | \* | get<br />list<br />update<br />patch |
-| batch | cronjobs | \* | get<br />list<br />update<br />patch |
-| apps.openshift.io | deploymentconfigs | \* | get<br />list<br />update<br />patch |
-| argoproj.io | rollouts | \* | get<br />list<br />update<br />patch |
+| apps | deployments<br />statefulsets<br />daemonsets | \* | get<br />list<br />watch<br />update<br />patch |
+| batch | cronjobs | \* | get<br />list<br />watch<br />update<br />patch |
+| apps.openshift.io | deploymentconfigs | \* | get<br />list<br />watch<br />update<br />patch |
+| argoproj.io | rollouts | \* | get<br />list<br />watch<br />update<br />patch |
 | apps | replicasets | \* | get<br />list |
 | \* | services | \* | get<br />list |
 | \* | pods | \* | get<br />list<br />watch<br />delete |

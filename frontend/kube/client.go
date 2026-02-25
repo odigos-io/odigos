@@ -24,13 +24,14 @@ import (
 )
 
 var (
-	DefaultClient                       *Client
-	Scheme                              = runtime.NewScheme()
-	deploymentConfigAvailable           bool
-	deploymentConfigAvailabilityChecked bool
-	deploymentConfigCheckMu             sync.Mutex
-	IsArgoRolloutAvailable              bool
-	argoRolloutCheckOnce                sync.Once
+	DefaultClient                        *Client
+	Scheme                               = runtime.NewScheme()
+	deploymentConfigAvailable            bool
+	deploymentConfigAvailabilityChecked  bool
+	deploymentConfigCheckMu              sync.Mutex
+	IsOpenShiftDeploymentConfigAvailable bool
+	IsArgoRolloutAvailable               bool
+	argoRolloutCheckOnce                 sync.Once
 )
 
 func init() {
@@ -145,10 +146,11 @@ func IsDeploymentConfigAvailable() bool {
 	return true
 }
 
-// InitArgoRolloutAvailability checks if the Argo Rollout resource is available in the cluster
-// and sets IsArgoRolloutAvailable. This should be called once during initialization.
-func InitArgoRolloutAvailability() {
+// InitWorkloadKindsAvailability checks if the Argo Rollout and open shift deployment config resource is available in the cluster
+// and sets IsArgoRolloutAvailable and IsOpenShiftDeploymentConfigAvailable. This should be called once during initialization.
+func InitWorkloadKindsAvailability() {
 	argoRolloutCheckOnce.Do(func() {
 		IsArgoRolloutAvailable = k8sutils.IsResourceAvailable(DefaultClient.RESTMapper, k8sconsts.ArgoRolloutGVK)
+		IsOpenShiftDeploymentConfigAvailable = k8sutils.IsResourceAvailable(DefaultClient.RESTMapper, k8sconsts.DeploymentConfigGVK)
 	})
 }

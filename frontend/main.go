@@ -88,7 +88,7 @@ func initKubernetesClient(flags *Flags) error {
 	}
 
 	kube.SetDefaultClient(client)
-	kube.InitArgoRolloutAvailability()
+	kube.InitWorkloadKindsAvailability()
 	return nil
 }
 
@@ -194,10 +194,10 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 
 	gqlExecutableSchema := graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
-			MetricsConsumer:   odigosMetrics,
-			Logger:            logger,
-			PromAPI:           promAPI,
-			K8sCacheClient:    k8sCacheClient,
+			MetricsConsumer: odigosMetrics,
+			Logger:          logger,
+			PromAPI:         promAPI,
+			K8sCacheClient:  k8sCacheClient,
 		},
 	})
 	gqlExecutor := executor.New(gqlExecutableSchema)
@@ -305,7 +305,7 @@ func main() {
 	// from all namespaces, providing fast read access without hitting the Kubernetes API
 	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
 	if err != nil {
-		log.Fatalf("Error setting up Source cache: %s", err)
+		log.Fatalf("Error setting up kubernetes objects cache: %s", err)
 	}
 
 	odigosMetrics := collectormetrics.NewOdigosMetrics()

@@ -16,7 +16,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -62,21 +61,11 @@ func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filter
 	// diffrentiate between a single source query and a namespace / cluster wide query.
 	if filters.SingleWorkload != nil {
 		instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(filters.SingleWorkload.WorkloadName, filters.SingleWorkload.WorkloadKind)
-		instrumentationConfigs, err := timedAPICall(
-			logger,
-			fmt.Sprintf("Get InstrumentationConfig %s/%s", filters.NamespaceString, instrumentationConfigName),
-			func() (*odigosv1.InstrumentationConfig, error) {
-				var instrumentationConfig odigosv1.InstrumentationConfig
-				err := k8sCacheClient.Get(ctx, client.ObjectKey{
-					Namespace: filters.NamespaceString,
-					Name:      instrumentationConfigName,
-				}, &instrumentationConfig)
-				if err != nil {
-					return nil, err
-				}
-				return &instrumentationConfig, nil
-			},
-		)
+		var instrumentationConfig odigosv1.InstrumentationConfig
+		err := k8sCacheClient.Get(ctx, client.ObjectKey{
+			Namespace: filters.NamespaceString,
+			Name:      instrumentationConfigName,
+		}, &instrumentationConfig)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				// workload cam be not found and it is not an error.
@@ -87,24 +76,14 @@ func fetchInstrumentationConfigs(ctx context.Context, logger logr.Logger, filter
 		}
 		return map[model.K8sWorkloadID]*odigosv1.InstrumentationConfig{
 			{
-				Namespace: instrumentationConfigs.Namespace,
+				Namespace: instrumentationConfig.Namespace,
 				Kind:      model.K8sResourceKind(filters.SingleWorkload.WorkloadKind),
 				Name:      filters.SingleWorkload.WorkloadName,
-			}: instrumentationConfigs,
+			}: &instrumentationConfig,
 		}, nil
 	} else {
-		instrumentationConfigs, err := timedAPICall(
-			logger,
-			formatOperationMessage("List InstrumentationConfigs", filters.NamespaceString),
-			func() (*odigosv1.InstrumentationConfigList, error) {
-				var instrumentationConfigs odigosv1.InstrumentationConfigList
-				err := k8sCacheClient.List(ctx, &instrumentationConfigs, client.InNamespace(filters.NamespaceString))
-				if err != nil {
-					return nil, err
-				}
-				return &instrumentationConfigs, nil
-			},
-		)
+		var instrumentationConfigs odigosv1.InstrumentationConfigList
+		err := k8sCacheClient.List(ctx, &instrumentationConfigs, client.InNamespace(filters.NamespaceString))
 		if err != nil {
 			return nil, err
 		}
@@ -224,27 +203,20 @@ func fetchSources(ctx context.Context, filters *WorkloadFilter, k8sCacheClient c
 	return
 }
 
-func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *WorkloadFilter) (workloadManifests map[model.K8sWorkloadID]*computed.CachedWorkloadManifest, err error) {
+func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, k8sCacheClient client.Client) (workloadManifests map[model.K8sWorkloadID]*computed.CachedWorkloadManifest, err error) {
 
 	// if this is a query for one specific workload, then fetch only it.
 	if filters.SingleWorkload != nil {
 		workloadManifests = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
 		switch filters.SingleWorkload.WorkloadKind {
 		case k8sconsts.WorkloadKindDeployment:
-			deployment, err := timedAPICall(
-				logger,
-				fmt.Sprintf("Get Deployment %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
-				func() (*appsv1.Deployment, error) {
-					return kube.DefaultClient.AppsV1().Deployments(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
-				},
-			)
+			deployment := &appsv1.Deployment{}
+			err := k8sCacheClient.Get(ctx, client.ObjectKey{
+				Namespace: filters.NamespaceString,
+				Name:      filters.SingleWorkload.WorkloadName,
+			}, deployment)
 			if err != nil {
-				if apierrors.IsNotFound(err) {
-					// workload cam be not found and it is not an error.
-					// we will just skip it.
-					return nil, nil
-				}
-				return nil, err
+				return nil, client.IgnoreNotFound(err)
 			}
 			workloadHealthStatus := status.CalculateDeploymentHealthStatus(deployment.Status)
 			workloadManifests[model.K8sWorkloadID{
@@ -254,26 +226,18 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    deployment.Status.AvailableReplicas,
 				Selector:             deployment.Spec.Selector,
-				PodTemplateSpec:      &deployment.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindDaemonSet:
-			daemonset, err := timedAPICall(
-				logger,
-				fmt.Sprintf("Get DaemonSet %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
-				func() (*appsv1.DaemonSet, error) {
-					return kube.DefaultClient.AppsV1().DaemonSets(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
-				},
-			)
+			daemonset := &appsv1.DaemonSet{}
+			err := k8sCacheClient.Get(ctx, client.ObjectKey{
+				Namespace: filters.NamespaceString,
+				Name:      filters.SingleWorkload.WorkloadName,
+			}, daemonset)
 			if err != nil {
-				if apierrors.IsNotFound(err) {
-					// workload cam be not found and it is not an error.
-					// we will just skip it.
-					return nil, nil
-				}
-				return nil, err
+				return nil, client.IgnoreNotFound(err)
 			}
 			workloadHealthStatus := status.CalculateDaemonSetHealthStatus(daemonset.Status)
 			workloadManifests[model.K8sWorkloadID{
@@ -283,26 +247,18 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    daemonset.Status.NumberReady,
 				Selector:             daemonset.Spec.Selector,
-				PodTemplateSpec:      &daemonset.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindStatefulSet:
-			statefulset, err := timedAPICall(
-				logger,
-				fmt.Sprintf("Get StatefulSet %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
-				func() (*appsv1.StatefulSet, error) {
-					return kube.DefaultClient.AppsV1().StatefulSets(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
-				},
-			)
+			statefulset := &appsv1.StatefulSet{}
+			err := k8sCacheClient.Get(ctx, client.ObjectKey{
+				Namespace: filters.NamespaceString,
+				Name:      filters.SingleWorkload.WorkloadName,
+			}, statefulset)
 			if err != nil {
-				if apierrors.IsNotFound(err) {
-					// workload cam be not found and it is not an error.
-					// we will just skip it.
-					return nil, nil
-				}
-				return nil, err
+				return nil, client.IgnoreNotFound(err)
 			}
 			workloadHealthStatus := status.CalculateStatefulSetHealthStatus(statefulset.Status)
 			workloadManifests[model.K8sWorkloadID{
@@ -312,26 +268,18 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    statefulset.Status.ReadyReplicas,
 				Selector:             statefulset.Spec.Selector,
-				PodTemplateSpec:      &statefulset.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindCronJob:
-			cronjob, err := timedAPICall(
-				logger,
-				fmt.Sprintf("Get CronJob %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
-				func() (*batchv1.CronJob, error) {
-					return kube.DefaultClient.BatchV1().CronJobs(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
-				},
-			)
+			cronjob := &batchv1.CronJob{}
+			err := k8sCacheClient.Get(ctx, client.ObjectKey{
+				Namespace: filters.NamespaceString,
+				Name:      filters.SingleWorkload.WorkloadName,
+			}, cronjob)
 			if err != nil {
-				if apierrors.IsNotFound(err) {
-					// workload cam be not found and it is not an error.
-					// we will just skip it.
-					return nil, nil
-				}
-				return nil, err
+				return nil, client.IgnoreNotFound(err)
 			}
 			workloadHealthStatus := status.CalculateCronJobHealthStatus(cronjob.Status)
 			workloadManifests[model.K8sWorkloadID{
@@ -341,14 +289,13 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    int32(len(cronjob.Status.Active)),
 				Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
-				PodTemplateSpec:      &cronjob.Spec.JobTemplate.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
 
 		case k8sconsts.WorkloadKindDeploymentConfig:
 			// Only try to get DeploymentConfig if it's available in the cluster
-			if !kube.IsDeploymentConfigAvailable() {
+			if !kube.IsOpenShiftDeploymentConfigAvailable {
 				return nil, nil
 			}
 
@@ -394,7 +341,6 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    unstructuredDC.Status.AvailableReplicas,
 				Selector:             labelSelector,
-				PodTemplateSpec:      unstructuredDC.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
@@ -404,30 +350,13 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 				return nil, nil
 			}
 
-			gvr := schema.GroupVersionResource{
-				Group:    "argoproj.io",
-				Version:  "v1alpha1",
-				Resource: "rollouts",
-			}
-
-			rollout, err := timedAPICall(
-				logger,
-				fmt.Sprintf("Get Argo Rollout %s/%s", filters.NamespaceString, filters.SingleWorkload.WorkloadName),
-				func() (*argorolloutsv1alpha1.Rollout, error) {
-					unstructuredRollout, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(filters.NamespaceString).Get(ctx, filters.SingleWorkload.WorkloadName, metav1.GetOptions{})
-					if err != nil {
-						return nil, err
-					}
-					var rollout argorolloutsv1alpha1.Rollout
-					err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredRollout.Object, &rollout)
-					return &rollout, err
-				},
-			)
+			rollout := &argorolloutsv1alpha1.Rollout{}
+			err := k8sCacheClient.Get(ctx, client.ObjectKey{
+				Namespace: filters.NamespaceString,
+				Name:      filters.SingleWorkload.WorkloadName,
+			}, rollout)
 			if err != nil {
-				if apierrors.IsNotFound(err) {
-					return nil, nil
-				}
-				return nil, err
+				return nil, client.IgnoreNotFound(err)
 			}
 			workloadHealthStatus := status.CalculateRolloutHealthStatus(rollout.Status)
 			workloadManifests[model.K8sWorkloadID{
@@ -437,7 +366,37 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    rollout.Status.AvailableReplicas,
 				Selector:             rollout.Spec.Selector,
-				PodTemplateSpec:      &rollout.Spec.Template,
+				WorkloadHealthStatus: workloadHealthStatus,
+			}
+			return workloadManifests, nil
+
+		case k8sconsts.WorkloadKindStaticPod:
+			staticPod := &corev1.Pod{}
+			err := k8sCacheClient.Get(ctx, client.ObjectKey{
+				Namespace: filters.NamespaceString,
+				Name:      filters.SingleWorkload.WorkloadName,
+			}, staticPod)
+			if err != nil {
+				return nil, client.IgnoreNotFound(err)
+			}
+
+			// if this is a pod, but not static, skip it.
+			if !workload.IsStaticPod(staticPod) {
+				return nil, nil
+			}
+
+			workloadHealthStatus := status.CalculateStaticPodHealthStatus(staticPod.Status)
+			workloadManifests[model.K8sWorkloadID{
+				Namespace: staticPod.Namespace,
+				Kind:      model.K8sResourceKindStaticPod,
+				Name:      staticPod.Name,
+			}] = &computed.CachedWorkloadManifest{
+				AvailableReplicas: 1, // static pod always have 1 instance
+				Selector: &metav1.LabelSelector{ // use selector so it works the same way as other workloads
+					MatchLabels: map[string]string{
+						k8sconsts.OdigosVirtualStaticPodNameLabel: staticPod.Name,
+					},
+				},
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 			return workloadManifests, nil
@@ -447,130 +406,109 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 		}
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
-	var (
-		deps              = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-		statefuls         = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-		daemons           = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-		crons             = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-		deploymentconfigs = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-		rollouts          = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-	)
+	deploymentsList := &appsv1.DeploymentList{}
+	err = k8sCacheClient.List(ctx, deploymentsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
+	if err != nil {
+		return nil, err
+	}
+	deploymentsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, deployment := range deploymentsList.Items {
+		workloadHealthStatus := status.CalculateDeploymentHealthStatus(deployment.Status)
+		deploymentsMap[model.K8sWorkloadID{
+			Namespace: deployment.Namespace,
+			Kind:      model.K8sResourceKindDeployment,
+			Name:      deployment.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas:    deployment.Status.AvailableReplicas,
+			Selector:             deployment.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
+	}
 
-	g.Go(func() error {
-		deployments, err := timedAPICall(
-			logger,
-			formatOperationMessage("List Deployments", filters.NamespaceString),
-			func() (*appsv1.DeploymentList, error) {
-				return kube.DefaultClient.AppsV1().Deployments(filters.NamespaceString).List(ctx, metav1.ListOptions{})
+	daemonsetsList := &appsv1.DaemonSetList{}
+	err = k8sCacheClient.List(ctx, daemonsetsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
+	if err != nil {
+		return nil, err
+	}
+	daemonsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, daemonset := range daemonsetsList.Items {
+		workloadHealthStatus := status.CalculateDaemonSetHealthStatus(daemonset.Status)
+		daemonsMap[model.K8sWorkloadID{
+			Namespace: daemonset.Namespace,
+			Kind:      model.K8sResourceKindDaemonSet,
+			Name:      daemonset.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas:    daemonset.Status.NumberReady,
+			Selector:             daemonset.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
+	}
+
+	statefulsetsList := &appsv1.StatefulSetList{}
+	err = k8sCacheClient.List(ctx, statefulsetsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
+	if err != nil {
+		return nil, err
+	}
+	statefulsetsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, statefulset := range statefulsetsList.Items {
+		workloadHealthStatus := status.CalculateStatefulSetHealthStatus(statefulset.Status)
+		statefulsetsMap[model.K8sWorkloadID{
+			Namespace: statefulset.Namespace,
+			Kind:      model.K8sResourceKindStatefulSet,
+			Name:      statefulset.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas:    statefulset.Status.ReadyReplicas,
+			Selector:             statefulset.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
+		}
+	}
+
+	staticPodsList := &corev1.PodList{}
+	err = k8sCacheClient.List(ctx, staticPodsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{k8sconsts.OdigosVirtualStaticPodNameLabel: "true"}))
+	if err != nil {
+		return nil, err
+	}
+	staticPodsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, staticPod := range staticPodsList.Items {
+		workloadHealthStatus := status.CalculateStaticPodHealthStatus(staticPod.Status)
+		staticPodsMap[model.K8sWorkloadID{
+			Namespace: staticPod.Namespace,
+			Kind:      model.K8sResourceKindStaticPod,
+			Name:      staticPod.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas: 1, // static pod always have 1 instance
+			Selector: &metav1.LabelSelector{ // use selector so it works the same way as other workloads
+				MatchLabels: map[string]string{
+					k8sconsts.OdigosVirtualStaticPodNameLabel: staticPod.Name,
+				},
 			},
-		)
-		if err != nil {
-			return err
+			WorkloadHealthStatus: workloadHealthStatus,
 		}
-		for _, deployment := range deployments.Items {
-			workloadHealthStatus := status.CalculateDeploymentHealthStatus(deployment.Status)
-			deps[model.K8sWorkloadID{
-				Namespace: deployment.Namespace,
-				Kind:      model.K8sResourceKindDeployment,
-				Name:      deployment.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas:    deployment.Status.AvailableReplicas,
-				Selector:             deployment.Spec.Selector,
-				PodTemplateSpec:      &deployment.Spec.Template,
-				WorkloadHealthStatus: workloadHealthStatus,
-			}
-		}
-		return nil
-	})
+	}
 
-	g.Go(func() error {
-		daemonsets, err := timedAPICall(
-			logger,
-			formatOperationMessage("List DaemonSets", filters.NamespaceString),
-			func() (*appsv1.DaemonSetList, error) {
-				return kube.DefaultClient.AppsV1().DaemonSets(filters.NamespaceString).List(ctx, metav1.ListOptions{})
-			},
-		)
-		if err != nil {
-			return err
+	cronjobsList := &batchv1.CronJobList{}
+	err = k8sCacheClient.List(ctx, cronjobsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
+	if err != nil {
+		return nil, err
+	}
+	cronjobsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	for _, cronjob := range cronjobsList.Items {
+		workloadHealthStatus := status.CalculateCronJobHealthStatus(cronjob.Status)
+		cronjobsMap[model.K8sWorkloadID{
+			Namespace: cronjob.Namespace,
+			Kind:      model.K8sResourceKindCronJob,
+			Name:      cronjob.Name,
+		}] = &computed.CachedWorkloadManifest{
+			AvailableReplicas:    int32(len(cronjob.Status.Active)),
+			Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
+			WorkloadHealthStatus: workloadHealthStatus,
 		}
-		for _, daemonset := range daemonsets.Items {
-			workloadHealthStatus := status.CalculateDaemonSetHealthStatus(daemonset.Status)
-			daemons[model.K8sWorkloadID{
-				Namespace: daemonset.Namespace,
-				Kind:      model.K8sResourceKindDaemonSet,
-				Name:      daemonset.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas:    daemonset.Status.NumberReady,
-				Selector:             daemonset.Spec.Selector,
-				PodTemplateSpec:      &daemonset.Spec.Template,
-				WorkloadHealthStatus: workloadHealthStatus,
-			}
-		}
-		return nil
-	})
+	}
 
-	g.Go(func() error {
-		statefulsets, err := timedAPICall(
-			logger,
-			formatOperationMessage("List StatefulSets", filters.NamespaceString),
-			func() (*appsv1.StatefulSetList, error) {
-				return kube.DefaultClient.AppsV1().StatefulSets(filters.NamespaceString).List(ctx, metav1.ListOptions{})
-			},
-		)
-		if err != nil {
-			return err
-		}
-		for _, statefulset := range statefulsets.Items {
-			workloadHealthStatus := status.CalculateStatefulSetHealthStatus(statefulset.Status)
-			statefuls[model.K8sWorkloadID{
-				Namespace: statefulset.Namespace,
-				Kind:      model.K8sResourceKindStatefulSet,
-				Name:      statefulset.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas:    statefulset.Status.ReadyReplicas,
-				Selector:             statefulset.Spec.Selector,
-				PodTemplateSpec:      &statefulset.Spec.Template,
-				WorkloadHealthStatus: workloadHealthStatus,
-			}
-		}
-		return nil
-	})
-
-	g.Go(func() error {
-		cronjobs, err := timedAPICall(
-			logger,
-			formatOperationMessage("List CronJobs", filters.NamespaceString),
-			func() (*batchv1.CronJobList, error) {
-				return kube.DefaultClient.BatchV1().CronJobs(filters.NamespaceString).List(ctx, metav1.ListOptions{})
-			},
-		)
-		if err != nil {
-			return err
-		}
-		for _, cronjob := range cronjobs.Items {
-			workloadHealthStatus := status.CalculateCronJobHealthStatus(cronjob.Status)
-			crons[model.K8sWorkloadID{
-				Namespace: cronjob.Namespace,
-				Kind:      model.K8sResourceKindCronJob,
-				Name:      cronjob.Name,
-			}] = &computed.CachedWorkloadManifest{
-				AvailableReplicas:    int32(len(cronjob.Status.Active)),
-				Selector:             cronjob.Spec.JobTemplate.Spec.Selector,
-				PodTemplateSpec:      &cronjob.Spec.JobTemplate.Spec.Template,
-				WorkloadHealthStatus: workloadHealthStatus,
-			}
-		}
-		return nil
-	})
-
-	g.Go(func() error {
-		// Only try to list DeploymentConfigs if they're available in the cluster
-		// This avoids permission errors on non-OpenShift clusters
-		if !kube.IsDeploymentConfigAvailable() {
-			return nil
-		}
+	// Only try to list DeploymentConfigs if they're available in the cluster
+	// This avoids permission errors on non-OpenShift clusters
+	deploymentconfigsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	if kube.IsDeploymentConfigAvailable() {
 
 		// Use dynamic client for DeploymentConfigs
 		gvr := schema.GroupVersionResource{
@@ -602,7 +540,7 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 			},
 		)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, dc := range dcListUnstructured {
@@ -613,109 +551,78 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 				MatchLabels: dc.Spec.Selector,
 			}
 
-			deploymentconfigs[model.K8sWorkloadID{
+			deploymentconfigsMap[model.K8sWorkloadID{
 				Namespace: dc.Namespace,
 				Kind:      model.K8sResourceKindDeploymentConfig,
 				Name:      dc.Name,
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    dc.Status.AvailableReplicas,
 				Selector:             labelSelector,
-				PodTemplateSpec:      dc.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
-		return nil
-	})
+	}
 
-	g.Go(func() error {
-		if !kube.IsArgoRolloutAvailable {
-			return nil
-		}
-
-		gvr := schema.GroupVersionResource{
-			Group:    "argoproj.io",
-			Version:  "v1alpha1",
-			Resource: "rollouts",
-		}
-
-		rolloutList, err := timedAPICall(
-			logger,
-			formatOperationMessage("List Argo Rollouts", filters.NamespaceString),
-			func() ([]argorolloutsv1alpha1.Rollout, error) {
-				unstructuredList, err := kube.DefaultClient.DynamicClient.Resource(gvr).Namespace(filters.NamespaceString).List(ctx, metav1.ListOptions{})
-				if err != nil {
-					return nil, err
-				}
-
-				typedRolloutsList := make([]argorolloutsv1alpha1.Rollout, 0, len(unstructuredList.Items))
-				for _, unstructuredRollout := range unstructuredList.Items {
-					var rollout argorolloutsv1alpha1.Rollout
-					if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredRollout.Object, &rollout); err != nil {
-						logger.Error(err, "failed to convert Rollout", "name", unstructuredRollout.GetName())
-						continue
-					}
-					typedRolloutsList = append(typedRolloutsList, rollout)
-				}
-				return typedRolloutsList, nil
-			},
-		)
+	rolloutsMap := make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
+	if kube.IsArgoRolloutAvailable {
+		rolloutsList := &argorolloutsv1alpha1.RolloutList{}
+		err := k8sCacheClient.List(ctx, rolloutsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{}))
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		for _, rollout := range rolloutList {
+		for _, rollout := range rolloutsList.Items {
 			workloadHealthStatus := status.CalculateRolloutHealthStatus(rollout.Status)
-
-			rollouts[model.K8sWorkloadID{
+			rolloutsMap[model.K8sWorkloadID{
 				Namespace: rollout.Namespace,
 				Kind:      model.K8sResourceKindRollout,
 				Name:      rollout.Name,
 			}] = &computed.CachedWorkloadManifest{
 				AvailableReplicas:    rollout.Status.AvailableReplicas,
 				Selector:             rollout.Spec.Selector,
-				PodTemplateSpec:      &rollout.Spec.Template,
 				WorkloadHealthStatus: workloadHealthStatus,
 			}
 		}
-		return nil
-	})
-
-	if err := g.Wait(); err != nil {
-		return nil, err
 	}
 
 	workloadManifests = make(map[model.K8sWorkloadID]*computed.CachedWorkloadManifest)
-	for id, manifest := range deps {
+	for id, manifest := range deploymentsMap {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
-	for id, manifest := range statefuls {
+	for id, manifest := range statefulsetsMap {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
-	for id, manifest := range daemons {
+	for id, manifest := range daemonsMap {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
-	for id, manifest := range crons {
+	for id, manifest := range cronjobsMap {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
-	for id, manifest := range deploymentconfigs {
+	for id, manifest := range deploymentconfigsMap {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
 		workloadManifests[id] = manifest
 	}
-	for id, manifest := range rollouts {
+	for id, manifest := range rolloutsMap {
+		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
+			continue
+		}
+		workloadManifests[id] = manifest
+	}
+	for id, manifest := range staticPodsMap {
 		if _, ok := filters.IgnoredNamespaces[id.Namespace]; ok {
 			continue
 		}
@@ -736,32 +643,22 @@ func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *Workloa
 		labelSelector = singleWorkloadManifest.Selector
 	}
 
-	pods, err := timedAPICall(
-		logger,
-		formatOperationMessage("List Pods", filters.NamespaceString),
-		func() (*corev1.PodList, error) {
-			podList := &corev1.PodList{}
-			opts := []client.ListOption{client.InNamespace(filters.NamespaceString)}
-			if labelSelector != nil {
-				selector, err := metav1.LabelSelectorAsSelector(labelSelector)
-				if err != nil {
-					return nil, fmt.Errorf("invalid label selector: %w", err)
-				}
-				opts = append(opts, client.MatchingLabelsSelector{Selector: selector})
-			}
-			err := k8sCacheClient.List(ctx, podList, opts...)
-			if err != nil {
-				return nil, err
-			}
-			return podList, nil
-		},
-	)
+	podList := &corev1.PodList{}
+	opts := []client.ListOption{client.InNamespace(filters.NamespaceString)}
+	if labelSelector != nil {
+		selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+		if err != nil {
+			return nil, fmt.Errorf("invalid label selector: %w", err)
+		}
+		opts = append(opts, client.MatchingLabelsSelector{Selector: selector})
+	}
+	err = k8sCacheClient.List(ctx, podList, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	workloadPods = make(map[model.K8sWorkloadID][]*corev1.Pod)
-	for _, pod := range pods.Items {
+	for _, pod := range podList.Items {
 		if _, ok := filters.IgnoredNamespaces[pod.Namespace]; ok {
 			continue
 		}
@@ -802,22 +699,12 @@ func fetchInstrumentationInstances(ctx context.Context, logger logr.Logger, filt
 		}
 	}
 
-	ii, err := timedAPICall(
-		logger,
-		formatOperationMessage("List InstrumentationInstances", filters.NamespaceString),
-		func() (*odigosv1.InstrumentationInstanceList, error) {
-			var instrumentationInstances odigosv1.InstrumentationInstanceList
-			opts := []client.ListOption{client.InNamespace(filters.NamespaceString)}
-			if matchingLabels != nil {
-				opts = append(opts, client.MatchingLabels(matchingLabels))
-			}
-			err := k8sCacheClient.List(ctx, &instrumentationInstances, opts...)
-			if err != nil {
-				return nil, err
-			}
-			return &instrumentationInstances, nil
-		},
-	)
+	var ii odigosv1.InstrumentationInstanceList
+	opts := []client.ListOption{client.InNamespace(filters.NamespaceString)}
+	if matchingLabels != nil {
+		opts = append(opts, client.MatchingLabels(matchingLabels))
+	}
+	err = k8sCacheClient.List(ctx, &ii, opts...)
 	if err != nil {
 		return nil, nil, err
 	}
