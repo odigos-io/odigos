@@ -41,6 +41,7 @@ type Config struct {
 type ResolverRoot interface {
 	ComputePlatform() ComputePlatformResolver
 	K8sActualNamespace() K8sActualNamespaceResolver
+	K8sNamespace() K8sNamespaceResolver
 	K8sWorkload() K8sWorkloadResolver
 	K8sWorkloadPodContainer() K8sWorkloadPodContainerResolver
 	K8sWorkloadTelemetryMetrics() K8sWorkloadTelemetryMetricsResolver
@@ -550,6 +551,12 @@ type ComplexityRoot struct {
 		LabelKey     func(childComplexity int) int
 	}
 
+	K8sNamespace struct {
+		MarkedForInstrumentation func(childComplexity int) int
+		Name                     func(childComplexity int) int
+		Workloads                func(childComplexity int) int
+	}
+
 	K8sWorkload struct {
 		AgentEnabled               func(childComplexity int) int
 		Conditions                 func(childComplexity int) int
@@ -975,6 +982,7 @@ type ComplexityRoot struct {
 		GetServiceMap                     func(childComplexity int) int
 		InstrumentationInstanceComponents func(childComplexity int, namespace string, kind string, name string) int
 		K8sManifest                       func(childComplexity int, namespace string, kind model.K8sResourceKind, name string) int
+		Namespaces                        func(childComplexity int) int
 		OdigletDaemonSetInfo              func(childComplexity int) int
 		OdigletPods                       func(childComplexity int) int
 		Pod                               func(childComplexity int, namespace string, name string) int
@@ -1150,6 +1158,9 @@ type ComputePlatformResolver interface {
 type K8sActualNamespaceResolver interface {
 	Sources(ctx context.Context, obj *model.K8sActualNamespace) ([]*model.K8sActualSource, error)
 }
+type K8sNamespaceResolver interface {
+	MarkedForInstrumentation(ctx context.Context, obj *model.K8sNamespace) (bool, error)
+}
 type K8sWorkloadResolver interface {
 	ServiceName(ctx context.Context, obj *model.K8sWorkload) (*string, error)
 	WorkloadOdigosHealthStatus(ctx context.Context, obj *model.K8sWorkload) (*model.DesiredConditionStatus, error)
@@ -1209,7 +1220,6 @@ type QueryResolver interface {
 	DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error)
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
 	InstrumentationInstanceComponents(ctx context.Context, namespace string, kind string, name string) ([]*model.InstrumentationInstanceComponent, error)
-	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
 	Diagnose(ctx context.Context, input *model.DiagnoseInput, dryRun *bool) (*model.DiagnoseResponse, error)
 	GatewayDeploymentInfo(ctx context.Context) (*model.GatewayDeploymentInfo, error)
 	OdigletDaemonSetInfo(ctx context.Context) (*model.CollectorDaemonSetInfo, error)
@@ -1221,6 +1231,8 @@ type QueryResolver interface {
 	EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error)
 	Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
 	Sampling(ctx context.Context) (*model.Sampling, error)
+	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
+	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
 }
 type SamplingConfigsResolver interface {
 	Effective(ctx context.Context, obj *model.SamplingConfigs) (*model.SamplingConfig, error)
@@ -3561,6 +3573,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.K8sLabelAttribute.LabelKey(childComplexity), true
 
+	case "K8sNamespace.markedForInstrumentation":
+		if e.complexity.K8sNamespace.MarkedForInstrumentation == nil {
+			break
+		}
+
+		return e.complexity.K8sNamespace.MarkedForInstrumentation(childComplexity), true
+
+	case "K8sNamespace.name":
+		if e.complexity.K8sNamespace.Name == nil {
+			break
+		}
+
+		return e.complexity.K8sNamespace.Name(childComplexity), true
+
+	case "K8sNamespace.workloads":
+		if e.complexity.K8sNamespace.Workloads == nil {
+			break
+		}
+
+		return e.complexity.K8sNamespace.Workloads(childComplexity), true
+
 	case "K8sWorkload.agentEnabled":
 		if e.complexity.K8sWorkload.AgentEnabled == nil {
 			break
@@ -5461,6 +5494,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.K8sManifest(childComplexity, args["namespace"].(string), args["kind"].(model.K8sResourceKind), args["name"].(string)), true
+
+	case "Query.namespaces":
+		if e.complexity.Query.Namespaces == nil {
+			break
+		}
+
+		return e.complexity.Query.Namespaces(childComplexity), true
 
 	case "Query.odigletDaemonSetInfo":
 		if e.complexity.Query.OdigletDaemonSetInfo == nil {
@@ -22484,6 +22524,170 @@ func (ec *executionContext) fieldContext_K8sLabelAttribute_fromSources(_ context
 	return fc, nil
 }
 
+func (ec *executionContext) _K8sNamespace_name(ctx context.Context, field graphql.CollectedField, obj *model.K8sNamespace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sNamespace_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sNamespace_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sNamespace",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sNamespace_markedForInstrumentation(ctx context.Context, field graphql.CollectedField, obj *model.K8sNamespace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sNamespace_markedForInstrumentation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.K8sNamespace().MarkedForInstrumentation(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sNamespace_markedForInstrumentation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sNamespace",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _K8sNamespace_workloads(ctx context.Context, field graphql.CollectedField, obj *model.K8sNamespace) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_K8sNamespace_workloads(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Workloads, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.K8sWorkload)
+	fc.Result = res
+	return ec.marshalNK8sWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_K8sNamespace_workloads(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "K8sNamespace",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_K8sWorkload_id(ctx, field)
+			case "serviceName":
+				return ec.fieldContext_K8sWorkload_serviceName(ctx, field)
+			case "workloadOdigosHealthStatus":
+				return ec.fieldContext_K8sWorkload_workloadOdigosHealthStatus(ctx, field)
+			case "conditions":
+				return ec.fieldContext_K8sWorkload_conditions(ctx, field)
+			case "markedForInstrumentation":
+				return ec.fieldContext_K8sWorkload_markedForInstrumentation(ctx, field)
+			case "runtimeInfo":
+				return ec.fieldContext_K8sWorkload_runtimeInfo(ctx, field)
+			case "agentEnabled":
+				return ec.fieldContext_K8sWorkload_agentEnabled(ctx, field)
+			case "rollout":
+				return ec.fieldContext_K8sWorkload_rollout(ctx, field)
+			case "containers":
+				return ec.fieldContext_K8sWorkload_containers(ctx, field)
+			case "pods":
+				return ec.fieldContext_K8sWorkload_pods(ctx, field)
+			case "podsAgentInjectionStatus":
+				return ec.fieldContext_K8sWorkload_podsAgentInjectionStatus(ctx, field)
+			case "podsHealthStatus":
+				return ec.fieldContext_K8sWorkload_podsHealthStatus(ctx, field)
+			case "workloadHealthStatus":
+				return ec.fieldContext_K8sWorkload_workloadHealthStatus(ctx, field)
+			case "processesHealthStatus":
+				return ec.fieldContext_K8sWorkload_processesHealthStatus(ctx, field)
+			case "telemetryMetrics":
+				return ec.fieldContext_K8sWorkload_telemetryMetrics(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _K8sWorkload_id(ctx context.Context, field graphql.CollectedField, obj *model.K8sWorkload) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_K8sWorkload_id(ctx, field)
 	if err != nil {
@@ -34613,93 +34817,6 @@ func (ec *executionContext) fieldContext_Query_instrumentationInstanceComponents
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_workloads(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_workloads(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Workloads(rctx, fc.Args["filter"].(*model.WorkloadFilter))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.K8sWorkload)
-	fc.Result = res
-	return ec.marshalNK8sWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_K8sWorkload_id(ctx, field)
-			case "serviceName":
-				return ec.fieldContext_K8sWorkload_serviceName(ctx, field)
-			case "workloadOdigosHealthStatus":
-				return ec.fieldContext_K8sWorkload_workloadOdigosHealthStatus(ctx, field)
-			case "conditions":
-				return ec.fieldContext_K8sWorkload_conditions(ctx, field)
-			case "markedForInstrumentation":
-				return ec.fieldContext_K8sWorkload_markedForInstrumentation(ctx, field)
-			case "runtimeInfo":
-				return ec.fieldContext_K8sWorkload_runtimeInfo(ctx, field)
-			case "agentEnabled":
-				return ec.fieldContext_K8sWorkload_agentEnabled(ctx, field)
-			case "rollout":
-				return ec.fieldContext_K8sWorkload_rollout(ctx, field)
-			case "containers":
-				return ec.fieldContext_K8sWorkload_containers(ctx, field)
-			case "pods":
-				return ec.fieldContext_K8sWorkload_pods(ctx, field)
-			case "podsAgentInjectionStatus":
-				return ec.fieldContext_K8sWorkload_podsAgentInjectionStatus(ctx, field)
-			case "podsHealthStatus":
-				return ec.fieldContext_K8sWorkload_podsHealthStatus(ctx, field)
-			case "workloadHealthStatus":
-				return ec.fieldContext_K8sWorkload_workloadHealthStatus(ctx, field)
-			case "processesHealthStatus":
-				return ec.fieldContext_K8sWorkload_processesHealthStatus(ctx, field)
-			case "telemetryMetrics":
-				return ec.fieldContext_K8sWorkload_telemetryMetrics(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_workloads_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_diagnose(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_diagnose(ctx, field)
 	if err != nil {
@@ -35427,6 +35544,145 @@ func (ec *executionContext) fieldContext_Query_sampling(_ context.Context, field
 				return ec.fieldContext_Sampling_configs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Sampling", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_workloads(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_workloads(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Workloads(rctx, fc.Args["filter"].(*model.WorkloadFilter))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.K8sWorkload)
+	fc.Result = res
+	return ec.marshalNK8sWorkload2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sWorkloadᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_workloads(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_K8sWorkload_id(ctx, field)
+			case "serviceName":
+				return ec.fieldContext_K8sWorkload_serviceName(ctx, field)
+			case "workloadOdigosHealthStatus":
+				return ec.fieldContext_K8sWorkload_workloadOdigosHealthStatus(ctx, field)
+			case "conditions":
+				return ec.fieldContext_K8sWorkload_conditions(ctx, field)
+			case "markedForInstrumentation":
+				return ec.fieldContext_K8sWorkload_markedForInstrumentation(ctx, field)
+			case "runtimeInfo":
+				return ec.fieldContext_K8sWorkload_runtimeInfo(ctx, field)
+			case "agentEnabled":
+				return ec.fieldContext_K8sWorkload_agentEnabled(ctx, field)
+			case "rollout":
+				return ec.fieldContext_K8sWorkload_rollout(ctx, field)
+			case "containers":
+				return ec.fieldContext_K8sWorkload_containers(ctx, field)
+			case "pods":
+				return ec.fieldContext_K8sWorkload_pods(ctx, field)
+			case "podsAgentInjectionStatus":
+				return ec.fieldContext_K8sWorkload_podsAgentInjectionStatus(ctx, field)
+			case "podsHealthStatus":
+				return ec.fieldContext_K8sWorkload_podsHealthStatus(ctx, field)
+			case "workloadHealthStatus":
+				return ec.fieldContext_K8sWorkload_workloadHealthStatus(ctx, field)
+			case "processesHealthStatus":
+				return ec.fieldContext_K8sWorkload_processesHealthStatus(ctx, field)
+			case "telemetryMetrics":
+				return ec.fieldContext_K8sWorkload_telemetryMetrics(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sWorkload", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_workloads_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_namespaces(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_namespaces(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Namespaces(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.K8sNamespace)
+	fc.Result = res
+	return ec.marshalNK8sNamespace2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sNamespaceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_namespaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_K8sNamespace_name(ctx, field)
+			case "markedForInstrumentation":
+				return ec.fieldContext_K8sNamespace_markedForInstrumentation(ctx, field)
+			case "workloads":
+				return ec.fieldContext_K8sNamespace_workloads(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type K8sNamespace", field.Name)
 		},
 	}
 	return fc, nil
@@ -46133,6 +46389,86 @@ func (ec *executionContext) _K8sLabelAttribute(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var k8sNamespaceImplementors = []string{"K8sNamespace"}
+
+func (ec *executionContext) _K8sNamespace(ctx context.Context, sel ast.SelectionSet, obj *model.K8sNamespace) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, k8sNamespaceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("K8sNamespace")
+		case "name":
+			out.Values[i] = ec._K8sNamespace_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "markedForInstrumentation":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._K8sNamespace_markedForInstrumentation(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "workloads":
+			out.Values[i] = ec._K8sNamespace_workloads(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var k8sWorkloadImplementors = []string{"K8sWorkload"}
 
 func (ec *executionContext) _K8sWorkload(ctx context.Context, sel ast.SelectionSet, obj *model.K8sWorkload) graphql.Marshaler {
@@ -49706,28 +50042,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "workloads":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_workloads(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "diagnose":
 			field := field
 
@@ -49949,6 +50263,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_sampling(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "workloads":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_workloads(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "namespaces":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_namespaces(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -53121,6 +53479,60 @@ func (ec *executionContext) marshalNK8sLabelAttribute2ᚖgithubᚗcomᚋodigos�
 func (ec *executionContext) unmarshalNK8sLabelAttributeInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sLabelAttributeInput(ctx context.Context, v any) (*model.K8sLabelAttributeInput, error) {
 	res, err := ec.unmarshalInputK8sLabelAttributeInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNK8sNamespace2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sNamespaceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.K8sNamespace) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNK8sNamespace2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sNamespace(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNK8sNamespace2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sNamespace(ctx context.Context, sel ast.SelectionSet, v *model.K8sNamespace) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._K8sNamespace(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNK8sResourceKind2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx context.Context, v any) (model.K8sResourceKind, error) {
