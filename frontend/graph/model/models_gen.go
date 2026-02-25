@@ -682,8 +682,9 @@ type K8sLabelAttributeInput struct {
 }
 
 type K8sNamespace struct {
-	Name                     string `json:"name"`
-	MarkedForInstrumentation bool   `json:"markedForInstrumentation"`
+	Name                     string         `json:"name"`
+	MarkedForInstrumentation bool           `json:"markedForInstrumentation"`
+	Workloads                []*K8sWorkload `json:"workloads"`
 }
 
 type K8sNamespaceID struct {

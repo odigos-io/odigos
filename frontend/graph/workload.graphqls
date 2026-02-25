@@ -546,6 +546,9 @@ type K8sNamespace {
   # if true, all the workloads in this namespace will be marked for auto instrumentation
   # (unless they specifically disable instrumentation)
   markedForInstrumentation: Boolean!
+
+  # all the workloads in this namespace (regardless of odigos state)
+  workloads: [K8sWorkload!]!
 }
 
 extend type Query {

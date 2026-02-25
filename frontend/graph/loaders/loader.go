@@ -53,8 +53,9 @@ type Loaders struct {
 	namespacesFetched bool
 	namespaces        []string
 
-	workloadIds    []model.K8sWorkloadID
-	workloadIdsMap map[k8sconsts.PodWorkload]struct{}
+	workloadIds     []model.K8sWorkloadID
+	workloadIdsMap  map[k8sconsts.PodWorkload]struct{}
+	nsToWorkloadIds map[string][]model.K8sWorkloadID
 
 	instrumentationConfigMutex    sync.Mutex
 	instrumentationConfigsFetched bool
@@ -98,6 +99,12 @@ func (l *Loaders) GetWorkloadIds() []model.K8sWorkloadID {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return l.workloadIds
+}
+
+func (l *Loaders) GetWorkloadIdsInNamespace(ns string) []model.K8sWorkloadID {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.nsToWorkloadIds[ns]
 }
 
 func (l *Loaders) loadNamespaces(ctx context.Context) error {
@@ -353,14 +360,8 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 			return err
 		}
 		l.workloadIds = make([]model.K8sWorkloadID, 0, len(l.instrumentationConfigs))
-		l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(l.instrumentationConfigs))
 		for sourceId := range l.instrumentationConfigs {
 			l.workloadIds = append(l.workloadIds, sourceId)
-			l.workloadIdsMap[k8sconsts.PodWorkload{
-				Namespace: sourceId.Namespace,
-				Kind:      k8sconsts.WorkloadKind(sourceId.Kind),
-				Name:      sourceId.Name,
-			}] = struct{}{}
 		}
 	} else {
 		l.sourcesMutex.Lock()
@@ -392,14 +393,17 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 		for sourceId := range allWorkloads {
 			l.workloadIds = append(l.workloadIds, sourceId)
 		}
-		l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(allWorkloads))
-		for workloadId := range allWorkloads {
-			l.workloadIdsMap[k8sconsts.PodWorkload{
-				Namespace: workloadId.Namespace,
-				Kind:      k8sconsts.WorkloadKind(workloadId.Kind),
-				Name:      workloadId.Name,
-			}] = struct{}{}
-		}
+	}
+
+	l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(l.workloadIds))
+	l.nsToWorkloadIds = make(map[string][]model.K8sWorkloadID)
+	for _, workloadId := range l.workloadIds {
+		l.nsToWorkloadIds[workloadId.Namespace] = append(l.nsToWorkloadIds[workloadId.Namespace], workloadId)
+		l.workloadIdsMap[k8sconsts.PodWorkload{
+			Namespace: workloadId.Namespace,
+			Kind:      k8sconsts.WorkloadKind(workloadId.Kind),
+			Name:      workloadId.Name,
+		}] = struct{}{}
 	}
 
 	return nil

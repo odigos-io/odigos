@@ -679,8 +679,16 @@ func (r *queryResolver) Namespaces(ctx context.Context) ([]*model.K8sNamespace, 
 
 	gqlNss := make([]*model.K8sNamespace, 0, len(nss))
 	for _, nsName := range nss {
+		workloadIds := l.GetWorkloadIdsInNamespace(nsName)
+		workloads := make([]*model.K8sWorkload, 0, len(workloadIds))
+		for _, workloadId := range workloadIds {
+			workloads = append(workloads, &model.K8sWorkload{
+				ID: &workloadId,
+			})
+		}
 		gqlNss = append(gqlNss, &model.K8sNamespace{
-			Name: nsName,
+			Name:      nsName,
+			Workloads: workloads,
 		})
 	}
 	return gqlNss, nil
