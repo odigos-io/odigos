@@ -39,6 +39,8 @@ spec:
             {{- if .Values.auth.externalUrl }}
             - name: CENTRAL_BACKEND_HOST
               value: {{ .Values.auth.externalUrl | quote }}
+            - name: CENTRAL_UI_HOST
+              value: {{ .Values.auth.externalUrl | quote }}
             {{- end }}
             - name: USE_K8S_SECRETS
               value: "true"
