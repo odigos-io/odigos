@@ -25,7 +25,7 @@ const (
 var MinK8SVersionForInstallation = version.MustParse("v1.20.15-0")
 
 var (
-	DefaultIgnoredNamespaces = []string{"kube-system", "local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
+	DefaultIgnoredNamespaces = []string{"local-path-storage", "istio-system", "linkerd", "kube-node-lease"}
 	DefaultIgnoredContainers = []string{"istio-proxy", "vault-agent", "filebeat", "linkerd-proxy", "fluentd", "akeyless-init"}
 )
 
