@@ -497,6 +497,21 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 		return loadErr
 	}
 
+	// If the instrumentation supports asynchronous status updates (e.g., lazy loading),
+	// wire a callback so that status changes are reported to the reporter.
+	if setter, ok := inst.(StatusCallbackSetter); ok {
+		capturedPid := pid
+		capturedPd := pd
+		setter.SetStatusCallback(func(status Status) {
+			if sr, ok := m.handler.Reporter.(StatusReporter[ProcessGroup, ConfigGroup, ProcessDetails]); ok {
+				if err := sr.OnStatusUpdate(ctx, capturedPid, capturedPd, status); err != nil {
+					m.logger.Error(err, "failed to report instrumentation status update",
+						"pid", capturedPid, "process group details", capturedPd)
+				}
+			}
+		})
+	}
+
 	m.startTrackInstrumentation(ctx, pid, inst, pd, processGroup, configGroup, otelDistro)
 	m.logger.Info("instrumentation loaded", "pid", pid, "process group details", pd)
 
