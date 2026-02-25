@@ -540,3 +540,22 @@ type K8sWorkload {
   # when true, the workload's instrumentation was rolled back and recovery action is available.
   rollbackOccurred: Boolean!
 }
+
+type K8sNamespace {
+
+  # name of the namespace.
+  name: String!
+
+  # marked for auto instrumentation.
+  # if true, all the workloads in this namespace will be marked for auto instrumentation
+  # (unless they specifically disable instrumentation)
+  markedForInstrumentation: Boolean!
+
+  # all the workloads in this namespace (regardless of odigos state)
+  workloads: [K8sWorkload!]!
+}
+
+extend type Query {
+  workloads(filter: WorkloadFilter): [K8sWorkload!]!
+  namespaces: [K8sNamespace!]!
+}

@@ -19,6 +19,16 @@ func (l *Loaders) GetIgnoredContainers() map[string]struct{} {
 	return ignoredContainers
 }
 
+func (l *Loaders) GetNamespaces(ctx context.Context) ([]string, error) {
+	l.namespacesMutex.Lock()
+	defer l.namespacesMutex.Unlock()
+
+	if err := l.loadNamespaces(ctx); err != nil {
+		return nil, err
+	}
+	return l.namespaces, nil
+}
+
 func (l *Loaders) GetInstrumentationConfig(ctx context.Context, workload model.K8sWorkloadID) (*v1alpha1.InstrumentationConfig, error) {
 	l.instrumentationConfigMutex.Lock()
 	defer l.instrumentationConfigMutex.Unlock()
@@ -42,6 +52,16 @@ func (l *Loaders) GetSources(ctx context.Context, sourceId model.K8sWorkloadID) 
 		Workload:  l.workloadSources[sourceId],
 		Namespace: l.nsSources[sourceId.Namespace],
 	}, nil
+}
+
+func (l *Loaders) GetNamespaceSource(ctx context.Context, namespaceName string) (*v1alpha1.Source, error) {
+	l.sourcesMutex.Lock()
+	defer l.sourcesMutex.Unlock()
+
+	if err := l.loadSources(ctx); err != nil {
+		return nil, err
+	}
+	return l.nsSources[namespaceName], nil
 }
 
 func (l *Loaders) GetWorkloadManifest(ctx context.Context, sourceId model.K8sWorkloadID) (*computed.CachedWorkloadManifest, error) {

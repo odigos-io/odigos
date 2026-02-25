@@ -681,6 +681,12 @@ type K8sLabelAttributeInput struct {
 	FromSources  []K8sAttributesFrom `json:"fromSources,omitempty"`
 }
 
+type K8sNamespace struct {
+	Name                     string         `json:"name"`
+	MarkedForInstrumentation bool           `json:"markedForInstrumentation"`
+	Workloads                []*K8sWorkload `json:"workloads"`
+}
+
 type K8sNamespaceID struct {
 	Name string `json:"name"`
 }

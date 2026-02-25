@@ -59,6 +59,7 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 			&corev1.Pod{}: {
 				Transform: podsTransformFunc,
 			},
+			&corev1.Namespace{}: {},
 			&appsv1.Deployment{}: {
 				Transform: deploymentsTransformFunc,
 			},

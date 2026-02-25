@@ -123,3 +123,8 @@ models:
         resolver: true
       localUiConfig:
         resolver: true
+
+  K8sNamespace:
+    fields:
+      markedForInstrumentation:
+        resolver: true

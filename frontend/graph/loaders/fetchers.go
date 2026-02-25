@@ -53,6 +53,15 @@ func timedAPICall[T any](logger logr.Logger, operation string, apiCall func() (T
 	return result, err
 }
 
+func fetchNamespaces(ctx context.Context, k8sCacheClient client.Client) (*corev1.NamespaceList, error) {
+	namespaces := &corev1.NamespaceList{}
+	err := k8sCacheClient.List(ctx, namespaces)
+	if err != nil {
+		return nil, err
+	}
+	return namespaces, nil
+}
+
 // function to get just the instrumentation configs that match the filter.
 // e.g. load only sources which are marked for instrumentation after the instrumentor reconciles it.
 // this is cheaper and faster query than to load all the sources and resolve each one.
