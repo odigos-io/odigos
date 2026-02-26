@@ -29,6 +29,7 @@ imagePrefix:
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,
 #     odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents
+# additionalProperties: true
 # @schema
 images: {}
 
@@ -85,21 +86,39 @@ userInstrumentationEnvs:
   languages:
     java:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     python:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     nodejs:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     go:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     dotnet:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     php:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
 
 # @schema
@@ -115,7 +134,7 @@ ResourceSizePreset: size_m
 #   HYBRID CONFIGURATION APPROACH:
 #   By default, all values below are automatically set based on the ResourceSizePreset above.
 #   Uncomment and modify any value to override the automatic sizing for that specific parameter.
-#   
+#
 #   IMPORTANT CONSTRAINTS:
 #   1. minReplicas must be less or equal to maxReplicas
 #   2. If you set limitMemoryMiB without requestMemoryMiB, request will equal limit
@@ -422,7 +441,7 @@ scheduler:
     limits:
       cpu: 500m
       memory: 512Mi
-  
+
   # @schema
   # description: Priority class name. Set to use your existing cluster priority classes.
   # @schema
@@ -918,6 +937,7 @@ profiles: []
 #   Global NodeSelector to apply to all Odigos components by default.
 #   Individual components can override this by uncommenting their specific nodeSelector configuration.
 #   Note: Odigos will only be able to instrument workloads on the same nodes.
+# additionalProperties: true
 # @schema
 nodeSelector:
   kubernetes.io/os: linux
@@ -935,7 +955,7 @@ karpenter:
 # description: |-
 #   Refer to the official Kubernetes documentation for structure and field details:
 #   https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
-#   
+#
 #   Example: Odigos components should be evenly spread across zones.
 #   No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
 #   topologySpreadConstraints:
@@ -1235,7 +1255,7 @@ sampling:
     # description: percentage % (0-100) of health probes to keep.
     # @schema
     # keepPercentage: 2
-    
+
 # @schema
 # description: |-
 #   On-prem token for Odigos Pro/Enterprise features.
