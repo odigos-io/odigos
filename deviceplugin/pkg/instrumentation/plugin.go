@@ -7,8 +7,8 @@ import (
 	"github.com/odigos-io/odigos/procdiscovery/pkg/libc"
 
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation/devices"
-	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
 	"k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
@@ -49,14 +49,15 @@ func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empt
 }
 
 func (p *plugin) ListAndWatch(empty *v1beta1.Empty, server v1beta1.DevicePlugin_ListAndWatchServer) error {
+	logger := commonlogger.Logger()
 	devicesList := p.idsManager.GetDevices()
-	log.Logger.V(3).Info("ListAndWatch", "devices", devicesList)
+	logger.Debug("ListAndWatch", "devices", devicesList)
 	err := server.Send(&v1beta1.ListAndWatchResponse{
 		Devices: devicesList,
 	})
 
 	if err != nil {
-		log.Logger.Error(err, "Failed to send ListAndWatchResponse")
+		logger.Error("Failed to send ListAndWatchResponse", "err", err)
 	}
 
 	<-p.stopCh
@@ -67,7 +68,8 @@ func (p *plugin) ListAndWatch(empty *v1beta1.Empty, server v1beta1.DevicePlugin_
 }
 
 func (p *plugin) Stop() error {
-	log.Logger.V(0).Info("Stopping Odigos Device Plugin ...")
+	logger := commonlogger.Logger()
+	logger.Info("Stopping Odigos Device Plugin ...")
 	p.stopCh <- struct{}{}
 	return nil
 }
@@ -79,9 +81,10 @@ func (p *plugin) GetPreferredAllocation(ctx context.Context, request *v1beta1.Pr
 func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest) (*v1beta1.AllocateResponse, error) {
 	res := &v1beta1.AllocateResponse{}
 
+	logger := commonlogger.Logger()
 	for _, req := range request.ContainerRequests {
 		if len(req.DevicesIds) != 1 {
-			log.Logger.V(0).Info("got  instrumentation device not equal to 1, skipping", "devices", req.DevicesIds)
+			logger.Info("got instrumentation device not equal to 1, skipping", "devices", req.DevicesIds)
 			continue
 		}
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros/distro"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
@@ -18,7 +19,6 @@ import (
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/instrumentation/fs"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	ebpfMetrics "github.com/odigos-io/odigos/odiglet/pkg/metrics"
 	"github.com/odigos-io/odigos/opampserver/pkg/server"
 	"golang.org/x/sync/errgroup"
@@ -70,9 +70,10 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}
 	otel.SetMeterProvider(provider)
 
-	collector := ebpfMetrics.NewEBPFMetricsCollector(env.Current.NodeName, log.Logger)
+	logger := commonlogger.Logger()
+	collector := ebpfMetrics.NewEBPFMetricsCollector(env.Current.NodeName)
 	if err := collector.RegisterMetrics(); err != nil {
-		log.Logger.Error(err, "failed to register metrics")
+		logger.Error("failed to register metrics", "err", err)
 	}
 
 	appendEnvVarNames := distro.GetAppendEnvVarNames(instrumentationMgrOpts.DistributionGetter.GetAllDistros())
@@ -86,11 +87,11 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 
 	configUpdates := make(chan commonInstrumentation.ConfigUpdate[ebpf.K8sConfigGroup], configUpdatesBufferSize)
 	instrumentationRequests := make(chan commonInstrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails], instrumentationRequestsBufferSize)
-	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), log.Logger, instrumentationMgrOpts, configUpdates, instrumentationRequests, appendEnvVarNames)
+	ebpfManager, err := ebpf.NewManager(mgr.GetClient(), instrumentationMgrOpts, configUpdates, instrumentationRequests, appendEnvVarNames)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ebpf manager %w", err)
 	}
-	criWrapper := criwrapper.CriClient{Logger: log.Logger}
+	criWrapper := criwrapper.CriClient{}
 
 	kubeManagerOptions := kube.KubeManagerOptions{
 		Mgr:                     mgr,
@@ -117,10 +118,11 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
+	logger := commonlogger.Logger()
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	if err := o.criClient.Connect(ctx); err != nil {
-		log.Logger.Error(err, "Failed to connect to CRI runtime")
+		logger.Error("Failed to connect to CRI runtime", "err", err)
 	}
 
 	defer o.criClient.Close()
@@ -128,15 +130,15 @@ func (o *Odiglet) Run(ctx context.Context) {
 	// Channel to signal when eBPF manager has exited
 	ebpfDone := make(chan struct{})
 
-	// Start pprof server
+	// Start debug server
 	g.Go(func() error {
-		err := common.StartPprofServer(groupCtx, log.Logger, int(k8sconsts.DefaultPprofEndpointPort))
+		err := common.StartDebugServer(groupCtx, logger, int(k8sconsts.DefaultDebugPort))
 		if err != nil {
-			log.Logger.Error(err, "Failed to start pprof server")
+			logger.Error("Failed to start debug server", "err", err)
 		} else {
-			log.Logger.V(0).Info("Pprof server exited")
+			logger.Info("Debug server exited")
 		}
-		// if we fail to start the pprof server, don't return an error as it is not critical
+		// if we fail to start the debug server, don't return an error as it is not critical
 		// and we can run the rest of the components
 		return nil
 	})
@@ -145,20 +147,20 @@ func (o *Odiglet) Run(ctx context.Context) {
 		defer close(ebpfDone)
 		err := o.ebpfManager.Run(groupCtx)
 		if err != nil {
-			log.Logger.Error(err, "Failed to run ebpf manager")
+			logger.Error("Failed to run ebpf manager", "err", err)
 		}
-		log.Logger.V(0).Info("eBPF manager exited")
+		logger.Info("eBPF manager exited")
 		return err
 	})
 
 	// start OpAmp server
 	odigosNs := env.GetCurrentNamespace()
 	g.Go(func() error {
-		err := server.StartOpAmpServer(groupCtx, log.Logger, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
+		err := server.StartOpAmpServer(groupCtx, o.mgr, o.clientset, env.Current.NodeName, odigosNs)
 		if err != nil {
-			log.Logger.Error(err, "Failed to start opamp server")
+			logger.Error("Failed to start opamp server", "err", err)
 		}
-		log.Logger.V(0).Info("OpAmp server exited")
+		logger.Info("OpAmp server exited")
 		return err
 	})
 
@@ -171,9 +173,9 @@ func (o *Odiglet) Run(ctx context.Context) {
 		go func() {
 			select {
 			case <-groupCtx.Done():
-				log.Logger.V(0).Info("Shutdown initiated, waiting for eBPF manager to exit before stopping kube manager")
+				logger.Info("Shutdown initiated, waiting for eBPF manager to exit before stopping kube manager")
 				<-ebpfDone
-				log.Logger.V(0).Info("eBPF manager exited, now stopping kube manager")
+				logger.Info("eBPF manager exited, now stopping kube manager")
 				kubeManagerCancel()
 			case <-kubeManagerCtx.Done():
 				// Kube context already cancelled
@@ -183,9 +185,9 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 		err := o.mgr.Start(kubeManagerCtx)
 		if err != nil {
-			log.Logger.Error(err, "error starting kube manager")
+			logger.Error("error starting kube manager", "err", err)
 		} else {
-			log.Logger.V(0).Info("Kube manager exited")
+			logger.Info("Kube manager exited")
 		}
 		// the manager is stopped, it is now safe to close the config updates channel
 		if o.configUpdates != nil {
@@ -199,41 +201,41 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 	err := g.Wait()
 	if err != nil {
-		log.Logger.Error(err, "Odiglet exited with error")
+		logger.Error("Odiglet exited with error", "err", err)
 	}
 }
 
 func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	odigletInitPhaseStart := time.Now()
-	if err := log.Init(); err != nil {
-		panic(err)
-	}
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
+	logger := commonlogger.Logger()
+
 	err := fs.CopyAgentsDirectoryToHost()
 	if err != nil {
-		log.Logger.Error(err, "Failed to copy agents directory to host")
+		logger.Error("Failed to copy agents directory to host", "err", err)
 		os.Exit(-1)
 	}
 
 	nn, ok := os.LookupEnv(k8sconsts.NodeNameEnvVar)
 	if !ok {
-		log.Logger.Error(fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar), "Failed to load env")
+		logger.Error("Failed to load env", "err", fmt.Errorf("env var %s is not set", k8sconsts.NodeNameEnvVar))
 		os.Exit(-1)
 	}
 
 	if err := k8snode.PrepareNodeForOdigosInstallation(clientset, nn); err != nil {
-		log.Logger.Error(err, "Failed to prepare node for Odigos installation")
+		logger.Error("Failed to prepare node for Odigos installation", "err", err)
 		os.Exit(-1)
 	} else {
-		log.Logger.Info("Successfully prepared node for Odigos installation")
+		logger.Info("Successfully prepared node for Odigos installation")
 	}
 
 	// SELinux settings should be applied last. This function chroot's to use the host's PATH for
 	// executing selinux commands to make agents readable by pods.
 	if err := fs.ApplyOpenShiftSELinuxSettings(); err != nil {
-		log.Logger.Error(err, "Failed to apply SELinux settings on RHEL host")
+		logger.Error("Failed to apply SELinux settings on RHEL host", "err", err)
 		os.Exit(-1)
 	}
 
-	log.Logger.V(0).Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
+	logger.Info("Odiglet init phase finished", "duration", time.Since(odigletInitPhaseStart))
 	os.Exit(0)
 }

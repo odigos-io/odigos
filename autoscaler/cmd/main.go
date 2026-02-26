@@ -27,18 +27,13 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/certs"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
 	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-
-	"github.com/go-logr/zapr"
-	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -48,7 +43,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -71,7 +65,6 @@ import (
 
 var (
 	scheme                = runtime.NewScheme()
-	setupLog              = ctrl.Log.WithName("setup")
 	defaultCollectorImage = "registry.odigos.io/odigos-collector"
 )
 
@@ -84,6 +77,10 @@ func init() {
 }
 
 func main() {
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
+	ctrl.SetLogger(commonlogger.FromSlogHandler())
+	logger := commonlogger.Logger()
+
 	managerOptions := controllers.KubeManagerOptions{}
 
 	flag.StringVar(&managerOptions.MetricsServerBindAddress, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -98,45 +95,36 @@ func main() {
 	}
 	err := feature.Setup()
 	if err != nil {
-		setupLog.Error(err, "unable to get setup feature k8s detection")
+		logger.Error("unable to get setup feature k8s detection", "err", err)
 	}
 
-	opts := ctrlzap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	zapLogger := ctrlzap.NewRaw(ctrlzap.UseFlagOptions(&opts))
-	zapLogger = bridge.AttachToZapLogger(zapLogger)
-	logger := zapr.NewLogger(zapLogger)
-	ctrl.SetLogger(logger)
-
 	if odigosVersion == "" {
-		setupLog.Error(nil, "ODIGOS_VERSION environment variable is not set and version flag is not provided")
+		logger.Error("ODIGOS_VERSION environment variable is not set and version flag is not provided")
 		os.Exit(1)
 	}
 
 	ctx := ctrl.SetupSignalHandler()
-	go common.StartPprofServer(ctx, setupLog, int(k8sconsts.DefaultPprofEndpointPort))
+	go common.StartDebugServer(ctx, logger, int(k8sconsts.DefaultDebugPort))
 
-	setupLog.Info("Starting odigos autoscaler", "version", odigosVersion)
+	logger.Info("Starting odigos autoscaler", "version", odigosVersion)
 
 	mgr, err := controllers.CreateManager(managerOptions)
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		logger.Error("unable to start manager", "err", err)
 		os.Exit(1)
 	}
 
 	// remove the deprecated webhook secret if it exists
-	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: logger, Secret: types.NamespacedName{
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: commonlogger.FromSlogHandler(), Secret: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      k8sconsts.DeprecatedAutoscalerWebhookSecretName,
 	}})
 
 	// remove the data collection daemonset if exists because it is part of the odiglet pod now.
 	// TODO: once we're done with the migration, we can remove this.
-	mgr.Add(&nodecollector.DataCollectionDSMigration{Client: mgr.GetClient(), Logger: logger, DataCollectionDaemonSet: types.NamespacedName{
+	mgr.Add(&nodecollector.DataCollectionDSMigration{Client: mgr.GetClient(), Logger: commonlogger.FromSlogHandler(), DataCollectionDaemonSet: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
 	}})
@@ -155,7 +143,7 @@ func main() {
 	// DO NOT ADD SIMILAR FUNCTIONS FOR OTHER PLATFORMS
 	onGKE := isRunningOnGKE(ctx)
 	if onGKE {
-		setupLog.Info("Running on GKE")
+		logger.Info("Running on GKE")
 	}
 
 	rotatorSetupFinished := make(chan struct{})
@@ -188,7 +176,7 @@ func main() {
 		LookaheadInterval:      90 * 24 * time.Hour,       // 90 days
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to add cert rotator")
+		logger.Error("unable to add cert rotator", "err", err)
 		os.Exit(1)
 	}
 
@@ -198,22 +186,21 @@ func main() {
 		OnGKE:          onGKE,
 	}
 
-	// wire up the controllers
 	err = controllers.SetupWithManager(mgr, odigosVersion)
 	if err != nil {
-		setupLog.Error(err, "unable to create odigos controllers")
+		logger.Error("unable to create odigos controllers", "err", err)
 		os.Exit(1)
 	}
 
 	webhooksRegistered := atomic.Bool{}
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		logger.Error("unable to set up health check", "err", err)
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", func(req *http.Request) error {
 		return mgr.GetWebhookServer().StartedChecker()(req)
 	}); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		logger.Error("unable to set up ready check", "err", err)
 		os.Exit(1)
 	}
 
@@ -223,7 +210,7 @@ func main() {
 		}
 		return nil
 	}); err != nil {
-		setupLog.Error(err, "unable to set up cert rotator check")
+		logger.Error("unable to set up cert rotator check", "err", err)
 		os.Exit(1)
 	}
 
@@ -232,9 +219,9 @@ func main() {
 	g.Go(func() error {
 		err := mgr.Start(groupCtx)
 		if err != nil {
-			setupLog.Error(err, "error starting kube manager")
+			logger.Error("error starting kube manager", "err", err)
 		} else {
-			setupLog.V(0).Info("Kube manager exited")
+			logger.Info("Kube manager exited")
 		}
 		return err
 	})
@@ -246,9 +233,8 @@ func main() {
 		case <-groupCtx.Done():
 			return nil
 		}
-		setupLog.V(0).Info("Cert rotator is ready")
+		logger.Info("Cert rotator is ready")
 
-		// Register admission webhooks
 		err := controllers.RegisterWebhooks(mgr)
 		if err != nil {
 			return err
@@ -258,21 +244,21 @@ func main() {
 		// We use this to trigger the HPA of the gateway collector by aggregating the metrics
 		// from all the gateway collector pods.
 		if err := metricshandler.RegisterCustomMetricsAPI(mgr); err != nil {
-			setupLog.Error(err, "failed to register custom metrics API")
+			logger.Error("failed to register custom metrics API", "err", err)
 		} else {
-			setupLog.Info("Custom Metrics API registered successfully")
+			logger.Info("Custom Metrics API registered successfully")
 		}
 
 		webhooksRegistered.Store(true)
-		setupLog.V(0).Info("Webhooks registered")
+		logger.Info("Webhooks registered")
 		return nil
 	})
 
 	err = g.Wait()
 	if err != nil {
-		setupLog.Error(err, "autoscaler exited with error")
+		logger.Error("autoscaler exited with error", "err", err)
 	} else {
-		setupLog.V(0).Info("autoscaler exiting")
+		logger.Info("autoscaler exiting")
 	}
 }
 

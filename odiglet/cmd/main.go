@@ -16,11 +16,14 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
+	logger := commonlogger.Logger()
+
 	var healthProbeBindPort int
 	flag.IntVar(&healthProbeBindPort, "health-probe-bind-port", k8sconsts.OdigletDefaultHealthProbeBindPort, "The port the probe endpoint binds to.")
 	flag.Parse()
@@ -46,21 +49,17 @@ func main() {
 		odiglet.OdigletInitPhase(clientset)
 	}
 
-	if err := log.Init(); err != nil {
-		panic(err)
-	}
-
-	log.Logger.V(0).Info("Starting odiglet")
+	logger.Info("Starting odiglet")
 
 	// Load env
 	if err := env.Load(); err != nil {
-		log.Logger.Error(err, "Failed to load env")
+		logger.Error("Failed to load env", "err", err)
 		os.Exit(1)
 	}
 
 	dg, err := distros.NewCommunityGetter()
 	if err != nil {
-		log.Logger.Error(err, "Failed to create distro getter")
+		logger.Error("Failed to create distro getter", "err", err)
 		os.Exit(1)
 	}
 
@@ -72,14 +71,14 @@ func main() {
 
 	o, err := odiglet.New(clientset, instrumentationManagerOptions)
 	if err != nil {
-		log.Logger.Error(err, "Failed to initialize odiglet")
+		logger.Error("Failed to initialize odiglet", "err", err)
 		os.Exit(1)
 	}
 
 	ctx := signals.SetupSignalHandler()
 	o.Run(ctx)
 
-	log.Logger.V(0).Info("odiglet exiting")
+	logger.Info("odiglet exiting")
 }
 
 func ebpfInstrumentationFactories() map[string]commonInstrumentation.Factory {

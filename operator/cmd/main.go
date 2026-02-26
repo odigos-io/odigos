@@ -31,21 +31,20 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	operatorv1alpha1 "github.com/odigos-io/odigos/operator/api/v1alpha1"
 	"github.com/odigos-io/odigos/operator/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
 
-var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
-)
+var scheme = runtime.NewScheme()
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -55,6 +54,10 @@ func init() {
 }
 
 func main() {
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
+	ctrl.SetLogger(commonlogger.FromSlogHandler())
+	logger := commonlogger.Logger()
+
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -71,13 +74,7 @@ func main() {
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
-	opts := zap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
-
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
@@ -86,7 +83,7 @@ func main() {
 	// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
 	// - https://github.com/advisories/GHSA-4374-p667-p6c8
 	disableHTTP2 := func(c *tls.Config) {
-		setupLog.Info("disabling http/2")
+		logger.Info("disabling http/2")
 		c.NextProtos = []string{"http/1.1"}
 	}
 
@@ -142,11 +139,11 @@ func main() {
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
 		Cache: cache.Options{
-			DefaultNamespaces: map[string]cache.Config{currentNamespace: cache.Config{}},
+			DefaultNamespaces: map[string]cache.Config{currentNamespace: {}},
 		},
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		logger.Error("unable to start manager", "err", err)
 		os.Exit(1)
 	}
 
@@ -154,23 +151,30 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Odigos")
+		logger.Error("unable to create controller", "err", err, "controller", "Odigos")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		logger.Error("unable to set up health check", "err", err)
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		logger.Error("unable to set up ready check", "err", err)
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+	ctx := ctrl.SetupSignalHandler()
+	go func() {
+		if err := common.StartDebugServer(ctx, logger, int(k8sconsts.DefaultDebugPort)); err != nil {
+			logger.Error("debug server error", "err", err)
+		}
+	}()
+
+	logger.Info("starting manager")
+	if err := mgr.Start(ctx); err != nil {
+		logger.Error("problem running manager", "err", err)
 		os.Exit(1)
 	}
 }

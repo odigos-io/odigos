@@ -4,9 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-logr/logr"
-
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/cplusplus"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/dotnet"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors/golang"
@@ -94,11 +93,12 @@ func runInspectionStage(
 }
 
 // DetectLanguage attempts to detect the programming language using QuickScan first, then DeepScan if needed.
-func DetectLanguage(proc process.Details, containerURL string, logger logr.Logger) (common.ProgramLanguageDetails, error) {
+func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
+	logger := commonlogger.Logger().With("subsystem", "langdetect")
 	procContext := process.NewProcessContext(proc)
 	defer func() {
 		if err := procContext.CloseFiles(); err != nil {
-			logger.Error(err, "Error closing files")
+			logger.Error("Error closing files", "err", err)
 		}
 	}()
 
@@ -111,7 +111,7 @@ func DetectLanguage(proc process.Details, containerURL string, logger logr.Logge
 			if errors.As(err, &conflict) {
 				// If one of the languages is C++, prefer the other language and log a warning
 				if l, ok := resolveNonCpp(conflict.languages); ok {
-					logger.Info("Warning: language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
+					logger.Warn("language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
 					resolved := common.ProgramLanguageDetails{Language: l}
 					if inspector, ok := inspectorsByLanguage[l]; ok {
 						if vi, ok := inspector.(VersionInspector); ok {
@@ -133,7 +133,7 @@ func DetectLanguage(proc process.Details, containerURL string, logger logr.Logge
 			var conflict ErrLanguageDetectionConflict
 			if errors.As(err, &conflict) {
 				if l, ok := resolveNonCpp(conflict.languages); ok {
-					logger.Info("Warning: language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
+					logger.Warn("language detection conflict includes C++; preferring non-C++ language", "languages", conflict.languages, "selected", l)
 					resolved := common.ProgramLanguageDetails{Language: l}
 					if inspector, ok := inspectorsByLanguage[l]; ok {
 						if vi, ok := inspector.(VersionInspector); ok {
@@ -162,7 +162,8 @@ func resolveNonCpp(langs [2]common.ProgrammingLanguage) (common.ProgrammingLangu
 	return none, false
 }
 
-func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage, logger logr.Logger) bool {
+func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage) bool {
+	logger := commonlogger.Logger().With("subsystem", "langdetect")
 	inspector, ok := inspectorsByLanguage[lang]
 	if !ok {
 		return false
@@ -171,7 +172,7 @@ func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage, logge
 	procContext := process.NewProcessContext(proc)
 	defer func() {
 		if err := procContext.CloseFiles(); err != nil {
-			logger.Error(err, "Error closing files")
+			logger.Error("Error closing files", "err", err)
 		}
 	}()
 

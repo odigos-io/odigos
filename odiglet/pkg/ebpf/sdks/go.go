@@ -8,10 +8,10 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
@@ -59,7 +59,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 		auto.WithConfigProvider(cp),
 	)
 	if err != nil {
-		log.Logger.Error(err, "instrumentation setup failed")
+		commonlogger.Logger().Error("instrumentation setup failed", "err", err)
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func convertToGoInstrumentationConfig(sdkConfig instrumentation.Config) (auto.In
 	}
 	ic := auto.InstrumentationConfig{}
 	if sdkConfig == nil {
-		log.Logger.V(0).Info("No SDK config provided for Go instrumentation, using default")
+		commonlogger.Logger().Info("No SDK config provided for Go instrumentation, using default")
 		return ic, nil
 	}
 	ic.InstrumentationLibraryConfigs = make(map[auto.InstrumentationLibraryID]auto.InstrumentationLibrary)

@@ -7,8 +7,8 @@ import (
 	"github.com/odigos-io/odigos-device-plugin/pkg/dpm"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/deviceplugin/pkg/instrumentation"
-	"github.com/odigos-io/odigos/deviceplugin/pkg/log"
 )
 
 // Start device manager
@@ -16,20 +16,21 @@ import (
 // however, internally it uses a context to cancel the device manager once SIGTERM or SIGINT is received.
 // We run it outside of the error group to avoid blocking on Wait() in case of a fatal error.
 func runDeviceManager() error {
-	log.Logger.V(0).Info("Starting device manager")
+	logger := commonlogger.Logger()
+	logger.Info("Starting device manager")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Start pprof server
-	pprofDone := make(chan struct{})
+	// Start debug server
+	debugDone := make(chan struct{})
 	go func() {
-		defer close(pprofDone)
-		err := common.StartPprofServer(ctx, log.Logger, int(k8sconsts.DevicePluginPprofEndpointPort))
+		defer close(debugDone)
+		err := common.StartDebugServer(ctx, logger, int(k8sconsts.DevicePluginDebugPort))
 		if err != nil {
-			log.Logger.Error(err, "Failed to start pprof server")
+			logger.Error("Failed to start debug server", "err", err)
 		} else {
-			log.Logger.V(0).Info("Pprof server exited")
+			logger.Info("Debug server exited")
 		}
 	}()
 
@@ -38,10 +39,10 @@ func runDeviceManager() error {
 		return fmt.Errorf("failed to create device manager lister: %w", err)
 	}
 
-	manager := dpm.NewManager(lister, log.Logger)
+	manager := dpm.NewManager(lister, commonlogger.FromSlogHandler())
 	manager.Run(ctx)
 
-	// Wait for pprof server to finish
-	<-pprofDone
+	// Wait for debug server to finish
+	<-debugDone
 	return nil
 }

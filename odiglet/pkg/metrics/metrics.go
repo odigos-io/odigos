@@ -9,17 +9,15 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/cilium/ebpf"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
-
-	"sync"
-
-	"github.com/cilium/ebpf"
-	"github.com/go-logr/logr"
 	"golang.org/x/sys/unix"
 )
 
@@ -46,7 +44,6 @@ type EBPFMetricsCollector struct {
 	eBPFTotalProgCnt   int64
 	mu                 sync.RWMutex
 	nodeName           string
-	logger             logr.Logger
 }
 
 // Returns true of the map allocation size should be fetched from the map's memlock
@@ -67,14 +64,12 @@ func isMemlockMap(mapType ebpf.MapType) bool {
 }
 
 // Initialize a new ebpf metrics collector struct
-func NewEBPFMetricsCollector(nodeName string, logger logr.Logger) *EBPFMetricsCollector {
+func NewEBPFMetricsCollector(nodeName string) *EBPFMetricsCollector {
 	return &EBPFMetricsCollector{
 		eBPFMapsMetricsMap: make(map[uint32]eBPFMapMetrics),
 		eBPFTotalProgCnt:   0,
 		nodeName:           nodeName,
-		logger:             logger,
 	}
-
 }
 
 // Reads the Smaps file under the /proc/<odigletPID>/smaps and parses perf buffers actual memory usage (Rss)
@@ -192,7 +187,8 @@ func (mc *EBPFMetricsCollector) collectSelfTotalBPFMemlock() error {
 		numCPUs                         int8
 	)
 
-	mc.logger.V(2).Info("Scanning for eBPF file descriptors")
+	logger := commonlogger.Logger().With("subsystem", "ebpf-metrics")
+	logger.Debug("Scanning for eBPF file descriptors")
 	dirEntries, err := os.ReadDir(process.HostProcDir() + "/self/fd")
 	if err != nil {
 		return err
@@ -201,13 +197,13 @@ func (mc *EBPFMetricsCollector) collectSelfTotalBPFMemlock() error {
 		fdString := entry.Name()
 		fdInt, err := strconv.Atoi(fdString)
 		if err != nil {
-			mc.logger.V(2).Info("Could not convert file descriptor string", "fd", fdString)
+			logger.Debug("Could not convert file descriptor string", "fd", fdString)
 			continue
 		}
 		// read the soft link of entry
 		linkedFD, err := os.Readlink(process.HostProcDir() + "/self/fd/" + fdString)
 		if err != nil {
-			mc.logger.V(2).Info("Could not read fd, Skipping", "fd", fdString, "err", err)
+			logger.Debug("Could not read fd, skipping", "fd", fdString, "err", err)
 			if os.IsNotExist(err) {
 				continue
 			}
@@ -227,19 +223,19 @@ func (mc *EBPFMetricsCollector) collectSelfTotalBPFMemlock() error {
 		// Possible to have multiple FDs to the same BPF object, no need to calculate twice
 		dupFD, err := unix.Dup(fdInt)
 		if err != nil {
-			mc.logger.V(2).Info("Could not dup FD", "fd", fdInt)
+			logger.Debug("Could not dup FD", "fd", fdInt)
 			continue
 		}
 
 		numPerfArrayMaps, err = createMapMetricsFromFD(dupFD, BPFMapsMetrics, numPerfArrayMaps)
 		if err != nil {
-			mc.logger.V(2).Info("error creating map metrics for fd:", "fd", fdInt, "error", err)
+			logger.Debug("error creating map metrics for fd", "fd", fdInt, "err", err)
 		}
 	}
 
 	err = unix.SchedGetaffinity(0, &cpuSet)
 	if err != nil {
-		mc.logger.V(2).Info("Error fetching sched affinity mask", err)
+		logger.Debug("Error fetching sched affinity mask", "err", err)
 		numCPUs = 0
 
 	} else {
@@ -247,7 +243,7 @@ func (mc *EBPFMetricsCollector) collectSelfTotalBPFMemlock() error {
 	}
 	totalPerfBuffersMemUsage, totalPerfBuffers, err := getPerfBuffersMemoryUsage()
 	if totalPerfBuffers != int64(numPerfArrayMaps)*int64(numCPUs) {
-		mc.logger.V(2).Info("Number of perf buffers does not match expected!", "total perf buffers", totalPerfBuffers, "expected number of buffers", uint64(numCPUs)*uint64(numPerfArrayMaps))
+		logger.Debug("Number of perf buffers does not match expected", "totalPerfBuffers", totalPerfBuffers, "expectedNumberOfBuffers", uint64(numCPUs)*uint64(numPerfArrayMaps))
 	}
 	// Insert a fabricated eBPFMapMetrics in order to track all perf buffer memory usage
 	uniqueID := getUniqueID(BPFMapsMetrics)
@@ -313,9 +309,9 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 	// The callback that runs everytime /metrics is scraped from odiglet, collects data and refreshes gauges
 	_, err = meter.RegisterCallback(
 		func(ctx context.Context, observer metric.Observer) error {
-
+			logger := commonlogger.Logger().With("subsystem", "ebpf-metrics")
 			if err := mc.collectSelfTotalBPFMemlock(); err != nil {
-				mc.logger.Error(err, "failed to collect eBPF metrics during scrape")
+				logger.Error("failed to collect eBPF metrics during scrape", "err", err)
 			}
 
 			var totalMapsMemory int64
