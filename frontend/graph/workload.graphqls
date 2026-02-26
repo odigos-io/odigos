@@ -535,6 +535,12 @@ type K8sWorkload {
   # the telemetry metrics for this source 
   # e.g. how much data is generated from this source as counted in the node collector.
   telemetryMetrics: [K8sWorkloadTelemetryMetrics!]!
+
+  # the names of data streams this workload belongs to.
+  dataStreamNames: [String!]!
+
+  # the number of pod instances currently running for this workload.
+  numberOfInstances: Int
 }
 
 type K8sNamespace {
@@ -546,6 +552,9 @@ type K8sNamespace {
   # if true, all the workloads in this namespace will be marked for auto instrumentation
   # (unless they specifically disable instrumentation)
   markedForInstrumentation: Boolean!
+
+  # the names of data streams this namespace belongs to.
+  dataStreamNames: [String!]!
 
   # all the workloads in this namespace (regardless of odigos state)
   workloads: [K8sWorkload!]!

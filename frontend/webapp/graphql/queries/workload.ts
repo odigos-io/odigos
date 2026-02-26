@@ -22,3 +22,25 @@ export const GET_WORKLOADS = gql`
     }
   }
 `;
+
+export const GET_NAMESPACES_WITH_WORKLOADS = gql`
+  query GetNamespacesWithWorkloads {
+    namespaces {
+      name
+      markedForInstrumentation
+      dataStreamNames
+      workloads {
+        id {
+          namespace
+          kind
+          name
+        }
+        markedForInstrumentation {
+          markedForInstrumentation
+        }
+        dataStreamNames
+        numberOfInstances
+      }
+    }
+  }
+`;
