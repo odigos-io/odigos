@@ -23,3 +23,9 @@ export const RESTART_POD = gql`
     restartPod(namespace: $namespace, name: $name)
   }
 `;
+
+export const RECOVER_FROM_ROLLBACK = gql`
+  mutation RecoverFromRollbackForWorkload($sourceId: K8sSourceId!) {
+    recoverFromRollbackForWorkload(sourceId: $sourceId)
+  }
+`;
