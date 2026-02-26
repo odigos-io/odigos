@@ -49,7 +49,7 @@
       "description": "Configuration for the autoscaler component.",
       "properties": {
         "affinity": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": [],
           "title": "affinity",
           "type": "object"
@@ -133,7 +133,7 @@
       "description": "Configuration for the central proxy component.",
       "properties": {
         "affinity": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": [],
           "title": "affinity",
           "type": "object"
@@ -561,7 +561,7 @@
       "description": "Configuration for the instrumentor component.",
       "properties": {
         "affinity": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": [],
           "title": "affinity",
           "type": "object"
@@ -972,7 +972,7 @@
       "description": "Configuration for the odiglet component.",
       "properties": {
         "affinity": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": [],
           "title": "affinity",
           "type": "object"
@@ -1480,7 +1480,7 @@
       "description": "Configuration for the scheduler component.",
       "properties": {
         "affinity": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": [],
           "title": "affinity",
           "type": "object"
@@ -1604,7 +1604,7 @@
       "description": "Configuration for the UI component.",
       "properties": {
         "affinity": {
-          "additionalProperties": false,
+          "additionalProperties": true,
           "required": [],
           "title": "affinity",
           "type": "object"
