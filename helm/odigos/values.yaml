@@ -395,6 +395,9 @@ autoscaler:
   #   tolerations for the autoscaler deployment.
   # @schema
   tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
 
   resources:
@@ -432,6 +435,9 @@ scheduler:
   #   tolerations for the scheduler deployment.
   # @schema
   tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
 
   resources:
@@ -465,6 +471,9 @@ ui:
   #   kubernetes.io/os: linux
 
   tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
   resources:
     requests:
@@ -589,6 +598,9 @@ instrumentor:
   #   kubernetes.io/os: linux
 
   tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
 
   # @schema
@@ -727,6 +739,9 @@ odiglet:
   # @schema
   tolerations:
     - operator: Exists
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
 
   # @schema
@@ -880,6 +895,9 @@ centralProxy:
   #   kubernetes.io/os: linux
 
   tolerations: []
+  # @schema
+  # additionalProperties: true
+  # @schema
   affinity: {}
 
   # @schema
@@ -955,7 +973,6 @@ karpenter:
 # description: |-
 #   Refer to the official Kubernetes documentation for structure and field details:
 #   https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
-#
 #   Example: Odigos components should be evenly spread across zones.
 #   No need to set labelSelector manually — the Odigos Helm chart will apply it automatically.
 #   topologySpreadConstraints:
