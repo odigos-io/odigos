@@ -139,7 +139,6 @@ export const useSSE = () => {
                 setStatusStore(StatusKeys.Instrumentation, { status: StatusType.Warning, label: 'Processing instrumentation, please wait a moment...', leftIcon: NotificationIcon });
 
                 handleEvent(EventTypes.MODIFIED, () => {
-                  addNotification({ type: StatusType.Success, title: EventTypes.MODIFIED, message: 'Instrumentation completed' });
                   clearStatusMessage();
 
                   fetchSources();
