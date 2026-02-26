@@ -207,7 +207,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	odigletInitPhaseStart := time.Now()
-	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
+	// Logger already initialized in main() before calling OdigletInitPhase.
 	logger := commonlogger.Logger()
 
 	err := fs.CopyAgentsDirectoryToHost()
