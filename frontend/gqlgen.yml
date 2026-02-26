@@ -97,6 +97,10 @@ models:
         resolver: true
       telemetryMetrics:
         resolver: true
+      dataStreamNames:
+        resolver: true
+      numberOfInstances:
+        resolver: true
 
   K8sWorkloadTelemetryMetrics:
     fields:
@@ -125,4 +129,6 @@ models:
   K8sNamespace:
     fields:
       markedForInstrumentation:
+        resolver: true
+      dataStreamNames:
         resolver: true

@@ -15,6 +15,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/graph/status"
+	"github.com/odigos-io/odigos/frontend/services"
 	frontendcommon "github.com/odigos-io/odigos/frontend/services/common"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 )
@@ -38,6 +39,22 @@ func (r *k8sNamespaceResolver) MarkedForInstrumentation(ctx context.Context, obj
 	}
 
 	return true, nil
+}
+
+// DataStreamNames is the resolver for the dataStreamNames field.
+func (r *k8sNamespaceResolver) DataStreamNames(ctx context.Context, obj *model.K8sNamespace) ([]string, error) {
+	l := loaders.For(ctx)
+	nsSource, err := l.GetNamespaceSource(ctx, obj.Name)
+	if err != nil {
+		return []string{}, err
+	}
+
+	ptrNames := services.ExtractDataStreamsFromSource(nsSource, nil)
+	names := make([]string, len(ptrNames))
+	for i, p := range ptrNames {
+		names[i] = *p
+	}
+	return names, nil
 }
 
 // ServiceName is the resolver for the serviceName field.
@@ -540,6 +557,33 @@ func (r *k8sWorkloadResolver) TelemetryMetrics(ctx context.Context, obj *model.K
 			ThroughputBytes:    throughput,
 		},
 	}, nil
+}
+
+// DataStreamNames is the resolver for the dataStreamNames field.
+func (r *k8sWorkloadResolver) DataStreamNames(ctx context.Context, obj *model.K8sWorkload) ([]string, error) {
+	l := loaders.For(ctx)
+	sources, err := l.GetSources(ctx, *obj.ID)
+	if err != nil {
+		return []string{}, err
+	}
+
+	ptrNames := services.ExtractDataStreamsFromSource(sources.Workload, sources.Namespace)
+	names := make([]string, len(ptrNames))
+	for i, p := range ptrNames {
+		names[i] = *p
+	}
+	return names, nil
+}
+
+// NumberOfInstances is the resolver for the numberOfInstances field.
+func (r *k8sWorkloadResolver) NumberOfInstances(ctx context.Context, obj *model.K8sWorkload) (*int, error) {
+	l := loaders.For(ctx)
+	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	count := len(pods)
+	return &count, nil
 }
 
 // Processes is the resolver for the processes field.

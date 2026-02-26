@@ -684,6 +684,7 @@ type K8sLabelAttributeInput struct {
 type K8sNamespace struct {
 	Name                     string         `json:"name"`
 	MarkedForInstrumentation bool           `json:"markedForInstrumentation"`
+	DataStreamNames          []string       `json:"dataStreamNames"`
 	Workloads                []*K8sWorkload `json:"workloads"`
 }
 
@@ -713,6 +714,8 @@ type K8sWorkload struct {
 	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus,omitempty"`
 	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
 	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
+	DataStreamNames            []string                             `json:"dataStreamNames"`
+	NumberOfInstances          *int                                 `json:"numberOfInstances,omitempty"`
 }
 
 type K8sWorkloadAgentEnabled struct {

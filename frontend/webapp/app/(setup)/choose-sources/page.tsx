@@ -6,7 +6,7 @@ import { OnboardingContentWrapper, SetupHeader } from '@/components';
 import { SourceSelectionForm, type SourceSelectionFormRef } from '@odigos/ui-kit/containers';
 
 export default function Page() {
-  const { fetchNamespace } = useNamespace();
+  const { fetchNamespacesWithWorkloads } = useNamespace();
   const { onClickSummary } = useSetupHelpers();
   const formRef = useRef<SourceSelectionFormRef>(null);
 
@@ -14,7 +14,7 @@ export default function Page() {
     <>
       <SetupHeader step={3} sourceFormRef={formRef} />
       <OnboardingContentWrapper>
-        <SourceSelectionForm ref={formRef} isModal={false} fetchSingleNamespace={fetchNamespace} onClickSummary={onClickSummary} />
+        <SourceSelectionForm ref={formRef} isModal={false} fetchNamespacesWithWorkloads={fetchNamespacesWithWorkloads} onClickSummary={onClickSummary} />
       </OnboardingContentWrapper>
     </>
   );
