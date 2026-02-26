@@ -62,7 +62,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           - name: ODIGOS_LOG_LEVEL
-            value: {{ .Values.autoscaler.logLevel | default .Values.logLevel | quote }}
+            value: {{ .Values.autoscaler.logLevel | default .Values.logLevel | default "info" | quote }}
           - name: ODIGOS_VERSION
             valueFrom:
               configMapKeyRef:
