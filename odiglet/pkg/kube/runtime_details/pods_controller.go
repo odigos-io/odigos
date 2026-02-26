@@ -5,13 +5,13 @@ import (
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -33,7 +33,12 @@ type PodsReconciler struct {
 // We need to apply runtime details detection for a new running pod in the following cases:
 // 1. User Instrument the pod for the first time
 func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx).With(
+		"controller", "odiglet-runtime-details-pods",
+		"namespace", request.Namespace,
+		"name", request.Name,
+	)
+	ctx = commonlogger.IntoContext(ctx, logger)
 
 	var pod corev1.Pod
 	err := p.Client.Get(ctx, request.NamespacedName, &pod)
@@ -43,7 +48,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 	podWorkload, err := workload.PodWorkloadObject(ctx, &pod)
 	if err != nil {
-		logger.Error(err, "error getting pod workload object")
+		logger.Error("error getting pod workload object", "err", err)
 		return reconcile.Result{}, err
 	}
 	if podWorkload == nil {
@@ -70,7 +75,7 @@ func (p *PodsReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 		return reconcile.Result{}, err
 	}
 
-	logger.V(0).Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace, "runtimeResults", runtimeResults)
+	logger.Info("Completed runtime details detection for a new running pod", "name", request.Name, "namespace", request.Namespace, "runtimeResults", runtimeResults)
 	return reconcile.Result{}, nil
 }
 

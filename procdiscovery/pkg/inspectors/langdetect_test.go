@@ -3,8 +3,6 @@ package inspectors
 import (
 	"testing"
 
-	"github.com/go-logr/logr"
-
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
@@ -51,7 +49,7 @@ func TestConflictWithCppPrefersOtherLanguage_QuickScan(t *testing.T) {
 		common.CPlusPlusProgrammingLanguage: &fakeInspector{lang: common.CPlusPlusProgrammingLanguage, quickDetected: true, deepDetected: false},
 	}
 
-	res, err := DetectLanguage(process.Details{}, "", logr.Discard())
+	res, err := DetectLanguage(process.Details{}, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -72,7 +70,7 @@ func TestConflictWithoutCppReturnsError_QuickScan(t *testing.T) {
 		common.PythonProgrammingLanguage: &fakeInspector{lang: common.PythonProgrammingLanguage, quickDetected: true, deepDetected: false},
 	}
 
-	res, err := DetectLanguage(process.Details{}, "", logr.Discard())
+	res, err := DetectLanguage(process.Details{}, "")
 	if err == nil {
 		t.Fatalf("expected conflict error, got nil")
 	}
@@ -93,7 +91,7 @@ func TestConflictWithCppPrefersOtherLanguage_DeepScan(t *testing.T) {
 		common.CPlusPlusProgrammingLanguage: &fakeInspector{lang: common.CPlusPlusProgrammingLanguage, quickDetected: false, deepDetected: true},
 	}
 
-	res, err := DetectLanguage(process.Details{}, "", logr.Discard())
+	res, err := DetectLanguage(process.Details{}, "")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

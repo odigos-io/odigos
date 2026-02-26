@@ -3,7 +3,6 @@ module github.com/odigos-io/odigos/opampserver
 go 1.26.0
 
 require (
-	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
@@ -17,6 +16,7 @@ require (
 
 require (
 	github.com/argoproj/argo-rollouts v1.8.3 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/klauspost/compress v1.18.1 // indirect

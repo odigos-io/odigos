@@ -1,13 +1,9 @@
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
-github.com/agoda-com/opentelemetry-logs-go v0.5.1 h1:6iQrLaY4M0glBZb/xVN559qQutK4V+HJ/mB1cbwaX3c=
-github.com/agoda-com/opentelemetry-logs-go v0.5.1/go.mod h1:35B5ypjX5pkVCPJR01i6owJSYWe8cnbWLpEyHgAGD/E=
 github.com/argoproj/argo-rollouts v1.8.3 h1:blbtQva4IK9r6gFh+dWkCrLnFdPOWiv9ubQYu36qeaA=
 github.com/argoproj/argo-rollouts v1.8.3/go.mod h1:kCAUvIfMGfOyVf3lvQbBt0nqQn4Pd+zB5/YwKv+UBa8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
-github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
-github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cenkalti/backoff/v5 v5.0.3 h1:ZN+IMa753KfX5hd8vVaMixjnqRZ3y8CuJKRKj1xcsSM=
 github.com/cenkalti/backoff/v5 v5.0.3/go.mod h1:rkhZdG3JZukswDf7f0cwqPNk4K0sa+F97BxZthm/crw=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
@@ -102,8 +98,6 @@ github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee h1:W5t00kpgFd
 github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/odigos-io/opentelemetry-zap-bridge v0.0.5 h1:UDEKtgab42nGVSvA/F3lLKUYFPETtpl7kpxM9BKBlWk=
-github.com/odigos-io/opentelemetry-zap-bridge v0.0.5/go.mod h1:K98wHhktQ6vCTqeFztcpBDtPTe88vxVgZFlbeGobt24=
 github.com/odigos-io/runtime-detector v0.0.22 h1:6jkqdWB0sLWXj433f/R13kzv7SHNSEoKNKi1LHZcFac=
 github.com/odigos-io/runtime-detector v0.0.22/go.mod h1:Iww/+1F0b1mk8/BDsV9kmAOPVotiqgGhDr2vBP6wwgU=
 github.com/onsi/ginkgo/v2 v2.25.1 h1:Fwp6crTREKM+oA6Cz4MsO8RhKQzs2/gOIVOUscMAfZY=

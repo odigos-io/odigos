@@ -1,13 +1,12 @@
 package detector
 
 import (
-	"log/slog"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 	detector "github.com/odigos-io/runtime-detector"
 )
@@ -16,11 +15,11 @@ const (
 	durationFilterMillisEnvKey = "ODIGOS_PROCESS_DURATION_FILTER_MILLIS"
 )
 
-func DefaultK8sDetectorOptions(logger logr.Logger, appendEnvVarNames []string) []detector.DetectorOption {
-	sLogger := slog.New(logr.ToSlogHandler(logger))
+func DefaultK8sDetectorOptions(appendEnvVarNames []string) []detector.DetectorOption {
+	logger := commonlogger.Logger().With("subsystem", "detector")
 
 	opts := []detector.DetectorOption{
-		detector.WithLogger(sLogger),
+		detector.WithLogger(logger),
 		detector.WithEnvironments(relevantEnvVars(appendEnvVarNames)...),
 		detector.WithEnvPrefixFilter(k8sconsts.OdigosEnvVarPodName),
 		detector.WithExePathsToFilter(
@@ -41,7 +40,7 @@ func DefaultK8sDetectorOptions(logger logr.Logger, appendEnvVarNames []string) [
 	if val, ok := os.LookupEnv(durationFilterMillisEnvKey); ok {
 		valI, err := strconv.Atoi(val)
 		if err != nil {
-			logger.Error(err, "Failed to parse ODIGOS_PROCESS_DURATION_FILTER_MILLIS env var, ignoring", "value", val)
+			logger.Error("Failed to parse ODIGOS_PROCESS_DURATION_FILTER_MILLIS env var, ignoring", "err", err, "value", val)
 			return opts
 		}
 

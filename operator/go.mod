@@ -3,7 +3,6 @@ module github.com/odigos-io/odigos/operator
 go 1.26.0
 
 require (
-	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/cli v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
@@ -49,6 +48,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
+	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect

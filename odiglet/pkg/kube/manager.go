@@ -6,11 +6,11 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentation"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -47,8 +47,8 @@ type KubeManagerOptions struct {
 }
 
 func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (ctrl.Manager, error) {
-	log.Logger.V(0).Info("Starting reconcileres for runtime details")
-	ctrl.SetLogger(log.Logger)
+	commonlogger.Logger().Info("Starting reconcilers for runtime details")
+	ctrl.SetLogger(commonlogger.FromSlogHandler())
 
 	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
 
