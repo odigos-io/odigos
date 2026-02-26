@@ -51,8 +51,7 @@
         "affinity": {
           "additionalProperties": true,
           "required": [],
-          "title": "affinity",
-          "type": "object"
+          "title": "affinity"
         },
         "deploymentName": {
           "default": "odigos-autoscaler",
@@ -135,8 +134,7 @@
         "affinity": {
           "additionalProperties": true,
           "required": [],
-          "title": "affinity",
-          "type": "object"
+          "title": "affinity"
         },
         "centralBackendURL": {
           "default": "",
@@ -563,8 +561,7 @@
         "affinity": {
           "additionalProperties": true,
           "required": [],
-          "title": "affinity",
-          "type": "object"
+          "title": "affinity"
         },
         "agentEnvVarsInjectionMethod": {
           "default": "",
@@ -974,8 +971,7 @@
         "affinity": {
           "additionalProperties": true,
           "required": [],
-          "title": "affinity",
-          "type": "object"
+          "title": "affinity"
         },
         "customContainerRuntimeSocketPath": {
           "default": "",
@@ -1482,8 +1478,7 @@
         "affinity": {
           "additionalProperties": true,
           "required": [],
-          "title": "affinity",
-          "type": "object"
+          "title": "affinity"
         },
         "deploymentName": {
           "default": "odigos-scheduler",
@@ -1592,7 +1587,7 @@
       "title": "telemetry"
     },
     "topologySpreadConstraints": {
-      "description": "Refer to the official Kubernetes documentation for structure and field details:\nhttps://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/\n\nExample: Odigos components should be evenly spread across zones.\nNo need to set labelSelector manually — the Odigos Helm chart will apply it automatically.\ntopologySpreadConstraints:\n  - maxSkew: 1\n    topologyKey: \"topology.kubernetes.io/zone\"\n    whenUnsatisfiable: \"ScheduleAnyway\"",
+      "description": "Refer to the official Kubernetes documentation for structure and field details:\nhttps://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/\nExample: Odigos components should be evenly spread across zones.\nNo need to set labelSelector manually — the Odigos Helm chart will apply it automatically.\ntopologySpreadConstraints:\n  - maxSkew: 1\n    topologyKey: \"topology.kubernetes.io/zone\"\n    whenUnsatisfiable: \"ScheduleAnyway\"",
       "items": {
         "required": []
       },
@@ -1606,8 +1601,7 @@
         "affinity": {
           "additionalProperties": true,
           "required": [],
-          "title": "affinity",
-          "type": "object"
+          "title": "affinity"
         },
         "centralBackendURL": {
           "default": "",
