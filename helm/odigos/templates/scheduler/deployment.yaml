@@ -61,6 +61,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: ODIGOS_LOG_LEVEL
+            value: {{ .Values.scheduler.logLevel | default .Values.logLevel | quote }}
           - name: ODIGOS_TIER
             valueFrom:
               configMapKeyRef:
