@@ -42,12 +42,6 @@ func logLevelHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // StartDebugServer starts the debug/admin HTTP server on the specified port.
-// It uses http.DefaultServeMux (Handler: nil), so:
-//   - /debug/loglevel is always registered here (GET current level, PUT to change it).
-//   - /debug/pprof/* is only available if the main package imports "net/http/pprof"
-//     (e.g. _ "net/http/pprof"). That import registers pprof routes on DefaultServeMux.
-// To have both log-level control and pprof in every binary, ensure each main that
-// calls StartDebugServer also has: _ "net/http/pprof"
 // This is blocking, so it should be run in a goroutine.
 func StartDebugServer(ctx context.Context, logger *slog.Logger, port int) error {
 	registerOnce.Do(func() {
@@ -79,7 +73,7 @@ func StartDebugServer(ctx context.Context, logger *slog.Logger, port int) error 
 	case <-ctx.Done():
 	}
 
-	// Shutdown with a fresh timeout so in-flight requests can finish (ctx is already cancelled).
+	// Shutdown with a fresh timeout so in-flight requests can finish (ctx is already canceled).
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {

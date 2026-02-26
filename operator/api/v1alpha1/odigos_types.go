@@ -80,6 +80,11 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	ImagePrefix string `json:"imagePrefix,omitempty"`
 
+	// (Optional) LogLevel sets the default log level for all Odigos components (e.g. autoscaler, odiglet, scheduler).
+	// Accepted values: debug, info, warn, error. Default=info when unset.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Log Level"
+	LogLevel string `json:"logLevel,omitempty"`
+
 	// (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
 	// One of "k8s-virtual-device" (default) or "k8s-host-path".
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Mount Method"

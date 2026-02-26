@@ -54,7 +54,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           - name: ODIGOS_LOG_LEVEL
-            value: {{ .Values.ui.logLevel | default .Values.logLevel | quote }}
+            value: {{ .Values.ui.logLevel | default .Values.logLevel | default "info" | quote }}
           {{- if .Values.ui.centralBackendURL }}
           - name: CENTRAL_BACKEND_WS_URL
             valueFrom:

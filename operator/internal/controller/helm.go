@@ -298,6 +298,11 @@ func odigosSpecToHelmValues(odigos *operatorv1alpha1.Odigos, openshiftEnabled bo
 		vals["imagePrefix"] = odigos.Spec.ImagePrefix
 	}
 
+	// Log level (default for all components when set on CR)
+	if odigos.Spec.LogLevel != "" {
+		vals["logLevel"] = odigos.Spec.LogLevel
+	}
+
 	// Instrumentor settings
 	instrumentor := make(map[string]interface{})
 
