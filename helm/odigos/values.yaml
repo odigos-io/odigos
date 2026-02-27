@@ -29,6 +29,7 @@ imagePrefix:
 #       collector: registry.connect.redhat.com/odigos/odigos-collector-ubi9:v1.0.0
 #   Supported component names: autoscaler, collector, ui, instrumentor, enterprise-instrumentor,
 #     odiglet, enterprise-odiglet, scheduler, agents, enterprise-agents
+# additionalProperties: true
 # @schema
 images: {}
 
@@ -93,21 +94,39 @@ userInstrumentationEnvs:
   languages:
     java:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     python:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     nodejs:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     go:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     dotnet:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
     php:
       enabled: false
+      # @schema
+      # additionalProperties: true
+      # @schema
       env: {}
 
 # @schema
@@ -967,6 +986,7 @@ profiles: []
 #   Global NodeSelector to apply to all Odigos components by default.
 #   Individual components can override this by uncommenting their specific nodeSelector configuration.
 #   Note: Odigos will only be able to instrument workloads on the same nodes.
+# additionalProperties: true
 # @schema
 nodeSelector:
   kubernetes.io/os: linux
