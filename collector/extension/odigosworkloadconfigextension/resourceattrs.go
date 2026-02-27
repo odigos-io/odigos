@@ -3,6 +3,8 @@ package odigosworkloadconfigextension
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 // K8SArgoRolloutNameAttribute is the attribute key for Argo Rollout name (no semconv key).
@@ -36,6 +38,13 @@ func WorkloadKeyFromResourceAttributes(attrs pcommon.Map) WorkloadKey {
 			key.Kind = p.kind
 			key.Name = v.Str()
 			return key
+		}
+	}
+	// Fallback to Odigos-specific workload attributes when no k8s workload attribute matched.
+	if nameVal, ok := attrs.Get(consts.OdigosWorkloadNameAttribute); ok && nameVal.Type() == pcommon.ValueTypeStr && nameVal.Str() != "" {
+		key.Name = nameVal.Str()
+		if kindVal, ok := attrs.Get(consts.OdigosWorkloadKindAttribute); ok && kindVal.Type() == pcommon.ValueTypeStr && kindVal.Str() != "" {
+			key.Kind = kindVal.Str()
 		}
 	}
 	return key

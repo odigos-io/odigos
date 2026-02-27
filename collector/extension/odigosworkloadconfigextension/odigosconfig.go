@@ -45,6 +45,3 @@ func (o *OdigosWorkloadConfig) Shutdown(ctx context.Context) error {
 func (o *OdigosWorkloadConfig) GetWorkloadSamplingConfig(key WorkloadKey) (*WorkloadConfig, bool) {
 	return o.cache.Get(key)
 }
-
-// Cache returns the underlying cache for advanced use (e.g. iteration).
-// Do not modify the cache directly; use GetWorkloadSamplingConfig for reads.

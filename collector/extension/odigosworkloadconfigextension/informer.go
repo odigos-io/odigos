@@ -87,6 +87,9 @@ func (o *OdigosWorkloadConfig) WaitForCacheSync(ctx context.Context) bool {
 }
 
 func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
+	// We're currently using unstructured to avoid a dependency on the odigos api package.
+	// The api package can bring in transitive dependencies that conflict with OTel upstream dependencies.
+	// This is a temporary solution until we have a better way to handle the instrumentation config (ie, using our api directly ideally)
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		o.logger.Debug("informer received non-unstructured object", zap.String("type", fmt.Sprintf("%T", obj)))
