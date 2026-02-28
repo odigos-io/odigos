@@ -1,0 +1,105 @@
+---
+title: 'Highlight'
+description: 'Configuring the Highlight backend (Managed)'
+sidebarTitle: 'Highlight'
+icon: 'signal-stream'
+---
+
+### Getting Started
+
+<img src="https://d15jtxgb40qetw.cloudfront.net/highlight.svg" alt="highlight" className="not-prose h-20" />
+
+{/*
+    Add custom content here (under this comment)...
+
+    e.g.
+
+    **Creating Account**<br />
+    Go to the **[🔗 website](https://odigos.io) > Account** and click **Sign Up**
+
+    **Obtaining Access Token**<br />
+    Go to **⚙️ > Access Tokens** and click **Create New**
+
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! START CUSTOM EDIT !!
+*/}
+
+{/*
+    !! Do not remove this comment, this acts as a key indicator in `docs/sync-dest-doc.py` !!
+    !! END CUSTOM EDIT !!
+*/}
+
+### Configuring Destination Fields
+
+<Accordion title="Supported Signals:">
+  ✅ Traces
+  ❌ Metrics
+  ✅ Logs
+</Accordion>
+
+- **HIGHLIGHT_PROJECT_ID** `string` : Highlight Project ID.
+  - This field is required
+
+<Check>
+  We handle the endpoint internally, so you don't need to provide it.
+  - The endpoint is `https://otel.highlight.io:4318`
+</Check>
+
+### Adding Destination to Odigos
+
+There are two primary methods for configuring destinations in Odigos:
+
+##### **Using the UI**
+
+<Steps>
+  <Step>
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
+    ```bash
+    odigos ui
+    ```
+  </Step>
+  <Step>
+    Click on `Add Destination`, select `Highlight` and follow the on-screen instructions
+  </Step>
+</Steps>
+
+##### **Using Kubernetes manifests**
+
+<Steps>
+  <Step>
+    Save the YAML below to a file (e.g. `highlight.yaml`)
+    ```yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Destination
+    metadata:
+      name: highlight-example
+      namespace: odigos-system
+    spec:
+      data: {}
+      destinationName: highlight
+      secretRef:
+        name: highlight-secret
+      signals:
+      - TRACES
+      - LOGS
+      type: highlight
+
+    ---
+
+    apiVersion: v1
+    data:
+      HIGHLIGHT_PROJECT_ID: <Base64 Highlight Project ID>
+    kind: Secret
+    metadata:
+      name: highlight-secret
+      namespace: odigos-system
+    type: Opaque
+    ```
+  </Step>
+  <Step>
+    Apply the YAML using `kubectl`
+    ```bash
+    kubectl apply -f highlight.yaml
+    ```
+  </Step>
+</Steps>
