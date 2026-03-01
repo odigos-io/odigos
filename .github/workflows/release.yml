@@ -62,7 +62,7 @@ jobs:
           tag: ${{ env.TAG }}
 
   build-cli:
-    needs: package-helm
+    needs: [package-helm]
     runs-on: depot-ubuntu-24.04-8
     steps:
       - name: Determine Tag Value
@@ -214,6 +214,22 @@ jobs:
           SKIP_HOMEBREW_UPDATE: ${{ env.SKIP_HOMEBREW_UPDATE }}
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
 
+      - name: Generate and update release notes
+        uses: odigos-io/ci-core/.github/actions/generate-release-notes@main
+        continue-on-error: true
+        with:
+          tag: ${{ env.TAG }}
+          release-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify Slack (release notes)
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Release notes updated successfully"
+          failure-description: "ERROR: Failed to update release notes"
+          tag: ${{ env.TAG }}
+
       - uses: ko-build/setup-ko@v0.9
 
       - name: publish cli image to docker registries
@@ -257,7 +273,7 @@ jobs:
           tag: ${{ env.TAG }}
 
   publish-helm:
-    needs: build-cli
+    needs: [build-cli]
     runs-on: ubuntu-latest
     steps:
       - name: Determine Tag Value
