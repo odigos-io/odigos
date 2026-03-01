@@ -19,6 +19,7 @@ import (
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -111,19 +112,25 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 		Exporters:  []string{"otlp/odigos-own-telemetry-ui"},
 	}
 
-	c.Service.Telemetry.Metrics = config.MetricsConfig{
-		Level: "detailed",
-		Readers: []config.GenericMap{
-			{
-				"pull": config.GenericMap{
-					"exporter": config.GenericMap{
-						"prometheus": config.GenericMap{
-							"host": "0.0.0.0",
-							"port": ownTelemetryPort,
+	podNameFromEnv := "${POD_NAME}"
+	c.Service.Telemetry = config.Telemetry{
+		Metrics: config.MetricsConfig{
+			Level: "detailed",
+			Readers: []config.GenericMap{
+				{
+					"pull": config.GenericMap{
+						"exporter": config.GenericMap{
+							"prometheus": config.GenericMap{
+								"host": "0.0.0.0",
+								"port": ownTelemetryPort,
+							},
 						},
 					},
 				},
 			},
+		},
+		Resource: map[string]*string{
+			string(semconv.K8SPodNameKey): &podNameFromEnv,
 		},
 	}
 
