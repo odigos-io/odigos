@@ -26,8 +26,8 @@ func getOwnMetricsConfig(odigosConfiguration *common.OdigosConfiguration, allDes
 	}
 
 	ownMetricsLocalStorageEnabled := false
-	if odigosConfiguration.OdigosOwnTelemetryStore != nil &&
-		odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled != nil &&
+	if odigosConfiguration.OdigosOwnTelemetryStore == nil ||
+		odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled == nil ||
 		!*odigosConfiguration.OdigosOwnTelemetryStore.MetricsStoreDisabled {
 		ownMetricsLocalStorageEnabled = true
 	}
