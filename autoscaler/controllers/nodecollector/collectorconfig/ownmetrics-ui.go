@@ -7,7 +7,7 @@ import (
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	semconv "go.opentelemetry.io/otel/semconv/v1.5.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 // internal, not meant to be used outside of this service
