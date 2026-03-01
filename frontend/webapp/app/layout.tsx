@@ -1,9 +1,11 @@
 'use client';
 
-import React, { Suspense, type PropsWithChildren } from 'react';
+import React, { type PropsWithChildren } from 'react';
 import { useDarkMode } from '@odigos/ui-kit/store';
-import ThemeProvider from '@/lib/theme-provider';
-import ApolloProvider from '@/lib/apollo-provider';
+import dynamic from 'next/dynamic';
+
+const ApolloProvider = dynamic(() => import('@/lib/apollo-provider'), { ssr: false });
+const ThemeProvider = dynamic(() => import('@/lib/theme-provider'), { ssr: false });
 
 function RootLayout({ children }: PropsWithChildren) {
   const { darkMode } = useDarkMode();
@@ -27,9 +29,7 @@ function RootLayout({ children }: PropsWithChildren) {
         }}
       >
         <ThemeProvider>
-          <ApolloProvider>
-            <Suspense>{children}</Suspense>
-          </ApolloProvider>
+          <ApolloProvider>{children}</ApolloProvider>
         </ThemeProvider>
       </body>
     </html>
