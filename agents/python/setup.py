@@ -6,7 +6,7 @@ index_url = None
 # index_url = 'http://host.docker.internal:8080/packages/odigos_opentelemetry_python-1.0.63-py3-none-any.whl'
 
 install_requires = [
-    f"odigos-opentelemetry-python @ {index_url}" if index_url else "odigos-opentelemetry-python==1.0.63"
+    f"odigos-opentelemetry-python @ {index_url}" if index_url else "odigos-opentelemetry-python==1.0.65"
 ]
 
 setup(
