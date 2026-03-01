@@ -6,8 +6,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/go-logr/logr"
 	"golang.org/x/sys/unix"
+
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 // Server serves eBPF map file descriptors to clients over a Unix socket.
@@ -15,7 +16,6 @@ import (
 // (which need access to those maps for reading telemetry data).
 type Server struct {
 	SocketPath         string
-	Logger             logr.Logger
 	TracesFDProvider   func() int   // Function that returns the traces eBPF map file descriptor
 	MetricsFDsProvider func() []int // Function that returns all metrics-related eBPF map file descriptors
 }
@@ -39,7 +39,8 @@ func (s *Server) Run(ctx context.Context) error {
 		_ = os.Remove(s.SocketPath)
 	}()
 
-	s.Logger.Info("unixfd server started", "socket", s.SocketPath)
+	logger := commonlogger.Logger().With("subsystem", "unixfd")
+	logger.Info("unixfd server started", "socket", s.SocketPath)
 
 	// Close listener when context is canceled
 	go func() {
@@ -51,10 +52,10 @@ func (s *Server) Run(ctx context.Context) error {
 		conn, err := listener.Accept()
 		if err != nil {
 			if ctx.Err() != nil {
-				s.Logger.Info("server shutting down")
+				logger.Info("server shutting down")
 				return nil
 			}
-			s.Logger.Error(err, "accept failed")
+			logger.Error("accept failed", "err", err)
 			continue
 		}
 
@@ -64,6 +65,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 // handleRequest processes a single client request
 func (s *Server) handleRequest(conn *net.UnixConn) {
+	logger := commonlogger.Logger().With("subsystem", "unixfd")
 	defer func() {
 		_ = conn.Close()
 	}()
@@ -72,7 +74,7 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 	buf := make([]byte, 16)
 	n, err := conn.Read(buf)
 	if err != nil {
-		s.Logger.Error(err, "failed to read request")
+		logger.Error("failed to read request", "err", err)
 		return
 	}
 
@@ -82,44 +84,44 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 	case ReqGetFD, ReqGetTracesFD:
 		// Legacy "GET_FD" defaults to traces for backward compatibility
 		if s.TracesFDProvider == nil {
-			s.Logger.Error(fmt.Errorf("traces FD provider not configured"), "no traces FD provider")
+			logger.Error("no traces FD provider", "err", fmt.Errorf("traces FD provider not configured"))
 			return
 		}
 		fd := s.TracesFDProvider()
 		if fd <= 0 {
-			s.Logger.Error(fmt.Errorf("invalid fd %d", fd), "FD provider returned invalid fd", "request", request)
+			logger.Error("FD provider returned invalid fd", "err", fmt.Errorf("invalid fd %d", fd), "request", request)
 			return
 		}
 		if err := sendFDs(conn, fd); err != nil {
-			s.Logger.Error(err, "failed to send FD")
+			logger.Error("failed to send FD", "err", err)
 			return
 		}
-		s.Logger.Info("sent FD to client", "fd", fd, "request", request)
+		logger.Info("sent FD to client", "fd", fd, "request", request)
 
 	case ReqGetMetricsFD:
 		if s.MetricsFDsProvider == nil {
-			s.Logger.Error(fmt.Errorf("metrics FDs provider not configured"), "no metrics FDs provider")
+			logger.Error("no metrics FDs provider", "err", fmt.Errorf("metrics FDs provider not configured"))
 			return
 		}
 		fds := s.MetricsFDsProvider()
 		if len(fds) == 0 {
-			s.Logger.Error(fmt.Errorf("no metrics FDs available"), "metrics FDs provider returned empty slice")
+			logger.Error("metrics FDs provider returned empty slice", "err", fmt.Errorf("no metrics FDs available"))
 			return
 		}
 		for _, fd := range fds {
 			if fd <= 0 {
-				s.Logger.Error(fmt.Errorf("invalid fd %d", fd), "FD provider returned invalid fd", "request", request)
+				logger.Error("FD provider returned invalid fd", "err", fmt.Errorf("invalid fd %d", fd), "request", request)
 				return
 			}
 		}
 		if err := sendFDs(conn, fds...); err != nil {
-			s.Logger.Error(err, "failed to send metrics FDs")
+			logger.Error("failed to send metrics FDs", "err", err)
 			return
 		}
-		s.Logger.Info("sent metrics FDs to client", "fds", fds, "request", request)
+		logger.Info("sent metrics FDs to client", "fds", fds, "request", request)
 
 	default:
-		s.Logger.Info("unknown request", "request", request)
+		logger.Info("unknown request", "request", request)
 		return
 	}
 }

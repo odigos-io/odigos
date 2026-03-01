@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/go-logr/logr"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
@@ -41,7 +42,7 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, 
 
 	resourceAttributes, err := getResourceAttributes(kd.Pw, kd.Pod, kd.ProcEvent)
 	if err != nil {
-		logger.Info("error getting resource attributes", "error", err)
+		commonlogger.Logger().With("subsystem", "settings-getter").Warn("error getting resource attributes", "err", err)
 	}
 
 	return instrumentation.Settings{

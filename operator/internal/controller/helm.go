@@ -18,14 +18,15 @@ package controller
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/pkg/helm"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	operatorv1alpha1 "github.com/odigos-io/odigos/operator/api/v1alpha1"
 	"helm.sh/helm/v3/pkg/action"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -116,9 +117,9 @@ func (c *simpleClientConfig) ConfigAccess() clientcmd.ConfigAccess {
 	return nil
 }
 
-// helmLogger implements helm's DebugLog function to use our logr logger
+// helmLogger implements helm's DebugLog function to collect and summarize Helm operations.
 type helmLogger struct {
-	logger logr.Logger
+	logger *slog.Logger
 	mu     sync.Mutex
 	stats  helmStats
 }
@@ -130,7 +131,7 @@ type helmStats struct {
 	unchanged int
 }
 
-func newHelmLogger(logger logr.Logger) *helmLogger {
+func newHelmLogger(logger *slog.Logger) *helmLogger {
 	return &helmLogger{logger: logger}
 }
 
@@ -170,7 +171,8 @@ func (h *helmLogger) printSummary() {
 }
 
 // helmInstall performs a Helm install or upgrade of Odigos using the shared CLI helm package
-func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1.Odigos, version string, openshiftEnabled bool, logger logr.Logger) error {
+func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1.Odigos, version string, openshiftEnabled bool) error {
+	logger := commonlogger.Logger()
 	helmLog := newHelmLogger(logger)
 	actionConfig := new(action.Configuration)
 
@@ -218,7 +220,8 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 }
 
 // helmUninstall performs a Helm uninstall of Odigos using the shared CLI helm package
-func helmUninstall(config *rest.Config, namespace string, logger logr.Logger) error {
+func helmUninstall(config *rest.Config, namespace string) error {
+	logger := commonlogger.Logger()
 	helmLog := newHelmLogger(logger)
 	actionConfig := new(action.Configuration)
 
@@ -293,6 +296,11 @@ func odigosSpecToHelmValues(odigos *operatorv1alpha1.Odigos, openshiftEnabled bo
 	// Image prefix
 	if odigos.Spec.ImagePrefix != "" {
 		vals["imagePrefix"] = odigos.Spec.ImagePrefix
+	}
+
+	// Log level (default for all components when set on CR)
+	if odigos.Spec.LogLevel != "" {
+		vals["logLevel"] = odigos.Spec.LogLevel
 	}
 
 	// Instrumentor settings

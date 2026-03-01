@@ -5,7 +5,6 @@ go 1.26.0
 require (
 	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
 	github.com/go-logr/logr v1.4.3
-	github.com/go-logr/zapr v1.3.0
 	github.com/moby/sys/mountinfo v0.7.2
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
@@ -14,14 +13,12 @@ require (
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/opampserver v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/odigos/procdiscovery v0.0.0-00010101000000-000000000000
-	github.com/odigos-io/opentelemetry-zap-bridge v0.0.5
 	github.com/odigos-io/runtime-detector v0.0.22
 	go.opentelemetry.io/auto v0.21.0
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.38.0
 	go.opentelemetry.io/otel/metric v1.38.0
 	go.opentelemetry.io/otel/sdk v1.38.0
-	go.uber.org/zap v1.27.1
 	golang.org/x/sync v0.18.0
 	golang.org/x/sys v0.38.0
 	k8s.io/api v0.34.2
@@ -32,10 +29,8 @@ require (
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
-	github.com/agoda-com/opentelemetry-logs-go v0.5.1 // indirect
 	github.com/argoproj/argo-rollouts v1.8.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -93,6 +88,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	go.uber.org/zap v1.27.1 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.14.0 // indirect

@@ -59,6 +59,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for autoscaler. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "required": [],
+          "title": "logLevel"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -625,6 +631,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for instrumentor. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "required": [],
+          "title": "logLevel"
+        },
         "mountMethod": {
           "default": "",
           "description": "which mount method to use for odigos agent directory\nk8s-virtual-device: default method using a virtual device\nk8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)\nk8s-init-container: alternative which uses an init container to copy the agent files to the shared volume",
@@ -717,6 +729,12 @@
       },
       "required": [],
       "title": "karpenter"
+    },
+    "logLevel": {
+      "default": "info",
+      "description": "Default log level for components when component-level logLevel is not set.\nAccepted values: debug, info, warn, error. Default: info.\nUse PUT /debug/loglevel on port 6060 for hot reload without restart.",
+      "required": [],
+      "title": "logLevel"
     },
     "metricsSources": {
       "additionalProperties": false,
@@ -1123,6 +1141,12 @@
           "required": [],
           "title": "initContainerResources"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for odiglet. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "required": [],
+          "title": "logLevel"
+        },
         "noHostNetwork": {
           "default": "false",
           "description": "noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.\nfor k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.\nfor k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.",
@@ -1486,6 +1510,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for scheduler. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "required": [],
+          "title": "logLevel"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -1614,6 +1644,12 @@
           "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-ui'",
           "required": [],
           "title": "deploymentName"
+        },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for UI. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "required": [],
+          "title": "logLevel"
         },
         "nodeSelector": {
           "default": "",

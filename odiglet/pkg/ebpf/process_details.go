@@ -11,7 +11,6 @@ import (
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/instrumentation/detector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 	corev1 "k8s.io/api/core/v1"
@@ -115,7 +114,7 @@ func (kd *K8sProcessDetails) Distribution(ctx context.Context) (*distro.OtelDist
 		Environments: process.ProcessEnvs{
 			DetailedEnvs: processEvent.ExecDetails.Environments,
 		},
-	}, distro.Language, log.Logger); !ok {
+	}, distro.Language); !ok {
 		kd.langVerified = &falseVal
 		return nil, errors.Join(instrumentation.ErrProcessLanguageNotMatchesDistribution,
 			fmt.Errorf("process with exe path %s does not match the detected language (%s) for container: %s", processEvent.ExecDetails.ExePath, distro.Language, kd.ContainerName))

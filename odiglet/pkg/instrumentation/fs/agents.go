@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 )
 
 func CopyAgentsDirectoryToHost() error {
-
+	logger := commonlogger.Logger()
 	startTime := time.Now()
 	// We kept the following list of files to avoid removing instrumentations that are already loaded in the process memory
 	filesToKeep := map[string]struct{}{
@@ -63,27 +63,27 @@ func CopyAgentsDirectoryToHost() error {
 
 	if empty {
 		// if empty, we can just copy the directory to the host
-		log.Logger.Info("Odigos agents directory is empty, copying agents directory to host")
+		logger.Info("Odigos agents directory is empty, copying agents directory to host")
 		err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory)
 		if err != nil {
-			log.Logger.Error(err, "Error copying instrumentation directory to host")
+			logger.Error("Error copying instrumentation directory to host", "err", err)
 			return err
 		}
 	} else {
-		log.Logger.Info("Odigos agents directory is not empty, syncing files with rsync")
+		logger.Info("Odigos agents directory is not empty, syncing files with rsync")
 		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
 
 		if err != nil {
-			log.Logger.Error(err, "Error getting changed files")
+			logger.Error("Error getting changed files", "err", err)
 		}
 
 		if err := writeKeeplist(keeplistPath, updatedFilesToKeepMap); err != nil {
-			log.Logger.Error(err, "failed to write keeplist")
+			logger.Error("failed to write keeplist", "err", err)
 			return err
 		}
 
 		if err := runSingleRsyncSync(containerDir, k8sconsts.OdigosAgentsDirectory, keeplistPath); err != nil {
-			log.Logger.Error(err, "rsync failed")
+			logger.Error("rsync failed", "err", err)
 			return err
 		}
 	}
@@ -98,17 +98,17 @@ func CopyAgentsDirectoryToHost() error {
 	// TODO: remove this once we delete the virtual devices.
 	err = createDotnetDeprecatedDirectories(path.Join(k8sconsts.OdigosAgentsDirectory, "dotnet"))
 	if err != nil {
-		log.Logger.Error(err, "Error creating dotnet deprecated directories")
+		logger.Error("Error creating dotnet deprecated directories", "err", err)
 		return err
 	}
 
-	log.Logger.Info("Odigos agents directory copied to host", "elapsed", time.Since(startTime))
+	logger.Info("Odigos agents directory copied to host", "elapsed", time.Since(startTime))
 
 	return nil
 }
 
 func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, containerDir string, hostDir string) (map[string]struct{}, error) {
-
+	logger := commonlogger.Logger()
 	updatedFilesToKeepMap := make(map[string]struct{})
 
 	for hostPath := range filesToKeepMap {
@@ -118,12 +118,12 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		// Find and preserve existing hash version files for this base file
 		existingHashVersionFiles, err := findExistingHashVersionFiles(hostPath)
 		if err != nil {
-			log.Logger.Error(err, "Error finding existing hash version files", "basePath", hostPath)
+			logger.Error("Error finding existing hash version files", "err", err, "basePath", hostPath)
 		} else {
 			// Add all existing hash version files to the keep map
 			for _, hashVersionFile := range existingHashVersionFiles {
 				updatedFilesToKeepMap[hashVersionFile] = struct{}{}
-				log.Logger.V(0).Info("Preserving existing hash version file", "file", hashVersionFile)
+				logger.Info("Preserving existing hash version file", "file", hashVersionFile)
 			}
 		}
 
@@ -132,7 +132,7 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 		_, containerErr := os.Stat(containerPath)
 
 		if hostErr != nil || containerErr != nil {
-			log.Logger.V(0).Info("File marked for recreate (missing)", "file", hostPath)
+			logger.Info("File marked for recreate (missing)", "file", hostPath)
 			continue
 		}
 
@@ -170,6 +170,7 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 // for the given base file path. For example, if basePath is "/var/odigos/python-ebpf/pythonUSDT.abi3.so",
 // it will search for files like "/var/odigos/python-ebpf/pythonUSDT.abi3_hash_version-*.so"
 func findExistingHashVersionFiles(basePath string) ([]string, error) {
+	logger := commonlogger.Logger()
 	// Extract directory and base filename
 	dir := filepath.Dir(basePath)
 	ext := filepath.Ext(basePath)
@@ -197,7 +198,7 @@ func findExistingHashVersionFiles(basePath string) ([]string, error) {
 		// Check if filename matches our pattern
 		matched, err := filepath.Match(pattern, entry.Name())
 		if err != nil {
-			log.Logger.Error(err, "Error matching pattern", "pattern", pattern, "filename", entry.Name())
+			logger.Error("Error matching pattern", "err", err, "pattern", pattern, "filename", entry.Name())
 			continue
 		}
 
@@ -212,6 +213,7 @@ func findExistingHashVersionFiles(basePath string) ([]string, error) {
 
 // Helper function to rename a file using the first 12 characters of its hash
 func renameFileWithHashSuffix(originalPath, fileHash string) (string, error) {
+	logger := commonlogger.Logger()
 	// Extract the first 12 characters of the hash
 	hashSuffix := fileHash[:12]
 
@@ -221,7 +223,7 @@ func renameFileWithHashSuffix(originalPath, fileHash string) (string, error) {
 		return "", fmt.Errorf("failed to rename file %s to %s: %w", originalPath, newPath, err)
 	}
 
-	log.Logger.V(0).Info("File successfully renamed", "oldPath", originalPath, "newPath", newPath)
+	logger.Info("File successfully renamed", "oldPath", originalPath, "newPath", newPath)
 	return newPath, nil
 }
 
@@ -253,7 +255,8 @@ func calculateFileHash(filePath string) (string, error) {
 // affect the odiglet running process's apparent filesystem.
 func ApplyOpenShiftSELinuxSettings() error {
 	// Check if the semanage command exists when running on RHEL/CoreOS
-	log.Logger.Info("Applying selinux settings to host")
+	logger := commonlogger.Logger()
+	logger.Info("Applying selinux settings to host")
 	_, err := exec.LookPath(filepath.Join(chrootDir, semanagePath))
 	if err == nil {
 		syscall.Chroot(chrootDir)
@@ -265,13 +268,13 @@ func ApplyOpenShiftSELinuxSettings() error {
 
 		err := cmd.Run()
 		if err != nil {
-			log.Logger.Error(err, "Error executing semanage")
+			logger.Error("Error executing semanage", "err", err)
 			return err
 		}
 
 		pattern := regexp.MustCompile(`/var/odigos(\(/.\*\)\?)?\s+.*container_ro_file_t`)
 		if pattern.Match(out.Bytes()) {
-			log.Logger.Info("Rule for /var/odigos already exists with container_ro_file_t.")
+			logger.Info("Rule for /var/odigos already exists with container_ro_file_t.")
 			return nil
 		}
 
@@ -280,7 +283,7 @@ func ApplyOpenShiftSELinuxSettings() error {
 		cmd = exec.Command(semanagePath, "fcontext", "-a", "-t", "container_ro_file_t", "/var/odigos(/.*)?")
 		stdoutBytes, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Logger.Error(err, "Error running semanage command", "stdout", string(stdoutBytes))
+			logger.Error("Error running semanage command", "err", err, "stdout", string(stdoutBytes))
 			if strings.Contains(string(stdoutBytes), "already defined") {
 				// some versions of selinux return an error when trying to set fcontext where it already exists
 				// if that's the case, we don't need to return an error here
@@ -298,15 +301,15 @@ func ApplyOpenShiftSELinuxSettings() error {
 			cmd := exec.Command(restoreconPath, "-r", k8sconsts.OdigosAgentsDirectory)
 			err = cmd.Run()
 			if err != nil {
-				log.Logger.Error(err, "Error running restorecon command")
+				logger.Error("Error running restorecon command", "err", err)
 				return err
 			}
 		} else {
-			log.Logger.Error(err, "Unable to find restorecon path")
+			logger.Error("Unable to find restorecon path", "err", err)
 			return err
 		}
 	} else {
-		log.Logger.Info("Unable to find semanage path, possibly not on RHEL host")
+		logger.Info("Unable to find semanage path, possibly not on RHEL host")
 	}
 	return nil
 }
@@ -364,6 +367,7 @@ func writeKeeplist(file string, keeps map[string]struct{}) error {
 // runSingleRsyncSync performs a single-threaded rsync from srcDir to dstDir using the given exclude file.
 // This is used when the destination already contains files and we want to sync changes while keeping versioned files.
 func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
+	logger := commonlogger.Logger()
 	// rsync flags:
 	// -a: archive mode (preserves permissions, symlinks, modification times, etc.)
 	// -v: verbose output (shows which files were copied)
@@ -382,10 +386,10 @@ func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Logger.Error(err, "rsync failed", "stderr", stderr.String())
+		logger.Error("rsync failed", "err", err, "stderr", stderr.String())
 		return err
 	}
 
-	log.Logger.V(0).Info("rsync completed")
+	logger.Info("rsync completed")
 	return nil
 }

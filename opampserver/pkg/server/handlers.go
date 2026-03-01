@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/instrumentation_instance"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	"github.com/odigos-io/odigos/opampserver/pkg/connection"
@@ -24,9 +24,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var logger = commonlogger.Logger().With("subsystem", "opamp-handlers")
+
 type ConnectionHandlers struct {
 	sdkConfig     *sdkconfig.SdkConfigManager
-	logger        logr.Logger
 	kubeclient    client.Client
 	kubeClientSet *kubernetes.Clientset
 	scheme        *runtime.Scheme // TODO: revisit this, we should not depend on controller runtime
@@ -46,7 +47,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 		// first message must be agent description.
 		// it is, however, possible that the OpAMP server restarted, and the agent is trying to reconnect.
 		// in which case we send back flag and request full status update.
-		c.logger.Info("Agent description is missing in the first OpAMP message, requesting full state update")
+		logger.Info("Agent description is missing in the first OpAMP message, requesting full state update")
 		serverToAgent := &protobufs.ServerToAgent{
 			Flags: uint64(protobufs.ServerToAgentFlags_ServerToAgentFlags_ReportFullState),
 		}
@@ -83,7 +84,7 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 	instrumentedAppName := workload.CalculateWorkloadRuntimeObjectName(k8sAttributes.WorkloadName, k8sAttributes.WorkloadKind)
 	instrumentationConfig, err := configsections.GetWorkloadInstrumentationConfig(ctx, c.kubeclient, instrumentedAppName, podWorkload.Namespace)
 	if err != nil {
-		c.logger.Error(err, "failed to get instrumentation config", "instrumentedAppName", instrumentedAppName, "namespace", podWorkload.Namespace)
+		logger.Error("failed to get instrumentation config", "err", err, "instrumentedAppName", instrumentedAppName, "namespace", podWorkload.Namespace)
 		return nil, nil, err
 	}
 
@@ -93,16 +94,16 @@ func (c *ConnectionHandlers) OnNewConnection(ctx context.Context, firstMessage *
 	}
 	remoteResourceAttributes, err := configresolvers.CalculateServerAttributes(k8sAttributes, c.nodeName, serviceName)
 	if err != nil {
-		c.logger.Error(err, "failed to calculate server attributes", "k8sAttributes", k8sAttributes)
+		logger.Error("failed to calculate server attributes", "err", err, "k8sAttributes", k8sAttributes)
 		return nil, nil, err
 	}
 
 	fullRemoteConfig, err := c.sdkConfig.GetFullConfig(ctx, remoteResourceAttributes, &podWorkload, instrumentedAppName, attrs.ProgrammingLanguage, instrumentationConfig, k8sAttributes.ContainerName)
 	if err != nil {
-		c.logger.Error(err, "failed to get full config", "k8sAttributes", k8sAttributes)
+		logger.Error("failed to get full config", "err", err, "k8sAttributes", k8sAttributes)
 		return nil, nil, err
 	}
-	c.logger.Info("new OpAMP client connected", "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
+	logger.Info("new OpAMP client connected", "namespace", k8sAttributes.Namespace, "podName", k8sAttributes.PodName, "instrumentedAppName", instrumentedAppName, "workloadKind", k8sAttributes.WorkloadKind, "workloadName", k8sAttributes.WorkloadName, "containerName", k8sAttributes.ContainerName, "otelServiceName", serviceName)
 
 	connectionInfo := &connection.ConnectionInfo{
 		Workload:                 podWorkload,
@@ -128,11 +129,11 @@ func (c *ConnectionHandlers) OnAgentToServerMessage(ctx context.Context, request
 	// If the remote config changed, send the new config to the agent on the response
 	if request.RemoteConfigStatus == nil {
 		// this is to support older agents which do not send remote config status
-		c.logger.Info("missing remote config status in agent to server message, sending full remote config", "workload", connectionInfo.Workload)
+		logger.Info("missing remote config status in agent to server message, sending full remote config", "workload", connectionInfo.Workload)
 		response.RemoteConfig = connectionInfo.AgentRemoteConfig
 	} else {
 		if !bytes.Equal(request.RemoteConfigStatus.LastRemoteConfigHash, connectionInfo.AgentRemoteConfig.ConfigHash) {
-			c.logger.Info("Remote config changed, sending new config to agent", "workload", connectionInfo.Workload)
+			logger.Info("Remote config changed, sending new config to agent", "workload", connectionInfo.Workload)
 			response.RemoteConfig = connectionInfo.AgentRemoteConfig
 		}
 	}
@@ -157,7 +158,7 @@ func (c *ConnectionHandlers) UpdateInstrumentationInstanceStatus(ctx context.Con
 		}
 		// [1] - agent disconnects with healthy status, delete the instrumentation instance CR
 		if message.Health.Healthy {
-			c.logger.Info("Agent disconnected with healthy status, deleting instrumentation instance", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
+			logger.Info("Agent disconnected with healthy status, deleting instrumentation instance", "workloadNamespace", connectionInfo.Workload.Namespace, "workloadName", connectionInfo.Workload.Name, "workloadKind", connectionInfo.Workload.Kind)
 			return instrumentation_instance.DeleteInstrumentationInstance(ctx, connectionInfo.Pod, connectionInfo.ContainerName, c.kubeclient, int(connectionInfo.Pid))
 		}
 

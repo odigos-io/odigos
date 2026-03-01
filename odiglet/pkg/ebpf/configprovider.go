@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 // Max time to wait for a config update to be sent to the instrumentation.
@@ -61,7 +61,7 @@ func (c *ConfigProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 	defer c.stoppedMutex.Unlock()
 
 	if c.stopped {
-		log.Logger.Info("SendConfig called on stopped configProvider, the supplied config will be ignored")
+		commonlogger.Logger().Info("SendConfig called on stopped configProvider, the supplied config will be ignored")
 		return nil
 	}
 

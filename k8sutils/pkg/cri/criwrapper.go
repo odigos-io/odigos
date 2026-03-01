@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-logr/logr"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 var (
@@ -27,7 +27,6 @@ type CriClient struct {
 	conn          *grpc.ClientConn
 	imageClient   criapi.ImageServiceClient
 	runtimeClient criapi.RuntimeServiceClient
-	Logger        logr.Logger
 }
 
 // Default runtime endpoints
@@ -58,6 +57,7 @@ func detectRuntimeSocket() string {
 
 // Connect attempts to establish a connection to a CRI runtime.
 func (rc *CriClient) Connect(ctx context.Context) error {
+	logger := commonlogger.Logger().With("subsystem", "cri")
 	var err error
 
 	endpoint := detectRuntimeSocket()
@@ -65,7 +65,7 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 		return ErrDetectingCRIEndpoint
 	}
 
-	rc.Logger.Info("Starting connection attempt to CRI runtime", "endpoint", endpoint)
+	logger.Info("Starting connection attempt to CRI runtime", "endpoint", endpoint)
 
 	rc.conn, err = grpc.NewClient(
 		endpoint,
@@ -91,7 +91,7 @@ func (rc *CriClient) Connect(ctx context.Context) error {
 		return ErrFailedToValidateCRIConnection
 	}
 
-	rc.Logger.Info("Successfully connected to CRI runtime", "endpoint", endpoint)
+	logger.Info("Successfully connected to CRI runtime", "endpoint", endpoint)
 	return nil
 }
 
@@ -115,12 +115,12 @@ func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []s
 // Close closes the gRPC connection.
 func (rc *CriClient) Close() {
 	if rc.conn != nil {
-		rc.Logger.V(0).Info("Closing gRPC connection")
+		logger := commonlogger.Logger().With("subsystem", "cri")
+		logger.Info("Closing gRPC connection")
 		if err := rc.conn.Close(); err != nil {
-			rc.Logger.V(0).Error(err, "Failed to close gRPC connection")
-			// Optional: Handle the error further, such as retrying or logging to an external service.
+			logger.Error("Failed to close gRPC connection", "err", err)
 		} else {
-			rc.Logger.V(0).Info("gRPC connection closed successfully")
+			logger.Info("gRPC connection closed successfully")
 		}
 	}
 }

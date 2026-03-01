@@ -200,6 +200,8 @@ spec:
                   fieldPath: metadata.namespace
             - name: OTEL_LOG_LEVEL
               value: info
+            - name: ODIGOS_LOG_LEVEL
+              value: {{ .Values.odiglet.logLevel | default .Values.logLevel | default "info" | quote }}
           {{- if include "odigos.secretExists" . }}
             - name: OTEL_GO_OFFSETS_FILE
               value: /offsets/go_offset_results.json
@@ -376,6 +378,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: ODIGOS_LOG_LEVEL
+              value: {{ .Values.odiglet.logLevel | default .Values.logLevel | default "info" | quote }}
           volumeMounts:
             - name: device-plugins-dir
               mountPath: /var/lib/kubelet/device-plugins

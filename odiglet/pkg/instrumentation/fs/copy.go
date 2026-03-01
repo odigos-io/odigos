@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 const (
@@ -29,6 +29,7 @@ func getNumberOfWorkers() int {
 }
 
 func copyDirectories(srcDir string, destDir string) error {
+	logger := commonlogger.Logger()
 	start := time.Now()
 
 	files, err := getFiles(srcDir)
@@ -61,7 +62,7 @@ func copyDirectories(srcDir string, destDir string) error {
 	// Close the channel and wait for workers to finish
 	close(fileChan)
 	wg.Wait()
-	log.Logger.V(0).Info("Finished copying instrumentation files to host", "duration", time.Since(start))
+	logger.Info("Finished copying instrumentation files to host", "duration", time.Since(start))
 	return nil
 }
 
@@ -99,6 +100,7 @@ func createDotnetDeprecatedDirectories(destDir string) error {
 
 func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGroup) {
 	defer wg.Done()
+	logger := commonlogger.Logger()
 
 	// Allocate a buffer once per goroutine.
 	buf := make([]byte, bufferSize)
@@ -106,7 +108,7 @@ func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGrou
 		destFile := filepath.Join(destDir, file[len(sourceDir)+1:])
 		err := copyFile(file, destFile, buf)
 		if err != nil {
-			log.Logger.Error(err, "error copying file", "file", file)
+			logger.Error("error copying file", "err", err, "file", file)
 		}
 	}
 }

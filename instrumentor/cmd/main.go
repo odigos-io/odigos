@@ -20,25 +20,23 @@ import (
 	"flag"
 	"os"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
-
+	"github.com/odigos-io/odigos/instrumentor"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/sdks"
 
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	"github.com/go-logr/zapr"
-	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
-
-	"github.com/odigos-io/odigos/instrumentor"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
-
 	_ "net/http/pprof"
 )
 
 func main() {
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
+	logger := commonlogger.Logger()
+
 	managerOptions := controllers.KubeManagerOptions{}
 	var telemetryDisabled bool
 
@@ -48,17 +46,10 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
-
-	opts := ctrlzap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	zapLogger := ctrlzap.NewRaw(ctrlzap.UseFlagOptions(&opts))
-	zapLogger = bridge.AttachToZapLogger(zapLogger)
-	logger := zapr.NewLogger(zapLogger)
-	managerOptions.Logger = logger
+	ctrl.SetLogger(commonlogger.FromSlogHandler())
+	managerOptions.Logger = commonlogger.FromSlogHandler()
 
 	// TODO: remove once the webhook stops using the default SDKs from the sdks package
 	sdks.SetDefaultSDKs()
@@ -67,23 +58,23 @@ func main() {
 
 	distrosGetter, err := distros.NewCommunityGetter()
 	if err != nil {
-		logger.Error(err, "Failed to initialize distro getter")
+		logger.Error("Failed to initialize distro getter", "err", err)
 		os.Exit(1)
 	}
 	dp, err := distros.NewProvider(distros.NewCommunityDefaulter(), distrosGetter)
 	if err != nil {
-		logger.Error(err, "Failed to initialize distro provider")
+		logger.Error("Failed to initialize distro provider", "err", err)
 		os.Exit(1)
 	}
 
 	i, err := instrumentor.New(managerOptions, dp, nil)
 	if err != nil {
-		logger.Error(err, "Failed to initialize instrumentor")
+		logger.Error("Failed to initialize instrumentor", "err", err)
 		os.Exit(1)
 	}
 
 	ctx := signals.SetupSignalHandler()
 
 	i.Run(ctx, telemetryDisabled)
-	logger.V(0).Info("instrumentor exiting")
+	logger.Info("instrumentor exiting")
 }

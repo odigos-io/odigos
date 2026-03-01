@@ -19,8 +19,8 @@ import (
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	kubecommon "github.com/odigos-io/odigos/odiglet/pkg/kube/common"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/inspectors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -96,12 +96,13 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 }
 
 func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) ([]odigosv1.RuntimeDetailsByContainer, error) {
+	logger := commonlogger.Logger()
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
 			processes, err := process.FindAllInContainer(workload.PodUID(&pod), container.Name, runtimeDetectionEnvs)
 			if err != nil {
-				log.Logger.Error(err, "failed to find processes in pod container", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+				logger.Error("failed to find processes in pod container", "err", err, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				return nil, err
 			}
 
@@ -110,7 +111,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 
 			for _, proc := range processes {
 				containerURL := kubecommon.GetPodExternalURL(pod.Status.PodIP, container.Ports)
-				langDetails, detectErr := inspectors.DetectLanguage(proc, containerURL, log.Logger)
+				langDetails, detectErr := inspectors.DetectLanguage(proc, containerURL)
 				if detectErr == nil && langDetails.Language != common.UnknownProgrammingLanguage {
 					knownLangsByPid[proc.ProcessID] = langDetails
 				}
@@ -121,9 +122,9 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			if err != nil {
 				switch {
 				case errors.Is(err, errNoKnownLanguageDetected):
-					log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace, "processes", processes)
+					logger.Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace, "processes", processes)
 				default:
-					log.Logger.Error(err, "error determining relevant processes and main language", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+					logger.Error("error determining relevant processes and main language", "err", err, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				}
 				langDetails.Language = common.UnknownProgrammingLanguage
 			}
@@ -135,11 +136,11 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 			var inspectProc *procdiscovery.Details
 
 			if len(relevantProcesses) == 0 || langDetails.Language == common.UnknownProgrammingLanguage {
-				log.Logger.V(0).Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace, "processes", processes)
+				logger.Info("unable to detect language for any process", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace, "processes", processes)
 				langDetails.Language = common.UnknownProgrammingLanguage
 			} else {
 				if len(relevantProcesses) > 1 {
-					log.Logger.V(0).Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+					logger.Info("multiple processes found in pod container, only taking the first one with detected language into account", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 				}
 
 				// Convert map to slice for k8s format
@@ -175,7 +176,7 @@ func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwra
 					if err == nil {
 						libcType = typeFound
 					} else {
-						log.Logger.Error(err, "error inspecting libc type", "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
+						logger.Error("error inspecting libc type", "err", err, "pod", pod.Name, "container", container.Name, "namespace", pod.Namespace)
 					}
 				}
 
@@ -236,9 +237,10 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 // fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's Image and updates the runtime details.
 func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
 	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
+	logger := commonlogger.Logger()
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
 	if containerID == "" {
-		log.Logger.V(0).Info("containerID not found for container", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
+		logger.Info("containerID not found for container", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
 		return
 	}
 	envVars, err := criClient.GetContainerEnvVarsList(ctx, envVarKeys, containerID)
@@ -264,7 +266,7 @@ func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrappe
 			}
 		}
 
-		log.Logger.Error(err, "failed to get relevant env var per language from CRI", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
+		logger.Error("failed to get relevant env var per language from CRI", "err", err, "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
 
 		runtimeDetailsByContainer.CriErrorMessage = criErrorMessage
 
@@ -360,11 +362,11 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 }
 
 func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer, podIdentintifier string) bool {
-
+	logger := commonlogger.Logger()
 	// Skip merging if languages are different, except when updating from unknown to known language.
 	if new.Language != existing.Language &&
 		!(new.Language != common.UnknownProgrammingLanguage && existing.Language == common.UnknownProgrammingLanguage) {
-		log.Logger.V(0).Info("detected different language, skipping merge runtime details", "pod_identifier", podIdentintifier, "container_name", new.ContainerName, "new.Language", new.Language, "existing.Language", existing.Language)
+		logger.Info("detected different language, skipping merge runtime details", "pod_identifier", podIdentintifier, "container_name", new.ContainerName, "new.Language", new.Language, "existing.Language", existing.Language)
 		return false
 	}
 
