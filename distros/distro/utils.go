@@ -17,3 +17,18 @@ func IsRestartRequired(d *OtelDistro, config *common.OdigosConfiguration) bool {
 	}
 	return !d.RuntimeAgent.NoRestartRequired
 }
+
+// RuntimeAgentOptionValue returns the value of the specified option for the runtime agent, and a boolean indicating whether the option was found or not.
+// assuming the option name is unique across the options for the distribution.
+// if duplicate option names are present, the first one will be returned.
+func RuntimeAgentOptionValue(d *OtelDistro, optionName string) (string, bool) {
+	if d == nil || d.RuntimeAgent == nil {
+		return "", false
+	}
+	for _, option := range d.RuntimeAgent.Options {
+		if option.Name == optionName {
+			return option.Value, true
+		}
+	}
+	return "", false
+}

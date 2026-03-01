@@ -100,6 +100,7 @@ import (
 	"go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 
 	odigosrouterconnector "github.com/odigos-io/odigos/collector/connectors/odigosrouterconnector"
+	odigosworkloadconfigextension "github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension"
 	odigoslogsresourceattrsprocessor "github.com/odigos-io/odigos/collector/processor/odigoslogsresourceattrsprocessor"
 	odigosurltemplateprocessor "github.com/odigos-io/odigos/collector/processor/odigosurltemplateprocessor"
 	odigosebpfreceiver "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver"
@@ -120,6 +121,7 @@ func components() (otelcol.Factories, error) {
 		bearertokenauthextension.NewFactory(),
 		oauth2clientauthextension.NewFactory(),
 		googleclientauthextension.NewFactory(),
+		odigosworkloadconfigextension.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
@@ -133,6 +135,7 @@ func components() (otelcol.Factories, error) {
 	factories.ExtensionModules[bearertokenauthextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.141.0"
 	factories.ExtensionModules[oauth2clientauthextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.141.0"
 	factories.ExtensionModules[googleclientauthextension.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/extension/googleclientauthextension v0.141.0"
+	factories.ExtensionModules[odigosworkloadconfigextension.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension v0.141.0"
 
 	factories.Receivers, err = otelcol.MakeFactoryMap[receiver.Factory](
 		otlpreceiver.NewFactory(),

@@ -17,15 +17,19 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	api "github.com/odigos-io/odigos/common/api"
+)
+
 // HighlyRelevantOperationApplyConfiguration represents a declarative configuration of the HighlyRelevantOperation type for use
 // with apply.
 type HighlyRelevantOperationApplyConfiguration struct {
-	SourceScopes      []SourcesScopeApplyConfiguration                `json:"sourceScopes,omitempty"`
-	Error             *bool                                           `json:"error,omitempty"`
-	DurationAtLeastMs *int                                            `json:"durationAtLeastMs,omitempty"`
-	Operation         *TailSamplingOperationMatcherApplyConfiguration `json:"operation,omitempty"`
-	PercentageAtLeast *float64                                        `json:"percentageAtLeast,omitempty"`
-	Notes             *string                                         `json:"notes,omitempty"`
+	SourceScopes      []SourcesScopeApplyConfiguration  `json:"sourceScopes,omitempty"`
+	Error             *bool                             `json:"error,omitempty"`
+	DurationAtLeastMs *int                              `json:"durationAtLeastMs,omitempty"`
+	Operation         *api.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtLeast *float64                          `json:"percentageAtLeast,omitempty"`
+	Notes             *string                           `json:"notes,omitempty"`
 }
 
 // HighlyRelevantOperationApplyConfiguration constructs a declarative configuration of the HighlyRelevantOperation type for use with
@@ -66,8 +70,8 @@ func (b *HighlyRelevantOperationApplyConfiguration) WithDurationAtLeastMs(value 
 // WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operation field is set to the value of the last call.
-func (b *HighlyRelevantOperationApplyConfiguration) WithOperation(value *TailSamplingOperationMatcherApplyConfiguration) *HighlyRelevantOperationApplyConfiguration {
-	b.Operation = value
+func (b *HighlyRelevantOperationApplyConfiguration) WithOperation(value api.TailSamplingOperationMatcher) *HighlyRelevantOperationApplyConfiguration {
+	b.Operation = &value
 	return b
 }
 
