@@ -94,6 +94,10 @@ type RuntimeAgent struct {
 	// K8s will mount this directory from the node fs to the container. other platforms may have different ways to make the directory accessible.
 	DirectoryNames []string `yaml:"directoryNames"`
 
+	// Options can be used to add language-specific configuration for the agent.
+	// for example, java supports dynamic attach, and the agent location and configuration can be declared here.
+	Options []Option `yaml:"options,omitempty"`
+
 	// This field indicates that the agent populates k8s resource attributes via environment variables.
 	// It targets distros odigos uses without wrapper or customization.
 	// For eBPF, the resource attributes are set in code.
@@ -118,6 +122,13 @@ type RuntimeAgent struct {
 
 	// If true, the instrumentation applied by this agent does not require application restart.
 	NoRestartRequired bool `yaml:"noRestartRequired,omitempty"`
+}
+
+type Option struct {
+	// The name of the option, which is used to identify it and reference it in the configuration.
+	Name  string `yaml:"name"`
+	// The value of the option, which is used to configure the agent in a specific way.
+	Value string `yaml:"value"`
 }
 
 type SpanMetrics struct {
