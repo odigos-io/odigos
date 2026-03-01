@@ -25,6 +25,7 @@ processors:
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+  odigos_workload_config: {}
   pprof:
     endpoint: 0.0.0.0:1777
 connectors:
@@ -35,6 +36,7 @@ service:
   extensions:
   - health_check
   - pprof
+  - odigos_workload_config
   pipelines:
     logs/debug-d1:
       receivers:
