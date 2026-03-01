@@ -53,6 +53,10 @@ func DiagnoseGraphQL(
 			includeSourceWorkloads = *input.IncludeSourceWorkloads
 		}
 		sourceWorkloadNamespaces = input.SourceWorkloadNamespaces
+		if len(sourceWorkloadNamespaces) > 0 {
+			// If specific namespaces were selected, include source workloads from those namespaces
+			includeSourceWorkloads = true
+		}
 	}
 
 	// Configure options matching the CLI diagnose behavior
