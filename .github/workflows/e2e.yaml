@@ -229,7 +229,7 @@ jobs:
 
       - name: Upload diagnose artifact
         if: ${{ failure() && matrix.test-scenario != 'ui' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: run-details-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
           path: odigos_debug*.tar.gz
@@ -237,7 +237,7 @@ jobs:
 
       - name: Upload UI screenshots artifact
         if: ${{ failure() && matrix.test-scenario == 'ui' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ui-screenshots-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
           path: frontend/webapp/cypress/screenshots
@@ -245,7 +245,7 @@ jobs:
 
       - name: Upload UI videos artifact
         if: ${{ failure() && matrix.test-scenario == 'ui' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ui-videos-${{ matrix.test-scenario }}-${{ matrix.kube-version }}
           path: frontend/webapp/cypress/videos
