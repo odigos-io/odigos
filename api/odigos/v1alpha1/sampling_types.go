@@ -7,6 +7,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -14,10 +16,14 @@ import (
 // a source container matches, if ALL non empty fields match (AND semantics)
 //
 // common patterns:
-// - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName) - all containers (usually there is only one with agent injection)
-// - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName) - only this container
-// - All services in a kubernetes namespace (WorkloadNamespace) - all containers in all sources in the namespace
-// - All services implemented in a specific programming language (WorkloadLanguage) - all container which are running odigos agent for this language
+//   - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
+//     all containers (usually there is only one with agent injection)
+//   - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
+//     only this container
+//   - All services in a kubernetes namespace (WorkloadNamespace):
+//     all containers in all sources in the namespace
+//   - All services implemented in a specific programming language (WorkloadLanguage):
+//     all container which are running odigos agent for this language
 type SourcesScope struct {
 	WorkloadName      string                 `json:"workloadName,omitempty"`
 	WorkloadKind      k8sconsts.WorkloadKind `json:"workloadKind,omitempty"`
@@ -27,61 +33,13 @@ type SourcesScope struct {
 	WorkloadLanguage common.ProgrammingLanguage `json:"workloadLanguage,omitempty"`
 }
 
-// match operations for tail sampling with the full context of the span.
-// this is used by sampling rules to limit it only to specific operations.
-// if the rule matches a sapn, the behavior is determined by the rule itself.
-type TailSamplingOperationMatcher struct {
-
-	// match http server operations in a generic way.
-	HttpServer *HttpServerOperationMatcher `json:"httpServer,omitempty"`
-
-	// match kafka consumer operations (consume spans)
-	KafkaConsumer *KafkaOperationMatcher `json:"kafkaConsumer,omitempty"`
-
-	// match kafka producer operations (produce spans)
-	KafkaProducer *KafkaOperationMatcher `json:"kafkaProducer,omitempty"`
-}
-
-// can match a specific operation for head sampling.
-// head sampling has access only to the attributes available at span start time,
-// and sampling decisions can only be based on the root span of the trace.
-type HeadSamplingOperationMatcher struct {
-	// match http server operation (trace that starts with an http endpoint)
-	HttpServer *HeadSamplingHttpServerOperationMatcher `json:"httpServer,omitempty"`
-
-	// match http client operation (trace that starts with an http client operation)
-	// common for agents that are internally calling home over http, and exporting data.
-	HttpClient *HeadSamplingHttpClientOperationMatcher `json:"httpClient,omitempty"`
-}
-
-// match http server operations for noisy operations matching (only attributes available at span start time)
-type HeadSamplingHttpServerOperationMatcher struct {
-	// match route exactly
-	Route string `json:"route,omitempty"`
-	// match preffix of route
-	RoutePrefix string `json:"routePrefix,omitempty"`
-	// match method exactly, can be empty to match any method
-	Method string `json:"method,omitempty"`
-}
-
-// match http client operations for noisy operations matching (only attributes available at span start time)
-// can be used to filter out outgoing http requests for other agents calling home or exporting data.
-type HeadSamplingHttpClientOperationMatcher struct {
-	// match server address exactly (e.g. collector.my.vendor.com)
-	ServerAddress string `json:"serverAddress,omitempty"`
-	// match url path exactly (e.g. /api/v1/metrics)
-	UrlPath string `json:"urlPath,omitempty"`
-	// match method exactly, can be empty to match any method
-	Method string `json:"method,omitempty"`
-}
-
 // endpoints (or other operations) which are considered "noise", and provide no or very little observability value.
 // these traces should not be collected at all, or dropped aggresevly.
 // motivation is data sentization and performance improvment (even if cost is not a factor)
 //
 // examples:
 // - health-checks (readiness and liveness probes)
-// - metrics scrape endpoints (promethues /metrics endpoint)
+// - metrics scrape endpoints (prometheus /metrics endpoint)
 // - other agents calling home (outgoing http requests to collector.my.vendor.com)
 type NoisyOperation struct {
 	// limit this rule to specific sources (by name, namespace, language, etc.)
@@ -93,7 +51,7 @@ type NoisyOperation struct {
 	// limit this rule to specific operations.
 	// for example: specific http server endpoint (GET "/healthz" as an example).
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapi.HeadSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for noisy operations.
 	// if unset, 0% of such the traces will be collected.
@@ -107,28 +65,6 @@ type NoisyOperation struct {
 	// for future context and maintenance.
 	// users can write why this rule was added, observations, document considerations, etc.
 	Notes string `json:"notes,omitempty"`
-}
-
-// match only http server spans for a specific endpoint.
-// user can specify route and method to match, and limit a sampling instruction to only this operation.
-type HttpServerOperationMatcher struct {
-
-	// a specific exact match http route
-	Route string `json:"route,omitempty"`
-
-	// any route that starts with a specific prefix
-	RoutePrefix string `json:"routePrefix,omitempty"`
-
-	// optionally limit to specific http method
-	Method string `json:"method,omitempty"`
-}
-
-// match a kafka consumer or producer operation for a specific topic.
-type KafkaOperationMatcher struct {
-
-	// the topic name to match.
-	// if left empty, all topics are matched.
-	KafkaTopic string `json:"kafkaTopic,omitempty"`
 }
 
 // define operations (spans) with high observability value.
@@ -151,7 +87,7 @@ type HighlyRelevantOperation struct {
 	// optionally, limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapi.TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// traces that contains this operation will be sampled by at least this percentage.
 	// if unset, 100% of such the traces will be sampled.
@@ -176,7 +112,7 @@ type CostReductionRule struct {
 	// limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapi.TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for cost reduction.
 	// this field is required.
