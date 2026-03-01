@@ -1,0 +1,8 @@
+type: odigostailsampling
+
+status:
+  class: processor
+  stability:
+    beta: [traces]
+  codeowners:
+    active: [blumamir]

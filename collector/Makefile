@@ -19,7 +19,7 @@ GOCMD?= go
 MDATAGENCMD?= mdatagen
 
 PROCESSOR_DIR := processors/odigossamplingprocessor
-
+TAILSAMPLING_PROCESSOR_DIR := processors/odigostailsamplingprocessor
 
 .PHONY: download_builder
 download_builder:
@@ -38,8 +38,13 @@ test-odigossamplingprocessor:
 	@echo "Running tests for odigossamplingprocessor at $(PROCESSOR_DIR)"
 	cd $(PROCESSOR_DIR) && GOOS=$(HOST_GOOS) GOARCH=$(HOST_GOARCH) $(GOCMD) test ./...
 
+.PHONY: test-odigostailsamplingprocessor
+test-odigostailsamplingprocessor:
+	@echo "Running tests for odigostailsamplingprocessor at $(TAILSAMPLING_PROCESSOR_DIR)"
+	cd $(TAILSAMPLING_PROCESSOR_DIR) && GOOS=$(HOST_GOOS) GOARCH=$(HOST_GOARCH) $(GOCMD) test ./...
+
 .PHONY: build-odigoscol
-build-odigoscol: download_builder test-odigossamplingprocessor
+build-odigoscol: download_builder test-odigossamplingprocessor test-odigostailsamplingprocessor
 	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml --skip-generate --skip-get-modules
 
 .PHONY: install-tools
