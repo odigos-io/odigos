@@ -13,10 +13,10 @@ require (
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.9
 	helm.sh/helm/v3 v3.19.0
-	k8s.io/api v0.34.2
-	k8s.io/apiextensions-apiserver v0.34.1
-	k8s.io/apimachinery v0.34.2
-	k8s.io/client-go v0.34.2
+	k8s.io/api v0.35.2
+	k8s.io/apiextensions-apiserver v0.35.0
+	k8s.io/apimachinery v0.35.2
+	k8s.io/client-go v0.35.2
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -46,7 +46,6 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
@@ -83,25 +82,24 @@ require (
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
-	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect
 	google.golang.org/grpc v1.77.0 // indirect
-	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
+	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apiserver v0.34.1 // indirect
+	k8s.io/apiserver v0.35.0 // indirect
 	k8s.io/cli-runtime v0.34.0 // indirect
-	k8s.io/component-base v0.34.1 // indirect
+	k8s.io/component-base v0.35.0 // indirect
 	k8s.io/kubectl v0.34.0 // indirect
 	oras.land/oras-go/v2 v2.6.0 // indirect
-	sigs.k8s.io/controller-runtime v0.22.1 // indirect
+	sigs.k8s.io/controller-runtime v0.23.1 // indirect
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
-	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
 )
 
 require (
@@ -134,9 +132,9 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
-	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
-	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
+	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
+	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
+	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 )
 
 replace (
