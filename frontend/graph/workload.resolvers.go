@@ -578,11 +578,11 @@ func (r *k8sWorkloadResolver) DataStreamNames(ctx context.Context, obj *model.K8
 // NumberOfInstances is the resolver for the numberOfInstances field.
 func (r *k8sWorkloadResolver) NumberOfInstances(ctx context.Context, obj *model.K8sWorkload) (*int, error) {
 	l := loaders.For(ctx)
-	pods, err := l.GetWorkloadPods(ctx, *obj.ID)
+	workloadManifest, err := l.GetWorkloadManifest(ctx, *obj.ID)
 	if err != nil {
 		return nil, err
 	}
-	count := len(pods)
+	count := int(workloadManifest.AvailableReplicas)
 	return &count, nil
 }
 
