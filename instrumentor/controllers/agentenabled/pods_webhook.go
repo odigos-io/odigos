@@ -474,10 +474,6 @@ func getRuntimeInfoForContainerName(ic *odigosv1.InstrumentationConfig, containe
 }
 
 func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config common.OdigosConfiguration) {
-	const (
-		instrumentationsPath = "/instrumentations"
-	)
-
 	imageName := getInitContainerImage(config)
 
 	var copyCommands []string
@@ -492,7 +488,7 @@ func createInitContainer(pod *corev1.Pod, dirsToCopy map[string]struct{}, config
 	sort.Strings(dirs)
 
 	for _, dir := range dirs {
-		from := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, instrumentationsPath)
+		from := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigletContainerAgentDirectory)
 		to := strings.ReplaceAll(dir, distro.AgentPlaceholderDirectory, k8sconsts.OdigosAgentsDirectory)
 		copyCommands = append(copyCommands, fmt.Sprintf("cp -r %s %s", from, to))
 	}

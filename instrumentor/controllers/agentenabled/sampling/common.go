@@ -2,11 +2,11 @@ package sampling
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 )
 
-func IsServiceInRuleScope(services []odigosv1.SourcesScope, pw k8sconsts.PodWorkload, containerName string, containerLanguage common.ProgrammingLanguage) bool {
+func IsServiceInRuleScope(services []v1alpha1.SourcesScope, pw k8sconsts.PodWorkload, containerName string, containerLanguage common.ProgrammingLanguage) bool {
 	if len(services) == 0 {
 		// empty list means all services are matched
 		return true

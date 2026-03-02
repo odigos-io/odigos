@@ -17,11 +17,15 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	api "github.com/odigos-io/odigos/common/api"
+)
+
 // AgentTracesConfigApplyConfiguration represents a declarative configuration of the AgentTracesConfig type for use
 // with apply.
 type AgentTracesConfigApplyConfiguration struct {
 	IdGenerator       *IdGeneratorConfigApplyConfiguration       `json:"idGenerator,omitempty"`
-	UrlTemplatization *UrlTemplatizationConfigApplyConfiguration `json:"urlTemplatization,omitempty"`
+	UrlTemplatization *api.UrlTemplatizationConfig               `json:"urlTemplatization,omitempty"`
 	HeadersCollection *HeadersCollectionConfigApplyConfiguration `json:"headersCollection,omitempty"`
 	HeadSampling      *HeadSamplingConfigApplyConfiguration      `json:"headSampling,omitempty"`
 	SpanRenamer       *SpanRenamerConfigApplyConfiguration       `json:"spanRenamer,omitempty"`
@@ -44,8 +48,8 @@ func (b *AgentTracesConfigApplyConfiguration) WithIdGenerator(value *IdGenerator
 // WithUrlTemplatization sets the UrlTemplatization field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the UrlTemplatization field is set to the value of the last call.
-func (b *AgentTracesConfigApplyConfiguration) WithUrlTemplatization(value *UrlTemplatizationConfigApplyConfiguration) *AgentTracesConfigApplyConfiguration {
-	b.UrlTemplatization = value
+func (b *AgentTracesConfigApplyConfiguration) WithUrlTemplatization(value api.UrlTemplatizationConfig) *AgentTracesConfigApplyConfiguration {
+	b.UrlTemplatization = &value
 	return b
 }
 

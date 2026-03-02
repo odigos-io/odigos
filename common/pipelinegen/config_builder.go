@@ -330,11 +330,12 @@ func GetBasicConfig() *config.Config {
 			"pprof": config.GenericMap{
 				"endpoint": "0.0.0.0:1777",
 			},
+			consts.OdigosWorkloadConfigExtensionName: config.GenericMap{},
 		},
 		Exporters: map[string]interface{}{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "pprof"},
+			Extensions: []string{"health_check", "pprof", consts.OdigosWorkloadConfigExtensionName},
 		},
 	}
 }

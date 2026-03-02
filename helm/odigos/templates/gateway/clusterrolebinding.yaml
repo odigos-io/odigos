@@ -1,4 +1,3 @@
-{{- if .Values.collectorGateway.clusterMetricsEnabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -13,4 +12,3 @@ subjects:
 - kind: ServiceAccount
   name: odigos-gateway
   namespace: {{ .Release.Namespace }}
-{{- end }}

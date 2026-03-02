@@ -11,10 +11,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-version"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -24,6 +26,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -214,7 +217,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		existingBackoffReason = odigosv1.AgentEnabledReasonCrashLoopBackOff
 	}
 	containersConfig := make([]odigosv1.ContainerAgentConfig, 0, len(ic.Spec.Containers))
-	collectorConfig := make([]odigosv1.ContainerCollectorConfig, 0, len(ic.Spec.Containers))
+	collectorConfig := make([]commonapi.ContainerCollectorConfig, 0, len(ic.Spec.Containers))
 	runtimeDetailsByContainer := ic.RuntimeDetailsByContainer()
 	podManifestInjectionOptional := true // pod manifest is optional, unless some container agent requires it
 
@@ -433,7 +436,7 @@ func getEnvInjectionDecision(
 // filterUrlTemplateRulesForContainer filters template rules to only include those relevant to the container.
 // A rule group is applied if ALL set filters match (AND logic).
 // If no filters are set in a group, it's considered global and applies to all containers.
-func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *odigosv1.UrlTemplatizationConfig {
+func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *commonapi.UrlTemplatizationConfig {
 	var rules []string
 	participating := false
 
@@ -459,7 +462,7 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 		return nil
 	}
 
-	return &odigosv1.UrlTemplatizationConfig{
+	return &commonapi.UrlTemplatizationConfig{
 		Rules: rules,
 	}
 }
@@ -506,7 +509,7 @@ func calculateContainerCollectorConfig(containerName string,
 	containerOverride *odigosv1.ContainerOverride,
 	samplingRules *[]odigosv1.Sampling,
 	pw k8sconsts.PodWorkload,
-) *odigosv1.ContainerCollectorConfig {
+) *commonapi.ContainerCollectorConfig {
 
 	// If this container is ignored, runtime details are unavailable, or language is not supported,
 	// we don't need to add any sampling rules for it.
@@ -531,9 +534,9 @@ func calculateContainerCollectorConfig(containerName string,
 
 	noisyOps, relevantOps, costRules := sampling.FilterTailSamplingRulesForContainer(samplingRules, runtimeDetails.Language, pw, containerName, containerDistro)
 
-	return &odigosv1.ContainerCollectorConfig{
+	return &commonapi.ContainerCollectorConfig{
 		ContainerName: containerName,
-		TailSampling: &odigosv1.SamplingCollectorConfig{
+		TailSampling: &commonapi.SamplingCollectorConfig{
 			NoisyOperations:          noisyOps,
 			HighlyRelevantOperations: relevantOps,
 			CostReductionRules:       costRules,
