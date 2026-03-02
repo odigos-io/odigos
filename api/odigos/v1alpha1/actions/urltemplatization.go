@@ -24,18 +24,38 @@ type URLTemplatizationRule struct {
 	Notes string `json:"notes,omitempty"`
 }
 
+// WorkloadFilter allows filtering rule groups by k8s workload.
+// Kind and Name are AND'd together within a single filter entry.
+// Multiple WorkloadFilter entries in a group are OR'd together.
+// An empty WorkloadFilters list matches all workloads.
+// +kubebuilder:object:generate=true
+// +kubebuilder:deepcopy-gen=true
+type WorkloadFilter struct {
+	// +kubebuilder:validation:Enum=Deployment;StatefulSet;DaemonSet
+	Kind *k8sconsts.WorkloadKind `json:"kind,omitempty"`
+	Name string                  `json:"name,omitempty"`
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 // UrlTemplatizationRulesGroup is a group of rules that share the same target spans.
-// For examples, all rules for java spans, all rules for deployment foo in namespace default, etc.
-// Filters, if set, are ANDed together, e.g. for the templatization rules to be applied, all set filters must be true.
-// If no filters are set, the rules will be applied to all spans.
+// All set filters are AND'd together; an unset filter matches everything.
+// FilterK8sNamespace is an AND gate (empty = all namespaces).
+// WorkloadFilters list is an OR gate (empty list = all workloads; each entry ANDs kind + name).
+// FilterK8sWorkloadKind and FilterK8sWorkloadName are deprecated scalar equivalents of WorkloadFilters,
+// kept for backward compatibility with existing CRs; they are ORed with WorkloadFilters entries.
+// If no filters are set at all, the rules will be applied to all spans.
 type UrlTemplatizationRulesGroup struct {
 	FilterProgrammingLanguage *common.ProgrammingLanguage `json:"filterProgrammingLanguage,omitempty"`
 	FilterK8sNamespace        string                      `json:"filterK8sNamespace,omitempty"`
 	FilterK8sWorkloadKind     *k8sconsts.WorkloadKind     `json:"filterK8sWorkloadKind,omitempty"`
 	FilterK8sWorkloadName     string                      `json:"filterK8sWorkloadName,omitempty"`
 
+	// WorkloadFilters is a list of workload (kind, name) pairs this group targets.
+	// Each entry is ORed: the group matches if the workload matches any entry.
+	// Within an entry, set fields are ANDed (both kind and name must match if both are set).
+	// If the list is empty, the group matches all workloads (subject to FilterK8sNamespace).
+	WorkloadFilters []WorkloadFilter `json:"workloadFilters,omitempty"`
 	// the rules that will be applied to the spans matching the above filters.
 	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`
 
@@ -50,10 +70,10 @@ type URLTemplatizationConfig struct {
 
 	// list here all the groups of rules that will be applied to the spans.
 	// each group targets a specific set of spans that share the same filters.
-	// for example, one can set up 3 groups in the action:
-	// 1. some rules for java spans
-	// 2. some rules for deployment foo in namespace default
-	// 3. rules without filters that will be applied to all spans.
+	// for example, one can set up multiple groups in the action:
+	// 1. some rules for deployment foo in namespace default
+	// 2. rules without filters that will be applied to all spans.
+	// +kubebuilder:validation:MinItems=1
 	TemplatizationRulesGroups []UrlTemplatizationRulesGroup `json:"templatizationRulesGroups"`
 }
 
@@ -66,7 +86,5 @@ func (URLTemplatizationConfig) OrderHint() int {
 }
 
 func (URLTemplatizationConfig) CollectorRoles() []k8sconsts.CollectorRole {
-	return []k8sconsts.CollectorRole{
-		k8sconsts.CollectorsRoleClusterGateway,
-	}
+	return []k8sconsts.CollectorRole{k8sconsts.CollectorsRoleNodeCollector}
 }
