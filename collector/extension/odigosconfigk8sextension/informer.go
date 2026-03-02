@@ -124,7 +124,7 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(itemMap, &c); err != nil {
 			continue
 		}
-		cacheKey := K8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, c.ContainerName)
+		cacheKey := k8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, c.ContainerName)
 		o.cache.Set(cacheKey, &c)
 	}
 

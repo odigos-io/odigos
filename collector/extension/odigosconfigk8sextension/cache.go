@@ -47,7 +47,7 @@ func (c *Cache) DeleteWorkload(workloadKey WorkloadKey) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	keyPrefix := K8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, "")
+	keyPrefix := k8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, "")
 
 	// cache key is in container level, this function delete on the workload level.
 	// iterate over the data and delete each entry where the key starts with the given key.
