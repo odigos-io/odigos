@@ -1,7 +1,6 @@
 FROM --platform=$BUILDPLATFORM node:20.9.0 AS deps
 WORKDIR /app
 COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
-COPY frontend/webapp/odigos-ui-kit-0.0.199.tgz ./odigos-ui-kit-0.0.199.tgz
 RUN yarn install --frozen-lockfile
 
 FROM --platform=$BUILDPLATFORM node:20.9.0 AS builder

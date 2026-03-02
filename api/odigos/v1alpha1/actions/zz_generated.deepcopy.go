@@ -100,7 +100,6 @@ func (in *UrlTemplatizationRulesGroup) DeepCopyInto(out *UrlTemplatizationRulesG
 		*out = new(k8sconsts.WorkloadKind)
 		**out = **in
 	}
-	out.FilterK8sWorkloadName = in.FilterK8sWorkloadName
 	if in.WorkloadFilters != nil {
 		in, out := &in.WorkloadFilters, &out.WorkloadFilters
 		*out = make([]WorkloadFilter, len(*in))
