@@ -3,9 +3,10 @@ package odigosconfigk8sextension
 import (
 	"context"
 
-	commonapi "github.com/odigos-io/odigos/common/api"
 	"go.opentelemetry.io/collector/component"
 	"go.uber.org/zap"
+
+	commonapi "github.com/odigos-io/odigos/common/api"
 
 	"k8s.io/client-go/dynamic/dynamicinformer"
 )
