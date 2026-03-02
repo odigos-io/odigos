@@ -1,6 +1,8 @@
 package odigosconfigk8sextension
 
 import (
+	"errors"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
@@ -27,11 +29,17 @@ var attrKindPairs = []struct {
 // WorkloadKeyFromResourceAttributes returns a key from OpenTelemetry resource
 // attributes when available. It reads k8s.namespace.name and the first present
 // workload name attribute (e.g. k8s.deployment.name, k8s.statefulset.name) to set
-func WorkloadKeyFromResourceAttributes(attrs pcommon.Map) string {
+func WorkloadKeyFromResourceAttributes(attrs pcommon.Map) (string, error) {
 	ns := getNamespace(attrs)
 	kind, name := getKindAndName(attrs)
 	containerName := getContainerName(attrs)
-	return K8sSourceKey(ns, kind, name, containerName)
+
+	// if the workload info cannot be calculated from the resource attributes, return an empty string.
+
+	if ns == "" || kind == "" || name == "" || containerName == "" {
+		return "", errors.New("workload info cannot be calculated from the resource attributes")
+	}
+	return K8sSourceKey(ns, kind, name, containerName), nil
 }
 
 func getNamespace(attrs pcommon.Map) string {
