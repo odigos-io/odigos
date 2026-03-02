@@ -7,9 +7,10 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/zap"
 
+	"k8s.io/client-go/dynamic/dynamicinformer"
+
 	commonapi "github.com/odigos-io/odigos/common/api"
 	"github.com/odigos-io/odigos/common/collector"
-	"k8s.io/client-go/dynamic/dynamicinformer"
 )
 
 // OdigosWorkloadConfig is an extension that runs a dynamic informer for InstrumentationConfigs
