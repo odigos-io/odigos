@@ -74,7 +74,7 @@ func TestCalculateMinimal(t *testing.T) {
 		make([]config.ExporterConfigurer, 0),
 		make([]config.ProcessorConfigurer, 0),
 		nil,
-		nil, gatewayOptions,
+		nil, gatewayOptions, nil,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -100,6 +100,7 @@ func TestCalculate(t *testing.T) {
 		make([]config.ProcessorConfigurer, 0),
 		nil,
 		nil, gatewayOptions,
+		nil,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, want, config)
@@ -141,6 +142,7 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 		[]config.ProcessorConfigurer{},
 		nil,
 		nil, gatewayOptions,
+		nil,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -170,6 +172,7 @@ func TestCalculateWithBaseNoOTLP(t *testing.T) {
 		[]config.ProcessorConfigurer{},
 		nil,
 		nil, gatewayOptions,
+		nil,
 	)
 	assert.Contains(t, err.Error(), "required receiver")
 	assert.Equal(t, len(statuses.Destination), 0)
@@ -227,6 +230,7 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 		[]config.ExporterConfigurer{dummyDest},
 		dummyProcessors,
 		nil, dataStreamDetails, gatewayOptions,
+		nil,
 	)
 
 	assert.Equal(t, config, want)
@@ -288,6 +292,7 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 		[]config.ExporterConfigurer{dummyDest},
 		dummyProcessors,
 		nil, dataStreamDetails, gatewayOptions,
+		nil,
 	)
 
 	assert.Equal(t, config, want)
@@ -351,6 +356,7 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 		[]config.ExporterConfigurer{},
 		dummyProcessors,
 		nil, dataStreamDetails, gatewayOptions,
+		nil,
 	)
 
 	assert.Equal(t, want, config)
