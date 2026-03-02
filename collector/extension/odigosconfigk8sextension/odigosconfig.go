@@ -3,6 +3,7 @@ package odigosconfigk8sextension
 import (
 	"context"
 
+	commonapi "github.com/odigos-io/odigos/common/api"
 	"go.opentelemetry.io/collector/component"
 	"go.uber.org/zap"
 
@@ -42,6 +43,6 @@ func (o *OdigosWorkloadConfig) Shutdown(ctx context.Context) error {
 }
 
 // GetWorkloadSamplingConfig returns the sampling config for the given workload key, or (nil, false) if not found.
-func (o *OdigosWorkloadConfig) GetWorkloadSamplingConfig(key WorkloadKey) (*WorkloadConfig, bool) {
+func (o *OdigosWorkloadConfig) GetWorkloadCollectorConfig(key string) (*commonapi.ContainerCollectorConfig, bool) {
 	return o.cache.Get(key)
 }

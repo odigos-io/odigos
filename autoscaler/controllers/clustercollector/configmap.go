@@ -174,6 +174,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		gatewayOptions.TraceAggregationWaitDuration = gateway.Spec.TailSampling.TraceAggregationWaitDuration
 	}
 
+	odigosConfigExtensionName := "odigos_config_k8s"
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
@@ -193,7 +194,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			}
 			return nil
 		},
-		dataStreams, gatewayOptions,
+		dataStreams, gatewayOptions, &odigosConfigExtensionName,
 	)
 
 	if err != nil {

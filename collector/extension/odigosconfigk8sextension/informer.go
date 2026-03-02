@@ -92,15 +92,43 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 	// This is a temporary solution until we have a better way to handle the instrumentation config (ie, using our api directly ideally)
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		o.logger.Debug("informer received non-unstructured object", zap.String("type", fmt.Sprintf("%T", obj)))
+		o.logger.Info("informer received non-unstructured object", zap.String("type", fmt.Sprintf("%T", obj)))
 		return
 	}
-	key, ok, cfg := instrumentationConfigToWorkloadSampling(u)
+
+	workloadKey, ok := workloadKeyFromObject(u)
 	if !ok {
+		o.logger.Info("failed to get workload key from instrumentation config", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
 		return
 	}
-	o.cache.Set(key, cfg)
-	o.logger.Debug("updated workload sampling cache", zap.String("namespace", key.Namespace), zap.String("kind", key.Kind), zap.String("name", key.Name))
+
+	specMap, ok, _ := unstructured.NestedMap(u.Object, "spec")
+	if !ok || len(specMap) == 0 {
+		o.logger.Info("failed to get instrumentation config spec", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+		return
+	}
+
+	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
+	if !ok || len(workloadCollectorConfigSlice) == 0 {
+		o.logger.Debug("failed to get workload collector config from instrumentation config", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+		return
+	}
+
+	for _, item := range workloadCollectorConfigSlice {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			o.logger.Info("failed to get container collector config from workload collector config", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+			return
+		}
+		var c commonapi.ContainerCollectorConfig
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(itemMap, &c); err != nil {
+			continue
+		}
+		cacheKey := K8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, c.ContainerName)
+		o.cache.Set(cacheKey, &c)
+	}
+
+	o.logger.Debug("updated workload sampling cache", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
 }
 
 func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}) {
@@ -113,40 +141,9 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 	}
 	key, ok := workloadKeyFromObject(u)
 	if ok {
-		o.cache.Delete(key)
+		o.cache.DeleteWorkload(key)
 		o.logger.Debug("removed workload from sampling cache", zap.String("namespace", key.Namespace), zap.String("kind", key.Kind), zap.String("name", key.Name))
 	}
-}
-
-func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (key WorkloadKey, ok bool, cfg *WorkloadConfig) {
-	key, ok = workloadKeyFromObject(u)
-	if !ok {
-		return key, false, nil
-	}
-	specMap, ok, _ := unstructured.NestedMap(u.Object, "spec")
-	if !ok || len(specMap) == 0 {
-		return key, true, &WorkloadConfig{}
-	}
-	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
-	if !ok || len(workloadCollectorConfigSlice) == 0 {
-		return key, true, &WorkloadConfig{}
-	}
-	var workloadCollectorConfig []commonapi.ContainerCollectorConfig
-	for _, item := range workloadCollectorConfigSlice {
-		itemMap, ok := item.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		var c commonapi.ContainerCollectorConfig
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(itemMap, &c); err != nil {
-			continue
-		}
-		workloadCollectorConfig = append(workloadCollectorConfig, c)
-	}
-	cfg = &WorkloadConfig{
-		WorkloadCollectorConfig: workloadCollectorConfig,
-	}
-	return key, true, cfg
 }
 
 // workloadKeyFromObject returns a WorkloadKey from the InstrumentationConfig's metadata.

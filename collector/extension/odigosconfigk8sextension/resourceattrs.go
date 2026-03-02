@@ -24,28 +24,45 @@ var attrKindPairs = []struct {
 	{K8SArgoRolloutNameAttribute, "Rollout"},
 }
 
-// WorkloadKeyFromResourceAttributes returns a WorkloadKey from OpenTelemetry resource
+// WorkloadKeyFromResourceAttributes returns a key from OpenTelemetry resource
 // attributes when available. It reads k8s.namespace.name and the first present
 // workload name attribute (e.g. k8s.deployment.name, k8s.statefulset.name) to set
-// Namespace, Kind, and Name. Fields that are not present remain empty.
-func WorkloadKeyFromResourceAttributes(attrs pcommon.Map) WorkloadKey {
-	var key WorkloadKey
+func WorkloadKeyFromResourceAttributes(attrs pcommon.Map) string {
+	ns := getNamespace(attrs)
+	kind, name := getKindAndName(attrs)
+	containerName := getContainerName(attrs)
+	return K8sSourceKey(ns, kind, name, containerName)
+}
+
+func getNamespace(attrs pcommon.Map) string {
 	if v, ok := attrs.Get(string(semconv.K8SNamespaceNameKey)); ok && v.Type() == pcommon.ValueTypeStr {
-		key.Namespace = v.Str()
+		return v.Str()
 	}
+	return ""
+}
+
+func getKindAndName(attrs pcommon.Map) (string, string) {
 	for _, p := range attrKindPairs {
 		if v, ok := attrs.Get(p.attr); ok && v.Type() == pcommon.ValueTypeStr && v.Str() != "" {
-			key.Kind = p.kind
-			key.Name = v.Str()
-			return key
+			return p.kind, v.Str()
 		}
 	}
+
 	// Fallback to Odigos-specific workload attributes when no k8s workload attribute matched.
 	if nameVal, ok := attrs.Get(consts.OdigosWorkloadNameAttribute); ok && nameVal.Type() == pcommon.ValueTypeStr && nameVal.Str() != "" {
-		key.Name = nameVal.Str()
+		name := nameVal.Str()
 		if kindVal, ok := attrs.Get(consts.OdigosWorkloadKindAttribute); ok && kindVal.Type() == pcommon.ValueTypeStr && kindVal.Str() != "" {
-			key.Kind = kindVal.Str()
+			kind := kindVal.Str()
+			return kind, name
 		}
 	}
-	return key
+
+	return "", ""
+}
+
+func getContainerName(attrs pcommon.Map) string {
+	if v, ok := attrs.Get(string(semconv.K8SContainerNameKey)); ok && v.Type() == pcommon.ValueTypeStr {
+		return v.Str()
+	}
+	return ""
 }

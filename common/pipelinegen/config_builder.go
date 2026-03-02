@@ -29,9 +29,10 @@ func GetGatewayConfig(
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
 	gatewayOptions GatewayConfigOptions,
+	odigosConfigExtensionName *string,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig()
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
+	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions, odigosConfigExtensionName)
 }
 
 //nolint:funlen // This function handles complex gateway configuration logic that is difficult to break down further
@@ -42,6 +43,7 @@ func CalculateGatewayConfig(
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
 	gatewayOptions GatewayConfigOptions,
+	odigosConfigExtensionName *string,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -187,6 +189,13 @@ func CalculateGatewayConfig(
 		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
 	}
 
+	// add the odigos config extension to the config if it is set
+	// each platform (k8s, vm) will have a different extension name
+	if odigosConfigExtensionName != nil {
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, *odigosConfigExtensionName)
+		currentConfig.Extensions[*odigosConfigExtensionName] = config.GenericMap{}
+	}
+
 	// Final marshal to YAML
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
@@ -330,12 +339,11 @@ func GetBasicConfig() *config.Config {
 			"pprof": config.GenericMap{
 				"endpoint": "0.0.0.0:1777",
 			},
-			consts.OdigosWorkloadConfigExtensionName: config.GenericMap{},
 		},
 		Exporters: map[string]interface{}{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "pprof", consts.OdigosWorkloadConfigExtensionName},
+			Extensions: []string{"health_check", "pprof"},
 		},
 	}
 }
