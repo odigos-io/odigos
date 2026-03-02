@@ -93,11 +93,7 @@ and rollback any metadata changes made to your objects.`,
 			if autoRolloutDisabled {
 				fmt.Println("Odigos is configured to NOT rollout workloads automatically; existing pods will remain instrumented until a manual rollout is triggered.")
 			} else if !cmd.Flag("no-wait").Changed {
-				err = waitForPodsToRolloutWithoutInstrumentation(ctx, client)
-				if err != nil {
-					fmt.Printf("\033[31mERROR\033[0m Failed to wait for pods to rollout without instrumentation: %s\n", err)
-					os.Exit(1)
-				}
+				waitForPodsToRolloutWithoutInstrumentation(ctx, client)
 			}
 
 			// If the user only wants to uninstall instrumentation, we exit here.
@@ -223,11 +219,34 @@ func namespaceHasOdigosLabel(ctx context.Context, client *kube.Client, ns string
 	return false, nil
 }
 
-func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) error {
+func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kube.Client) {
 	instrumentedPodReq, _ := k8slabels.NewRequirement(k8sconsts.OdigosAgentsMetaHashLabel, selection.Exists, []string{})
-	fmt.Printf("Waiting for pods to rollout without instrumentation... this might take a while\n")
 
-	pollErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(innerCtx context.Context) (bool, error) {
+	// First, count the instrumented pods to determine dynamic timeout (10 seconds per pod)
+	pods, err := client.CoreV1().Pods("").List(ctx, metav1.ListOptions{
+		LabelSelector: instrumentedPodReq.String(),
+	})
+	if err != nil {
+		fmt.Printf("\033[33m!\tWARN\033[0m failed to list instrumented pods: %s, continuing with uninstall\n", err)
+		return
+	}
+
+	numPods := len(pods.Items)
+	if numPods == 0 {
+		l := log.Print("All pods rolled out without instrumentation")
+		l.Success()
+		return
+	}
+
+	// Calculate timeout: 10 seconds per pod, capped at 5 minutes
+	timeout := time.Duration(numPods) * 10 * time.Second
+	maxTimeout := 5 * time.Minute
+	if timeout > maxTimeout {
+		timeout = maxTimeout
+	}
+	fmt.Printf("Waiting for %d pods to rollout without instrumentation (timeout: %v)...\n", numPods, timeout)
+
+	pollErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, timeout, true, func(innerCtx context.Context) (bool, error) {
 		pods, err := client.CoreV1().Pods("").List(innerCtx, metav1.ListOptions{
 			LabelSelector: instrumentedPodReq.String(),
 		})
@@ -245,26 +264,41 @@ func waitForPodsToRolloutWithoutInstrumentation(ctx context.Context, client *kub
 
 	if pollErr != nil {
 		if errors.Is(pollErr, context.DeadlineExceeded) {
-			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting pods to roll out cleanly, consider re-running uninstall or rollout the un cleaned workloads\n")
+			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting pods to roll out cleanly, continuing with uninstall. Consider re-running uninstall or rollout the un-cleaned workloads\n")
+		} else if errors.Is(pollErr, context.Canceled) {
+			fmt.Printf("\033[33m!\tWARN\033[0m canceled while waiting pods to roll out cleanly, continuing with uninstall\n")
+		} else {
+			fmt.Printf("\033[33m!\tWARN\033[0m error while waiting for pods to roll out: %s, continuing with uninstall\n", pollErr)
 		}
-		if errors.Is(pollErr, context.Canceled) {
-			fmt.Printf("\033[33m!\tWARN\033[0m canceled while waiting pods to roll out cleanly\n")
-		}
-		return pollErr
 	}
-	return nil
 }
 
 func waitForNamespaceDeletion(ctx context.Context, client *kube.Client, ns string) {
 	l := log.Print("Waiting for namespace to be deleted")
-	wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
-		_, err := client.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	// Timeout: 10 seconds for 1 namespace, capped at 5 minutes max
+	timeout := 10 * time.Second
+	maxTimeout := 5 * time.Minute
+	if timeout > maxTimeout {
+		timeout = maxTimeout
+	}
+	pollErr := wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(innerCtx context.Context) (bool, error) {
+		_, err := client.CoreV1().Namespaces().Get(innerCtx, ns, metav1.GetOptions{})
 		if err != nil {
 			l.Success()
 			return true, nil
 		}
 		return false, nil
 	})
+
+	if pollErr != nil {
+		if errors.Is(pollErr, context.DeadlineExceeded) {
+			fmt.Printf("\033[33m!\tWARN\033[0m deadline exceeded for waiting namespace to be deleted, continuing with uninstall\n")
+		} else if errors.Is(pollErr, context.Canceled) {
+			fmt.Printf("\033[33m!\tWARN\033[0m canceled while waiting namespace to be deleted, continuing with uninstall\n")
+		} else {
+			fmt.Printf("\033[33m!\tWARN\033[0m error while waiting for namespace deletion: %s, continuing with uninstall\n", pollErr)
+		}
+	}
 }
 
 func uninstallDeployments(ctx context.Context, client *kube.Client, ns, _ string) error {
