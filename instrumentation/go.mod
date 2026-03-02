@@ -7,7 +7,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0
-	github.com/odigos-io/runtime-detector v0.0.22
+	github.com/odigos-io/runtime-detector v0.0.23
 	go.opentelemetry.io/otel v1.38.0
 	go.opentelemetry.io/otel/metric v1.38.0
 	golang.org/x/sync v0.18.0
