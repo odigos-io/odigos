@@ -1,0 +1,72 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: rust-native
+spec:
+  name: rust-native
+  language: rust
+  runtimeEnvironments:
+    - name: rust-runtime
+      supportedVersions: '>= 1.70'
+  displayName: Rust Native SDK Instrumentation
+  description: |
+    This distribution enables Rust applications that are manually instrumented with the 
+    OpenTelemetry Rust SDK (opentelemetry-rust) to export telemetry data to Odigos.
+    
+    This distribution injects OTLP endpoint environment variables that the OpenTelemetry 
+    Rust SDK reads at startup. Applications must be compiled with the opentelemetry crate 
+    and configured to use environment variables for OTLP export.
+    
+    Required crates in your Cargo.toml:
+    - opentelemetry = "0.24"
+    - opentelemetry-otlp = { version = "0.17", features = ["grpc-tonic"] }
+    - opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
+    
+    Your application should initialize the tracer to read from environment variables:
+    
+    ```rust
+    use opentelemetry_otlp::WithExportConfig;
+    
+    let exporter = opentelemetry_otlp::new_exporter()
+        .tonic()
+        .with_env();  // Reads OTEL_EXPORTER_OTLP_ENDPOINT from env
+    ```
+    
+    For eBPF-based automatic instrumentation (no code changes required), 
+    use the 'rust-community' distribution instead (coming soon).
+  environmentVariables:
+    otlpHttpLocalNode: true
+    signalsAsStaticOtelEnvVars: true
+    staticVariables:
+      - envName: OTEL_EXPORTER_OTLP_PROTOCOL
+        envValue: 'http/protobuf'
+      - envName: OTEL_TRACES_EXPORTER
+        envValue: 'otlp'
+      - envName: OTEL_METRICS_EXPORTER
+        envValue: 'otlp'
+      - envName: OTEL_LOGS_EXPORTER
+        envValue: 'otlp'
+      - envName: OTEL_PROPAGATORS
+        envValue: 'tracecontext,baggage'
+      - envName: OTEL_TRACES_SAMPLER
+        envValue: 'parentbased_traceidratio'
+      - envName: OTEL_TRACES_SAMPLER_ARG
+        envValue: '1.0'
+      - envName: OTEL_BSP_MAX_QUEUE_SIZE
+        envValue: '2048'
+      - envName: OTEL_BSP_SCHEDULE_DELAY
+        envValue: '5000'
+      - envName: OTEL_BSP_MAX_EXPORT_BATCH_SIZE
+        envValue: '512'
+      - envName: RUST_LOG
+        envValue: 'info,opentelemetry=debug'
+  runtimeAgent:
+    device: 'instrumentation.odigos.io/generic'
+    k8sAttrsViaEnvVars: true
+    noRestartRequired: false
+  traces:
+    headSampling:
+      supported: true
+      urlPathAttributeKey: "url.path"
+      httpRequestMethodAttributeKey: "http.request.method"
+

@@ -1,0 +1,31 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: rust-community
+spec:
+  name: rust-community
+  language: rust
+  runtimeEnvironments:
+    - name: rust-runtime
+      supportedVersions: '>= 1.60'
+  displayName: Rust (Detection Only - Coming Soon)
+  description: |
+    EXPERIMENTAL / COMING SOON: Rust language detection is available, but automatic 
+    instrumentation is not yet implemented.
+    
+    Current Status:
+    - Odigos CAN detect Rust applications (via ELF symbol inspection for __rust_ symbols)
+    - Odigos CANNOT automatically instrument Rust applications yet
+    - No eBPF auto-instrumentation library exists for Rust in the OpenTelemetry ecosystem
+    
+    For Rust applications, consider using the OpenTelemetry Rust SDK for manual instrumentation:
+    https://github.com/open-telemetry/opentelemetry-rust
+    
+    This distribution is a placeholder for future eBPF-based instrumentation support.
+  # Device ensures Rust pods are scheduled only on nodes with the Odiglet installed,
+  # since we intentionally skip setting node affinity when the mount method is 'virtual device'.
+  runtimeAgent:
+    device: 'instrumentation.odigos.io/generic'
+    k8sAttrsViaEnvVars: true
+    noRestartRequired: true
+

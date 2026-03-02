@@ -1,0 +1,311 @@
+---
+title: 'Rust Native SDK'
+sidebarTitle: 'Native SDK'
+icon: 'code'
+---
+
+The **rust-native** distribution enables Rust applications that are manually instrumented with the OpenTelemetry Rust SDK to export telemetry data through Odigos.
+
+<Info>
+  This distribution injects OTLP endpoint environment variables that the OpenTelemetry Rust SDK reads at startup. Your application must be compiled with the OpenTelemetry crates and configured to use environment variables.
+</Info>
+
+## How It Works
+
+When you select the `rust-native` distribution for your Rust workload, Odigos will:
+
+1. Inject `OTEL_EXPORTER_OTLP_ENDPOINT` pointing to the local node collector
+2. Set standard OpenTelemetry environment variables for SDK configuration
+3. Configure batch processing and sampling defaults
+
+Your application reads these environment variables at startup and exports telemetry through the Odigos pipeline.
+
+## Prerequisites
+
+Your Rust application must include the OpenTelemetry dependencies:
+
+```toml
+[dependencies]
+opentelemetry = "0.24"
+opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.17", features = ["grpc-tonic"] }
+```
+
+## Application Setup
+
+### Basic Initialization
+
+Configure your application to read from environment variables:
+
+```rust
+use opentelemetry::global;
+use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::trace::TracerProvider;
+
+pub fn init_telemetry() -> Result<TracerProvider, Box<dyn std::error::Error>> {
+    let exporter = opentelemetry_otlp::new_exporter()
+        .tonic()
+        .with_env();  // Reads OTEL_EXPORTER_OTLP_ENDPOINT from env
+
+    let provider = opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(exporter)
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+
+    global::set_tracer_provider(provider.clone());
+    Ok(provider)
+}
+```
+
+### With Tracing Integration
+
+For applications using the `tracing` crate:
+
+```rust
+use opentelemetry::global;
+use opentelemetry_otlp::WithExportConfig;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+
+pub fn init_telemetry() -> Result<(), Box<dyn std::error::Error>> {
+    let exporter = opentelemetry_otlp::new_exporter()
+        .tonic()
+        .with_env();
+
+    let provider = opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(exporter)
+        .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+
+    let tracer = provider.tracer("my-service");
+    let telemetry_layer = tracing_opentelemetry::layer().with_tracer(tracer);
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(telemetry_layer)
+        .init();
+
+    Ok(())
+}
+```
+
+## Environment Variables
+
+The `rust-native` distribution injects these environment variables:
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://<node-collector>:4317` | OTLP gRPC endpoint |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `grpc` | Export protocol |
+| `OTEL_TRACES_EXPORTER` | `otlp` | Traces exporter |
+| `OTEL_METRICS_EXPORTER` | `otlp` | Metrics exporter |
+| `OTEL_LOGS_EXPORTER` | `otlp` | Logs exporter |
+| `OTEL_PROPAGATORS` | `tracecontext,baggage` | W3C context propagation |
+| `OTEL_TRACES_SAMPLER` | `parentbased_traceidratio` | Sampling strategy |
+| `OTEL_TRACES_SAMPLER_ARG` | `1.0` | Sample 100% by default |
+| `OTEL_BSP_MAX_QUEUE_SIZE` | `2048` | Batch processor queue |
+| `OTEL_BSP_SCHEDULE_DELAY` | `5000` | Batch delay (ms) |
+
+## Creating Spans
+
+### Using the OpenTelemetry API Directly
+
+```rust
+use opentelemetry::{global, trace::{Tracer, Span, SpanKind}};
+use opentelemetry::KeyValue;
+
+async fn process_order(order_id: &str) -> Result<(), Error> {
+    let tracer = global::tracer("my-service");
+    
+    let mut span = tracer
+        .span_builder("process_order")
+        .with_kind(SpanKind::Internal)
+        .with_attributes(vec![
+            KeyValue::new("order.id", order_id.to_string()),
+        ])
+        .start(&tracer);
+
+    let result = do_processing(order_id).await;
+
+    if let Err(ref e) = result {
+        span.record_error(e);
+        span.set_status(opentelemetry::trace::Status::error(e.to_string()));
+    }
+
+    span.end();
+    result
+}
+```
+
+### Using the Tracing Crate
+
+```rust
+use tracing::{instrument, info, error};
+
+#[instrument(skip(db), fields(order.id = %order_id))]
+async fn process_order(db: &Database, order_id: &str) -> Result<Order, Error> {
+    info!("Starting order processing");
+    
+    let order = db.get_order(order_id).await?;
+    
+    validate_order(&order).await?;
+    
+    info!(status = "completed", "Order processed successfully");
+    Ok(order)
+}
+
+#[instrument]
+async fn validate_order(order: &Order) -> Result<(), Error> {
+    // Automatically creates a child span
+    // ...
+    Ok(())
+}
+```
+
+## Framework Integration
+
+### Axum
+
+```rust
+use axum::{Router, routing::get, middleware};
+use tower_http::trace::TraceLayer;
+
+fn create_app() -> Router {
+    Router::new()
+        .route("/api/orders", get(list_orders))
+        .route("/api/orders/:id", get(get_order))
+        .layer(TraceLayer::new_for_http())
+}
+```
+
+### Actix-web
+
+```rust
+use actix_web::{web, App, HttpServer};
+use tracing_actix_web::TracingLogger;
+
+HttpServer::new(|| {
+    App::new()
+        .wrap(TracingLogger::default())
+        .route("/api/orders", web::get().to(list_orders))
+})
+```
+
+### Tonic (gRPC)
+
+```rust
+use tonic::transport::Server;
+use tower::ServiceBuilder;
+use tower_http::trace::TraceLayer;
+
+Server::builder()
+    .layer(ServiceBuilder::new().layer(TraceLayer::new_for_grpc()))
+    .add_service(my_service)
+    .serve(addr)
+    .await?;
+```
+
+## Context Propagation
+
+### Extracting Context from Incoming Requests
+
+```rust
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
+use opentelemetry::Context;
+
+fn extract_context(headers: &http::HeaderMap) -> Context {
+    let propagator = TraceContextPropagator::new();
+    
+    let extractor = HeaderExtractor(headers);
+    propagator.extract(&extractor)
+}
+
+struct HeaderExtractor<'a>(&'a http::HeaderMap);
+
+impl<'a> opentelemetry::propagation::Extractor for HeaderExtractor<'a> {
+    fn get(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|v| v.to_str().ok())
+    }
+    
+    fn keys(&self) -> Vec<&str> {
+        self.0.keys().map(|k| k.as_str()).collect()
+    }
+}
+```
+
+### Injecting Context into Outgoing Requests
+
+```rust
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
+
+fn inject_context(headers: &mut http::HeaderMap) {
+    let propagator = TraceContextPropagator::new();
+    let cx = opentelemetry::Context::current();
+    
+    propagator.inject_context(&cx, &mut HeaderInjector(headers));
+}
+
+struct HeaderInjector<'a>(&'a mut http::HeaderMap);
+
+impl<'a> opentelemetry::propagation::Injector for HeaderInjector<'a> {
+    fn set(&mut self, key: &str, value: String) {
+        if let Ok(name) = http::header::HeaderName::from_bytes(key.as_bytes()) {
+            if let Ok(val) = http::header::HeaderValue::from_str(&value) {
+                self.0.insert(name, val);
+            }
+        }
+    }
+}
+```
+
+## Graceful Shutdown
+
+Ensure telemetry is flushed before your application exits:
+
+```rust
+use opentelemetry::global;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    init_telemetry()?;
+    
+    // Run your application...
+    run_server().await?;
+    
+    // Flush and shutdown
+    global::shutdown_tracer_provider();
+    
+    Ok(())
+}
+```
+
+## Troubleshooting
+
+### No Traces Appearing
+
+1. **Check environment variables**: Ensure `OTEL_EXPORTER_OTLP_ENDPOINT` is set
+2. **Verify initialization**: Ensure `init_telemetry()` is called before creating spans
+3. **Check for errors**: Enable debug logging with `RUST_LOG=opentelemetry=debug`
+
+### Connection Refused
+
+The collector may not be ready. Add retry logic:
+
+```rust
+let exporter = opentelemetry_otlp::new_exporter()
+    .tonic()
+    .with_env()
+    .with_timeout(std::time::Duration::from_secs(10));
+```
+
+### Missing Spans
+
+Ensure spans are ended properly. Use `#[instrument]` or explicit `.end()` calls.
+
+## Next Steps
+
+- [Context Propagation Best Practices](/instrumentations/rust/enrichment)
+- [OpenTelemetry Rust SDK Documentation](https://docs.rs/opentelemetry/latest/opentelemetry/)
+
