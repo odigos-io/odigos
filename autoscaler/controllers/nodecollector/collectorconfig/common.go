@@ -8,6 +8,7 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/consts"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
@@ -148,10 +149,11 @@ func init() {
 		pprofExtensionName: config.GenericMap{
 			"endpoint": "0.0.0.0:1777",
 		},
+		consts.OdigosWorkloadConfigExtensionName: config.GenericMap{},
 	}
 
 	commonService = config.Service{
-		Extensions: []string{healthCheckExtensionName, pprofExtensionName},
+		Extensions: []string{healthCheckExtensionName, pprofExtensionName, consts.OdigosWorkloadConfigExtensionName},
 	}
 }
 

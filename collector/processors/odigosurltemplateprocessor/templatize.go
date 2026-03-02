@@ -5,7 +5,26 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 )
+
+// regexpCache caches compiled *regexp.Regexp objects keyed by pattern string
+// to avoid repeated regexp.Compile calls for the same pattern.
+var regexpCache sync.Map // map[string]*regexp.Regexp
+
+// compileRegexp returns the compiled regexp for pattern, using the cache to avoid recompilation.
+func compileRegexp(pattern string) (*regexp.Regexp, error) {
+	if v, ok := regexpCache.Load(pattern); ok {
+		return v.(*regexp.Regexp), nil
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	// Store only if another goroutine hasn't stored it first.
+	actual, _ := regexpCache.LoadOrStore(pattern, re)
+	return actual.(*regexp.Regexp), nil
+}
 
 var (
 
@@ -114,7 +133,7 @@ func parseRuleTemplateString(ruleTemplateString string) (string, *regexp.Regexp,
 			return "", nil, errors.New("invalid rule template string. regexp is empty")
 		}
 		var err error
-		regexpPattern, err = regexp.Compile(regexpString)
+		regexpPattern, err = compileRegexp(regexpString)
 		if err != nil {
 			return "", nil, fmt.Errorf("invalid rule template string. regexp is invalid: %w", err)
 		}
@@ -128,7 +147,7 @@ func parseRegexPattern(segment string) (*regexp.Regexp, string, error) {
 	// Check if segment starts with "regex:" prefix
 	if strings.HasPrefix(segment, "regex:") && len(segment) > 6 {
 		regexString := segment[6:] // len("regex:") = 6
-		regexpPattern, err := regexp.Compile(regexString)
+		regexpPattern, err := compileRegexp(regexString)
 		if err != nil {
 			return nil, "", fmt.Errorf("invalid regexp pattern %q: %w", regexString, err)
 		}

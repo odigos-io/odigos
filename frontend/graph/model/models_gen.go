@@ -36,6 +36,7 @@ type ActionFields struct {
 	EndpointsFilters            []*HTTPRouteFilter        `json:"endpointsFilters,omitempty"`
 	ServicesNameFilters         []*ServiceNameFilter      `json:"servicesNameFilters,omitempty"`
 	AttributeFilters            []*SpanAttributeFilter    `json:"attributeFilters,omitempty"`
+	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
 }
 
 type ActionFieldsInput struct {
@@ -55,6 +56,7 @@ type ActionFieldsInput struct {
 	EndpointsFilters            []*HTTPRouteFilterInput        `json:"endpointsFilters,omitempty"`
 	ServicesNameFilters         []*ServiceNameFilterInput      `json:"servicesNameFilters,omitempty"`
 	AttributeFilters            []*SpanAttributeFilterInput    `json:"attributeFilters,omitempty"`
+	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
 }
 
 type ActionInput struct {
@@ -1307,12 +1309,54 @@ type TailSamplingConfigInput struct {
 	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
 }
 
+type TemplatizationScopeFilter struct {
+	Kind *WorkloadKind `json:"kind,omitempty"`
+	Name *string       `json:"name,omitempty"`
+}
+
+type TemplatizationScopeFilterInput struct {
+	Kind *WorkloadKind `json:"kind,omitempty"`
+	Name *string       `json:"name,omitempty"`
+}
+
 type TestConnectionResponse struct {
 	Succeeded       bool    `json:"succeeded"`
 	StatusCode      int     `json:"statusCode"`
 	DestinationType *string `json:"destinationType,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Reason          *string `json:"reason,omitempty"`
+}
+
+type URLTemplatizationRule struct {
+	Template string   `json:"template"`
+	Notes    *string  `json:"notes,omitempty"`
+	Examples []string `json:"examples,omitempty"`
+}
+
+type URLTemplatizationRuleInput struct {
+	Template string   `json:"template"`
+	Notes    *string  `json:"notes,omitempty"`
+	Examples []string `json:"examples,omitempty"`
+}
+
+type URLTemplatizationRulesGroup struct {
+	FilterK8sNamespace        *string                      `json:"filterK8sNamespace,omitempty"`
+	FilterK8sWorkloadKind     *WorkloadKind                `json:"filterK8sWorkloadKind,omitempty"`
+	FilterK8sWorkloadName     *string                      `json:"filterK8sWorkloadName,omitempty"`
+	FilterProgrammingLanguage *string                      `json:"filterProgrammingLanguage,omitempty"`
+	WorkloadFilters           []*TemplatizationScopeFilter `json:"workloadFilters,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRule     `json:"templatizationRules,omitempty"`
+	Notes                     *string                      `json:"notes,omitempty"`
+}
+
+type URLTemplatizationRulesGroupInput struct {
+	FilterK8sNamespace        *string                           `json:"filterK8sNamespace,omitempty"`
+	FilterK8sWorkloadKind     *WorkloadKind                     `json:"filterK8sWorkloadKind,omitempty"`
+	FilterK8sWorkloadName     *string                           `json:"filterK8sWorkloadName,omitempty"`
+	FilterProgrammingLanguage *string                           `json:"filterProgrammingLanguage,omitempty"`
+	WorkloadFilters           []*TemplatizationScopeFilterInput `json:"workloadFilters,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRuleInput     `json:"templatizationRules"`
+	Notes                     *string                           `json:"notes,omitempty"`
 }
 
 type UserInstrumentationEnvsConfig struct {
@@ -1339,6 +1383,7 @@ const (
 	ActionTypeLatencySampler        ActionType = "LatencySampler"
 	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
 	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
+	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1353,12 +1398,13 @@ var AllActionType = []ActionType{
 	ActionTypeLatencySampler,
 	ActionTypeServiceNameSampler,
 	ActionTypeSpanAttributeSampler,
+	ActionTypeURLTemplatization,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
 		return true
 	}
 	return false
@@ -2484,6 +2530,49 @@ func (e *UIMode) UnmarshalGQL(v any) error {
 }
 
 func (e UIMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type WorkloadKind string
+
+const (
+	WorkloadKindDeployment  WorkloadKind = "Deployment"
+	WorkloadKindStatefulSet WorkloadKind = "StatefulSet"
+	WorkloadKindDaemonSet   WorkloadKind = "DaemonSet"
+)
+
+var AllWorkloadKind = []WorkloadKind{
+	WorkloadKindDeployment,
+	WorkloadKindStatefulSet,
+	WorkloadKindDaemonSet,
+}
+
+func (e WorkloadKind) IsValid() bool {
+	switch e {
+	case WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet:
+		return true
+	}
+	return false
+}
+
+func (e WorkloadKind) String() string {
+	return string(e)
+}
+
+func (e *WorkloadKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = WorkloadKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid WorkloadKind", str)
+	}
+	return nil
+}
+
+func (e WorkloadKind) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

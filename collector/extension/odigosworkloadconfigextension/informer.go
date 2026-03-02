@@ -104,18 +104,28 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 }
 
 func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}) {
+	o.handleInstrumentationConfigDeleteInner(obj, 0)
+}
+
+func (o *OdigosWorkloadConfig) handleInstrumentationConfigDeleteInner(obj interface{}, depth int) {
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		if deleted, ok := obj.(k8scache.DeletedFinalStateUnknown); ok {
-			o.handleInstrumentationConfigDelete(deleted.Obj)
+		if depth < 1 {
+			if tombstone, ok := obj.(k8scache.DeletedFinalStateUnknown); ok {
+				o.handleInstrumentationConfigDeleteInner(tombstone.Obj, depth+1)
+			}
+		} else {
+			o.logger.Warn("double-wrapped DeletedFinalStateUnknown in delete handler; skipping")
 		}
 		return
 	}
 	key, ok := workloadKeyFromObject(u)
-	if ok {
-		o.cache.Delete(key)
-		o.logger.Debug("removed workload from sampling cache", zap.String("namespace", key.Namespace), zap.String("kind", key.Kind), zap.String("name", key.Name))
+	if !ok {
+		o.logger.Warn("failed to extract workload key on delete; entry may linger in cache")
+		return
 	}
+	o.cache.Delete(key)
+	o.logger.Debug("removed workload from sampling cache", zap.String("namespace", key.Namespace), zap.String("kind", key.Kind), zap.String("name", key.Name))
 }
 
 func instrumentationConfigToWorkloadSampling(u *unstructured.Unstructured) (key WorkloadKey, ok bool, cfg *WorkloadConfig) {
