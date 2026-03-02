@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
 
@@ -96,6 +97,12 @@ type Config struct {
 	// to apply templatization to the path.
 	// It is optional and defaults to empty.
 	TemplatizationConfig `mapstructure:",squash"`
+
+	// WorkloadConfigExtensionID is the OTel component type string of the workload config extension.
+	// When set, the processor reads per-workload templatization rules from the extension cache
+	// instead of using the static TemplatizationConfig above.
+	// The extension must implement the workloadRulesProvider interface.
+	WorkloadConfigExtensionID string `mapstructure:"workload_config_extension"`
 }
 
 var _ xconfmap.Validator = (*Config)(nil)
@@ -154,5 +161,13 @@ func (c Config) Validate() error {
 			return fmt.Errorf("invalid custom id regexp: %w", err)
 		}
 	}
+
+	if c.WorkloadConfigExtensionID != "" {
+		// Validate the extension type string is a valid OTel component type.
+		if _, err := component.NewType(c.WorkloadConfigExtensionID); err != nil {
+			return fmt.Errorf("invalid workload_config_extension type %q: %w", c.WorkloadConfigExtensionID, err)
+		}
+	}
+
 	return nil
 }
