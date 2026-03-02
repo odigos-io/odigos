@@ -219,7 +219,19 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 			// Requeue to wait for workload to finish or enter backoff state
 			return false, ctrl.Result{RequeueAfter: requeueWaitingForWorkloadRollout}, nil
 		}
-		return false, ctrl.Result{}, nil
+
+		// at this point, we know that rollout happened.
+		// make sure to cleanup any stale condition from previous rollout attempts.
+		// example:
+		// - workload is instrumented successfully.
+		// - rollout regardless of odigos
+		// - agent disabled -> status is changed to "waiting for previous rollout to finish"
+		// - agent enabled -> no need for a rollout, but the status needs to be updated.
+		statusChanged := false
+		if rolloutDone {
+			statusChanged = meta.SetStatusCondition(&ic.Status.Conditions, rolloutCondition(nil))
+		}
+		return statusChanged, ctrl.Result{}, nil
 	}
 	// if a rollout is ongoing, wait for it to finish, requeue
 	statusChanged := false

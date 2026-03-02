@@ -68,6 +68,8 @@ spec:
             - name: TLS_KEY_FILE
               value: "/etc/tls/client/tls.key"
             {{- end }}
+            - name: GOMEMLIMIT
+              value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.centralProxy.resources) }}
           {{- if or .Values.centralProxy.tls.caSecretName .Values.centralProxy.tls.clientCertSecretName }}
           volumeMounts:
             {{- if .Values.centralProxy.tls.caSecretName }}

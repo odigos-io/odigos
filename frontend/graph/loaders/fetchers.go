@@ -725,24 +725,35 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 	return workloadManifests, nil
 }
 
-func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, singleWorkloadManifest *computed.CachedWorkloadManifest, workloadIdsMap map[k8sconsts.PodWorkload]struct{}) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
+func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *WorkloadFilter, singleWorkloadManifest *computed.CachedWorkloadManifest, workloadIdsMap map[k8sconsts.PodWorkload]struct{}, k8sCacheClient client.Client) (workloadPods map[model.K8sWorkloadID][]*corev1.Pod, err error) {
 
-	var labelSelector string
+	var labelSelector *metav1.LabelSelector
 	if filters.SingleWorkload != nil {
 		if singleWorkloadManifest == nil || singleWorkloadManifest.Selector == nil {
 			// if workload is not found for this pod, skip the queries - no pods to fetch.
 			return map[model.K8sWorkloadID][]*corev1.Pod{}, nil
 		}
-		labelSelector = metav1.FormatLabelSelector(singleWorkloadManifest.Selector)
+		labelSelector = singleWorkloadManifest.Selector
 	}
 
 	pods, err := timedAPICall(
 		logger,
-		formatOperationMessage("List Pods", filters.NamespaceString, labelSelector),
+		formatOperationMessage("List Pods", filters.NamespaceString),
 		func() (*corev1.PodList, error) {
-			return kube.DefaultClient.CoreV1().Pods(filters.NamespaceString).List(ctx, metav1.ListOptions{
-				LabelSelector: labelSelector,
-			})
+			podList := &corev1.PodList{}
+			opts := []client.ListOption{client.InNamespace(filters.NamespaceString)}
+			if labelSelector != nil {
+				selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+				if err != nil {
+					return nil, fmt.Errorf("invalid label selector: %w", err)
+				}
+				opts = append(opts, client.MatchingLabelsSelector{Selector: selector})
+			}
+			err := k8sCacheClient.List(ctx, podList, opts...)
+			if err != nil {
+				return nil, err
+			}
+			return podList, nil
 		},
 	)
 	if err != nil {
@@ -760,7 +771,7 @@ func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *Workloa
 			continue
 		}
 		if _, ok := workloadIdsMap[*pw]; !ok {
-			fmt.Printf("skipping pod %s/%s because it is not relevant for odigos\n", pod.Namespace, pod.Name)
+			// fmt.Printf("skipping pod %s/%s because it is not relevant for odigos\n", pod.Namespace, pod.Name)
 			// skip pods not relevant for odigos.
 			// for example, when we are fetching only instrumentated workloads,
 			// we can drop all the pods which does not participate.
