@@ -37,6 +37,7 @@ func createTracesProcessor(
 		cfg,
 		nextConsumer,
 		proc.processTraces,
+		processorhelper.WithStart(proc.Start),
 		processorhelper.WithCapabilities(consumer.Capabilities{MutatesData: true}),
 	)
 }
