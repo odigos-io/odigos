@@ -642,29 +642,21 @@ spec:
                         UrlTemplatizationRulesGroup is a group of rules that share the same target spans.
                         All set filters are AND'd together; an unset filter matches everything.
                         FilterK8sNamespace is an AND gate (empty = all namespaces).
-                        FilterProgrammingLanguage is an AND gate (nil = all languages). Evaluated by the
-                        instrumentor when writing rules into InstrumentationConfig for agent injection;
-                        the node collector processor ignores this field (it has no language info at span time).
                         WorkloadFilters list is an OR gate (empty list = all workloads; each entry ANDs kind + name).
+                        FilterK8sWorkloadKind and FilterK8sWorkloadName are deprecated scalar equivalents of WorkloadFilters,
+                        kept for backward compatibility with existing CRs; they are ORed with WorkloadFilters entries.
                         If no filters are set at all, the rules will be applied to all spans.
                       properties:
                         filterK8sNamespace:
                           type: string
                         filterK8sWorkloadKind:
-                          description: Deprecated; use workloadFilters. Restricts group to workloads of this kind.
-                          enum:
-                          - Deployment
-                          - StatefulSet
-                          - DaemonSet
+                          description: |-
+                            1. the pascal case representation of the workload kind
+                            it is used in k8s api objects as the `Kind` field.
                           type: string
                         filterK8sWorkloadName:
-                          description: Deprecated; use workloadFilters. Restricts group to a workload with this name.
                           type: string
                         filterProgrammingLanguage:
-                          description: |-
-                            FilterProgrammingLanguage restricts this rule group to workloads whose detected language
-                            matches the given value. Only respected by the agent injection path (instrumentor →
-                            InstrumentationConfig → agent env var). The node collector processor ignores this field.
                           enum:
                           - java
                           - python
@@ -712,9 +704,13 @@ spec:
                             required:
                             - template
                             type: object
-                          minItems: 1
                           type: array
                         workloadFilters:
+                          description: |-
+                            WorkloadFilters is a list of workload (kind, name) pairs this group targets.
+                            Each entry is ORed: the group matches if the workload matches any entry.
+                            Within an entry, set fields are ANDed (both kind and name must match if both are set).
+                            If the list is empty, the group matches all workloads (subject to FilterK8sNamespace).
                           items:
                             description: |-
                               WorkloadFilter allows filtering rule groups by k8s workload.
