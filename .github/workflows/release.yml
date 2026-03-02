@@ -89,6 +89,11 @@ jobs:
             echo "This is a stable release: $TAG"
           fi
 
+          # Release branch for tag: v1.17.6 -> releases/v1.17.0
+          VERSION="${TAG#v}"
+          MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
+          echo "RELEASE_BRANCH=releases/v${MAJOR_MINOR}.0" >> $GITHUB_ENV
+
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
@@ -219,7 +224,7 @@ jobs:
         continue-on-error: true
         with:
           tag: ${{ env.TAG }}
-          release-branch: main
+          release-branch: ${{ env.RELEASE_BRANCH }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Notify Slack (release notes)
