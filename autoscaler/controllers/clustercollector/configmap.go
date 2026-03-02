@@ -157,10 +157,12 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
+	odigosConfigExtensionName := "odigos_config_k8s"
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
-		ServiceGraphDisabled:  gateway.Spec.ServiceGraphDisabled,
-		ClusterMetricsEnabled: gateway.Spec.ClusterMetricsEnabled,
-		OdigosNamespace:       env.GetCurrentNamespace(),
+		ServiceGraphDisabled:      gateway.Spec.ServiceGraphDisabled,
+		ClusterMetricsEnabled:     gateway.Spec.ClusterMetricsEnabled,
+		OdigosNamespace:           env.GetCurrentNamespace(),
+		OdigosConfigExtensionName: &odigosConfigExtensionName,
 	}
 
 	// TailSampling is nil when inactive, non-nil when the scheduler has resolved it as active.
@@ -174,7 +176,6 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		gatewayOptions.TraceAggregationWaitDuration = gateway.Spec.TailSampling.TraceAggregationWaitDuration
 	}
 
-	odigosConfigExtensionName := "odigos_config_k8s"
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
@@ -194,7 +195,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			}
 			return nil
 		},
-		dataStreams, gatewayOptions, &odigosConfigExtensionName,
+		dataStreams, gatewayOptions,
 	)
 
 	if err != nil {

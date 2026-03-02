@@ -18,6 +18,10 @@ type GatewayConfigOptions struct {
 	ClusterMetricsEnabled *bool
 	OdigosNamespace       string
 
+	// the name of the extension for accessing odigos configurations.
+	// the extension and it's name are platform specific.
+	OdigosConfigExtensionName *string
+
 	// Sampling config option
 	SamplingEnabled              *bool
 	TraceAggregationWaitDuration *string
@@ -29,10 +33,9 @@ func GetGatewayConfig(
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
 	gatewayOptions GatewayConfigOptions,
-	odigosConfigExtensionName *string,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig()
-	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions, odigosConfigExtensionName)
+	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
 }
 
 //nolint:funlen // This function handles complex gateway configuration logic that is difficult to break down further
@@ -43,7 +46,6 @@ func CalculateGatewayConfig(
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
 	gatewayOptions GatewayConfigOptions,
-	odigosConfigExtensionName *string,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -191,9 +193,9 @@ func CalculateGatewayConfig(
 
 	// add the odigos config extension to the config if it is set
 	// each platform (k8s, vm) will have a different extension name
-	if odigosConfigExtensionName != nil {
-		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, *odigosConfigExtensionName)
-		currentConfig.Extensions[*odigosConfigExtensionName] = config.GenericMap{}
+	if gatewayOptions.OdigosConfigExtensionName != nil {
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, *gatewayOptions.OdigosConfigExtensionName)
+		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
 	}
 
 	// Final marshal to YAML
