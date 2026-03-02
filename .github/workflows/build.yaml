@@ -27,7 +27,7 @@ jobs:
         run: docker load -i /tmp/autoscaler.tar
       - name: Scan image for vulnerabilities
         id: scan-autoscaler
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           image: autoscaler:pr-${{ github.event.number || github.run_number }}
           severity-cutoff: "CRITICAL"
@@ -74,7 +74,7 @@ jobs:
         run: docker load -i /tmp/scheduler.tar
       - name: Scan image for vulnerabilities
         id: scan-scheduler
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           image: scheduler:pr-${{ github.event.number || github.run_number }}
           severity-cutoff: "CRITICAL"
@@ -118,7 +118,7 @@ jobs:
         run: docker load -i /tmp/agents.tar
       - name: Scan image for vulnerabilities
         id: scan-agents
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           image: agents:pr-${{ github.event.number || github.run_number }}
           severity-cutoff: "CRITICAL"
@@ -164,7 +164,7 @@ jobs:
         run: docker load -i /tmp/instrumentor.tar
       - name: Scan image for vulnerabilities
         id: scan-instrumentor
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           image: instrumentor:pr-${{ github.event.number || github.run_number }}
           severity-cutoff: "CRITICAL"
@@ -210,7 +210,7 @@ jobs:
         run: docker load -i /tmp/odigos-collector.tar
       - name: Scan image for vulnerabilities
         id: scan-collector
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           image: odigos-collector:pr-${{ github.event.number || github.run_number }}
           severity-cutoff: "CRITICAL"
@@ -259,7 +259,7 @@ jobs:
         run: docker load -i /tmp/odiglet.tar
       - name: Scan image for vulnerabilities
         id: scan-odiglet
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           image: odiglet:pr-${{ github.event.number || github.run_number }}
           severity-cutoff: "CRITICAL"
@@ -303,7 +303,7 @@ jobs:
         working-directory: frontend/webapp
       - name: Scan frontend webapp for vulnerabilities
         id: scan-frontend-webapp
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           path: frontend/webapp
           severity-cutoff: "CRITICAL"
@@ -341,7 +341,7 @@ jobs:
         run: docker load -i /tmp/frontend.tar
       - name: Scan image for vulnerabilities
         id: scan-frontend
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           image: frontend:pr-${{ github.event.number || github.run_number }}
           severity-cutoff: "CRITICAL"
@@ -386,7 +386,7 @@ jobs:
         run: docker load -i /tmp/operator.tar
       - name: Scan image for vulnerabilities
         id: scan-operator
-        uses: odigos-io/ci-core/vulnerabilities-scanner@3ace0ddac40435dba0f98700af061f63c24442cd
+        uses: odigos-io/ci-core/vulnerabilities-scanner@main
         with:
           image: operator:pr-${{ github.event.number || github.run_number }}
           severity-cutoff: "CRITICAL"
