@@ -1,6 +1,7 @@
 package k8sconsts
 
 const (
-	OdigosAgentsDirectory      = "/var/odigos"
-	OdigosAgentMountVolumeName = "odigos-agent"
+	OdigosAgentsDirectory          = "/var/odigos"
+	OdigletContainerAgentDirectory = "/instrumentations"
+	OdigosAgentMountVolumeName     = "odigos-agent"
 )
