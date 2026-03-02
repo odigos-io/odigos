@@ -6,8 +6,10 @@ import (
 	"log"
 
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -17,6 +19,57 @@ import (
 )
 
 var CacheClient client.Client
+
+func podsTransformFunc(obj interface{}) (interface{}, error) {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return nil, fmt.Errorf("expected a Pod, got %T", obj)
+	}
+
+	// Strip unnecessary fields to reduce memory usage.
+	// Keep only fields needed for computing CachedPod in loader.go and status calculations.
+	minimalContainers := make([]corev1.Container, len(pod.Spec.Containers))
+	for i, c := range pod.Spec.Containers {
+		relevantEnvVars := make([]corev1.EnvVar, 0, 1)
+		for _, env := range c.Env {
+			if env.Name == k8sconsts.OdigosEnvVarDistroName {
+				relevantEnvVars = append(relevantEnvVars, env)
+				break
+			}
+		}
+		minimalContainers[i] = corev1.Container{
+			Name:      c.Name,
+			Env:       relevantEnvVars,
+			Resources: c.Resources,
+		}
+	}
+
+	// Only keep the specific label needed for agent injection status calculation
+	var minimalLabels map[string]string
+	if agentHashValue, exists := pod.Labels[k8sconsts.OdigosAgentsMetaHashLabel]; exists {
+		minimalLabels = map[string]string{k8sconsts.OdigosAgentsMetaHashLabel: agentHashValue}
+	}
+
+	minimalPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:         pod.Namespace,
+			Name:              pod.Name,
+			CreationTimestamp: pod.CreationTimestamp,
+			Labels:            minimalLabels,
+			OwnerReferences:   pod.OwnerReferences,
+		},
+		Spec: corev1.PodSpec{
+			NodeName:   pod.Spec.NodeName,
+			Containers: minimalContainers,
+		},
+		Status: corev1.PodStatus{
+			ContainerStatuses:     pod.Status.ContainerStatuses,
+			InitContainerStatuses: pod.Status.InitContainerStatuses,
+		},
+	}
+
+	return minimalPod, nil
+}
 
 // SetupK8sCache initializes and starts the controller runtime cache for Source resources
 // Returns the cache client for direct usage
@@ -49,6 +102,9 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		ByObject: map[client.Object]cache.ByObject{
 			&corev1.ConfigMap{}: {
 				Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
+			},
+			&corev1.Pod{}: {
+				Transform: podsTransformFunc,
 			},
 			&odigosv1.Source{}:                {},
 			&odigosv1.InstrumentationConfig{}: {},
