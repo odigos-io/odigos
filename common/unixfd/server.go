@@ -18,6 +18,7 @@ type Server struct {
 	Logger             logr.Logger
 	TracesFDProvider   func() int   // Function that returns the traces eBPF map file descriptor
 	MetricsFDsProvider func() []int // Function that returns all metrics-related eBPF map file descriptors
+	LogsFDsProvider    func() []int // Function that returns all logs-related eBPF map file descriptors
 }
 
 // Run starts the Unix domain socket server, which serves eBPF map file descriptors to connecting clients.
@@ -117,6 +118,28 @@ func (s *Server) handleRequest(conn *net.UnixConn) {
 			return
 		}
 		s.Logger.Info("sent metrics FDs to client", "fds", fds, "request", request)
+
+	case ReqGetLogsFD:
+		if s.LogsFDsProvider == nil {
+			s.Logger.Error(fmt.Errorf("logs FDs provider not configured"), "no logs FDs provider")
+			return
+		}
+		fds := s.LogsFDsProvider()
+		if len(fds) == 0 {
+			s.Logger.Error(fmt.Errorf("no logs FDs available"), "logs FDs provider returned empty slice")
+			return
+		}
+		for _, fd := range fds {
+			if fd <= 0 {
+				s.Logger.Error(fmt.Errorf("invalid fd %d", fd), "FD provider returned invalid fd", "request", request)
+				return
+			}
+		}
+		if err := sendFDs(conn, fds...); err != nil {
+			s.Logger.Error(err, "failed to send logs FDs")
+			return
+		}
+		s.Logger.Info("sent logs FDs to client", "fds", fds, "request", request)
 
 	default:
 		s.Logger.Info("unknown request", "request", request)
