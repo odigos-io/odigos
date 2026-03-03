@@ -5,7 +5,7 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
-  # Required for the odigos_workload_config extension (InstrumentationConfig informer)
+  # Required for the odigos_config_k8s extension (InstrumentationConfig informer)
   - apiGroups:
       - odigos.io
     resources:
