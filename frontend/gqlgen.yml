@@ -101,6 +101,8 @@ models:
         resolver: true
       numberOfInstances:
         resolver: true
+      rollbackOccurred:
+        resolver: true
 
   K8sWorkloadTelemetryMetrics:
     fields:
