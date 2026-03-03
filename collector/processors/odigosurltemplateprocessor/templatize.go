@@ -1,8 +1,6 @@
 package odigosurltemplateprocessor
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 )
@@ -94,47 +92,13 @@ type RulePathSegment struct {
 
 type TemplatizationRule []RulePathSegment
 
-func parseRuleTemplateString(ruleTemplateString string) (string, *regexp.Regexp, error) {
-	// template string is in the format name:optional-regexp.
-	// for example: {userId:[0-9]+} or {userId}
-	// if the regexp is not provided, it will be nil
+func parseRuleTemplateString(ruleTemplateString string) (string, error) {
 
-	parts := strings.SplitN(ruleTemplateString, ":", 2)
-	if len(parts) == 0 {
-		return "", nil, errors.New("invalid rule template string")
-	}
-	templateName := strings.TrimSpace(parts[0])
+	templateName := strings.TrimSpace(ruleTemplateString)
 	if templateName == "" {
 		templateName = "id" // default to name id if not provided
 	}
-	var regexpPattern *regexp.Regexp
-	if len(parts) == 2 {
-		regexpString := strings.TrimSpace(parts[1])
-		if regexpString == "" {
-			return "", nil, errors.New("invalid rule template string. regexp is empty")
-		}
-		var err error
-		regexpPattern, err = regexp.Compile(regexpString)
-		if err != nil {
-			return "", nil, fmt.Errorf("invalid rule template string. regexp is invalid: %w", err)
-		}
-	}
-	return templateName, regexpPattern, nil
-}
-
-// parseRegexPattern checks if a segment starts with "regex:" prefix
-// and returns the regex pattern if found, or nil if not
-func parseRegexPattern(segment string) (*regexp.Regexp, string, error) {
-	// Check if segment starts with "regex:" prefix
-	if strings.HasPrefix(segment, "regex:") && len(segment) > 6 {
-		regexString := segment[6:] // len("regex:") = 6
-		regexpPattern, err := regexp.Compile(regexString)
-		if err != nil {
-			return nil, "", fmt.Errorf("invalid regexp pattern %q: %w", regexString, err)
-		}
-		return regexpPattern, "", nil
-	}
-	return nil, segment, nil
+	return templateName, nil
 }
 
 func parseUserInputRuleString(userInputRule string) ([]RulePathSegment, error) {
@@ -157,31 +121,18 @@ func parseUserInputRuleString(userInputRule string) ([]RulePathSegment, error) {
 		} else if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
 			// remove the curly braces
 			templatizationRule := segment[1 : len(segment)-1]
-			// parse the template name and optional regexp
-			templateName, regexpPattern, err := parseRuleTemplateString(templatizationRule)
+			// parse the template name
+			templateName, err := parseRuleTemplateString(templatizationRule)
 			if err != nil {
 				return nil, err
 			}
 			ruleSegments[i] = RulePathSegment{
-				TemplateName:  templateName,
-				RegexpPattern: regexpPattern,
+				TemplateName: templateName,
 			}
 		} else {
-			// Check if it's a regex pattern prefixed with "regex:"
-			regexpPattern, staticString, err := parseRegexPattern(segment)
-			if err != nil {
-				return nil, err
-			}
-			if regexpPattern != nil {
-				// it's a regex pattern for untemplatized section matching
-				ruleSegments[i] = RulePathSegment{
-					RegexpPattern: regexpPattern,
-				}
-			} else {
-				// otherwise, it's a static string
-				ruleSegments[i] = RulePathSegment{
-					StaticString: staticString,
-				}
+			// static string segment — must match path segment exactly
+			ruleSegments[i] = RulePathSegment{
+				StaticString: segment,
 			}
 		}
 	}
@@ -205,27 +156,13 @@ func attemptTemplateWithRule(pathSegments []string, ruleSegments TemplatizationR
 			// if the static string does not match, we can't use this rule
 			return "", false
 		}
-
-		if ruleSegment.TemplateName != "" && ruleSegment.RegexpPattern != nil {
-			// if this segment is a templated segment, it must match the regexp pattern
-			if !ruleSegment.RegexpPattern.MatchString(pathSegment) {
-				// if the regexp pattern does not match, we can't use this rule
-				return "", false
-			}
-		} else if ruleSegment.RegexpPattern != nil {
-			// if a regexp pattern is provided, use it for matching
-			if !ruleSegment.RegexpPattern.MatchString(pathSegment) {
-				// if the regexp pattern does not match, we can't use this rule
-				return "", false
-			}
-		}
 	}
 
 	result := make([]string, 0, len(ruleSegments))
 	for i, segment := range ruleSegments {
 		if segment.TemplateName != "" {
 			result = append(result, "{"+segment.TemplateName+"}")
-		} else if segment.Wildcard || segment.RegexpPattern != nil {
+		} else if segment.Wildcard {
 			// untemplated value, keep whatever is in the path (assumes low cardinality)
 			result = append(result, pathSegments[i])
 		} else {
@@ -283,8 +220,8 @@ func defaultTemplatizeURLPath(pathSegments []string, customIdsRegexp []internalC
 	}
 	if !templated {
 		return "", false
-	} else {
-		templatedPath := strings.Join(templatizedSegments, "/")
-		return templatedPath, true
 	}
+
+	templatedPath := strings.Join(templatizedSegments, "/")
+	return templatedPath, true
 }

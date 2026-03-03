@@ -18,6 +18,10 @@ type GatewayConfigOptions struct {
 	ClusterMetricsEnabled *bool
 	OdigosNamespace       string
 
+	// the name of the extension for accessing odigos configurations.
+	// the extension and it's name are platform specific.
+	OdigosConfigExtensionName *string
+
 	// Sampling config option
 	SamplingEnabled              *bool
 	TraceAggregationWaitDuration *string
@@ -187,6 +191,13 @@ func CalculateGatewayConfig(
 		insertClusterMetricsResources(currentConfig, gatewayOptions.OdigosNamespace)
 	}
 
+	// add the odigos config extension to the config if it is set
+	// each platform (k8s, vm) will have a different extension name
+	if gatewayOptions.OdigosConfigExtensionName != nil {
+		currentConfig.Service.Extensions = append(currentConfig.Service.Extensions, *gatewayOptions.OdigosConfigExtensionName)
+		currentConfig.Extensions[*gatewayOptions.OdigosConfigExtensionName] = config.GenericMap{}
+	}
+
 	// Final marshal to YAML
 	data, err := yaml.Marshal(currentConfig)
 	if err != nil {
@@ -330,12 +341,11 @@ func GetBasicConfig() *config.Config {
 			"pprof": config.GenericMap{
 				"endpoint": "0.0.0.0:1777",
 			},
-			consts.OdigosWorkloadConfigExtensionName: config.GenericMap{},
 		},
 		Exporters: map[string]interface{}{},
 		Service: config.Service{
 			Pipelines:  map[string]config.Pipeline{},
-			Extensions: []string{"health_check", "pprof", consts.OdigosWorkloadConfigExtensionName},
+			Extensions: []string{"health_check", "pprof"},
 		},
 	}
 }
