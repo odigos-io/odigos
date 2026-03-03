@@ -716,6 +716,7 @@ type K8sWorkload struct {
 	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
 	DataStreamNames            []string                             `json:"dataStreamNames"`
 	NumberOfInstances          *int                                 `json:"numberOfInstances,omitempty"`
+	RollbackOccurred           bool                                 `json:"rollbackOccurred"`
 }
 
 type K8sWorkloadAgentEnabled struct {
