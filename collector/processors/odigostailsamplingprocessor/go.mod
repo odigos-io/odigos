@@ -3,7 +3,6 @@ module github.com/odigos-io/odigos/collector/processors/odigostailsamplingproces
 go 1.26.0
 
 require (
-	github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.52.0
 	go.opentelemetry.io/collector/component/componenttest v0.146.1
@@ -91,6 +90,5 @@ require (
 )
 
 replace (
-	github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension => ../../extension/odigosworkloadconfigextension
 	github.com/odigos-io/odigos/common => ../../../common
 )

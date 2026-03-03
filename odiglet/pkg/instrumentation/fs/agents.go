@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	containerDir   = "/instrumentations"
 	chrootDir      = "/host"
 	semanagePath   = "/sbin/semanage"
 	restoreconPath = "/sbin/restorecon"
@@ -64,14 +63,14 @@ func CopyAgentsDirectoryToHost() error {
 	if empty {
 		// if empty, we can just copy the directory to the host
 		log.Logger.Info("Odigos agents directory is empty, copying agents directory to host")
-		err = copyDirectories(containerDir, k8sconsts.OdigosAgentsDirectory)
+		err = copyDirectories(k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory)
 		if err != nil {
 			log.Logger.Error(err, "Error copying instrumentation directory to host")
 			return err
 		}
 	} else {
 		log.Logger.Info("Odigos agents directory is not empty, syncing files with rsync")
-		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, containerDir, k8sconsts.OdigosAgentsDirectory)
+		updatedFilesToKeepMap, err := removeChangedFilesFromKeepMap(filesToKeep, k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory)
 
 		if err != nil {
 			log.Logger.Error(err, "Error getting changed files")
@@ -82,7 +81,7 @@ func CopyAgentsDirectoryToHost() error {
 			return err
 		}
 
-		if err := runSingleRsyncSync(containerDir, k8sconsts.OdigosAgentsDirectory, keeplistPath); err != nil {
+		if err := runSingleRsyncSync(k8sconsts.OdigletContainerAgentDirectory, k8sconsts.OdigosAgentsDirectory, keeplistPath); err != nil {
 			log.Logger.Error(err, "rsync failed")
 			return err
 		}

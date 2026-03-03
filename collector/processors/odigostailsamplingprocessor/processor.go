@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap"
+
+	"github.com/odigos-io/odigos/common/collector"
 )
 
 type tailSamplingProcessor struct {
 	logger                *zap.Logger
 	config                *Config
-	odigosConfigExtension *odigosworkloadconfigextension.OdigosWorkloadConfig
+	odigosConfigExtension collector.OdigosConfigExtension
 }
 
 func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
@@ -41,7 +42,11 @@ func (p *tailSamplingProcessor) Start(ctx context.Context, host component.Host) 
 		if !found || ext == nil {
 			return fmt.Errorf("odigos config extension not found")
 		}
-		p.odigosConfigExtension = ext.(*odigosworkloadconfigextension.OdigosWorkloadConfig)
+		odigosConfigExtension, ok := ext.(collector.OdigosConfigExtension)
+		if !ok {
+			return fmt.Errorf("the collector extension instance %s is not a valid odigos config extension", *p.config.OdigosConfigExtension)
+		}
+		p.odigosConfigExtension = odigosConfigExtension
 	}
 	return nil
 }
