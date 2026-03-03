@@ -17,6 +17,9 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
+// Stage constant for the profiles (pprof) diagnose phase.
+const StageProfiles Stage = "profiles"
+
 // ProfileInterface defines the interface for different profile types
 type ProfileInterface interface {
 	GetFileName() string
@@ -100,7 +103,6 @@ var servicesProfilingMetadata = map[string]ProfilingPodConfig{
 
 // FetchOdigosProfiles collects pprof profiles from Odigos components
 func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, builder Builder, profileDir, odigosNamespace string) error {
-	fmt.Printf("Fetching Odigos Profiles...\n")
 	klog.V(2).InfoS("Fetching Odigos Profiles", "namespace", odigosNamespace)
 
 	var podsWaitGroup sync.WaitGroup
@@ -111,17 +113,15 @@ func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, build
 			LabelSelector: service.Selector.String(),
 		})
 		if err != nil {
-			fmt.Printf("  Warning: Failed to list pods for %s: %v\n", serviceName, err)
+			klog.V(1).InfoS("Failed to list pods for profiling", "service", serviceName, "err", err)
 			continue
 		}
 
 		if len(podsToProfile.Items) == 0 {
-			fmt.Printf("  No %s pods found for profiling\n", serviceName)
 			continue
 		}
 
 		totalPods += len(podsToProfile.Items)
-		fmt.Printf("  Found %d %s pod(s) for profiling\n", len(podsToProfile.Items), serviceName)
 
 		for i := 0; i < len(podsToProfile.Items); i++ {
 			pod := &podsToProfile.Items[i]
@@ -174,10 +174,6 @@ func FetchOdigosProfiles(ctx context.Context, client kubernetes.Interface, build
 	}
 
 	podsWaitGroup.Wait()
-
-	if totalPods == 0 {
-		fmt.Printf("  No pods found for profiling in namespace %s\n", odigosNamespace)
-	}
 
 	return nil
 }

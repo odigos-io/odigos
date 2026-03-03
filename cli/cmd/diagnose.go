@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"text/tabwriter"
 	"time"
 
 	"github.com/odigos-io/odigos/cli/cmd/resources"
@@ -15,6 +17,7 @@ import (
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/diagnose"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 	"k8s.io/klog/v2"
 )
 
@@ -91,10 +94,79 @@ func startDiagnose(ctx context.Context, client *kube.Client) error {
 		SourceWorkloadNamespaces: diagnoseSourceWorkloadNamespaces,
 	}
 
+	// Show requested stages; update each line in place as it completes (TTY) or print one line per completion (non-TTY).
+	requestedStages := diagnose.RequestedStages(opts)
+	stageToIndex := make(map[diagnose.Stage]int)
+	for i, s := range requestedStages {
+		stageToIndex[s] = i
+	}
+
+	const (
+		green      = "\033[32m"
+		red        = "\033[31m"
+		reset      = "\033[0m"
+		stageColWd = 32 // min width for "Collecting X..." so the "(done ✓/✗)" column lines up
+	)
+	formatStageLine := func(s diagnose.Stage, suffix string) string {
+		var buf bytes.Buffer
+		w := tabwriter.NewWriter(&buf, stageColWd, 0, 0, ' ', 0)
+		_, _ = fmt.Fprintf(w, "Collecting %s...\t%s\n", string(s), suffix)
+		_ = w.Flush()
+		return buf.String()
+	}
+
+	stageCh := make(chan diagnose.StageResult, 10)
+	done := make(chan struct{})
+	isTerminal := term.IsTerminal(int(os.Stdout.Fd()))
+
+	if isTerminal {
+		// List each requested stage on its own line; tabwriter pads so the done marker column aligns.
+		for _, s := range requestedStages {
+			fmt.Fprint(os.Stdout, formatStageLine(s, ""))
+		}
+		go func() {
+			for result := range stageCh {
+				idx, ok := stageToIndex[result.Stage]
+				if !ok {
+					continue
+				}
+				n := len(requestedStages)
+				// Move cursor up to the line for this stage.
+				for i := 0; i < n-idx; i++ {
+					fmt.Fprint(os.Stdout, "\033[A")
+				}
+				fmt.Fprint(os.Stdout, "\r\033[2K") // start of line, clear line
+				mark := green + "✓" + reset
+				if result.Status != nil {
+					mark = red + "✗" + reset
+				}
+				fmt.Fprint(os.Stdout, formatStageLine(result.Stage, " (done "+mark+")"))
+				// Move cursor back down to below the stage list.
+				for i := 0; i < n-1-idx; i++ {
+					fmt.Fprint(os.Stdout, "\033[B")
+				}
+			}
+			close(done)
+		}()
+	} else {
+		go func() {
+			for result := range stageCh {
+				mark := green + "✓" + reset
+				if result.Status != nil {
+					mark = red + "✗" + reset
+				}
+				fmt.Printf("Collected %s %s\n", string(result.Stage), mark)
+			}
+			close(done)
+		}()
+	}
+
 	// Run the diagnose collection
-	if err := diagnose.RunDiagnose(ctx, client.Clientset, client.Dynamic, client.Clientset.Discovery(), client.OdigosClient, builder, builderRootDir, opts); err != nil {
+	if err := diagnose.RunDiagnose(ctx, client.Clientset, client.Dynamic, client.Clientset.Discovery(), client.OdigosClient, builder, builderRootDir, opts, stageCh); err != nil {
 		klog.V(1).ErrorS(err, "Some diagnose operations had errors")
 	}
+	close(stageCh)
+	<-done
 
 	// Package the results into a tar.gz file
 	tarGzFileName, err := createTarGz(mainTempDir)

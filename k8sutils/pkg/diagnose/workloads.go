@@ -22,6 +22,12 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 )
 
+// Stage constants for workload-related diagnose phases.
+const (
+	StageWorkloads       Stage = "workloads"
+	StageSourceWorkloads Stage = "source_workloads"
+)
+
 // WorkloadTarget represents a workload to collect
 type WorkloadTarget struct {
 	Namespace   string
@@ -41,7 +47,6 @@ func FetchOdigosWorkloads(
 	rootDir, odigosNamespace string,
 	includeLogs bool,
 ) error {
-	fmt.Printf("Fetching Odigos Workloads and Logs...\n")
 	klog.V(2).InfoS("Fetching Odigos Workloads", "namespace", odigosNamespace)
 
 	var targets []WorkloadTarget
@@ -404,7 +409,6 @@ func FetchSourceWorkloads(
 	namespaceFilter []string,
 	includeLogs bool,
 ) error {
-	fmt.Printf("Fetching Instrumented Source Workloads...\n")
 	klog.V(2).InfoS("Fetching Source Workloads", "namespaceFilter", namespaceFilter)
 
 	// Create a set of allowed namespaces for quick lookup

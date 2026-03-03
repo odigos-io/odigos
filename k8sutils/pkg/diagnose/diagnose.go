@@ -13,7 +13,41 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/generated/odigos/clientset/versioned/typed/odigos/v1alpha1"
 )
 
-// RunDiagnose collects all diagnostic data based on the provided options
+// Stage identifies a single phase of diagnose collection.
+// When a stage completes, a StageResult is sent on the onStageComplete channel (if non-nil).
+// Stage constants are defined in the file for each stage (workloads.go, crds.go, etc.).
+type Stage string
+
+// StageResult is sent on onStageComplete when a stage finishes.
+// Status is nil on success, or the error returned by that stage's fetch.
+type StageResult struct {
+	Stage  Stage
+	Status error
+}
+
+// runStage runs fetch in a goroutine and sends a StageResult on onStageComplete (Status is nil on success, or the fetch error).
+func runStage(
+	wg *sync.WaitGroup,
+	stage Stage,
+	onStageComplete chan<- StageResult,
+	fetch func() error,
+) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := fetch()
+		if err != nil {
+			klog.V(1).ErrorS(err, "Stage failed", "stage", stage)
+		}
+		if onStageComplete != nil {
+			onStageComplete <- StageResult{Stage: stage, Status: err}
+		}
+	}()
+}
+
+// RunDiagnose collects all diagnostic data based on the provided options.
+// If onStageComplete is non-nil, each stage sends a StageResult (Stage and Status: nil on success, or the error) when it completes.
+// The caller must not close the channel; RunDiagnose does not close it.
 func RunDiagnose(
 	ctx context.Context,
 	client kubernetes.Interface,
@@ -23,6 +57,7 @@ func RunDiagnose(
 	builder Builder,
 	rootDir string,
 	opts Options,
+	onStageComplete chan<- StageResult,
 ) error {
 	if opts.OdigosNamespace == "" {
 		return fmt.Errorf("odigos namespace is required")
@@ -31,100 +66,46 @@ func RunDiagnose(
 	klog.V(1).InfoS("Starting diagnose collection", "namespace", opts.OdigosNamespace, "rootDir", rootDir)
 
 	var wg sync.WaitGroup
-	errChan := make(chan error, 10)
 
 	// Fetch Odigos workloads (deployments, daemonsets, statefulsets with their pods and logs)
-	// This is always collected as it's core diagnostic data
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := FetchOdigosWorkloads(ctx, client, dynamicClient, builder, rootDir, opts.OdigosNamespace, opts.IncludeLogs); err != nil {
-			klog.V(1).ErrorS(err, "Failed to fetch Odigos workloads")
-			errChan <- fmt.Errorf("workloads: %w", err)
-		}
-	}()
+	runStage(&wg, StageWorkloads, onStageComplete, func() error {
+		return FetchOdigosWorkloads(ctx, client, dynamicClient, builder, rootDir, opts.OdigosNamespace, opts.IncludeLogs)
+	})
 
-	// Fetch Odigos CRDs (organized by namespace, cluster-scoped under odigos namespace)
 	if opts.IncludeCRDs {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := FetchOdigosCRDs(ctx, dynamicClient, discoveryClient, builder, rootDir, opts.OdigosNamespace); err != nil {
-				klog.V(1).ErrorS(err, "Failed to fetch Odigos CRDs")
-				errChan <- fmt.Errorf("crds: %w", err)
-			}
-		}()
+		runStage(&wg, StageCRDs, onStageComplete, func() error {
+			return FetchOdigosCRDs(ctx, dynamicClient, discoveryClient, builder, rootDir, opts.OdigosNamespace)
+		})
 	}
 
-	// Fetch Odigos Profiles (goes under odigos namespace)
 	if opts.IncludeProfiles {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		runStage(&wg, StageProfiles, onStageComplete, func() error {
 			profileDir := GetProfileDir(rootDir, opts.OdigosNamespace)
-			if err := FetchOdigosProfiles(ctx, client, builder, profileDir, opts.OdigosNamespace); err != nil {
-				klog.V(1).ErrorS(err, "Failed to fetch Odigos profiles")
-				errChan <- fmt.Errorf("profiles: %w", err)
-			}
-		}()
+			return FetchOdigosProfiles(ctx, client, builder, profileDir, opts.OdigosNamespace)
+		})
 	}
 
-	// Fetch Odigos Collector Metrics (goes under odigos namespace)
 	if opts.IncludeMetrics {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		runStage(&wg, StageMetrics, onStageComplete, func() error {
 			metricsDir := GetMetricsDir(rootDir, opts.OdigosNamespace)
-			if err := FetchOdigosCollectorMetrics(ctx, client, builder, metricsDir, opts.OdigosNamespace); err != nil {
-				klog.V(1).ErrorS(err, "Failed to fetch Odigos metrics")
-				errChan <- fmt.Errorf("metrics: %w", err)
-			}
-		}()
+			return FetchOdigosCollectorMetrics(ctx, client, builder, metricsDir, opts.OdigosNamespace)
+		})
 	}
 
-	// Fetch ConfigMaps (goes under odigos namespace)
 	if opts.IncludeConfigMaps {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		runStage(&wg, StageConfigMaps, onStageComplete, func() error {
 			configMapDir := GetConfigMapsDir(rootDir, opts.OdigosNamespace)
-			if err := FetchConfigMaps(ctx, client, builder, configMapDir, opts.OdigosNamespace); err != nil {
-				klog.V(1).ErrorS(err, "Failed to fetch ConfigMaps")
-				errChan <- fmt.Errorf("configmaps: %w", err)
-			}
-		}()
+			return FetchConfigMaps(ctx, client, builder, configMapDir, opts.OdigosNamespace)
+		})
 	}
 
-	// Fetch instrumented source workloads (user's applications)
 	if opts.IncludeSourceWorkloads {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := FetchSourceWorkloads(
-				ctx, client, dynamicClient, odigosClient, builder,
-				rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs)
-			if err != nil {
-				klog.V(1).ErrorS(err, "Failed to fetch source workloads")
-				errChan <- fmt.Errorf("source workloads: %w", err)
-			}
-		}()
+		runStage(&wg, StageSourceWorkloads, onStageComplete, func() error {
+			return FetchSourceWorkloads(ctx, client, dynamicClient, odigosClient, builder, rootDir, opts.SourceWorkloadNamespaces, opts.IncludeLogs)
+		})
 	}
 
 	wg.Wait()
-	close(errChan)
-
-	// Collect and log all errors, but don't fail the overall operation
-	var errs []error
-	for err := range errChan {
-		errs = append(errs, err)
-	}
-
-	if len(errs) > 0 {
-		klog.V(1).InfoS("Some diagnose operations had errors", "errorCount", len(errs))
-		for _, err := range errs {
-			klog.V(1).ErrorS(err, "Diagnose error")
-		}
-	}
 
 	stats := builder.GetStats()
 	klog.V(1).InfoS("Diagnose collection completed",
@@ -132,4 +113,27 @@ func RunDiagnose(
 		"totalSize", FormatBytes(stats.TotalSize))
 
 	return nil
+}
+
+// RequestedStages returns the list of stages that will run for the given options.
+// Callers can use this to show planned stages before calling RunDiagnose (e.g. for progress UI or initial SSE).
+func RequestedStages(opts Options) []Stage {
+	var stages []Stage
+	stages = append(stages, StageWorkloads)
+	if opts.IncludeCRDs {
+		stages = append(stages, StageCRDs)
+	}
+	if opts.IncludeProfiles {
+		stages = append(stages, StageProfiles)
+	}
+	if opts.IncludeMetrics {
+		stages = append(stages, StageMetrics)
+	}
+	if opts.IncludeConfigMaps {
+		stages = append(stages, StageConfigMaps)
+	}
+	if opts.IncludeSourceWorkloads {
+		stages = append(stages, StageSourceWorkloads)
+	}
+	return stages
 }
