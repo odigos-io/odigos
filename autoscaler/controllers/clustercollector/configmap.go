@@ -157,10 +157,12 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 
 	processors := common.FilterAndSortProcessorsByOrderHint(allProcessors, odigosv1.CollectorsGroupRoleClusterGateway)
 
+	odigosConfigExtensionName := "odigos_config_k8s"
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
-		ServiceGraphDisabled:  gateway.Spec.ServiceGraphDisabled,
-		ClusterMetricsEnabled: gateway.Spec.ClusterMetricsEnabled,
-		OdigosNamespace:       env.GetCurrentNamespace(),
+		ServiceGraphDisabled:      gateway.Spec.ServiceGraphDisabled,
+		ClusterMetricsEnabled:     gateway.Spec.ClusterMetricsEnabled,
+		OdigosNamespace:           env.GetCurrentNamespace(),
+		OdigosConfigExtensionName: &odigosConfigExtensionName,
 	}
 
 	// TailSampling is nil when inactive, non-nil when the scheduler has resolved it as active.

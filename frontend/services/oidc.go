@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/yaml"
 )
 
@@ -65,9 +68,25 @@ func getOidcValuesFromConfig(ctx context.Context) (string, string, string, strin
 	var odigosConfiguration common.OdigosConfiguration
 	odigosns := env.GetCurrentNamespace()
 
-	configMap, err := kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+	// Retry up to ~1 minute with exponential backoff (2s→4s→8s→16s→16s→16s) in case
+	// the frontend starts before the effective-config CM has been reconciled [e.g frontend started before scheduler is ready].
+	effectiveConfigBackoff := wait.Backoff{
+		Duration: 2 * time.Second,
+		Factor:   2,
+		Cap:      16 * time.Second,
+		Steps:    6,
+	}
+	var configMap *corev1.ConfigMap
+	err := retry.OnError(effectiveConfigBackoff, apierrors.IsNotFound, func() error {
+		var e error
+		configMap, e = kube.DefaultClient.CoreV1().ConfigMaps(odigosns).Get(ctx, consts.OdigosEffectiveConfigName, metav1.GetOptions{})
+		if apierrors.IsNotFound(e) {
+			log.Printf("Effective config CM not found, retrying...\n")
+		}
+		return e
+	})
 	if err != nil {
-		log.Fatalf("Error getting CM: %v\n", err)
+		log.Fatalf("Error getting effective config CM: %v\n", err)
 	}
 	err = yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration)
 	if err != nil {

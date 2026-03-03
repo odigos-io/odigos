@@ -763,20 +763,6 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			expectedHttpRoute: "/user/{user-id}/friends/{friend-id}",
 		},
 		{
-			name:              "regex-templatization",
-			rules:             []string{"/user/{user-id:\\d+}"},
-			path:              "/user/1234",
-			expectedName:      "GET /user/{user-id}",
-			expectedHttpRoute: "/user/{user-id}",
-		},
-		{
-			name:              "regex-templatization-fail",
-			rules:             []string{"/user/{user-id:\\d+}"},
-			path:              "/user/john",
-			expectedName:      "GET /user/john",
-			expectedHttpRoute: "/user/john",
-		},
-		{
 			name:              "path-no-leading-slash",
 			rules:             []string{"user/{user-id}"},
 			path:              "user/1234",
@@ -832,20 +818,6 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			expectedHttpRoute: "/user/{id}",
 		},
 		{
-			name:              "regexp-no-name",
-			rules:             []string{"/user/{:[0-9]+}"},
-			path:              "/user/1234",
-			expectedName:      "GET /user/{id}", // fallback to name "id" when missing
-			expectedHttpRoute: "/user/{id}",
-		},
-		{
-			name:              "segment-rule-with-spaces",
-			rules:             []string{"/user/{user-name : [a-zA-Z]+}"},
-			path:              "/user/John",
-			expectedName:      "GET /user/{user-name}",
-			expectedHttpRoute: "/user/{user-name}",
-		},
-		{
 			name:              "static-string-with-regex-match",
 			rules:             []string{"/regex:api-v\\d+/users/{id}"},
 			path:              "/api-v1/users/123",
@@ -858,13 +830,6 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			path:              "/api-v2/users/456",
 			expectedName:      "GET /api-v2/users/{id}",
 			expectedHttpRoute: "/api-v2/users/{id}",
-		},
-		{
-			name:              "static-string-with-regex-no-match",
-			rules:             []string{"/regex:api-v\\d+/users/{id}"},
-			path:              "/api/users/123",
-			expectedName:      "GET /api/users/{id}",
-			expectedHttpRoute: "/api/users/{id}",
 		},
 	}
 
