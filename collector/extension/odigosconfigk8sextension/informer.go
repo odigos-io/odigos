@@ -152,21 +152,21 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 // k8sutils/pkg/workload/runtimeobjects.ExtractWorkloadInfoFromRuntimeObjectName and
 // workloadkinds.WorkloadKindFromLowerCase. It is duplicated here temporarily to avoid
 // coupling the collector extension to k8sutils and the odigos api package.
-func workloadKeyFromObject(u *unstructured.Unstructured) (WorkloadKey, bool) {
+func workloadKeyFromObject(u *unstructured.Unstructured) (workloadKey, bool) {
 	namespace, _, _ := unstructured.NestedString(u.Object, "metadata", "namespace")
 	runtimeObjectName, _, _ := unstructured.NestedString(u.Object, "metadata", "name")
 	if namespace == "" || runtimeObjectName == "" {
-		return WorkloadKey{}, false
+		return workloadKey{}, false
 	}
 	parts := strings.SplitN(runtimeObjectName, "-", 2)
 	if len(parts) != 2 {
-		return WorkloadKey{}, false
+		return workloadKey{}, false
 	}
 	kind := kindFromInstrumentationConfigName(parts[0])
 	if kind == "" {
-		return WorkloadKey{}, false
+		return workloadKey{}, false
 	}
-	return WorkloadKey{Namespace: namespace, Kind: kind, Name: parts[1]}, true
+	return workloadKey{Namespace: namespace, Kind: kind, Name: parts[1]}, true
 }
 
 // kindFromInstrumentationConfigName maps lowercase workload kind (from InstrumentationConfig

@@ -7,28 +7,28 @@ import (
 	commonapi "github.com/odigos-io/odigos/common/api"
 )
 
-// WorkloadKey identifies a workload by namespace, kind, and name.
+// workloadKey identifies a workload by namespace, kind, and name.
 // Kind is the workload kind (e.g. Deployment, StatefulSet).
 // Fields may be empty depending on context.
-type WorkloadKey struct {
+type workloadKey struct {
 	Namespace string
 	Kind      string
 	Name      string
 }
 
-// Cache stores workload sampling config by WorkloadKey.
-type Cache struct {
+// cache stores workload sampling config by WorkloadKey.
+type cache struct {
 	mu   sync.RWMutex
 	data map[string]*commonapi.ContainerCollectorConfig
 }
 
-// NewCache creates a new empty cache.
-func NewCache() *Cache {
-	return &Cache{data: make(map[string]*commonapi.ContainerCollectorConfig)}
+// newCache creates a new empty cache.
+func newCache() *cache {
+	return &cache{data: make(map[string]*commonapi.ContainerCollectorConfig)}
 }
 
 // Get returns the WorkloadSamplingConfig for the given workload key, and true if found.
-func (c *Cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
+func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	val, found := c.data[key]
@@ -36,14 +36,14 @@ func (c *Cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 }
 
 // Set stores the sampling config for the given workload key.
-func (c *Cache) Set(key string, cfg *commonapi.ContainerCollectorConfig) {
+func (c *cache) Set(key string, cfg *commonapi.ContainerCollectorConfig) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data[key] = cfg
 }
 
 // DeleteWorkload removes the entry for the given workload key.
-func (c *Cache) DeleteWorkload(workloadKey WorkloadKey) {
+func (c *cache) DeleteWorkload(workloadKey workloadKey) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

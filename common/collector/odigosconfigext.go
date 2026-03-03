@@ -10,6 +10,6 @@ import (
 // Every platform (k8s, vm) can implement this interface to provide it's own processor extension to fetch the config from where it is stored.
 type OdigosConfigExtension interface {
 
-	// givin a specific resource, return it's collector config if exists.
-	GetConfigFromResourceAttributes(res resource.Resource) (*commonapi.ContainerCollectorConfig, bool)
+	// givin a specific resource, return a source collector config if exists.
+	GetFromResource(res resource.Resource) (*commonapi.ContainerCollectorConfig, bool)
 }

@@ -16,7 +16,7 @@ import (
 // OdigosWorkloadConfig is an extension that runs a dynamic informer for InstrumentationConfigs
 // and maintains a cache of workload sampling config keyed by WorkloadKey (namespace, kind, name).
 type OdigosWorkloadConfig struct {
-	cache           *Cache
+	cache           *cache
 	logger          *zap.Logger
 	cancel          context.CancelFunc
 	informerFactory dynamicinformer.DynamicSharedInformerFactory // set when in-cluster; nil otherwise
@@ -28,7 +28,7 @@ var _ collector.OdigosConfigExtension = (*OdigosWorkloadConfig)(nil)
 // NewOdigosConfig creates a new OdigosConfig extension.
 func NewOdigosConfig(settings component.TelemetrySettings) (*OdigosWorkloadConfig, error) {
 	return &OdigosWorkloadConfig{
-		cache:  NewCache(),
+		cache:  newCache(),
 		logger: settings.Logger,
 	}, nil
 }
@@ -48,7 +48,7 @@ func (o *OdigosWorkloadConfig) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (o *OdigosWorkloadConfig) GetConfigFromResourceAttributes(res resource.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+func (o *OdigosWorkloadConfig) GetFromResource(res resource.Resource) (*commonapi.ContainerCollectorConfig, bool) {
 	key, err := workloadKeyFromResourceAttributes(res.Attributes())
 	if err != nil {
 		return nil, false
