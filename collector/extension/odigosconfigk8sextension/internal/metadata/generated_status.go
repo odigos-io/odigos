@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("odigos_workload_config")
-	ScopeName = "github.com/odigos-io/odigos/collector/extension/odigosworkloadconfigextension"
+	Type      = component.MustNewType("odigos_config_k8s")
+	ScopeName = "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
 )
 
 const (
