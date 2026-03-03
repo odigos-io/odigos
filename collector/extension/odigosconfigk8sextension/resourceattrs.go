@@ -3,7 +3,7 @@ package odigosconfigk8sextension
 import (
 	"errors"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 
 	"github.com/odigos-io/odigos/common/consts"
@@ -14,19 +14,22 @@ const k8SArgoRolloutNameAttribute = "k8s.argoproj.rollout.name"
 
 // attrKindPairs defines the order in which workload attributes are checked.
 // The first matching attribute supplies Name and Kind for the WorkloadKey.
-var attrKindPairs = map[string]string{
-	string(semconv.K8SDeploymentNameKey):  "Deployment",
-	string(semconv.K8SStatefulSetNameKey): "StatefulSet",
-	string(semconv.K8SDaemonSetNameKey):   "DaemonSet",
-	string(semconv.K8SJobNameKey):         "Job",
-	string(semconv.K8SCronJobNameKey):     "CronJob",
-	k8SArgoRolloutNameAttribute:           "Rollout",
+var attrKindPairs = []struct {
+	key  string
+	kind string
+}{
+	{key: string(semconv.K8SDeploymentNameKey), kind: "Deployment"},
+	{key: string(semconv.K8SStatefulSetNameKey), kind: "StatefulSet"},
+	{key: string(semconv.K8SDaemonSetNameKey), kind: "DaemonSet"},
+	{key: string(semconv.K8SJobNameKey), kind: "Job"},
+	{key: string(semconv.K8SCronJobNameKey), kind: "CronJob"},
+	{key: k8SArgoRolloutNameAttribute, kind: "Rollout"},
 }
 
 // workloadKeyFromResourceAttributes returns a key from OpenTelemetry resource
 // attributes when available. It reads k8s.namespace.name and the first present
 // workload name attribute (e.g. k8s.deployment.name, k8s.statefulset.name) to set
-func workloadKeyFromResourceAttributes(attrs []attribute.KeyValue) (string, error) {
+func workloadKeyFromResourceAttributes(attrs pcommon.Map) (string, error) {
 
 	ns := getNamespace(attrs)
 	kind, name := getKindAndName(attrs)
@@ -40,39 +43,38 @@ func workloadKeyFromResourceAttributes(attrs []attribute.KeyValue) (string, erro
 	return k8sSourceKey(ns, kind, name, containerName), nil
 }
 
-func getNamespace(attrs []attribute.KeyValue) string {
-	for _, attr := range attrs {
-		if string(attr.Key) == string(semconv.K8SNamespaceNameKey) {
-			return attr.Value.AsString()
-		}
+func getNamespace(attrs pcommon.Map) string {
+	ns, ok := attrs.Get(string(semconv.K8SNamespaceNameKey))
+	if !ok {
+		return ""
 	}
-	return ""
+	return ns.Str()
 }
-func getKindAndName(attrs []attribute.KeyValue) (string, string) {
-	for _, attr := range attrs {
-		k := string(attr.Key)
-		if kind, found := attrKindPairs[k]; found {
-			return kind, attr.Value.AsString()
+
+func getKindAndName(attrs pcommon.Map) (string, string) {
+
+	for _, pair := range attrKindPairs {
+		if val, ok := attrs.Get(pair.key); ok && val.Type() == pcommon.ValueTypeStr {
+			return pair.kind, val.Str()
 		}
 	}
 
 	// Fallback to Odigos-specific workload attributes when no k8s workload attribute matched.
-	var kind, name string
-	for _, attr := range attrs {
-		if string(attr.Key) == consts.OdigosWorkloadNameAttribute {
-			name = attr.Value.AsString()
-		} else if string(attr.Key) == consts.OdigosWorkloadKindAttribute {
-			kind = attr.Value.AsString()
-		}
+	kind, ok := attrs.Get(consts.OdigosWorkloadKindAttribute)
+	if !ok {
+		return "", ""
 	}
-	return kind, name
+	name, ok := attrs.Get(consts.OdigosWorkloadNameAttribute)
+	if !ok {
+		return "", ""
+	}
+	return kind.Str(), name.Str()
 }
 
-func getContainerName(attrs []attribute.KeyValue) string {
-	for _, attr := range attrs {
-		if string(attr.Key) == string(semconv.K8SContainerNameKey) {
-			return attr.Value.AsString()
-		}
+func getContainerName(attrs pcommon.Map) string {
+	containerName, ok := attrs.Get(string(semconv.K8SContainerNameKey))
+	if !ok {
+		return ""
 	}
-	return ""
+	return containerName.Str()
 }
