@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 
 	"k8s.io/client-go/dynamic/dynamicinformer"
@@ -48,7 +48,7 @@ func (o *OdigosWorkloadConfig) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (o *OdigosWorkloadConfig) GetFromResource(res resource.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+func (o *OdigosWorkloadConfig) GetFromResource(res pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
 	key, err := workloadKeyFromResourceAttributes(res.Attributes())
 	if err != nil {
 		return nil, false
