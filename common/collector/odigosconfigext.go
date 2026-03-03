@@ -1,7 +1,7 @@
 package collector
 
 import (
-	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	commonapi "github.com/odigos-io/odigos/common/api"
 )
@@ -11,5 +11,5 @@ import (
 type OdigosConfigExtension interface {
 
 	// givin a specific resource, return a source collector config if exists.
-	GetFromResource(res resource.Resource) (*commonapi.ContainerCollectorConfig, bool)
+	GetFromResource(res pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool)
 }
