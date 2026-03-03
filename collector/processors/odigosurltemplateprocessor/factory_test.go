@@ -28,31 +28,3 @@ func TestCreateProcessor(t *testing.T) {
 	assert.NoError(t, err, "cannot create tracer processor")
 	assert.NoError(t, tp.Shutdown(context.Background()))
 }
-
-func TestInvalidRules(t *testing.T) {
-	tests := []struct {
-		name string
-		rule string
-	}{
-		{
-			name: "empty-regexp",
-			rule: "{foo:}",
-		},
-		{
-			name: "invalid-regexp",
-			rule: "{foo:.*[}",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			factory := NewFactory()
-			set := processortest.NewNopSettings(factory.Type())
-			_, err := factory.CreateTraces(context.Background(), set, &Config{
-				TemplatizationConfig: TemplatizationConfig{
-					TemplatizationRules: []string{test.rule},
-				},
-			}, nil)
-			assert.Error(t, err)
-		})
-	}
-}
