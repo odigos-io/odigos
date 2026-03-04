@@ -220,7 +220,7 @@ jobs:
           GORELEASER_CURRENT_TAG: ${{ env.TAG }}
 
       - name: Generate and update release notes
-        uses: odigos-io/ci-core/.github/actions/generate-release-notes@main
+        uses: odigos-io/ci-core/generate-release-notes@main
         continue-on-error: true
         with:
           tag: ${{ env.TAG }}
