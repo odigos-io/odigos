@@ -3,7 +3,7 @@ import { useConfig } from '../config';
 import type { NamespaceInstrumentInput } from '@/types';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import { GET_NAMESPACES, GET_NAMESPACES_WITH_WORKLOADS, PERSIST_NAMESPACES } from '@/graphql';
+import { GET_NAMESPACES_WITH_WORKLOADS, PERSIST_NAMESPACES } from '@/graphql';
 import { Crud, EntityTypes, type Namespace, type NamespaceWorkload, type Source, StatusType } from '@odigos/ui-kit/types';
 import { useDataStreamStore, useEntityStore, useNotificationStore } from '@odigos/ui-kit/store';
 
@@ -37,15 +37,12 @@ export const useNamespace = () => {
   const { isReadonly } = useConfig();
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
-  const { namespacesLoading, setEntitiesLoading, namespaces, setEntities } = useEntityStore();
+  const { namespacesLoading, namespaces, setEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, hideFromHistory });
   };
 
-  const [queryAllNs] = useLazyQuery<{ computePlatform?: { k8sActualNamespaces?: Namespace[] } }>(GET_NAMESPACES, {
-    onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
-  });
   const [queryNsWithWorkloads] = useLazyQuery<{ namespaces: GqlNamespaceWithWorkloads[] }>(GET_NAMESPACES_WITH_WORKLOADS, {
     onError: (error) => addNotification({ type: StatusType.Error, title: error.name || Crud.Read, message: error.cause?.message || error.message }),
   });
@@ -59,19 +56,6 @@ export const useNamespace = () => {
       addNotification({ type: StatusType.Error, title: error.name || Crud.Update, message: error.cause?.message || error.message });
     },
   });
-
-  const fetchNamespaces = async () => {
-    setEntitiesLoading(EntityTypes.Namespace, true);
-    const { error, data } = await queryAllNs();
-
-    if (error) {
-      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
-    } else if (data?.computePlatform?.k8sActualNamespaces) {
-      const { k8sActualNamespaces: items } = data.computePlatform;
-      setEntities(EntityTypes.Namespace, items);
-      setEntitiesLoading(EntityTypes.Namespace, false);
-    }
-  };
 
   const fetchNamespacesWithWorkloads = async () => {
     const { error, data } = await queryNsWithWorkloads();
@@ -102,13 +86,12 @@ export const useNamespace = () => {
   };
 
   useEffect(() => {
-    if (selectedStreamName && !namespaces.length && !namespacesLoading) fetchNamespaces();
+    if (selectedStreamName && !namespaces.length && !namespacesLoading) fetchNamespacesWithWorkloads();
   }, [selectedStreamName]);
 
   return {
     namespacesLoading,
     namespaces,
-    fetchNamespaces,
     fetchNamespacesWithWorkloads,
     persistNamespaces,
   };

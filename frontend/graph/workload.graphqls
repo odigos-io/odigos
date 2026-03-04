@@ -1,4 +1,3 @@
-
 # each workload in k8s is uniquely identified by its namespace, resource kind and resource name.
 # a workload is anything that odigos can instrument, even if it's not instrumented, ignored, disabled, etc.
 type K8sWorkloadId {
@@ -11,7 +10,7 @@ type K8sWorkloadId {
 # workload queries can be expensive and resource intensive,
 # so we provide a filter to reduce the scope of the query to just what is actually needed.
 # each empty value means no filter for that field.
-# 
+#
 # 3 modes are supported:
 # - single workload: all fields are set.
 # - namespace: namespace is set, other fields are empty.
@@ -28,7 +27,6 @@ input WorkloadFilter {
 # describes a condition for a workload in odigos
 # and its status and message which describes if the condition is met or not and in what state it is.
 type DesiredConditionStatus {
-
   # name of the condition, in PascalCase ("AgentInjected", "RuntimeInfo", etc.)
   name: String!
 
@@ -49,7 +47,6 @@ type DesiredConditionStatus {
 
 # Indicates if a workload in the cluster is marked for instrumentation and why.
 type K8sWorkloadMarkedForInstrumentation {
-
   # markedForInstrumentation is the reconciled decision for this workload.
   # workload can be marked, disabled, or unset for instrumentation due to the presence
   # of Source CRs, there can be workload sources and namespace sources.
@@ -57,7 +54,7 @@ type K8sWorkloadMarkedForInstrumentation {
   # when false, the workload is disabled for instrumentation (set explicitly to not instrument)
   markedForInstrumentation: Boolean
 
-  # decisionEnum is a String, out of close set of enum values, 
+  # decisionEnum is a String, out of close set of enum values,
   # that describes the reason for the markedForInstrumentation value
   decisionEnum: String!
 
@@ -96,7 +93,7 @@ type K8sWorkloadRuntimeInfoContainer {
   # there are some rare cases where value can be set in this list but not coming from container runtime.
   containerRuntimeEnvVars: [EnvVar!]
 
-  # if there was any cri error, the containerRuntimeEnvVars will be empty, 
+  # if there was any cri error, the containerRuntimeEnvVars will be empty,
   # criErrorMessage will be set to the error message, and containerRuntimeEnvVars is unknown.
   criErrorMessage: String
 
@@ -116,7 +113,6 @@ type K8sWorkloadRuntimeInfoContainer {
 
 # describes the result of the runtime info detection for a workload.
 type K8sWorkloadRuntimeInfo {
-
   # completed is true if the runtime info has been calculated for the source.
   completed: Boolean!
 
@@ -197,8 +193,7 @@ type K8sWorkloadAgentEnabledContainer {
 # pods for this workload are expected to have the agent injected, but it is not guaranteed.
 # only the actual state on each pod describe if the agent was indeed injected or not.
 type K8sWorkloadAgentEnabled {
-
-  # when enabled is true, odigos will attempt to inject the agent 
+  # when enabled is true, odigos will attempt to inject the agent
   # into relevant containers of future new pods from this source.
   # this value is true when at least one container is enabled.
   # to view the detailed decision for each container, see the containers field.
@@ -241,7 +236,6 @@ enum K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckConditionOperator {
 # a condition checks one attribute of a span for head sampling.
 # multiple conditions can be combined to form a single check which is used to determine the sampling decision.
 type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition {
-
   # attribute key to check.
   key: String!
 
@@ -255,7 +249,6 @@ type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition {
 }
 
 type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck {
-
   # all the conditions that must evaluate to true for this check to be used.
   # for example: 'url.path', 'equals', '/healthz' and 'http.request.method', 'equals', 'GET'
   conditions: [K8sWorkloadContainerAgentConfigTracesHeadSamplingCheckCondition!]
@@ -266,7 +259,6 @@ type K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck {
 
 # configuration for head sampling to apply on traces in instrumentation agent.
 type K8sWorkloadContainerAgentConfigTracesHeadSampling {
-
   # these are tested one by one, and the first one that evaluates to true is used to determine the sampling decision.
   checks: [K8sWorkloadContainerAgentConfigTracesHeadSamplingCheck!]
 
@@ -277,14 +269,12 @@ type K8sWorkloadContainerAgentConfigTracesHeadSampling {
 
 # traces configuration for the instrumentation agent.
 type K8sWorkloadContainerAgentConfigTraces {
-
   # configuration for head sampling to apply on traces.
   headSampling: K8sWorkloadContainerAgentConfigTracesHeadSampling
 }
 
 # configuration for the instrumentation agent.
 type K8sWorkloadContainerAgentConfig {
-
   # configuration for traces.
   traces: K8sWorkloadContainerAgentConfigTraces
 }
@@ -312,69 +302,68 @@ type K8sWorkloadContainer {
 # describes a single attribute of a process.
 # it is used to describe the attributes of a process.
 type K8sWorkloadPodContainerProcessAttribute {
-    name: String!
-    value: String!
+  name: String!
+  value: String!
 }
 
 type K8sWorkloadPodContainerProcessInstrumentation {
-    name: String!
-    isStandardLibrary: Boolean
+  name: String!
+  isStandardLibrary: Boolean
 }
 
 # describes a single process instance in a pod container.
 type K8sWorkloadPodContainerProcess {
+  # if the agent instrumenting this process is reporting healthy or not.
+  # if the agent is still starting up, this will be empty.
+  healthy: Boolean
 
-    # if the agent instrumenting this process is reporting healthy or not.
-    # if the agent is still starting up, this will be empty.
-    healthy: Boolean
+  # the status of the health of the process.
+  healthStatus: DesiredConditionStatus!
 
-    # the status of the health of the process.
-    healthStatus: DesiredConditionStatus!
+  # attributes are key value pairs that are reported as part of this process resource attributes in telemetry.
+  # it contains just some of the attributes and may not be complete.
+  identifyingAttributes: [K8sWorkloadPodContainerProcessAttribute!]!
 
-    # attributes are key value pairs that are reported as part of this process resource attributes in telemetry.
-    # it contains just some of the attributes and may not be complete.
-    identifyingAttributes: [K8sWorkloadPodContainerProcessAttribute!]!
-
-    instrumentations: [K8sWorkloadPodContainerProcessInstrumentation!]
+  instrumentations: [K8sWorkloadPodContainerProcessInstrumentation!]
 }
 
 # describes a single container instance in a pod instance.
 type K8sWorkloadPodContainer {
-    # the name of the container in the pod manifest.
-    containerName: String!
+  # the name of the container in the pod manifest.
+  containerName: String!
 
-    # if this container is using an instrumentation device, this will be set to the device name.
-    odigosInstrumentationDeviceName: String
+  # if this container is using an instrumentation device, this will be set to the device name.
+  odigosInstrumentationDeviceName: String
 
-    # if this container has agent injected, this will be set to the otel distro name.
-    otelDistroName: String
+  # if this container has agent injected, this will be set to the otel distro name.
+  otelDistroName: String
 
-    # if the container is marked as started in k8s.
-    started: Boolean
+  # if the container is marked as started in k8s.
+  started: Boolean
 
-    # if the container is marked as ready in k8s.
-    ready: Boolean
+  # if the container is marked as ready in k8s.
+  ready: Boolean
 
-    # if the container is in crash loop back off.
-    isCrashLoop: Boolean
+  # if the container is in crash loop back off.
+  isCrashLoop: Boolean
 
-    # the number of times the container has restarted.
-    restartCount: Int
+  # the number of times the container has restarted.
+  restartCount: Int
 
-    # the time the container started running (on restarts, this will be the time of the first restart).
-    # if pod is not running, this will be null.
-    runningStartedTime: String
+  # the time the container started running (on restarts, this will be the time of the first restart).
+  # if pod is not running, this will be null.
+  runningStartedTime: String
 
-    # if the container is in state waiting, this will be the reason and message from k8s for the status.
-    waitingReasonEnum: String
-    waitingMessage: String
+  # if the container is in state waiting, this will be the reason and message from k8s for the status.
+  waitingReasonEnum: String
+  waitingMessage: String
 
-    # the status of the health of the container itself, which is not directly related to the agent and instrumentation.
-    # it tracks the started, ready, and crash loop back off and present a unified status to show container health.
-    healthStatus: DesiredConditionStatus!
+  # the status of the health of the container itself, which is not directly related to the agent and instrumentation.
+  # it tracks the started, ready, and crash loop back off and present a unified status to show container health.
+  healthStatus: DesiredConditionStatus!
 
-    # the processes running with odigos agent in the container
-    processes: [K8sWorkloadPodContainerProcess!]!
+  # the processes running with odigos agent in the container
+  processes: [K8sWorkloadPodContainerProcess!]!
 }
 
 # describes a single pod instance
@@ -389,8 +378,8 @@ type K8sWorkloadPod {
   startTime: String!
 
   # if the agent is injected into the pod.
-  # agent injection is decided at pod creation time, 
-  # and depends on the agentEnabled decision for the source 
+  # agent injection is decided at pod creation time,
+  # and depends on the agentEnabled decision for the source
   # and the availability of the instrumentor webhook to handle requests.
   agentInjected: Boolean!
 
@@ -421,7 +410,6 @@ type K8sWorkloadPod {
 
 # everything related to the reported metrics for a workload.
 type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus {
-
   # indicate whether the source is expected to generate telemetry.
   # this value is calculated based on the source's actual instrumentation process.
   # it is not a guarantee that the source will generate telemetry, but it's a good indicator.
@@ -434,7 +422,6 @@ type K8sWorkloadTelemetryMetricsExpectingTelemetryStatus {
 
 # describes the actual metrics values for a workload.
 type K8sWorkloadTelemetryMetrics {
-
   # total bytes sent by this source, counted from when ui pod started running.
   # when the value is null, no telemetry data was observed yet for this source.
   # this value shows the amount from an arbitrary point in time, and thus the exact value is not important on it's own.
@@ -447,7 +434,7 @@ type K8sWorkloadTelemetryMetrics {
   # use this value with caution, and take the above into account.
   totalDataSentBytes: Int
 
-  # the current throughput of the source, counted over a timespan of 20 seconds 
+  # the current throughput of the source, counted over a timespan of 20 seconds
   # (or as configured in the node collector).
   # when the value is null, no telemetry data was observed yet for this source.
   # when this value is != 0, it means the source is observed to be generating telemetry.
@@ -488,7 +475,7 @@ type K8sWorkload {
   serviceName: String
 
   # this field is an aggregated status for the odigos health of the workload.
-  # it examines all related odigos values to determine if the workload is in its desired odigos state, 
+  # it examines all related odigos values to determine if the workload is in its desired odigos state,
   # and will indicate any odigos related errors or progress related to this workload.
   # the goal is to have one single property to examine and get an overall view for a workload.
   workloadOdigosHealthStatus: DesiredConditionStatus!
@@ -532,7 +519,7 @@ type K8sWorkload {
   # it indicates if no processes are found, unhealthy agent, and other issues.
   processesHealthStatus: DesiredConditionStatus!
 
-  # the telemetry metrics for this source 
+  # the telemetry metrics for this source
   # e.g. how much data is generated from this source as counted in the node collector.
   telemetryMetrics: [K8sWorkloadTelemetryMetrics!]!
 
@@ -548,7 +535,6 @@ type K8sWorkload {
 }
 
 type K8sNamespace {
-
   # name of the namespace.
   name: String!
 

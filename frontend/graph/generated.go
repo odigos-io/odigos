@@ -66,22 +66,23 @@ type ComplexityRoot struct {
 	}
 
 	ActionFields struct {
-		AnnotationsAttributes       func(childComplexity int) int
-		AttributeFilters            func(childComplexity int) int
-		AttributeNamesToDelete      func(childComplexity int) int
-		ClusterAttributes           func(childComplexity int) int
-		CollectClusterID            func(childComplexity int) int
-		CollectContainerAttributes  func(childComplexity int) int
-		CollectReplicaSetAttributes func(childComplexity int) int
-		CollectWorkloadID           func(childComplexity int) int
-		EndpointsFilters            func(childComplexity int) int
-		FallbackSamplingRatio       func(childComplexity int) int
-		LabelsAttributes            func(childComplexity int) int
-		OverwriteExistingValues     func(childComplexity int) int
-		PiiCategories               func(childComplexity int) int
-		Renames                     func(childComplexity int) int
-		SamplingPercentage          func(childComplexity int) int
-		ServicesNameFilters         func(childComplexity int) int
+		AnnotationsAttributes        func(childComplexity int) int
+		AttributeFilters             func(childComplexity int) int
+		AttributeNamesToDelete       func(childComplexity int) int
+		ClusterAttributes            func(childComplexity int) int
+		CollectClusterID             func(childComplexity int) int
+		CollectContainerAttributes   func(childComplexity int) int
+		CollectReplicaSetAttributes  func(childComplexity int) int
+		CollectWorkloadID            func(childComplexity int) int
+		EndpointsFilters             func(childComplexity int) int
+		FallbackSamplingRatio        func(childComplexity int) int
+		LabelsAttributes             func(childComplexity int) int
+		OverwriteExistingValues      func(childComplexity int) int
+		PiiCategories                func(childComplexity int) int
+		Renames                      func(childComplexity int) int
+		SamplingPercentage           func(childComplexity int) int
+		ServicesNameFilters          func(childComplexity int) int
+		URLTemplatizationRulesGroups func(childComplexity int) int
 	}
 
 	AgentsInitContainerResourcesConfig struct {
@@ -1135,12 +1136,32 @@ type ComplexityRoot struct {
 		TraceAggregationWaitDuration func(childComplexity int) int
 	}
 
+	TemplatizationWorkloadFilter struct {
+		Kind func(childComplexity int) int
+		Name func(childComplexity int) int
+	}
+
 	TestConnectionResponse struct {
 		DestinationType func(childComplexity int) int
 		Message         func(childComplexity int) int
 		Reason          func(childComplexity int) int
 		StatusCode      func(childComplexity int) int
 		Succeeded       func(childComplexity int) int
+	}
+
+	URLTemplatizationRule struct {
+		Notes    func(childComplexity int) int
+		Template func(childComplexity int) int
+	}
+
+	UrlTemplatizationRulesGroup struct {
+		FilterK8sNamespace        func(childComplexity int) int
+		FilterK8sWorkloadKind     func(childComplexity int) int
+		FilterK8sWorkloadName     func(childComplexity int) int
+		FilterProgrammingLanguage func(childComplexity int) int
+		Notes                     func(childComplexity int) int
+		TemplatizationRules       func(childComplexity int) int
+		WorkloadFilters           func(childComplexity int) int
 	}
 
 	UserInstrumentationEnvsConfig struct {
@@ -1435,6 +1456,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ActionFields.ServicesNameFilters(childComplexity), true
+
+	case "ActionFields.urlTemplatizationRulesGroups":
+		if e.complexity.ActionFields.URLTemplatizationRulesGroups == nil {
+			break
+		}
+
+		return e.complexity.ActionFields.URLTemplatizationRulesGroups(childComplexity), true
 
 	case "AgentsInitContainerResourcesConfig.limitCPUm":
 		if e.complexity.AgentsInitContainerResourcesConfig.LimitCPUm == nil {
@@ -6087,6 +6115,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TailSamplingConfig.TraceAggregationWaitDuration(childComplexity), true
 
+	case "TemplatizationWorkloadFilter.kind":
+		if e.complexity.TemplatizationWorkloadFilter.Kind == nil {
+			break
+		}
+
+		return e.complexity.TemplatizationWorkloadFilter.Kind(childComplexity), true
+
+	case "TemplatizationWorkloadFilter.name":
+		if e.complexity.TemplatizationWorkloadFilter.Name == nil {
+			break
+		}
+
+		return e.complexity.TemplatizationWorkloadFilter.Name(childComplexity), true
+
 	case "TestConnectionResponse.destinationType":
 		if e.complexity.TestConnectionResponse.DestinationType == nil {
 			break
@@ -6121,6 +6163,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TestConnectionResponse.Succeeded(childComplexity), true
+
+	case "URLTemplatizationRule.notes":
+		if e.complexity.URLTemplatizationRule.Notes == nil {
+			break
+		}
+
+		return e.complexity.URLTemplatizationRule.Notes(childComplexity), true
+
+	case "URLTemplatizationRule.template":
+		if e.complexity.URLTemplatizationRule.Template == nil {
+			break
+		}
+
+		return e.complexity.URLTemplatizationRule.Template(childComplexity), true
+
+	case "UrlTemplatizationRulesGroup.filterK8sNamespace":
+		if e.complexity.UrlTemplatizationRulesGroup.FilterK8sNamespace == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationRulesGroup.FilterK8sNamespace(childComplexity), true
+
+	case "UrlTemplatizationRulesGroup.filterK8sWorkloadKind":
+		if e.complexity.UrlTemplatizationRulesGroup.FilterK8sWorkloadKind == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationRulesGroup.FilterK8sWorkloadKind(childComplexity), true
+
+	case "UrlTemplatizationRulesGroup.filterK8sWorkloadName":
+		if e.complexity.UrlTemplatizationRulesGroup.FilterK8sWorkloadName == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationRulesGroup.FilterK8sWorkloadName(childComplexity), true
+
+	case "UrlTemplatizationRulesGroup.filterProgrammingLanguage":
+		if e.complexity.UrlTemplatizationRulesGroup.FilterProgrammingLanguage == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationRulesGroup.FilterProgrammingLanguage(childComplexity), true
+
+	case "UrlTemplatizationRulesGroup.notes":
+		if e.complexity.UrlTemplatizationRulesGroup.Notes == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationRulesGroup.Notes(childComplexity), true
+
+	case "UrlTemplatizationRulesGroup.templatizationRules":
+		if e.complexity.UrlTemplatizationRulesGroup.TemplatizationRules == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationRulesGroup.TemplatizationRules(childComplexity), true
+
+	case "UrlTemplatizationRulesGroup.workloadFilters":
+		if e.complexity.UrlTemplatizationRulesGroup.WorkloadFilters == nil {
+			break
+		}
+
+		return e.complexity.UrlTemplatizationRulesGroup.WorkloadFilters(childComplexity), true
 
 	case "UserInstrumentationEnvsConfig.languages":
 		if e.complexity.UserInstrumentationEnvsConfig.Languages == nil {
@@ -6179,6 +6284,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputSpanAttributeFilterInput,
 		ec.unmarshalInputStringConditionInput,
 		ec.unmarshalInputTailSamplingConfigInput,
+		ec.unmarshalInputTemplatizationWorkloadFilterInput,
+		ec.unmarshalInputURLTemplatizationRuleInput,
+		ec.unmarshalInputUrlTemplatizationRulesGroupInput,
 		ec.unmarshalInputWorkloadFilter,
 	)
 	first := true
@@ -8010,6 +8118,8 @@ func (ec *executionContext) fieldContext_Action_fields(_ context.Context, field 
 				return ec.fieldContext_ActionFields_servicesNameFilters(ctx, field)
 			case "attributeFilters":
 				return ec.fieldContext_ActionFields_attributeFilters(ctx, field)
+			case "urlTemplatizationRulesGroups":
+				return ec.fieldContext_ActionFields_urlTemplatizationRulesGroups(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ActionFields", field.Name)
 		},
@@ -8777,6 +8887,63 @@ func (ec *executionContext) fieldContext_ActionFields_attributeFilters(_ context
 				return ec.fieldContext_SpanAttributeFilter_fallbackSamplingRatio(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SpanAttributeFilter", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActionFields_urlTemplatizationRulesGroups(ctx context.Context, field graphql.CollectedField, obj *model.ActionFields) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ActionFields_urlTemplatizationRulesGroups(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URLTemplatizationRulesGroups, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.URLTemplatizationRulesGroup)
+	fc.Result = res
+	return ec.marshalOUrlTemplatizationRulesGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroupᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ActionFields_urlTemplatizationRulesGroups(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActionFields",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "filterK8sNamespace":
+				return ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sNamespace(ctx, field)
+			case "filterK8sWorkloadKind":
+				return ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sWorkloadKind(ctx, field)
+			case "filterK8sWorkloadName":
+				return ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sWorkloadName(ctx, field)
+			case "filterProgrammingLanguage":
+				return ec.fieldContext_UrlTemplatizationRulesGroup_filterProgrammingLanguage(ctx, field)
+			case "workloadFilters":
+				return ec.fieldContext_UrlTemplatizationRulesGroup_workloadFilters(ctx, field)
+			case "templatizationRules":
+				return ec.fieldContext_UrlTemplatizationRulesGroup_templatizationRules(ctx, field)
+			case "notes":
+				return ec.fieldContext_UrlTemplatizationRulesGroup_notes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UrlTemplatizationRulesGroup", field.Name)
 		},
 	}
 	return fc, nil
@@ -39215,6 +39382,88 @@ func (ec *executionContext) fieldContext_TailSamplingConfig_traceAggregationWait
 	return fc, nil
 }
 
+func (ec *executionContext) _TemplatizationWorkloadFilter_kind(ctx context.Context, field graphql.CollectedField, obj *model.TemplatizationWorkloadFilter) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TemplatizationWorkloadFilter_kind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Kind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sResourceKind)
+	fc.Result = res
+	return ec.marshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TemplatizationWorkloadFilter_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TemplatizationWorkloadFilter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type K8sResourceKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TemplatizationWorkloadFilter_name(ctx context.Context, field graphql.CollectedField, obj *model.TemplatizationWorkloadFilter) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_TemplatizationWorkloadFilter_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_TemplatizationWorkloadFilter_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TemplatizationWorkloadFilter",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TestConnectionResponse_succeeded(ctx context.Context, field graphql.CollectedField, obj *model.TestConnectionResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_TestConnectionResponse_succeeded(ctx, field)
 	if err != nil {
@@ -39416,6 +39665,393 @@ func (ec *executionContext) _TestConnectionResponse_reason(ctx context.Context, 
 func (ec *executionContext) fieldContext_TestConnectionResponse_reason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "TestConnectionResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _URLTemplatizationRule_template(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_URLTemplatizationRule_template(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Template, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_URLTemplatizationRule_template(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "URLTemplatizationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _URLTemplatizationRule_notes(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_URLTemplatizationRule_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_URLTemplatizationRule_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "URLTemplatizationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationRulesGroup_filterK8sNamespace(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sNamespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FilterK8sNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_filterK8sNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationRulesGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationRulesGroup_filterK8sWorkloadKind(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sWorkloadKind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FilterK8sWorkloadKind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.K8sResourceKind)
+	fc.Result = res
+	return ec.marshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_filterK8sWorkloadKind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationRulesGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type K8sResourceKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationRulesGroup_filterK8sWorkloadName(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sWorkloadName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FilterK8sWorkloadName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_filterK8sWorkloadName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationRulesGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationRulesGroup_filterProgrammingLanguage(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_filterProgrammingLanguage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FilterProgrammingLanguage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_filterProgrammingLanguage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationRulesGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationRulesGroup_workloadFilters(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_workloadFilters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.WorkloadFilters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.TemplatizationWorkloadFilter)
+	fc.Result = res
+	return ec.marshalOTemplatizationWorkloadFilter2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilterᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_workloadFilters(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationRulesGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "kind":
+				return ec.fieldContext_TemplatizationWorkloadFilter_kind(ctx, field)
+			case "name":
+				return ec.fieldContext_TemplatizationWorkloadFilter_name(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TemplatizationWorkloadFilter", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationRulesGroup_templatizationRules(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_templatizationRules(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TemplatizationRules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.URLTemplatizationRule)
+	fc.Result = res
+	return ec.marshalNURLTemplatizationRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_templatizationRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationRulesGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "template":
+				return ec.fieldContext_URLTemplatizationRule_template(ctx, field)
+			case "notes":
+				return ec.fieldContext_URLTemplatizationRule_notes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type URLTemplatizationRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UrlTemplatizationRulesGroup_notes(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_notes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UrlTemplatizationRulesGroup",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -41425,7 +42061,7 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "samplingPercentage", "fallbackSamplingRatio", "endpointsFilters", "servicesNameFilters", "attributeFilters"}
+	fieldsInOrder := [...]string{"collectContainerAttributes", "collectReplicaSetAttributes", "collectWorkloadId", "collectClusterId", "labelsAttributes", "annotationsAttributes", "clusterAttributes", "overwriteExistingValues", "attributeNamesToDelete", "renames", "piiCategories", "samplingPercentage", "fallbackSamplingRatio", "endpointsFilters", "servicesNameFilters", "attributeFilters", "urlTemplatizationRulesGroups"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -41544,6 +42180,13 @@ func (ec *executionContext) unmarshalInputActionFieldsInput(ctx context.Context,
 				return it, err
 			}
 			it.AttributeFilters = data
+		case "urlTemplatizationRulesGroups":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("urlTemplatizationRulesGroups"))
+			data, err := ec.unmarshalOUrlTemplatizationRulesGroupInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroupInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.URLTemplatizationRulesGroups = data
 		}
 	}
 
@@ -43252,6 +43895,143 @@ func (ec *executionContext) unmarshalInputTailSamplingConfigInput(ctx context.Co
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTemplatizationWorkloadFilterInput(ctx context.Context, obj any) (model.TemplatizationWorkloadFilterInput, error) {
+	var it model.TemplatizationWorkloadFilterInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"kind", "name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "kind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			data, err := ec.unmarshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kind = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputURLTemplatizationRuleInput(ctx context.Context, obj any) (model.URLTemplatizationRuleInput, error) {
+	var it model.URLTemplatizationRuleInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"template", "notes"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "template":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("template"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Template = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUrlTemplatizationRulesGroupInput(ctx context.Context, obj any) (model.URLTemplatizationRulesGroupInput, error) {
+	var it model.URLTemplatizationRulesGroupInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"filterK8sNamespace", "filterK8sWorkloadKind", "filterK8sWorkloadName", "filterProgrammingLanguage", "workloadFilters", "templatizationRules", "notes"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "filterK8sNamespace":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filterK8sNamespace"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FilterK8sNamespace = data
+		case "filterK8sWorkloadKind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filterK8sWorkloadKind"))
+			data, err := ec.unmarshalOK8sResourceKind2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sResourceKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FilterK8sWorkloadKind = data
+		case "filterK8sWorkloadName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filterK8sWorkloadName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FilterK8sWorkloadName = data
+		case "filterProgrammingLanguage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filterProgrammingLanguage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FilterProgrammingLanguage = data
+		case "workloadFilters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workloadFilters"))
+			data, err := ec.unmarshalOTemplatizationWorkloadFilterInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilterInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WorkloadFilters = data
+		case "templatizationRules":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("templatizationRules"))
+			data, err := ec.unmarshalNURLTemplatizationRuleInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TemplatizationRules = data
+		case "notes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Notes = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputWorkloadFilter(ctx context.Context, obj any) (model.WorkloadFilter, error) {
 	var it model.WorkloadFilter
 	asMap := map[string]any{}
@@ -43416,6 +44196,8 @@ func (ec *executionContext) _ActionFields(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._ActionFields_servicesNameFilters(ctx, field, obj)
 		case "attributeFilters":
 			out.Values[i] = ec._ActionFields_attributeFilters(ctx, field, obj)
+		case "urlTemplatizationRulesGroups":
+			out.Values[i] = ec._ActionFields_urlTemplatizationRulesGroups(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -51902,6 +52684,44 @@ func (ec *executionContext) _TailSamplingConfig(ctx context.Context, sel ast.Sel
 	return out
 }
 
+var templatizationWorkloadFilterImplementors = []string{"TemplatizationWorkloadFilter"}
+
+func (ec *executionContext) _TemplatizationWorkloadFilter(ctx context.Context, sel ast.SelectionSet, obj *model.TemplatizationWorkloadFilter) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, templatizationWorkloadFilterImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TemplatizationWorkloadFilter")
+		case "kind":
+			out.Values[i] = ec._TemplatizationWorkloadFilter_kind(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._TemplatizationWorkloadFilter_name(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var testConnectionResponseImplementors = []string{"TestConnectionResponse"}
 
 func (ec *executionContext) _TestConnectionResponse(ctx context.Context, sel ast.SelectionSet, obj *model.TestConnectionResponse) graphql.Marshaler {
@@ -51929,6 +52749,98 @@ func (ec *executionContext) _TestConnectionResponse(ctx context.Context, sel ast
 			out.Values[i] = ec._TestConnectionResponse_message(ctx, field, obj)
 		case "reason":
 			out.Values[i] = ec._TestConnectionResponse_reason(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var uRLTemplatizationRuleImplementors = []string{"URLTemplatizationRule"}
+
+func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, uRLTemplatizationRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("URLTemplatizationRule")
+		case "template":
+			out.Values[i] = ec._URLTemplatizationRule_template(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "notes":
+			out.Values[i] = ec._URLTemplatizationRule_notes(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var urlTemplatizationRulesGroupImplementors = []string{"UrlTemplatizationRulesGroup"}
+
+func (ec *executionContext) _UrlTemplatizationRulesGroup(ctx context.Context, sel ast.SelectionSet, obj *model.URLTemplatizationRulesGroup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, urlTemplatizationRulesGroupImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UrlTemplatizationRulesGroup")
+		case "filterK8sNamespace":
+			out.Values[i] = ec._UrlTemplatizationRulesGroup_filterK8sNamespace(ctx, field, obj)
+		case "filterK8sWorkloadKind":
+			out.Values[i] = ec._UrlTemplatizationRulesGroup_filterK8sWorkloadKind(ctx, field, obj)
+		case "filterK8sWorkloadName":
+			out.Values[i] = ec._UrlTemplatizationRulesGroup_filterK8sWorkloadName(ctx, field, obj)
+		case "filterProgrammingLanguage":
+			out.Values[i] = ec._UrlTemplatizationRulesGroup_filterProgrammingLanguage(ctx, field, obj)
+		case "workloadFilters":
+			out.Values[i] = ec._UrlTemplatizationRulesGroup_workloadFilters(ctx, field, obj)
+		case "templatizationRules":
+			out.Values[i] = ec._UrlTemplatizationRulesGroup_templatizationRules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "notes":
+			out.Values[i] = ec._UrlTemplatizationRulesGroup_notes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -55259,6 +56171,21 @@ func (ec *executionContext) marshalNSupportedSignals2ᚖgithubᚗcomᚋodigosᚑ
 	return ec._SupportedSignals(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNTemplatizationWorkloadFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilter(ctx context.Context, sel ast.SelectionSet, v *model.TemplatizationWorkloadFilter) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TemplatizationWorkloadFilter(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTemplatizationWorkloadFilterInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilterInput(ctx context.Context, v any) (*model.TemplatizationWorkloadFilterInput, error) {
+	res, err := ec.unmarshalInputTemplatizationWorkloadFilterInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNTestConnectionResponse2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTestConnectionResponse(ctx context.Context, sel ast.SelectionSet, v model.TestConnectionResponse) graphql.Marshaler {
 	return ec._TestConnectionResponse(ctx, sel, &v)
 }
@@ -55281,6 +56208,95 @@ func (ec *executionContext) unmarshalNTier2githubᚗcomᚋodigosᚑioᚋodigos�
 
 func (ec *executionContext) marshalNTier2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTier(ctx context.Context, sel ast.SelectionSet, v model.Tier) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNURLTemplatizationRule2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationRule) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNURLTemplatizationRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRule(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNURLTemplatizationRule2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRule(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationRule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._URLTemplatizationRule(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNURLTemplatizationRuleInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleInputᚄ(ctx context.Context, v any) ([]*model.URLTemplatizationRuleInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.URLTemplatizationRuleInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNURLTemplatizationRuleInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNURLTemplatizationRuleInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRuleInput(ctx context.Context, v any) (*model.URLTemplatizationRuleInput, error) {
+	res, err := ec.unmarshalInputURLTemplatizationRuleInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUrlTemplatizationRulesGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroup(ctx context.Context, sel ast.SelectionSet, v *model.URLTemplatizationRulesGroup) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UrlTemplatizationRulesGroup(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNUrlTemplatizationRulesGroupInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroupInput(ctx context.Context, v any) (*model.URLTemplatizationRulesGroupInput, error) {
+	res, err := ec.unmarshalInputUrlTemplatizationRulesGroupInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNWorkloadRolloutStatus2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐWorkloadRolloutStatus(ctx context.Context, v any) (model.WorkloadRolloutStatus, error) {
@@ -57772,6 +58788,71 @@ func (ec *executionContext) unmarshalOTailSamplingConfigInput2ᚖgithubᚗcomᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalOTemplatizationWorkloadFilter2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TemplatizationWorkloadFilter) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTemplatizationWorkloadFilter2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilter(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOTemplatizationWorkloadFilterInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilterInputᚄ(ctx context.Context, v any) ([]*model.TemplatizationWorkloadFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.TemplatizationWorkloadFilterInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNTemplatizationWorkloadFilterInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTemplatizationWorkloadFilterInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx context.Context, v any) (*model.UIMode, error) {
 	if v == nil {
 		return nil, nil
@@ -57786,6 +58867,71 @@ func (ec *executionContext) marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigo
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOUrlTemplatizationRulesGroup2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroupᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.URLTemplatizationRulesGroup) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUrlTemplatizationRulesGroup2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroup(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOUrlTemplatizationRulesGroupInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroupInputᚄ(ctx context.Context, v any) ([]*model.URLTemplatizationRulesGroupInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.URLTemplatizationRulesGroupInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUrlTemplatizationRulesGroupInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐURLTemplatizationRulesGroupInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) marshalOUserInstrumentationEnvsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUserInstrumentationEnvsConfig(ctx context.Context, sel ast.SelectionSet, v *model.UserInstrumentationEnvsConfig) graphql.Marshaler {

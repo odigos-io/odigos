@@ -69,6 +69,7 @@ enum ActionType {
   LatencySampler
   ServiceNameSampler
   SpanAttributeSampler
+  URLTemplatization
   UnknownType
 }
 
@@ -471,6 +472,27 @@ input ActionFieldsInput {
   endpointsFilters: [HttpRouteFilterInput!]
   servicesNameFilters: [ServiceNameFilterInput!]
   attributeFilters: [SpanAttributeFilterInput!]
+  urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroupInput!]
+}
+
+input URLTemplatizationRuleInput {
+  template: String!
+  notes: String
+}
+
+input TemplatizationWorkloadFilterInput {
+  kind: K8sResourceKind
+  name: String
+}
+
+input UrlTemplatizationRulesGroupInput {
+  filterK8sNamespace: String
+  filterK8sWorkloadKind: K8sResourceKind
+  filterK8sWorkloadName: String
+  filterProgrammingLanguage: String
+  workloadFilters: [TemplatizationWorkloadFilterInput!]
+  templatizationRules: [URLTemplatizationRuleInput!]!
+  notes: String
 }
 
 input K8sLabelAttributeInput {
@@ -567,6 +589,27 @@ type ActionFields {
   endpointsFilters: [HttpRouteFilter!]
   servicesNameFilters: [ServiceNameFilter!]
   attributeFilters: [SpanAttributeFilter!]
+  urlTemplatizationRulesGroups: [UrlTemplatizationRulesGroup!]
+}
+
+type URLTemplatizationRule {
+  template: String!
+  notes: String
+}
+
+type TemplatizationWorkloadFilter {
+  kind: K8sResourceKind
+  name: String
+}
+
+type UrlTemplatizationRulesGroup {
+  filterK8sNamespace: String
+  filterK8sWorkloadKind: K8sResourceKind
+  filterK8sWorkloadName: String
+  filterProgrammingLanguage: String
+  workloadFilters: [TemplatizationWorkloadFilter!]
+  templatizationRules: [URLTemplatizationRule!]!
+  notes: String
 }
 
 type K8sLabelAttribute {
