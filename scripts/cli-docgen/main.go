@@ -32,7 +32,7 @@ func main() {
 	}
 
 	rootCmd := cmd.RootCmd()
-	outputDir := "../../docs/cli"
+	outputDir := "../../docs/snippets/shared/cli"
 
 	err := doc.GenMarkdownTreeCustom(&rootCmd, outputDir, filePrepender, linkHandler)
 	if err != nil {
