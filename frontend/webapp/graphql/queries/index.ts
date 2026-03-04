@@ -6,7 +6,6 @@ export * from './destination';
 export * from './diagnose';
 export * from './instrumentation-rules';
 export * from './metrics';
-export * from './namespaces';
 export * from './pipeline-collectors';
 export * from './service-map';
 export * from './source';

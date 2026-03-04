@@ -16,6 +16,9 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// Stage constant for the CRDs diagnose phase.
+const StageCRDs Stage = "crds"
+
 // DiscoverOdigosCRDs uses the discovery client to find all CRDs in groups ending with ".odigos.io"
 func DiscoverOdigosCRDs(discoveryClient discovery.DiscoveryInterface) []schema.GroupVersionResource {
 	var gvrs []schema.GroupVersionResource
@@ -71,7 +74,6 @@ func FetchOdigosCRDs(
 	builder Builder,
 	rootDir, odigosNamespace string,
 ) error {
-	fmt.Printf("Fetching Odigos CRDs...\n")
 	klog.V(2).InfoS("Fetching Odigos CRDs")
 
 	gvrs := DiscoverOdigosCRDs(discoveryClient)

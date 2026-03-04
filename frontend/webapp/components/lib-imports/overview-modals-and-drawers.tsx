@@ -14,7 +14,7 @@ import {
 } from '@/hooks';
 
 const OverviewModalsAndDrawers = () => {
-  const { fetchNamespace } = useNamespace();
+  const { fetchNamespacesWithWorkloads } = useNamespace();
   const { fetchDescribeSource } = useDescribe();
   const { testConnection } = useTestConnection();
   const { categories } = useDestinationCategories();
@@ -28,7 +28,7 @@ const OverviewModalsAndDrawers = () => {
   return (
     <>
       {/* modals */}
-      <SourceModal fetchSingleNamespace={fetchNamespace} persistSources={persistSources} />
+      <SourceModal fetchNamespacesWithWorkloads={fetchNamespacesWithWorkloads} persistSources={persistSources} />
       <DestinationModal
         isOnboarding={false}
         categories={categories}

@@ -24,6 +24,11 @@ const (
 	MessageEventAdded    MessageEvent = "Added"
 	MessageEventDeleted  MessageEvent = "Deleted"
 	MessageEventModified MessageEvent = "Modified"
+
+	// Diagnose progress events. Data is JSON: DiagnoseStagesRequested = array of stage ids;
+	// DiagnoseStageCompleted = object with "stage", "status" (success|error), and optional "message" on error.
+	MessageEventDiagnoseStagesRequested MessageEvent = "DiagnoseStagesRequested"
+	MessageEventDiagnoseStageCompleted  MessageEvent = "DiagnoseStageCompleted"
 )
 
 type SSEMessage struct {

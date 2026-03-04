@@ -10,6 +10,9 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// Stage constant for the ConfigMaps diagnose phase.
+const StageConfigMaps Stage = "configmaps"
+
 // FetchConfigMaps collects all ConfigMaps from the Odigos namespace
 func FetchConfigMaps(ctx context.Context, client kubernetes.Interface, builder Builder, configMapDir, odigosNamespace string) error {
 	klog.V(2).InfoS("Fetching ConfigMaps", "namespace", odigosNamespace)
