@@ -1,0 +1,30 @@
+## odigos sources disable namespace
+
+disable a Namespace for Odigos instrumentation
+
+### Synopsis
+
+This command disables the provided Namespace for Odigos instrumentatin. It will create a Source object if one does not already exists, or update the existing one if it does.
+
+```
+odigos sources disable namespace [name] [flags]
+```
+
+### Options
+
+```
+      --dry-run   dry run
+  -h, --help      help for namespace
+```
+
+### Options inherited from parent commands
+
+```
+      --kube-context string   (optional) name of the kubeconfig context to use
+      --kubeconfig string     (optional) absolute path to the kubeconfig file (default "KUBECONFIG")
+  -v, --verbose               enable verbose output
+```
+
+### SEE ALSO
+
+* [odigos sources disable](./odigos_sources_disable)	 - Disable a source for Odigos instrumentation.

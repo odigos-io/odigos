@@ -1,0 +1,94 @@
+## Supported Versions
+
+Odigos uses the official OpenTelemetry instrumentation libraries and SDK components, thus it supports the same Node.js versions as the OpenTelemetry Node.js.
+
+- Node.js runtime versions **14** and above are supported.
+
+## Traces
+
+Odigos will automatically instrument your Node.js sources to record and collect spans for distributed tracing, by utilizing the OpenTelemetry Node.js Official Instrumentation Libraries.
+
+If you use one of the supported logger libraries, the trace id and span id will be auto-injected into your log records allowing signals correlations between logs and traces.
+
+## Instrumentation Libraries
+
+The following npm packages will be auto instrumented by Odigos:
+
+### Node.js Core Modules:
+
+- `node:dns` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- `node:fs` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- `node:http` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- `node:https` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- `node:net` [`Node.js`](https://nodejs.org/) versions `>=14` 
+
+
+### HTTP Frameworks:
+
+- [`connect`](https://www.npmjs.com/package/connect) versions `>=3.0.0 <4` 
+- [`express`](https://www.npmjs.com/package/express) versions `>=4.0.0 <5` 
+- [`fastify`](https://www.npmjs.com/package/fastify) versions `>=3.0.0 <5` 
+- [`graphql`](https://www.npmjs.com/package/graphql) versions `>=14.0.0 <17` 
+- [`@hapi/hapi`](https://www.npmjs.com/package/@hapi/hapi) versions `>=17.0.0 <22` 
+- [`koa`](https://www.npmjs.com/package/koa) versions `>=2.0.0 <3` 
+- [`@koa/router`](https://www.npmjs.com/package/@koa/router) versions `>=8.0.0` 
+- [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <11` 
+- `node:http` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- `node:https` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- [`restify`](https://www.npmjs.com/package/restify) versions `>=4.0.0 <12` 
+- [`router`](https://www.npmjs.com/package/router) versions `>=1.0.0 <2` 
+
+
+### HTTP Clients:
+
+- `node:http` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- `node:https` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- [`undici`](https://www.npmjs.com/package/undici) versions `>=5.12.0` 
+
+
+### RPC (Remote Procedure Call):
+
+- [`aws-sdk`](https://www.npmjs.com/package/aws-sdk) versions `>=2.308.0 <3` 
+- [`@aws-sdk/client-*`](https://www.npmjs.com/package/@aws-sdk/client-*) versions `>=3.0.0 <4` 
+- [`@grpc/grpc-js`](https://www.npmjs.com/package/@grpc/grpc-js) versions `^1.0.0` 
+
+
+### Messaging Systems Clients:
+
+- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <1` 
+- [`kafkajs`](https://www.npmjs.com/package/kafkajs) versions `>=0.3.0 <3` 
+- `node:http` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- `node:https` [`Node.js`](https://nodejs.org/) versions `>=14` 
+- [`socket.io`](https://www.npmjs.com/package/socket.io) versions `>=2.0.0 <5` 
+
+
+### Database Clients, ORMs, and data access libraries:
+
+- [`aws-sdk`](https://www.npmjs.com/package/aws-sdk) versions `>=2.308.0 <3` 
+- [`@aws-sdk/client-*`](https://www.npmjs.com/package/@aws-sdk/client-*) versions `>=3.0.0 <4` 
+- [`cassandra-driver`](https://www.npmjs.com/package/cassandra-driver) versions `>=4.4.0 <5` 
+- [`dataloader`](https://www.npmjs.com/package/dataloader) versions `>=2.0.0 <3` 
+- [`generic-pool`](https://www.npmjs.com/package/generic-pool) versions `>=2.0.0 <4` 
+- [`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <6` 
+- [`knex`](https://www.npmjs.com/package/knex) versions `>=0.10.0 <4` 
+- [`lru-memoizer`](https://www.npmjs.com/package/lru-memoizer) versions `>=1.3.0 <3` 
+- [`memcached`](https://www.npmjs.com/package/memcached) versions `>=2.2.0 <3` 
+- [`mongodb`](https://www.npmjs.com/package/mongodb) versions `>=3.3.0 <7` 
+- [`mongoose`](https://www.npmjs.com/package/mongoose) versions `>=5.9.7 <7` 
+- [`mysql`](https://www.npmjs.com/package/mysql) versions `>=2.0.0 <3` 
+- [`mysql2`](https://www.npmjs.com/package/mysql2) versions `>=1.4.2 <4` 
+- [`pg-pool`](https://www.npmjs.com/package/pg-pool) versions `>=2.0.0 <4` 
+- [`pg`](https://www.npmjs.com/package/pg) versions `>=8.0.0 <9` 
+- [`redis`](https://www.npmjs.com/package/redis) versions `>=2.6.0` 
+- [`tedious`](https://www.npmjs.com/package/tedious) versions `>=1.11.0 <18` 
+
+
+### Loggers:
+
+Automatic injection of trace context (trace id and span id) into log records for the following loggers:
+
+- [`bunyan`](https://www.npmjs.com/package/bunyan) versions `>=1.0.0 <2` 
+- [`pino`](https://www.npmjs.com/package/pino) versions `>=5.14.0 <10` 
+- [`winston`](https://www.npmjs.com/package/winston) versions `>=1.0.0 <4` 
+
+{/* END OF FILE */}
