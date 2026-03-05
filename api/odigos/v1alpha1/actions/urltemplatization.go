@@ -3,6 +3,7 @@ package actions
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	commonapi "github.com/odigos-io/odigos/common/api"
 )
 
 const ActionNameURLTemplatization = "URLTemplatization"
@@ -36,6 +37,8 @@ type UrlTemplatizationRulesGroup struct {
 	FilterK8sWorkloadKind     *k8sconsts.WorkloadKind     `json:"filterK8sWorkloadKind,omitempty"`
 	FilterK8sWorkloadName     string                      `json:"filterK8sWorkloadName,omitempty"`
 
+	// WorkloadFilters to which the rules must be applied to
+	WorkloadFilters []commonapi.SourcesScope `json:"workloadFilters,omitempty"`
 	// the rules that will be applied to the spans matching the above filters.
 	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`
 

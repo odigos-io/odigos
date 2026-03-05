@@ -142,6 +142,17 @@ const (
 	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
 	SmallBatchesProcessor          = "batch/small-batches"
 	GroupByTraceProcessorV2        = "groupbytrace/samplingv2"
+
+	// URLTemplatizationProcessorName is the name of the shared Processor CR and pipeline component for URL templatization.
+	// Used by the autoscaler action controller when creating/watching the Processor CR.
+	URLTemplatizationProcessorName = "odigos-url-templatization"
+)
+
+// Collector component type IDs (must match collector metadata.yaml type values).
+// Used by autoscaler when building pipeline configs and processor configs.
+const (
+	// OdigosConfigK8sExtensionType is the OTel component type for the workload config extension (odigos_config_k8s).
+	OdigosConfigK8sExtensionType = "odigos_config_k8s"
 )
 
 // Auto rollback related consts

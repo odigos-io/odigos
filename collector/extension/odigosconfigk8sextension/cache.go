@@ -42,6 +42,22 @@ func (c *cache) Set(key string, cfg *commonapi.ContainerCollectorConfig) {
 	c.data[key] = cfg
 }
 
+// Range calls f for each key and config in the cache. Caller must not modify the cache from f.
+func (c *cache) Range(f func(key string, cfg *commonapi.ContainerCollectorConfig)) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	for k, v := range c.data {
+		f(k, v)
+	}
+}
+
+// Delete removes the entry for the given key.
+func (c *cache) Delete(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.data, key)
+}
+
 // DeleteWorkload removes the entry for the given workload key.
 func (c *cache) DeleteWorkload(workloadKey workloadKey) {
 	c.mu.Lock()

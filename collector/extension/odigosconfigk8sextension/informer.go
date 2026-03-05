@@ -108,6 +108,21 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 		return
 	}
 
+	keyPrefix := k8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, "")
+	workloadKeyStr := workloadKey.Namespace + "/" + workloadKey.Kind + "/" + workloadKey.Name
+	o.logger.Debug("instrumentation config add/update", zap.String("workload", workloadKeyStr), zap.String("key_prefix", keyPrefix))
+
+	// On add/update: clear existing entries for this workload first so removed containers (or empty workloadCollectorConfig) are dropped from both caches.
+	// Do this before reading workloadCollectorConfig so that an IC with empty workloadCollectorConfig still clears stale keys.
+	cb := o.getUrlTemplatizationCallback()
+	if cb != nil {
+		cb.OnDeleteKey(keyPrefix)
+		o.logger.Debug("url templatization callback OnDeleteKey called", zap.String("key_prefix", keyPrefix))
+	} else {
+		o.logger.Debug("url templatization callback not set, skipping OnDeleteKey", zap.String("key_prefix", keyPrefix))
+	}
+	o.cache.DeleteWorkload(workloadKey)
+
 	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
 	if !ok || len(workloadCollectorConfigSlice) == 0 {
 		o.logger.Debug("failed to get workload collector config from instrumentation config", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
@@ -124,8 +139,16 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(itemMap, &c); err != nil {
 			continue
 		}
+		if c.ContainerName == "" {
+			continue
+		}
 		cacheKey := k8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, c.ContainerName)
 		o.cache.Set(cacheKey, &c)
+		if cb != nil {
+			cb.OnSet(cacheKey, &c)
+			hasRules := c.UrlTemplatization != nil && len(c.UrlTemplatization.TemplatizationRules) > 0
+			o.logger.Debug("url templatization callback OnSet called", zap.String("cache_key", cacheKey), zap.Bool("has_rules", hasRules))
+		}
 	}
 
 	o.logger.Debug("updated workload sampling cache", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
@@ -140,10 +163,21 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 		return
 	}
 	key, ok := workloadKeyFromObject(u)
-	if ok {
-		o.cache.DeleteWorkload(key)
-		o.logger.Debug("removed workload from sampling cache", zap.String("namespace", key.Namespace), zap.String("kind", key.Kind), zap.String("name", key.Name))
+	if !ok {
+		return
 	}
+	keyPrefix := k8sSourceKey(key.Namespace, key.Kind, key.Name, "")
+	workloadKeyStr := key.Namespace + "/" + key.Kind + "/" + key.Name
+	o.logger.Debug("instrumentation config delete", zap.String("workload", workloadKeyStr), zap.String("key_prefix", keyPrefix))
+
+	cb := o.getUrlTemplatizationCallback()
+	if cb != nil {
+		cb.OnDeleteKey(keyPrefix)
+		o.logger.Debug("url templatization callback OnDeleteKey called", zap.String("key_prefix", keyPrefix))
+	} else {
+		o.logger.Debug("url templatization callback not set, skipping OnDeleteKey", zap.String("key_prefix", keyPrefix))
+	}
+	o.cache.DeleteWorkload(key)
 }
 
 // workloadKeyFromObject returns a WorkloadKey from the InstrumentationConfig's metadata.
