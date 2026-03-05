@@ -50,22 +50,12 @@ func (r *CAUpdaterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	needsUpdate := false
-	if string(apiSvc.Spec.CABundle) != string(ca) {
-		apiSvc.Spec.CABundle = ca
-		needsUpdate = true
-	}
-
-	if apiSvc.Spec.InsecureSkipTLSVerify {
-		apiSvc.Spec.InsecureSkipTLSVerify = false
-		needsUpdate = true
-	}
-
-	if !needsUpdate {
+	if string(apiSvc.Spec.CABundle) == string(ca) {
 		logger.V(1).Info("CA bundle already up-to-date")
 		return ctrl.Result{}, nil
 	}
 
+	apiSvc.Spec.CABundle = ca
 	if err := r.Client.Update(ctx, apiSvc); err != nil {
 		logger.Error(err, "Failed to update APIService CABundle")
 		return ctrl.Result{}, err
