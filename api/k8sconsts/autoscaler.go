@@ -24,6 +24,7 @@ const (
 	AutoscalerWebhookVolumeName           = "autoscaler-webhooks-cert"
 	AutoScalerWebhookServiceName          = "odigos-autoscaler"
 	AutoScalerWebhookFieldOwner           = AutoScalerDeploymentName
+	CustomMetricsAPIServiceName           = "v1beta1.custom.metrics.k8s.io"
 )
 
 const (
