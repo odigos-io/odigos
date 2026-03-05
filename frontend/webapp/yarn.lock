@@ -635,12 +635,13 @@
   resolved "https://registry.yarnpkg.com/@nolyfill/is-core-module/-/is-core-module-1.0.39.tgz#3dc35ba0f1e66b403c00b39344f870298ebb1c8e"
   integrity sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==
 
-"@odigos/ui-kit@0.0.201":
-  version "0.0.201"
-  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.201.tgz#1111b07201f229741d62da6973d073798533d38d"
-  integrity sha512-7iCdFp0cDj58XkTNVcitS6nGT23cpTher8cguiOdWLayDIjdY89eDkxESYgQkhZcDDqhF7ALrzkQ/HHVuKX4mg==
+"@odigos/ui-kit@0.0.204":
+  version "0.0.204"
+  resolved "https://registry.yarnpkg.com/@odigos/ui-kit/-/ui-kit-0.0.204.tgz#c4ba3c77f5a11ab81d66d3ca5f145ee6ce9bc97a"
+  integrity sha512-pNCmvpt4CQTOIb/PjJu4uDGCOLqaYmrd2VzDowizN8EX/N2rs28AhaRFkB0qH9CrvQlfdzNO9FilvqIjtod2Ew==
   dependencies:
     "@xyflow/react" "^12.10.1"
+    elkjs "^0.11.1"
     javascript-time-ago "^2.6.2"
     lottie-react "^2.4.1"
     prism-react-renderer "^2.4.1"
@@ -1817,6 +1818,11 @@ electron-to-chromium@^1.5.263:
   version "1.5.302"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.5.302.tgz#032a5802b31f7119269959c69fe2015d8dad5edb"
   integrity sha512-sM6HAN2LyK82IyPBpznDRqlTQAtuSaO+ShzFiWTvoMJLHyZ+Y39r8VMfHzwbU8MVBzQ4Wdn85+wlZl2TLGIlwg==
+
+elkjs@^0.11.1:
+  version "0.11.1"
+  resolved "https://registry.yarnpkg.com/elkjs/-/elkjs-0.11.1.tgz#d27fcdbbf5a8aeeff80420d17d1666f78cfc8544"
+  integrity sha512-zxxR9k+rx5ktMwT/FwyLdPCrq7xN6e4VGGHH8hA01vVYKjTFik7nHOxBnAYtrgYUB1RpAiLvA1/U2YraWxyKKg==
 
 emoji-regex@^8.0.0:
   version "8.0.0"
