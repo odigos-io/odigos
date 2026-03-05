@@ -6,6 +6,8 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
+	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/utils/pointer"
@@ -19,6 +21,7 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 const (
@@ -68,6 +71,12 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 	kubeVersion := commonconfig.ControllerConfig.K8sVersion
 	logger := log.FromContext(ctx)
 
+	useCustomMetric := false
+	apiSvc := &apiregv1.APIService{}
+	if err := c.Get(ctx, client.ObjectKey{Name: k8sconsts.CustomMetricsAPIServiceName}, apiSvc); err == nil {
+		useCustomMetric = metricshandler.IsOwnedByOdigos(apiSvc)
+	}
+
 	var hpa client.Object
 
 	// Metric thresholds computation
@@ -113,19 +122,17 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 				MinReplicas: minReplicas,
 				MaxReplicas: maxReplicas,
 				Metrics: []autoscalingv2beta1.MetricSpec{
-					// Memory target
 					{
 						Type: autoscalingv2beta1.ResourceMetricSourceType,
 						Resource: &autoscalingv2beta1.ResourceMetricSource{
-							Name:               "memory",
+							Name:               corev1.ResourceMemory,
 							TargetAverageValue: &memQuantity,
 						},
 					},
-					// CPU target
 					{
 						Type: autoscalingv2beta1.ResourceMetricSourceType,
 						Resource: &autoscalingv2beta1.ResourceMetricSource{
-							Name:               "cpu",
+							Name:               corev1.ResourceCPU,
 							TargetAverageValue: &cpuQuantity,
 						},
 					},
@@ -188,48 +195,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 					},
 				},
 
-				Metrics: []autoscalingv2beta2.MetricSpec{
-					// Custom Odigos binary metric
-					{
-						Type: autoscalingv2beta2.ObjectMetricSourceType,
-						Object: &autoscalingv2beta2.ObjectMetricSource{
-							DescribedObject: autoscalingv2beta2.CrossVersionObjectReference{
-								APIVersion: "apps/v1",
-								Kind:       "Deployment",
-								Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
-							},
-							Metric: autoscalingv2beta2.MetricIdentifier{
-								Name: "odigos_gateway_rejections",
-							},
-							Target: autoscalingv2beta2.MetricTarget{
-								Type:  autoscalingv2beta2.ValueMetricType,
-								Value: resource.NewMilliQuantity(500, resource.DecimalSI), // "0.5" equivalent
-							},
-						},
-					},
-					// CPU metric
-					{
-						Type: autoscalingv2beta2.ResourceMetricSourceType,
-						Resource: &autoscalingv2beta2.ResourceMetricSource{
-							Name: "memory",
-							Target: autoscalingv2beta2.MetricTarget{
-								Type:         autoscalingv2beta2.AverageValueMetricType,
-								AverageValue: &memQuantity,
-							},
-						},
-					},
-					// Memory metric
-					{
-						Type: autoscalingv2beta2.ResourceMetricSourceType,
-						Resource: &autoscalingv2beta2.ResourceMetricSource{
-							Name: "cpu",
-							Target: autoscalingv2beta2.MetricTarget{
-								Type:         autoscalingv2beta2.AverageValueMetricType,
-								AverageValue: &cpuQuantity,
-							},
-						},
-					},
-				},
+				Metrics: buildv2beta2Metrics(useCustomMetric, memQuantity, cpuQuantity),
 			},
 		}
 
@@ -283,45 +249,7 @@ func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Cl
 						},
 					},
 				},
-				Metrics: []autoscalingv2.MetricSpec{
-					{
-						Type: autoscalingv2.ObjectMetricSourceType,
-						Object: &autoscalingv2.ObjectMetricSource{
-							DescribedObject: autoscalingv2.CrossVersionObjectReference{
-								APIVersion: "apps/v1",
-								Kind:       "Deployment",
-								Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
-							},
-							Metric: autoscalingv2.MetricIdentifier{
-								Name: "odigos_gateway_rejections",
-							},
-							Target: autoscalingv2.MetricTarget{
-								Type:  autoscalingv2.ValueMetricType,
-								Value: resource.NewMilliQuantity(500, resource.DecimalSI),
-							},
-						},
-					},
-					{
-						Type: autoscalingv2.ResourceMetricSourceType,
-						Resource: &autoscalingv2.ResourceMetricSource{
-							Name: "memory",
-							Target: autoscalingv2.MetricTarget{
-								Type:         autoscalingv2.AverageValueMetricType,
-								AverageValue: &memQuantity,
-							},
-						},
-					},
-					{
-						Type: autoscalingv2.ResourceMetricSourceType,
-						Resource: &autoscalingv2.ResourceMetricSource{
-							Name: "cpu",
-							Target: autoscalingv2.MetricTarget{
-								Type:         autoscalingv2.AverageValueMetricType,
-								AverageValue: &cpuQuantity,
-							},
-						},
-					},
-				},
+				Metrics: buildv2Metrics(useCustomMetric, memQuantity, cpuQuantity),
 			},
 		}
 	}
@@ -351,4 +279,96 @@ func buildHPACommonFields(gateway *odigosv1.CollectorsGroup) metav1.ObjectMeta {
 		Name:      k8sconsts.OdigosClusterCollectorHpaName,
 		Namespace: gateway.Namespace,
 	}
+}
+
+func buildv2beta2Metrics(useCustomMetric bool, memQuantity, cpuQuantity resource.Quantity) []autoscalingv2beta2.MetricSpec {
+	metrics := []autoscalingv2beta2.MetricSpec{}
+	if useCustomMetric {
+		metrics = append(metrics, autoscalingv2beta2.MetricSpec{
+			Type: autoscalingv2beta2.ObjectMetricSourceType,
+			Object: &autoscalingv2beta2.ObjectMetricSource{
+				DescribedObject: autoscalingv2beta2.CrossVersionObjectReference{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
+				},
+				Metric: autoscalingv2beta2.MetricIdentifier{
+					Name: "odigos_gateway_rejections",
+				},
+				Target: autoscalingv2beta2.MetricTarget{
+					Type:  autoscalingv2beta2.ValueMetricType,
+					Value: resource.NewMilliQuantity(500, resource.DecimalSI),
+				},
+			},
+		})
+	}
+	metrics = append(metrics,
+		autoscalingv2beta2.MetricSpec{
+			Type: autoscalingv2beta2.ResourceMetricSourceType,
+			Resource: &autoscalingv2beta2.ResourceMetricSource{
+				Name: corev1.ResourceMemory,
+				Target: autoscalingv2beta2.MetricTarget{
+					Type:         autoscalingv2beta2.AverageValueMetricType,
+					AverageValue: &memQuantity,
+				},
+			},
+		},
+		autoscalingv2beta2.MetricSpec{
+			Type: autoscalingv2beta2.ResourceMetricSourceType,
+			Resource: &autoscalingv2beta2.ResourceMetricSource{
+				Name: corev1.ResourceCPU,
+				Target: autoscalingv2beta2.MetricTarget{
+					Type:         autoscalingv2beta2.AverageValueMetricType,
+					AverageValue: &cpuQuantity,
+				},
+			},
+		},
+	)
+	return metrics
+}
+
+func buildv2Metrics(useCustomMetric bool, memQuantity, cpuQuantity resource.Quantity) []autoscalingv2.MetricSpec {
+	metrics := []autoscalingv2.MetricSpec{}
+	if useCustomMetric {
+		metrics = append(metrics, autoscalingv2.MetricSpec{
+			Type: autoscalingv2.ObjectMetricSourceType,
+			Object: &autoscalingv2.ObjectMetricSource{
+				DescribedObject: autoscalingv2.CrossVersionObjectReference{
+					APIVersion: "apps/v1",
+					Kind:       "Deployment",
+					Name:       k8sconsts.OdigosClusterCollectorDeploymentName,
+				},
+				Metric: autoscalingv2.MetricIdentifier{
+					Name: "odigos_gateway_rejections",
+				},
+				Target: autoscalingv2.MetricTarget{
+					Type:  autoscalingv2.ValueMetricType,
+					Value: resource.NewMilliQuantity(500, resource.DecimalSI),
+				},
+			},
+		})
+	}
+	metrics = append(metrics,
+		autoscalingv2.MetricSpec{
+			Type: autoscalingv2.ResourceMetricSourceType,
+			Resource: &autoscalingv2.ResourceMetricSource{
+				Name: corev1.ResourceMemory,
+				Target: autoscalingv2.MetricTarget{
+					Type:         autoscalingv2.AverageValueMetricType,
+					AverageValue: &memQuantity,
+				},
+			},
+		},
+		autoscalingv2.MetricSpec{
+			Type: autoscalingv2.ResourceMetricSourceType,
+			Resource: &autoscalingv2.ResourceMetricSource{
+				Name: corev1.ResourceCPU,
+				Target: autoscalingv2.MetricTarget{
+					Type:         autoscalingv2.AverageValueMetricType,
+					AverageValue: &cpuQuantity,
+				},
+			},
+		},
+	)
+	return metrics
 }
