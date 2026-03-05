@@ -189,10 +189,8 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 		return fmt.Errorf("ca.crt not found in secret %s", secret.Name)
 	}
 
-	// Create or update APIService for custom.metrics.k8s.io
-	apiSvcName := "v1beta1.custom.metrics.k8s.io"
 	existing := &apiregv1.APIService{}
-	err := mgr.GetClient().Get(ctx, client.ObjectKey{Name: apiSvcName}, existing)
+	err := mgr.GetClient().Get(ctx, client.ObjectKey{Name: k8sconsts.CustomMetricsAPIServiceName}, existing)
 	if client.IgnoreNotFound(err) != nil {
 		return err
 	}
@@ -202,7 +200,7 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 		port := int32(9443)
 		apiSvc := &apiregv1.APIService{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: apiSvcName,
+				Name: k8sconsts.CustomMetricsAPIServiceName,
 			},
 			Spec: apiregv1.APIServiceSpec{
 				Service: &apiregv1.ServiceReference{
@@ -221,6 +219,11 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 		if err := mgr.GetClient().Create(ctx, apiSvc); err != nil {
 			return fmt.Errorf("failed to create APIService: %w", err)
 		}
+	} else if !IsOwnedByOdigos(existing) {
+		ctrl.Log.Info("APIService already exists and is not managed by Odigos, skipping",
+			"apiService", k8sconsts.CustomMetricsAPIServiceName,
+			"existingService", existing.Spec.Service,
+		)
 	} else {
 		// Found -> update if CA changed
 		if base64.StdEncoding.EncodeToString(existing.Spec.CABundle) !=
