@@ -1,0 +1,85 @@
+---
+title: 'Connecting Remote Clusters'
+description: 'Configure remote Kubernetes clusters to connect to Odigos Central using the CLI or Helm, including TLS configuration for production.'
+sidebarTitle: 'Remote Clusters'
+---
+
+Once Odigos Central is running, you need to configure your remote clusters to connect to it. This is done by installing Odigos in each remote cluster with the Central Proxy configuration.
+
+<Info>
+  Remote clusters require the same Odigos Enterprise license token as the
+  central installation.
+</Info>
+
+## Using CLI
+
+```bash
+odigos install \
+  --onprem-token <token> \
+  --set centralProxy.centralBackendURL=<your-central-backend-url> \
+  --set clusterName=<your-cluster-name>
+```
+
+**Example:**
+
+```bash
+odigos install \
+  --onprem-token <token> \
+  --set centralProxy.centralBackendURL=https://central-backend.example.com:8081 \
+  --set clusterName=production-east-1
+```
+
+## Using Helm
+
+Add the following to your remote cluster's `values.yaml`:
+
+```yaml
+clusterName: 'production-east-1'
+
+centralProxy:
+  centralBackendURL: 'https://central-backend.example.com:8081'
+```
+
+Then install:
+
+```bash
+helm upgrade --install odigos odigos/odigos \
+  --namespace odigos-system \
+  --create-namespace \
+  -f values.yaml
+```
+
+## TLS Configuration
+
+For production deployments, configure TLS for secure communication between the Central Proxy and Central Backend:
+
+```yaml
+centralProxy:
+  centralBackendURL: 'https://central-backend.example.com:8081'
+  tls:
+    # Skip certificate verification (for testing/self-signed certificates only)
+    skipVerify: false
+
+    # Secret name containing CA certificate (key: 'ca.crt')
+    caSecretName: 'central-ca-cert'
+
+    # Secret name for mTLS client certificate (keys: 'tls.crt', 'tls.key')
+    clientCertSecretName: 'central-client-cert'
+```
+
+**Create the CA certificate secret:**
+
+```bash
+kubectl create secret generic central-ca-cert \
+  --from-file=ca.crt=/path/to/ca.crt \
+  -n odigos-system
+```
+
+**Create the client certificate secret (for mTLS):**
+
+```bash
+kubectl create secret generic central-client-cert \
+  --from-file=tls.crt=/path/to/client.crt \
+  --from-file=tls.key=/path/to/client.key \
+  -n odigos-system
+```

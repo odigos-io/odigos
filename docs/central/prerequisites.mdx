@@ -1,0 +1,29 @@
+---
+title: 'Prerequisites'
+description: 'Requirements for installing Odigos Central, including Kubernetes version, license token, and network connectivity.'
+sidebarTitle: 'Prerequisites'
+---
+
+Before installing Odigos Central, ensure you have:
+
+- **Kubernetes** version 1.19.0 or higher
+- **Odigos Enterprise license token** (contact Odigos team to obtain)
+- **Helm** 3.x (if using Helm installation method)
+- **Network connectivity** from remote clusters to the Central Backend endpoint
+
+## Network Requirements
+
+Ensure the following network connectivity:
+
+| Source                 | Destination     | Port | Protocol        |
+| ---------------------- | --------------- | ---- | --------------- |
+| Users                  | Central UI      | 3000 | HTTPS           |
+| Central UI             | Central Backend | 8081 | HTTP/HTTPS      |
+| Central Backend        | Redis           | 6379 | TCP             |
+| Central Backend        | Keycloak        | 8080 | HTTP            |
+| Remote Cluster Proxies | Central Backend | 8081 | WebSocket (WSS) |
+
+<Warning>
+  Odigos Central is an Enterprise feature and requires a valid license token.
+  Make sure your `--onprem-token` is valid and has the necessary permissions.
+</Warning>

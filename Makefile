@@ -79,7 +79,7 @@ lint-fix:
 cli-docs:
 	rm -rf docs/cli/*
 	cd scripts/cli-docgen && KUBECONFIG=KUBECONFIG go run -tags embed_manifests main.go
-	for file in docs/cli/*; do \
+	for file in docs/snippets/shared/cli/*; do \
 		mv $${file} $${file%.md}.mdx; \
 	done
 
