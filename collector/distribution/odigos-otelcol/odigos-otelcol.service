@@ -11,5 +11,8 @@ Type=simple
 User=odigos
 Group=odigos
 
+AmbientCapabilities=CAP_SYS_ADMIN CAP_BPF CAP_PERFMON
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_BPF CAP_PERFMON
+
 [Install]
 WantedBy=multi-user.target
