@@ -222,10 +222,18 @@ func RegisterCustomMetricsAPI(mgr ctrl.Manager) error {
 			return fmt.Errorf("failed to create APIService: %w", err)
 		}
 	} else {
-		// Found -> update if CA changed
+		// Found -> update if CA changed or InsecureSkipTLSVerify needs correction
+		needsUpdate := false
 		if base64.StdEncoding.EncodeToString(existing.Spec.CABundle) !=
 			base64.StdEncoding.EncodeToString(caData) {
 			existing.Spec.CABundle = caData
+			needsUpdate = true
+		}
+		if existing.Spec.InsecureSkipTLSVerify {
+			existing.Spec.InsecureSkipTLSVerify = false
+			needsUpdate = true
+		}
+		if needsUpdate {
 			if err := mgr.GetClient().Update(ctx, existing); err != nil {
 				return fmt.Errorf("failed to update APIService: %w", err)
 			}
