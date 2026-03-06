@@ -1206,6 +1206,17 @@ goAutoOffsetsCron: ''
 goAutoOffsetsMode: 'off'
 
 # @schema
+# description: Experimental configuration options.
+# @schema
+experimental:
+  # @schema
+  # description: |-
+  #   When true, deployment (instrumentor) and UI fill the internal Kubernetes object cache
+  #   sequentially to reduce memory spikes on application start.
+  # @schema
+  sequentialCacheLoad: false
+
+# @schema
 # description: experimental configuration for own telemetry of odigos on itself
 # @schema
 ownTelemetry:
