@@ -467,6 +467,20 @@
       "required": [],
       "title": "collectorNode"
     },
+    "experimental": {
+      "additionalProperties": false,
+      "description": "Experimental configuration options.",
+      "properties": {
+        "sequentialCacheLoad": {
+          "default": "false",
+          "description": "When true, deployment (instrumentor) and UI fill the internal Kubernetes object cache\nsequentially to reduce memory spikes on application start.",
+          "required": [],
+          "title": "sequentialCacheLoad"
+        }
+      },
+      "required": [],
+      "title": "experimental"
+    },
     "externalOnpremTokenSecret": {
       "default": "false",
       "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the secret but will still enable Pro features if the secret exists.\nThis is useful for GitOps workflows where secrets are managed separately.",
@@ -1321,20 +1335,6 @@
       },
       "required": [],
       "title": "odiglet"
-    },
-    "experimental": {
-      "additionalProperties": false,
-      "description": "Experimental configuration options.",
-      "properties": {
-        "sequentialCacheLoad": {
-          "default": false,
-          "description": "When true, deployment and UI fill the internal Kubernetes object cache sequentially to reduce memory spikes on application start.",
-          "title": "sequentialCacheLoad",
-          "type": "boolean"
-        }
-      },
-      "required": [],
-      "title": "experimental"
     },
     "onPremToken": {
       "default": "",
