@@ -1063,6 +1063,11 @@ type PayloadCollectionInput struct {
 	Messaging    *MessagingPayloadCollectionInput `json:"messaging,omitempty"`
 }
 
+type PeerSources struct {
+	Inbound  []*ServiceMapToSource `json:"inbound"`
+	Outbound []*ServiceMapToSource `json:"outbound"`
+}
+
 type PersistNamespaceItemInput struct {
 	Namespace         string `json:"namespace"`
 	Selected          bool   `json:"selected"`
