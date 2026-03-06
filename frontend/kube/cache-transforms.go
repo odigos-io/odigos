@@ -6,6 +6,7 @@ import (
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	cacheutils "github.com/odigos-io/odigos/k8sutils/pkg/cache"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -65,6 +66,8 @@ func podsTransformFunc(obj interface{}) (interface{}, error) {
 		},
 	}
 
+	cacheutils.StripPod(minimalPod)
+
 	return minimalPod, nil
 }
 
@@ -75,7 +78,7 @@ func deploymentsTransformFunc(obj interface{}) (interface{}, error) {
 	}
 
 	// copy just what we need from the deployment
-	return &appsv1.Deployment{
+	minimalDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: deployment.Namespace,
 			Name:      deployment.Name,
@@ -84,7 +87,10 @@ func deploymentsTransformFunc(obj interface{}) (interface{}, error) {
 			Selector: deployment.Spec.Selector,
 		},
 		Status: deployment.Status,
-	}, nil
+	}
+
+	cacheutils.StripWorkloadSpecTemplate(minimalDeployment)
+	return minimalDeployment, nil
 }
 
 func daemonsetsTransformFunc(obj interface{}) (interface{}, error) {
@@ -94,7 +100,7 @@ func daemonsetsTransformFunc(obj interface{}) (interface{}, error) {
 	}
 
 	// copy just what we need from the daemonset
-	return &appsv1.DaemonSet{
+	minimalDaemonSet := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: daemonset.Namespace,
 			Name:      daemonset.Name,
@@ -103,7 +109,9 @@ func daemonsetsTransformFunc(obj interface{}) (interface{}, error) {
 			Selector: daemonset.Spec.Selector,
 		},
 		Status: daemonset.Status,
-	}, nil
+	}
+	cacheutils.StripWorkloadSpecTemplate(minimalDaemonSet)
+	return minimalDaemonSet, nil
 }
 
 func statefulsetsTransformFunc(obj interface{}) (interface{}, error) {
@@ -113,7 +121,7 @@ func statefulsetsTransformFunc(obj interface{}) (interface{}, error) {
 	}
 
 	// copy just what we need from the statefulset
-	return &appsv1.StatefulSet{
+	minimalStatefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: statefulset.Namespace,
 			Name:      statefulset.Name,
@@ -122,7 +130,9 @@ func statefulsetsTransformFunc(obj interface{}) (interface{}, error) {
 			Selector: statefulset.Spec.Selector,
 		},
 		Status: statefulset.Status,
-	}, nil
+	}
+	cacheutils.StripWorkloadSpecTemplate(minimalStatefulSet)
+	return minimalStatefulSet, nil
 }
 
 func cronjobsTransformFunc(obj interface{}) (interface{}, error) {

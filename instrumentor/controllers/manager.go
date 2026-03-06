@@ -16,6 +16,7 @@ import (
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/common/consts"
+	cacheutils "github.com/odigos-io/odigos/k8sutils/pkg/cache"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
@@ -34,6 +35,7 @@ import (
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
@@ -71,7 +73,7 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 
 		stripedStatus := corev1.PodStatus{
 			Phase:                 pod.Status.Phase,
-			ContainerStatuses:     pod.Status.ContainerStatuses,     // TODO: we don't need all data here
+			ContainerStatuses:     pod.Status.ContainerStatuses,
 			InitContainerStatuses: pod.Status.InitContainerStatuses, // needed for backoff detection
 			Message:               pod.Status.Message,
 			Reason:                pod.Status.Reason,
@@ -85,7 +87,19 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 			strippedPod.Spec = pod.Spec
 		}
 		strippedPod.SetManagedFields(nil) // don't store managed fields in the cache
+		// remove non relevant data such as un-relevant annotations and container statuses fields which are not used
+		cacheutils.StripPod(&strippedPod)
 		return &strippedPod, nil
+	}
+
+	workloadTransformFunc := func(obj interface{}) (interface{}, error) {
+		clientObj, ok := obj.(client.Object)
+		if !ok {
+			return nil, fmt.Errorf("expected a client.Object, got %T", obj)
+		}
+		clientObj.SetManagedFields(nil)
+		cacheutils.StripWorkloadSpecTemplate(clientObj)
+		return clientObj, nil
 	}
 
 	mgrOptions := ctrl.Options{
@@ -132,6 +146,15 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 				},
 				&corev1.ConfigMap{}: {
 					Field: odigosEffectiveConfigSelector,
+				},
+				&appsv1.Deployment{}: {
+					Transform: workloadTransformFunc,
+				},
+				&appsv1.StatefulSet{}: {
+					Transform: workloadTransformFunc,
+				},
+				&appsv1.DaemonSet{}: {
+					Transform: workloadTransformFunc,
 				},
 				&odigosv1.CollectorsGroup{}: {
 					Field: nsSelector,
