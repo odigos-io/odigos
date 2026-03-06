@@ -62,6 +62,10 @@ spec:
           {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.ui.resources) }}
+          {{- if and .Values.experimental .Values.experimental.sequentialCacheLoad }}
+          - name: ODIGOS_SEQUENTIAL_CACHE_LOAD
+            value: "true"
+          {{- end }}
         ports:
           - containerPort: 3000
             name: ui

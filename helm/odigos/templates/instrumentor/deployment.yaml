@@ -108,6 +108,10 @@ spec:
             {{- end }}
           - name: GOMEMLIMIT
             value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.instrumentor.resources) }}
+          {{- if and .Values.experimental .Values.experimental.sequentialCacheLoad }}
+          - name: ODIGOS_SEQUENTIAL_CACHE_LOAD
+            value: "true"
+          {{- end }}
         volumeMounts:
           - name: instrumentor-webhooks-cert
             mountPath: /tmp/k8s-webhook-server/serving-certs

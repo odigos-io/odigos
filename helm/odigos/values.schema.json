@@ -1322,6 +1322,20 @@
       "required": [],
       "title": "odiglet"
     },
+    "experimental": {
+      "additionalProperties": false,
+      "description": "Experimental configuration options.",
+      "properties": {
+        "sequentialCacheLoad": {
+          "default": false,
+          "description": "When true, deployment and UI fill the internal Kubernetes object cache sequentially to reduce memory spikes on application start.",
+          "title": "sequentialCacheLoad",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "experimental"
+    },
     "onPremToken": {
       "default": "",
       "description": "On-prem token for Odigos Pro/Enterprise features.\nWhen set, Odigos will create a secret with this token to enable Pro features.\nLeave empty for community edition.",

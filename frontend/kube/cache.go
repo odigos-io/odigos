@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"time"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
@@ -110,6 +112,20 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		return nil, fmt.Errorf("failed to create cache client: %w", err)
 	}
 
+	// Start the cache in a goroutine
+	go func() {
+		if err := k8sCache.Start(ctx); err != nil {
+			log.Printf("Error starting kubernetes cache: %v", err)
+		}
+	}()
+
+	// check if sequential cache load is enabled
+	sequentialCacheLoadVal := os.Getenv("ODIGOS_SEQUENTIAL_CACHE_LOAD")
+	sequentialCacheLoad := sequentialCacheLoadVal == "true"
+
+	startTime := time.Now()
+	log.Println("start syncing internal kubernetes objects cache", "sequentialCacheLoad", sequentialCacheLoad)
+
 	// Explicitly initialize informers for all configured resource types with selectors.
 	// Controller-runtime cache uses lazy initialization - informers are created on-demand.
 	// With ReaderFailOnMissingInformer: true, we must ensure informers exist before
@@ -120,22 +136,23 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		if err != nil {
 			return nil, fmt.Errorf("failed to get informer for %s: %w", obj.GetObjectKind().GroupVersionKind().Kind, err)
 		}
-	}
-
-	// Start the cache in a goroutine
-	go func() {
-		if err := k8sCache.Start(ctx); err != nil {
-			log.Printf("Error starting kubernetes cache: %v", err)
+		if sequentialCacheLoad {
+			ok := k8sCache.WaitForCacheSync(ctx)
+			if !ok {
+				return nil, fmt.Errorf("failed to sync kubernetes cache")
+			}
 		}
-	}()
-
-	// Wait for cache to be synced
-	if !k8sCache.WaitForCacheSync(ctx) {
-		return nil, fmt.Errorf("failed to sync kubernetes cache")
 	}
+
+	if !sequentialCacheLoad {
+		if !k8sCache.WaitForCacheSync(ctx) {
+			return nil, fmt.Errorf("failed to sync kubernetes cache")
+		}
+	}
+
+	log.Println("internal kubernetes objects cache is synced", "duration", time.Since(startTime))
 
 	CacheClient = k8sCacheClient
 
-	log.Println("K8s cache initialized and synced successfully")
 	return k8sCacheClient, nil
 }
