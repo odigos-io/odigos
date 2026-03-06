@@ -126,9 +126,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:
@@ -254,9 +251,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:
@@ -377,9 +371,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:

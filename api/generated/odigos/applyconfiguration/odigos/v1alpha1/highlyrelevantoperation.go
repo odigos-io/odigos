@@ -24,7 +24,7 @@ import (
 // HighlyRelevantOperationApplyConfiguration represents a declarative configuration of the HighlyRelevantOperation type for use
 // with apply.
 type HighlyRelevantOperationApplyConfiguration struct {
-	SourceScopes      []SourcesScopeApplyConfiguration  `json:"sourceScopes,omitempty"`
+	SourceScopes      []api.SourcesScope                `json:"sourceScopes,omitempty"`
 	Error             *bool                             `json:"error,omitempty"`
 	DurationAtLeastMs *int                              `json:"durationAtLeastMs,omitempty"`
 	Operation         *api.TailSamplingOperationMatcher `json:"operation,omitempty"`
@@ -41,12 +41,9 @@ func HighlyRelevantOperation() *HighlyRelevantOperationApplyConfiguration {
 // WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the SourceScopes field.
-func (b *HighlyRelevantOperationApplyConfiguration) WithSourceScopes(values ...*SourcesScopeApplyConfiguration) *HighlyRelevantOperationApplyConfiguration {
+func (b *HighlyRelevantOperationApplyConfiguration) WithSourceScopes(values ...api.SourcesScope) *HighlyRelevantOperationApplyConfiguration {
 	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithSourceScopes")
-		}
-		b.SourceScopes = append(b.SourceScopes, *values[i])
+		b.SourceScopes = append(b.SourceScopes, values[i])
 	}
 	return b
 }

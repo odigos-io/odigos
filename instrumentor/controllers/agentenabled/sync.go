@@ -225,7 +225,20 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, samplingRules, workloadObj, pw)
+
+		// filterUrlTemplateRulesForContainer depends on both the workload (pw) and the container language
+		// (for FilterProgrammingLanguage support). Compute once per container and share between the two
+		// calculate functions below.
+		containerLanguage := common.UnknownProgrammingLanguage
+		if containerRuntimeDetails != nil {
+			containerLanguage = containerRuntimeDetails.Language
+		}
+		workloadUrlTemplatization := filterUrlTemplateRulesForContainer(agentLevelActions, pw, containerLanguage)
+		if workloadUrlTemplatization != nil && len(workloadUrlTemplatization.TemplatizationRules) > 0 {
+			logger.Info("URL templatization rules applied for workload container", "namespace", pw.Namespace, "workloadKind", pw.Kind, "workloadName", pw.Name, "container", containerName, "rulesCount", len(workloadUrlTemplatization.TemplatizationRules))
+		}
+
+		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, workloadUrlTemplatization, samplingRules, workloadObj, pw)
 		containersConfig = append(containersConfig, currentContainerConfig)
 		// if at least one container has agent enabled, and pod manifest injection is required,
 		// then the overall pod manifest injection is required.
@@ -233,7 +246,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			podManifestInjectionOptional = false
 		}
 		// calculate the relevant collector configurations for the container.
-		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, samplingRules, pw)
+		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, samplingRules, workloadUrlTemplatization, pw)
 		if currentContainerCollectorConfig != nil {
 			collectorConfig = append(collectorConfig, *currentContainerCollectorConfig)
 		}
@@ -433,10 +446,20 @@ func getEnvInjectionDecision(
 	return &envInjectionDecision, nil
 }
 
-// filterUrlTemplateRulesForContainer filters template rules to only include those relevant to the container.
-// A rule group is applied if ALL set filters match (AND logic).
-// If no filters are set in a group, it's considered global and applies to all containers.
-func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *commonapi.UrlTemplatizationConfig {
+// filterUrlTemplateRulesForContainer filters template rules to only include those relevant to the
+// workload and container language.
+// FilterK8sNamespace is an AND gate (empty = all namespaces).
+// WorkloadFilters list is an OR gate (empty = all workloads; each entry ANDs kind + name).
+// FilterProgrammingLanguage is an AND gate (nil = all languages).
+// If no filters are set in a group, it's considered global and applies to all spans.
+// This function is called once per container (not per workload) because FilterProgrammingLanguage
+// may differ across containers. The result is shared between calculateContainerInstrumentationConfig
+// and calculateContainerCollectorConfig for the same container.
+func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, pw k8sconsts.PodWorkload, language common.ProgrammingLanguage) *commonapi.UrlTemplatizationConfig {
+	if agentLevelActions == nil {
+		return nil
+	}
+
 	var rules []string
 	participating := false
 
@@ -463,12 +486,15 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 	}
 
 	return &commonapi.UrlTemplatizationConfig{
-		Rules: rules,
+		TemplatizationRules: rules,
 	}
 }
 
-// templatizationRulesGroupMatchesContainer checks if a rules group matches the container based on all set filters.
-// Returns true if all explicitly-set filters match (AND logic), or if no filters are set (global rule).
+// templatizationRulesGroupMatchesContainer checks if a rules group matches the workload and container.
+// Namespace is ANDed (empty = all namespaces).
+// WorkloadFilters and legacy scalar fields (FilterK8sWorkloadKind, FilterK8sWorkloadName) are ORed:
+// any matching entry is sufficient; empty list with no legacy fields = all workloads.
+// FilterProgrammingLanguage is ANDed (nil = all languages).
 func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizationRulesGroup, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) bool {
 	// Filter by programming language
 	if rulesGroup.FilterProgrammingLanguage != nil {
@@ -484,21 +510,26 @@ func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizati
 		}
 	}
 
-	// Filter by k8s workload kind
-	if rulesGroup.FilterK8sWorkloadKind != nil {
-		if *rulesGroup.FilterK8sWorkloadKind != pw.Kind {
-			return false
+	// ToDo: remove legay filters from struct
+	// OR gate: legacy scalar fields + new WorkloadFilters list.
+	hasLegacyFilter := rulesGroup.FilterK8sWorkloadKind != nil || rulesGroup.FilterK8sWorkloadName != ""
+	hasNewFilters := len(rulesGroup.WorkloadFilters) > 0
+	if !hasLegacyFilter && !hasNewFilters {
+		return true // no workload filter → match all workloads
+	}
+
+	// Legacy scalar fields as an implicit OR entry (kind AND name within the entry).
+	if hasLegacyFilter {
+		kindOK := rulesGroup.FilterK8sWorkloadKind == nil || *rulesGroup.FilterK8sWorkloadKind == pw.Kind
+		nameOK := rulesGroup.FilterK8sWorkloadName == "" || rulesGroup.FilterK8sWorkloadName == pw.Name
+		if kindOK && nameOK {
+			return true
 		}
 	}
 
-	// Filter by k8s workload name
-	if rulesGroup.FilterK8sWorkloadName != "" {
-		if rulesGroup.FilterK8sWorkloadName != pw.Name {
-			return false
-		}
-	}
-
-	return true
+	// New WorkloadFilters entries (each ANDs kind+name+namespace, all ORed). SourcesScope uses json "kind"/"name".
+	ref := commonapi.WorkloadRef{Name: pw.Name, Namespace: pw.Namespace, Kind: string(pw.Kind)}
+	return commonapi.AnySourceScopeMatchesWorkload(rulesGroup.WorkloadFilters, ref)
 }
 
 func calculateContainerCollectorConfig(containerName string,
@@ -508,6 +539,7 @@ func calculateContainerCollectorConfig(containerName string,
 	distroGetter *distros.Getter,
 	containerOverride *odigosv1.ContainerOverride,
 	samplingRules *[]odigosv1.Sampling,
+	workloadUrlTemplatization *commonapi.UrlTemplatizationConfig,
 	pw k8sconsts.PodWorkload,
 ) *commonapi.ContainerCollectorConfig {
 
@@ -541,6 +573,7 @@ func calculateContainerCollectorConfig(containerName string,
 			HighlyRelevantOperations: relevantOps,
 			CostReductionRules:       costRules,
 		},
+		UrlTemplatization: workloadUrlTemplatization,
 	}
 }
 
@@ -555,6 +588,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	irls *[]odigosv1.InstrumentationRule,
 	containerOverride *odigosv1.ContainerOverride,
 	agentLevelActions *[]odigosv1.Action,
+	workloadUrlTemplatization *commonapi.UrlTemplatizationConfig,
 	samplingRules *[]odigosv1.Sampling,
 	workloadObj workload.Workload,
 	pw k8sconsts.PodWorkload,
@@ -588,8 +622,6 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, runtimeDetails.Language, pw)
-
 	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {
 		return *err
@@ -599,7 +631,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
 
 	// at this time, we don't populate the signals specific configs, but we will do it soon
-	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, filteredTemplateRules, irls, agentLevelActions, samplingRules, workloadObj, pw, d)
+	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, workloadUrlTemplatization, irls, agentLevelActions, samplingRules, workloadObj, pw, d)
 	if err != nil {
 		return *err
 	}
