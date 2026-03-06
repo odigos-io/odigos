@@ -52,6 +52,7 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	cacheOptions := cache.Options{
 		Scheme:                      scheme,
 		ReaderFailOnMissingInformer: true,
+		DefaultTransform:            cache.TransformStripManagedFields(),
 		ByObject: map[client.Object]cache.ByObject{
 			&corev1.ConfigMap{}: {
 				Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
@@ -114,7 +115,7 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	// With ReaderFailOnMissingInformer: true, we must ensure informers exist before
 	// WaitForCacheSync, otherwise cache operations will fail with "is not cached" errors.
 	// This ensures all configured informers are ready before the cache sync completes.
-	for obj, _ := range cacheOptions.ByObject {
+	for obj := range cacheOptions.ByObject {
 		_, err = k8sCache.GetInformer(ctx, obj) // just need to call it to initialize the informer
 		if err != nil {
 			return nil, fmt.Errorf("failed to get informer for %s: %w", obj.GetObjectKind().GroupVersionKind().Kind, err)
