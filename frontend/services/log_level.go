@@ -52,7 +52,9 @@ func SetComponentLogLevel(ctx context.Context, c client.Client, component string
 		}
 		var cfg common.OdigosConfiguration
 		if cm.Data != nil && cm.Data[consts.OdigosConfigurationFileName] != "" {
-			_ = yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &cfg)
+			if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &cfg); err != nil {
+				return fmt.Errorf("parse existing config: %w", err)
+			}
 		}
 		if cfg.ComponentLogLevels == nil {
 			cfg.ComponentLogLevels = &common.ComponentLogLevels{}
