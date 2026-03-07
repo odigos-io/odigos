@@ -732,7 +732,7 @@
     },
     "logLevel": {
       "default": "info",
-      "description": "Default log level for components when component-level logLevel is not set.\nAccepted values: debug, info, warn, error. Default: info.",
+      "description": "Default log level for components when component-level logLevel is not set.\nAccepted values: debug, info, warn, error. Default: info.\nSet via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.",
       "required": [],
       "title": "logLevel"
     },

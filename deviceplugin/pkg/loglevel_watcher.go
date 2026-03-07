@@ -39,6 +39,9 @@ func startLogLevelWatcher(ctx context.Context) {
 			if err != nil {
 				continue
 			}
+			if cm.Data == nil || cm.Data[consts.OdigosConfigurationFileName] == "" {
+				continue
+			}
 			var odigosConfig common.OdigosConfiguration
 			if err := yaml.Unmarshal([]byte(cm.Data[consts.OdigosConfigurationFileName]), &odigosConfig); err != nil {
 				continue
