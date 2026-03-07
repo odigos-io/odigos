@@ -76,7 +76,6 @@ const (
 const (
 	TelemetryEnabledProperty           = "telemetry-enabled"
 	OpenshiftEnabledProperty           = "openshift-enabled"
-	PspProperty                        = "psp"
 	SkipWebhookIssuerCreationProperty  = "skip-webhook-issuer-creation"
 	AllowConcurrentAgentsProperty      = "allow-concurrent-agents"
 	ImagePrefixProperty                = "image-prefix"

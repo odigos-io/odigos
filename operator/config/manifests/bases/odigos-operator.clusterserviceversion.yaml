@@ -86,11 +86,6 @@ spec:
         displayName: OpenShift Enabled
         path: openshiftEnabled
       - description: |-
-          (Optional) PodSecurityPolicy allows Odigos pods to use a privileged pod security policy.
-          Default=false
-        displayName: Pod Security Policy
-        path: podSecurityPolicy
-      - description: |-
           (Optional) SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
           Default=false
         displayName: Skip Webhook Issuer Creation

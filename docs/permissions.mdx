@@ -228,7 +228,7 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 | \* | events | \* | create<br />patch |
 | \* | namespaces | \* | get<br />list<br />patch<br />watch |
 | \* | nodes | \* | get<br />list<br />patch<br />update<br />watch |
-| \* | nodes/proxy<br />nodes/stats | \* | get<br />list |
+| \* | nodes/stats | \* | get<br />list<br />watch |
 | \* | pods | \* | delete<br />get<br />list<br />watch |
 | \* | pods/log<br />pods/status | \* | get |
 | \* | serviceaccounts | \* | create<br />delete<br />get<br />list<br />patch<br />watch |
@@ -252,6 +252,7 @@ This section lists the RBAC policies used by the Odigos Operator. Many of these 
 | odigos.io | collectorsgroups/finalizers<br />sources/finalizers | \* | update |
 | odigos.io | collectorsgroups/status<br />destinations/status<br />instrumentationconfigs/status<br />instrumentationinstances/status | \* | get<br />list<br />patch<br />update<br />watch |
 | odigos.io | instrumentationrules/status | \* | get<br />patch<br />update |
+| odigos.io | sampling | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | operator.odigos.io | odigos | \* | create<br />delete<br />get<br />list<br />patch<br />update<br />watch |
 | operator.odigos.io | odigos/finalizers | \* | update |
 | operator.odigos.io | odigos/status | \* | get<br />patch<br />update |

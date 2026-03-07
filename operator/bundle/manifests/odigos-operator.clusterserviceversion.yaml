@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-operator-certified:v1.8.7
-    createdAt: "2026-01-22T17:18:22Z"
+    createdAt: "2026-03-07T01:46:34Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -101,11 +101,6 @@ spec:
           DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
         displayName: OpenShift Enabled
         path: openshiftEnabled
-      - description: |-
-          (Optional) PodSecurityPolicy allows Odigos pods to use a privileged pod security policy.
-          Default=false
-        displayName: Pod Security Policy
-        path: podSecurityPolicy
       - description: |-
           (Optional) SkipWebhookIssuerCreation skips creating the Issuer and Certificate for the Instrumentor pod webhook if cert-manager is installed.
           Default=false
@@ -188,11 +183,11 @@ spec:
         - apiGroups:
           - ""
           resources:
-          - nodes/proxy
           - nodes/stats
           verbs:
           - get
           - list
+          - watch
         - apiGroups:
           - ""
           resources:
@@ -426,6 +421,18 @@ spec:
           - get
           - patch
           - update
+        - apiGroups:
+          - odigos.io
+          resources:
+          - sampling
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - operator.odigos.io
           resources:
