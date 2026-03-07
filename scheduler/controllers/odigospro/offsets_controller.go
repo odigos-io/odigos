@@ -78,17 +78,6 @@ func (r *odigosproOffsetsController) Reconcile(ctx context.Context, _ ctrl.Reque
 		command = []string{"pro", "update-offsets", "--from-file", "/odigos/offset_results_min.json"}
 	}
 
-	typeMeta := metav1.TypeMeta{
-		Kind:       "CronJob",
-		APIVersion: "batch/v1",
-	}
-	objectMeta := metav1.ObjectMeta{
-		Name:      k8sconsts.OffsetCronJobName,
-		Namespace: odigosNs,
-		Labels: map[string]string{
-			k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
-		},
-	}
 	template := corev1.PodTemplateSpec{
 		Spec: corev1.PodSpec{
 			ServiceAccountName: k8sconsts.SchedulerServiceAccountName,
@@ -104,8 +93,17 @@ func (r *odigosproOffsetsController) Reconcile(ctx context.Context, _ ctrl.Reque
 	}
 
 	cronJob := &batchv1.CronJob{
-		TypeMeta:   typeMeta,
-		ObjectMeta: objectMeta,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CronJob",
+			APIVersion: "batch/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sconsts.OffsetCronJobName,
+			Namespace: odigosNs,
+			Labels: map[string]string{
+				k8sconsts.OdigosSystemLabelKey: k8sconsts.OdigosSystemLabelValue,
+			},
+		},
 		Spec: batchv1.CronJobSpec{
 			Schedule: odigosConfiguration.GoAutoOffsetsCron,
 			JobTemplate: batchv1.JobTemplateSpec{
