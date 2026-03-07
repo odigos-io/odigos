@@ -21,7 +21,7 @@ const OverviewModalsAndDrawers = () => {
   const { restartWorkloads, restartPod, recoverFromRollback } = useWorkloadUtils();
   const { potentialDestinations } = usePotentialDestinations();
   const { createAction, updateAction, deleteAction } = useActionCRUD();
-  const { persistSources, updateSource, fetchSourceById, fetchSourceLibraries } = useSourceCRUD();
+  const { persistSources, updateSource, fetchSourceById, fetchSourceLibraries, fetchPeerSources } = useSourceCRUD();
   const { createDestination, updateDestination, deleteDestination } = useDestinationCRUD();
   const { createInstrumentationRule, updateInstrumentationRule, deleteInstrumentationRule } = useInstrumentationRuleCRUD();
 
@@ -51,6 +51,7 @@ const OverviewModalsAndDrawers = () => {
         fetchSourceById={fetchSourceById}
         fetchSourceDescribe={fetchDescribeSource}
         fetchSourceLibraries={fetchSourceLibraries}
+        fetchPeerSources={fetchPeerSources}
       />
       <DestinationDrawer categories={categories} updateDestination={updateDestination} deleteDestination={deleteDestination} testConnection={testConnection} />
       <InstrumentationRuleDrawer updateInstrumentationRule={updateInstrumentationRule} deleteInstrumentationRule={deleteInstrumentationRule} />

@@ -942,6 +942,16 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 	return &model.ServiceMap{Services: services}, nil
 }
 
+// PeerSources is the resolver for the peerSources field.
+func (r *queryResolver) PeerSources(ctx context.Context, serviceName string) (*model.PeerSources, error) {
+	if r.MetricsConsumer == nil {
+		return nil, fmt.Errorf("metrics consumer not initialized")
+	}
+
+	allEdges := r.MetricsConsumer.GetServiceGraphEdges()
+	return services.PeerSources(allEdges, serviceName), nil
+}
+
 // DescribeOdigos is the resolver for the describeOdigos field.
 func (r *queryResolver) DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error) {
 	return odigos_describe.GetOdigosDescription(ctx)
