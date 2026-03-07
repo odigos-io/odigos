@@ -25,7 +25,6 @@ var _ Workload = &DaemonSetWorkload{}
 var _ Workload = &StatefulSetWorkload{}
 var _ Workload = &StaticPodWorkload{}
 var _ Workload = &CronJobWorkloadV1{}
-var _ Workload = &CronJobWorkloadBeta{}
 var _ Workload = &DeploymentConfigWorkload{}
 var _ Workload = &ArgoRolloutWorkload{}
 
@@ -102,6 +101,14 @@ type CronJobWorkloadV1 struct {
 
 func (c *CronJobWorkloadV1) LabelSelector() *metav1.LabelSelector {
 	return nil
+}
+
+func (c *CronJobWorkloadV1) AvailableReplicas() int32 {
+	return int32(len(c.Status.Active))
+}
+
+func (c *CronJobWorkloadV1) PodSpec() *corev1.PodSpec {
+	return &c.Spec.JobTemplate.Spec.Template.Spec
 }
 
 type DeploymentConfigWorkload struct {
