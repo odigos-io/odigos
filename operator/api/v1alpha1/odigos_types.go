@@ -68,11 +68,6 @@ type OdigosSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec
 	SkipWebhookIssuerCreation bool `json:"skipWebhookIssuerCreation,omitempty"`
 
-	// (Optional) PodSecurityPolicy allows Odigos pods to use a privileged pod security policy.
-	// Default=false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec
-	PodSecurityPolicy bool `json:"podSecurityPolicy,omitempty"`
-
 	// (Optional) ImagePrefix is a prefix for all container images.
 	// This should only be used if you are pulling Odigos images from the non-default registry.
 	// Default: registry.odigos.io

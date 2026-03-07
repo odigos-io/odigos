@@ -173,9 +173,6 @@ func setEffectiveConfigBooleans(result *model.EffectiveConfig, config *common.Od
 	openshiftEnabled := config.OpenshiftEnabled
 	result.OpenshiftEnabled = &openshiftEnabled
 
-	psp := config.Psp
-	result.Psp = &psp
-
 	skipWebhookIssuerCreation := config.SkipWebhookIssuerCreation
 	result.SkipWebhookIssuerCreation = &skipWebhookIssuerCreation
 

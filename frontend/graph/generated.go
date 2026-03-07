@@ -375,7 +375,6 @@ type ComplexityRoot struct {
 		Oidc                             func(childComplexity int) int
 		OpenshiftEnabled                 func(childComplexity int) int
 		Profiles                         func(childComplexity int) int
-		Psp                              func(childComplexity int) int
 		ResourceSizePreset               func(childComplexity int) int
 		RollbackDisabled                 func(childComplexity int) int
 		RollbackGraceTime                func(childComplexity int) int
@@ -2852,13 +2851,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.Profiles(childComplexity), true
-
-	case "EffectiveConfig.psp":
-		if e.complexity.EffectiveConfig.Psp == nil {
-			break
-		}
-
-		return e.complexity.EffectiveConfig.Psp(childComplexity), true
 
 	case "EffectiveConfig.resourceSizePreset":
 		if e.complexity.EffectiveConfig.ResourceSizePreset == nil {
@@ -16966,47 +16958,6 @@ func (ec *executionContext) _EffectiveConfig_ignoreOdigosNamespace(ctx context.C
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_ignoreOdigosNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EffectiveConfig",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EffectiveConfig_psp(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EffectiveConfig_psp(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Psp, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_EffectiveConfig_psp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EffectiveConfig",
 		Field:      field,
@@ -35961,8 +35912,6 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_ignoredContainers(ctx, field)
 			case "ignoreOdigosNamespace":
 				return ec.fieldContext_EffectiveConfig_ignoreOdigosNamespace(ctx, field)
-			case "psp":
-				return ec.fieldContext_EffectiveConfig_psp(ctx, field)
 			case "imagePrefix":
 				return ec.fieldContext_EffectiveConfig_imagePrefix(ctx, field)
 			case "skipWebhookIssuerCreation":
@@ -46439,8 +46388,6 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_ignoredContainers(ctx, field, obj)
 		case "ignoreOdigosNamespace":
 			out.Values[i] = ec._EffectiveConfig_ignoreOdigosNamespace(ctx, field, obj)
-		case "psp":
-			out.Values[i] = ec._EffectiveConfig_psp(ctx, field, obj)
 		case "imagePrefix":
 			out.Values[i] = ec._EffectiveConfig_imagePrefix(ctx, field, obj)
 		case "skipWebhookIssuerCreation":

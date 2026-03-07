@@ -167,7 +167,6 @@ type EffectiveConfig {
   ignoredNamespaces: [String!]
   ignoredContainers: [String!]
   ignoreOdigosNamespace: Boolean
-  psp: Boolean
   imagePrefix: String
   skipWebhookIssuerCreation: Boolean
   collectorGateway: CollectorGatewayConfig
