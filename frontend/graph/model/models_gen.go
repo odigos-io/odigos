@@ -20,41 +20,43 @@ type Action struct {
 }
 
 type ActionFields struct {
-	CollectContainerAttributes  *bool                     `json:"collectContainerAttributes,omitempty"`
-	CollectReplicaSetAttributes *bool                     `json:"collectReplicaSetAttributes,omitempty"`
-	CollectWorkloadID           *bool                     `json:"collectWorkloadId,omitempty"`
-	CollectClusterID            *bool                     `json:"collectClusterId,omitempty"`
-	LabelsAttributes            []*K8sLabelAttribute      `json:"labelsAttributes,omitempty"`
-	AnnotationsAttributes       []*K8sAnnotationAttribute `json:"annotationsAttributes,omitempty"`
-	ClusterAttributes           []*ClusterAttribute       `json:"clusterAttributes,omitempty"`
-	OverwriteExistingValues     *bool                     `json:"overwriteExistingValues,omitempty"`
-	AttributeNamesToDelete      []string                  `json:"attributeNamesToDelete,omitempty"`
-	Renames                     *string                   `json:"renames,omitempty"`
-	PiiCategories               []string                  `json:"piiCategories,omitempty"`
-	SamplingPercentage          *string                   `json:"samplingPercentage,omitempty"`
-	FallbackSamplingRatio       *int                      `json:"fallbackSamplingRatio,omitempty"`
-	EndpointsFilters            []*HTTPRouteFilter        `json:"endpointsFilters,omitempty"`
-	ServicesNameFilters         []*ServiceNameFilter      `json:"servicesNameFilters,omitempty"`
-	AttributeFilters            []*SpanAttributeFilter    `json:"attributeFilters,omitempty"`
+	CollectContainerAttributes   *bool                          `json:"collectContainerAttributes,omitempty"`
+	CollectReplicaSetAttributes  *bool                          `json:"collectReplicaSetAttributes,omitempty"`
+	CollectWorkloadID            *bool                          `json:"collectWorkloadId,omitempty"`
+	CollectClusterID             *bool                          `json:"collectClusterId,omitempty"`
+	LabelsAttributes             []*K8sLabelAttribute           `json:"labelsAttributes,omitempty"`
+	AnnotationsAttributes        []*K8sAnnotationAttribute      `json:"annotationsAttributes,omitempty"`
+	ClusterAttributes            []*ClusterAttribute            `json:"clusterAttributes,omitempty"`
+	OverwriteExistingValues      *bool                          `json:"overwriteExistingValues,omitempty"`
+	AttributeNamesToDelete       []string                       `json:"attributeNamesToDelete,omitempty"`
+	Renames                      *string                        `json:"renames,omitempty"`
+	PiiCategories                []string                       `json:"piiCategories,omitempty"`
+	SamplingPercentage           *string                        `json:"samplingPercentage,omitempty"`
+	FallbackSamplingRatio        *int                           `json:"fallbackSamplingRatio,omitempty"`
+	EndpointsFilters             []*HTTPRouteFilter             `json:"endpointsFilters,omitempty"`
+	ServicesNameFilters          []*ServiceNameFilter           `json:"servicesNameFilters,omitempty"`
+	AttributeFilters             []*SpanAttributeFilter         `json:"attributeFilters,omitempty"`
+	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroup `json:"urlTemplatizationRulesGroups,omitempty"`
 }
 
 type ActionFieldsInput struct {
-	CollectContainerAttributes  *bool                          `json:"collectContainerAttributes,omitempty"`
-	CollectReplicaSetAttributes *bool                          `json:"collectReplicaSetAttributes,omitempty"`
-	CollectWorkloadID           *bool                          `json:"collectWorkloadId,omitempty"`
-	CollectClusterID            *bool                          `json:"collectClusterId,omitempty"`
-	LabelsAttributes            []*K8sLabelAttributeInput      `json:"labelsAttributes,omitempty"`
-	AnnotationsAttributes       []*K8sAnnotationAttributeInput `json:"annotationsAttributes,omitempty"`
-	ClusterAttributes           []*ClusterAttributeInput       `json:"clusterAttributes,omitempty"`
-	OverwriteExistingValues     *bool                          `json:"overwriteExistingValues,omitempty"`
-	AttributeNamesToDelete      []string                       `json:"attributeNamesToDelete,omitempty"`
-	Renames                     *string                        `json:"renames,omitempty"`
-	PiiCategories               []string                       `json:"piiCategories,omitempty"`
-	SamplingPercentage          *string                        `json:"samplingPercentage,omitempty"`
-	FallbackSamplingRatio       *int                           `json:"fallbackSamplingRatio,omitempty"`
-	EndpointsFilters            []*HTTPRouteFilterInput        `json:"endpointsFilters,omitempty"`
-	ServicesNameFilters         []*ServiceNameFilterInput      `json:"servicesNameFilters,omitempty"`
-	AttributeFilters            []*SpanAttributeFilterInput    `json:"attributeFilters,omitempty"`
+	CollectContainerAttributes   *bool                               `json:"collectContainerAttributes,omitempty"`
+	CollectReplicaSetAttributes  *bool                               `json:"collectReplicaSetAttributes,omitempty"`
+	CollectWorkloadID            *bool                               `json:"collectWorkloadId,omitempty"`
+	CollectClusterID             *bool                               `json:"collectClusterId,omitempty"`
+	LabelsAttributes             []*K8sLabelAttributeInput           `json:"labelsAttributes,omitempty"`
+	AnnotationsAttributes        []*K8sAnnotationAttributeInput      `json:"annotationsAttributes,omitempty"`
+	ClusterAttributes            []*ClusterAttributeInput            `json:"clusterAttributes,omitempty"`
+	OverwriteExistingValues      *bool                               `json:"overwriteExistingValues,omitempty"`
+	AttributeNamesToDelete       []string                            `json:"attributeNamesToDelete,omitempty"`
+	Renames                      *string                             `json:"renames,omitempty"`
+	PiiCategories                []string                            `json:"piiCategories,omitempty"`
+	SamplingPercentage           *string                             `json:"samplingPercentage,omitempty"`
+	FallbackSamplingRatio        *int                                `json:"fallbackSamplingRatio,omitempty"`
+	EndpointsFilters             []*HTTPRouteFilterInput             `json:"endpointsFilters,omitempty"`
+	ServicesNameFilters          []*ServiceNameFilterInput           `json:"servicesNameFilters,omitempty"`
+	AttributeFilters             []*SpanAttributeFilterInput         `json:"attributeFilters,omitempty"`
+	URLTemplatizationRulesGroups []*URLTemplatizationRulesGroupInput `json:"urlTemplatizationRulesGroups,omitempty"`
 }
 
 type ActionInput struct {
@@ -684,6 +686,7 @@ type K8sLabelAttributeInput struct {
 type K8sNamespace struct {
 	Name                     string         `json:"name"`
 	MarkedForInstrumentation bool           `json:"markedForInstrumentation"`
+	DataStreamNames          []string       `json:"dataStreamNames"`
 	Workloads                []*K8sWorkload `json:"workloads"`
 }
 
@@ -713,6 +716,8 @@ type K8sWorkload struct {
 	WorkloadHealthStatus       *DesiredConditionStatus              `json:"workloadHealthStatus,omitempty"`
 	ProcessesHealthStatus      *DesiredConditionStatus              `json:"processesHealthStatus"`
 	TelemetryMetrics           []*K8sWorkloadTelemetryMetrics       `json:"telemetryMetrics"`
+	DataStreamNames            []string                             `json:"dataStreamNames"`
+	NumberOfInstances          *int                                 `json:"numberOfInstances,omitempty"`
 	RollbackOccurred           bool                                 `json:"rollbackOccurred"`
 }
 
@@ -1058,6 +1063,11 @@ type PayloadCollectionInput struct {
 	Messaging    *MessagingPayloadCollectionInput `json:"messaging,omitempty"`
 }
 
+type PeerSources struct {
+	Inbound  []*ServiceMapToSource `json:"inbound"`
+	Outbound []*ServiceMapToSource `json:"outbound"`
+}
+
 type PersistNamespaceItemInput struct {
 	Namespace         string `json:"namespace"`
 	Selected          bool   `json:"selected"`
@@ -1307,12 +1317,52 @@ type TailSamplingConfigInput struct {
 	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
 }
 
+type TemplatizationWorkloadFilter struct {
+	Kind *K8sResourceKind `json:"kind,omitempty"`
+	Name *string          `json:"name,omitempty"`
+}
+
+type TemplatizationWorkloadFilterInput struct {
+	Kind *K8sResourceKind `json:"kind,omitempty"`
+	Name *string          `json:"name,omitempty"`
+}
+
 type TestConnectionResponse struct {
 	Succeeded       bool    `json:"succeeded"`
 	StatusCode      int     `json:"statusCode"`
 	DestinationType *string `json:"destinationType,omitempty"`
 	Message         *string `json:"message,omitempty"`
 	Reason          *string `json:"reason,omitempty"`
+}
+
+type URLTemplatizationRule struct {
+	Template string  `json:"template"`
+	Notes    *string `json:"notes,omitempty"`
+}
+
+type URLTemplatizationRuleInput struct {
+	Template string  `json:"template"`
+	Notes    *string `json:"notes,omitempty"`
+}
+
+type URLTemplatizationRulesGroup struct {
+	FilterK8sNamespace        *string                         `json:"filterK8sNamespace,omitempty"`
+	FilterK8sWorkloadKind     *K8sResourceKind                `json:"filterK8sWorkloadKind,omitempty"`
+	FilterK8sWorkloadName     *string                         `json:"filterK8sWorkloadName,omitempty"`
+	FilterProgrammingLanguage *string                         `json:"filterProgrammingLanguage,omitempty"`
+	WorkloadFilters           []*TemplatizationWorkloadFilter `json:"workloadFilters,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRule        `json:"templatizationRules"`
+	Notes                     *string                         `json:"notes,omitempty"`
+}
+
+type URLTemplatizationRulesGroupInput struct {
+	FilterK8sNamespace        *string                              `json:"filterK8sNamespace,omitempty"`
+	FilterK8sWorkloadKind     *K8sResourceKind                     `json:"filterK8sWorkloadKind,omitempty"`
+	FilterK8sWorkloadName     *string                              `json:"filterK8sWorkloadName,omitempty"`
+	FilterProgrammingLanguage *string                              `json:"filterProgrammingLanguage,omitempty"`
+	WorkloadFilters           []*TemplatizationWorkloadFilterInput `json:"workloadFilters,omitempty"`
+	TemplatizationRules       []*URLTemplatizationRuleInput        `json:"templatizationRules"`
+	Notes                     *string                              `json:"notes,omitempty"`
 }
 
 type UserInstrumentationEnvsConfig struct {
@@ -1339,6 +1389,7 @@ const (
 	ActionTypeLatencySampler        ActionType = "LatencySampler"
 	ActionTypeServiceNameSampler    ActionType = "ServiceNameSampler"
 	ActionTypeSpanAttributeSampler  ActionType = "SpanAttributeSampler"
+	ActionTypeURLTemplatization     ActionType = "URLTemplatization"
 	ActionTypeUnknownType           ActionType = "UnknownType"
 )
 
@@ -1353,12 +1404,13 @@ var AllActionType = []ActionType{
 	ActionTypeLatencySampler,
 	ActionTypeServiceNameSampler,
 	ActionTypeSpanAttributeSampler,
+	ActionTypeURLTemplatization,
 	ActionTypeUnknownType,
 }
 
 func (e ActionType) IsValid() bool {
 	switch e {
-	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeUnknownType:
+	case ActionTypeK8sAttributesResolver, ActionTypeAddClusterInfo, ActionTypeDeleteAttribute, ActionTypeRenameAttribute, ActionTypePiiMasking, ActionTypeErrorSampler, ActionTypeProbabilisticSampler, ActionTypeLatencySampler, ActionTypeServiceNameSampler, ActionTypeSpanAttributeSampler, ActionTypeURLTemplatization, ActionTypeUnknownType:
 		return true
 	}
 	return false

@@ -15,9 +15,11 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
+// Stage constant for the collector metrics diagnose phase.
+const StageMetrics Stage = "metrics"
+
 // FetchOdigosCollectorMetrics collects Prometheus metrics from Odigos collectors
 func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interface, builder Builder, metricsDir, odigosNamespace string) error {
-	fmt.Printf("Fetching Odigos Collectors Metrics...\n")
 	klog.V(2).InfoS("Fetching Odigos Collector Metrics", "namespace", odigosNamespace)
 
 	var wg sync.WaitGroup
@@ -54,16 +56,13 @@ func collectMetricsForRole(
 		LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(collectorRole),
 	})
 	if err != nil {
-		fmt.Printf("  Warning: Failed to list %s pods: %v\n", collectorRole, err)
+		klog.V(1).InfoS("Failed to list collector pods", "role", collectorRole, "err", err)
 		return err
 	}
 
 	if len(collectorPods.Items) == 0 {
-		fmt.Printf("  No %s pods found for metrics collection\n", collectorRole)
 		return nil
 	}
-
-	fmt.Printf("  Found %d %s pod(s) for metrics collection\n", len(collectorPods.Items), collectorRole)
 
 	var wg sync.WaitGroup
 

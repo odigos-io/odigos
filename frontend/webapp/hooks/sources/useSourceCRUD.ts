@@ -4,10 +4,10 @@ import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
 import { getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
-import type { SourceConditions, SourceInstrumentInput } from '@/types';
-import { addAgentInjectionStatusToSources, addConditionToSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
-import { GET_SOURCE, GET_SOURCE_CONDITIONS, GET_SOURCE_LIBRARIES, GET_SOURCES, GET_WORKLOADS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent, Workload } from '@odigos/ui-kit/types';
+import type { SourceInstrumentInput, WorkloadResponse } from '@/types';
+import { mapWorkloadToSource, sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import { GET_PEER_SOURCES, GET_SOURCE, GET_SOURCE_LIBRARIES, GET_WORKLOADS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { type WorkloadId, type Source, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
   type SourceSelectionFormData,
@@ -23,8 +23,9 @@ interface UseSourceCrud {
   sources: Source[];
   sourcesLoading: boolean;
   fetchSources: () => Promise<void>;
-  fetchSourceById: (id: WorkloadId, bypassPaginationLoader?: boolean) => Promise<Source | undefined>;
+  fetchSourceById: (id: WorkloadId) => Promise<Source | undefined>;
   fetchSourceLibraries: (id: WorkloadId) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
+  fetchPeerSources: (serviceName: string) => Promise<{ data?: { peerSources: PeerSources } }>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
@@ -35,20 +36,21 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const { addNotification } = useNotificationStore();
   const { selectedStreamName } = useDataStreamStore();
   const { setProgress, resetProgress } = useProgressStore();
-  const { setAvailableSources, setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
+  const { setConfiguredSources, setConfiguredFutureApps } = useSetupStore();
   const { sourcesLoading, setEntitiesLoading, sources, setEntities, addEntities, removeEntities } = useEntityStore();
 
   const notifyUser = (type: StatusType, title: string, message: string, id?: WorkloadId, hideFromHistory?: boolean) => {
     addNotification({ type, title, message, crdType: EntityTypes.Source, target: id ? getSseTargetFromId(id, EntityTypes.Source) : undefined, hideFromHistory });
   };
 
-  const [queryAll] = useLazyQuery<{ computePlatform: { sources: Source[] } }>(GET_SOURCES);
   const [queryById] = useLazyQuery<{ computePlatform: { source: Source } }, { sourceId: WorkloadId }>(GET_SOURCE);
-  const [queryOtherConditions] = useLazyQuery<{ sourceConditions: SourceConditions[] }>(GET_SOURCE_CONDITIONS);
   const [querySourceLibraries] = useLazyQuery<{ instrumentationInstanceComponents: InstrumentationInstanceComponent[] }, WorkloadId>(GET_SOURCE_LIBRARIES, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
   });
-  const [queryWorkloads] = useLazyQuery<{ workloads: Workload[] }, { filter?: WorkloadId }>(GET_WORKLOADS);
+  const [queryPeerSources] = useLazyQuery<{ peerSources: PeerSources }, { serviceName: string }>(GET_PEER_SOURCES, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
+  });
+  const [queryWorkloads] = useLazyQuery<{ workloads: WorkloadResponse[] }, { filter?: { markedForInstrumentation?: boolean } & Partial<WorkloadId> }>(GET_WORKLOADS);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
@@ -79,70 +81,49 @@ export const useSourceCRUD = (): UseSourceCrud => {
       });
   };
 
-  const fetchAllConditions = async (allSources: Source[]) => {
-    const { data } = await queryOtherConditions();
-
-    if (data?.sourceConditions) {
-      const tempSources: Source[] = [];
-
-      for (const item of data.sourceConditions) {
-        const updatedSource = addConditionToSources(item, allSources);
-        if (updatedSource) tempSources.push(updatedSource);
-      }
-
-      addEntities(EntityTypes.Source, tempSources);
-    }
-  };
-
-  const fetchAllAgentInjectionStatuses = async (allSources: Source[]) => {
-    const reqPayload = allSources.length === 1 ? { variables: { filter: { namespace: allSources[0].namespace, kind: allSources[0].kind, name: allSources[0].name } } } : undefined;
-
-    const { data } = await queryWorkloads(reqPayload);
-    const { workloads } = data || {};
-
-    if (workloads) {
-      const tempSources: Source[] = [];
-
-      for (const item of workloads) {
-        const updatedSource = addAgentInjectionStatusToSources(item, allSources);
-        if (updatedSource) tempSources.push(updatedSource);
-      }
-
-      addEntities(EntityTypes.Source, tempSources);
-    }
-  };
-
   const fetchSources: UseSourceCrud['fetchSources'] = async () => {
     setEntitiesLoading(EntityTypes.Source, true);
 
-    const { error, data } = await queryAll();
-    const { sources: fetchedSources } = data?.computePlatform || {};
+    const { error, data } = await queryWorkloads({ variables: { filter: { markedForInstrumentation: true } } });
 
     if (error) {
       notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
-    } else if (fetchedSources) {
-      setEntities(EntityTypes.Source, fetchedSources);
-      setEntitiesLoading(EntityTypes.Source, false);
-      if (fetchedSources.length) {
-        fetchAllAgentInjectionStatuses(fetchedSources);
-        fetchAllConditions(fetchedSources);
-      }
+    } else if (data?.workloads) {
+      const mappedSources = sortSources(data.workloads.map(mapWorkloadToSource));
+      setEntities(EntityTypes.Source, mappedSources);
     }
+
+    setEntitiesLoading(EntityTypes.Source, false);
   };
 
-  const fetchSourceById: UseSourceCrud['fetchSourceById'] = async (id, bypassPaginationLoader = false): Promise<Source | undefined> => {
-    const { error, data } = await queryById({ variables: { sourceId: id } });
+  const fetchSourceById: UseSourceCrud['fetchSourceById'] = async (id): Promise<Source | undefined> => {
+    const { error: sourceError, data: sourceData } = await queryById({ variables: { sourceId: id } });
 
-    if (error) {
-      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
-    } else if (data?.computePlatform?.source) {
-      const { source } = data.computePlatform;
-      addEntities(EntityTypes.Source, [source]);
-      await fetchAllAgentInjectionStatuses([source]);
-      // Return the updated source from the store (with workloadOdigosHealthStatus merged)
-      const { sources: updatedSources } = useEntityStore.getState();
-      return updatedSources.find((s) => s.namespace === id.namespace && s.name === id.name && s.kind === id.kind) || source;
+    if (sourceError) {
+      notifyUser(StatusType.Error, sourceError.name || Crud.Read, sourceError.cause?.message || sourceError.message);
+      return undefined;
     }
+
+    if (!sourceData?.computePlatform?.source) return undefined;
+
+    const { source } = sourceData.computePlatform;
+
+    const { data: workloadData } = await queryWorkloads({ variables: { filter: { namespace: id.namespace, kind: id.kind, name: id.name } } });
+    const workload = workloadData?.workloads?.[0];
+
+    if (workload) {
+      const enrichedSource: Source = {
+        ...source,
+        workloadOdigosHealthStatus: workload.workloadOdigosHealthStatus,
+        podsAgentInjectionStatus: workload.podsAgentInjectionStatus,
+        rollbackOccurred: workload.rollbackOccurred,
+      };
+      addEntities(EntityTypes.Source, [enrichedSource]);
+      return enrichedSource;
+    }
+
+    addEntities(EntityTypes.Source, [source]);
+    return source;
   };
 
   const persistSources: UseSourceCrud['persistSources'] = async (selectAppsList, futureSelectAppsList) => {
@@ -165,7 +146,6 @@ export const useSourceCRUD = (): UseSourceCrud => {
       await mutatePersistSources({ variables: persistSourcesPayloads });
       await persistNamespaces(persistNamespacesPayloads);
 
-      setAvailableSources({});
       setConfiguredSources({});
       setConfiguredFutureApps({});
 
@@ -198,6 +178,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     fetchSources,
     fetchSourceById,
     fetchSourceLibraries: (payload: WorkloadId) => querySourceLibraries({ variables: payload }),
+    fetchPeerSources: (serviceName: string) => queryPeerSources({ variables: { serviceName } }),
     persistSources,
     updateSource,
   };

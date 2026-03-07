@@ -1,36 +1,5 @@
 import { gql } from '@apollo/client';
 
-export const GET_SOURCES = gql`
-  query GetSources {
-    computePlatform {
-      sources {
-        namespace
-        name
-        kind
-        dataStreamNames
-        selected
-        otelServiceName
-        containers {
-          containerName
-          language
-          runtimeVersion
-          overriden
-          instrumented
-          instrumentationMessage
-          otelDistroName
-        }
-        conditions {
-          status
-          type
-          reason
-          message
-          lastTransitionTime
-        }
-      }
-    }
-  }
-`;
-
 export const GET_SOURCE = gql`
   query GetSource($sourceId: K8sSourceId!) {
     computePlatform {
@@ -59,23 +28,6 @@ export const GET_SOURCE = gql`
         }
         manifestYAML
         instrumentationConfigYAML
-      }
-    }
-  }
-`;
-
-export const GET_SOURCE_CONDITIONS = gql`
-  query GetSourceConditions {
-    sourceConditions {
-      namespace
-      name
-      kind
-      conditions {
-        status
-        type
-        reason
-        message
-        lastTransitionTime
       }
     }
   }

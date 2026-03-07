@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/k8sutils/pkg/diagnose"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 )
@@ -85,6 +87,7 @@ func DiagnoseGraphQL(
 			builder,
 			rootDir,
 			opts,
+			nil, // no progress callback for dry run
 		); err != nil {
 			return nil, fmt.Errorf("failed to run diagnose: %w", err)
 		}
@@ -128,6 +131,40 @@ func DiagnoseGraphQL(
 	// Create diagnose builder (writes to temp directory)
 	builder := diagnose.NewBuilder()
 
+	// Send initial SSE with the list of stages that will run (for progress UI).
+	stagesRequested := diagnose.RequestedStages(opts)
+	if stagesJSON, err := json.Marshal(stagesRequested); err == nil {
+		sse.SendMessageToClient(sse.SSEMessage{
+			Type:    sse.MessageTypeInfo,
+			Event:   sse.MessageEventDiagnoseStagesRequested,
+			Data:    string(stagesJSON),
+			Target:  "diagnose",
+		})
+	}
+
+	// Channel for stage completion; send SSE for each completed stage (stage id, status success/error, and message on error).
+	stageCh := make(chan diagnose.StageResult, 10)
+	done := make(chan struct{})
+	go func() {
+		for result := range stageCh {
+			payload := map[string]string{"stage": string(result.Stage)}
+			if result.Status == nil {
+				payload["status"] = "success"
+			} else {
+				payload["status"] = "error"
+				payload["message"] = result.Status.Error()
+			}
+			data, _ := json.Marshal(payload)
+			sse.SendMessageToClient(sse.SSEMessage{
+				Type:    sse.MessageTypeInfo,
+				Event:   sse.MessageEventDiagnoseStageCompleted,
+				Data:    string(data),
+				Target:  "diagnose",
+			})
+		}
+		close(done)
+	}()
+
 	// Run the diagnose collection
 	if err := diagnose.RunDiagnose(
 		ctx,
@@ -138,10 +175,15 @@ func DiagnoseGraphQL(
 		builder,
 		builderRootDir,
 		opts,
+		stageCh,
 	); err != nil {
 		os.RemoveAll(mainTempDir)
+		close(stageCh)
+		<-done
 		return nil, fmt.Errorf("failed to run diagnose: %w", err)
 	}
+	close(stageCh)
+	<-done
 
 	// Get file stats
 	fileCount, totalSize := countFilesAndSize(mainTempDir)
