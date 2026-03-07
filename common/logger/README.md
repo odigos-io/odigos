@@ -1,6 +1,6 @@
 # Odigos Logger
 
-Structured logger (slog) shared across Odigos components. Single global instance, optional context carry, and runtime level control.
+Structured logger (zap) shared across Odigos components. Single global instance, optional context carry, and config-driven log level. AddCaller is enabled so logs include file/line.
 
 ## Setup
 
@@ -17,7 +17,7 @@ func main() {
 
 ## Usage
 
-**Direct logging** — use the global logger anywhere in the same process:
+**Direct logging** — use the global logger (slog-style API):
 
 ```go
 logger := commonlogger.Logger()
@@ -38,23 +38,23 @@ logger.Info("reconciling", "name", name)
 For components using controller-runtime, set the global logr logger so all controllers use the same backend:
 
 ```go
-ctrl.SetLogger(commonlogger.FromSlogHandler())
+ctrl.SetLogger(commonlogger.ForControllerRuntime())
 ```
 
-Then `mgr.GetLogger()` and reconciler loggers write through this logger; level and format are shared.
+Then `log.FromContext(ctx)` in reconcilers returns this logger; level and format are shared.
 
 ## Context (request-scoped logger)
 
-Store a logger in context for downstream code; resolve with fallback to global, then default:
+Store a logger in context for downstream code; resolve with fallback to global:
 
 ```go
-// Store (e.g. in HTTP middleware or request handler)
 ctx = commonlogger.IntoContext(ctx, commonlogger.Logger().With("requestID", id))
-
-// Retrieve later
 logger := commonlogger.FromContext(ctx)
 logger.Info("processing request")
 ```
 
-If no logger is in context, `FromContext` returns the global logger (or `slog.Default()` if `Init` was never called).
+If no logger is in context, `FromContext` returns the global logger.
 
+## Log level
+
+Level is set at startup via `ODIGOS_LOG_LEVEL` (or Helm/CR `logLevel`). For runtime changes without restart, a config watcher can call `logger.SetLevel(level)`; no HTTP debug server is used.

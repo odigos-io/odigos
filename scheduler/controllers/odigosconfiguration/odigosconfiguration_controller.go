@@ -10,6 +10,7 @@ import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/odigos-io/odigos/profiles"
@@ -234,6 +235,31 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 	}
 
+	if addtionalConfig.ComponentLogLevels != nil {
+		if baseConfig.ComponentLogLevels == nil {
+			baseConfig.ComponentLogLevels = &common.ComponentLogLevels{}
+		}
+		src, dst := addtionalConfig.ComponentLogLevels, baseConfig.ComponentLogLevels
+		if src.Default != "" {
+			dst.Default = src.Default
+		}
+		if src.Autoscaler != "" {
+			dst.Autoscaler = src.Autoscaler
+		}
+		if src.Scheduler != "" {
+			dst.Scheduler = src.Scheduler
+		}
+		if src.Instrumentor != "" {
+			dst.Instrumentor = src.Instrumentor
+		}
+		if src.Odiglet != "" {
+			dst.Odiglet = src.Odiglet
+		}
+		if src.UI != "" {
+			dst.UI = src.UI
+		}
+	}
+
 	// Future fields can be added here following the same pattern:
 	// - ignoredNamespaces, ignoredContainers
 	// - profiles
@@ -283,6 +309,10 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 	err = r.Client.Patch(ctx, &effectiveConfigMap, client.RawPatch(types.ApplyYAMLPatchType, objApplyBytes), client.ForceOwnership, client.FieldOwner("scheduler-odigosconfiguration"))
 	if err != nil {
 		return err
+	}
+
+	if effectiveConfig.ComponentLogLevels != nil {
+		commonlogger.SetLevel(effectiveConfig.ComponentLogLevels.Resolve("scheduler"))
 	}
 
 	logger := ctrl.LoggerFrom(ctx)

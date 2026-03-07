@@ -29,7 +29,7 @@ func getNumberOfWorkers() int {
 }
 
 func copyDirectories(srcDir string, destDir string) error {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	start := time.Now()
 
 	files, err := getFiles(srcDir)
@@ -100,7 +100,7 @@ func createDotnetDeprecatedDirectories(destDir string) error {
 
 func worker(fileChan <-chan string, sourceDir, destDir string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 
 	// Allocate a buffer once per goroutine.
 	buf := make([]byte, bufferSize)

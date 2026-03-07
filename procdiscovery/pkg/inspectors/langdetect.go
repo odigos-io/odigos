@@ -94,7 +94,7 @@ func runInspectionStage(
 
 // DetectLanguage attempts to detect the programming language using QuickScan first, then DeepScan if needed.
 func DetectLanguage(proc process.Details, containerURL string) (common.ProgramLanguageDetails, error) {
-	logger := commonlogger.Logger().With("subsystem", "langdetect")
+	logger := commonlogger.LoggerCompat().With("subsystem", "langdetect")
 	procContext := process.NewProcessContext(proc)
 	defer func() {
 		if err := procContext.CloseFiles(); err != nil {
@@ -163,7 +163,7 @@ func resolveNonCpp(langs [2]common.ProgrammingLanguage) (common.ProgrammingLangu
 }
 
 func VerifyLanguage(proc process.Details, lang common.ProgrammingLanguage) bool {
-	logger := commonlogger.Logger().With("subsystem", "langdetect")
+	logger := commonlogger.LoggerCompat().With("subsystem", "langdetect")
 	inspector, ok := inspectorsByLanguage[lang]
 	if !ok {
 		return false

@@ -35,10 +35,9 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"k8s.io/klog/v2"
 	operatorv1alpha1 "github.com/odigos-io/odigos/operator/api/v1alpha1"
 	"github.com/odigos-io/odigos/operator/internal/controller"
 	// +kubebuilder:scaffold:imports
@@ -55,8 +54,9 @@ func init() {
 
 func main() {
 	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
-	ctrl.SetLogger(commonlogger.FromSlogHandler())
-	logger := commonlogger.Logger()
+	ctrl.SetLogger(commonlogger.ToLogr())
+	klog.SetLogger(commonlogger.ToLogr())
+	logger := commonlogger.LoggerCompat()
 
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -166,11 +166,6 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
-	go func() {
-		if err := common.StartDebugServer(ctx, logger, int(k8sconsts.DefaultDebugPort)); err != nil {
-			logger.Error("debug server error", "err", err)
-		}
-	}()
 
 	logger.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {

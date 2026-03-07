@@ -16,7 +16,7 @@ const (
 )
 
 func DefaultK8sDetectorOptions(appendEnvVarNames []string) []detector.DetectorOption {
-	logger := commonlogger.Logger().With("subsystem", "detector")
+	logger := commonlogger.LoggerCompat().With("subsystem", "detector")
 
 	opts := []detector.DetectorOption{
 		detector.WithLogger(logger),

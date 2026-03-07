@@ -169,7 +169,7 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 		return nil, fmt.Errorf("failed to create ebpf instrumentation manager metrics: %w", err)
 	}
 
-	logger := commonlogger.Logger().With("subsystem", "ebpf-instrumentation-manager")
+	logger := commonlogger.LoggerCompat().With("subsystem", "ebpf-instrumentation-manager")
 	procEvents := make(chan detector.ProcessEvent)
 	detector, err := detector.NewDetector(procEvents, options.DetectorOptions...)
 	if err != nil {
@@ -442,7 +442,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) tryInstrument(ctx c
 	}
 
 	// Fetch initial settings for the instrumentation (SettingsGetter interface requires logr.Logger)
-	settings, err := m.handler.SettingsGetter.Settings(ctx, commonlogger.FromSlogHandler().WithName("ebpf-instrumentation-manager"), pd, otelDistro)
+	settings, err := m.handler.SettingsGetter.Settings(ctx, commonlogger.ToLogr().WithName("ebpf-instrumentation-manager"), pd, otelDistro)
 	if err != nil {
 		// for k8s instrumentation config CR will be queried to get the settings
 		// we should always have config for this event.

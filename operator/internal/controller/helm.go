@@ -18,7 +18,6 @@ package controller
 
 import (
 	"fmt"
-	"log/slog"
 	"os"
 	"strings"
 	"sync"
@@ -119,7 +118,7 @@ func (c *simpleClientConfig) ConfigAccess() clientcmd.ConfigAccess {
 
 // helmLogger implements helm's DebugLog function to collect and summarize Helm operations.
 type helmLogger struct {
-	logger *slog.Logger
+	logger *commonlogger.OdigosLogger
 	mu     sync.Mutex
 	stats  helmStats
 }
@@ -131,7 +130,7 @@ type helmStats struct {
 	unchanged int
 }
 
-func newHelmLogger(logger *slog.Logger) *helmLogger {
+func newHelmLogger(logger *commonlogger.OdigosLogger) *helmLogger {
 	return &helmLogger{logger: logger}
 }
 
@@ -172,7 +171,7 @@ func (h *helmLogger) printSummary() {
 
 // helmInstall performs a Helm install or upgrade of Odigos using the shared CLI helm package
 func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1.Odigos, version string, openshiftEnabled bool) error {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	helmLog := newHelmLogger(logger)
 	actionConfig := new(action.Configuration)
 
@@ -221,7 +220,7 @@ func helmInstall(config *rest.Config, namespace string, odigos *operatorv1alpha1
 
 // helmUninstall performs a Helm uninstall of Odigos using the shared CLI helm package
 func helmUninstall(config *rest.Config, namespace string) error {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	helmLog := newHelmLogger(logger)
 	actionConfig := new(action.Configuration)
 

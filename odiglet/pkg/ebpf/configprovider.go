@@ -61,7 +61,7 @@ func (c *ConfigProvider[C]) SendConfig(ctx context.Context, newConfig C) error {
 	defer c.stoppedMutex.Unlock()
 
 	if c.stopped {
-		commonlogger.Logger().Info("SendConfig called on stopped configProvider, the supplied config will be ignored")
+		commonlogger.LoggerCompat().Info("SendConfig called on stopped configProvider, the supplied config will be ignored")
 		return nil
 	}
 

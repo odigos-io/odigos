@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,8 +21,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
@@ -39,6 +36,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/version"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -109,7 +107,7 @@ func startWatchers(ctx context.Context) error {
 	return nil
 }
 
-func startDatabase(logger *slog.Logger) error {
+func startDatabase(logger *commonlogger.OdigosLogger) error {
 	database, err := db.NewSQLiteDB("/data/data.db")
 	if err != nil {
 		// TODO: Move to fatal once db required
@@ -270,9 +268,10 @@ func main() {
 	}
 
 	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
-	logger := commonlogger.FromSlogHandler()
+	logger := commonlogger.ToLogr()
 	ctrl.SetLogger(logger)
-	slogLogger := commonlogger.Logger()
+	klog.SetLogger(logger)
+	log := commonlogger.LoggerCompat()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := make(chan os.Signal, 1)
@@ -282,26 +281,24 @@ func main() {
 		cancel()
 	}()
 
-	go common.StartDebugServer(ctx, slogLogger, int(k8sconsts.DefaultDebugPort))
-
 	// Load destinations data
 	err := destinations.Load()
 	if err != nil {
-		slogLogger.Error("Error loading destinations data", "err", err)
+		log.Error("Error loading destinations data", "err", err)
 		os.Exit(1)
 	}
 
 	// Start SQLite database
-	err = startDatabase(slogLogger)
+	err = startDatabase(log)
 	if err != nil {
-		slogLogger.Error("Error starting database", "err", err)
+		log.Error("Error starting database", "err", err)
 		os.Exit(1)
 	}
 
 	// Connect to Kubernetes
 	err = initKubernetesClient(&flags)
 	if err != nil {
-		slogLogger.Error("Error creating Kubernetes client", "err", err)
+		log.Error("Error creating Kubernetes client", "err", err)
 		os.Exit(1)
 	}
 
@@ -309,7 +306,7 @@ func main() {
 	// from all namespaces, providing fast read access without hitting the Kubernetes API
 	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
 	if err != nil {
-		slogLogger.Error("Error setting up kubernetes objects cache", "err", err)
+		log.Error("Error setting up kubernetes objects cache", "err", err)
 		os.Exit(1)
 	}
 
@@ -324,14 +321,14 @@ func main() {
 	// Start watchers
 	err = startWatchers(ctx)
 	if err != nil {
-		slogLogger.Error("Error starting watchers", "err", err)
+		log.Error("Error starting watchers", "err", err)
 		os.Exit(1)
 	}
 
 	var promAPI v1.API
 	metricsURL := fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
 	if api, err := metrics.NewAPIFromURL(metricsURL); err != nil {
-		slogLogger.Warn("failed to initialize VictoriaMetrics API", "url", metricsURL, "err", err)
+		log.Warn("failed to initialize VictoriaMetrics API", "url", metricsURL, "err", err)
 	} else {
 		promAPI = api
 	}
@@ -339,29 +336,29 @@ func main() {
 	// Start server
 	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI)
 	if err != nil {
-		slogLogger.Error("Error starting server", "err", err)
+		log.Error("Error starting server", "err", err)
 		os.Exit(1)
 	}
 
 	// Serve client (react/next app)
 	dist, err := fs.Sub(uiFS, "webapp/out")
 	if err != nil {
-		slogLogger.Error("Error reading webapp/out directory", "err", err)
+		log.Error("Error reading webapp/out directory", "err", err)
 		os.Exit(1)
 	}
 	serveClientFiles(ctx, r, dist)
 
 	go func() {
-		slogLogger.Info("Odigos UI is available", "address", fmt.Sprintf("http://%s:%d", flags.Address, flags.Port))
+		log.Info("Odigos UI is available", "address", fmt.Sprintf("http://%s:%d", flags.Address, flags.Port))
 		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
-			slogLogger.Error("Error starting server", "err", err)
+			log.Error("Error starting server", "err", err)
 			os.Exit(1)
 		}
 	}()
 
 	<-ch
-	slogLogger.Info("Shutting down Odigos UI...")
+	log.Info("Shutting down Odigos UI...")
 	cancel()
 	wg.Wait()
 }

@@ -135,21 +135,8 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 }
 
 func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	g, groupCtx := errgroup.WithContext(ctx)
-
-	// Start debug server
-	g.Go(func() error {
-		err := common.StartDebugServer(groupCtx, logger, int(k8sconsts.DefaultDebugPort))
-		if err != nil {
-			logger.Error("Failed to start debug server", "err", err)
-		} else {
-			logger.Info("Debug server exited")
-		}
-		// if we fail to start the debug server, don't return an error as it is not critical
-		// and we can run the rest of the components
-		return nil
-	})
 
 	if !odigosTelemetryDisabled {
 		// Start telemetry report

@@ -61,7 +61,7 @@
         },
         "logLevel": {
           "default": "info",
-          "description": "Log level for autoscaler. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "description": "Log level for autoscaler. Defaults to info.",
           "required": [],
           "title": "logLevel"
         },
@@ -633,7 +633,7 @@
         },
         "logLevel": {
           "default": "info",
-          "description": "Log level for instrumentor. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "description": "Log level for instrumentor. Defaults to info.",
           "required": [],
           "title": "logLevel"
         },
@@ -732,7 +732,7 @@
     },
     "logLevel": {
       "default": "info",
-      "description": "Default log level for components when component-level logLevel is not set.\nAccepted values: debug, info, warn, error. Default: info.\nUse PUT /debug/loglevel on port 6060 for hot reload without restart.",
+      "description": "Default log level for components when component-level logLevel is not set.\nAccepted values: debug, info, warn, error. Default: info.",
       "required": [],
       "title": "logLevel"
     },
@@ -1143,7 +1143,7 @@
         },
         "logLevel": {
           "default": "info",
-          "description": "Log level for odiglet. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "description": "Log level for odiglet. Defaults to info.",
           "required": [],
           "title": "logLevel"
         },
@@ -1512,7 +1512,7 @@
         },
         "logLevel": {
           "default": "info",
-          "description": "Log level for scheduler. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "description": "Log level for scheduler. Defaults to info.",
           "required": [],
           "title": "logLevel"
         },
@@ -1647,7 +1647,7 @@
         },
         "logLevel": {
           "default": "info",
-          "description": "Log level for UI. Defaults to info. Use PUT /debug/loglevel for hot reload.",
+          "description": "Log level for UI. Defaults to info.",
           "required": [],
           "title": "logLevel"
         },

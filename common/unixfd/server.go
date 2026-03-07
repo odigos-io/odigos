@@ -39,7 +39,7 @@ func (s *Server) Run(ctx context.Context) error {
 		_ = os.Remove(s.SocketPath)
 	}()
 
-	logger := commonlogger.Logger().With("subsystem", "unixfd")
+	logger := commonlogger.LoggerCompat().With("subsystem", "unixfd")
 	logger.Info("unixfd server started", "socket", s.SocketPath)
 
 	// Close listener when context is canceled
@@ -65,7 +65,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 // handleRequest processes a single client request
 func (s *Server) handleRequest(conn *net.UnixConn) {
-	logger := commonlogger.Logger().With("subsystem", "unixfd")
+	logger := commonlogger.LoggerCompat().With("subsystem", "unixfd")
 	defer func() {
 		_ = conn.Close()
 	}()

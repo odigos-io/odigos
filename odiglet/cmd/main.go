@@ -17,12 +17,14 @@ import (
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
 	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
-	logger := commonlogger.Logger()
+	klog.SetLogger(commonlogger.ToLogr())
+	logger := commonlogger.LoggerCompat()
 
 	var healthProbeBindPort int
 	flag.IntVar(&healthProbeBindPort, "health-probe-bind-port", k8sconsts.OdigletDefaultHealthProbeBindPort, "The port the probe endpoint binds to.")

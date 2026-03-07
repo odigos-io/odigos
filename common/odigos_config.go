@@ -2,6 +2,57 @@ package common
 
 type ProfileName string
 
+// OdigosLogLevel is the log level for components (error, warn, info, debug, trace).
+type OdigosLogLevel string
+
+const (
+	LogLevelError OdigosLogLevel = "error"
+	LogLevelWarn  OdigosLogLevel = "warn"
+	LogLevelInfo  OdigosLogLevel = "info"
+	LogLevelDebug OdigosLogLevel = "debug"
+	LogLevelTrace OdigosLogLevel = "trace"
+)
+
+// +kubebuilder:object:generate=true
+// ComponentLogLevels holds default and per-component log levels. Default is the global; per-field overrides for that component.
+type ComponentLogLevels struct {
+	Default      OdigosLogLevel `json:"default,omitempty"      yaml:"default,omitempty"`
+	Autoscaler   OdigosLogLevel `json:"autoscaler,omitempty"   yaml:"autoscaler,omitempty"`
+	Scheduler    OdigosLogLevel `json:"scheduler,omitempty"    yaml:"scheduler,omitempty"`
+	Instrumentor OdigosLogLevel `json:"instrumentor,omitempty" yaml:"instrumentor,omitempty"`
+	Odiglet      OdigosLogLevel `json:"odiglet,omitempty"      yaml:"odiglet,omitempty"`
+	UI           OdigosLogLevel `json:"ui,omitempty"          yaml:"ui,omitempty"`
+}
+
+// Resolve returns the effective log level for the component. Order: component-specific → Default → "info".
+func (c *ComponentLogLevels) Resolve(component string) string {
+	if c == nil {
+		return string(LogLevelInfo)
+	}
+	var v OdigosLogLevel
+	switch component {
+	case "autoscaler":
+		v = c.Autoscaler
+	case "scheduler":
+		v = c.Scheduler
+	case "instrumentor":
+		v = c.Instrumentor
+	case "odiglet":
+		v = c.Odiglet
+	case "ui":
+		v = c.UI
+	default:
+		v = ""
+	}
+	if v != "" {
+		return string(v)
+	}
+	if c.Default != "" {
+		return string(c.Default)
+	}
+	return string(LogLevelInfo)
+}
+
 // "normal" is deprecated. Kept here in the enum for backwards compatibility with operator CRD.
 // +kubebuilder:validation:Enum=default;readonly;normal
 type UiMode string
@@ -470,4 +521,7 @@ type OdigosConfiguration struct {
 
 	// global configurations for sampling.
 	Sampling *SamplingConfiguration `json:"sampling,omitempty" yaml:"sampling"`
+
+	// ComponentLogLevels: default = global level (e.g. from Helm); per-component overrides (e.g. from UI).
+	ComponentLogLevels *ComponentLogLevels `json:"componentLogLevels,omitempty" yaml:"componentLogLevels,omitempty"`
 }

@@ -35,7 +35,7 @@ import (
 
 func main() {
 	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 
 	managerOptions := controllers.KubeManagerOptions{}
 	var telemetryDisabled bool
@@ -48,8 +48,8 @@ func main() {
 	flag.BoolVar(&telemetryDisabled, "telemetry-disabled", false, "Disable telemetry")
 	flag.Parse()
 
-	ctrl.SetLogger(commonlogger.FromSlogHandler())
-	managerOptions.Logger = commonlogger.FromSlogHandler()
+	ctrl.SetLogger(commonlogger.ToLogr())
+	managerOptions.Logger = commonlogger.ToLogr()
 
 	// TODO: remove once the webhook stops using the default SDKs from the sdks package
 	sdks.SetDefaultSDKs()

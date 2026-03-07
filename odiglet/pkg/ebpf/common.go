@@ -173,7 +173,7 @@ func NewManager(
 
 	if len(fileOpenTriggers) > 0 {
 		managerOpts.DetectorOptions = append(managerOpts.DetectorOptions, processdetector.WithFilesOpenTrigger(fileOpenTriggers...))
-		commonlogger.Logger().Info("Added file open triggers to the detector", "triggers", fileOpenTriggers)
+		commonlogger.LoggerCompat().Info("Added file open triggers to the detector", "triggers", fileOpenTriggers)
 	}
 
 	manager, err := instrumentation.NewManager(managerOpts)

@@ -68,7 +68,7 @@ clusterName: ''
 # description: |-
 #   Default log level for components when component-level logLevel is not set.
 #   Accepted values: debug, info, warn, error. Default: info.
-#   Use PUT /debug/loglevel on port 6060 for hot reload without restart.
+#   Set via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.
 # @schema
 logLevel: "info"
 
@@ -393,7 +393,7 @@ collectorNode:
 # @schema
 autoscaler:
   # @schema
-  # description: Log level for autoscaler. Defaults to info. Use PUT /debug/loglevel for hot reload.
+  # description: Log level for autoscaler. Defaults to info.
   # @schema
   logLevel: "info"
 
@@ -438,7 +438,7 @@ autoscaler:
 # @schema
 scheduler:
   # @schema
-  # description: Log level for scheduler. Defaults to info. Use PUT /debug/loglevel for hot reload.
+  # description: Log level for scheduler. Defaults to info.
   # @schema
   logLevel: "info"
 
@@ -483,7 +483,7 @@ scheduler:
 # @schema
 ui:
   # @schema
-  # description: Log level for UI. Defaults to info. Use PUT /debug/loglevel for hot reload.
+  # description: Log level for UI. Defaults to info.
   # @schema
   logLevel: "info"
 
@@ -581,7 +581,7 @@ ui:
 # @schema
 instrumentor:
   # @schema
-  # description: Log level for instrumentor. Defaults to info. Use PUT /debug/loglevel for hot reload.
+  # description: Log level for instrumentor. Defaults to info.
   # @schema
   logLevel: "info"
 
@@ -677,7 +677,7 @@ instrumentor:
 # @schema
 odiglet:
   # @schema
-  # description: Log level for odiglet. Defaults to info. Use PUT /debug/loglevel for hot reload.
+  # description: Log level for odiglet. Defaults to info.
   # @schema
   logLevel: "info"
 

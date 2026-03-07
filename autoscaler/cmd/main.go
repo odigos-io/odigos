@@ -35,6 +35,8 @@ import (
 	"golang.org/x/sync/errgroup"
 	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,7 +49,6 @@ import (
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 
 	"github.com/odigos-io/odigos/autoscaler/controllers"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
@@ -78,8 +79,8 @@ func init() {
 
 func main() {
 	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
-	ctrl.SetLogger(commonlogger.FromSlogHandler())
-	logger := commonlogger.Logger()
+	ctrl.SetLogger(commonlogger.ToLogr())
+	logger := commonlogger.LoggerCompat()
 
 	managerOptions := controllers.KubeManagerOptions{}
 
@@ -106,7 +107,6 @@ func main() {
 	}
 
 	ctx := ctrl.SetupSignalHandler()
-	go common.StartDebugServer(ctx, logger, int(k8sconsts.DefaultDebugPort))
 
 	logger.Info("Starting odigos autoscaler", "version", odigosVersion)
 
@@ -117,14 +117,14 @@ func main() {
 	}
 
 	// remove the deprecated webhook secret if it exists
-	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: commonlogger.FromSlogHandler(), Secret: types.NamespacedName{
+	mgr.Add(&certs.SecretDeleteMigration{Client: mgr.GetClient(), Logger: commonlogger.ToLogr(), Secret: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      k8sconsts.DeprecatedAutoscalerWebhookSecretName,
 	}})
 
 	// remove the data collection daemonset if exists because it is part of the odiglet pod now.
 	// TODO: once we're done with the migration, we can remove this.
-	mgr.Add(&nodecollector.DataCollectionDSMigration{Client: mgr.GetClient(), Logger: commonlogger.FromSlogHandler(), DataCollectionDaemonSet: types.NamespacedName{
+	mgr.Add(&nodecollector.DataCollectionDSMigration{Client: mgr.GetClient(), Logger: commonlogger.ToLogr(), DataCollectionDaemonSet: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      k8sconsts.OdigosNodeCollectorDaemonSetName,
 	}})

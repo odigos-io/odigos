@@ -57,7 +57,7 @@ func detectRuntimeSocket() string {
 
 // Connect attempts to establish a connection to a CRI runtime.
 func (rc *CriClient) Connect(ctx context.Context) error {
-	logger := commonlogger.Logger().With("subsystem", "cri")
+	logger := commonlogger.LoggerCompat().With("subsystem", "cri")
 	var err error
 
 	endpoint := detectRuntimeSocket()
@@ -115,7 +115,7 @@ func (rc *CriClient) GetContainerEnvVarsList(ctx context.Context, envVarKeys []s
 // Close closes the gRPC connection.
 func (rc *CriClient) Close() {
 	if rc.conn != nil {
-		logger := commonlogger.Logger().With("subsystem", "cri")
+		logger := commonlogger.LoggerCompat().With("subsystem", "cri")
 		logger.Info("Closing gRPC connection")
 		if err := rc.conn.Close(); err != nil {
 			logger.Error("Failed to close gRPC connection", "err", err)

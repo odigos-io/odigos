@@ -27,7 +27,7 @@ const (
 )
 
 func CopyAgentsDirectoryToHost() error {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	startTime := time.Now()
 	// We kept the following list of files to avoid removing instrumentations that are already loaded in the process memory
 	filesToKeep := map[string]struct{}{
@@ -107,7 +107,7 @@ func CopyAgentsDirectoryToHost() error {
 }
 
 func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, containerDir string, hostDir string) (map[string]struct{}, error) {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	updatedFilesToKeepMap := make(map[string]struct{})
 
 	for hostPath := range filesToKeepMap {
@@ -169,7 +169,7 @@ func removeChangedFilesFromKeepMap(filesToKeepMap map[string]struct{}, container
 // for the given base file path. For example, if basePath is "/var/odigos/python-ebpf/pythonUSDT.abi3.so",
 // it will search for files like "/var/odigos/python-ebpf/pythonUSDT.abi3_hash_version-*.so"
 func findExistingHashVersionFiles(basePath string) ([]string, error) {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	// Extract directory and base filename
 	dir := filepath.Dir(basePath)
 	ext := filepath.Ext(basePath)
@@ -212,7 +212,7 @@ func findExistingHashVersionFiles(basePath string) ([]string, error) {
 
 // Helper function to rename a file using the first 12 characters of its hash
 func renameFileWithHashSuffix(originalPath, fileHash string) (string, error) {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	// Extract the first 12 characters of the hash
 	hashSuffix := fileHash[:12]
 
@@ -254,7 +254,7 @@ func calculateFileHash(filePath string) (string, error) {
 // affect the odiglet running process's apparent filesystem.
 func ApplyOpenShiftSELinuxSettings() error {
 	// Check if the semanage command exists when running on RHEL/CoreOS
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	logger.Info("Applying selinux settings to host")
 	_, err := exec.LookPath(filepath.Join(chrootDir, semanagePath))
 	if err == nil {
@@ -366,7 +366,7 @@ func writeKeeplist(file string, keeps map[string]struct{}) error {
 // runSingleRsyncSync performs a single-threaded rsync from srcDir to dstDir using the given exclude file.
 // This is used when the destination already contains files and we want to sync changes while keeping versioned files.
 func runSingleRsyncSync(srcDir, dstDir, excludeFile string) error {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	// rsync flags:
 	// -a: archive mode (preserves permissions, symlinks, modification times, etc.)
 	// -v: verbose output (shows which files were copied)

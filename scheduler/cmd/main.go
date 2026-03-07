@@ -37,7 +37,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/destinations"
@@ -72,8 +71,8 @@ func init() {
 
 func main() {
 	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"))
-	ctrl.SetLogger(commonlogger.FromSlogHandler())
-	logger := commonlogger.Logger()
+	ctrl.SetLogger(commonlogger.ToLogr())
+	logger := commonlogger.LoggerCompat()
 
 	var metricsAddr string
 	var enableLeaderElection bool
@@ -86,7 +85,6 @@ func main() {
 	flag.Parse()
 
 	ctx := ctrl.SetupSignalHandler()
-	go common.StartDebugServer(ctx, logger, int(k8sconsts.DefaultDebugPort))
 
 	odigosNs := env.GetCurrentNamespace()
 	tier := env.GetOdigosTierFromEnv()
@@ -225,7 +223,7 @@ func main() {
 	}
 
 	// remove the legacy configmap if it exists
-	mgr.Add(&configmaps.ConfigMapDeleteMigration{Client: mgr.GetClient(), Logger: commonlogger.FromSlogHandler(), ConfigMap: types.NamespacedName{
+	mgr.Add(&configmaps.ConfigMapDeleteMigration{Client: mgr.GetClient(), Logger: commonlogger.ToLogr(), ConfigMap: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      consts.OdigosLegacyConfigName,
 	}})

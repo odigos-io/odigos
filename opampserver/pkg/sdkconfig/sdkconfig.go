@@ -23,7 +23,7 @@ type SdkConfigManager struct {
 }
 
 func NewSdkConfigManager(mgr ctrl.Manager, connectionCache *connection.ConnectionsCache, odigosNs string) *SdkConfigManager {
-	logger := commonlogger.Logger().With("subsystem", "sdkconfig")
+	logger := commonlogger.LoggerCompat().With("subsystem", "sdkconfig")
 	sdkConfigManager := &SdkConfigManager{
 		logger:   logger,
 		mgr:      mgr,

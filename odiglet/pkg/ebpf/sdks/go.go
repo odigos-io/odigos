@@ -59,7 +59,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 		auto.WithConfigProvider(cp),
 	)
 	if err != nil {
-		commonlogger.Logger().Error("instrumentation setup failed", "err", err)
+		commonlogger.LoggerCompat().Error("instrumentation setup failed", "err", err)
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func convertToGoInstrumentationConfig(sdkConfig instrumentation.Config) (auto.In
 	}
 	ic := auto.InstrumentationConfig{}
 	if sdkConfig == nil {
-		commonlogger.Logger().Info("No SDK config provided for Go instrumentation, using default")
+		commonlogger.LoggerCompat().Info("No SDK config provided for Go instrumentation, using default")
 		return ic, nil
 	}
 	ic.InstrumentationLibraryConfigs = make(map[auto.InstrumentationLibraryID]auto.InstrumentationLibrary)

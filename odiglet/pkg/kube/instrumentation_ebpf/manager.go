@@ -18,7 +18,7 @@ func SetupWithManager(
 	InstrumentationRequests chan<- instrumentation.Request[ebpf.K8sProcessGroup, ebpf.K8sConfigGroup, *ebpf.K8sProcessDetails],
 	distributionGetter *distros.Getter,
 ) error {
-	commonlogger.Logger().Info("Starting reconcilers for ebpf instrumentation")
+	commonlogger.LoggerCompat().Info("Starting reconcilers for ebpf instrumentation")
 	var err error
 
 	err = builder.

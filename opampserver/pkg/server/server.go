@@ -21,7 +21,7 @@ import (
 )
 
 func StartOpAmpServer(ctx context.Context, mgr ctrl.Manager, kubeClientSet *kubernetes.Clientset, nodeName string, odigosNs string) error {
-	logger := commonlogger.Logger().With("subsystem", "opamp-server")
+	logger := commonlogger.LoggerCompat().With("subsystem", "opamp-server")
 	listenEndpoint := fmt.Sprintf("0.0.0.0:%d", commonconsts.OpAMPPort)
 	logger.Info("Starting opamp server", "listenEndpoint", listenEndpoint)
 
@@ -218,7 +218,7 @@ const (
 )
 
 func ProcessInstrumentationUpdates(ctx context.Context, updateChannel chan InstrumentationUpdateTask, handlers *ConnectionHandlers) {
-	logger := commonlogger.Logger().With("subsystem", "opamp-server")
+	logger := commonlogger.LoggerCompat().With("subsystem", "opamp-server")
 	logger.Info("Starting instrumentation instance update worker")
 
 	for task := range updateChannel {

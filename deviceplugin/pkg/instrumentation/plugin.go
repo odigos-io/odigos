@@ -49,7 +49,7 @@ func (p *plugin) GetDevicePluginOptions(ctx context.Context, empty *v1beta1.Empt
 }
 
 func (p *plugin) ListAndWatch(empty *v1beta1.Empty, server v1beta1.DevicePlugin_ListAndWatchServer) error {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	devicesList := p.idsManager.GetDevices()
 	logger.Debug("ListAndWatch", "devices", devicesList)
 	err := server.Send(&v1beta1.ListAndWatchResponse{
@@ -68,7 +68,7 @@ func (p *plugin) ListAndWatch(empty *v1beta1.Empty, server v1beta1.DevicePlugin_
 }
 
 func (p *plugin) Stop() error {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	logger.Info("Stopping Odigos Device Plugin ...")
 	p.stopCh <- struct{}{}
 	return nil
@@ -81,7 +81,7 @@ func (p *plugin) GetPreferredAllocation(ctx context.Context, request *v1beta1.Pr
 func (p *plugin) Allocate(ctx context.Context, request *v1beta1.AllocateRequest) (*v1beta1.AllocateResponse, error) {
 	res := &v1beta1.AllocateResponse{}
 
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	for _, req := range request.ContainerRequests {
 		if len(req.DevicesIds) != 1 {
 			logger.Info("got instrumentation device not equal to 1, skipping", "devices", req.DevicesIds)

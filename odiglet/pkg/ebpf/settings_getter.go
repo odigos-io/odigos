@@ -42,7 +42,7 @@ func (ksg *k8sSettingsGetter) Settings(ctx context.Context, logger logr.Logger, 
 
 	resourceAttributes, err := getResourceAttributes(kd.Pw, kd.Pod, kd.ProcEvent)
 	if err != nil {
-		commonlogger.Logger().With("subsystem", "settings-getter").Warn("error getting resource attributes", "err", err)
+		commonlogger.LoggerCompat().With("subsystem", "settings-getter").Warn("error getting resource attributes", "err", err)
 	}
 
 	return instrumentation.Settings{

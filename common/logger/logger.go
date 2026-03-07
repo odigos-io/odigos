@@ -1,121 +1,105 @@
 package logger
 
 import (
-	"fmt"
-	"log/slog"
 	"os"
-	"strings"
-	"sync"
 
 	"github.com/go-logr/logr"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
-	mu       sync.RWMutex
-	levelVar = new(slog.LevelVar)
-	instance *slog.Logger
-	handler  slog.Handler
+	atom     = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+	instance *zap.Logger
 )
 
-// Init sets up the global structured logger backed by slog.
-// level should be one of: "debug", "info", "warn", "error".
-// If level is empty or invalid, it defaults to INFO (same as when ODIGOS_LOG_LEVEL is unset).
-//
-// Init must be called once at the start of main() before any logging.
-func Init(level string) {
-	parsed, err := parseLevel(level)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "odigos logger: %v, defaulting to info\n", err)
-		parsed = slog.LevelInfo
-	}
-	levelVar.Set(parsed)
+// Init builds the logger on the shared atom. Call once at process startup.
+// levelStr: "error"|"warn"|"info"|"debug"|"trace"
+func Init(levelStr string) *zap.Logger {
+	atom.SetLevel(ParseLevel(levelStr))
 
-	h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level:     levelVar,
-		AddSource: true,
-	})
+	encoderCfg := zap.NewProductionEncoderConfig()
+	encoderCfg.TimeKey = "ts"
+	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	l := slog.New(h)
-
-	mu.Lock()
-	handler = h
-	instance = l
-	slog.SetDefault(l)
-	mu.Unlock()
+	core := zapcore.NewCore(
+		zapcore.NewJSONEncoder(encoderCfg),
+		zapcore.AddSync(os.Stdout),
+		atom,
+	)
+	instance = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	zap.ReplaceGlobals(instance)
+	return instance
 }
 
-// Logger returns the global *slog.Logger. If Init has not been called yet,
-// it returns slog.Default() so callers never receive a nil logger.
-func Logger() *slog.Logger {
-	mu.RLock()
-	defer mu.RUnlock()
+// UpdateInstance must be called after bridge.AttachToZapLogger wraps the logger.
+func UpdateInstance(zl *zap.Logger) {
+	instance = zl
+	zap.ReplaceGlobals(instance)
+}
+
+func Logger() *zap.Logger          { return instance }
+func AtomicLevel() zap.AtomicLevel { return atom }
+
+// SetLevel sets the global log level. Empty string is a no-op (keeps current level).
+func SetLevel(lvl string) {
+	if lvl != "" {
+		atom.SetLevel(ParseLevel(lvl))
+	}
+}
+
+func CurrentLevel() string { return atom.Level().String() }
+
+// ToLogr returns a logr.Logger for ctrl.SetLogger / klog.SetLogger.
+func ToLogr() logr.Logger {
 	if instance != nil {
-		return instance
+		return zapr.NewLogger(instance)
 	}
-	return slog.Default()
+	return logr.Discard()
 }
 
-// Handler returns the slog.Handler used by the global logger.
-// If Init has not been called yet, returns slog.Default().Handler().
-// Use this to bridge to controller-runtime's logr-based logger:
-//
-//	ctrl.SetLogger(logr.FromSlogHandler(logger.Handler()))
-func Handler() slog.Handler {
-	mu.RLock()
-	defer mu.RUnlock()
-	if handler != nil {
-		return handler
+// OdigosLogger is a slog-style logger (Info(msg, k, v...)) for backward compatibility.
+// Use LoggerCompat() to get it; Logger() returns raw *zap.Logger per plan.
+type OdigosLogger struct {
+	sugared *zap.SugaredLogger
+}
+
+// LoggerCompat returns a logger with slog-style API. Use for existing .Info(msg, k, v) call sites.
+func LoggerCompat() *OdigosLogger {
+	if instance != nil {
+		return &OdigosLogger{sugared: instance.Sugar()}
 	}
-	return slog.Default().Handler()
+	return &OdigosLogger{sugared: zap.NewNop().Sugar()}
 }
 
-// FromSlogHandler returns a logr.Logger backed by the global slog handler.
-// This is a convenience wrapper for controller-runtime components that
-// require a logr.Logger.
-func FromSlogHandler() logr.Logger {
-	return logr.FromSlogHandler(Handler())
-}
-
-// SetLevel changes the global log level at runtime without restarting.
-// Accepts: "debug", "info", "warn", "error".
-// Returns an error if the provided level is invalid.
-func SetLevel(level string) error {
-	parsed, err := parseLevel(level)
-	if err != nil {
-		return err
+func (l *OdigosLogger) With(keysAndValues ...interface{}) *OdigosLogger {
+	if l == nil || l.sugared == nil {
+		return LoggerCompat()
 	}
-	levelVar.Set(parsed)
-	Logger().Info("log level updated", "level", parsed.String())
-	return nil
+	return &OdigosLogger{sugared: l.sugared.With(keysAndValues...)}
 }
 
-// CurrentLevel returns the active log level as a lowercase string: "debug", "info", "warn", or "error".
-// Useful for exposing the current level via a diagnostics endpoint.
-func CurrentLevel() string {
-	switch levelVar.Level() {
-	case slog.LevelDebug:
-		return "debug"
-	case slog.LevelWarn:
-		return "warn"
-	case slog.LevelError:
-		return "error"
-	default:
-		return "info"
+func (l *OdigosLogger) Info(msg string, keysAndValues ...interface{}) {
+	if l != nil && l.sugared != nil {
+		l.sugared.Infow(msg, keysAndValues...)
 	}
 }
 
-// parseLevel converts a string to slog.Level.
-func parseLevel(s string) (slog.Level, error) {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "debug":
-		return slog.LevelDebug, nil
-	case "info", "":
-		return slog.LevelInfo, nil
-	case "warn", "warning":
-		return slog.LevelWarn, nil
-	case "error":
-		return slog.LevelError, nil
-	default:
-		return slog.LevelInfo, fmt.Errorf("unknown log level %q", s)
+func (l *OdigosLogger) Error(msg string, keysAndValues ...interface{}) {
+	if l != nil && l.sugared != nil {
+		l.sugared.Errorw(msg, keysAndValues...)
+	}
+}
+
+func (l *OdigosLogger) Warn(msg string, keysAndValues ...interface{}) {
+	if l != nil && l.sugared != nil {
+		l.sugared.Warnw(msg, keysAndValues...)
+	}
+}
+
+func (l *OdigosLogger) Debug(msg string, keysAndValues ...interface{}) {
+	if l != nil && l.sugared != nil {
+		l.sugared.Debugw(msg, keysAndValues...)
 	}
 }

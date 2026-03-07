@@ -96,7 +96,7 @@ func relevantProcessesDetailsInContainer(knownLangByPid map[int]common.ProgramLa
 }
 
 func runtimeInspection(ctx context.Context, pods []corev1.Pod, criClient *criwrapper.CriClient, runtimeDetectionEnvs map[string]struct{}) ([]odigosv1.RuntimeDetailsByContainer, error) {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	resultsMap := make(map[string]odigosv1.RuntimeDetailsByContainer)
 	for _, pod := range pods {
 		for _, container := range pod.Spec.Containers {
@@ -237,7 +237,7 @@ func updateRuntimeDetailsWithContainerRuntimeEnvs(ctx context.Context, criClient
 // fetchAndSetEnvFromContainerRuntime retrieves environment variables from the container's Image and updates the runtime details.
 func fetchAndSetEnvFromContainerRuntime(ctx context.Context, criClient criwrapper.CriClient, pod corev1.Pod, container corev1.Container,
 	envVarKeys []string, resultsMap *map[string]odigosv1.RuntimeDetailsByContainer, procEnvVars map[string]string) {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	containerID := getContainerID(pod.Status.ContainerStatuses, container.Name)
 	if containerID == "" {
 		logger.Info("containerID not found for container", "container", container.Name, "pod", pod.Name, "namespace", pod.Namespace)
@@ -362,7 +362,7 @@ func persistRuntimeDetailsToInstrumentationConfig(ctx context.Context, kubeclien
 }
 
 func mergeRuntimeDetails(existing *odigosv1.RuntimeDetailsByContainer, new odigosv1.RuntimeDetailsByContainer, podIdentintifier string) bool {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	// Skip merging if languages are different, except when updating from unknown to known language.
 	if new.Language != existing.Language &&
 		!(new.Language != common.UnknownProgrammingLanguage && existing.Language == common.UnknownProgrammingLanguage) {

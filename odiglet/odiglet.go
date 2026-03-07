@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros/distro"
 	commonInstrumentation "github.com/odigos-io/odigos/instrumentation"
@@ -70,7 +69,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 	}
 	otel.SetMeterProvider(provider)
 
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	collector := ebpfMetrics.NewEBPFMetricsCollector(env.Current.NodeName)
 	if err := collector.RegisterMetrics(); err != nil {
 		logger.Error("failed to register metrics", "err", err)
@@ -118,7 +117,7 @@ func New(clientset *kubernetes.Clientset, instrumentationMgrOpts ebpf.Instrument
 
 // Run starts the Odiglet components and blocks until the context is cancelled, or a critical error occurs.
 func (o *Odiglet) Run(ctx context.Context) {
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	if err := o.criClient.Connect(ctx); err != nil {
@@ -129,19 +128,6 @@ func (o *Odiglet) Run(ctx context.Context) {
 
 	// Channel to signal when eBPF manager has exited
 	ebpfDone := make(chan struct{})
-
-	// Start debug server
-	g.Go(func() error {
-		err := common.StartDebugServer(groupCtx, logger, int(k8sconsts.DefaultDebugPort))
-		if err != nil {
-			logger.Error("Failed to start debug server", "err", err)
-		} else {
-			logger.Info("Debug server exited")
-		}
-		// if we fail to start the debug server, don't return an error as it is not critical
-		// and we can run the rest of the components
-		return nil
-	})
 
 	g.Go(func() error {
 		defer close(ebpfDone)
@@ -208,7 +194,7 @@ func (o *Odiglet) Run(ctx context.Context) {
 func OdigletInitPhase(clientset *kubernetes.Clientset) {
 	odigletInitPhaseStart := time.Now()
 	// Logger already initialized in main() before calling OdigletInitPhase.
-	logger := commonlogger.Logger()
+	logger := commonlogger.LoggerCompat()
 
 	err := fs.CopyAgentsDirectoryToHost()
 	if err != nil {

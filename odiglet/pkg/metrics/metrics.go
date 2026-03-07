@@ -187,7 +187,7 @@ func (mc *EBPFMetricsCollector) collectSelfTotalBPFMemlock() error {
 		numCPUs                         int8
 	)
 
-	logger := commonlogger.Logger().With("subsystem", "ebpf-metrics")
+	logger := commonlogger.LoggerCompat().With("subsystem", "ebpf-metrics")
 	logger.Debug("Scanning for eBPF file descriptors")
 	dirEntries, err := os.ReadDir(process.HostProcDir() + "/self/fd")
 	if err != nil {
@@ -309,7 +309,7 @@ func (mc *EBPFMetricsCollector) RegisterMetrics() error {
 	// The callback that runs everytime /metrics is scraped from odiglet, collects data and refreshes gauges
 	_, err = meter.RegisterCallback(
 		func(ctx context.Context, observer metric.Observer) error {
-			logger := commonlogger.Logger().With("subsystem", "ebpf-metrics")
+			logger := commonlogger.LoggerCompat().With("subsystem", "ebpf-metrics")
 			if err := mc.collectSelfTotalBPFMemlock(); err != nil {
 				logger.Error("failed to collect eBPF metrics during scrape", "err", err)
 			}

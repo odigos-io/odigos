@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var logger = commonlogger.Logger().With("subsystem", "opamp-handlers")
+var logger = commonlogger.LoggerCompat().With("subsystem", "opamp-handlers")
 
 type ConnectionHandlers struct {
 	sdkConfig     *sdkconfig.SdkConfigManager
