@@ -12,7 +12,6 @@ import (
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -227,8 +226,6 @@ func WorkloadKindFrombject(obj metav1.Object) k8sconsts.WorkloadKind {
 		return k8sconsts.WorkloadKindStatefulSet
 	case *v1.DaemonSet:
 		return k8sconsts.WorkloadKindDaemonSet
-	case *batchv1beta1.CronJob:
-		return k8sconsts.WorkloadKindCronJob
 	case *batchv1.CronJob:
 		return k8sconsts.WorkloadKindCronJob
 	case *openshiftappsv1.DeploymentConfig:

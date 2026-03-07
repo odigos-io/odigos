@@ -27,13 +27,10 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -62,20 +59,9 @@ func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, own
 	}
 
 	if ownerRef.Kind == "CronJob" {
-
-		ver, err := utils.ClusterVersion()
-		if err != nil {
-			return nil, err
-		}
-		if ver != nil && ver.LessThan(version.MustParseSemantic("1.21.0")) {
-			cj := &batchv1beta1.CronJob{}
-			err := k8sClient.Get(ctx, key, cj)
-			return cj, err
-		} else {
-			cj := &batchv1.CronJob{}
-			err := k8sClient.Get(ctx, key, cj)
-			return cj, err
-		}
+		cj := &batchv1.CronJob{}
+		err := k8sClient.Get(ctx, key, cj)
+		return cj, err
 	}
 
 	if ownerRef.Kind == "DeploymentConfig" {
