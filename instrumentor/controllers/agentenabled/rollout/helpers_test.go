@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,7 +45,6 @@ func newTestSetup() *testSetup {
 	_ = odigosv1alpha1.AddToScheme(scheme)
 	_ = appsv1.AddToScheme(scheme)
 	_ = batchv1.AddToScheme(scheme)
-	_ = batchv1beta1.AddToScheme(scheme)
 	_ = argorolloutsv1alpha1.AddToScheme(scheme)
 
 	getter, _ := distros.NewCommunityGetter()
