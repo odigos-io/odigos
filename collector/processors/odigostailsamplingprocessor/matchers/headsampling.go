@@ -1,11 +1,11 @@
 package matchers
 
 import (
-	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-func HeadSamplingOperationMatcher(operation *commonapi.HeadSamplingOperationMatcher, span ptrace.Span) bool {
+func HeadSamplingOperationMatcher(operation *commonapisanpling.HeadSamplingOperationMatcher, span ptrace.Span) bool {
 	if operation == nil {
 		// if operation is not specified, it will match any operation.
 		return true
@@ -20,7 +20,7 @@ func HeadSamplingOperationMatcher(operation *commonapi.HeadSamplingOperationMatc
 	return true
 }
 
-func headSamplingOperationHttpServerMatcher(operation *commonapi.HeadSamplingHttpServerOperationMatcher, span ptrace.Span) bool {
+func headSamplingOperationHttpServerMatcher(operation *commonapisanpling.HeadSamplingHttpServerOperationMatcher, span ptrace.Span) bool {
 
 	if span.Kind() != ptrace.SpanKindServer {
 		return false
@@ -42,7 +42,7 @@ func headSamplingOperationHttpServerMatcher(operation *commonapi.HeadSamplingHtt
 	return true
 }
 
-func headSamplingOperationHttpClientMatcher(operation *commonapi.HeadSamplingHttpClientOperationMatcher, span ptrace.Span) bool {
+func headSamplingOperationHttpClientMatcher(operation *commonapisanpling.HeadSamplingHttpClientOperationMatcher, span ptrace.Span) bool {
 
 	// this matcher is for http client operations only, and only client spans are considered.
 	if span.Kind() != ptrace.SpanKindClient {

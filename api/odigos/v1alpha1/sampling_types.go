@@ -7,7 +7,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
-	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,7 +51,7 @@ type NoisyOperation struct {
 	// limit this rule to specific operations.
 	// for example: specific http server endpoint (GET "/healthz" as an example).
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapi.HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisanpling.HeadSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for noisy operations.
 	// if unset, 0% of such the traces will be collected.
@@ -72,6 +72,18 @@ type NoisyOperation struct {
 // regaradless of any cost reduction rules.
 type HighlyRelevantOperation struct {
 
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name string `json:"name,omitempty"`
+
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled bool `json:"disabled,omitempty"`
+
 	// limit the operation to specific sources.
 	// an empty list will match any source.
 	// if multiple items are set, the operation match if any one matches
@@ -87,7 +99,7 @@ type HighlyRelevantOperation struct {
 	// optionally, limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapi.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisanpling.TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// traces that contains this operation will be sampled by at least this percentage.
 	// if unset, 100% of such the traces will be sampled.
@@ -112,7 +124,7 @@ type CostReductionRule struct {
 	// limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapi.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisanpling.TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for cost reduction.
 	// this field is required.

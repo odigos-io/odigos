@@ -4,7 +4,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 
@@ -152,7 +152,7 @@ func convertNoisyOperationToAttributeConditions(noisyOperation odigosv1.NoisyOpe
 	return nil
 }
 
-func convertNoisyOperationHttpServerToAttributeConditions(httpServer *commonapi.HeadSamplingHttpServerOperationMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
+func convertNoisyOperationHttpServerToAttributeConditions(httpServer *commonapisanpling.HeadSamplingHttpServerOperationMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
 	urlPathAttributeKey, httpRequestMethodAttributeKey, _ := getDistroPathAndMethodAttributeKeys(distro)
 	andConditions := []odigosv1.AttributeCondition{}
 	if httpServer.Route != "" {
@@ -179,7 +179,7 @@ func convertNoisyOperationHttpServerToAttributeConditions(httpServer *commonapi.
 	return andConditions
 }
 
-func convertNoisyOperationHttpClientToAttributeConditions(httpClient *commonapi.HeadSamplingHttpClientOperationMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
+func convertNoisyOperationHttpClientToAttributeConditions(httpClient *commonapisanpling.HeadSamplingHttpClientOperationMatcher, distro *distro.OtelDistro) []odigosv1.AttributeCondition {
 
 	urlPathAttributeKey, httpRequestMethodAttributeKey, serverAddressAttributeKey := getDistroPathAndMethodAttributeKeys(distro)
 

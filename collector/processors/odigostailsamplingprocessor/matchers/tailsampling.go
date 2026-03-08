@@ -1,11 +1,11 @@
 package matchers
 
 import (
-	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-func TailSamplingOperationMatcher(operation *commonapi.TailSamplingOperationMatcher, span ptrace.Span) bool {
+func TailSamplingOperationMatcher(operation *commonapisanpling.TailSamplingOperationMatcher, span ptrace.Span) bool {
 	if operation == nil {
 		// if operation is not specified, it will match any operation.
 		return true
@@ -35,7 +35,7 @@ func TailSamplingOperationMatcher(operation *commonapi.TailSamplingOperationMatc
 // - any of the attributes specified in the matcher are not present on the span.
 // - any of the attributes specified in the matcher are presence with a different value.
 // - templated routes for spans that don't have the http.route attribute.
-func operationHttpServerMatcher(operation *commonapi.HttpServerOperationMatcher, span ptrace.Span) bool {
+func operationHttpServerMatcher(operation *commonapisanpling.HttpServerOperationMatcher, span ptrace.Span) bool {
 	if span.Kind() != ptrace.SpanKindServer {
 		return false
 	}
@@ -56,10 +56,10 @@ func operationHttpServerMatcher(operation *commonapi.HttpServerOperationMatcher,
 	return true
 }
 
-func operationKafkaConsumerMatcher(operation *commonapi.KafkaOperationMatcher, span ptrace.Span) bool {
+func operationKafkaConsumerMatcher(operation *commonapisanpling.KafkaOperationMatcher, span ptrace.Span) bool {
 	return false
 }
 
-func operationKafkaProducerMatcher(operation *commonapi.KafkaOperationMatcher, span ptrace.Span) bool {
+func operationKafkaProducerMatcher(operation *commonapisanpling.KafkaOperationMatcher, span ptrace.Span) bool {
 	return false
 }

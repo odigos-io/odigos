@@ -4,15 +4,15 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
-	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
-func EvaluateNoisyOperations(span ptrace.Span, noisyOperations []commonapi.WorkloadNoisyOperation) (bool, *commonapi.WorkloadNoisyOperation) {
+func EvaluateNoisyOperations(span ptrace.Span, noisyOperations []commonapisanpling.NoisyOperation) (bool, *commonapisanpling.NoisyOperation) {
 
 	// aggregate the matching rules in a list.
 	// there should be very few, so the length is expected to be 0 almost always,
 	// 1 occassionally, and more very rarely.
-	var leastPercentageRule *commonapi.WorkloadNoisyOperation
+	var leastPercentageRule *commonapisanpling.NoisyOperation
 
 	for _, noisyOperation := range noisyOperations {
 

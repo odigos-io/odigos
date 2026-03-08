@@ -3,7 +3,7 @@ package matchers
 import (
 	"testing"
 
-	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -20,14 +20,14 @@ func spanWithAttrsAndKind(t *testing.T, kind ptrace.SpanKind, attrs map[string]s
 func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 	tests := []struct {
 		name      string
-		operation *commonapi.HeadSamplingHttpServerOperationMatcher
+		operation *commonapisanpling.HeadSamplingHttpServerOperationMatcher
 		spanKind  ptrace.SpanKind
 		attrs     map[string]string
 		want      bool
 	}{
 		{
 			name:      "non-server span returns false",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{},
 			spanKind:  ptrace.SpanKindClient,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
@@ -36,14 +36,14 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name:      "server span without http method returns false",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{},
 			spanKind:  ptrace.SpanKindServer,
 			attrs:     map[string]string{"other.attr": "value"},
 			want:      false,
 		},
 		{
 			name:      "server span with method and empty operation matches",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{},
 			spanKind:  ptrace.SpanKindServer,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
@@ -52,7 +52,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span method exact match",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{
 				Method: "GET",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -63,7 +63,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span method mismatch",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{
 				Method: "POST",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -74,7 +74,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span route exact match",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{
 				Route: "/users/:id",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -86,7 +86,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span route no match",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{
 				Route: "/orders",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -98,7 +98,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span route prefix match",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{
 				RoutePrefix: "/api",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -110,7 +110,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span route prefix no match",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{
 				RoutePrefix: "/api",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -122,7 +122,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span method and route both match",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{
 				Method: "POST",
 				Route:  "/users",
 			},
@@ -135,7 +135,7 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span method match but route does not",
-			operation: &commonapi.HeadSamplingHttpServerOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{
 				Method: "GET",
 				Route:  "/users",
 			},
@@ -159,14 +159,14 @@ func TestHeadSamplingOperationHttpServerMatcher(t *testing.T) {
 func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 	tests := []struct {
 		name      string
-		operation *commonapi.HeadSamplingHttpClientOperationMatcher
+		operation *commonapisanpling.HeadSamplingHttpClientOperationMatcher
 		spanKind  ptrace.SpanKind
 		attrs     map[string]string
 		want      bool
 	}{
 		{
 			name:      "non-client span returns false",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{},
 			spanKind:  ptrace.SpanKindServer,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
@@ -175,14 +175,14 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name:      "client span without http method returns false",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{},
 			spanKind:  ptrace.SpanKindClient,
 			attrs:     map[string]string{"other.attr": "value"},
 			want:      false,
 		},
 		{
 			name:      "client span with method and empty operation matches",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{},
 			spanKind:  ptrace.SpanKindClient,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
@@ -191,7 +191,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span method exact match",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				Method: "GET",
 			},
 			spanKind: ptrace.SpanKindClient,
@@ -202,7 +202,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span method mismatch",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				Method: "POST",
 			},
 			spanKind: ptrace.SpanKindClient,
@@ -213,7 +213,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span server address match",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				ServerAddress: "api.example.com",
 			},
 			spanKind: ptrace.SpanKindClient,
@@ -225,7 +225,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span server address no match",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				ServerAddress: "other.example.com",
 			},
 			spanKind: ptrace.SpanKindClient,
@@ -237,7 +237,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span server address missing when required",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				ServerAddress: "api.example.com",
 			},
 			spanKind: ptrace.SpanKindClient,
@@ -248,7 +248,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span route exact match",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				Route: "/users/:id",
 			},
 			spanKind: ptrace.SpanKindClient,
@@ -260,7 +260,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span route no match",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				Route: "/orders",
 			},
 			spanKind: ptrace.SpanKindClient,
@@ -272,7 +272,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span route prefix match",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				RoutePrefix: "/api",
 			},
 			spanKind: ptrace.SpanKindClient,
@@ -284,7 +284,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span method and server address and route all match",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				Method:        "POST",
 				ServerAddress: "collector.example.com",
 				Route:         "/v1/export",
@@ -299,7 +299,7 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		},
 		{
 			name: "client span method match but server address does not",
-			operation: &commonapi.HeadSamplingHttpClientOperationMatcher{
+			operation: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{
 				Method:        "GET",
 				ServerAddress: "collector.example.com",
 			},
@@ -325,7 +325,7 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 	// TestHeadSamplingOperationHttpServerMatcher and TestHeadSamplingOperationHttpClientMatcher.
 	tests := []struct {
 		name      string
-		operation *commonapi.HeadSamplingOperationMatcher
+		operation *commonapisanpling.HeadSamplingOperationMatcher
 		spanKind  ptrace.SpanKind
 		attrs     map[string]string
 		want      bool
@@ -341,7 +341,7 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 		},
 		{
 			name:      "empty operation matches any span",
-			operation: &commonapi.HeadSamplingOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingOperationMatcher{},
 			spanKind:  ptrace.SpanKindServer,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
@@ -350,8 +350,8 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 		},
 		{
 			name: "HttpServer set delegates to server matcher - match",
-			operation: &commonapi.HeadSamplingOperationMatcher{
-				HttpServer: &commonapi.HeadSamplingHttpServerOperationMatcher{Method: "GET"},
+			operation: &commonapisanpling.HeadSamplingOperationMatcher{
+				HttpServer: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{Method: "GET"},
 			},
 			spanKind: ptrace.SpanKindServer,
 			attrs: map[string]string{
@@ -361,8 +361,8 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 		},
 		{
 			name: "HttpServer set delegates to server matcher - client span no match",
-			operation: &commonapi.HeadSamplingOperationMatcher{
-				HttpServer: &commonapi.HeadSamplingHttpServerOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingOperationMatcher{
+				HttpServer: &commonapisanpling.HeadSamplingHttpServerOperationMatcher{},
 			},
 			spanKind: ptrace.SpanKindClient,
 			attrs: map[string]string{
@@ -372,8 +372,8 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 		},
 		{
 			name: "HttpClient set delegates to client matcher - match",
-			operation: &commonapi.HeadSamplingOperationMatcher{
-				HttpClient: &commonapi.HeadSamplingHttpClientOperationMatcher{Method: "GET"},
+			operation: &commonapisanpling.HeadSamplingOperationMatcher{
+				HttpClient: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{Method: "GET"},
 			},
 			spanKind: ptrace.SpanKindClient,
 			attrs: map[string]string{
@@ -383,8 +383,8 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 		},
 		{
 			name: "HttpClient set delegates to client matcher - server span no match",
-			operation: &commonapi.HeadSamplingOperationMatcher{
-				HttpClient: &commonapi.HeadSamplingHttpClientOperationMatcher{},
+			operation: &commonapisanpling.HeadSamplingOperationMatcher{
+				HttpClient: &commonapisanpling.HeadSamplingHttpClientOperationMatcher{},
 			},
 			spanKind: ptrace.SpanKindServer,
 			attrs: map[string]string{
