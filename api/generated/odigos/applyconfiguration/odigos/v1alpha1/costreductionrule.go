@@ -25,6 +25,8 @@ import (
 // CostReductionRuleApplyConfiguration represents a declarative configuration of the CostReductionRule type for use
 // with apply.
 type CostReductionRuleApplyConfiguration struct {
+	Name             *string                                `json:"name,omitempty"`
+	Disabled         *bool                                  `json:"disabled,omitempty"`
 	SourceScopes     []k8sconsts.SourcesScope               `json:"sourceScopes,omitempty"`
 	Operation        *sampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
 	PercentageAtMost *float64                               `json:"percentageAtMost,omitempty"`
@@ -35,6 +37,22 @@ type CostReductionRuleApplyConfiguration struct {
 // apply.
 func CostReductionRule() *CostReductionRuleApplyConfiguration {
 	return &CostReductionRuleApplyConfiguration{}
+}
+
+// WithName sets the Name field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Name field is set to the value of the last call.
+func (b *CostReductionRuleApplyConfiguration) WithName(value string) *CostReductionRuleApplyConfiguration {
+	b.Name = &value
+	return b
+}
+
+// WithDisabled sets the Disabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Disabled field is set to the value of the last call.
+func (b *CostReductionRuleApplyConfiguration) WithDisabled(value bool) *CostReductionRuleApplyConfiguration {
+	b.Disabled = &value
+	return b
 }
 
 // WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration

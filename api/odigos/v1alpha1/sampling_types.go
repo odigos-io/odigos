@@ -24,6 +24,18 @@ type SourcesScope = k8sconsts.SourcesScope
 // - metrics scrape endpoints (prometheus /metrics endpoint)
 // - other agents calling home (outgoing http requests to collector.my.vendor.com)
 type NoisyOperation struct {
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name string `json:"name,omitempty"`
+
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled bool `json:"disabled,omitempty"`
+
 	// limit this rule to specific sources (by name, namespace, language, etc.)
 	// for example: if "other agent" rule for noisty operation is relevant only in java,
 	// limit this rule by setting source scope to java and prevent other languages from being affected
@@ -96,6 +108,17 @@ type HighlyRelevantOperation struct {
 }
 
 type CostReductionRule struct {
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name string `json:"name,omitempty"`
+
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled bool `json:"disabled,omitempty"`
 
 	// limit this rule to specific sources (by name, namespace, language, etc.)
 	// an empty list will match any source.
