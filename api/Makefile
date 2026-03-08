@@ -58,6 +58,9 @@ docgen: genref
 	for file in $(PWD)/../docs/snippets/shared/api-reference/*; do \
 		mv $${file} $${file%.md}.mdx; \
 	done
+	for file in $(PWD)/../docs/snippets/shared/api-reference/*.mdx; do \
+		sed -i 's/[[:space:]]*$$//' $${file}; \
+	done
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
