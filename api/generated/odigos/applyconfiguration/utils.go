@@ -141,8 +141,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &odigosv1alpha1.SourceSelectorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceSpec"):
 		return &odigosv1alpha1.SourceSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("SourcesScope"):
-		return &odigosv1alpha1.SourcesScopeApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SourceStatus"):
 		return &odigosv1alpha1.SourceStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("SpanRenamerConfig"):
