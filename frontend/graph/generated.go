@@ -920,6 +920,11 @@ type ComplexityRoot struct {
 		Messaging    func(childComplexity int) int
 	}
 
+	PeerSources struct {
+		Inbound  func(childComplexity int) int
+		Outbound func(childComplexity int) int
+	}
+
 	PodAnalyze struct {
 		AgentInjected                 func(childComplexity int) int
 		Containers                    func(childComplexity int) int
@@ -990,6 +995,7 @@ type ComplexityRoot struct {
 		Namespaces                        func(childComplexity int) int
 		OdigletDaemonSetInfo              func(childComplexity int) int
 		OdigletPods                       func(childComplexity int) int
+		PeerSources                       func(childComplexity int, serviceName string) int
 		Pod                               func(childComplexity int, namespace string, name string) int
 		PotentialDestinations             func(childComplexity int) int
 		RemoteConfig                      func(childComplexity int) int
@@ -1245,6 +1251,7 @@ type QueryResolver interface {
 	PotentialDestinations(ctx context.Context) ([]*model.DestinationDetails, error)
 	GetOverviewMetrics(ctx context.Context) (*model.OverviewMetricsResponse, error)
 	GetServiceMap(ctx context.Context) (*model.ServiceMap, error)
+	PeerSources(ctx context.Context, serviceName string) (*model.PeerSources, error)
 	DescribeOdigos(ctx context.Context) (*model.OdigosAnalyze, error)
 	DescribeSource(ctx context.Context, namespace string, kind string, name string) (*model.SourceAnalyze, error)
 	SourceConditions(ctx context.Context) ([]*model.SourceConditions, error)
@@ -5198,6 +5205,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PayloadCollection.Messaging(childComplexity), true
 
+	case "PeerSources.inbound":
+		if e.complexity.PeerSources.Inbound == nil {
+			break
+		}
+
+		return e.complexity.PeerSources.Inbound(childComplexity), true
+
+	case "PeerSources.outbound":
+		if e.complexity.PeerSources.Outbound == nil {
+			break
+		}
+
+		return e.complexity.PeerSources.Outbound(childComplexity), true
+
 	case "PodAnalyze.agentInjected":
 		if e.complexity.PodAnalyze.AgentInjected == nil {
 			break
@@ -5579,6 +5600,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.OdigletPods(childComplexity), true
+
+	case "Query.peerSources":
+		if e.complexity.Query.PeerSources == nil {
+			break
+		}
+
+		args, err := ec.field_Query_peerSources_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PeerSources(childComplexity, args["serviceName"].(string)), true
 
 	case "Query.pod":
 		if e.complexity.Query.Pod == nil {
@@ -7583,6 +7616,34 @@ func (ec *executionContext) field_Query_k8sManifest_argsName(
 
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_peerSources_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_peerSources_argsServiceName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["serviceName"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_peerSources_argsServiceName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["serviceName"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceName"))
+	if tmp, ok := rawArgs["serviceName"]; ok {
 		return ec.unmarshalNString2string(ctx, tmp)
 	}
 
@@ -33018,6 +33079,110 @@ func (ec *executionContext) fieldContext_PayloadCollection_messaging(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _PeerSources_inbound(ctx context.Context, field graphql.CollectedField, obj *model.PeerSources) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PeerSources_inbound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Inbound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ServiceMapToSource)
+	fc.Result = res
+	return ec.marshalNServiceMapToSource2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐServiceMapToSourceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PeerSources_inbound(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PeerSources",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "serviceName":
+				return ec.fieldContext_ServiceMapToSource_serviceName(ctx, field)
+			case "requests":
+				return ec.fieldContext_ServiceMapToSource_requests(ctx, field)
+			case "dateTime":
+				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PeerSources_outbound(ctx context.Context, field graphql.CollectedField, obj *model.PeerSources) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_PeerSources_outbound(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Outbound, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ServiceMapToSource)
+	fc.Result = res
+	return ec.marshalNServiceMapToSource2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐServiceMapToSourceᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_PeerSources_outbound(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PeerSources",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "serviceName":
+				return ec.fieldContext_ServiceMapToSource_serviceName(ctx, field)
+			case "requests":
+				return ec.fieldContext_ServiceMapToSource_requests(ctx, field)
+			case "dateTime":
+				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PodAnalyze_podName(ctx context.Context, field graphql.CollectedField, obj *model.PodAnalyze) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PodAnalyze_podName(ctx, field)
 	if err != nil {
@@ -34931,6 +35096,67 @@ func (ec *executionContext) fieldContext_Query_getServiceMap(_ context.Context, 
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMap", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_peerSources(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_peerSources(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PeerSources(rctx, fc.Args["serviceName"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.PeerSources)
+	fc.Result = res
+	return ec.marshalNPeerSources2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPeerSources(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_peerSources(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "inbound":
+				return ec.fieldContext_PeerSources_inbound(ctx, field)
+			case "outbound":
+				return ec.fieldContext_PeerSources_outbound(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PeerSources", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_peerSources_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -50617,6 +50843,50 @@ func (ec *executionContext) _PayloadCollection(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var peerSourcesImplementors = []string{"PeerSources"}
+
+func (ec *executionContext) _PeerSources(ctx context.Context, sel ast.SelectionSet, obj *model.PeerSources) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, peerSourcesImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PeerSources")
+		case "inbound":
+			out.Values[i] = ec._PeerSources_inbound(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "outbound":
+			out.Values[i] = ec._PeerSources_outbound(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var podAnalyzeImplementors = []string{"PodAnalyze"}
 
 func (ec *executionContext) _PodAnalyze(ctx context.Context, sel ast.SelectionSet, obj *model.PodAnalyze) graphql.Marshaler {
@@ -51088,6 +51358,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getServiceMap(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "peerSources":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_peerSources(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -55393,6 +55685,20 @@ func (ec *executionContext) marshalNOverviewMetricsResponse2ᚖgithubᚗcomᚋod
 func (ec *executionContext) unmarshalNPatchSourceRequestInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPatchSourceRequestInput(ctx context.Context, v any) (model.PatchSourceRequestInput, error) {
 	res, err := ec.unmarshalInputPatchSourceRequestInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPeerSources2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPeerSources(ctx context.Context, sel ast.SelectionSet, v model.PeerSources) graphql.Marshaler {
+	return ec._PeerSources(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPeerSources2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPeerSources(ctx context.Context, sel ast.SelectionSet, v *model.PeerSources) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PeerSources(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNPersistNamespaceItemInput2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐPersistNamespaceItemInputᚄ(ctx context.Context, v any) ([]*model.PersistNamespaceItemInput, error) {
