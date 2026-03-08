@@ -77,7 +77,7 @@ jobs:
       - name: Upload Linux Packages to AWS S3
         uses: odigos-io/ci-core/upload-to-s3@v1.0.6
         with:
-          aws-role-arn: ${{ secrets.AWS_VM_AGENT_S3_ROLE }}
+          aws-role-arn: arn:aws:iam::061717858829:role/vmagent-s3
           aws-region: us-east-1
           bucket-name: odigos-releases
           agent-type: 'otelcol'
