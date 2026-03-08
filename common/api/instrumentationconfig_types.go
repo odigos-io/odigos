@@ -56,6 +56,6 @@ type SamplingCollectorConfig struct {
 
 // +kubebuilder:object:generate=true
 type UrlTemplatizationConfig struct {
-	// Rule is the template rule to be applied to URLs
-	Rules []string `json:"templatizationRules,omitempty"`
+	// Template rules to apply to URLs
+	TemplatizationRules []string `json:"templatizationRules,omitempty"`
 }

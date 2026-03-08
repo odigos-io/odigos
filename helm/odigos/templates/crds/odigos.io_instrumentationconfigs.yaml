@@ -358,8 +358,7 @@ spec:
                             to be applied to the traces.
                           properties:
                             templatizationRules:
-                              description: Rule is the template rule to be applied
-                                to URLs
+                              description: Template rules to apply to URLs
                               items:
                                 type: string
                               type: array
@@ -1161,8 +1160,7 @@ spec:
                     urlTemplatization:
                       properties:
                         templatizationRules:
-                          description: Rule is the template rule to be applied to
-                            URLs
+                          description: Template rules to apply to URLs
                           items:
                             type: string
                           type: array

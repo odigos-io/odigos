@@ -645,38 +645,53 @@ spec:
                         Filters, if set, are ANDed together, e.g. for the templatization rules to be applied, all set filters must be true.
                         If no filters are set, the rules will be applied to all spans.
                       properties:
-                        filterK8sNamespace:
-                          type: string
-                        filterK8sWorkloadKind:
+                        sourcesScope:
                           description: |-
-                            1. the pascal case representation of the workload kind
-                            it is used in k8s api objects as the `Kind` field.
-                          type: string
-                        filterK8sWorkloadName:
-                          type: string
-                        filterProgrammingLanguage:
-                          enum:
-                          - java
-                          - python
-                          - go
-                          - dotnet
-                          - javascript
-                          - php
-                          - ruby
-                          - rust
-                          - cplusplus
-                          - mysql
-                          - nginx
-                          - redis
-                          - postgres
-                          - unknown
-                          - ignored
-                          type: string
-                        notes:
-                          description: |-
-                            user can add notes about this group for future maintenance purposes. not used by the system.
-                            it can record why this group was added and what endpoints it's targeting.
-                          type: string
+                            SourcesScope selects which sources (workloads / containers / languages) the rules apply to.
+                            Empty list means "all sources" (global rules).
+                          items:
+                            description: |-
+                              define conditions to match specific sources (containers) managed by odigos.
+                              a source container matches, if ALL non empty fields match (AND semantics)
+
+                              common patterns:
+                                - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
+                                  all containers (usually there is only one with agent injection)
+                                - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
+                                  only this container
+                                - All services in a kubernetes namespace (WorkloadNamespace):
+                                  all containers in all sources in the namespace
+                                - All services implemented in a specific programming language (WorkloadLanguage):
+                                  all container which are running odigos agent for this language
+                            properties:
+                              containerName:
+                                type: string
+                              workloadKind:
+                                type: string
+                              workloadLanguage:
+                                enum:
+                                - java
+                                - python
+                                - go
+                                - dotnet
+                                - javascript
+                                - php
+                                - ruby
+                                - rust
+                                - cplusplus
+                                - mysql
+                                - nginx
+                                - redis
+                                - postgres
+                                - unknown
+                                - ignored
+                                type: string
+                              workloadName:
+                                type: string
+                              workloadNamespace:
+                                type: string
+                            type: object
+                          type: array
                         templatizationRules:
                           description: the rules that will be applied to the spans
                             matching the above filters.
