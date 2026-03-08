@@ -51,7 +51,7 @@ jobs:
           TAG="${{ steps.extract_tag.outputs.tag }}"
           SEMVER_TAG="${TAG#otelcol-linux/}"
           echo "GORELEASER_CURRENT_TAG=$SEMVER_TAG" >> $GITHUB_ENV
-          git tag -a "$SEMVER_TAG" -m "Release $SEMVER_TAG"
+          git tag -a -f "$SEMVER_TAG" -m "Release $SEMVER_TAG"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
