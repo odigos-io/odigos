@@ -1,6 +1,6 @@
 
 
-## Resource Types 
+## Resource Types
 
 
 - [AddClusterInfo](#AddClusterInfo)
@@ -13,23 +13,23 @@
 - [RenameAttribute](#RenameAttribute)
 - [ServiceNameSampler](#ServiceNameSampler)
 - [SpanAttributeSampler](#SpanAttributeSampler)
-  
-    
-    
+
+
+
 
 ## `AddClusterInfo` <a id="AddClusterInfo"></a>
-    
+
 <p>AddClusterInfo is the Schema for the addclusterinfo odigos action API
 DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>AddClusterInfo</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -68,18 +68,18 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `DeleteAttribute` <a id="DeleteAttribute"></a>
-    
+
 <p>DeleteAttribute is the Schema for the DeleteAttribute odigos action API
 DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>DeleteAttribute</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -118,7 +118,7 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `ErrorSampler` <a id="ErrorSampler"></a>
-    
+
 <p>ErrorSampler is the Schema for the ErrorSampler CRD.
 It defines sampling logic that always retains traces with errors, and optionally samples
 non-error traces based on the fallback ratio.
@@ -127,11 +127,11 @@ DEPRECATED: Use odigosv1.Action instead</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>ErrorSampler</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -170,18 +170,18 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `K8sAttributesResolver` <a id="K8sAttributesResolver"></a>
-    
+
 <p>K8sAttributesResolver allows adding an action to collect k8s attributes.
 DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>K8sAttributesResolver</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -220,7 +220,7 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `LatencySampler` <a id="LatencySampler"></a>
-    
+
 <p>LatencySampler is the Schema for defining latency-based trace sampling rules.
 It supports targeting specific services and HTTP routes and applying latency thresholds
 to determine sampling eligibility.
@@ -229,11 +229,11 @@ DEPRECATED: Use odigosv1.Action instead</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>LatencySampler</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -272,18 +272,18 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `PiiMasking` <a id="PiiMasking"></a>
-    
+
 <p>PiiMasking is the Schema for the PiiMasking odigos action API
 DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>PiiMasking</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -322,18 +322,18 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `ProbabilisticSampler` <a id="ProbabilisticSampler"></a>
-    
+
 <p>ProbabilisticSampler is the Schema for the ProbabilisticSampler odigos action API
 DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>ProbabilisticSampler</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -372,18 +372,18 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `RenameAttribute` <a id="RenameAttribute"></a>
-    
+
 <p>RenameAttribute is the Schema for the RenameAttribute odigos action API
 DEPRECATED: Use odigosv1.Action instead</p>
 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>RenameAttribute</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -422,7 +422,7 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `ServiceNameSampler` <a id="ServiceNameSampler"></a>
-    
+
 <p>ServiceNameSampler is the Schema for the servicenamesamplers API.
 It enables trace sampling based on whether specific services appear within a trace.
 DEPRECATED: Use odigosv1.Action instead</p>
@@ -430,11 +430,11 @@ DEPRECATED: Use odigosv1.Action instead</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>ServiceNameSampler</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -473,7 +473,7 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `SpanAttributeSampler` <a id="SpanAttributeSampler"></a>
-    
+
 <p>SpanAttributeSampler is the Schema for the spanattributesamplers API.
 It holds the specification for sampling spans based on attribute conditions,
 as well as the sampler's current status.
@@ -482,11 +482,11 @@ DEPRECATED: Use odigosv1.Action instead</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
+
 <tr><td><code>apiVersion</code></td><td>string</td><td><code>/v1alpha1</code></td></tr>
 <tr><td><code>kind</code></td><td>string</td><td><code>SpanAttributeSampler</code></td></tr>
-    
-  
+
+
 <tr>
 <td>
 <code>metadata</code> <B>[Required]</B>
@@ -525,7 +525,7 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `AddClusterInfoConfig` <a id="AddClusterInfoConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -534,8 +534,8 @@ DEPRECATED: Use odigosv1.Action instead</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>clusterAttributes</code> <B>[Required]</B>
@@ -562,7 +562,7 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `AddClusterInfoSpec` <a id="AddClusterInfoSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -573,8 +573,8 @@ DEPRECATED: Use odigosv1.Action instead</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -645,7 +645,7 @@ DEPRECATED: Use odigosv1.Action instead</p>
 </table>
 
 ## `AddClusterInfoStatus` <a id="AddClusterInfoStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -656,8 +656,8 @@ DEPRECATED: Use odigosv1.Action instead</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -674,7 +674,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `AttributeCondition` <a id="AttributeCondition"></a>
-    
+
 
 **Appears in:**
 
@@ -687,8 +687,8 @@ the attribute is expected to have.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>string_condition</code> <B>[Required]</B>
@@ -737,7 +737,7 @@ the attribute is expected to have.</p>
 </table>
 
 ## `BooleanAttributeCondition` <a id="BooleanAttributeCondition"></a>
-    
+
 
 **Appears in:**
 
@@ -748,8 +748,8 @@ the attribute is expected to have.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>operation</code> <B>[Required]</B>
@@ -781,7 +781,7 @@ the attribute is expected to have.</p>
 </table>
 
 ## `DefaultSamplerConfig` <a id="DefaultSamplerConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -792,7 +792,7 @@ the attribute is expected to have.</p>
 
 
 ## `DeleteAttributeConfig` <a id="DeleteAttributeConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -801,8 +801,8 @@ the attribute is expected to have.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>attributeNamesToDelete</code> <B>[Required]</B>
@@ -818,7 +818,7 @@ the attribute is expected to have.</p>
 </table>
 
 ## `DeleteAttributeSpec` <a id="DeleteAttributeSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -829,8 +829,8 @@ the attribute is expected to have.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -890,7 +890,7 @@ the attribute is expected to have.</p>
 </table>
 
 ## `DeleteAttributeStatus` <a id="DeleteAttributeStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -901,8 +901,8 @@ the attribute is expected to have.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -919,7 +919,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `ErrorSamplerConfig` <a id="ErrorSamplerConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -930,8 +930,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>fallback_sampling_ratio</code> <B>[Required]</B>
@@ -948,7 +948,7 @@ that should be sampled. Error traces are always sampled.</p>
 </table>
 
 ## `ErrorSamplerSpec` <a id="ErrorSamplerSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -961,8 +961,8 @@ for traces that do not include any errors.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -1026,7 +1026,7 @@ that should be sampled. Error traces are always sampled.</p>
 </table>
 
 ## `ErrorSamplerStatus` <a id="ErrorSamplerStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -1038,8 +1038,8 @@ It may include conditions such as &quot;Available&quot; or &quot;Progressing&quo
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -1055,7 +1055,7 @@ It may include conditions such as &quot;Available&quot; or &quot;Progressing&quo
 </table>
 
 ## `HttpRouteFilter` <a id="HttpRouteFilter"></a>
-    
+
 
 **Appears in:**
 
@@ -1067,8 +1067,8 @@ It may include conditions such as &quot;Available&quot; or &quot;Progressing&quo
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>http_route</code> <B>[Required]</B>
@@ -1120,7 +1120,7 @@ and service match but the span latency is below the threshold.</p>
 </table>
 
 ## `IgnoreHealthChecksConfig` <a id="IgnoreHealthChecksConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -1129,8 +1129,8 @@ and service match but the span latency is below the threshold.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>fractionToRecord</code> <B>[Required]</B>
@@ -1150,7 +1150,7 @@ should be in range [0, 1]
 </table>
 
 ## `JsonAttributeCondition` <a id="JsonAttributeCondition"></a>
-    
+
 
 **Appears in:**
 
@@ -1173,8 +1173,8 @@ It supports structural and value-based filtering using key lookups and JSONPath 
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>operation</code> <B>[Required]</B>
@@ -1236,7 +1236,7 @@ Example: $.user.role or $.events[0].code</p>
 </table>
 
 ## `K8sAnnotationAttribute` <a id="K8sAnnotationAttribute"></a>
-    
+
 
 **Appears in:**
 
@@ -1246,8 +1246,8 @@ Example: $.user.role or $.events[0].code</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>annotationKey</code> <B>[Required]</B>
@@ -1304,7 +1304,7 @@ Supported sources: &quot;pod&quot;, &quot;namespace&quot;, &quot;node&quot;</p>
 </table>
 
 ## `K8sAttributeSource` <a id="K8sAttributeSource"></a>
-    
+
 (Alias of `string`)
 
 **Appears in:**
@@ -1315,7 +1315,7 @@ Supported sources: &quot;pod&quot;, &quot;namespace&quot;, &quot;node&quot;</p>
 
 
 ## `K8sAttributesConfig` <a id="K8sAttributesConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -1324,8 +1324,8 @@ Supported sources: &quot;pod&quot;, &quot;namespace&quot;, &quot;node&quot;</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>collectContainerAttributes</code> <B>[Required]</B>
@@ -1408,7 +1408,7 @@ DEPRECATED: Workload UID attributes are now collected by default during instrume
 </table>
 
 ## `K8sAttributesSpec` <a id="K8sAttributesSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -1417,8 +1417,8 @@ DEPRECATED: Workload UID attributes are now collected by default during instrume
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -1545,7 +1545,7 @@ DEPRECATED: Workload UID attributes are now collected by default during instrume
 </table>
 
 ## `K8sAttributesStatus` <a id="K8sAttributesStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -1556,8 +1556,8 @@ DEPRECATED: Workload UID attributes are now collected by default during instrume
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -1574,7 +1574,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `K8sLabelAttribute` <a id="K8sLabelAttribute"></a>
-    
+
 
 **Appears in:**
 
@@ -1584,8 +1584,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>labelKey</code> <B>[Required]</B>
@@ -1642,7 +1642,7 @@ Supported sources: &quot;pod&quot;, &quot;namespace&quot;, &quot;node&quot;</p>
 </table>
 
 ## `LatencySamplerConfig` <a id="LatencySamplerConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -1653,8 +1653,8 @@ Supported sources: &quot;pod&quot;, &quot;namespace&quot;, &quot;node&quot;</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>endpoints_filters</code> <B>[Required]</B>
@@ -1671,7 +1671,7 @@ Each filter targets a specific service and HTTP route with a latency threshold.<
 </table>
 
 ## `LatencySamplerSpec` <a id="LatencySamplerSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -1684,8 +1684,8 @@ Traces with spans whose latency exceeds the specified threshold will be consider
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -1749,7 +1749,7 @@ Each filter targets a specific service and HTTP route with a latency threshold.<
 </table>
 
 ## `LatencySamplerStatus` <a id="LatencySamplerStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -1761,8 +1761,8 @@ It captures runtime status such as readiness or deployment progress.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -1779,7 +1779,7 @@ Typical types include &quot;Available&quot; and &quot;Progressing&quot;.</p>
 </table>
 
 ## `NumberAttributeCondition` <a id="NumberAttributeCondition"></a>
-    
+
 
 **Appears in:**
 
@@ -1790,8 +1790,8 @@ Typical types include &quot;Available&quot; and &quot;Progressing&quot;.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>operation</code> <B>[Required]</B>
@@ -1829,7 +1829,7 @@ Typical types include &quot;Available&quot; and &quot;Progressing&quot;.</p>
 </table>
 
 ## `OtelAttributeWithValue` <a id="OtelAttributeWithValue"></a>
-    
+
 
 **Appears in:**
 
@@ -1839,8 +1839,8 @@ Typical types include &quot;Available&quot; and &quot;Progressing&quot;.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>attributeName</code> <B>[Required]</B>
@@ -1868,7 +1868,7 @@ empty string is a valid value</p>
 </table>
 
 ## `PiiCategory` <a id="PiiCategory"></a>
-    
+
 (Alias of `string`)
 
 **Appears in:**
@@ -1879,7 +1879,7 @@ empty string is a valid value</p>
 
 
 ## `PiiMaskingConfig` <a id="PiiMaskingConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -1888,8 +1888,8 @@ empty string is a valid value</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>piiCategories</code> <B>[Required]</B>
@@ -1905,7 +1905,7 @@ empty string is a valid value</p>
 </table>
 
 ## `PiiMaskingSpec` <a id="PiiMaskingSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -1916,8 +1916,8 @@ empty string is a valid value</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -1977,7 +1977,7 @@ empty string is a valid value</p>
 </table>
 
 ## `PiiMaskingStatus` <a id="PiiMaskingStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -1988,8 +1988,8 @@ empty string is a valid value</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -2006,7 +2006,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `ProbabilisticSamplerConfig` <a id="ProbabilisticSamplerConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -2017,8 +2017,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>sampling_percentage</code> <B>[Required]</B>
@@ -2034,7 +2034,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `ProbabilisticSamplerSpec` <a id="ProbabilisticSamplerSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -2045,8 +2045,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -2106,7 +2106,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `ProbabilisticSamplerStatus` <a id="ProbabilisticSamplerStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -2117,8 +2117,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -2135,7 +2135,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `RenameAttributeConfig` <a id="RenameAttributeConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -2144,8 +2144,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>renames</code> <B>[Required]</B>
@@ -2161,7 +2161,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `RenameAttributeSpec` <a id="RenameAttributeSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -2172,8 +2172,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -2233,7 +2233,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `RenameAttributeStatus` <a id="RenameAttributeStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -2244,8 +2244,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -2262,7 +2262,7 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </table>
 
 ## `SamplersConfig` <a id="SamplersConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -2271,8 +2271,8 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>DefaultSamplerConfig</code> <B>[Required]</B>
@@ -2280,9 +2280,10 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 <td>
 <a href="#DefaultSamplerConfig"><code>DefaultSamplerConfig</code></a>
 </td>
-<td>(Members of <code>DefaultSamplerConfig</code> are embedded into this type.)
-   <span class="text-muted">No description provided.</span>
-   </td>
+<td>
+(Members of <code>DefaultSamplerConfig</code> are embedded into this type.)
+   <p>DefaultSamplerConfig contains the base sampling configuration shared by all samplers.</p>
+</td>
 </tr>
 <tr>
 <td>
@@ -2357,7 +2358,7 @@ if set, health checks are sampled regardless of any other configuration (head sa
 </table>
 
 ## `ServiceNameFilter` <a id="ServiceNameFilter"></a>
-    
+
 
 **Appears in:**
 
@@ -2369,8 +2370,8 @@ if set, health checks are sampled regardless of any other configuration (head sa
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>service_name</code> <B>[Required]</B>
@@ -2413,7 +2414,7 @@ if the specified service is not present in the trace.</p>
 </table>
 
 ## `ServiceNameSamplerConfig` <a id="ServiceNameSamplerConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -2424,8 +2425,8 @@ if the specified service is not present in the trace.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>services_name_filters</code> <B>[Required]</B>
@@ -2443,7 +2444,7 @@ services, the associated sampling ratio is applied.</p>
 </table>
 
 ## `ServiceNameSamplerSpec` <a id="ServiceNameSamplerSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -2455,8 +2456,8 @@ This sampler enables sampling based on the presence of specific service names wi
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -2521,7 +2522,7 @@ services, the associated sampling ratio is applied.</p>
 </table>
 
 ## `ServiceNameSamplerStatus` <a id="ServiceNameSamplerStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -2533,8 +2534,8 @@ including observed conditions such as validation errors or processing state.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -2551,7 +2552,7 @@ following the standard Kubernetes conventions.</p>
 </table>
 
 ## `SpanAttributeFilter` <a id="SpanAttributeFilter"></a>
-    
+
 
 **Appears in:**
 
@@ -2563,8 +2564,8 @@ following the standard Kubernetes conventions.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>service_name</code> <B>[Required]</B>
@@ -2637,7 +2638,7 @@ then half of non-matching spans would be sampled.</p>
 </table>
 
 ## `SpanAttributeSamplerConfig` <a id="SpanAttributeSamplerConfig"></a>
-    
+
 
 **Appears in:**
 
@@ -2648,8 +2649,8 @@ then half of non-matching spans would be sampled.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>attribute_filters</code> <B>[Required]</B>
@@ -2666,7 +2667,7 @@ sampled based on their attributes. At least one filter is required.</p>
 </table>
 
 ## `SpanAttributeSamplerSpec` <a id="SpanAttributeSamplerSpec"></a>
-    
+
 
 **Appears in:**
 
@@ -2677,8 +2678,8 @@ sampled based on their attributes. At least one filter is required.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>actionName</code> <B>[Required]</B>
@@ -2744,7 +2745,7 @@ sampled based on their attributes. At least one filter is required.</p>
 </table>
 
 ## `SpanAttributeSamplerStatus` <a id="SpanAttributeSamplerStatus"></a>
-    
+
 
 **Appears in:**
 
@@ -2755,8 +2756,8 @@ sampled based on their attributes. At least one filter is required.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>conditions</code> <B>[Required]</B>
@@ -2772,7 +2773,7 @@ sampled based on their attributes. At least one filter is required.</p>
 </table>
 
 ## `StringAttributeCondition` <a id="StringAttributeCondition"></a>
-    
+
 
 **Appears in:**
 
@@ -2783,8 +2784,8 @@ sampled based on their attributes. At least one filter is required.</p>
 <table class="table">
 <thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
 <tbody>
-    
-  
+
+
 <tr>
 <td>
 <code>operation</code> <B>[Required]</B>

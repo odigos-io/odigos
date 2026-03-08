@@ -58,6 +58,8 @@ docgen: genref
 	for file in $(PWD)/../docs/snippets/shared/api-reference/*; do \
 		mv $${file} $${file%.md}.mdx; \
 	done
+	# Fix known genref output issues (trailing whitespace + broken MDX <td> formatting)
+	python3 $(PWD)/fix-genref-output.py $(PWD)/../docs/snippets/shared/api-reference
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
