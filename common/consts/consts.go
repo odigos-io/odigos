@@ -139,10 +139,9 @@ const (
 
 // Processor related consts
 const (
-	GenericBatchProcessorConfigKey  = "batch/generic-batch-processor"
-	SmallBatchesProcessor           = "batch/small-batches"
-	GroupByTraceProcessorV2         = "groupbytrace/samplingv2"
-	OdigosTailSamplingProcessorName = "odigostailsampling"
+	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
+	SmallBatchesProcessor          = "batch/small-batches"
+	GroupByTraceProcessorV2        = "groupbytrace/samplingv2"
 )
 
 // Auto rollback related consts

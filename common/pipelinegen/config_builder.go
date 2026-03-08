@@ -38,7 +38,7 @@ func GetGatewayConfig(
 	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
 }
 
-//nolint:funlen,gocyclo // This function handles complex gateway configuration logic that is difficult to break down further
+//nolint:funlen // This function handles complex gateway configuration logic that is difficult to break down further
 func CalculateGatewayConfig(
 	currentConfig *config.Config,
 	dests []config.ExporterConfigurer,
@@ -82,21 +82,13 @@ func CalculateGatewayConfig(
 	}
 
 	// If sampling v2 is enabled, we need to add the groupbytrace processor to the traces processors.
-	if gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
+	if gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled {
 		groupbytraceProcessor := config.GenericMap{
 			"wait_duration": gatewayOptions.TraceAggregationWaitDuration,
 		}
 		currentConfig.Processors[consts.GroupByTraceProcessorV2] = groupbytraceProcessor
-
-		currentConfig.Processors[consts.OdigosTailSamplingProcessorName] = config.GenericMap{
-			"odigos_config_extension": *gatewayOptions.OdigosConfigExtensionName,
-		}
-
 		// add the groupbytrace processor to the beginning of the traces processors
-		processorsResults.TracesProcessors = append(
-			[]string{consts.GroupByTraceProcessorV2, consts.OdigosTailSamplingProcessorName},
-			processorsResults.TracesProcessors...,
-		)
+		processorsResults.TracesProcessors = append([]string{consts.GroupByTraceProcessorV2}, processorsResults.TracesProcessors...)
 	}
 
 	allTracesProcessors := make([]string, 0, len(processorsResults.TracesProcessors)+len(processorsResults.TracesProcessorsPostSpanMetrics))
