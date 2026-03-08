@@ -4,14 +4,12 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/version"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -91,17 +89,10 @@ func SetupWithManager(mgr ctrl.Manager, k8sVersion *version.Version) error {
 		return err
 	}
 
-	var cronJobObject client.Object
-	if k8sVersion.LessThan(version.MustParseSemantic("1.21.0")) {
-		cronJobObject = &batchv1beta1.CronJob{}
-	} else {
-		cronJobObject = &batchv1.CronJob{}
-	}
-
 	err = builder.
 		ControllerManagedBy(mgr).
 		Named("sourceinstrumentation-cronjob").
-		For(cronJobObject).
+		For(&batchv1.CronJob{}).
 		WithEventFilter(&odigospredicate.CreationPredicate{}).
 		Complete(&CronJobReconciler{
 			Client: mgr.GetClient(),

@@ -7,7 +7,6 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -26,7 +25,6 @@ var _ Workload = &DaemonSetWorkload{}
 var _ Workload = &StatefulSetWorkload{}
 var _ Workload = &StaticPodWorkload{}
 var _ Workload = &CronJobWorkloadV1{}
-var _ Workload = &CronJobWorkloadBeta{}
 var _ Workload = &DeploymentConfigWorkload{}
 var _ Workload = &ArgoRolloutWorkload{}
 
@@ -105,28 +103,12 @@ func (c *CronJobWorkloadV1) LabelSelector() *metav1.LabelSelector {
 	return nil
 }
 
-type CronJobWorkloadBeta struct {
-	*batchv1beta1.CronJob
-}
-
 func (c *CronJobWorkloadV1) AvailableReplicas() int32 {
 	return int32(len(c.Status.Active))
 }
 
 func (c *CronJobWorkloadV1) PodSpec() *corev1.PodSpec {
 	return &c.Spec.JobTemplate.Spec.Template.Spec
-}
-
-func (c *CronJobWorkloadBeta) AvailableReplicas() int32 {
-	return int32(len(c.Status.Active))
-}
-
-func (c *CronJobWorkloadBeta) PodSpec() *corev1.PodSpec {
-	return &c.Spec.JobTemplate.Spec.Template.Spec
-}
-
-func (c *CronJobWorkloadBeta) LabelSelector() *metav1.LabelSelector {
-	return nil
 }
 
 type DeploymentConfigWorkload struct {
@@ -178,8 +160,6 @@ func ObjectToWorkload(obj client.Object) (Workload, error) {
 		return nil, errors.New("currently not supporting standalone pods which are not static as workloads")
 	case *batchv1.CronJob:
 		return &CronJobWorkloadV1{CronJob: t}, nil
-	case *batchv1beta1.CronJob:
-		return &CronJobWorkloadBeta{CronJob: t}, nil
 	case *openshiftappsv1.DeploymentConfig:
 		return &DeploymentConfigWorkload{DeploymentConfig: t}, nil
 	case *argorolloutsv1alpha1.Rollout:

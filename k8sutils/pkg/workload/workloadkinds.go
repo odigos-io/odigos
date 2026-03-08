@@ -7,15 +7,12 @@ import (
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/version"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
 // This go file contains utils to handle the kind of odigos workloads.
@@ -133,16 +130,7 @@ func ClientObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object {
 	case k8sconsts.WorkloadKindStaticPod:
 		return &corev1.Pod{}
 	case k8sconsts.WorkloadKindCronJob:
-		ver, err := utils.ClusterVersion()
-		if err != nil {
-			return &batchv1beta1.CronJob{}
-		}
-
-		if ver.LessThan(version.MustParseSemantic("1.21.0")) {
-			return &batchv1beta1.CronJob{}
-		} else {
-			return &batchv1.CronJob{}
-		}
+		return &batchv1.CronJob{}
 	case k8sconsts.WorkloadKindJob:
 		return &batchv1.Job{}
 	case k8sconsts.WorkloadKindDeploymentConfig:
@@ -165,16 +153,7 @@ func ClientListObjectFromWorkloadKind(kind k8sconsts.WorkloadKind) client.Object
 	case k8sconsts.WorkloadKindStaticPod:
 		return &corev1.PodList{}
 	case k8sconsts.WorkloadKindCronJob:
-		ver, err := utils.ClusterVersion()
-		if err != nil {
-			return &batchv1beta1.CronJobList{}
-		}
-
-		if ver != nil && ver.LessThan(version.MustParseSemantic("1.21.0")) {
-			return &batchv1beta1.CronJobList{}
-		} else {
-			return &batchv1.CronJobList{}
-		}
+		return &batchv1.CronJobList{}
 	case k8sconsts.WorkloadKindJob:
 		return &batchv1.JobList{}
 	case k8sconsts.WorkloadKindDeploymentConfig:
