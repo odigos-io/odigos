@@ -1,3 +1,10 @@
+---
+title: 'Clickhouse'
+description: 'Configuring the Clickhouse backend (Self-Hosted)'
+sidebarTitle: 'Clickhouse'
+icon: 'signal-stream'
+---
+
 ### Getting Started
 
 <img src="https://d15jtxgb40qetw.cloudfront.net/clickhouse.svg" alt="clickhouse" className="not-prose h-20" />
@@ -107,13 +114,13 @@ Important Settings:
 - **CLICKHOUSE_ENDPOINT** `string` : Endpoint. The ClickHouse endpoint is the URL where the ClickHouse server is listening for incoming connections.
   - This field is required
   - Example: `http://host:port`
-- **CLICKHOUSE_USERNAME** `string` : Username. If ClickHouse Authentication is used, provide the username
+- **CLICKHOUSE_USERNAME** `string` : Username. If Clickhouse Authentication is used, provide the username
   - This field is optional
-- **CLICKHOUSE_PASSWORD** `string` : Password. If ClickHouse Authentication is used, provide the password
+- **CLICKHOUSE_PASSWORD** `string` : Password. If Clickhouse Authentication is used, provide the password
   - This field is optional
 - **CLICKHOUSE_CREATE_SCHEME** `boolean` : Create Schema. Should the destination create the schema for you? Set to `false` if you manage your own schema, or `true` to have Odigos create the schema for you
   - This field is required and defaults to `True`
-- **CLICKHOUSE_DATABASE_NAME** `string` : Database Name. The name of the ClickHouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before
+- **CLICKHOUSE_DATABASE_NAME** `string` : Database Name. The name of the Clickhouse Database where the telemetry data will be stored. The Database will not be created when not exists, so make sure you have created it before
   - This field is required and defaults to `otel`
 - **CLICKHOUSE_TLS_ENABLED** `boolean` : Enable TLS. Secure connection
   - This field is optional and defaults to `False`
@@ -149,13 +156,13 @@ There are two primary methods for configuring destinations in Odigos:
 
 <Steps>
   <Step>
-    Use the [Odigos CLI](../cli/odigos_ui) to access the UI
+    Use the [Odigos CLI](https://docs.odigos.io/cli/odigos_ui) to access the UI
     ```bash
     odigos ui
     ```
   </Step>
   <Step>
-    Click on `Add Destination`, select `ClickHouse` and follow the on-screen instructions
+    Click on `Add Destination`, select `Clickhouse` and follow the on-screen instructions
   </Step>
 </Steps>
 
