@@ -147,3 +147,39 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		})
 	}
 }
+
+func TestTailSamplingOperationMatcher(t *testing.T) {
+	tests := []struct {
+		name      string
+		operation *commonapi.TailSamplingOperationMatcher
+		spanKind  ptrace.SpanKind
+		attrs     map[string]string
+		want      bool
+	}{
+		{
+			name:      "nil operation matches any span",
+			operation: nil,
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.HTTPRequestMethodKey): "GET",
+			},
+			want: true,
+		},
+		{
+			name:      "empty operation matches any span",
+			operation: &commonapi.TailSamplingOperationMatcher{},
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.HTTPRequestMethodKey): "GET",
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			span := spanWithAttrsAndKind(t, tt.spanKind, tt.attrs)
+			got := TailSamplingOperationMatcher(tt.operation, span)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

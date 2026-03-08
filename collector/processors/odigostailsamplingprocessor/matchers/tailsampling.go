@@ -6,6 +6,10 @@ import (
 )
 
 func TailSamplingOperationMatcher(operation *commonapi.TailSamplingOperationMatcher, span ptrace.Span) bool {
+	if operation == nil {
+		// if operation is not specified, it will match any operation.
+		return true
+	}
 	if operation.HttpServer != nil {
 		return operationHttpServerMatcher(operation.HttpServer, span)
 	}
@@ -15,7 +19,8 @@ func TailSamplingOperationMatcher(operation *commonapi.TailSamplingOperationMatc
 	if operation.KafkaProducer != nil {
 		return operationKafkaProducerMatcher(operation.KafkaProducer, span)
 	}
-	return false
+	// no operation type specified, match any.
+	return true
 }
 
 // given a span and a http server operation matcher, will attempt to match the span to the matcher.

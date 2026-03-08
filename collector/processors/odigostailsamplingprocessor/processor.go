@@ -76,7 +76,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		keepTrace := tracePercentage <= percentageAtLeast
 
 		if keepTrace {
-			// TODO: enrich spans with sampling attributes
+			enrichSpansWithSamplingAttributes(td, "highly_relevant", highlyRelevantOperationRule.Id, percentageAtLeast)
 			return td, nil
 		} else {
 			return ptrace.NewTraces(), nil

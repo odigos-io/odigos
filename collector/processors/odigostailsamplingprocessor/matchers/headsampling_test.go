@@ -331,13 +331,22 @@ func TestHeadSamplingOperationMatcher(t *testing.T) {
 		want      bool
 	}{
 		{
-			name:      "empty operation returns false",
+			name:      "nil operation matches any span",
+			operation: nil,
+			spanKind:  ptrace.SpanKindServer,
+			attrs: map[string]string{
+				string(semconv.HTTPRequestMethodKey): "GET",
+			},
+			want: true,
+		},
+		{
+			name:      "empty operation matches any span",
 			operation: &commonapi.HeadSamplingOperationMatcher{},
 			spanKind:  ptrace.SpanKindServer,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "HttpServer set delegates to server matcher - match",

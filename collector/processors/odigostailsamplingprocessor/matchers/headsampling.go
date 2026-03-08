@@ -6,13 +6,18 @@ import (
 )
 
 func HeadSamplingOperationMatcher(operation *commonapi.HeadSamplingOperationMatcher, span ptrace.Span) bool {
+	if operation == nil {
+		// if operation is not specified, it will match any operation.
+		return true
+	}
 	if operation.HttpServer != nil {
 		return headSamplingOperationHttpServerMatcher(operation.HttpServer, span)
 	}
 	if operation.HttpClient != nil {
 		return headSamplingOperationHttpClientMatcher(operation.HttpClient, span)
 	}
-	return false
+	// no operation type specified, match any.
+	return true
 }
 
 func headSamplingOperationHttpServerMatcher(operation *commonapi.HeadSamplingHttpServerOperationMatcher, span ptrace.Span) bool {
