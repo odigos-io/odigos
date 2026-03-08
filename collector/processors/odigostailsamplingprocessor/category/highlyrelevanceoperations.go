@@ -26,11 +26,6 @@ type RuleMetrics struct {
 	// for enabled rules, out of those that matched, how many traces/total-spans were kept?
 	RuleTracesKeptCount     int
 	RuleTotalSpansKeptCount int
-
-	// for enabled rules that matched, how many traces/total-spans eventually were kept?
-	// traces can be kept due to other rules which require higher percentages.
-	TracesKeptCount     int
-	TotalSpansKeptCount int
 }
 
 func EvaluateHighlyRelevantOperations(td ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64) (bool, *commonapi.WorkloadHighlyRelevantOperation) {

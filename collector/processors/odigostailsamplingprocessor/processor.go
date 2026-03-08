@@ -83,19 +83,6 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		}
 	}
 
-	matched, costReductionRule := category.EvaluateCostReductionOperations(td, p.odigosConfigExtension.GetCostReductionOperations())
-	if matched {
-		percentageAtMost := category.GetPercentageOrDefault(costReductionRule.PercentageAtMost, 100.0)
-		keepTrace := tracePercentage <= percentageAtMost
-
-		if keepTrace {
-			// TODO: enrich spans with sampling attributes
-			return td, nil
-		} else {
-			return ptrace.NewTraces(), nil
-		}
-	}
-
 	return td, nil
 }
 

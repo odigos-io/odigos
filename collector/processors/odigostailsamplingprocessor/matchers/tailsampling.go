@@ -48,7 +48,7 @@ func operationHttpServerMatcher(operation *commonapi.HttpServerOperationMatcher,
 		return false
 	}
 
-	return false
+	return true
 }
 
 func operationKafkaConsumerMatcher(operation *commonapi.KafkaOperationMatcher, span ptrace.Span) bool {
