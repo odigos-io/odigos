@@ -26,14 +26,14 @@ jobs:
             echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Notify Slack Start
-        if: always()
-        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with:
-          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          success-description: "start releasing odigos collector as linux packages"
-          failure-description: "error during releasing of odigos collector as linux packages"
-          tag: ${{ steps.extract_tag.outputs.tag }}
+      # - name: Notify Slack Start
+      #   if: always()
+      #   uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+      #   with:
+      #     webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+      #     success-description: "start releasing odigos collector as linux packages"
+      #     failure-description: "error during releasing of odigos collector as linux packages"
+      #     tag: ${{ steps.extract_tag.outputs.tag }}
 
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -82,11 +82,11 @@ jobs:
           version: ${{ steps.extract_tag.outputs.tag }}
           package-directory: 'collector/dist'
 
-      - name: Notify Slack Success
-        if: always()
-        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
-        with:
-          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
-          success-description: "Odigos collector linux packages released successfully"
-          failure-description: "ERROR: Odigos collector linux packages release failed"
-          tag: ${{ steps.extract_tag.outputs.tag }}
+      # - name: Notify Slack Success
+      #   if: always()
+      #   uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+      #   with:
+      #     webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+      #     success-description: "Odigos collector linux packages released successfully"
+      #     failure-description: "ERROR: Odigos collector linux packages release failed"
+      #     tag: ${{ steps.extract_tag.outputs.tag }}
