@@ -14,12 +14,10 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/cli/cmd/resources"
-	cmdcontext "github.com/odigos-io/odigos/cli/pkg/cmd_context"
 	"github.com/odigos-io/odigos/cli/pkg/kube"
 	"github.com/odigos-io/odigos/cli/pkg/lifecycle"
 	"github.com/odigos-io/odigos/cli/pkg/preflight"
 	"github.com/odigos-io/odigos/cli/pkg/remote"
-	"k8s.io/apimachinery/pkg/util/version"
 
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -309,33 +307,15 @@ func instrumentNamespace(ctx context.Context, client *kube.Client, ns string, ex
 		}
 	}
 
-	// CronJobs - handle both v1 and v1beta1
-	ver := cmdcontext.K8SVersionFromContext(ctx)
-	if ver.LessThan(version.MustParseSemantic("1.21.0")) {
-		// Use v1beta1 for Kubernetes < 1.21
-		cronjobs, err := client.BatchV1beta1().CronJobs(ns).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			fmt.Printf("  - \033[31mERROR\033[0m Cannot list cronjobs (v1beta1): %s\n", err)
-			return nil
-		}
-		for _, cj := range cronjobs.Items {
-			err = instrumentApp(ctx, &cj, excludedApps, orchestrator, dryRun, "CronJob (v1beta1)")
-			if isFatalError(err) {
-				return err
-			}
-		}
-	} else {
-		// Use v1 for Kubernetes >= 1.21
-		cronjobs, err := client.BatchV1().CronJobs(ns).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			fmt.Printf("  - \033[31mERROR\033[0m Cannot list cronjobs (v1): %s\n", err)
-			return nil
-		}
-		for _, cj := range cronjobs.Items {
-			err = instrumentApp(ctx, &cj, excludedApps, orchestrator, dryRun, "CronJob (v1)")
-			if isFatalError(err) {
-				return err
-			}
+	cronjobs, err := client.BatchV1().CronJobs(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("  - \033[31mERROR\033[0m Cannot list cronjobs (v1): %s\n", err)
+		return nil
+	}
+	for _, cj := range cronjobs.Items {
+		err = instrumentApp(ctx, &cj, excludedApps, orchestrator, dryRun, "CronJob (v1)")
+		if isFatalError(err) {
+			return err
 		}
 	}
 
