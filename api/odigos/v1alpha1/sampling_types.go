@@ -6,32 +6,14 @@ import (
 	"encoding/json"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
-	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// define conditions to match specific sources (containers) managed by odigos.
-// a source container matches, if ALL non empty fields match (AND semantics)
-//
-// common patterns:
-//   - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
-//     all containers (usually there is only one with agent injection)
-//   - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
-//     only this container
-//   - All services in a kubernetes namespace (WorkloadNamespace):
-//     all containers in all sources in the namespace
-//   - All services implemented in a specific programming language (WorkloadLanguage):
-//     all container which are running odigos agent for this language
-type SourcesScope struct {
-	WorkloadName      string                 `json:"workloadName,omitempty"`
-	WorkloadKind      k8sconsts.WorkloadKind `json:"workloadKind,omitempty"`
-	WorkloadNamespace string                 `json:"workloadNamespace,omitempty"`
-	ContainerName     string                 `json:"containerName,omitempty"`
-
-	WorkloadLanguage common.ProgrammingLanguage `json:"workloadLanguage,omitempty"`
-}
+// SourcesScope is defined in api/k8sconsts so that both api and k8sutils can use it
+// without a circular module dependency (k8sutils imports api).
+type SourcesScope = k8sconsts.SourcesScope
 
 // endpoints (or other operations) which are considered "noise", and provide no or very little observability value.
 // these traces should not be collected at all, or dropped aggresevly.
@@ -51,7 +33,7 @@ type NoisyOperation struct {
 	// limit this rule to specific operations.
 	// for example: specific http server endpoint (GET "/healthz" as an example).
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapisanpling.HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisampling.HeadSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for noisy operations.
 	// if unset, 0% of such the traces will be collected.
@@ -99,7 +81,7 @@ type HighlyRelevantOperation struct {
 	// optionally, limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapisanpling.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// traces that contains this operation will be sampled by at least this percentage.
 	// if unset, 100% of such the traces will be sampled.
@@ -124,7 +106,7 @@ type CostReductionRule struct {
 	// limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapisanpling.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for cost reduction.
 	// this field is required.

@@ -8,3 +8,5 @@ const (
 )
 
 const OdigosCollectorConfigMapProviderScheme = "k8scm"
+
+const OdigosConfigK8sExtensionType = "odigos_config_k8s"

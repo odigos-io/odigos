@@ -112,7 +112,6 @@ spec:
                         description: |-
                           define conditions to match specific sources (containers) managed by odigos.
                           a source container matches, if ALL non empty fields match (AND semantics)
-
                           common patterns:
                             - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
                               all containers (usually there is only one with agent injection)
@@ -126,9 +125,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:
@@ -254,7 +250,6 @@ spec:
                         description: |-
                           define conditions to match specific sources (containers) managed by odigos.
                           a source container matches, if ALL non empty fields match (AND semantics)
-
                           common patterns:
                             - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
                               all containers (usually there is only one with agent injection)
@@ -268,9 +263,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:
@@ -380,7 +372,6 @@ spec:
                         description: |-
                           define conditions to match specific sources (containers) managed by odigos.
                           a source container matches, if ALL non empty fields match (AND semantics)
-
                           common patterns:
                             - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
                               all containers (usually there is only one with agent injection)
@@ -394,9 +385,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:
