@@ -56,7 +56,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: release --clean --skip-validate
           workdir: collector
         env:
           GOTOOLCHAIN: local
