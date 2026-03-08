@@ -46,6 +46,11 @@ jobs:
         with:
           go-version: "1.26"
 
+      - name: Set GoReleaser tag
+        run: |
+          TAG="${{ steps.extract_tag.outputs.tag }}"
+          echo "GORELEASER_CURRENT_TAG=${TAG#otelcol-linux/}" >> $GITHUB_ENV
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -53,6 +58,8 @@ jobs:
           version: latest
           args: release --clean
           workdir: collector
+        env:
+          GOTOOLCHAIN: local
 
       - name: Upload Linux packages to Artifact Registry
         uses: odigos-io/ci-core/upload-linux-packages@v1.0.5
