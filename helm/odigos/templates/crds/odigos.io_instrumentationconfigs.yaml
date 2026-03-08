@@ -1126,13 +1126,15 @@ spec:
                                         description: match method exactly, can be
                                           empty to match any method
                                         type: string
+                                      route:
+                                        description: match route exactly
+                                        type: string
+                                      routePrefix:
+                                        description: match preffix of route
+                                        type: string
                                       serverAddress:
                                         description: match server address exactly
                                           (e.g. collector.my.vendor.com)
-                                        type: string
-                                      urlPath:
-                                        description: match url path exactly (e.g.
-                                          /api/v1/metrics)
                                         type: string
                                     type: object
                                   httpServer:
