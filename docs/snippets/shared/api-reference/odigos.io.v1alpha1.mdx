@@ -1,3 +1,9 @@
+---
+title: odigos.io/v1alpha1
+content_type: tool-reference
+package: odigos.io/v1alpha1
+auto_generated: true
+---
 <p>Package v1alpha1 is the v1alpha1 version of the API.</p>
 
 
@@ -777,7 +783,7 @@ if not specified, the default random id generator will be used.</p>
 <code>urlTemplatization</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-UrlTemplatizationConfig"><code>UrlTemplatizationConfig</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#UrlTemplatizationConfig"><code>common/api.UrlTemplatizationConfig</code></a>
 </td>
 <td>
    <p>A list of URL templatization configurations to be applied to the traces.</p>
@@ -1384,6 +1390,18 @@ If no matching nodes exist, the pod will remain Pending.</p>
 Only relevant for cluster gateway collector.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>tailSampling</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingConfiguration"><code>common.TailSamplingConfiguration</code></a>
+</td>
+<td>
+   <p>Sampling holds the sampling configuration derived from the OdigosConfiguration.
+Currently this is only relevant for the cluster gateway collector.</p>
+</td>
+</tr>
 </tbody>
 </table>
 
@@ -1670,7 +1688,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-OperationMatcher"><code>OperationMatcher</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingOperationMatcher"><code>common/api.TailSamplingOperationMatcher</code></a>
 </td>
 <td>
    <p>limit this rule to specific operations.
@@ -2096,7 +2114,7 @@ this relates to the &quot;ResourceAttributes&quot; part of a span.</p>
 <code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-OperationMatcher"><code>OperationMatcher</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#TailSamplingOperationMatcher"><code>common/api.TailSamplingOperationMatcher</code></a>
 </td>
 <td>
    <p>optionally, limit this rule to specific operations.
@@ -2127,57 +2145,6 @@ if unset, 100% of such the traces will be sampled.</p>
    <p>optional free-form text field that allows you to attach notes
 for future context and maintenance.
 users can write why this rule was added, observations, document considerations, etc.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `HttpServerOperationMatcher` <a id="odigos-io-v1alpha1-HttpServerOperationMatcher"></a>
-    
-
-**Appears in:**
-
-- [OperationMatcher](#odigos-io-v1alpha1-OperationMatcher)
-
-<p>match only http server spans for a specific endpoint.
-user can specify route and method to match, and limit a sampling instruction to only this operation.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>route</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>a specific exact match http route</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>routePrefix</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>any route that starts with a specific prefix</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>method</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>optionally limit to specific http method</p>
 </td>
 </tr>
 </tbody>
@@ -2325,6 +2292,17 @@ if false, at least one container requires pod manifest changes to enable agent i
 <td>
    <p>configuration for each instrumented container in the workload</p>
 </td>
+</tr>
+<tr>
+<td>
+<code>workloadCollectorConfig</code> <B>[Required]</B>
+</td>
+<td>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#ContainerCollectorConfig"><code>[]common/api.ContainerCollectorConfig</code></a>
+</td>
+<td>
+   <span class="text-muted">No description provided.</span>
+   </td>
 </tr>
 <tr>
 <td>
@@ -3060,150 +3038,20 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 </tbody>
 </table>
 
-## `KafkaOperationMatcher` <a id="odigos-io-v1alpha1-KafkaOperationMatcher"></a>
-    
-
-**Appears in:**
-
-- [OperationMatcher](#odigos-io-v1alpha1-OperationMatcher)
-
-<p>match a kafka consumer or producer operation for a specific topic.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>kafkaTopic</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>the topic name to match.
-if left empty, all topics are matched.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `NoisyOperationHttpClientMatcher` <a id="odigos-io-v1alpha1-NoisyOperationHttpClientMatcher"></a>
-    
-
-**Appears in:**
-
-- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
-
-<p>match http client operations for noisy operations matching (only attributes available at span start time)
-can be used to filter out outgoing http requests for other agents calling home or exporting data.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>serverAddress</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match server address exactly (e.g. collector.my.vendor.com)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>urlPath</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match url path exactly (e.g. /api/v1/metrics)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>method</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match method exactly, can be empty to match any method</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `NoisyOperationHttpServerMatcher` <a id="odigos-io-v1alpha1-NoisyOperationHttpServerMatcher"></a>
-    
-
-**Appears in:**
-
-- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
-
-<p>match http server operations for noisy operations matching (only attributes available at span start time)</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>route</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match route exactly</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>routePrefix</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match preffix of route</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>method</code> <B>[Required]</B>
-</td>
-<td>
-<code>string</code>
-</td>
-<td>
-   <p>match method exactly, can be empty to match any method</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `NoisyOperations` <a id="odigos-io-v1alpha1-NoisyOperations"></a>
+## `NoisyOperation` <a id="odigos-io-v1alpha1-NoisyOperation"></a>
     
 
 **Appears in:**
 
 - [SamplingSpec](#odigos-io-v1alpha1-SamplingSpec)
 
-<p>endpoints which are considered &quot;noise&quot;, and provide no or very little observability value.
+<p>endpoints (or other operations) which are considered &quot;noise&quot;, and provide no or very little observability value.
 these traces should not be collected at all, or dropped aggresevly.
 motivation is data sentization and performance improvment (even if cost is not a factor)</p>
 <p>examples:</p>
 <ul>
 <li>health-checks (readiness and liveness probes)</li>
-<li>metrics scrape endpoints (promethues /metrics endpoint)</li>
+<li>metrics scrape endpoints (prometheus /metrics endpoint)</li>
 <li>other agents calling home (outgoing http requests to collector.my.vendor.com)</li>
 </ul>
 
@@ -3228,24 +3076,15 @@ if the list is empty - all sources are matched.</p>
 </tr>
 <tr>
 <td>
-<code>httpServer</code> <B>[Required]</B>
+<code>operation</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-NoisyOperationHttpServerMatcher"><code>NoisyOperationHttpServerMatcher</code></a>
+<a href="https://pkg.go.dev/github.com/odigos-io/odigos/common#HeadSamplingOperationMatcher"><code>common/api.HeadSamplingOperationMatcher</code></a>
 </td>
 <td>
-   <p>match http server operations for noisy operations matching (only attributes available at span start time)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>httpClient</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-NoisyOperationHttpClientMatcher"><code>NoisyOperationHttpClientMatcher</code></a>
-</td>
-<td>
-   <p>match http client operations for noisy operations matching (only attributes available at span start time)</p>
+   <p>limit this rule to specific operations.
+for example: specific http server endpoint (GET &quot;/healthz&quot; as an example).
+this field is optional, and if not set, the rule will be applied to all operations.</p>
 </td>
 </tr>
 <tr>
@@ -3329,59 +3168,6 @@ it can help in presenting a consistent view of odigos itself, without relying on
 </td>
 <td>
    <p>time interval for flusing metrics (format: 15s, 1m etc). defaults: 10s</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `OperationMatcher` <a id="odigos-io-v1alpha1-OperationMatcher"></a>
-    
-
-**Appears in:**
-
-- [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
-- [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
-
-<p>match operations for tail sampling with the full context of the span.
-this is used by sampling rules to limit it only to specific operations.
-if the rule matches a sapn, the behavior is determined by the rule itself.</p>
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>httpServer</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-HttpServerOperationMatcher"><code>HttpServerOperationMatcher</code></a>
-</td>
-<td>
-   <p>match http server operations in a generic way.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>kafkaConsumer</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-KafkaOperationMatcher"><code>KafkaOperationMatcher</code></a>
-</td>
-<td>
-   <p>match kafka consumer operations (consume spans)</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>kafkaProducer</code> <B>[Required]</B>
-</td>
-<td>
-<a href="#odigos-io-v1alpha1-KafkaOperationMatcher"><code>KafkaOperationMatcher</code></a>
-</td>
-<td>
-   <p>match kafka producer operations (produce spans)</p>
 </td>
 </tr>
 </tbody>
@@ -3802,7 +3588,7 @@ useful if you want to temporarily disable the rules but re-enable them later,</p
 <code>noisyOperations</code> <B>[Required]</B>
 </td>
 <td>
-<a href="#odigos-io-v1alpha1-NoisyOperations"><code>[]NoisyOperations</code></a>
+<a href="#odigos-io-v1alpha1-NoisyOperation"><code>[]NoisyOperation</code></a>
 </td>
 <td>
    <span class="text-muted">No description provided.</span>
@@ -4145,16 +3931,20 @@ Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot
 
 - [CostReductionRule](#odigos-io-v1alpha1-CostReductionRule)
 - [HighlyRelevantOperation](#odigos-io-v1alpha1-HighlyRelevantOperation)
-- [NoisyOperations](#odigos-io-v1alpha1-NoisyOperations)
+- [NoisyOperation](#odigos-io-v1alpha1-NoisyOperation)
 
 <p>define conditions to match specific sources (containers) managed by odigos.
 a source container matches, if ALL non empty fields match (AND semantics)</p>
 <p>common patterns:</p>
 <ul>
-<li>Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName) - all containers (usually there is only one with agent injection)</li>
-<li>Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName) - only this container</li>
-<li>All services in a kubernetes namespace (WorkloadNamespace) - all containers in all sources in the namespace</li>
-<li>All services implemented in a specific programming language (WorkloadLanguage) - all container which are running odigos agent for this language</li>
+<li>Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
+all containers (usually there is only one with agent injection)</li>
+<li>Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
+only this container</li>
+<li>All services in a kubernetes namespace (WorkloadNamespace):
+all containers in all sources in the namespace</li>
+<li>All services implemented in a specific programming language (WorkloadLanguage):
+all container which are running odigos agent for this language</li>
 </ul>
 
 <table class="table">
@@ -4280,32 +4070,6 @@ all options are always tried, regardless of whether the previous options have ma
 <td>
    <p>list of regex replacements to be applied to the span name.
 all options are always tried, regardless of whether the previous options have matched or not.</p>
-</td>
-</tr>
-</tbody>
-</table>
-
-## `UrlTemplatizationConfig` <a id="odigos-io-v1alpha1-UrlTemplatizationConfig"></a>
-    
-
-**Appears in:**
-
-- [AgentTracesConfig](#odigos-io-v1alpha1-AgentTracesConfig)
-
-<table class="table">
-<thead><tr><th width="30%">Field</th><th>Type</th><th>Description</th></tr></thead>
-<tbody>
-    
-  
-<tr>
-<td>
-<code>templatizationRules</code> <B>[Required]</B>
-</td>
-<td>
-<code>[]string</code>
-</td>
-<td>
-   <p>Rule is the template rule to be applied to URLs</p>
 </td>
 </tr>
 </tbody>
