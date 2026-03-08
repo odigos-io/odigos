@@ -48,6 +48,8 @@ jobs:
 
       - name: Set GoReleaser tag
         run: |
+          git config user.email "ci@odigos.io"
+          git config user.name "Odigos CI"
           TAG="${{ steps.extract_tag.outputs.tag }}"
           SEMVER_TAG="${TAG#otelcol-linux/}"
           echo "GORELEASER_CURRENT_TAG=$SEMVER_TAG" >> $GITHUB_ENV
