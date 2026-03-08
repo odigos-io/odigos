@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
-	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	"github.com/odigos-io/odigos/common/collector"
 )
@@ -101,7 +101,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 
 // evaluateNoisyOperations evaluates the noisy operations category for the trace.
 // it return the result of the evaluation.
-func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) (bool, *commonapisanpling.NoisyOperation) {
+func (p *tailSamplingProcessor) evaluateNoisyOperations(td ptrace.Traces) (bool, *commonapisampling.NoisyOperation) {
 
 	rootSpan, resource, found := getRootSpan(td)
 	if !found {
@@ -137,7 +137,7 @@ func (p *tailSamplingProcessor) Start(ctx context.Context, host component.Host) 
 	return nil
 }
 
-func (p *tailSamplingProcessor) getTailSamplingConfig(resource pcommon.Resource) (*commonapisanpling.TailSamplingSourceConfig, bool) {
+func (p *tailSamplingProcessor) getTailSamplingConfig(resource pcommon.Resource) (*commonapisampling.TailSamplingSourceConfig, bool) {
 	collectorConfig, ok := p.odigosConfigExtension.GetFromResource(resource)
 	if !ok {
 		return nil, false

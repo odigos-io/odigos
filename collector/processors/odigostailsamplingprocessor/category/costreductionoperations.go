@@ -5,7 +5,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
-	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
 )
 
@@ -18,12 +18,12 @@ type CostReductionRuleMetrics struct {
 	RuleTotalSpansDroppedCount int
 }
 
-func EvaluateCostReductionOperations(trace ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64) (bool, *commonapisanpling.CostReductionRule, map[string]*CostReductionRuleMetrics) {
+func EvaluateCostReductionOperations(trace ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64) (bool, *commonapisampling.CostReductionRule, map[string]*CostReductionRuleMetrics) {
 
 	rulesMetrics := make(map[string]*CostReductionRuleMetrics)
 	totalSpansCount := 0
 
-	matchingRules := map[string]*commonapisanpling.CostReductionRule{}
+	matchingRules := map[string]*commonapisampling.CostReductionRule{}
 
 	rss := trace.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
@@ -73,7 +73,7 @@ func EvaluateCostReductionOperations(trace ptrace.Traces, configProvider collect
 	return decidingRule != nil, decidingRule, rulesMetrics
 }
 
-func recordCostReductionMetricsInvocationsForSingleSpan(rulesMetrics map[string]*CostReductionRuleMetrics, costReductionRules []commonapisanpling.CostReductionRule) {
+func recordCostReductionMetricsInvocationsForSingleSpan(rulesMetrics map[string]*CostReductionRuleMetrics, costReductionRules []commonapisampling.CostReductionRule) {
 	for _, rule := range costReductionRules {
 		metrics, found := rulesMetrics[rule.Id]
 		if !found {
@@ -84,7 +84,7 @@ func recordCostReductionMetricsInvocationsForSingleSpan(rulesMetrics map[string]
 	}
 }
 
-func recordCostReductionMetricsMatchingForSingleSpan(rulesMetrics map[string]*CostReductionRuleMetrics, matchedRules []*commonapisanpling.CostReductionRule) {
+func recordCostReductionMetricsMatchingForSingleSpan(rulesMetrics map[string]*CostReductionRuleMetrics, matchedRules []*commonapisampling.CostReductionRule) {
 	for _, rule := range matchedRules {
 		metrics := rulesMetrics[rule.Id]
 		metrics.SpanMatchingCount++
@@ -94,9 +94,9 @@ func recordCostReductionMetricsMatchingForSingleSpan(rulesMetrics map[string]*Co
 // for a single span, evaluate all of the cost reduction rules against the span.
 // it will return the rule with the smallest percentage (at most semantics) that matched, and a list of all the rules that matched.
 // matching rules can also be disabled (and should be ignored or used where appropriate)
-func processCostReductionRulesForSingleSpan(span ptrace.Span, costReductionRules []commonapisanpling.CostReductionRule) (*commonapisanpling.CostReductionRule, []*commonapisanpling.CostReductionRule) {
+func processCostReductionRulesForSingleSpan(span ptrace.Span, costReductionRules []commonapisampling.CostReductionRule) (*commonapisampling.CostReductionRule, []*commonapisampling.CostReductionRule) {
 
-	matchedRules := []*commonapisanpling.CostReductionRule{}
+	matchedRules := []*commonapisampling.CostReductionRule{}
 
 	for _, rule := range costReductionRules {
 		matched := matchers.TailSamplingOperationMatcher(rule.Operation, span)
@@ -119,7 +119,7 @@ func processCostReductionRulesForSingleSpan(span ptrace.Span, costReductionRules
 	}
 
 	// percentage at most: lowest percentage wins (most restrictive)
-	var selectedRule *commonapisanpling.CostReductionRule
+	var selectedRule *commonapisampling.CostReductionRule
 	var selectedPercentage float64 = 101.0
 	for _, rule := range matchedRules {
 		if rule.Disabled {
@@ -134,7 +134,7 @@ func processCostReductionRulesForSingleSpan(span ptrace.Span, costReductionRules
 	return selectedRule, matchedRules
 }
 
-func getCostReductionRulesConfig(configProvider collector.OdigosConfigExtension, resource pcommon.Resource) []commonapisanpling.CostReductionRule {
+func getCostReductionRulesConfig(configProvider collector.OdigosConfigExtension, resource pcommon.Resource) []commonapisampling.CostReductionRule {
 	cfg, found := configProvider.GetFromResource(resource)
 	if !found {
 		return nil
@@ -149,7 +149,7 @@ func getCostReductionRulesConfig(configProvider collector.OdigosConfigExtension,
 }
 
 // calculateCostReductionDecidingRule returns the rule with the lowest percentage (most restrictive).
-func calculateCostReductionDecidingRule(matchingRules map[string]*commonapisanpling.CostReductionRule) *commonapisanpling.CostReductionRule {
+func calculateCostReductionDecidingRule(matchingRules map[string]*commonapisampling.CostReductionRule) *commonapisampling.CostReductionRule {
 	if len(matchingRules) == 0 {
 		return nil
 	}
@@ -163,7 +163,7 @@ func calculateCostReductionDecidingRule(matchingRules map[string]*commonapisanpl
 		}
 	}
 
-	var selectedRule *commonapisanpling.CostReductionRule
+	var selectedRule *commonapisampling.CostReductionRule
 	var selectedPercentage float64 = 101.0
 	for _, r := range matchingRules {
 		if r.Disabled {
@@ -180,7 +180,7 @@ func calculateCostReductionDecidingRule(matchingRules map[string]*commonapisanpl
 // recordCostReductionMetricsMatchingAndDropped updates rulesMetrics for each matching rule:
 // - the trace is counted once for being matched by this rule.
 // - if the rule's decision is "drop" (trace percentage > rule threshold), we count trace and spans in dropped metrics.
-func recordCostReductionMetricsMatchingAndDropped(rulesMetrics map[string]*CostReductionRuleMetrics, matchingRules map[string]*commonapisanpling.CostReductionRule, tracePercentage float64, totalSpansCount int) map[string]*CostReductionRuleMetrics {
+func recordCostReductionMetricsMatchingAndDropped(rulesMetrics map[string]*CostReductionRuleMetrics, matchingRules map[string]*commonapisampling.CostReductionRule, tracePercentage float64, totalSpansCount int) map[string]*CostReductionRuleMetrics {
 	for _, rule := range matchingRules {
 		dropped := tracePercentage > rule.PercentageAtMost
 		metrics := rulesMetrics[rule.Id]
@@ -193,7 +193,7 @@ func recordCostReductionMetricsMatchingAndDropped(rulesMetrics map[string]*CostR
 	return rulesMetrics
 }
 
-func setCostReductionRuleAttributesOnSpan(span ptrace.Span, rule *commonapisanpling.CostReductionRule) {
+func setCostReductionRuleAttributesOnSpan(span ptrace.Span, rule *commonapisampling.CostReductionRule) {
 	span.Attributes().PutStr("odigos.sampling.span.matching_rule.id", rule.Id)
 	span.Attributes().PutStr("odigos.sampling.span.matching_rule.name", rule.Name)
 	span.Attributes().PutDouble("odigos.sampling.span.matching_rule.percentage_at_most", rule.PercentageAtMost)

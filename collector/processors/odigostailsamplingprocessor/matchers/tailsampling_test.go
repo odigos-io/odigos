@@ -3,7 +3,7 @@ package matchers
 import (
 	"testing"
 
-	commonapisanpling "github.com/odigos-io/odigos/common/api/sampling"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -12,14 +12,14 @@ import (
 func TestOperationHttpServerMatcher(t *testing.T) {
 	tests := []struct {
 		name      string
-		operation *commonapisanpling.HttpServerOperationMatcher
+		operation *commonapisampling.HttpServerOperationMatcher
 		spanKind  ptrace.SpanKind
 		attrs     map[string]string
 		want      bool
 	}{
 		{
 			name:      "non-server span returns false",
-			operation: &commonapisanpling.HttpServerOperationMatcher{},
+			operation: &commonapisampling.HttpServerOperationMatcher{},
 			spanKind:  ptrace.SpanKindClient,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
@@ -28,14 +28,14 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name:      "server span without http method returns false",
-			operation: &commonapisanpling.HttpServerOperationMatcher{},
+			operation: &commonapisampling.HttpServerOperationMatcher{},
 			spanKind:  ptrace.SpanKindServer,
 			attrs:     map[string]string{"other.attr": "value"},
 			want:      false,
 		},
 		{
 			name:      "server span with method and empty operation matches",
-			operation: &commonapisanpling.HttpServerOperationMatcher{},
+			operation: &commonapisampling.HttpServerOperationMatcher{},
 			spanKind:  ptrace.SpanKindServer,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
@@ -44,7 +44,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span method exact match",
-			operation: &commonapisanpling.HttpServerOperationMatcher{
+			operation: &commonapisampling.HttpServerOperationMatcher{
 				Method: "GET",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -55,7 +55,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span method mismatch",
-			operation: &commonapisanpling.HttpServerOperationMatcher{
+			operation: &commonapisampling.HttpServerOperationMatcher{
 				Method: "POST",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -66,7 +66,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span route exact match",
-			operation: &commonapisanpling.HttpServerOperationMatcher{
+			operation: &commonapisampling.HttpServerOperationMatcher{
 				Route: "/users/:id",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -78,7 +78,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span route no match",
-			operation: &commonapisanpling.HttpServerOperationMatcher{
+			operation: &commonapisampling.HttpServerOperationMatcher{
 				Route: "/orders",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -90,7 +90,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span route prefix match",
-			operation: &commonapisanpling.HttpServerOperationMatcher{
+			operation: &commonapisampling.HttpServerOperationMatcher{
 				RoutePrefix: "/api",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -102,7 +102,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span route prefix no match",
-			operation: &commonapisanpling.HttpServerOperationMatcher{
+			operation: &commonapisampling.HttpServerOperationMatcher{
 				RoutePrefix: "/api",
 			},
 			spanKind: ptrace.SpanKindServer,
@@ -114,7 +114,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span method and route both match",
-			operation: &commonapisanpling.HttpServerOperationMatcher{
+			operation: &commonapisampling.HttpServerOperationMatcher{
 				Method: "POST",
 				Route:  "/users",
 			},
@@ -127,7 +127,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 		},
 		{
 			name: "server span method match but route does not",
-			operation: &commonapisanpling.HttpServerOperationMatcher{
+			operation: &commonapisampling.HttpServerOperationMatcher{
 				Method: "GET",
 				Route:  "/users",
 			},
@@ -151,7 +151,7 @@ func TestOperationHttpServerMatcher(t *testing.T) {
 func TestTailSamplingOperationMatcher(t *testing.T) {
 	tests := []struct {
 		name      string
-		operation *commonapisanpling.TailSamplingOperationMatcher
+		operation *commonapisampling.TailSamplingOperationMatcher
 		spanKind  ptrace.SpanKind
 		attrs     map[string]string
 		want      bool
@@ -167,7 +167,7 @@ func TestTailSamplingOperationMatcher(t *testing.T) {
 		},
 		{
 			name:      "empty operation matches any span",
-			operation: &commonapisanpling.TailSamplingOperationMatcher{},
+			operation: &commonapisampling.TailSamplingOperationMatcher{},
 			spanKind:  ptrace.SpanKindServer,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
