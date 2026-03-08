@@ -48,9 +48,13 @@ func EvaluateCostReductionOperations(trace ptrace.Traces, configProvider collect
 				recordCostReductionMetricsInvocationsForSingleSpan(rulesMetrics, costReductionRules)
 
 				if spanLeastPercentageRule != nil {
-					setCostReductionRuleAttributesOnSpan(span, spanLeastPercentageRule.Id, spanLeastPercentageRule.PercentageAtMost)
+					setCostReductionRuleAttributesOnSpan(span, spanLeastPercentageRule)
+				}
+				if len(matchedRules) > 0 {
 					recordCostReductionMetricsMatchingForSingleSpan(rulesMetrics, matchedRules)
 
+					// update the map that tracks all the rules that matched for this trace,
+					// so we can calculate combined result.
 					for _, matchedRule := range matchedRules {
 						matchingRules[matchedRule.Id] = matchedRule
 					}
@@ -87,6 +91,9 @@ func recordCostReductionMetricsMatchingForSingleSpan(rulesMetrics map[string]*Co
 	}
 }
 
+// for a single span, evaluate all of the cost reduction rules against the span.
+// it will return the rule with the smallest percentage (at most semantics) that matched, and a list of all the rules that matched.
+// matching rules can also be disabled (and should be ignored or used where appropriate)
 func processCostReductionRulesForSingleSpan(span ptrace.Span, costReductionRules []commonapisanpling.CostReductionRule) (*commonapisanpling.CostReductionRule, []*commonapisanpling.CostReductionRule) {
 
 	matchedRules := []*commonapisanpling.CostReductionRule{}
@@ -101,21 +108,30 @@ func processCostReductionRulesForSingleSpan(span ptrace.Span, costReductionRules
 	if len(matchedRules) == 0 {
 		return nil, nil
 	}
-	if len(matchedRules) == 1 {
-		return matchedRules[0], matchedRules
-	}
 
-	// percentage at most: lowest percentage wins (most restrictive)
-	leastPercentageRule := matchedRules[0]
-	leastPercentage := leastPercentageRule.PercentageAtMost
-	for _, rule := range matchedRules {
-		if rule.PercentageAtMost < leastPercentage {
-			leastPercentage = rule.PercentageAtMost
-			leastPercentageRule = rule
+	// ignore disabled rules for the "decision" rule selection.
+	if len(matchedRules) == 1 {
+		if matchedRules[0].Disabled {
+			return nil, matchedRules
+		} else {
+			return matchedRules[0], matchedRules
 		}
 	}
 
-	return leastPercentageRule, matchedRules
+	// percentage at most: lowest percentage wins (most restrictive)
+	var selectedRule *commonapisanpling.CostReductionRule
+	var selectedPercentage float64 = 101.0
+	for _, rule := range matchedRules {
+		if rule.Disabled {
+			continue
+		}
+		// although it is possible, we are not expecting 0 here, as the intent is cost reduction, not noisy reduction.
+		if rule.PercentageAtMost < selectedPercentage {
+			selectedRule = rule
+			selectedPercentage = rule.PercentageAtMost
+		}
+	}
+	return selectedRule, matchedRules
 }
 
 func getCostReductionRulesConfig(configProvider collector.OdigosConfigExtension, resource pcommon.Resource) []commonapisanpling.CostReductionRule {
@@ -139,13 +155,20 @@ func calculateCostReductionDecidingRule(matchingRules map[string]*commonapisanpl
 	}
 	if len(matchingRules) == 1 {
 		for _, r := range matchingRules {
-			return r
+			if r.Disabled {
+				return nil
+			} else {
+				return r
+			}
 		}
 	}
 
 	var selectedRule *commonapisanpling.CostReductionRule
 	var selectedPercentage float64 = 101.0
 	for _, r := range matchingRules {
+		if r.Disabled {
+			continue
+		}
 		if r.PercentageAtMost < selectedPercentage {
 			selectedRule = r
 			selectedPercentage = r.PercentageAtMost
@@ -170,7 +193,8 @@ func recordCostReductionMetricsMatchingAndDropped(rulesMetrics map[string]*CostR
 	return rulesMetrics
 }
 
-func setCostReductionRuleAttributesOnSpan(span ptrace.Span, ruleId string, percentageAtMost float64) {
-	span.Attributes().PutStr("odigos.sampling.span.matching_rule.id", ruleId)
-	span.Attributes().PutDouble("odigos.sampling.span.matching_rule.percentage_at_most", percentageAtMost)
+func setCostReductionRuleAttributesOnSpan(span ptrace.Span, rule *commonapisanpling.CostReductionRule) {
+	span.Attributes().PutStr("odigos.sampling.span.matching_rule.id", rule.Id)
+	span.Attributes().PutStr("odigos.sampling.span.matching_rule.name", rule.Name)
+	span.Attributes().PutDouble("odigos.sampling.span.matching_rule.percentage_at_most", rule.PercentageAtMost)
 }

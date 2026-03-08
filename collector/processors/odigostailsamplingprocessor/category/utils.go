@@ -19,8 +19,3 @@ func GetPercentageOrDefault100(percentage *float64) float64 {
 func SpanDurationNano(span ptrace.Span) uint64 {
 	return uint64(span.EndTimestamp() - span.StartTimestamp())
 }
-
-func setMatchingRuleAttributesOnSpan(span ptrace.Span, ruleId string, percentage float64) {
-	span.Attributes().PutStr("odigos.sampling.span.matching_rule.id", ruleId)
-	span.Attributes().PutDouble("odigos.sampling.span.matching_rule.percentage_at_least", percentage)
-}

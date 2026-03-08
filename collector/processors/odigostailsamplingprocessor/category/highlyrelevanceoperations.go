@@ -51,7 +51,9 @@ func EvaluateHighlyRelevantOperations(trace ptrace.Traces, configProvider collec
 				recordMetricsInvocationsForSingleSpan(rulesMetrics, highlyRelevantOperations)
 
 				if spanMostPercentageRule != nil {
-					setMatchingRuleAttributesOnSpan(span, spanMostPercentageRule.Id, GetPercentageOrDefault100(spanMostPercentageRule.PercentageAtLeast))
+					setHighlyRelevantRuleAttributesOnSpan(span, spanMostPercentageRule)
+				}
+				if len(matchedRules) > 0 {
 					recordMetricsMatchingForSingleSpan(rulesMetrics, matchedRules)
 
 					// update the map that tracks all the rules that matched for this trace,
@@ -121,22 +123,30 @@ func processHighlyRelevantRulesForSingleSpan(span ptrace.Span, highlyRelevantOpe
 	if len(matchedRules) == 0 {
 		return nil, nil
 	}
-	if len(matchedRules) == 1 { // shortcut for common easy case
-		return matchedRules[0], matchedRules
-	}
 
-	// find the rule with the highest percentage
-	highestPercentageRule := matchedRules[0]
-	highestPercentage := GetPercentageOrDefault100(highestPercentageRule.PercentageAtLeast)
-	for _, rule := range matchedRules {
-		rulePercentage := GetPercentageOrDefault100(rule.PercentageAtLeast)
-		if rulePercentage > highestPercentage {
-			highestPercentage = rulePercentage
-			highestPercentageRule = rule
+	// ignore disabled rules for the "decision" rule selection.
+	if len(matchedRules) == 1 {
+		if matchedRules[0].Disabled {
+			return nil, matchedRules
+		} else {
+			return matchedRules[0], matchedRules
 		}
 	}
 
-	return highestPercentageRule, matchedRules
+	// find the rule with smallest percentage (at most semantics) which is not disabled, and return it.
+	var selectedRule *commonapisanpling.HighlyRelevantOperation
+	var selectedPercentage float64 = 101.0
+	for _, rule := range matchedRules {
+		if rule.Disabled {
+			continue
+		}
+		percentage := GetPercentageOrDefault100(rule.PercentageAtLeast)
+		if percentage < selectedPercentage {
+			selectedRule = rule
+			selectedPercentage = percentage
+		}
+	}
+	return selectedRule, matchedRules
 }
 
 func getHighlyRelevantOperationsConfig(configProvider collector.OdigosConfigExtension, resource pcommon.Resource) []commonapisanpling.HighlyRelevantOperation {
@@ -164,7 +174,11 @@ func calculateDecidingRule(matchingRules map[string]*commonapisanpling.HighlyRel
 	// shortcut for common and easy case
 	if len(matchingRules) == 1 {
 		for _, matchingRule := range matchingRules {
-			return matchingRule
+			if matchingRule.Disabled {
+				return nil
+			} else {
+				return matchingRule
+			}
 		}
 	}
 
@@ -172,6 +186,9 @@ func calculateDecidingRule(matchingRules map[string]*commonapisanpling.HighlyRel
 	var selectedRule *commonapisanpling.HighlyRelevantOperation
 	var selectedRulePercentage float64 = 0.0
 	for _, matchingRule := range matchingRules {
+		if matchingRule.Disabled {
+			continue
+		}
 		percentage := GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
 		// we don't need to continue once we found the first rule which is 100% (most permissive rule).
 		if percentage == 100.0 {
@@ -190,7 +207,7 @@ func calculateDecidingRule(matchingRules map[string]*commonapisanpling.HighlyRel
 // - if the rules decision for this trace is "keep", we count the trace once and number of spans in the "kept" metrics.
 func recordMetricsMatchingAndKept(rulesMetrics map[string]*RuleMetrics, matchingRules map[string]*commonapisanpling.HighlyRelevantOperation, tracePercentage float64, totalSpansCount int) map[string]*RuleMetrics {
 	for _, matchingRule := range matchingRules {
-		kept := tracePercentage >= GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
+		kept := tracePercentage <= GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
 		metrics := rulesMetrics[matchingRule.Id] // rule has already been added when we marked the trace as matched by this rule.
 		metrics.TraceMatchingCount++
 		if kept {
@@ -199,4 +216,10 @@ func recordMetricsMatchingAndKept(rulesMetrics map[string]*RuleMetrics, matching
 		}
 	}
 	return rulesMetrics
+}
+
+func setHighlyRelevantRuleAttributesOnSpan(span ptrace.Span, rule *commonapisanpling.HighlyRelevantOperation) {
+	span.Attributes().PutStr("odigos.sampling.span.matching_rule.id", rule.Id)
+	span.Attributes().PutStr("odigos.sampling.span.matching_rule.name", rule.Name)
+	span.Attributes().PutDouble("odigos.sampling.span.matching_rule.percentage_at_least", GetPercentageOrDefault100(rule.PercentageAtLeast))
 }
