@@ -57,6 +57,7 @@ docgen: genref
 	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/snippets/shared/api-reference
 	for file in $(PWD)/../docs/snippets/shared/api-reference/*; do \
 		mv $${file} $${file%.md}.mdx;
+	done
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
