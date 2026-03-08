@@ -44,8 +44,10 @@ type HeadSamplingHttpServerOperationMatcher struct {
 type HeadSamplingHttpClientOperationMatcher struct {
 	// match server address exactly (e.g. collector.my.vendor.com)
 	ServerAddress string `json:"serverAddress,omitempty"`
-	// match url path exactly (e.g. /api/v1/metrics)
-	UrlPath string `json:"urlPath,omitempty"`
+	// match route exactly
+	Route string `json:"route,omitempty"`
+	// match preffix of route
+	RoutePrefix string `json:"routePrefix,omitempty"`
 	// match method exactly, can be empty to match any method
 	Method string `json:"method,omitempty"`
 }

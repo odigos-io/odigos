@@ -28,32 +28,70 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		p.logger.Error("odigos config extension is not set, skipping tail sampling")
 		return td, nil // for auto generated tests, and not to crash in case it somehow happens
 	}
-	if td.ResourceSpans().Len() == 0 {
+	if td.ResourceSpans().Len() == 0 || td.ResourceSpans().At(0).ScopeSpans().Len() == 0 || td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().Len() == 0 {
 		return td, nil // no spans to process
 	}
 
 	// assuming that all the spans have the same trace ID, so take just the first one.
 	traceID := td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).TraceID()
+	// verify all spans belong to the same trace
+	for i := 0; i < td.ResourceSpans().Len(); i++ {
+		for j := 0; j < td.ResourceSpans().At(i).ScopeSpans().Len(); j++ {
+			for k := 0; k < td.ResourceSpans().At(i).ScopeSpans().At(j).Spans().Len(); k++ {
+				if td.ResourceSpans().At(i).ScopeSpans().At(j).Spans().At(k).TraceID() != traceID {
+					p.logger.Error("not all spans belong to the same trace", zap.String("trace_id", traceID.String()))
+					return td, nil // not all spans belong to the same trace
+				}
+			}
+		}
+	}
+
 	rnd := sampling.TraceIDToRandomness(traceID)
 	// convert from range [0-MaxAdjustedCount] to range [0-100]
 	tracePercentage := float64(rnd.Unsigned()) / float64(sampling.MaxAdjustedCount) * 100.0
 
 	// Noisy operations category.
-	matched, rule := p.evaluateNoisyOperations(td)
+	matched, noisyOperationRule := p.evaluateNoisyOperations(td)
 	if matched {
 		percentageAtMost := 0.0
-		if rule.PercentageAtMost != nil {
-			percentageAtMost = *rule.PercentageAtMost
+		if noisyOperationRule.PercentageAtMost != nil {
+			percentageAtMost = *noisyOperationRule.PercentageAtMost
 		}
 
 		// either drop it, or keep it and add relevant sampling attributes to all spans.
 		keepTrace := tracePercentage <= percentageAtMost
 
 		if keepTrace {
-			enrichSpansWithSamplingAttributes(td, "noisy", rule.Id, percentageAtMost)
+			enrichSpansWithSamplingAttributes(td, "noisy", noisyOperationRule.Id, percentageAtMost)
 			return td, nil
 		} else {
 			// drop the trace by not returning anything in the result.
+			return ptrace.NewTraces(), nil
+		}
+	}
+
+	matched, highlyRelevantOperationRule := category.EvaluateHighlyRelevantOperations(td, p.odigosConfigExtension, tracePercentage)
+	if matched {
+		percentageAtLeast := category.GetPercentageOrDefault(highlyRelevantOperationRule.PercentageAtLeast, 100.0)
+		keepTrace := tracePercentage <= percentageAtLeast
+
+		if keepTrace {
+			// TODO: enrich spans with sampling attributes
+			return td, nil
+		} else {
+			return ptrace.NewTraces(), nil
+		}
+	}
+
+	matched, costReductionRule := category.EvaluateCostReductionOperations(td, p.odigosConfigExtension.GetCostReductionOperations())
+	if matched {
+		percentageAtMost := category.GetPercentageOrDefault(costReductionRule.PercentageAtMost, 100.0)
+		keepTrace := tracePercentage <= percentageAtMost
+
+		if keepTrace {
+			// TODO: enrich spans with sampling attributes
+			return td, nil
+		} else {
 			return ptrace.NewTraces(), nil
 		}
 	}
