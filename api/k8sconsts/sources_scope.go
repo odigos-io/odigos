@@ -1,8 +1,6 @@
-package api
+package k8sconsts
 
-import (
-	"github.com/odigos-io/odigos/common"
-)
+import "github.com/odigos-io/odigos/common"
 
 // define conditions to match specific sources (containers) managed by odigos.
 // a source container matches, if ALL non empty fields match (AND semantics)

@@ -2,7 +2,6 @@ package actions
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonapi "github.com/odigos-io/odigos/common/api"
 )
 
 const ActionNameURLTemplatization = "URLTemplatization"
@@ -33,7 +32,7 @@ type URLTemplatizationRule struct {
 type UrlTemplatizationRulesGroup struct {
 	// SourcesScope selects which sources (workloads / containers / languages) the rules apply to.
 	// Empty list means "all sources" (global rules).
-	SourcesScope []commonapi.SourcesScope `json:"sourcesScope,omitempty"`
+	SourcesScope []k8sconsts.SourcesScope `json:"sourcesScope,omitempty"`
 
 	// the rules that will be applied to the spans matching the above filters.
 	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`

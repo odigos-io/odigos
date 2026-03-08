@@ -5,16 +5,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	commonapi "github.com/odigos-io/odigos/common/api"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// SourcesScope is the canonical type for matching sources (containers); defined in common/api.
-// Use this alias so v1alpha1 CRDs and types share the same definition.
-// Note: applyconfiguration-gen inlines []api.SourcesScope (no SourcesScopeApplyConfiguration)
-// because SourcesScope is an alias to an external type; Apply API still works for nested fields.
-type SourcesScope = commonapi.SourcesScope
+// SourcesScope is defined in api/k8sconsts so that both api and k8sutils can use it
+// without a circular module dependency (k8sutils imports api).
+type SourcesScope = k8sconsts.SourcesScope
 
 // endpoints (or other operations) which are considered "noise", and provide no or very little observability value.
 // these traces should not be collected at all, or dropped aggresevly.
