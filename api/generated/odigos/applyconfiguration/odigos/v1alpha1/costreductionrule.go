@@ -24,7 +24,7 @@ import (
 // CostReductionRuleApplyConfiguration represents a declarative configuration of the CostReductionRule type for use
 // with apply.
 type CostReductionRuleApplyConfiguration struct {
-	SourceScopes     []SourcesScopeApplyConfiguration  `json:"sourceScopes,omitempty"`
+	SourceScopes     []api.SourcesScope                `json:"sourceScopes,omitempty"`
 	Operation        *api.TailSamplingOperationMatcher `json:"operation,omitempty"`
 	PercentageAtMost *float64                          `json:"percentageAtMost,omitempty"`
 	Notes            *string                           `json:"notes,omitempty"`
@@ -39,12 +39,9 @@ func CostReductionRule() *CostReductionRuleApplyConfiguration {
 // WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the SourceScopes field.
-func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(values ...*SourcesScopeApplyConfiguration) *CostReductionRuleApplyConfiguration {
+func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(values ...api.SourcesScope) *CostReductionRuleApplyConfiguration {
 	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithSourceScopes")
-		}
-		b.SourceScopes = append(b.SourceScopes, *values[i])
+		b.SourceScopes = append(b.SourceScopes, values[i])
 	}
 	return b
 }

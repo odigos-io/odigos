@@ -19,9 +19,9 @@ import (
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
 type SourcesScope struct {
-	WorkloadName      string                 `json:"workloadName,omitempty"`
-	WorkloadKind      string                 `json:"workloadKind,omitempty"` // e.g. "Deployment"
-	WorkloadNamespace string                 `json:"workloadNamespace,omitempty"`
-	ContainerName     string                 `json:"containerName,omitempty"`
+	WorkloadName      string                     `json:"workloadName,omitempty"`
+	WorkloadKind      string                     `json:"workloadKind,omitempty"` // e.g. "Deployment"
+	WorkloadNamespace string                     `json:"workloadNamespace,omitempty"`
+	ContainerName     string                     `json:"containerName,omitempty"`
 	WorkloadLanguage  common.ProgrammingLanguage `json:"workloadLanguage,omitempty"`
 }
