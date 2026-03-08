@@ -167,6 +167,13 @@ spec:
                     if found anywhere in the trace, the entire trace will be kept
                     regaradless of any cost reduction rules.
                   properties:
+                    disabled:
+                      description: |-
+                        if set to true, the rule will be disabled,
+                        e.g. will not be taken into account for any sampling decisions.
+                        disabled rules still participate in metrics calculations,
+                        allowing enhanced tools and data for troubleshooting and sampling maintenance.
+                      type: boolean
                     durationAtLeastMs:
                       description: if Duration is set, only operations with duration
                         in milli seconds larger then this value are considered
@@ -175,6 +182,13 @@ spec:
                       description: if "Error" is set to true, only spans with SpanStatus
                         set to "Error" are considered
                       type: boolean
+                    name:
+                      description: |-
+                        user provided name, for easier identification and reference.
+                        use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+                        odigos does not use or assume any meaning from this field,
+                        but it is written as metric attribute, and stored as span attribute on participating spans.
+                      type: string
                     notes:
                       description: |-
                         optional free-form text field that allows you to attach notes
@@ -313,11 +327,14 @@ spec:
                               description: match method exactly, can be empty to match
                                 any method
                               type: string
+                            route:
+                              description: match route exactly
+                              type: string
+                            routePrefix:
+                              description: match preffix of route
+                              type: string
                             serverAddress:
                               description: match server address exactly (e.g. collector.my.vendor.com)
-                              type: string
-                            urlPath:
-                              description: match url path exactly (e.g. /api/v1/metrics)
                               type: string
                           type: object
                         httpServer:

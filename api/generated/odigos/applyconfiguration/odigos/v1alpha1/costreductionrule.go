@@ -19,16 +19,16 @@ package v1alpha1
 
 import (
 	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
-	api "github.com/odigos-io/odigos/common/api"
+	sampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
 // CostReductionRuleApplyConfiguration represents a declarative configuration of the CostReductionRule type for use
 // with apply.
 type CostReductionRuleApplyConfiguration struct {
-	SourceScopes     []k8sconsts.SourcesScope          `json:"sourceScopes,omitempty"`
-	Operation        *api.TailSamplingOperationMatcher `json:"operation,omitempty"`
-	PercentageAtMost *float64                          `json:"percentageAtMost,omitempty"`
-	Notes            *string                           `json:"notes,omitempty"`
+	SourceScopes     []k8sconsts.SourcesScope               `json:"sourceScopes,omitempty"`
+	Operation        *sampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                               `json:"percentageAtMost,omitempty"`
+	Notes            *string                                `json:"notes,omitempty"`
 }
 
 // CostReductionRuleApplyConfiguration constructs a declarative configuration of the CostReductionRule type for use with
@@ -50,7 +50,7 @@ func (b *CostReductionRuleApplyConfiguration) WithSourceScopes(values ...k8scons
 // WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operation field is set to the value of the last call.
-func (b *CostReductionRuleApplyConfiguration) WithOperation(value api.TailSamplingOperationMatcher) *CostReductionRuleApplyConfiguration {
+func (b *CostReductionRuleApplyConfiguration) WithOperation(value sampling.TailSamplingOperationMatcher) *CostReductionRuleApplyConfiguration {
 	b.Operation = &value
 	return b
 }
