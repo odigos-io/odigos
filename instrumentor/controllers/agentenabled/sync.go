@@ -16,7 +16,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
-	apisanpling "github.com/odigos-io/odigos/common/api/sampling"
+	apisampling "github.com/odigos-io/odigos/common/api/sampling"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
@@ -502,7 +502,7 @@ func calculateContainerCollectorConfig(containerName string,
 
 	return &commonapi.ContainerCollectorConfig{
 		ContainerName: containerName,
-		TailSampling: &apisanpling.TailSamplingSourceConfig{
+		TailSampling: &apisampling.TailSamplingSourceConfig{
 			NoisyOperations:          noisyOps,
 			HighlyRelevantOperations: relevantOps,
 			CostReductionRules:       costRules,
