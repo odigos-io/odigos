@@ -6,7 +6,6 @@ require (
 	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
-	github.com/moby/sys/mountinfo v0.7.2
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
 	github.com/odigos-io/odigos/distros v0.0.0

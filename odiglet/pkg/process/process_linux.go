@@ -1,19 +1,19 @@
 package process
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os"
-	"strings"
 
-	mount "github.com/moby/sys/mountinfo"
 	"github.com/odigos-io/odigos/procdiscovery/pkg/process"
 )
 
 func isInPodContainersBatchPredicate(podContainers []PodContainerUID) func(int) (PodContainerUID, bool) {
-	expectedMountByPodContainer := make(map[PodContainerUID]string)
+	expectedMountByPodContainer := make(map[PodContainerUID][]byte)
 	for _, pc := range podContainers {
 		expectedMount := fmt.Sprintf("%s/containers/%s/", pc.PodUID, pc.ContainerName)
-		expectedMountByPodContainer[pc] = expectedMount
+		expectedMountByPodContainer[pc] = []byte(expectedMount)
 	}
 
 	return func(pid int) (PodContainerUID, bool) {
@@ -24,26 +24,14 @@ func isInPodContainersBatchPredicate(podContainers []PodContainerUID) func(int) 
 		}
 		defer f.Close()
 
-		relevantPodContainer := PodContainerUID{}
-		infos, err := mount.GetMountsFromReader(f, func(m *mount.Info) (skip, stop bool) {
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
 			for pc, mountPath := range expectedMountByPodContainer {
-				if strings.Contains(m.Root, mountPath) {
-					// Found the mount, add it and stop
-					relevantPodContainer = pc
-					return false, true
+				if bytes.Contains(scanner.Bytes(), mountPath) {
+					return pc, true
 				}
 			}
-
-			// Keep looking
-			return true, false
-		})
-		if err != nil {
-			return PodContainerUID{}, false
 		}
-		if len(infos) > 0 {
-			return relevantPodContainer, true
-		}
-
 		return PodContainerUID{}, false
 	}
 }
@@ -53,7 +41,7 @@ func isPodContainerPredicate(podUID string, containerName string) func(int) bool
 	// Added trailing slash to avoid substring collisions like "membership" matching "membership1".
 	// Real m.Root ends with runtime ID (e.g., .../containers/membership/<runtime-id>), so exact match fails.
 	// Using slash ensures we only match full "containers/<name>/" segments in mount paths.
-	expectedMountRoot := fmt.Sprintf("%s/containers/%s/", podUID, containerName)
+	expectedMountRoot := []byte(fmt.Sprintf("%s/containers/%s/", podUID, containerName))
 
 	return func(pid int) bool {
 		mountInfoFile := process.ProcFilePath(pid, "mountinfo")
@@ -63,19 +51,11 @@ func isPodContainerPredicate(podUID string, containerName string) func(int) bool
 		}
 		defer f.Close()
 
-		infos, err := mount.GetMountsFromReader(f, func(m *mount.Info) (skip, stop bool) {
-			if strings.Contains(m.Root, expectedMountRoot) {
-				// Found the mount, add it and stop
-				return false, true
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			if bytes.Contains(scanner.Bytes(), expectedMountRoot) {
+				return true
 			}
-			// Keep looking
-			return true, false
-		})
-		if err != nil {
-			return false
-		}
-		if len(infos) > 0 {
-			return true
 		}
 
 		return false
