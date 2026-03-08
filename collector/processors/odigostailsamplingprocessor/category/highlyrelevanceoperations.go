@@ -10,37 +10,24 @@ import (
 )
 
 type RuleMetrics struct {
-
-	// number of spans on which we invoked this rule.
-	SpanInvocationCount int
-
-	// number of spans on which we matched this rule.
-	SpanMatchingCount int
-
-	// number of traces on which we invoked this rule at least once.
-	TraceInvocationCount int
-
-	// number of traces on which we matched this rule at least once.
-	TraceMatchingCount int
-
+	CommonRuleMetrics
 	// for enabled rules, out of those that matched, how many traces/total-spans were kept?
 	RuleTracesKeptCount     int
 	RuleTotalSpansKeptCount int
 }
 
-func EvaluateHighlyRelevantOperations(td ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64) (bool, *commonapi.WorkloadHighlyRelevantOperation) {
+func EvaluateHighlyRelevantOperations(trace ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64) (bool, *commonapi.WorkloadHighlyRelevantOperation, map[string]*RuleMetrics) {
 
-	var mostPercentageRule *commonapi.WorkloadHighlyRelevantOperation
-	var mostPercentagePercent float64 = 0.0
-
-	rulesMetrics := make(map[string]RuleMetrics)
+	// keep a trace for metrics for running rules on this trace.
+	// this map is not expected to be very large,
+	// as each source should (ideally) have zero, or only few rules, and there is a lot of overlap.
+	rulesMetrics := make(map[string]*RuleMetrics)
 	totalSpansCount := 0
 
-	// kept a count of all matching rules that were invoked.
+	// keep all the rules that matched here as they are evaluated in all the spans of the given trace.
 	matchingRules := map[string]*commonapi.WorkloadHighlyRelevantOperation{}
-	invoctedRules := map[string]struct{}{}
 
-	rss := td.ResourceSpans()
+	rss := trace.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
 		res := rss.At(i)
 
@@ -58,102 +45,73 @@ func EvaluateHighlyRelevantOperations(td ptrace.Traces, configProvider collector
 				span := spans.At(k)
 				totalSpansCount++
 
-				spanMostPercentageRule, matchedRules := processSpanHighlyRelevantRules(span, highlyRelevantOperations)
+				spanMostPercentageRule, matchedRules := processHighlyRelevantRulesForSingleSpan(span, highlyRelevantOperations)
+
+				// capture metrics for invocations of theses rules
+				recordMetricsInvocationsForSingleSpan(rulesMetrics, highlyRelevantOperations)
+
 				if spanMostPercentageRule != nil {
-					// rule matched, update the global one if needed
-					currentPercentage := GetPercentageOrDefault100(spanMostPercentageRule.PercentageAtLeast)
-					if mostPercentageRule == nil || currentPercentage > mostPercentagePercent {
-						mostPercentagePercent = currentPercentage
-						mostPercentageRule = spanMostPercentageRule
+					setMatchingRuleAttributesOnSpan(span, spanMostPercentageRule.Id, GetPercentageOrDefault100(spanMostPercentageRule.PercentageAtLeast))
+					recordMetricsMatchingForSingleSpan(rulesMetrics, matchedRules)
+
+					// update the map that tracks all the rules that matched for this trace,
+					// so we can calculate combined result.
+					for _, matchedRule := range matchedRules {
+						matchingRules[matchedRule.Id] = matchedRule
 					}
-
-					// TODO: check if span attributes annotations are enabled
-					span.Attributes().PutStr("odigos.sampling.span.matching_rule.id", spanMostPercentageRule.Id)
-					span.Attributes().PutDouble("odigos.sampling.span.matching_rule.percentage_at_least", GetPercentageOrDefault100(spanMostPercentageRule.PercentageAtLeast))
-				}
-
-				// capture metrics for all the invocations of theses rules
-				for _, rule := range highlyRelevantOperations {
-
-					if _, found := rulesMetrics[rule.Id]; !found {
-						rulesMetrics[rule.Id] = RuleMetrics{}
-					}
-					metrics := rulesMetrics[rule.Id]
-					metrics.SpanInvocationCount++
-
-					invoctedRules[rule.Id] = struct{}{}
-				}
-				for _, matchedRule := range matchedRules {
-
-					// rule id has already been created in the map already
-					metrics := rulesMetrics[matchedRule.Id]
-					metrics.SpanMatchingCount++
-
-					matchingRules[matchedRule.Id] = matchedRule
 				}
 			}
 		}
 	}
 
-	for ruleId := range invoctedRules {
-		rulesMetrics[ruleId] = RuleMetrics{
-			// marked it as invoked for metrics
-			TraceInvocationCount: 1,
-		}
+	for _, metrics := range rulesMetrics {
+		metrics.TraceCheckedCount = 1
 	}
+	rulesMetrics = recordMetricsMatchingAndKept(rulesMetrics, matchingRules, tracePercentage, totalSpansCount)
+	decidingRule := calculateDecidingRule(matchingRules)
 
-	var selectedRule *commonapi.WorkloadHighlyRelevantOperation
-	var selectedRulePercentage float64 = 0.0
-	for _, matchingRule := range matchingRules {
-		percentage := GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
-		if selectedRule == nil || percentage > selectedRulePercentage {
-			selectedRule = matchingRule
-			selectedRulePercentage = percentage
-		}
-	}
-
-	for _, matchingRule := range matchingRules {
-
-		kept := tracePercentage >= GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
-
-		metrics := rulesMetrics[matchingRule.Id]
-		metrics.TraceMatchingCount++
-		if kept {
-			metrics.RuleTracesKeptCount++
-			metrics.RuleTotalSpansKeptCount += totalSpansCount
-		}
-	}
-
-	return mostPercentageRule != nil, mostPercentageRule
+	return decidingRule != nil, decidingRule, rulesMetrics
 }
 
-func processSpanHighlyRelevantRules(span ptrace.Span, highlyRelevantOperations []commonapi.WorkloadHighlyRelevantOperation) (*commonapi.WorkloadHighlyRelevantOperation, []*commonapi.WorkloadHighlyRelevantOperation) {
+// record all the rules that invoked on a single span into the givin metrics.
+// this function will update the rulesMetrics map in place.
+func recordMetricsInvocationsForSingleSpan(rulesMetrics map[string]*RuleMetrics, highlyRelevantOperations []commonapi.WorkloadHighlyRelevantOperation) {
+	for _, rule := range highlyRelevantOperations {
+		metrics, found := rulesMetrics[rule.Id]
+		if !found {
+			metrics = &RuleMetrics{}
+			rulesMetrics[rule.Id] = metrics
+		}
+		metrics.SpanCheckedCount++
+	}
+}
 
+// record all the rules that matched on a single span into the givin metrics.
+// this function will update the rulesMetrics map in place.
+func recordMetricsMatchingForSingleSpan(rulesMetrics map[string]*RuleMetrics, matchedRules []*commonapi.WorkloadHighlyRelevantOperation) {
+	for _, rule := range matchedRules {
+		metrics := rulesMetrics[rule.Id]
+		metrics.SpanMatchingCount++
+	}
+}
+
+// for a single span, evaluate all of the service highly relevant rules against the span.
+// it will return the rule with the highest percentage that matched, and a list of all the rules that matched.
+func processHighlyRelevantRulesForSingleSpan(span ptrace.Span, highlyRelevantOperations []commonapi.WorkloadHighlyRelevantOperation) (*commonapi.WorkloadHighlyRelevantOperation, []*commonapi.WorkloadHighlyRelevantOperation) {
+
+	// keep all the rules that matched, it will most likely contains 0 entries,
+	// but occasionally 1 (when this span interacted with sampling), or a few values.
 	matchedRules := []*commonapi.WorkloadHighlyRelevantOperation{}
 
 	for _, highlyRelevantOperation := range highlyRelevantOperations {
 
-		// operation matching
-		matched := matchers.TailSamplingOperationMatcher(highlyRelevantOperation.Operation, span)
-
-		// error matching
-		if highlyRelevantOperation.Error {
-			errorMatched := span.Status().Code() == ptrace.StatusCodeError
-			if !errorMatched {
-				matched = false
-			}
-		}
-
-		// duration matching
-		if highlyRelevantOperation.DurationAtLeastMs != nil {
-			currentSpanDurationNano := uint64(span.EndTimestamp() - span.StartTimestamp())
-			ruleDurationNano := uint64(*highlyRelevantOperation.DurationAtLeastMs) * 1e6
-
-			aboveThreshold := currentSpanDurationNano >= ruleDurationNano
-			if !aboveThreshold {
-				matched = false
-			}
-		}
+		// try all the matchers in a single pass.
+		// all of them must return true (AND logic) for the rule to match.
+		// if they are not specified, they will default to true.
+		matched := true
+		matched = matched && matchers.TailSamplingOperationMatcher(highlyRelevantOperation.Operation, span)
+		matched = matched && matchers.SpanErrorMatcher(span, highlyRelevantOperation.Error)
+		matched = matched && matchers.SpanDurationMatcher(span, highlyRelevantOperation.DurationAtLeastMs)
 
 		if matched {
 			matchedRules = append(matchedRules, &highlyRelevantOperation)
@@ -163,7 +121,7 @@ func processSpanHighlyRelevantRules(span ptrace.Span, highlyRelevantOperations [
 	if len(matchedRules) == 0 {
 		return nil, nil
 	}
-	if len(matchedRules) == 1 { // shortcut for common case
+	if len(matchedRules) == 1 { // shortcut for common easy case
 		return matchedRules[0], matchedRules
 	}
 
@@ -193,4 +151,52 @@ func getHighlyRelevantOperationsConfig(configProvider collector.OdigosConfigExte
 		return nil
 	}
 	return cfg.TailSampling.HighlyRelevantOperations
+}
+
+// based on all the matching rules, find the one with the highest percentage.
+// if multiple rules have the same highest percentage, one of them will be selected arbitrarily.
+// this is used to mark spans with a single rule (most allowing) for sampling traceability.
+func calculateDecidingRule(matchingRules map[string]*commonapi.WorkloadHighlyRelevantOperation) *commonapi.WorkloadHighlyRelevantOperation {
+	if len(matchingRules) == 0 {
+		return nil
+	}
+
+	// shortcut for common and easy case
+	if len(matchingRules) == 1 {
+		for _, matchingRule := range matchingRules {
+			return matchingRule
+		}
+	}
+
+	// pick the rule with the highest percentage.
+	var selectedRule *commonapi.WorkloadHighlyRelevantOperation
+	var selectedRulePercentage float64 = 0.0
+	for _, matchingRule := range matchingRules {
+		percentage := GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
+		// we don't need to continue once we found the first rule which is 100% (most permissive rule).
+		if percentage == 100.0 {
+			return matchingRule
+		}
+		if selectedRule == nil || percentage > selectedRulePercentage {
+			selectedRule = matchingRule
+			selectedRulePercentage = percentage
+		}
+	}
+	return selectedRule
+}
+
+// recordMetricsMatchingAndKept updates rulesMetrics for each matching rule:
+// - the trace is counted once for being matched by this rule.
+// - if the rules decision for this trace is "keep", we count the trace once and number of spans in the "kept" metrics.
+func recordMetricsMatchingAndKept(rulesMetrics map[string]*RuleMetrics, matchingRules map[string]*commonapi.WorkloadHighlyRelevantOperation, tracePercentage float64, totalSpansCount int) map[string]*RuleMetrics {
+	for _, matchingRule := range matchingRules {
+		kept := tracePercentage >= GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
+		metrics := rulesMetrics[matchingRule.Id] // rule has already been added when we marked the trace as matched by this rule.
+		metrics.TraceMatchingCount++
+		if kept {
+			metrics.RuleTracesKeptCount++
+			metrics.RuleTotalSpansKeptCount += totalSpansCount
+		}
+	}
+	return rulesMetrics
 }

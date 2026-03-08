@@ -39,8 +39,8 @@ func enrichSpansWithSamplingAttributes(td ptrace.Traces, category string, ruleId
 			for k := 0; k < spans.Len(); k++ {
 				span := spans.At(k)
 				span.Attributes().PutStr("odigos.sampling.category", category)
-				span.Attributes().PutStr("odigos.sampling.rule_id", ruleId)
-				span.Attributes().PutDouble("odigos.sampling.keep_percentage", keepPercentage)
+				span.Attributes().PutStr("odigos.sampling.trace.deciding_rule.id", ruleId)
+				span.Attributes().PutDouble("odigos.sampling.trace.deciding_rule.keep_percentage", keepPercentage)
 			}
 		}
 	}

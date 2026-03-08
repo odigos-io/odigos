@@ -70,13 +70,26 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		}
 	}
 
-	matched, highlyRelevantOperationRule := category.EvaluateHighlyRelevantOperations(td, p.odigosConfigExtension, tracePercentage)
+	matched, highlyRelevantOperationRule, _ := category.EvaluateHighlyRelevantOperations(td, p.odigosConfigExtension, tracePercentage)
 	if matched {
 		percentageAtLeast := category.GetPercentageOrDefault(highlyRelevantOperationRule.PercentageAtLeast, 100.0)
 		keepTrace := tracePercentage <= percentageAtLeast
 
 		if keepTrace {
 			enrichSpansWithSamplingAttributes(td, "highly_relevant", highlyRelevantOperationRule.Id, percentageAtLeast)
+			return td, nil
+		} else {
+			return ptrace.NewTraces(), nil
+		}
+	}
+
+	matched, costReductionRule, _ := category.EvaluateCostReductionOperations(td, p.odigosConfigExtension, tracePercentage)
+	if matched {
+		percentageAtMost := costReductionRule.PercentageAtMost
+		keepTrace := tracePercentage <= percentageAtMost
+
+		if keepTrace {
+			enrichSpansWithSamplingAttributes(td, "cost_reduction", costReductionRule.Id, percentageAtMost)
 			return td, nil
 		} else {
 			return ptrace.NewTraces(), nil
