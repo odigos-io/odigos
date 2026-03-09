@@ -13,6 +13,8 @@ metadata:
 data:
   config.yaml: |
     configVersion: 1
+    componentLogLevels:
+      default: {{ .Values.logLevel | default "info" }}
     {{- if .Values.clusterName }}
     clusterName: {{ .Values.clusterName }}
     {{- end }}

@@ -46,7 +46,7 @@ func GetHelmDeploymentConfig(ctx context.Context, c client.Client) (*common.Odig
 	return getOdigosConfigFromConfigMap(ctx, c, consts.OdigosConfigurationName)
 }
 
-// GetRemoteConfig retrieves the current remote configuration from the odigos-remote-config ConfigMap.
+// GetRemoteConfig retrieves the backend/GraphQL overlay from odigos-remote-config.
 func GetRemoteConfig(ctx context.Context, c client.Client) (*common.OdigosConfiguration, error) {
 	return getOdigosConfigFromConfigMap(ctx, c, consts.OdigosRemoteConfigName)
 }

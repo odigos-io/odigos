@@ -13,6 +13,34 @@ type Config {
 
 # Effective configuration, reflects the actual values applied to the cluster
 
+enum OdigosLogLevel {
+  error
+  warn
+  info
+  debug
+}
+
+enum OdigosComponent {
+  autoscaler
+  scheduler
+  instrumentor
+  odiglet
+  deviceplugin
+  ui
+  collector
+}
+
+type ComponentLogLevelsConfig {
+  default: OdigosLogLevel
+  autoscaler: OdigosLogLevel
+  scheduler: OdigosLogLevel
+  instrumentor: OdigosLogLevel
+  odiglet: OdigosLogLevel
+  deviceplugin: OdigosLogLevel
+  ui: OdigosLogLevel
+  collector: OdigosLogLevel
+}
+
 enum UiMode {
   default
   readonly
@@ -203,6 +231,7 @@ type EffectiveConfig {
   allowedTestConnectionHosts: [String!]
   odigosOwnTelemetryStore: OdigosOwnTelemetryConfig
   imagePullSecrets: [String!]
+  componentLogLevels: ComponentLogLevelsConfig
 }
 
 # Remote configuration managed by central-backend
@@ -225,12 +254,13 @@ input RemoteConfigInput {
 extend type Query {
   # key information about the cluster and the installation (self-defined config for UI control and usage)
   config: Config
-  # odigos-remote-config ConfigMap managed by central-backend (deprecated, will be removed in the future)
+  # odigos-remote-config ConfigMap (backend/GraphQL overlay, e.g. rollout)
   remoteConfig: RemoteConfig
-  # effective-config ConfigMap, reflects the actual values applied to the cluster (by odigos-configuration, odigos-remote-config, etc.)
+  # effective-config ConfigMap (base + remote + local-ui merged by scheduler)
   effectiveConfig: EffectiveConfig
 }
 
 extend type Mutation {
   updateRemoteConfig(config: RemoteConfigInput!): Boolean!
+  setComponentLogLevel(component: OdigosComponent, level: OdigosLogLevel!): Boolean!
 }

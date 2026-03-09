@@ -13,6 +13,7 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -48,7 +48,7 @@ func (b *nodeCollectorBaseReconciler) SyncConfigMap(ctx context.Context, sources
 		return errors.Join(err, errors.New("failed to check if tracing load balancing is needed"))
 	}
 
-	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
+	configDomains, configAsYamlText, err := calculateCollectorConfigDomains(ctx, b.odigosNamespace, datacollection, sources, clusterCollectorGroup.Status.ReceiverSignals, processors, commonconf.ControllerConfig.OnGKE, tracingLoadBalancingNeeded)
 	if err != nil {
 		return errors.Join(err, errors.New("failed to calculate collector config domains"))
 	}
@@ -131,6 +131,7 @@ func (b *nodeCollectorBaseReconciler) persistCollectorConfigDomains(ctx context.
 }
 
 func calculateCollectorConfigDomains(
+	ctx context.Context,
 	odigosNamespace string,
 	nodeCG *odigosv1.CollectorsGroup,
 	sources *odigosv1.InstrumentationConfigList,
@@ -138,6 +139,8 @@ func calculateCollectorConfigDomains(
 	processors []*odigosv1.Processor,
 	onGKE bool,
 	loadBalancingNeeded bool) (map[string]config.Config, string, error) {
+
+	logger := commonlogger.FromContext(ctx)
 
 	// common config domains - always set and active
 	configDomains := map[string]config.Config{
@@ -165,7 +168,7 @@ func calculateCollectorConfigDomains(
 	// processors from k8s "Processor" custom resource
 	processorsResults := config.CrdProcessorToConfig(commonconf.ToProcessorConfigurerArray(processors))
 	for name, err := range processorsResults.Errs {
-		log.Log.V(0).Error(err, "failed to convert processor manifest to config", "processor", name)
+		logger.Error(err, "failed to convert processor manifest to config", "processor", name)
 		return nil, "", err
 	}
 	configDomains["processors"] = processorsResults.ProcessorsConfig
@@ -216,7 +219,7 @@ func calculateCollectorConfigDomains(
 	// logs
 	collectLogs := slices.Contains(clusterCollectorSignals, odigoscommon.LogsObservabilitySignal)
 	if collectLogs {
-		logsConfig := collectorconfig.LogsConfig(nodeCG, odigosNamespace, processorsResults.LogsProcessors, sources)
+		logsConfig := collectorconfig.LogsConfig(logger.Logr(), nodeCG, odigosNamespace, processorsResults.LogsProcessors, sources)
 		configDomains["logs"] = logsConfig
 	}
 

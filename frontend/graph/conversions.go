@@ -157,6 +157,7 @@ func EffectiveConfigToModel(config *common.OdigosConfiguration) (*model.Effectiv
 	setEffectiveConfigInts(result, config)
 	setEffectiveConfigArrays(result, config)
 	setEffectiveConfigEnums(result, config)
+	setEffectiveConfigComponentLogLevels(result, config)
 
 	if err := setEffectiveConfigNestedStructs(result, config); err != nil {
 		return nil, err
@@ -262,6 +263,47 @@ func setEffectiveConfigEnums(result *model.EffectiveConfig, config *common.Odigo
 		injectionMethod := convertEnvInjectionMethodToModel(*config.AgentEnvVarsInjectionMethod)
 		result.AgentEnvVarsInjectionMethod = &injectionMethod
 	}
+}
+
+func setEffectiveConfigComponentLogLevels(result *model.EffectiveConfig, config *common.OdigosConfiguration) {
+	if config.ComponentLogLevels == nil {
+		return
+	}
+	c := config.ComponentLogLevels
+	out := &model.ComponentLogLevelsConfig{}
+	if c.Default != "" {
+		lvl := model.OdigosLogLevel(c.Default)
+		out.Default = &lvl
+	}
+	if c.Autoscaler != "" {
+		lvl := model.OdigosLogLevel(c.Autoscaler)
+		out.Autoscaler = &lvl
+	}
+	if c.Scheduler != "" {
+		lvl := model.OdigosLogLevel(c.Scheduler)
+		out.Scheduler = &lvl
+	}
+	if c.Instrumentor != "" {
+		lvl := model.OdigosLogLevel(c.Instrumentor)
+		out.Instrumentor = &lvl
+	}
+	if c.Odiglet != "" {
+		lvl := model.OdigosLogLevel(c.Odiglet)
+		out.Odiglet = &lvl
+	}
+	if c.Deviceplugin != "" {
+		lvl := model.OdigosLogLevel(c.Deviceplugin)
+		out.Deviceplugin = &lvl
+	}
+	if c.UI != "" {
+		lvl := model.OdigosLogLevel(c.UI)
+		out.UI = &lvl
+	}
+	if c.Collector != "" {
+		lvl := model.OdigosLogLevel(c.Collector)
+		out.Collector = &lvl
+	}
+	result.ComponentLogLevels = out
 }
 
 func setEffectiveConfigNestedStructs(result *model.EffectiveConfig, config *common.OdigosConfiguration) error {

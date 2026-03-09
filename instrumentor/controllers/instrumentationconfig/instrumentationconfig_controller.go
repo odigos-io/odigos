@@ -20,11 +20,11 @@ import (
 	"context"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type InstrumentationConfigReconciler struct {
@@ -33,7 +33,7 @@ type InstrumentationConfigReconciler struct {
 }
 
 func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	var ic odigosv1.InstrumentationConfig
 	err := r.Client.Get(ctx, req.NamespacedName, &ic)
@@ -52,14 +52,14 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	err = updateInstrumentationConfigForWorkload(&ic, instrumentationRules, &conf)
+	err = updateInstrumentationConfigForWorkload(ctx, &ic, instrumentationRules, &conf)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	err = r.Client.Update(ctx, &ic)
 	if err == nil {
-		logger.V(0).Info("Updated instrumentation config", "workload", ic.Name)
+		logger.Info("Updated instrumentation config", "workload", ic.Name)
 	}
 	return utils.K8SUpdateErrorHandler(err)
 }

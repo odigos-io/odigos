@@ -160,7 +160,7 @@ func Test_Deinstrumentation_RateLimited_NoRequeue(t *testing.T) {
 	}
 
 	fakeClient := s.newFakeClient(deployment, instrumentedPod)
-	var ic *odigosv1alpha1.InstrumentationConfig // nil IC = de-instrumentation
+	var ic *odigosv1alpha1.InstrumentationConfig       // nil IC = de-instrumentation
 	limiter := newRolloutConcurrencyLimiterExhausted() // Limiter with one slot already taken
 
 	// Act

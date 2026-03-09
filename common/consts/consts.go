@@ -11,12 +11,11 @@ const (
 	OdigosComponentDeploymentNameEnvVar = "ODIGOS_COMPONENT_DEPLOYMENT_NAME"
 	OdigosTierEnvVarName                = "ODIGOS_TIER"
 	DefaultOdigosNamespace              = "odigos-system"
-	OdigosConfigurationName             = "odigos-configuration"
-	// Deprecated: only used for migrations
-	OdigosLegacyConfigName      = "odigos-config"
+	OdigosConfigurationName     = "odigos-configuration"
 	OdigosEffectiveConfigName   = "effective-config"
-	OdigosRemoteConfigName      = "odigos-remote-config"
-	OdigosLocalUiConfigName     = "odigos-local-ui-config"
+	OdigosRemoteConfigName      = "odigos-remote-config"  // backend/GraphQL overlay (e.g. rollout)
+	OdigosLocalUiConfigName     = "odigos-local-ui-config" // UI overlay (log level, sampling)
+	OdigosLegacyConfigName      = "odigos-config"          // Deprecated: only used for migrations
 	OdigosConfigurationFileName = "config.yaml"
 	OTLPPort                    = 4317
 	OTLPHttpPort                = 4318

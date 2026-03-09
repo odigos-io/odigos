@@ -15,11 +15,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"errors"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	commonconfig "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/k8sconfig"
@@ -36,7 +36,7 @@ const (
 
 func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.CollectorsGroup,
 	ctx context.Context, c client.Client, scheme *runtime.Scheme, odigosVersion string) (*appsv1.Deployment, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	autoscalerDeploymentName := env.GetComponentDeploymentNameOrDefault(k8sconsts.AutoScalerDeploymentName)
 	autoscalerDeployment := &appsv1.Deployment{}
@@ -70,14 +70,14 @@ func syncDeployment(enabledDests *odigosv1.DestinationList, gateway *odigosv1.Co
 	}
 
 	if apierrors.IsNotFound(getError) {
-		logger.V(0).Info("Creating new gateway deployment")
+		logger.Info("Creating new gateway deployment")
 		err := c.Create(ctx, desiredDeployment)
 		if err != nil {
 			return nil, errors.Join(err, errors.New("failed to create gateway deployment"))
 		}
 		return desiredDeployment, nil
 	} else {
-		logger.V(0).Info("Patching existing gateway deployment")
+		logger.Info("Patching existing gateway deployment")
 		newDep, err := patchDeployment(existingDeployment, desiredDeployment, ctx, c)
 		if err != nil {
 			return nil, errors.Join(err, errors.New("failed to patch gateway deployment"))
@@ -99,10 +99,10 @@ func deleteOldDeployments(ctx context.Context, c client.Client, namespace string
 		return nil
 	}
 
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	for _, deployment := range deployments.Items {
 		if deployment.Name != deploymentName {
-			logger.V(0).Info("Deleting old gateway deployment pre odigos cluster collector deployment rename", "deployment", deployment.Name)
+			logger.Info("Deleting old gateway deployment pre odigos cluster collector deployment rename", "deployment", deployment.Name)
 			err := c.Delete(ctx, &deployment)
 			if err != nil {
 				return err
@@ -113,7 +113,7 @@ func deleteOldDeployments(ctx context.Context, c client.Client, namespace string
 }
 
 func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ctx context.Context, c client.Client) (*appsv1.Deployment, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	res, err := controllerutil.CreateOrPatch(ctx, c, existing, func() error {
 		existing.Spec.Template = desired.Spec.Template
 		return nil
@@ -123,7 +123,7 @@ func patchDeployment(existing *appsv1.Deployment, desired *appsv1.Deployment, ct
 		return nil, err
 	}
 
-	logger.V(0).Info("Deployment patched", "result", res)
+	logger.Info("Deployment patched", "result", res)
 	return existing, nil
 }
 

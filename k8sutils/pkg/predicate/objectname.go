@@ -95,14 +95,12 @@ var OdigosDeploymentConfigMapPredicate = ObjectNamePredicate{
 	AllowedObjectName: k8sconsts.OdigosDeploymentConfigMapName,
 }
 
-// OdigosRemoteConfigMapPredicate filters events for the odigos-remote-config ConfigMap
-// which contains configuration managed by the central-backend.
+// OdigosRemoteConfigMapPredicate filters events for the odigos-remote-config ConfigMap (backend/GraphQL overlay).
 var OdigosRemoteConfigMapPredicate = ObjectNamePredicate{
 	AllowedObjectName: consts.OdigosRemoteConfigName,
 }
 
-// OdigosLocalUiConfigMapPredicate filters events for the odigos-local-ui-config ConfigMap
-// which contains configuration for the local UI.
+// OdigosLocalUiConfigMapPredicate filters events for the odigos-local-ui-config ConfigMap (UI overlay: log level, sampling).
 var OdigosLocalUiConfigMapPredicate = ObjectNamePredicate{
 	AllowedObjectName: consts.OdigosLocalUiConfigName,
 }

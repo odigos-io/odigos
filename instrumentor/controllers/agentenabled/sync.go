@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-version"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -17,6 +16,7 @@ import (
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
@@ -32,7 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type agentInjectedStatusCondition struct {
@@ -83,7 +82,7 @@ func reconcileAll(ctx context.Context, c client.Client, dp *distros.Provider, ro
 }
 
 func reconcileWorkload(ctx context.Context, c client.Client, icName string, namespace string, distroProvider *distros.Provider, conf *common.OdigosConfiguration, rolloutConcurrencyLimiter *rollout.RolloutConcurrencyLimiter) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(icName, namespace)
 	if err != nil {
@@ -149,7 +148,7 @@ func updateInstrumentationConfigAgentsMetaHash(ic *odigosv1.InstrumentationConfi
 // which records what should be written to the status.conditions field of the instrumentation config
 // and later be used for viability and monitoring purposes.
 func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, distroProvider *distros.Provider, effectiveConfig *common.OdigosConfiguration) (*agentInjectedStatusCondition, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	cg, irls, agentLevelActions, samplingRules, workloadObj, err := getRelevantResources(ctx, c, pw)
 	if err != nil {
 		// error of fetching one of the resources, retry
@@ -285,7 +284,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 }
 
 // hasUninstrumentedPodsWithBackoff checks if the workload has pods in backoff state before instrumentation.
-func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, logger logr.Logger) (*agentInjectedStatusCondition, error) {
+func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k8sconsts.PodWorkload, ic *odigosv1.InstrumentationConfig, logger *commonlogger.ContextLogger) (*agentInjectedStatusCondition, error) {
 	// CronJob and Job workloads don't have a label selector like Deployments/StatefulSets/DaemonSets,
 	// so we skip the backoff check for them. Their pods are managed differently through the Job controller.
 	if pw.Kind == k8sconsts.WorkloadKindCronJob || pw.Kind == k8sconsts.WorkloadKindJob {
@@ -296,11 +295,11 @@ func hasUninstrumentedPodsWithBackoff(ctx context.Context, c client.Client, pw k
 	if getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadClientObj); getErr == nil {
 		hasPodInBackoff, backoffErr := rollout.WorkloadHasNonInstrumentedPodInBackoff(ctx, c, workloadClientObj)
 		if backoffErr != nil {
-			logger.V(2).Info("failed to check for pods in backoff", "error", backoffErr, "workload", pw.Name, "namespace", pw.Namespace)
+			logger.Debug("failed to check for pods in backoff", "err", backoffErr, "workload", pw.Name, "namespace", pw.Namespace)
 			return nil, fmt.Errorf("failed to check for pods in backoff: %w", backoffErr)
 		}
 		if hasPodInBackoff {
-			logger.V(2).Info("workload has pods in backoff state", "workload", pw.Name, "namespace", pw.Namespace)
+			logger.Debug("workload has pods in backoff state", "workload", pw.Name, "namespace", pw.Namespace)
 			return &agentInjectedStatusCondition{
 				Status:  metav1.ConditionFalse,
 				Reason:  odigosv1.AgentEnabledReasonCrashLoopBackOff,

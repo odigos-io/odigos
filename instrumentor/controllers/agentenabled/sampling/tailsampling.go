@@ -4,8 +4,8 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/distros/distro"
 	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/distros/distro"
 )
 
 func FilterTailSamplingRulesForContainer(samplingRules *[]odigosv1.Sampling, language common.ProgrammingLanguage,
