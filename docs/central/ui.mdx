@@ -1,0 +1,29 @@
+---
+title: 'Accessing the Central UI'
+description: 'Access the Odigos Central web interface using port-forwarding or a custom address.'
+sidebarTitle: 'Central UI'
+---
+
+After installation, access the Central UI using port-forward:
+
+```bash
+odigos pro central ui
+```
+
+This forwards:
+
+- **Central UI** to `http://localhost:3000`
+- **Central Backend** to `http://localhost:8081`
+
+## Options
+
+| Flag                | Default          | Description                                 |
+| ------------------- | ---------------- | ------------------------------------------- |
+| `--address`         | `localhost`      | Address to bind the port-forward to         |
+| `--namespace`, `-n` | `odigos-central` | Namespace where Odigos Central is installed |
+
+**Example:** To access from other machines on your network:
+
+```bash
+odigos pro central ui --address 0.0.0.0
+```

@@ -1,0 +1,78 @@
+import EnrichmentIntro from '/snippets/shared/enrichment-intro.mdx';
+
+<EnrichmentIntro language="Node.js" />
+
+## Required Dependencies
+
+Add the following npm packages to your service by running:
+
+```bash
+npm install @opentelemetry/api@1.9.0
+```
+
+<Warning>
+  Odigos agent implements OpenTelemetry API version 1.9.0. Any version greater than 1.9.0 may not be compatible with Odigos agent and fail to produce data.<br />
+  Please do not use caret range ~~`@opentelemetry/api@^1.9.0`~~ for this dependency in your package.json to avoid pulling in incompatible version.
+</Warning>
+
+## Creating Spans
+
+To enhance your traces with spans for your custom business logic operations, you need to create a span in your code and wrap the operation you want to observe.
+
+The `tracer` object is the entry point for the OpenTelemetry API.
+
+You can create a `tracer` object using the `getTracer` method from the `@opentelemetry/api` package.
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+const opentelemetry = require('@opentelemetry/api');
+
+const tracer = opentelemetry.trace.getTracer(
+   'instrumentation-scope-name',
+   'instrumentation-scope-version',
+);
+
+function myFunction() {
+   const span = tracer.startSpan('myFunction');
+   // Your code here
+   span.end();
+}
+````
+</Tab>
+<Tab title="TypeScript">
+```typescript
+import opentelemetry from '@opentelemetry/api';
+
+const tracer = opentelemetry.trace.getTracer(
+   'instrumentation-scope-name',
+   'instrumentation-scope-version',
+);
+
+function myFunction() {
+   const span = tracer.startSpan('myFunction');
+   // Your code here
+   span.end();
+}
+````
+</Tab>
+</Tabs>
+
+Make sure to replace `instrumentation-scope-name` and `instrumentation-scope-version` with the name and version of your instrumented file.
+
+Important Notes:
+
+1. **Always End a span**:
+   Ensure that every span is ended to appear in your trace. Defer the End method of the span to guarantee that the span is always ended, even with multiple return paths in the function.
+2. **Propagate and use a valid context object**:
+   When calling tracer.Start, use a valid context object instead of context.Background(). This makes the new span a child of the active span, ensuring it appears correctly in the trace.
+3. **Pass the context object downstream**:
+   When calling downstream functions, pass the context object returned from tracer.Start() to ensure any spans created within these functions are children of the current span. This maintains the hierarchical relationship between spans and provides a clear trace of the request flow.
+4. **Assign meaningful names to spans**:
+   Use descriptive names for spans, (such as the function name) to clearly describe the operations they represent. This helps anyone examining the trace to easily understand the span's purpose and context.
+5. **Avoid dynamic, high cardinality data in span names**:
+   Do not include dynamic data such as IDs in the span name, as this can cause performance issues and make the trace harder to read. Instead, use static, descriptive names for spans and record dynamic information in span attributes. This ensures better performance and readability of the trace.
+
+## Additional Information
+
+For more use cases, see the [OpenTelemetry JavaScript API documentation](https://opentelemetry.io/docs/languages/js/instrumentation/#create-spans).

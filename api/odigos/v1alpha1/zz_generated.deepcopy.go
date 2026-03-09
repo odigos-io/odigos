@@ -27,6 +27,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -648,7 +649,7 @@ func (in *CostReductionRule) DeepCopyInto(out *CostReductionRule) {
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation
-		*out = new(api.TailSamplingOperationMatcher)
+		*out = new(sampling.TailSamplingOperationMatcher)
 		(*in).DeepCopyInto(*out)
 	}
 }
@@ -908,7 +909,7 @@ func (in *HighlyRelevantOperation) DeepCopyInto(out *HighlyRelevantOperation) {
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation
-		*out = new(api.TailSamplingOperationMatcher)
+		*out = new(sampling.TailSamplingOperationMatcher)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PercentageAtLeast != nil {
@@ -1520,7 +1521,7 @@ func (in *NoisyOperation) DeepCopyInto(out *NoisyOperation) {
 	}
 	if in.Operation != nil {
 		in, out := &in.Operation, &out.Operation
-		*out = new(api.HeadSamplingOperationMatcher)
+		*out = new(sampling.HeadSamplingOperationMatcher)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.PercentageAtMost != nil {

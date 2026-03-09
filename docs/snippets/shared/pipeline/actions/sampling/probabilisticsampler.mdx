@@ -1,0 +1,102 @@
+import BetaWarning from '/snippets/shared/beta-warning.mdx';
+import AssumeNoMeaning from '/snippets/shared/assume-no-meaning.mdx';
+
+<Note>
+  <strong>Deprecation Notice:</strong> This feature is deprecated and will be removed in version 1.0.180.
+</Note>
+
+## Considerations
+
+<Warning>
+  Before enabling **probabilistic sampler**, please note the following:
+  - Currently supports only traces.
+  - The action will arbitrarily filter out traces regardless of their properties, potentially dropping important traces, even if they were sampled by other samplers.
+  - All spans in a trace will be either entirely dropped or entirely sampled.
+  - The action will be positioned after all other sampling actions in the pipeline.
+</Warning>
+
+## Use Cases
+
+**Cost Reduction**
+
+- Some vendors charge based on the amount of data ingested. For self hosted destinations, the cost is correlated to the use of cloud resources which grows with the based on the amount of data you process and store. By Reducing traces volumes, you can reduce the amount of data ingested and reduce costs.
+
+**Stability**
+
+- Performance Trend Analysis - In certain scenarios, users may seek to collect sufficient data to understand performance trends without overwhelming the system with excessive telemetry data. For example, track latency trend.
+- Telemetry Volume Management - When experiencing a sudden influx of telemetry data, probabilistic sampling can temporarily reduce data volume sent to your data destination.
+
+## Configuration Options
+
+The ProbabilisticSampler action is configured using the `odigos.io/v1alpha1.Action` CRD with the `samplers` configuration section.
+
+<AccordionGroup>
+  <Accordion title="actionName">
+    **actionName** `string` : Allows you to attach a meaningful name to the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="notes">
+    **notes** `string` : Allows you to attach notes regarding the action for convenience.
+    - This field is *optional*
+    - <AssumeNoMeaning />
+  </Accordion>
+  <Accordion title="disabled">
+    **disabled** `boolean` : Allows you to temporarily disable the action, but keep it saved for future use.
+    - This field is *optional*, and defaults to `false`
+  </Accordion>
+  <Accordion title="signals *">
+    **signals** `string[]` : An array with the signals that the action will operate on.
+    - This field is *required*
+    - Supported values: `TRACES`
+  </Accordion>
+  <Accordion title="samplers *">
+    **samplers** `object` : Configuration for sampling actions.
+    - This field is *required* for this action type
+    <AccordionGroup>
+      <Accordion title="probabilisticSampler *">
+        **probabilisticSampler** `object` : Configuration for the ProbabilisticSampler.
+        - This field is *required* for this action type
+        <AccordionGroup>
+          <Accordion title="sampling_percentage *">
+            **sampling_percentage** `string` : Percentage at which items are sampled.
+            - This field is *required*
+            - 100 = all items, 0 = no items
+          </Accordion>
+        </AccordionGroup>
+      </Accordion>
+    </AccordionGroup>
+  </Accordion>
+</AccordionGroup>
+
+## Basic Example
+
+The following example demonstrates how to add a sampler with a 15% sampling percentage using the new Action CRD.
+
+<Steps>
+  <Step>
+    Create a YAML file with the following content:
+
+    ```yaml probabilistic-sampler.yaml
+    apiVersion: odigos.io/v1alpha1
+    kind: Action
+    metadata:
+      name: example-probabilistic-sampler
+      namespace: odigos-system
+    spec:
+      actionName: "configure probabilistic_sampler"
+      signals:
+        - TRACES
+      samplers:
+        probabilisticSampler:
+          sampling_percentage: "15"
+    ```
+  </Step>
+  <Step>
+    Apply the action to the cluster:
+
+    ```bash
+    kubectl apply -f probabilistic-sampler.yaml
+    ```
+  </Step>
+</Steps>

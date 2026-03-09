@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	commonapi "github.com/odigos-io/odigos/common/api"
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,6 +24,18 @@ type SourcesScope = k8sconsts.SourcesScope
 // - metrics scrape endpoints (prometheus /metrics endpoint)
 // - other agents calling home (outgoing http requests to collector.my.vendor.com)
 type NoisyOperation struct {
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name string `json:"name,omitempty"`
+
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled bool `json:"disabled,omitempty"`
+
 	// limit this rule to specific sources (by name, namespace, language, etc.)
 	// for example: if "other agent" rule for noisty operation is relevant only in java,
 	// limit this rule by setting source scope to java and prevent other languages from being affected
@@ -33,7 +45,7 @@ type NoisyOperation struct {
 	// limit this rule to specific operations.
 	// for example: specific http server endpoint (GET "/healthz" as an example).
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapi.HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisampling.HeadSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for noisy operations.
 	// if unset, 0% of such the traces will be collected.
@@ -54,6 +66,18 @@ type NoisyOperation struct {
 // regaradless of any cost reduction rules.
 type HighlyRelevantOperation struct {
 
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name string `json:"name,omitempty"`
+
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled bool `json:"disabled,omitempty"`
+
 	// limit the operation to specific sources.
 	// an empty list will match any source.
 	// if multiple items are set, the operation match if any one matches
@@ -69,7 +93,7 @@ type HighlyRelevantOperation struct {
 	// optionally, limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapi.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// traces that contains this operation will be sampled by at least this percentage.
 	// if unset, 100% of such the traces will be sampled.
@@ -84,6 +108,17 @@ type HighlyRelevantOperation struct {
 }
 
 type CostReductionRule struct {
+	// user provided name, for easier identification and reference.
+	// use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+	// odigos does not use or assume any meaning from this field,
+	// but it is written as metric attribute, and stored as span attribute on participating spans.
+	Name string `json:"name,omitempty"`
+
+	// if set to true, the rule will be disabled,
+	// e.g. will not be taken into account for any sampling decisions.
+	// disabled rules still participate in metrics calculations,
+	// allowing enhanced tools and data for troubleshooting and sampling maintenance.
+	Disabled bool `json:"disabled,omitempty"`
 
 	// limit this rule to specific sources (by name, namespace, language, etc.)
 	// an empty list will match any source.
@@ -94,7 +129,7 @@ type CostReductionRule struct {
 	// limit this rule to specific operations.
 	// for example: specific endpoint or kafka topic.
 	// this field is optional, and if not set, the rule will be applied to all operations.
-	Operation *commonapi.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	Operation *commonapisampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
 
 	// sampling percentage for cost reduction.
 	// this field is required.

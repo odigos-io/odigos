@@ -19,22 +19,40 @@ package v1alpha1
 
 import (
 	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
-	api "github.com/odigos-io/odigos/common/api"
+	sampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
 // NoisyOperationApplyConfiguration represents a declarative configuration of the NoisyOperation type for use
 // with apply.
 type NoisyOperationApplyConfiguration struct {
-	SourceScopes     []k8sconsts.SourcesScope          `json:"sourceScopes,omitempty"`
-	Operation        *api.HeadSamplingOperationMatcher `json:"operation,omitempty"`
-	PercentageAtMost *float64                          `json:"percentageAtMost,omitempty"`
-	Notes            *string                           `json:"notes,omitempty"`
+	Name             *string                                `json:"name,omitempty"`
+	Disabled         *bool                                  `json:"disabled,omitempty"`
+	SourceScopes     []k8sconsts.SourcesScope               `json:"sourceScopes,omitempty"`
+	Operation        *sampling.HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                               `json:"percentageAtMost,omitempty"`
+	Notes            *string                                `json:"notes,omitempty"`
 }
 
 // NoisyOperationApplyConfiguration constructs a declarative configuration of the NoisyOperation type for use with
 // apply.
 func NoisyOperation() *NoisyOperationApplyConfiguration {
 	return &NoisyOperationApplyConfiguration{}
+}
+
+// WithName sets the Name field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Name field is set to the value of the last call.
+func (b *NoisyOperationApplyConfiguration) WithName(value string) *NoisyOperationApplyConfiguration {
+	b.Name = &value
+	return b
+}
+
+// WithDisabled sets the Disabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Disabled field is set to the value of the last call.
+func (b *NoisyOperationApplyConfiguration) WithDisabled(value bool) *NoisyOperationApplyConfiguration {
+	b.Disabled = &value
+	return b
 }
 
 // WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
@@ -50,7 +68,7 @@ func (b *NoisyOperationApplyConfiguration) WithSourceScopes(values ...k8sconsts.
 // WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operation field is set to the value of the last call.
-func (b *NoisyOperationApplyConfiguration) WithOperation(value api.HeadSamplingOperationMatcher) *NoisyOperationApplyConfiguration {
+func (b *NoisyOperationApplyConfiguration) WithOperation(value sampling.HeadSamplingOperationMatcher) *NoisyOperationApplyConfiguration {
 	b.Operation = &value
 	return b
 }

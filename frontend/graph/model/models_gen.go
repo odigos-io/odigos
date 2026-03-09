@@ -804,6 +804,12 @@ type K8sWorkloadID struct {
 	Name      string          `json:"name"`
 }
 
+type K8sWorkloadIDInput struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
 type K8sWorkloadMarkedForInstrumentation struct {
 	MarkedForInstrumentation *bool  `json:"markedForInstrumentation,omitempty"`
 	DecisionEnum             string `json:"decisionEnum"`
