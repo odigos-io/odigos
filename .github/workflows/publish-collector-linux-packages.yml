@@ -46,6 +46,15 @@ jobs:
         with:
           go-version: "1.26"
 
+      - name: Set GoReleaser tag
+        run: |
+          git config user.email "ci@odigos.io"
+          git config user.name "Odigos CI"
+          TAG="${{ steps.extract_tag.outputs.tag }}"
+          SEMVER_TAG="${TAG#otelcol-linux/}"
+          echo "GORELEASER_CURRENT_TAG=$SEMVER_TAG" >> $GITHUB_ENV
+          git tag -a -f "$SEMVER_TAG" -m "Release $SEMVER_TAG"
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:

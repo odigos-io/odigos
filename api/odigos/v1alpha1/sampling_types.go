@@ -6,32 +6,14 @@ import (
 	"encoding/json"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// define conditions to match specific sources (containers) managed by odigos.
-// a source container matches, if ALL non empty fields match (AND semantics)
-//
-// common patterns:
-//   - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
-//     all containers (usually there is only one with agent injection)
-//   - Specific container in a kubernetes workload (WorkloadNamespace + WorkloadKind + WorkloadName + ContainerName):
-//     only this container
-//   - All services in a kubernetes namespace (WorkloadNamespace):
-//     all containers in all sources in the namespace
-//   - All services implemented in a specific programming language (WorkloadLanguage):
-//     all container which are running odigos agent for this language
-type SourcesScope struct {
-	WorkloadName      string                 `json:"workloadName,omitempty"`
-	WorkloadKind      k8sconsts.WorkloadKind `json:"workloadKind,omitempty"`
-	WorkloadNamespace string                 `json:"workloadNamespace,omitempty"`
-	ContainerName     string                 `json:"containerName,omitempty"`
-
-	WorkloadLanguage common.ProgrammingLanguage `json:"workloadLanguage,omitempty"`
-}
+// SourcesScope is defined in api/k8sconsts so that both api and k8sutils can use it
+// without a circular module dependency (k8sutils imports api).
+type SourcesScope = k8sconsts.SourcesScope
 
 // endpoints (or other operations) which are considered "noise", and provide no or very little observability value.
 // these traces should not be collected at all, or dropped aggresevly.

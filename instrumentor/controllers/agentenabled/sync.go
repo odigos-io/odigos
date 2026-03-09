@@ -14,7 +14,6 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	commonapi "github.com/odigos-io/odigos/common/api"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
@@ -23,6 +22,7 @@ import (
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/sampling"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/signalconfig"
+	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -434,9 +434,8 @@ func getEnvInjectionDecision(
 }
 
 // filterUrlTemplateRulesForContainer filters template rules to only include those relevant to the container.
-// A rule group is applied if ALL set filters match (AND logic).
-// If no filters are set in a group, it's considered global and applies to all containers.
-func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *commonapi.UrlTemplatizationConfig {
+// A rule group is applied if its SourcesScope matches (empty scope = global, applies to all).
+func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, containerName string, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) *commonapi.UrlTemplatizationConfig {
 	var rules []string
 	participating := false
 
@@ -447,7 +446,7 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 		}
 
 		for _, rulesGroup := range action.Spec.URLTemplatization.TemplatizationRulesGroups {
-			if templatizationRulesGroupMatchesContainer(rulesGroup, language, pw) {
+			if scope.AnySourceScopeMatchesContainer(rulesGroup.SourcesScope, pw, containerName, language) {
 				participating = true
 				for _, rule := range rulesGroup.TemplatizationRules {
 					rules = append(rules, rule.Template)
@@ -463,42 +462,8 @@ func filterUrlTemplateRulesForContainer(agentLevelActions *[]odigosv1.Action, la
 	}
 
 	return &commonapi.UrlTemplatizationConfig{
-		Rules: rules,
+		TemplatizationRules: rules,
 	}
-}
-
-// templatizationRulesGroupMatchesContainer checks if a rules group matches the container based on all set filters.
-// Returns true if all explicitly-set filters match (AND logic), or if no filters are set (global rule).
-func templatizationRulesGroupMatchesContainer(rulesGroup actions.UrlTemplatizationRulesGroup, language common.ProgrammingLanguage, pw k8sconsts.PodWorkload) bool {
-	// Filter by programming language
-	if rulesGroup.FilterProgrammingLanguage != nil {
-		if *rulesGroup.FilterProgrammingLanguage != language {
-			return false
-		}
-	}
-
-	// Filter by k8s namespace
-	if rulesGroup.FilterK8sNamespace != "" {
-		if rulesGroup.FilterK8sNamespace != pw.Namespace {
-			return false
-		}
-	}
-
-	// Filter by k8s workload kind
-	if rulesGroup.FilterK8sWorkloadKind != nil {
-		if *rulesGroup.FilterK8sWorkloadKind != pw.Kind {
-			return false
-		}
-	}
-
-	// Filter by k8s workload name
-	if rulesGroup.FilterK8sWorkloadName != "" {
-		if rulesGroup.FilterK8sWorkloadName != pw.Name {
-			return false
-		}
-	}
-
-	return true
 }
 
 func calculateContainerCollectorConfig(containerName string,
@@ -588,7 +553,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}
 	}
 
-	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, runtimeDetails.Language, pw)
+	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, containerName, runtimeDetails.Language, pw)
 
 	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {

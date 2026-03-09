@@ -1,0 +1,40 @@
+# Manually run to regenerate and update the release notes for an existing tag.
+# Use when you want to refresh the body of a GitHub release (e.g. after fixing
+# the release-notes logic or adding more release-note blocks).
+#
+# Trigger: Actions → Update release notes → Run workflow → enter tag (e.g. v1.17.0-rc1)
+
+name: Update release notes
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag of the release to update (e.g. v1.17.0 or v1.17.0-rc1)"
+        required: true
+        type: string
+      release_branch:
+        description: "Branch to use for release note scope (e.g. main)"
+        required: false
+        default: main
+        type: string
+      dry_run:
+        description: "Just generate and preview the release notes, don't upload or update the release."
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write  # needed for gh release edit
+
+jobs:
+  update-release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate and update release notes
+        uses: odigos-io/ci-core/generate-release-notes@main
+        with:
+          tag: ${{ inputs.tag }}
+          release-branch: ${{ inputs.release_branch }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          dry-run: ${{ inputs.dry_run }}
