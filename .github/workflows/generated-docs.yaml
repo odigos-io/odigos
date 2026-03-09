@@ -18,8 +18,8 @@ jobs:
           make docgen
       - name: Check for changes in CRD API docs
         run: |
+          git diff
           if [[ -n $(git status --porcelain) ]]; then
-            git diff
             echo "CRD API docs need to be updated. Please run 'cd api && make docgen', then commit the changes."
             exit 1
           fi

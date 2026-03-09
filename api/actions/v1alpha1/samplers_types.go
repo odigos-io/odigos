@@ -29,6 +29,7 @@ const (
 )
 
 type SamplersConfig struct {
+	// DefaultSamplerConfig contains the base sampling configuration shared by all samplers.
 	DefaultSamplerConfig `json:",inline"`
 
 	// ErrorSamplerSpec defines the desired state of ErrorSampler

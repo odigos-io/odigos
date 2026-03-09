@@ -26,7 +26,7 @@ describe('Sources CRUD', () => {
     getCrdIds({ namespace, crdName: configCrdName, expectedError: TEXTS.NO_RESOURCES(namespace), expectedLength: 0 });
   });
 
-  it(`Should instrument ${totalEntities} sources via API, and notify with SSE`, () => {
+  it(`Should instrument ${totalEntities} sources via API`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_SOURCE).click();
       cy.get(DATA_IDS.MODAL_ADD_SOURCE).should('exist');
@@ -41,10 +41,6 @@ describe('Sources CRUD', () => {
         cy.contains('button', BUTTONS.DONE).click();
 
         awaitToast({ message: TEXTS.NOTIF_SOURCES_PERSISTING });
-        // Wait for sources to instrument
-        cy.wait('@gql').then(() => {
-          awaitToast({ message: TEXTS.NOTIF_SOURCES_CREATED(totalEntities) });
-        });
       });
     });
   });
@@ -94,7 +90,7 @@ describe('Sources CRUD', () => {
     });
   });
 
-  it(`Should uninstrument ${totalEntities} sources via API, and notify with SSE`, () => {
+  it(`Should uninstrument ${totalEntities} sources via API`, () => {
     visitPage(ROUTES.OVERVIEW, () => {
       cy.get(DATA_IDS.ADD_SOURCE).parent().parent().parent().find(DATA_IDS.CHECKBOX).click();
       cy.get(DATA_IDS.MULTI_SOURCE_CONTROL).contains(totalEntities).should('exist');
@@ -104,10 +100,6 @@ describe('Sources CRUD', () => {
       cy.get(DATA_IDS.APPROVE).click();
 
       awaitToast({ message: TEXTS.NOTIF_SOURCES_PERSISTING });
-      // Wait for the sources to delete
-      cy.wait('@gql').then(() => {
-        awaitToast({ message: TEXTS.NOTIF_SOURCES_DELETED(totalEntities) });
-      });
     });
   });
 

@@ -1,0 +1,88 @@
+import EnrichmentIntro from '/snippets/shared/enrichment-intro.mdx';
+
+<EnrichmentIntro language="Python" />
+
+## Required Dependencies
+
+Install the API from PyPI using pip:
+
+```bash
+pip install opentelemetry-api
+```
+
+## Creating Spans
+
+To create a span, use the `tracer` object from the `opentelemetry.trace` module. The `tracer` object is a factory for creating spans.
+
+```python
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
+def my_function():
+   with tracer.start_as_current_span("my_function") as span:
+      print("Hello world!")
+```
+
+Important Notes:
+
+1. **Assign meaningful names to spans**:
+   Use descriptive names for spans, (such as the function name) to clearly describe the operations they represent. This helps anyone examining the trace to easily understand the span's purpose and context.
+2. **Avoid dynamic, high cardinality data in span names**:
+   Do not include dynamic data such as IDs in the span name, as this can cause performance issues and make the trace harder to read. Instead, use static, descriptive names for spans and record dynamic information in span attributes. This ensures better performance and readability of the trace.
+
+### Recording Span Attributes
+
+Span attributes are key-value pairs that record additional information about an operation, which can be useful for debugging, performance analysis, or troubleshooting
+
+Examples:
+
+- User ID, organization ID, Account ID or other identifiers.
+- Inputs - the relevant parameters or configuration that influenced the operation.
+- Outputs - the result of the operation.
+- Entities - the entities or resources that the operation interacted with.
+
+Attribute names are lowercased strings in the form `my_application.my_attribute`, example: `my_service.user_id`.
+Read more [here](https://opentelemetry.io/docs/specs/semconv/general/attribute-naming/)
+
+To record attributes, use the `set_attribute` method on the span object.
+
+```python
+def my_function(arg: str):
+   with tracer.start_as_current_span("my_function") as span:
+      span.set_attribute("argument_name", arg)
+```
+
+Important Notes:
+
+1. **Be cautious when recording data**:
+   Avoid including PII (personally identifiable information) or any data you do not wish to expose in your traces.
+2. **Attribute cost considerations**:
+   Each attribute affects performance and processing time. Record only what is necessary and avoid superfluous data.
+3. **Use static names for attributes**:
+   Avoid dynamic content such as IDs in attribute keys. Use static names and properly namespace them (scope.attribute_name) to provide clear context for downstream consumers.
+4. **Adhere to OpenTelemetry semantic conventions**:
+   Prefer using namespaces and attribute names from the OpenTelemetry semantic conventions to enhance data interoperability and make it easier for others to understand.
+
+### Recording Errors
+
+To easily identify and monitor errors in your traces, the Span object includes a status field that can be used to mark the span as an error. This helps in spotting errors in trace viewers, sampling, and setting up alerts.
+
+If an operation you are tracing fails, you can mark the span's status as an error and record the error details within the span. Here's how you can do it:
+
+- An exception has been raised to demonstrate an error that occurred in your code.
+
+```python
+def my_function():
+   with tracer.start_as_current_span("my_function") as span:
+      try:
+         print("Hello world!")
+         raise Exception("Some Exception")
+      except Exception as e:
+         span.record_exception(e)
+         span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+```
+
+## Additional Information
+
+For more use cases, see the [OpenTelemetry Python API documentation](https://opentelemetry.io/docs/languages/python/instrumentation/#creating-spans).
