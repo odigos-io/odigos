@@ -11,6 +11,13 @@ type Config struct {
 
 	// the name of the extension that provides the odigos configuration
 	OdigosConfigExtension *component.ID `mapstructure:"odigos_config_extension"`
+
+	// if true, the processor will not sample the traces, but will log the sampling decisions,
+	// and forward all traces down the pipeline.
+	// this is helpful to evaluate the sampling decisions without actually committing
+	// to changes that might drop something important.
+	// it also allows to easily view "what would have been dropped" quite easily to troubleshoot issues.
+	DryRun bool `mapstructure:"dry_run"`
 }
 
 var _ component.Config = (*Config)(nil)

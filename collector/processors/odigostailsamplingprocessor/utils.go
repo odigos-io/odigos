@@ -29,7 +29,7 @@ func getRootSpan(trace ptrace.Traces) (ptrace.Span, pcommon.Resource, bool) {
 }
 
 // add few span attributes to all spans in the trace to indicate the sampling info.
-func enrichSpansWithSamplingAttributes(td ptrace.Traces, category string, ruleId string, keepPercentage float64) {
+func enrichSpansWithSamplingAttributes(td ptrace.Traces, category string, ruleId string, ruleName string, keepPercentage float64, dryRun bool, kept bool) {
 	for i := 0; i < td.ResourceSpans().Len(); i++ {
 		resourceSpan := td.ResourceSpans().At(i)
 		scopeSpans := resourceSpan.ScopeSpans()
@@ -40,8 +40,32 @@ func enrichSpansWithSamplingAttributes(td ptrace.Traces, category string, ruleId
 				span := spans.At(k)
 				span.Attributes().PutStr("odigos.sampling.category", category)
 				span.Attributes().PutStr("odigos.sampling.trace.deciding_rule.id", ruleId)
+				span.Attributes().PutStr("odigos.sampling.trace.deciding_rule.name", ruleName)
 				span.Attributes().PutDouble("odigos.sampling.trace.deciding_rule.keep_percentage", keepPercentage)
+				if dryRun {
+					span.Attributes().PutBool("odigos.sampling.dry_run", dryRun)
+					span.Attributes().PutBool("odigos.sampling.trace.kept", kept) // can be false to indicate this trace would have been dropped.
+				}
 			}
 		}
 	}
+}
+
+// processor should be placed in the pipeline after the "groupbytraceid" processor,
+// so all spans in a single batch should belong to the same trace.
+// this function asserts this assumption, in case of misconfigurations, bugs etc,
+// to protect us from making mistakes.
+// returns the trace ID if all spans belong to the same trace, and a boolean indicating if the assertion is successful.
+func assertAllSpansBelongToTheSameTrace(td ptrace.Traces) (pcommon.TraceID, bool) {
+	traceID := td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).TraceID()
+	for i := 0; i < td.ResourceSpans().Len(); i++ {
+		for j := 0; j < td.ResourceSpans().At(i).ScopeSpans().Len(); j++ {
+			for k := 0; k < td.ResourceSpans().At(i).ScopeSpans().At(j).Spans().Len(); k++ {
+				if td.ResourceSpans().At(i).ScopeSpans().At(j).Spans().At(k).TraceID() != traceID {
+					return pcommon.TraceID{}, false
+				}
+			}
+		}
+	}
+	return traceID, true
 }

@@ -32,18 +32,10 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		return td, nil // no spans to process
 	}
 
-	// assuming that all the spans have the same trace ID, so take just the first one.
-	traceID := td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).TraceID()
-	// verify all spans belong to the same trace
-	for i := 0; i < td.ResourceSpans().Len(); i++ {
-		for j := 0; j < td.ResourceSpans().At(i).ScopeSpans().Len(); j++ {
-			for k := 0; k < td.ResourceSpans().At(i).ScopeSpans().At(j).Spans().Len(); k++ {
-				if td.ResourceSpans().At(i).ScopeSpans().At(j).Spans().At(k).TraceID() != traceID {
-					p.logger.Error("not all spans belong to the same trace", zap.String("trace_id", traceID.String()))
-					return td, nil // not all spans belong to the same trace
-				}
-			}
-		}
+	traceID, ok := assertAllSpansBelongToTheSameTrace(td)
+	if !ok {
+		p.logger.Error("not all spans belong to the same trace", zap.String("trace_id", traceID.String()))
+		return td, nil // not all spans belong to the same trace
 	}
 
 	rnd := sampling.TraceIDToRandomness(traceID)
@@ -61,8 +53,8 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		// either drop it, or keep it and add relevant sampling attributes to all spans.
 		keepTrace := tracePercentage <= percentageAtMost
 
-		if keepTrace {
-			enrichSpansWithSamplingAttributes(td, "noisy", noisyOperationRule.Id, percentageAtMost)
+		if keepTrace || p.config.DryRun {
+			enrichSpansWithSamplingAttributes(td, "noisy", noisyOperationRule.Id, noisyOperationRule.Name, percentageAtMost, p.config.DryRun, keepTrace)
 			return td, nil
 		} else {
 			// drop the trace by not returning anything in the result.
@@ -75,8 +67,8 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		percentageAtLeast := category.GetPercentageOrDefault(highlyRelevantOperationRule.PercentageAtLeast, 100.0)
 		keepTrace := tracePercentage <= percentageAtLeast
 
-		if keepTrace {
-			enrichSpansWithSamplingAttributes(td, "highly_relevant", highlyRelevantOperationRule.Id, percentageAtLeast)
+		if keepTrace || p.config.DryRun {
+			enrichSpansWithSamplingAttributes(td, "highly_relevant", highlyRelevantOperationRule.Id, highlyRelevantOperationRule.Name, percentageAtLeast, p.config.DryRun, keepTrace)
 			return td, nil
 		} else {
 			return ptrace.NewTraces(), nil
@@ -88,8 +80,8 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		percentageAtMost := costReductionRule.PercentageAtMost
 		keepTrace := tracePercentage <= percentageAtMost
 
-		if keepTrace {
-			enrichSpansWithSamplingAttributes(td, "cost_reduction", costReductionRule.Id, percentageAtMost)
+		if keepTrace || p.config.DryRun {
+			enrichSpansWithSamplingAttributes(td, "cost_reduction", costReductionRule.Id, costReductionRule.Name, percentageAtMost, p.config.DryRun, keepTrace)
 			return td, nil
 		} else {
 			return ptrace.NewTraces(), nil
