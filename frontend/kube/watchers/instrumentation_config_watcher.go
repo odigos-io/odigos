@@ -132,8 +132,7 @@ func handleModifiedInstrumentationConfig(instruConfig *v1alpha1.InstrumentationC
 		return
 	}
 
-	// Use source identifier as target for deduplication (same source = counted once)
-	target := fmt.Sprintf("%s/%s/%s", pw.Namespace, pw.Kind, pw.Name)
+	target := fmt.Sprintf("namespace=%s&name=%s&kind=%s", pw.Namespace, pw.Name, pw.Kind)
 	data := fmt.Sprintf(`Successfully updated "%s" source`, pw.Name)
 	instrumentationConfigModifiedEventBatcher.AddEvent(sse.MessageTypeSuccess, data, target)
 }

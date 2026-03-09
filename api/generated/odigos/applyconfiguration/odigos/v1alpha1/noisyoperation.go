@@ -25,6 +25,8 @@ import (
 // NoisyOperationApplyConfiguration represents a declarative configuration of the NoisyOperation type for use
 // with apply.
 type NoisyOperationApplyConfiguration struct {
+	Name             *string                                `json:"name,omitempty"`
+	Disabled         *bool                                  `json:"disabled,omitempty"`
 	SourceScopes     []k8sconsts.SourcesScope               `json:"sourceScopes,omitempty"`
 	Operation        *sampling.HeadSamplingOperationMatcher `json:"operation,omitempty"`
 	PercentageAtMost *float64                               `json:"percentageAtMost,omitempty"`
@@ -35,6 +37,22 @@ type NoisyOperationApplyConfiguration struct {
 // apply.
 func NoisyOperation() *NoisyOperationApplyConfiguration {
 	return &NoisyOperationApplyConfiguration{}
+}
+
+// WithName sets the Name field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Name field is set to the value of the last call.
+func (b *NoisyOperationApplyConfiguration) WithName(value string) *NoisyOperationApplyConfiguration {
+	b.Name = &value
+	return b
+}
+
+// WithDisabled sets the Disabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Disabled field is set to the value of the last call.
+func (b *NoisyOperationApplyConfiguration) WithDisabled(value bool) *NoisyOperationApplyConfiguration {
+	b.Disabled = &value
+	return b
 }
 
 // WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration

@@ -90,7 +90,7 @@ func (eb *EventBatcher) AddEvent(msgType sse.MessageType, data, target string) e
 		Event:   eb.config.Event,
 		Data:    data,
 		CRDType: eb.config.CRDType,
-		Target:  target,
+		Targets: []string{target},
 	}
 
 	eb.batch = append(eb.batch, message)
@@ -134,16 +134,13 @@ func (eb *EventBatcher) sendBatch() {
 }
 
 func (eb *EventBatcher) prepareBatchMessage() []sse.SSEMessage {
-	// Use maps to track unique targets for deduplication
-	// This ensures that multiple events for the same source are counted only once
 	successTargets := make(map[string]struct{})
 	failureTargets := make(map[string]struct{})
 
 	for _, message := range eb.batch {
-		// Use target as key for deduplication, fallback to data if target is empty
-		key := message.Target
-		if key == "" {
-			key = message.Data
+		key := message.Data
+		if len(message.Targets) > 0 {
+			key = message.Targets[0]
 		}
 
 		if message.Type == sse.MessageTypeSuccess {
@@ -155,22 +152,30 @@ func (eb *EventBatcher) prepareBatchMessage() []sse.SSEMessage {
 
 	var result []sse.SSEMessage
 	if len(successTargets) > 0 {
+		targets := make([]string, 0, len(successTargets))
+		for t := range successTargets {
+			targets = append(targets, t)
+		}
 		result = append(result, sse.SSEMessage{
 			Type:    sse.MessageTypeSuccess,
 			Event:   eb.config.Event,
 			Data:    eb.config.SuccessBatchMessageFunc(len(successTargets), eb.config.CRDType),
 			CRDType: eb.config.CRDType,
-			Target:  "",
+			Targets: targets,
 		})
 	}
 
 	if len(failureTargets) > 0 {
+		targets := make([]string, 0, len(failureTargets))
+		for t := range failureTargets {
+			targets = append(targets, t)
+		}
 		result = append(result, sse.SSEMessage{
 			Type:    sse.MessageTypeError,
 			Event:   eb.config.Event,
 			Data:    eb.config.FailureBatchMessageFunc(len(failureTargets), eb.config.CRDType),
 			CRDType: eb.config.CRDType,
-			Target:  "",
+			Targets: targets,
 		})
 	}
 	return result

@@ -7,19 +7,19 @@ package sampling
 type TailSamplingOperationMatcher struct {
 
 	// match http server operations in a generic way.
-	HttpServer *HttpServerOperationMatcher `json:"httpServer,omitempty"`
+	HttpServer *TailSamplingHttpServerOperationMatcher `json:"httpServer,omitempty"`
 
 	// match kafka consumer operations (consume spans)
-	KafkaConsumer *KafkaOperationMatcher `json:"kafkaConsumer,omitempty"`
+	KafkaConsumer *TailSamplingKafkaOperationMatcher `json:"kafkaConsumer,omitempty"`
 
 	// match kafka producer operations (produce spans)
-	KafkaProducer *KafkaOperationMatcher `json:"kafkaProducer,omitempty"`
+	KafkaProducer *TailSamplingKafkaOperationMatcher `json:"kafkaProducer,omitempty"`
 }
 
 // match only http server spans for a specific endpoint.
 // user can specify route and method to match, and limit a sampling instruction to only this operation.
 // +kubebuilder:object:generate=true
-type HttpServerOperationMatcher struct {
+type TailSamplingHttpServerOperationMatcher struct {
 
 	// a specific exact match http route
 	Route string `json:"route,omitempty"`
@@ -33,7 +33,7 @@ type HttpServerOperationMatcher struct {
 
 // match a kafka consumer or producer operation for a specific topic.
 // +kubebuilder:object:generate=true
-type KafkaOperationMatcher struct {
+type TailSamplingKafkaOperationMatcher struct {
 
 	// the topic name to match.
 	// if left empty, all topics are matched.

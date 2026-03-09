@@ -138,7 +138,6 @@ func DiagnoseGraphQL(
 			Type:    sse.MessageTypeInfo,
 			Event:   sse.MessageEventDiagnoseStagesRequested,
 			Data:    string(stagesJSON),
-			Target:  "diagnose",
 		})
 	}
 
@@ -159,7 +158,6 @@ func DiagnoseGraphQL(
 				Type:    sse.MessageTypeInfo,
 				Event:   sse.MessageEventDiagnoseStageCompleted,
 				Data:    string(data),
-				Target:  "diagnose",
 			})
 		}
 		close(done)

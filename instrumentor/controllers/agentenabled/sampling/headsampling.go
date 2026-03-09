@@ -191,16 +191,16 @@ func convertNoisyOperationHttpClientToAttributeConditions(httpClient *commonapis
 			Operator: odigosv1.Equals,
 		})
 	}
-	if httpClient.Route != "" {
+	if httpClient.TemplatedPath != "" {
 		andConditions = append(andConditions, odigosv1.AttributeCondition{
 			Key:      string(urlPathAttributeKey),
-			Val:      httpClient.Route,
+			Val:      httpClient.TemplatedPath,
 			Operator: odigosv1.Equals,
 		})
-	} else if httpClient.RoutePrefix != "" {
+	} else if httpClient.TemplatedPathPrefix != "" {
 		andConditions = append(andConditions, odigosv1.AttributeCondition{
 			Key:      string(urlPathAttributeKey),
-			Val:      httpClient.RoutePrefix,
+			Val:      httpClient.TemplatedPathPrefix,
 			Operator: odigosv1.StartWith,
 		})
 	}
