@@ -355,14 +355,14 @@ spec:
                               description: match method exactly, can be empty to match
                                 any method
                               type: string
-                            route:
-                              description: match route exactly
-                              type: string
-                            routePrefix:
-                              description: match preffix of route
-                              type: string
                             serverAddress:
                               description: match server address exactly (e.g. collector.my.vendor.com)
+                              type: string
+                            templatedPath:
+                              description: match templated path exactly
+                              type: string
+                            templatedPathPrefix:
+                              description: match preffix of templated path
                               type: string
                           type: object
                         httpServer:
