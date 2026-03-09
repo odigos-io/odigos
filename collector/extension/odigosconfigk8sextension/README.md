@@ -65,7 +65,49 @@ func (p *myProcessor) Start(ctx context.Context, host component.Host) error {
 
 If your processor config explicitly stores the extension name/ID from the pipeline, use that to look up `exts[thatID]` instead.
 
-### 3. Use it when processing telemetry
+### 3. Wait for the informer cache to sync (optional but recommended)
+
+The extension starts the Kubernetes informer without blocking on initial list/watch sync. Until the cache has synced, `GetFromResource` may miss existing `InstrumentationConfig` resources. To avoid using an empty cache on the first batches, dependents can call `WaitForCacheSync` on the extension’s informer.
+
+`WaitForCacheSync` is not part of the `OdigosConfigExtension` interface; it is on the concrete type `*odigosconfigk8sextension.OdigosWorkloadConfig`. After resolving the extension as in step 2, type-assert to that type and call `WaitForCacheSync` with a context (e.g. a short timeout or the collector’s lifetime context). It returns `true` if the cache synced successfully, and `false` if the context was cancelled or the extension is not running in-cluster.
+
+Example: wait for sync in a goroutine at `Start` so the collector does not block, then set a “ready” flag for your processor:
+
+```go
+import (
+    "context"
+    "sync/atomic"
+
+    "go.opentelemetry.io/collector/component"
+    "github.com/odigos-io/odigos/common/collector"
+    odigosconfigk8sextension "github.com/odigos-io/odigos/collector/extension/odigosconfigk8sextension"
+)
+
+type myProcessor struct {
+    logger       *zap.Logger
+    odigosConfig collector.OdigosConfigExtension
+    cacheReady   atomic.Bool
+}
+
+func (p *myProcessor) Start(ctx context.Context, host component.Host) error {
+    // ... resolve ext and set p.odigosConfig as in step 2 ...
+
+    if k8sExt, ok := p.odigosConfig.(*odigosconfigk8sextension.OdigosWorkloadConfig); ok {
+        go func() {
+            if k8sExt.WaitForCacheSync(ctx) {
+                p.cacheReady.Store(true)
+            }
+        }()
+    } else {
+        p.cacheReady.Store(true) // no K8s informer, treat as ready
+    }
+    return nil
+}
+```
+
+Alternatively, call `WaitForCacheSync` once (e.g. with a timeout) before the first time you rely on `GetFromResource` in a critical path.
+
+### 4. Use the config when processing telemetry
 
 For each resource (e.g. in a trace or metric batch), call `GetFromResource` with that resource. Use the returned config to drive per-workload behavior (e.g. sampling rules, URL templatization rules).
 
@@ -95,7 +137,7 @@ func (p *myProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptra
 }
 ```
 
-### 4. Handle missing or optional extension
+### 5. Handle missing or optional extension
 
 - If the extension is not in the config, `host.GetExtensions()` may not contain it; keep `p.odigosConfig` as `nil` and skip per-workload lookups.
 - `GetFromResource` returns `(nil, false)` when the resource does not identify a known workload or when there is no config for that workload; processors should fall back to their default or static config in that case.
