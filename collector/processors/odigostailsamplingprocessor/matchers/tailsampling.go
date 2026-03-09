@@ -35,7 +35,7 @@ func TailSamplingOperationMatcher(operation *commonapisampling.TailSamplingOpera
 // - any of the attributes specified in the matcher are not present on the span.
 // - any of the attributes specified in the matcher are presence with a different value.
 // - templated routes for spans that don't have the http.route attribute.
-func operationHttpServerMatcher(operation *commonapisampling.HttpServerOperationMatcher, span ptrace.Span) bool {
+func operationHttpServerMatcher(operation *commonapisampling.TailSamplingHttpServerOperationMatcher, span ptrace.Span) bool {
 	if span.Kind() != ptrace.SpanKindServer {
 		return false
 	}
@@ -56,10 +56,10 @@ func operationHttpServerMatcher(operation *commonapisampling.HttpServerOperation
 	return true
 }
 
-func operationKafkaConsumerMatcher(operation *commonapisampling.KafkaOperationMatcher, span ptrace.Span) bool {
+func operationKafkaConsumerMatcher(operation *commonapisampling.TailSamplingKafkaOperationMatcher, span ptrace.Span) bool {
 	return false
 }
 
-func operationKafkaProducerMatcher(operation *commonapisampling.KafkaOperationMatcher, span ptrace.Span) bool {
+func operationKafkaProducerMatcher(operation *commonapisampling.TailSamplingKafkaOperationMatcher, span ptrace.Span) bool {
 	return false
 }

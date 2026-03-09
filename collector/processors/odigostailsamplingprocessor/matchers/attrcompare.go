@@ -22,14 +22,14 @@ func compareHttpRoute(spanRoute string, ruleRouteExact string, ruleRoutePrefix s
 	return true
 }
 
-func comparePathToHttpRoute(path string, routeExactMatch string, routePrefix string) bool {
-	if routeExactMatch != "" {
+func comparePathToTemplate(path string, exactMatch string, prefix string) bool {
+	if exactMatch != "" {
 		// todo: we should do templated comparison here.
-		return routeExactMatch == path
+		return exactMatch == path
 	}
-	if routePrefix != "" {
+	if prefix != "" {
 		// todo: we should do templated comparison here.
-		return strings.HasPrefix(path, routePrefix)
+		return strings.HasPrefix(path, prefix)
 	}
 	return false
 }

@@ -249,36 +249,36 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 		{
 			name: "client span route exact match",
 			operation: &commonapisampling.HeadSamplingHttpClientOperationMatcher{
-				Route: "/users/:id",
+				TemplatedPath: "/users/:id",
 			},
 			spanKind: ptrace.SpanKindClient,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
-				string(semconv.HTTPRouteKey):         "/users/:id",
+				string(semconv.URLTemplateKey):       "/users/:id",
 			},
 			want: true,
 		},
 		{
 			name: "client span route no match",
 			operation: &commonapisampling.HeadSamplingHttpClientOperationMatcher{
-				Route: "/orders",
+				TemplatedPath: "/orders",
 			},
 			spanKind: ptrace.SpanKindClient,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
-				string(semconv.HTTPRouteKey):         "/users/:id",
+				string(semconv.URLTemplateKey):       "/users/:id",
 			},
 			want: false,
 		},
 		{
 			name: "client span route prefix match",
 			operation: &commonapisampling.HeadSamplingHttpClientOperationMatcher{
-				RoutePrefix: "/api",
+				TemplatedPathPrefix: "/api",
 			},
 			spanKind: ptrace.SpanKindClient,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "GET",
-				string(semconv.URLPathKey):           "/api/v1/health",
+				string(semconv.URLTemplateKey):       "/api/v1/health",
 			},
 			want: true,
 		},
@@ -287,13 +287,13 @@ func TestHeadSamplingOperationHttpClientMatcher(t *testing.T) {
 			operation: &commonapisampling.HeadSamplingHttpClientOperationMatcher{
 				Method:        "POST",
 				ServerAddress: "collector.example.com",
-				Route:         "/v1/export",
+				TemplatedPath: "/v1/export",
 			},
 			spanKind: ptrace.SpanKindClient,
 			attrs: map[string]string{
 				string(semconv.HTTPRequestMethodKey): "POST",
 				string(semconv.ServerAddressKey):     "collector.example.com",
-				string(semconv.HTTPRouteKey):         "/v1/export",
+				string(semconv.URLTemplateKey):       "/v1/export",
 			},
 			want: true,
 		},

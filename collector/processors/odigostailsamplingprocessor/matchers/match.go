@@ -21,10 +21,30 @@ func matchHttpRoute(span ptrace.Span, ruleRouteExact string, ruleRoutePrefix str
 
 	httpPath, found := getHttpServerPath(span)
 	if found {
-		return comparePathToHttpRoute(httpPath, ruleRouteExact, ruleRoutePrefix)
+		return comparePathToTemplate(httpPath, ruleRouteExact, ruleRoutePrefix)
 	}
 
 	return false // no attribute found and the rule requires a match, so no match.
+}
+
+// given a span and a templated path rule, will attempt to match the span to the rule.
+// will return true if there is a match.
+// if the attribute is missing (and required on the rule), it will return false (no match).
+func matchTemplatedPath(span ptrace.Span, ruleTemplatedPath string, ruleTemplatedPathPrefix string) bool {
+	if ruleTemplatedPath == "" && ruleTemplatedPathPrefix == "" { // (should have been checked by caller, but just in case.)
+		// unset means match any path
+		return true
+	}
+
+	urlTemplate, found := getHttpTemplatedPath(span)
+	if found {
+		// best case scenario (like if url templatization was run prior to the sampling)
+		// do exact match on the path.
+		return comparePathToTemplate(urlTemplate, ruleTemplatedPath, ruleTemplatedPathPrefix)
+	}
+
+	// TODO: extract the path from either url.full or http.target attributes and compare to the rule.
+	return false
 }
 
 // given a span and a non-empty server address, will attempt to match it to the span attributes.

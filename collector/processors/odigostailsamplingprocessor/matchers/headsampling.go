@@ -61,7 +61,7 @@ func headSamplingOperationHttpClientMatcher(operation *commonapisampling.HeadSam
 		return false
 	}
 
-	if (operation.Route != "" || operation.RoutePrefix != "") && !matchHttpRoute(span, operation.Route, operation.RoutePrefix) {
+	if (operation.TemplatedPath != "" || operation.TemplatedPathPrefix != "") && !matchTemplatedPath(span, operation.TemplatedPath, operation.TemplatedPathPrefix) {
 		return false
 	}
 

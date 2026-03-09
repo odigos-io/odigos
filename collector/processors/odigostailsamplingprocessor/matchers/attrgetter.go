@@ -18,6 +18,14 @@ func getHttpMethod(span ptrace.Span) (string, bool) {
 	return "", false
 }
 
+func getHttpTemplatedPath(span ptrace.Span) (string, bool) {
+	httpTemplatedPath, found := span.Attributes().Get(string(semconv.URLTemplateKey))
+	if found {
+		return httpTemplatedPath.Str(), true
+	}
+	return "", false
+}
+
 func getHttpRoute(span ptrace.Span) (string, bool) {
 	httpRoute, found := span.Attributes().Get(string(semconv.HTTPRouteKey))
 	if found {
