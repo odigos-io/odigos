@@ -213,11 +213,9 @@ type CollectorsGroupSpec struct {
 	// before committing to any changes that might lose data.
 	SamplingDryRun *bool `json:"samplingDryRun,omitempty"`
 
-	// Configuration for span attributes marking.
-	// Controls if spans should be enhanced with additional sampling attributes,
-	// like the sampling category (noisy, highly relevant, cost reduction) and the sampling decisions.
-	// This is useful for enhanced visibility into the sampling mechanism and decision making,
-	// when consuming the traces directly via a viewer or tooling.
+	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+	// Capturing these attributes gives visibility into sampling decision-making and effective
+	// sampling percentages when viewing traces or querying the database with tools.
 	SamplingSpanAttributesMarking *common.SpanAttributesMarkingConfiguration `json:"samplingSpanAttributesMarking,omitempty"`
 }
 

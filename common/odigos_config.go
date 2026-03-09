@@ -402,14 +402,14 @@ type K8sHealthProbesSamplingConfiguration struct {
 	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
 }
 
-// SpanAttributesMarkingConfiguration controls if spans should be enhanced with additional sampling attributes.
-// When consuming traces via a viewer or tooling, this provides visibility into the sampling mechanism and decisions.
+// SpanAttributesMarkingConfiguration controls whether spans are enhanced with sampling attributes
+// (e.g. category and decisions). Capturing these attributes gives visibility into sampling
+// decision-making and effective sampling percentages when viewing traces or querying the database with tools.
 // +kubebuilder:object:generate=true
 type SpanAttributesMarkingConfiguration struct {
 	// Set to true to disable span attributes marking.
-	// When disabled, odigos will not mark any spans with sampling decisions.
-	// This is useful when you want to use the sampling decisions for other purposes,
-	// like for metrics or logging.
+	// When disabled, odigos will not set span attributes for sampling decisions
+	// (unless explicitly enabled for specific attributes set).
 	Disabled *bool `json:"disabled,omitempty"`
 
 	// Set to true to disable recording the sampling category as a span attribute.
@@ -417,7 +417,7 @@ type SpanAttributesMarkingConfiguration struct {
 	SamplingCategoryDisabled *bool `json:"samplingCategoryDisabled,omitempty"`
 
 	// Set to true to disable recording the trace matching decision (if any) as span attributes.
-	// When a trace matches an enabled sampling rule for a category,
+	// When a trace matches an enabled sampling rules for a category,
 	// the most "severe" rule is calculated as the "deciding rule" for the trace,
 	// and the sampling is attributed to this rule and marked as span attribute on the trace spans.
 	// Attributes:
@@ -427,7 +427,7 @@ type SpanAttributesMarkingConfiguration struct {
 	TraceDecidingRuleDisabled *bool `json:"traceDecidingRuleDisabled,omitempty"`
 
 	// Set to true to disable recording the span decision (if any) as span attributes.
-	// When a specific span matches an enabled sampling rule for a category,
+	// When a specific span matches an enabled sampling rules for a category,
 	// the sampling for this span is attributed to this rule and marked as span attribute on the span.
 	// This helps track which spans in a trace actually contributed to the final sampling decision on a span level.
 	// Spans can match different rules which are different than the final deciding rule for the trace.
@@ -446,11 +446,9 @@ type SamplingConfiguration struct {
 	// before committing to any changes that might lose data.
 	DryRun *bool `json:"dryRun,omitempty"`
 
-	// Configuration for span attributes marking.
-	// Controls if spans should be enhanced with additional sampling attributes,
-	// like the sampling category (noisy, highly relevant, cost reduction) and the sampling decisions.
-	// This is useful for enhanced visibility into the sampling mechanism and decision making,
-	// when consuming the traces directly via a viewer or tooling.
+	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+	// Capturing these attributes gives visibility into sampling decision-making and effective
+	// sampling percentages when viewing traces or querying the database with tools.
 	SpanAttributesMarking *SpanAttributesMarkingConfiguration `json:"spanAttributesMarking,omitempty"`
 
 	// configuration for tail sampling.

@@ -1234,11 +1234,9 @@ sampling:
 
   # @schema
   # description: |-
-  #   configuration for span attributes marking.
-  #   controls if spans should be enhanced with additional sampling attributes,
-  #   like the sampling category (noisy, highly relevant, cost reduction) and the sampling decisions.
-  #   this is useful for enhanced visibility into the sampling mechanism and decisions making,
-  #   when consuming the traces directly via a viewer or tooling.
+  #   Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+  #   Capturing these attributes gives visibility into sampling decision-making and effective
+  #   sampling percentages when viewing traces or querying the database with tools.
   # 
   # @schema
   spanAttributesMarking:
@@ -1246,9 +1244,8 @@ sampling:
     # @schema
     # description: |-
     #   set to true to disable span attributes marking.
-    #   when disabled, odigos will not mark any spans with sampling decisions.
-    #   this is useful when you want to use the sampling decisions for other purposes,
-    #   like for metrics or logging.
+    #   when disabled, odigos will not set span attributes for sampling decisions
+    #   (unless explicitly enabled for specific attributes set).
     # @schema
     # disabled: true
 
@@ -1284,8 +1281,8 @@ sampling:
     #     - odigos.sampling.span.odigos.sampling.span.deciding_rule.id
     #     - odigos.sampling.span.odigos.sampling.span.deciding_rule.name
     #     - odigos.sampling.span.odigos.sampling.span.deciding_rule.keep_percentage
+    # @schema
     # spanDecisionAttributesDisabled: true
-
 
   # @schema
   # description: configuration for tail sampling.
