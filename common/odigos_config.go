@@ -419,7 +419,6 @@ type OdigosConfiguration struct {
 	IgnoredNamespaces         []string                       `json:"ignoredNamespaces,omitempty" yaml:"ignoredNamespaces"`
 	IgnoredContainers         []string                       `json:"ignoredContainers,omitempty" yaml:"ignoredContainers"`
 	IgnoreOdigosNamespace     *bool                          `json:"ignoreOdigosNamespace,omitempty" yaml:"ignoreOdigosNamespace"`
-	Psp                       bool                           `json:"psp,omitempty" yaml:"psp"`
 	ImagePrefix               string                         `json:"imagePrefix,omitempty" yaml:"imagePrefix"`
 	SkipWebhookIssuerCreation bool                           `json:"skipWebhookIssuerCreation,omitempty" yaml:"skipWebhookIssuerCreation"`
 	CollectorGateway          *CollectorGatewayConfiguration `json:"collectorGateway,omitempty" yaml:"collectorGateway"`

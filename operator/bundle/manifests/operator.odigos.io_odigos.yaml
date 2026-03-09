@@ -92,11 +92,6 @@ spec:
                   (Optional) OpenShiftEnabled configures selinux on OpenShift nodes.
                   DEPRECATED: OpenShift clusters are auto-detected and this API field will be removed in a future release.
                 type: boolean
-              podSecurityPolicy:
-                description: |-
-                  (Optional) PodSecurityPolicy allows Odigos pods to use a privileged pod security policy.
-                  Default=false
-                type: boolean
               profiles:
                 description: (Optional) Profiles is a list of preset profiles with
                   a specific configuration.

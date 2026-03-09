@@ -392,7 +392,6 @@ type EffectiveConfig struct {
 	IgnoredNamespaces                []string                            `json:"ignoredNamespaces,omitempty"`
 	IgnoredContainers                []string                            `json:"ignoredContainers,omitempty"`
 	IgnoreOdigosNamespace            *bool                               `json:"ignoreOdigosNamespace,omitempty"`
-	Psp                              *bool                               `json:"psp,omitempty"`
 	ImagePrefix                      *string                             `json:"imagePrefix,omitempty"`
 	SkipWebhookIssuerCreation        *bool                               `json:"skipWebhookIssuerCreation,omitempty"`
 	CollectorGateway                 *CollectorGatewayConfig             `json:"collectorGateway,omitempty"`

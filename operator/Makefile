@@ -51,7 +51,7 @@ endif
 
 # Set the Operator SDK version to use. By default, what is installed on the system is used.
 # This is useful for CI or a project to utilize a specific version of the operator-sdk toolkit.
-OPERATOR_SDK_VERSION ?= v1.39.1
+OPERATOR_SDK_VERSION ?= v1.41.1
 # Image URL to use all building/pushing image targets
 IMG ?= registry.connect.redhat.com/odigos/odigos-operator-certified:v$(VERSION)
 AUTOSCALER_IMG ?= $(ORG)/odigos-autoscaler-certified:v$(VERSION)

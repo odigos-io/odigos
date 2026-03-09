@@ -126,7 +126,6 @@ data:
     {{- end }}
     telemetryEnabled: {{ .Values.telemetry.enabled }}
     openshiftEnabled: {{ .Values.openshift.enabled }}
-    psp: {{ .Values.psp.enabled }}
     {{- if .Values.ignoredNamespaces }}
     ignoredNamespaces:
       {{- toYaml .Values.ignoredNamespaces | nindent 6 }}

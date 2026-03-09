@@ -322,13 +322,6 @@ func odigosSpecToHelmValues(odigos *operatorv1alpha1.Odigos, openshiftEnabled bo
 		vals["nodeSelector"] = odigos.Spec.NodeSelector
 	}
 
-	// Pod Security Policy
-	if odigos.Spec.PodSecurityPolicy {
-		psp := make(map[string]interface{})
-		psp["enabled"] = true
-		vals["psp"] = psp
-	}
-
 	// OpenShift
 	openshift := make(map[string]interface{})
 	openshift["enabled"] = openshiftEnabled

@@ -906,12 +906,6 @@ centralProxy:
   # priorityClassName: ''
 
 # @schema
-# description: Pod Security Policy
-# @schema
-psp:
-  enabled: false
-
-# @schema
 # description: Telemetry configuration for Odigos.
 # @schema
 telemetry:
