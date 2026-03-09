@@ -35,8 +35,8 @@ type SSEMessage struct {
 	Type    MessageType  `json:"type"`
 	Event   MessageEvent `json:"event"`
 	Data    string       `json:"data"`
-	Target  string       `json:"target"`
 	CRDType string       `json:"crdType"`
+	Targets []string     `json:"targets"`
 }
 
 // This map will hold channels for each client connected to the SSE endpoint
@@ -73,7 +73,6 @@ func HandleSSEConnections(c *gin.Context) {
 		Event:   "Connected",
 		Data:    "Connected to the server",
 		CRDType: "CONNECTED",
-		Target:  "CONNECTED",
 	})
 
 	// Continuously send SSE messages to the client

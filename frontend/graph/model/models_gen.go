@@ -804,6 +804,12 @@ type K8sWorkloadID struct {
 	Name      string          `json:"name"`
 }
 
+type K8sWorkloadIDInput struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
 type K8sWorkloadMarkedForInstrumentation struct {
 	MarkedForInstrumentation *bool  `json:"markedForInstrumentation,omitempty"`
 	DecisionEnum             string `json:"decisionEnum"`
@@ -1061,6 +1067,11 @@ type PayloadCollectionInput struct {
 	HTTPResponse *HTTPPayloadCollectionInput      `json:"httpResponse,omitempty"`
 	DbQuery      *DbQueryPayloadCollectionInput   `json:"dbQuery,omitempty"`
 	Messaging    *MessagingPayloadCollectionInput `json:"messaging,omitempty"`
+}
+
+type PeerSources struct {
+	Inbound  []*ServiceMapToSource `json:"inbound"`
+	Outbound []*ServiceMapToSource `json:"outbound"`
 }
 
 type PersistNamespaceItemInput struct {

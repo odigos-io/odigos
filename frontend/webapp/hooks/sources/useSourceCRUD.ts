@@ -2,12 +2,12 @@ import { useEffect } from 'react';
 import { useConfig } from '../config';
 import { useNamespace } from '../namespaces';
 import { useLazyQuery, useMutation } from '@apollo/client';
-import { getSseTargetFromId } from '@odigos/ui-kit/functions';
+import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { SourceInstrumentInput, WorkloadResponse } from '@/types';
 import { mapWorkloadToSource, sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
-import { GET_SOURCE, GET_SOURCE_LIBRARIES, GET_WORKLOADS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
-import { type WorkloadId, type Source, type SourceFormData, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
+import { GET_PEER_SOURCES, GET_SOURCE, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
+import { type WorkloadId, type Source, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
 import {
   type NamespaceSelectionFormData,
   type SourceSelectionFormData,
@@ -19,12 +19,16 @@ import {
   ProgressKeys,
 } from '@odigos/ui-kit/store';
 
+const MAX_INDIVIDUAL_FETCH = 50;
+
 interface UseSourceCrud {
   sources: Source[];
   sourcesLoading: boolean;
   fetchSources: () => Promise<void>;
+  fetchSourcesByTargets: (targets: string[]) => Promise<void>;
   fetchSourceById: (id: WorkloadId) => Promise<Source | undefined>;
   fetchSourceLibraries: (id: WorkloadId) => Promise<{ data?: { instrumentationInstanceComponents: InstrumentationInstanceComponent[] } }>;
+  fetchPeerSources: (serviceName: string) => Promise<{ data?: { peerSources: PeerSources } }>;
   persistSources: (selectAppsList: SourceSelectionFormData, futureSelectAppsList: NamespaceSelectionFormData) => Promise<void>;
   updateSource: (sourceId: WorkloadId, payload: SourceFormData) => Promise<void>;
 }
@@ -46,7 +50,11 @@ export const useSourceCRUD = (): UseSourceCrud => {
   const [querySourceLibraries] = useLazyQuery<{ instrumentationInstanceComponents: InstrumentationInstanceComponent[] }, WorkloadId>(GET_SOURCE_LIBRARIES, {
     onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
   });
+  const [queryPeerSources] = useLazyQuery<{ peerSources: PeerSources }, { serviceName: string }>(GET_PEER_SOURCES, {
+    onError: (error) => notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message),
+  });
   const [queryWorkloads] = useLazyQuery<{ workloads: WorkloadResponse[] }, { filter?: { markedForInstrumentation?: boolean } & Partial<WorkloadId> }>(GET_WORKLOADS);
+  const [queryWorkloadsByIds] = useLazyQuery<{ workloadsByIds: WorkloadResponse[] }, { ids: { namespace: string; kind: string; name: string }[] }>(GET_WORKLOADS_BY_IDS);
 
   const [mutatePersistSources] = useMutation<{ persistK8sSources: boolean }, SourceInstrumentInput>(PERSIST_SOURCES, {
     onError: (error) => {
@@ -90,6 +98,29 @@ export const useSourceCRUD = (): UseSourceCrud => {
     }
 
     setEntitiesLoading(EntityTypes.Source, false);
+  };
+
+  const fetchSourcesByTargets: UseSourceCrud['fetchSourcesByTargets'] = async (targets) => {
+    const ids = targets
+      .map((t) => getIdFromSseTarget(t, EntityTypes.Source) as WorkloadId)
+      .filter((id) => id.namespace && id.name && id.kind);
+
+    if (ids.length === 0) return;
+
+    if (ids.length > MAX_INDIVIDUAL_FETCH) {
+      await fetchSources();
+      return;
+    }
+
+    const { error, data } = await queryWorkloadsByIds({
+      variables: { ids: ids.map(({ namespace, kind, name }) => ({ namespace, kind, name })) },
+    });
+
+    if (error) {
+      notifyUser(StatusType.Error, error.name || Crud.Read, error.cause?.message || error.message);
+    } else if (data?.workloadsByIds) {
+      addEntities(EntityTypes.Source, data.workloadsByIds.map(mapWorkloadToSource));
+    }
   };
 
   const fetchSourceById: UseSourceCrud['fetchSourceById'] = async (id): Promise<Source | undefined> => {
@@ -172,8 +203,10 @@ export const useSourceCRUD = (): UseSourceCrud => {
     sources,
     sourcesLoading,
     fetchSources,
+    fetchSourcesByTargets,
     fetchSourceById,
     fetchSourceLibraries: (payload: WorkloadId) => querySourceLibraries({ variables: payload }),
+    fetchPeerSources: (serviceName: string) => queryPeerSources({ variables: { serviceName } }),
     persistSources,
     updateSource,
   };

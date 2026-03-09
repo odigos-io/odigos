@@ -721,6 +721,31 @@ func (r *queryResolver) Workloads(ctx context.Context, filter *model.WorkloadFil
 	return sources, nil
 }
 
+// WorkloadsByIds is the resolver for the workloadsByIds field.
+func (r *queryResolver) WorkloadsByIds(ctx context.Context, ids []*model.K8sWorkloadIDInput) ([]*model.K8sWorkload, error) {
+	l := loaders.For(ctx)
+
+	workloadIds := make([]model.K8sWorkloadID, 0, len(ids))
+	for _, id := range ids {
+		workloadIds = append(workloadIds, model.K8sWorkloadID{
+			Namespace: id.Namespace,
+			Kind:      id.Kind,
+			Name:      id.Name,
+		})
+	}
+
+	if err := l.SetWorkloadIdsDirect(ctx, workloadIds); err != nil {
+		return nil, err
+	}
+
+	result := make([]*model.K8sWorkload, 0, len(workloadIds))
+	for _, id := range l.GetWorkloadIds() {
+		id := id
+		result = append(result, &model.K8sWorkload{ID: &id})
+	}
+	return result, nil
+}
+
 // Namespaces is the resolver for the namespaces field.
 func (r *queryResolver) Namespaces(ctx context.Context) ([]*model.K8sNamespace, error) {
 	l := loaders.For(ctx)

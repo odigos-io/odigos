@@ -888,6 +888,11 @@ type ServiceMapToSource {
   dateTime: String!
 }
 
+type PeerSources {
+  inbound: [ServiceMapToSource!]!
+  outbound: [ServiceMapToSource!]!
+}
+
 type NonIdentifyingAttribute {
   key: String!
   value: String!
@@ -941,6 +946,7 @@ type Query {
 
   getOverviewMetrics: OverviewMetricsResponse!
   getServiceMap: ServiceMap!
+  peerSources(serviceName: String!): PeerSources!
 
   describeOdigos: OdigosAnalyze!
   describeSource(

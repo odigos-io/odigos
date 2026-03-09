@@ -24,6 +24,12 @@ input WorkloadFilter {
   markedForInstrumentation: Boolean
 }
 
+input K8sWorkloadIdInput {
+  namespace: String!
+  kind: K8sResourceKind!
+  name: String!
+}
+
 # describes a condition for a workload in odigos
 # and its status and message which describes if the condition is met or not and in what state it is.
 type DesiredConditionStatus {
@@ -552,5 +558,6 @@ type K8sNamespace {
 
 extend type Query {
   workloads(filter: WorkloadFilter): [K8sWorkload!]!
+  workloadsByIds(ids: [K8sWorkloadIdInput!]!): [K8sWorkload!]!
   namespaces: [K8sNamespace!]!
 }
