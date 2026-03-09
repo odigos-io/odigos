@@ -19,24 +19,42 @@ package v1alpha1
 
 import (
 	k8sconsts "github.com/odigos-io/odigos/api/k8sconsts"
-	api "github.com/odigos-io/odigos/common/api"
+	sampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
 // HighlyRelevantOperationApplyConfiguration represents a declarative configuration of the HighlyRelevantOperation type for use
 // with apply.
 type HighlyRelevantOperationApplyConfiguration struct {
-	SourceScopes      []k8sconsts.SourcesScope          `json:"sourceScopes,omitempty"`
-	Error             *bool                             `json:"error,omitempty"`
-	DurationAtLeastMs *int                              `json:"durationAtLeastMs,omitempty"`
-	Operation         *api.TailSamplingOperationMatcher `json:"operation,omitempty"`
-	PercentageAtLeast *float64                          `json:"percentageAtLeast,omitempty"`
-	Notes             *string                           `json:"notes,omitempty"`
+	Name              *string                                `json:"name,omitempty"`
+	Disabled          *bool                                  `json:"disabled,omitempty"`
+	SourceScopes      []k8sconsts.SourcesScope               `json:"sourceScopes,omitempty"`
+	Error             *bool                                  `json:"error,omitempty"`
+	DurationAtLeastMs *int                                   `json:"durationAtLeastMs,omitempty"`
+	Operation         *sampling.TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtLeast *float64                               `json:"percentageAtLeast,omitempty"`
+	Notes             *string                                `json:"notes,omitempty"`
 }
 
 // HighlyRelevantOperationApplyConfiguration constructs a declarative configuration of the HighlyRelevantOperation type for use with
 // apply.
 func HighlyRelevantOperation() *HighlyRelevantOperationApplyConfiguration {
 	return &HighlyRelevantOperationApplyConfiguration{}
+}
+
+// WithName sets the Name field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Name field is set to the value of the last call.
+func (b *HighlyRelevantOperationApplyConfiguration) WithName(value string) *HighlyRelevantOperationApplyConfiguration {
+	b.Name = &value
+	return b
+}
+
+// WithDisabled sets the Disabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Disabled field is set to the value of the last call.
+func (b *HighlyRelevantOperationApplyConfiguration) WithDisabled(value bool) *HighlyRelevantOperationApplyConfiguration {
+	b.Disabled = &value
+	return b
 }
 
 // WithSourceScopes adds the given value to the SourceScopes field in the declarative configuration
@@ -68,7 +86,7 @@ func (b *HighlyRelevantOperationApplyConfiguration) WithDurationAtLeastMs(value 
 // WithOperation sets the Operation field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Operation field is set to the value of the last call.
-func (b *HighlyRelevantOperationApplyConfiguration) WithOperation(value api.TailSamplingOperationMatcher) *HighlyRelevantOperationApplyConfiguration {
+func (b *HighlyRelevantOperationApplyConfiguration) WithOperation(value sampling.TailSamplingOperationMatcher) *HighlyRelevantOperationApplyConfiguration {
 	b.Operation = &value
 	return b
 }
