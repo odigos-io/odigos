@@ -1671,6 +1671,34 @@ if the programmin language is incorrect, the runtime info can be overridden to m
   
 <tr>
 <td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>user provided name, for easier identification and reference.
+use short and descriptive name, like &quot;health check&quot;, &quot;always keep /transaction in payment service&quot;, etc.
+odigos does not use or assume any meaning from this field,
+but it is written as metric attribute, and stored as span attribute on participating spans.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if set to true, the rule will be disabled,
+e.g. will not be taken into account for any sampling decisions.
+disabled rules still participate in metrics calculations,
+allowing enhanced tools and data for troubleshooting and sampling maintenance.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>sourceScopes</code> <B>[Required]</B>
 </td>
 <td>
@@ -3088,6 +3116,34 @@ motivation is data sentization and performance improvment (even if cost is not a
 <tbody>
     
   
+<tr>
+<td>
+<code>name</code> <B>[Required]</B>
+</td>
+<td>
+<code>string</code>
+</td>
+<td>
+   <p>user provided name, for easier identification and reference.
+use short and descriptive name, like &quot;health check&quot;, &quot;always keep /transaction in payment service&quot;, etc.
+odigos does not use or assume any meaning from this field,
+but it is written as metric attribute, and stored as span attribute on participating spans.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>disabled</code> <B>[Required]</B>
+</td>
+<td>
+<code>bool</code>
+</td>
+<td>
+   <p>if set to true, the rule will be disabled,
+e.g. will not be taken into account for any sampling decisions.
+disabled rules still participate in metrics calculations,
+allowing enhanced tools and data for troubleshooting and sampling maintenance.</p>
+</td>
+</tr>
 <tr>
 <td>
 <code>sourceScopes</code> <B>[Required]</B>
