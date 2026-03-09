@@ -210,6 +210,26 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		if baseConfig.Sampling == nil {
 			baseConfig.Sampling = &common.SamplingConfiguration{}
 		}
+		if addtionalConfig.Sampling.DryRun != nil {
+			baseConfig.Sampling.DryRun = addtionalConfig.Sampling.DryRun
+		}
+		if addtionalConfig.Sampling.SpanAttributesMarking != nil {
+			if baseConfig.Sampling.SpanAttributesMarking == nil {
+				baseConfig.Sampling.SpanAttributesMarking = &common.SpanAttributesMarkingConfiguration{}
+			}
+			if addtionalConfig.Sampling.SpanAttributesMarking.Disabled != nil {
+				baseConfig.Sampling.SpanAttributesMarking.Disabled = addtionalConfig.Sampling.SpanAttributesMarking.Disabled
+			}
+			if addtionalConfig.Sampling.SpanAttributesMarking.SamplingCategoryDisabled != nil {
+				baseConfig.Sampling.SpanAttributesMarking.SamplingCategoryDisabled = addtionalConfig.Sampling.SpanAttributesMarking.SamplingCategoryDisabled
+			}
+			if addtionalConfig.Sampling.SpanAttributesMarking.TraceDecidingRuleDisabled != nil {
+				baseConfig.Sampling.SpanAttributesMarking.TraceDecidingRuleDisabled = addtionalConfig.Sampling.SpanAttributesMarking.TraceDecidingRuleDisabled
+			}
+			if addtionalConfig.Sampling.SpanAttributesMarking.SpanDecisionAttributesDisabled != nil {
+				baseConfig.Sampling.SpanAttributesMarking.SpanDecisionAttributesDisabled = addtionalConfig.Sampling.SpanAttributesMarking.SpanDecisionAttributesDisabled
+			}
+		}
 		if addtionalConfig.Sampling.TailSampling != nil {
 			if baseConfig.Sampling.TailSampling == nil {
 				baseConfig.Sampling.TailSampling = &common.TailSamplingConfiguration{}

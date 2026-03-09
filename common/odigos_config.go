@@ -402,7 +402,56 @@ type K8sHealthProbesSamplingConfiguration struct {
 	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
 }
 
+// SpanAttributesMarkingConfiguration controls if spans should be enhanced with additional sampling attributes.
+// When consuming traces via a viewer or tooling, this provides visibility into the sampling mechanism and decisions.
+// +kubebuilder:object:generate=true
+type SpanAttributesMarkingConfiguration struct {
+	// Set to true to disable span attributes marking.
+	// When disabled, odigos will not mark any spans with sampling decisions.
+	// This is useful when you want to use the sampling decisions for other purposes,
+	// like for metrics or logging.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// Set to true to disable recording the sampling category as a span attribute.
+	// Attribute: odigos.sampling.category (noise, highly relevant, cost reduction, or empty)
+	SamplingCategoryDisabled *bool `json:"samplingCategoryDisabled,omitempty"`
+
+	// Set to true to disable recording the trace matching decision (if any) as span attributes.
+	// When a trace matches an enabled sampling rule for a category,
+	// the most "severe" rule is calculated as the "deciding rule" for the trace,
+	// and the sampling is attributed to this rule and marked as span attribute on the trace spans.
+	// Attributes:
+	//   - odigos.sampling.trace.deciding_rule.id
+	//   - odigos.sampling.trace.deciding_rule.name
+	//   - odigos.sampling.trace.deciding_rule.keep_percentage
+	TraceDecidingRuleDisabled *bool `json:"traceDecidingRuleDisabled,omitempty"`
+
+	// Set to true to disable recording the span decision (if any) as span attributes.
+	// When a specific span matches an enabled sampling rule for a category,
+	// the sampling for this span is attributed to this rule and marked as span attribute on the span.
+	// This helps track which spans in a trace actually contributed to the final sampling decision on a span level.
+	// Spans can match different rules which are different than the final deciding rule for the trace.
+	// Attributes:
+	//   - odigos.sampling.span.deciding_rule.id
+	//   - odigos.sampling.span.deciding_rule.name
+	//   - odigos.sampling.span.deciding_rule.keep_percentage
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
+}
+
 type SamplingConfiguration struct {
+
+	// Set to true to enable dry run mode for sampling.
+	// When enabled, odigos will invoke the sampling logic, but will not drop any traces.
+	// This is useful while evaluating sampling rules to check for effectiveness and correctness
+	// before committing to any changes that might lose data.
+	DryRun *bool `json:"dryRun,omitempty"`
+
+	// Configuration for span attributes marking.
+	// Controls if spans should be enhanced with additional sampling attributes,
+	// like the sampling category (noisy, highly relevant, cost reduction) and the sampling decisions.
+	// This is useful for enhanced visibility into the sampling mechanism and decision making,
+	// when consuming the traces directly via a viewer or tooling.
+	SpanAttributesMarking *SpanAttributesMarkingConfiguration `json:"spanAttributesMarking,omitempty"`
 
 	// configuration for tail sampling.
 	TailSampling *TailSamplingConfiguration `json:"tailSampling,omitempty"`

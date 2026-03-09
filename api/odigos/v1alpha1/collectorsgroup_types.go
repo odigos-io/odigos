@@ -206,6 +206,19 @@ type CollectorsGroupSpec struct {
 	// Sampling holds the sampling configuration derived from the OdigosConfiguration.
 	// Currently this is only relevant for the cluster gateway collector.
 	TailSampling *common.TailSamplingConfiguration `json:"tailSampling,omitempty"`
+
+	// Set to true to enable dry run mode for sampling.
+	// When enabled, odigos will invoke the sampling logic, but will not drop any traces.
+	// This is useful while evaluating sampling rules to check for effectiveness and correctness
+	// before committing to any changes that might lose data.
+	SamplingDryRun *bool `json:"samplingDryRun,omitempty"`
+
+	// Configuration for span attributes marking.
+	// Controls if spans should be enhanced with additional sampling attributes,
+	// like the sampling category (noisy, highly relevant, cost reduction) and the sampling decisions.
+	// This is useful for enhanced visibility into the sampling mechanism and decision making,
+	// when consuming the traces directly via a viewer or tooling.
+	SamplingSpanAttributesMarking *common.SpanAttributesMarkingConfiguration `json:"samplingSpanAttributesMarking,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

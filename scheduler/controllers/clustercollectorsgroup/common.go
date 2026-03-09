@@ -62,7 +62,7 @@ func getOwnMetricsConfig(odigosConfiguration *common.OdigosConfiguration, allDes
 }
 
 func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool, clusterMetricsEnabled *bool,
-	httpsProxyAddress *string, nodeSelector *map[string]string, deploymentName string, metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, tailSampling *common.TailSamplingConfiguration) *odigosv1.CollectorsGroup {
+	httpsProxyAddress *string, nodeSelector *map[string]string, deploymentName string, metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, tailSampling *common.TailSamplingConfiguration, dryRun *bool, spanAttributesMarking *common.SpanAttributesMarkingConfiguration) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -82,7 +82,9 @@ func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.Coll
 			NodeSelector:            nodeSelector,
 			DeploymentName:          deploymentName,
 			Metrics:                 metricsConfig,
-			TailSampling:            tailSampling,
+			TailSampling:                  tailSampling,
+			SamplingDryRun:                dryRun,
+			SamplingSpanAttributesMarking: spanAttributesMarking,
 		},
 	}
 }
@@ -125,12 +127,19 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 		tailSampling = resolveTailSamplingConfig(ctx, &odigosConfiguration, true)
 	}
 
+	var dryRun *bool
+	var spanAttributesMarking *common.SpanAttributesMarkingConfiguration
+	if odigosConfiguration.Sampling != nil {
+		dryRun = odigosConfiguration.Sampling.DryRun
+		spanAttributesMarking = odigosConfiguration.Sampling.SpanAttributesMarking
+	}
+
 	// cluster collector is always set and never deleted at the moment.
 	// this is to accelerate spinup time and avoid errors while things are gradually being reconciled
 	// and started.
 	// in the future we might want to support a deployment of instrumentations only and allow user
 	// to setup their own collectors, then we would avoid adding the cluster collector by default.
-	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress, nodeSelector, deploymentName, ownMetricsConfig, tailSampling)
+	clusterCollectorGroup := newClusterCollectorGroup(namespace, resourceSettings, serviceGraphDisabled, clusterMetricsEnabled, odigosConfiguration.CollectorGateway.HttpsProxyAddress, nodeSelector, deploymentName, ownMetricsConfig, tailSampling, dryRun, spanAttributesMarking)
 	err = utils.SetOwnerControllerToSchedulerDeployment(ctx, c, clusterCollectorGroup, scheme)
 	if err != nil {
 		return err

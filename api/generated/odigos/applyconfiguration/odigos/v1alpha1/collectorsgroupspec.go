@@ -25,19 +25,21 @@ import (
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
 type CollectorsGroupSpecApplyConfiguration struct {
-	Role                      *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
-	CollectorOwnMetricsPort   *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
-	K8sNodeLogsDirectory      *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
-	ResourcesSettings         *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
-	ServiceGraphDisabled      *bool                                                       `json:"serviceGraphDisabled,omitempty"`
-	EnableDataCompression     *bool                                                       `json:"enableDataCompression,omitempty"`
-	OtlpExporterConfiguration *common.OtlpExporterConfiguration                           `json:"otlpExporterConfiguration,omitempty"`
-	ClusterMetricsEnabled     *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
-	HttpsProxyAddress         *string                                                     `json:"httpsProxyAddress,omitempty"`
-	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
-	NodeSelector              *map[string]string                                          `json:"nodeSelector,omitempty"`
-	DeploymentName            *string                                                     `json:"deploymentName,omitempty"`
-	TailSampling              *common.TailSamplingConfiguration                           `json:"tailSampling,omitempty"`
+	Role                          *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
+	CollectorOwnMetricsPort       *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
+	K8sNodeLogsDirectory          *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
+	ResourcesSettings             *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
+	ServiceGraphDisabled          *bool                                                       `json:"serviceGraphDisabled,omitempty"`
+	EnableDataCompression         *bool                                                       `json:"enableDataCompression,omitempty"`
+	OtlpExporterConfiguration     *common.OtlpExporterConfiguration                           `json:"otlpExporterConfiguration,omitempty"`
+	ClusterMetricsEnabled         *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
+	HttpsProxyAddress             *string                                                     `json:"httpsProxyAddress,omitempty"`
+	Metrics                       *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
+	NodeSelector                  *map[string]string                                          `json:"nodeSelector,omitempty"`
+	DeploymentName                *string                                                     `json:"deploymentName,omitempty"`
+	TailSampling                  *common.TailSamplingConfiguration                           `json:"tailSampling,omitempty"`
+	SamplingDryRun                *bool                                                       `json:"samplingDryRun,omitempty"`
+	SamplingSpanAttributesMarking *common.SpanAttributesMarkingConfiguration                  `json:"samplingSpanAttributesMarking,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -147,5 +149,21 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithDeploymentName(value string)
 // If called multiple times, the TailSampling field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithTailSampling(value common.TailSamplingConfiguration) *CollectorsGroupSpecApplyConfiguration {
 	b.TailSampling = &value
+	return b
+}
+
+// WithSamplingDryRun sets the SamplingDryRun field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SamplingDryRun field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithSamplingDryRun(value bool) *CollectorsGroupSpecApplyConfiguration {
+	b.SamplingDryRun = &value
+	return b
+}
+
+// WithSamplingSpanAttributesMarking sets the SamplingSpanAttributesMarking field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SamplingSpanAttributesMarking field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithSamplingSpanAttributesMarking(value common.SpanAttributesMarkingConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.SamplingSpanAttributesMarking = &value
 	return b
 }
