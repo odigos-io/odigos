@@ -53,11 +53,13 @@ genref: tools
 
 .PHONY: docgen
 docgen: genref
-	rm -rf $(PWD)/../docs/api-reference/*
-	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/api-reference
-	for file in $(PWD)/../docs/api-reference/*; do \
+	rm -rf $(PWD)/../docs/snippets/shared/api-reference/*
+	$(TOOLS)/genref -c genref-config.yaml -f markdown -o $(PWD)/../docs/snippets/shared/api-reference
+	for file in $(PWD)/../docs/snippets/shared/api-reference/*; do \
 		mv $${file} $${file%.md}.mdx; \
 	done
+	# Fix known genref output issues (trailing whitespace + broken MDX <td> formatting)
+	python3 $(PWD)/fix-genref-output.py $(PWD)/../docs/snippets/shared/api-reference
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
