@@ -409,6 +409,46 @@ func (l *Loaders) SetFilters(ctx context.Context, filter *model.WorkloadFilter) 
 	return nil
 }
 
+func (l *Loaders) SetWorkloadIdsDirect(ctx context.Context, ids []model.K8sWorkloadID) error {
+	odigosns := env.GetCurrentNamespace()
+	var odigosConfigurationConfigMap corev1.ConfigMap
+	err := l.k8sCacheClient.Get(ctx, client.ObjectKey{
+		Namespace: odigosns,
+		Name:      consts.OdigosEffectiveConfigName,
+	}, &odigosConfigurationConfigMap)
+	if err != nil {
+		return err
+	}
+
+	if err := yaml.Unmarshal([]byte(odigosConfigurationConfigMap.Data[consts.OdigosConfigurationFileName]), &l.odigosConfiguration); err != nil {
+		return err
+	}
+	ignoredNamespacesMap := make(map[string]struct{})
+	for _, namespace := range l.odigosConfiguration.IgnoredNamespaces {
+		ignoredNamespacesMap[namespace] = struct{}{}
+	}
+
+	l.workloadFilter = &WorkloadFilter{
+		ClusterWide:       &WorkloadFilterClusterWide{},
+		NamespaceString:   "",
+		IgnoredNamespaces: ignoredNamespacesMap,
+	}
+
+	l.workloadIds = ids
+	l.workloadIdsMap = make(map[k8sconsts.PodWorkload]struct{}, len(ids))
+	l.nsToWorkloadIds = make(map[string][]model.K8sWorkloadID)
+	for _, workloadId := range ids {
+		l.nsToWorkloadIds[workloadId.Namespace] = append(l.nsToWorkloadIds[workloadId.Namespace], workloadId)
+		l.workloadIdsMap[k8sconsts.PodWorkload{
+			Namespace: workloadId.Namespace,
+			Kind:      k8sconsts.WorkloadKind(workloadId.Kind),
+			Name:      workloadId.Name,
+		}] = struct{}{}
+	}
+
+	return nil
+}
+
 func getEnvValueFromManifest(envVarManifest []corev1.EnvVar, envVarName string) *string {
 	if envVarManifest == nil {
 		return nil
