@@ -402,12 +402,12 @@ type K8sHealthProbesSamplingConfiguration struct {
 	KeepPercentage *float64 `json:"keepPercentage,omitempty"`
 }
 
-// SpanAttributesMarkingConfiguration controls whether spans are enhanced with sampling attributes
+// SpanSamplingAttributesConfiguration controls whether spans are enhanced with sampling attributes
 // (e.g. category and decisions). Capturing these attributes gives visibility into sampling
 // decision-making and effective sampling percentages when viewing traces or querying the database with tools.
 // +kubebuilder:object:generate=true
-type SpanAttributesMarkingConfiguration struct {
-	// Set to true to disable span attributes marking.
+type SpanSamplingAttributesConfiguration struct {
+	// Set to true to disable span sampling attributes.
 	// When disabled, odigos will not set span attributes for sampling decisions
 	// (unless explicitly enabled for specific attributes set).
 	Disabled *bool `json:"disabled,omitempty"`
@@ -449,7 +449,7 @@ type SamplingConfiguration struct {
 	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
 	// Capturing these attributes gives visibility into sampling decision-making and effective
 	// sampling percentages when viewing traces or querying the database with tools.
-	SpanAttributesMarking *SpanAttributesMarkingConfiguration `json:"spanAttributesMarking,omitempty"`
+	SpanSamplingAttributes *SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
 
 	// configuration for tail sampling.
 	TailSampling *TailSamplingConfiguration `json:"tailSampling,omitempty"`

@@ -25,21 +25,21 @@ import (
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
 type CollectorsGroupSpecApplyConfiguration struct {
-	Role                          *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
-	CollectorOwnMetricsPort       *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
-	K8sNodeLogsDirectory          *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
-	ResourcesSettings             *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
-	ServiceGraphDisabled          *bool                                                       `json:"serviceGraphDisabled,omitempty"`
-	EnableDataCompression         *bool                                                       `json:"enableDataCompression,omitempty"`
-	OtlpExporterConfiguration     *common.OtlpExporterConfiguration                           `json:"otlpExporterConfiguration,omitempty"`
-	ClusterMetricsEnabled         *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
-	HttpsProxyAddress             *string                                                     `json:"httpsProxyAddress,omitempty"`
-	Metrics                       *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
-	NodeSelector                  *map[string]string                                          `json:"nodeSelector,omitempty"`
-	DeploymentName                *string                                                     `json:"deploymentName,omitempty"`
-	TailSampling                  *common.TailSamplingConfiguration                           `json:"tailSampling,omitempty"`
-	SamplingDryRun                *bool                                                       `json:"samplingDryRun,omitempty"`
-	SamplingSpanAttributesMarking *common.SpanAttributesMarkingConfiguration                  `json:"samplingSpanAttributesMarking,omitempty"`
+	Role                      *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
+	CollectorOwnMetricsPort   *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
+	K8sNodeLogsDirectory      *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
+	ResourcesSettings         *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
+	ServiceGraphDisabled      *bool                                                       `json:"serviceGraphDisabled,omitempty"`
+	EnableDataCompression     *bool                                                       `json:"enableDataCompression,omitempty"`
+	OtlpExporterConfiguration *common.OtlpExporterConfiguration                           `json:"otlpExporterConfiguration,omitempty"`
+	ClusterMetricsEnabled     *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
+	HttpsProxyAddress         *string                                                     `json:"httpsProxyAddress,omitempty"`
+	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
+	NodeSelector              *map[string]string                                          `json:"nodeSelector,omitempty"`
+	DeploymentName            *string                                                     `json:"deploymentName,omitempty"`
+	TailSampling              *common.TailSamplingConfiguration                           `json:"tailSampling,omitempty"`
+	SamplingDryRun            *bool                                                       `json:"samplingDryRun,omitempty"`
+	SpanSamplingAttributes    *common.SpanSamplingAttributesConfiguration                 `json:"spanSamplingAttributes,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -160,10 +160,10 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithSamplingDryRun(value bool) *
 	return b
 }
 
-// WithSamplingSpanAttributesMarking sets the SamplingSpanAttributesMarking field in the declarative configuration to the given value
+// WithSpanSamplingAttributes sets the SpanSamplingAttributes field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the SamplingSpanAttributesMarking field is set to the value of the last call.
-func (b *CollectorsGroupSpecApplyConfiguration) WithSamplingSpanAttributesMarking(value common.SpanAttributesMarkingConfiguration) *CollectorsGroupSpecApplyConfiguration {
-	b.SamplingSpanAttributesMarking = &value
+// If called multiple times, the SpanSamplingAttributes field is set to the value of the last call.
+func (b *CollectorsGroupSpecApplyConfiguration) WithSpanSamplingAttributes(value common.SpanSamplingAttributesConfiguration) *CollectorsGroupSpecApplyConfiguration {
+	b.SpanSamplingAttributes = &value
 	return b
 }

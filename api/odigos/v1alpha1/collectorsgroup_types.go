@@ -216,7 +216,7 @@ type CollectorsGroupSpec struct {
 	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
 	// Capturing these attributes gives visibility into sampling decision-making and effective
 	// sampling percentages when viewing traces or querying the database with tools.
-	SamplingSpanAttributesMarking *common.SpanAttributesMarkingConfiguration `json:"samplingSpanAttributesMarking,omitempty"`
+	SpanSamplingAttributes *common.SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

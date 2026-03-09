@@ -528,9 +528,9 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 		*out = new(bool)
 		**out = **in
 	}
-	if in.SamplingSpanAttributesMarking != nil {
-		in, out := &in.SamplingSpanAttributesMarking, &out.SamplingSpanAttributesMarking
-		*out = new(common.SpanAttributesMarkingConfiguration)
+	if in.SpanSamplingAttributes != nil {
+		in, out := &in.SpanSamplingAttributes, &out.SpanSamplingAttributes
+		*out = new(common.SpanSamplingAttributesConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
 }

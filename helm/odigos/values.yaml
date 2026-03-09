@@ -1239,11 +1239,11 @@ sampling:
   #   sampling percentages when viewing traces or querying the database with tools.
   # 
   # @schema
-  spanAttributesMarking:
+  spanSamplingAttributes:
 
     # @schema
     # description: |-
-    #   set to true to disable span attributes marking.
+    #   set to true to disable span sampling attributes.
     #   when disabled, odigos will not set span attributes for sampling decisions
     #   (unless explicitly enabled for specific attributes set).
     # @schema

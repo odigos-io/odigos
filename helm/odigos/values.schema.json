@@ -1453,13 +1453,13 @@
           "required": [],
           "title": "k8sHealthProbesSampling"
         },
-        "spanAttributesMarking": {
+        "spanSamplingAttributes": {
           "additionalProperties": false,
           "description": "Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).\nCapturing these attributes gives visibility into sampling decision-making and effective\nsampling percentages when viewing traces or querying the database with tools.",
           "properties": {
             "disabled": {
               "default": "true",
-              "description": "set to true to disable span attributes marking.\nwhen disabled, odigos will not set span attributes for sampling decisions\n(unless explicitly enabled for specific attributes set).",
+              "description": "set to true to disable span sampling attributes.\nwhen disabled, odigos will not set span attributes for sampling decisions\n(unless explicitly enabled for specific attributes set).",
               "required": [],
               "title": "disabled"
             },
@@ -1483,7 +1483,7 @@
             }
           },
           "required": [],
-          "title": "spanAttributesMarking"
+          "title": "spanSamplingAttributes"
         },
         "tailSampling": {
           "additionalProperties": false,
