@@ -10,6 +10,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/autoscaler/controllers/common"
 	odigoscommon "github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
@@ -18,6 +19,7 @@ import (
 	pipelinegen "github.com/odigos-io/odigos/common/pipelinegen"
 	odgiosK8s "github.com/odigos-io/odigos/k8sutils/pkg/conditions"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
+	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	v1 "k8s.io/api/core/v1"
@@ -27,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -147,7 +148,7 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 }
 
 func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	dataStreams, err := calculateDataStreams(ctx, c, enabledDests)
 	if err != nil {
@@ -176,6 +177,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		gatewayOptions.TraceAggregationWaitDuration = gateway.Spec.TailSampling.TraceAggregationWaitDuration
 	}
 
+	collectorLogLevel := string(odigoscommon.LogLevelInfo)
+	if odigosCfg, err := utils.GetCurrentOdigosConfiguration(ctx, c); err == nil && odigosCfg.ComponentLogLevels != nil {
+		collectorLogLevel = odigosCfg.ComponentLogLevels.Resolve("collector")
+	}
+
 	desiredData, err, status, signals := pipelinegen.GetGatewayConfig(
 		common.ToExporterConfigurerArray(enabledDests),
 		common.ToProcessorConfigurerArray(processors),
@@ -184,6 +190,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			if err := addSelfTelemetryPipeline(c, gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames, signalsRootPipelines); err != nil {
 				return err
 			}
+			c.Service.Telemetry.Logs = config.LogsConfig{Level: collectorLogLevel}
 			// Creating a metric pipeline for the incoming Odigos components metrics
 			if gateway.Spec.Metrics != nil && gateway.Spec.Metrics.OdigosOwnMetrics != nil {
 				ownMetricsConfig := gateway.Spec.Metrics.OdigosOwnMetrics
@@ -249,7 +256,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 	existing := &v1.ConfigMap{}
 	if err := c.Get(ctx, client.ObjectKey{Namespace: gateway.Namespace, Name: k8sconsts.OdigosClusterCollectorConfigMapName}, existing); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(0).Info("Creating gateway config map")
+			logger.Info("Creating gateway config map")
 			_, err := createConfigMap(desiredCM, ctx, c)
 			if err != nil {
 				logger.Error(err, "Failed to create gateway config map")
@@ -262,7 +269,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 		}
 	}
 
-	logger.V(0).Info("Patching gateway config map")
+	logger.Info("Patching gateway config map")
 	_, err = patchConfigMap(existing, desiredCM, ctx, c)
 	if err != nil {
 		logger.Error(err, "Failed to patch gateway config map")
@@ -283,7 +290,7 @@ func createConfigMap(desired *v1.ConfigMap, ctx context.Context, c client.Client
 func patchConfigMap(existing *v1.ConfigMap, desired *v1.ConfigMap, ctx context.Context, c client.Client) (*v1.ConfigMap, error) {
 	if reflect.DeepEqual(existing.Data, desired.Data) &&
 		reflect.DeepEqual(existing.ObjectMeta.OwnerReferences, desired.ObjectMeta.OwnerReferences) {
-		log.FromContext(ctx).V(0).Info("Gateway config maps already match")
+		commonlogger.FromContext(ctx).Info("Gateway config maps already match")
 		return existing, nil
 	}
 	updated := existing.DeepCopy()
@@ -398,7 +405,7 @@ func getSourcesForDataStream(
 	kubeClient client.Client,
 	dataStream string,
 ) ([]pipelinegen.SourceFilter, error) {
-	logger := ctrl.LoggerFrom(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	instrumentationConfigsList := &odigosv1.InstrumentationConfigList{}
 

@@ -21,13 +21,13 @@ import (
 	"errors"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type EffectiveConfigReconciler struct {
@@ -36,7 +36,7 @@ type EffectiveConfigReconciler struct {
 }
 
 func (r *EffectiveConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	// When effective config changes, we need to reconcile ALL InstrumentationConfig objects
 	allInstrumentationConfigs := odigosv1.InstrumentationConfigList{}
@@ -73,7 +73,7 @@ func (r *EffectiveConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			}
 
 			// Apply the update logic
-			if err := updateInstrumentationConfigForWorkload(latestIC, instrumentationRules, &conf); err != nil {
+			if err := updateInstrumentationConfigForWorkload(ctx, latestIC, instrumentationRules, &conf); err != nil {
 				return err
 			}
 
@@ -89,7 +89,7 @@ func (r *EffectiveConfigReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	if updatedCount > 0 {
-		logger.V(0).Info("Updated instrumentation configs from effective config change", "count", updatedCount)
+		logger.Info("Updated instrumentation configs from effective config change", "count", updatedCount)
 	}
 
 	return ctrl.Result{}, allErrs

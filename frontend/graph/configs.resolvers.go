@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"strings"
 
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
@@ -27,6 +28,16 @@ func (r *mutationResolver) UpdateRemoteConfig(ctx context.Context, config model.
 	}
 
 	return true, nil
+}
+
+// SetComponentLogLevel is the resolver for the setComponentLogLevel field.
+func (r *mutationResolver) SetComponentLogLevel(ctx context.Context, component *model.OdigosComponent, level model.OdigosLogLevel) (bool, error) {
+	componentStr := ""
+	if component != nil {
+		componentStr = strings.ToLower(string(*component))
+	}
+	err := services.SetComponentLogLevel(ctx, r.K8sCacheClient, componentStr, common.OdigosLogLevel(level))
+	return err == nil, err
 }
 
 // Config is the resolver for the config field.

@@ -5,13 +5,13 @@ import (
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -29,7 +29,7 @@ func (b *nodeCollectorBaseReconciler) syncService(ctx context.Context, dc *odigo
 		return nil
 	}
 
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	localTrafficPolicy := v1.ServiceInternalTrafficPolicyLocal
 	dcService := &v1.Service{

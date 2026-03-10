@@ -65,6 +65,14 @@ ignoredContainers:
 clusterName: ''
 
 # @schema
+# description: |-
+#   Default log level for components when component-level logLevel is not set.
+#   Accepted values: debug, info, warn, error. Default: info.
+#   Set via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.
+# @schema
+logLevel: "info"
+
+# @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
 # @schema
 userInstrumentationEnvs:
@@ -385,6 +393,11 @@ collectorNode:
 # @schema
 autoscaler:
   # @schema
+  # description: Log level for autoscaler. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
   # nodeSelector:
@@ -439,6 +452,11 @@ autoscaler:
 # @schema
 scheduler:
   # @schema
+  # description: Log level for scheduler. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
   # nodeSelector:
@@ -492,6 +510,11 @@ scheduler:
 # description: Configuration for the UI component.
 # @schema
 ui:
+  # @schema
+  # description: Log level for UI. Defaults to info.
+  # @schema
+  logLevel: "info"
+
   # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
@@ -601,6 +624,10 @@ ui:
 # description: Configuration for the instrumentor component.
 # @schema
 instrumentor:
+  # @schema
+  # description: Log level for instrumentor. Defaults to info.
+  # @schema
+  logLevel: "info"
 
   # @schema
   # description: |-
@@ -709,6 +736,10 @@ instrumentor:
 # description: Configuration for the odiglet component.
 # @schema
 odiglet:
+  # @schema
+  # description: Log level for odiglet. Defaults to info.
+  # @schema
+  logLevel: "info"
 
   # @schema
   # description: Configuration for the odiglet container.

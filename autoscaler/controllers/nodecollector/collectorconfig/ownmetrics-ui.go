@@ -112,6 +112,7 @@ func serviceTelemetryConfigForOwnMetricsUi(ownMetricsPort int32) config.Telemetr
 	podNameFromEnv := "${POD_NAME}"
 	nodeNameFromEnv := "${NODE_NAME}"
 	return config.Telemetry{
+		Logs: config.LogsConfig{Level: "info"},
 		Metrics: config.MetricsConfig{
 			Level:   "detailed",
 			Readers: []config.GenericMap{reader},
