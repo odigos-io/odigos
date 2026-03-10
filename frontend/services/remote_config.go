@@ -35,30 +35,19 @@ func UpdateRemoteConfig(ctx context.Context, config *common.OdigosConfiguration)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get odigos-configuration for owner reference: %w", err)
 			}
-
-			cm = &corev1.ConfigMap{
+			newCm := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      consts.OdigosRemoteConfigName,
 					Namespace: ns,
-					Labels: map[string]string{
-						k8sconsts.OdigosSystemConfigLabelKey: "remote",
-					},
+					Labels:    map[string]string{k8sconsts.OdigosSystemConfigLabelKey: "remote"},
 					OwnerReferences: []metav1.OwnerReference{{
-						APIVersion: "v1",
-						Kind:       "ConfigMap",
-						Name:       ownerCm.Name,
-						UID:        ownerCm.UID,
+						APIVersion: "v1", Kind: "ConfigMap", Name: ownerCm.Name, UID: ownerCm.UID,
 					}},
 				},
-				Data: map[string]string{
-					consts.OdigosConfigurationFileName: string(yamlBytes),
-				},
+				Data: map[string]string{consts.OdigosConfigurationFileName: string(yamlBytes)},
 			}
-			_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Create(ctx, cm, metav1.CreateOptions{})
-			if err != nil {
-				return nil, fmt.Errorf("failed to create remote config ConfigMap: %w", err)
-			}
-			return config, nil
+			_, err = kube.DefaultClient.CoreV1().ConfigMaps(ns).Create(ctx, newCm, metav1.CreateOptions{})
+			return config, err
 		}
 		return nil, fmt.Errorf("failed to get remote config: %w", err)
 	}

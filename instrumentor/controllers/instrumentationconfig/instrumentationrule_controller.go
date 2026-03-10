@@ -5,13 +5,13 @@ import (
 	"errors"
 
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type InstrumentationRuleReconciler struct {
@@ -20,7 +20,7 @@ type InstrumentationRuleReconciler struct {
 }
 
 func (irc *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	instrumentationRules := &odigosv1alpha1.InstrumentationRuleList{}
 	err := irc.Client.List(ctx, instrumentationRules)
@@ -65,7 +65,7 @@ func (irc *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctr
 	instrumentationRules.Items = validRules
 	for _, ic := range instrumentationConfigs.Items {
 		currIc := ic
-		err = updateInstrumentationConfigForWorkload(&currIc, instrumentationRules, &conf)
+		err = updateInstrumentationConfigForWorkload(ctx, &currIc, instrumentationRules, &conf)
 		if err != nil {
 			logger.Error(err, "error updating instrumentation config", "workload", ic.Name)
 			continue
@@ -76,10 +76,10 @@ func (irc *InstrumentationRuleReconciler) Reconcile(ctx context.Context, req ctr
 			return ctrl.Result{}, err
 		}
 
-		logger.V(0).Info("Updated instrumentation config", "workload", ic.Name)
+		logger.Info("Updated instrumentation config", "workload", ic.Name)
 	}
 
-	logger.V(0).Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of instrumentation rules", len(instrumentationRules.Items), "number of instrumented workloads", len(instrumentationConfigs.Items))
+	logger.Info("Payload Collection Rules changed, recalculating instrumentation configs", "number of instrumentation rules", len(instrumentationRules.Items), "number of instrumented workloads", len(instrumentationConfigs.Items))
 	return ctrl.Result{}, nil
 }
 

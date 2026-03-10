@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/common/consts"
 )
 
@@ -25,7 +26,7 @@ type odigosproOffsetsController struct {
 }
 
 func (r *odigosproOffsetsController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-	logger := ctrl.LoggerFrom(ctx)
+	logger := commonlogger.FromContext(ctx)
 	var configMap corev1.ConfigMap
 	odigosNs := env.GetCurrentNamespace()
 
@@ -137,7 +138,7 @@ func deleteCronJob(ctx context.Context, kubeClient client.Client, ns string) err
 
 func applyCronJob(ctx context.Context, kubeClient client.Client, ns string, cronJob *batchv1.CronJob, config *common.OdigosConfiguration) error {
 
-	logger := ctrl.LoggerFrom(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	// Apply the CronJob
 	objApplyBytes, err := yaml.Marshal(cronJob)
