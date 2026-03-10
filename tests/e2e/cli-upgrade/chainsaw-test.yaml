@@ -27,7 +27,7 @@ spec:
               ./odigos uninstall || true
 
               # If LATEST_RELEASE_TAG is not set (running locally), compute it from Helm
-              if [[ -z "$LATEST_RELEASE_TAG" ]]; then
+              if [ -z "$LATEST_RELEASE_TAG" ]; then
                 echo "🔍 LATEST_RELEASE_TAG not set, fetching from Helm..."
 
                 echo "📦 Updating Helm repositories..."
@@ -37,18 +37,20 @@ spec:
                 # Determine the branch to get version prefix
                 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-                if [[ "$BRANCH" == releases/* ]]; then
-                  # Extract version prefix (e.g., "1.14" from "releases/v1.14.0")
-                  VERSION_PREFIX=$(echo "$BRANCH" | sed -E 's|releases/v([0-9]+\.[0-9]+)\..*|\1|')
-                  echo "Release branch detected, looking for v${VERSION_PREFIX}.* in Helm"
-                  LATEST_RELEASE_TAG=$(helm search repo odigos/odigos --versions | awk -v prefix="^v${VERSION_PREFIX}\\\\." '$1 == "odigos/odigos" && $3 ~ prefix {print $3; exit}')
-                else
-                  echo "Non-release branch, using latest Helm chart version"
-                  LATEST_RELEASE_TAG=$(helm search repo odigos/odigos | awk '$1 == "odigos/odigos" {print $3}')
-                fi
+                case "$BRANCH" in
+                  releases/*)
+                    VERSION_PREFIX=$(echo "$BRANCH" | sed -E 's|releases/v([0-9]+\.[0-9]+)\..*|\1|')
+                    echo "Release branch detected, looking for v${VERSION_PREFIX}.* in Helm"
+                    LATEST_RELEASE_TAG=$(helm search repo odigos/odigos --versions | awk -v prefix="^v${VERSION_PREFIX}\\\\." '$1 == "odigos/odigos" && $3 ~ prefix {print $3; exit}')
+                    ;;
+                  *)
+                    echo "Non-release branch, using latest Helm chart version"
+                    LATEST_RELEASE_TAG=$(helm search repo odigos/odigos | awk '$1 == "odigos/odigos" {print $3}')
+                    ;;
+                esac
               fi
 
-              if [[ -z "$LATEST_RELEASE_TAG" ]]; then
+              if [ -z "$LATEST_RELEASE_TAG" ]; then
                 echo "❌ ERROR: Failed to determine LATEST_RELEASE_TAG, aborting..."
                 exit 1
               fi
