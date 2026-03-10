@@ -8,13 +8,16 @@ import (
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	"go.opentelemetry.io/auto"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 )
+
+// log is the package logger for Go eBPF SDK; init once, use everywhere (respects ODIGOS_LOG_LEVEL).
+var log = commonlogger.LoggerCompat().With("subsystem", "ebpfgosdk")
 
 type GoOtelEbpfSdk struct {
 	inst *auto.Instrumentation
@@ -59,7 +62,7 @@ func (g *GoInstrumentationFactory) CreateInstrumentation(ctx context.Context, pi
 		auto.WithConfigProvider(cp),
 	)
 	if err != nil {
-		log.Logger.Error(err, "instrumentation setup failed")
+		log.Error("instrumentation setup failed", "err", err)
 		return nil, err
 	}
 
@@ -95,7 +98,7 @@ func convertToGoInstrumentationConfig(sdkConfig instrumentation.Config) (auto.In
 	}
 	ic := auto.InstrumentationConfig{}
 	if sdkConfig == nil {
-		log.Logger.V(0).Info("No SDK config provided for Go instrumentation, using default")
+		log.Info("No SDK config provided for Go instrumentation, using default")
 		return ic, nil
 	}
 	ic.InstrumentationLibraryConfigs = make(map[auto.InstrumentationLibraryID]auto.InstrumentationLibrary)

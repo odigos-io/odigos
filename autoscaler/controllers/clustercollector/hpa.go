@@ -13,9 +13,9 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
@@ -69,7 +69,7 @@ var (
 // while avoiding aggressive scale-in that could cause instability.
 func syncHPA(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	kubeVersion := commonconfig.ControllerConfig.K8sVersion
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	useCustomMetric := false
 	apiSvc := &apiregv1.APIService{}

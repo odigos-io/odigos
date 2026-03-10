@@ -1,6 +1,7 @@
 package instrumentationconfig
 
 import (
+	"context"
 	"slices"
 	"testing"
 
@@ -34,7 +35,7 @@ func TestUpdateInstrumentationConfigForWorkload_SingleLanguage(t *testing.T) {
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -76,7 +77,7 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleLanguages(t *testing.T) 
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -132,7 +133,7 @@ func TestUpdateInstrumentationConfigForWorkload_IgnoreUnknownLanguage(t *testing
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -157,7 +158,7 @@ func TestUpdateInstrumentationConfigForWorkload_NoLanguages(t *testing.T) {
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -196,7 +197,7 @@ func TestUpdateInstrumentationConfigForWorkload_SameLanguageMultipleContainers(t
 		},
 	}
 	rules := &odigosv1.InstrumentationRuleList{}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -245,7 +246,7 @@ func TestUpdateInstrumentationConfigForWorkload_SingleMatchingRule(t *testing.T)
 			},
 		},
 	}
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -311,7 +312,7 @@ func TestUpdateInstrumentationConfigForWorkload_InWorkloadList(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -367,7 +368,7 @@ func TestUpdateInstrumentationConfigForWorkload_NotInWorkloadList(t *testing.T) 
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -418,7 +419,7 @@ func TestUpdateInstrumentationConfigForWorkload_DisabledRule(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -481,7 +482,7 @@ func TestUpdateInstrumentationConfigForWorkload_MultipleDefaultRules(t *testing.
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -572,7 +573,7 @@ func TestUpdateInstrumentationConfigForWorkload_RuleForLibrary(t *testing.T) {
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -635,7 +636,7 @@ func TestUpdateInstrumentationConfigForWorkload_LibraryRuleOtherLanguage(t *test
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}
@@ -692,7 +693,7 @@ func TestUpdateInstrumentationConfigForWorkload_RuleFoOverrideContainer(t *testi
 		},
 	}
 
-	err := updateInstrumentationConfigForWorkload(&ic, rules, nil)
+	err := updateInstrumentationConfigForWorkload(context.Background(), &ic, rules, nil)
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
 	}

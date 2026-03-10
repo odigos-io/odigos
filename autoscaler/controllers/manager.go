@@ -9,6 +9,7 @@ import (
 	apiactions "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	"github.com/odigos-io/odigos/autoscaler/controllers/actions"
 	"github.com/odigos-io/odigos/autoscaler/controllers/clustercollector"
+	"github.com/odigos-io/odigos/autoscaler/controllers/loglevel"
 	"github.com/odigos-io/odigos/autoscaler/controllers/metricshandler"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -183,6 +184,10 @@ func SetupWithManager(mgr manager.Manager, odigosVersion string) error {
 
 	if err = metricshandler.SetupWithManager(mgr); err != nil {
 		return fmt.Errorf("failed to create controller for metrics handler: %w", err)
+	}
+
+	if err = loglevel.SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("failed to create log level controller: %w", err)
 	}
 
 	return nil

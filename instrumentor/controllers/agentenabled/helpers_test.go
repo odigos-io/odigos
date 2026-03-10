@@ -6,6 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -25,7 +26,7 @@ type syncTestSetup struct {
 	ctx    context.Context
 	scheme *runtime.Scheme
 	ns     *corev1.Namespace
-	logger logr.Logger
+	logger *commonlogger.ContextLogger
 }
 
 func newSyncTestSetup() *syncTestSetup {
@@ -39,7 +40,7 @@ func newSyncTestSetup() *syncTestSetup {
 		ctx:    context.Background(),
 		scheme: scheme,
 		ns:     testutil.NewMockNamespace(),
-		logger: logr.Discard(),
+		logger: commonlogger.WrapLogr(logr.Discard()),
 	}
 }
 

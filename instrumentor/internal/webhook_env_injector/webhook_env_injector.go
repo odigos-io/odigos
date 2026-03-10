@@ -241,7 +241,7 @@ func shouldInject(runtimeDetails *odigosv1.RuntimeDetailsByContainer, logger log
 		if runtimeDetails.CriErrorMessage != nil {
 			criErrorMessage = *runtimeDetails.CriErrorMessage
 		}
-		logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "error", criErrorMessage)
+		logger.Info("CRI error message present, skipping environment variable injection", "container", containerName, "message", criErrorMessage)
 		return false
 	}
 

@@ -11,16 +11,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func deletePreviousServices(ctx context.Context, c client.Client, ns string) error {
 	// to support multiple gateways, odigos service changed it's ClusterIP to None
 	// this change is not automatically applied to existing installations, we need to delete the service
 	// so that it can be recreated with the new ClusterIP value
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	svc := &v1.Service{}
 	err := c.Get(ctx, client.ObjectKey{Name: k8sconsts.OdigosClusterCollectorServiceName, Namespace: ns}, svc)
 	if err != nil {
@@ -39,7 +39,7 @@ func deletePreviousServices(ctx context.Context, c client.Client, ns string) err
 }
 
 func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) (*v1.Service, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	gatewaySvc := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sconsts.OdigosClusterCollectorServiceName,
@@ -63,7 +63,7 @@ func syncService(gateway *odigosv1.CollectorsGroup, ctx context.Context, c clien
 		return nil, err
 	}
 
-	logger.V(0).Info("gateway service synced", "result", result)
+	logger.Info("gateway service synced", "result", result)
 	return gatewaySvc, nil
 }
 

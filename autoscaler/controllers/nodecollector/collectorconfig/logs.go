@@ -3,9 +3,9 @@ package collectorconfig
 import (
 	"fmt"
 
+	"github.com/go-logr/logr"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common/config"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 	odigosLogsResourceAttrsProcessorName = "odigoslogsresourceattrsprocessor"
 )
 
-func getReceivers(sources *odigosv1.InstrumentationConfigList, odigosNamespace string) config.GenericMap {
+func getReceivers(logger logr.Logger, sources *odigosv1.InstrumentationConfigList, odigosNamespace string) config.GenericMap {
 
 	includes := make([]string, 0)
 	for _, element := range sources.Items {
@@ -26,7 +26,7 @@ func getReceivers(sources *odigosv1.InstrumentationConfigList, odigosNamespace s
 		// The suffixes are not the same lenght always, so we cannot match the pattern reliably.
 		// We expect there to exactly one OwnerReference
 		if len(element.OwnerReferences) != 1 {
-			log.Log.V(0).Error(
+			logger.Error(
 				fmt.Errorf("unexpected number of OwnerReferences for instrumentation config %s/%s during logs configmap compilation: %d", element.Namespace, element.Name, len(element.OwnerReferences)),
 				"failed to compile logs include list for configmap for instrumentation config",
 			)
@@ -65,7 +65,7 @@ func getReceivers(sources *odigosv1.InstrumentationConfigList, odigosNamespace s
 	}
 }
 
-func LogsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList) config.Config {
+func LogsConfig(logger logr.Logger, nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manifestProcessorNames []string, sources *odigosv1.InstrumentationConfigList) config.Config {
 
 	pipelineProcessors := append([]string{
 		memoryLimiterProcessorName,
@@ -77,7 +77,7 @@ func LogsConfig(nodeCG *odigosv1.CollectorsGroup, odigosNamespace string, manife
 	pipelineProcessors = append(pipelineProcessors, odigosTrafficMetricsProcessorName)
 
 	return config.Config{
-		Receivers: getReceivers(sources, odigosNamespace),
+		Receivers: getReceivers(logger, sources, odigosNamespace),
 		Service: config.Service{
 			Pipelines: map[string]config.Pipeline{
 				logsPipelineName: {
