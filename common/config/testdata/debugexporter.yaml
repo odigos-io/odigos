@@ -54,4 +54,6 @@ service:
     metrics:
       level: ""
       readers: []
+    logs:
+      level: ""
     resource: {}

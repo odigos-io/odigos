@@ -6,13 +6,25 @@ metadata:
   labels:
     odigos.io/system-object: "true"
 rules:
-# for the collector live config updates, it needs to watch the config map
+# Controller-runtime informer watches the ConfigMap resource
+# type (not specific names); list+watch on configmaps is required for the
+# loglevel reconciler's informer to work.
+  - apiGroups:
+      - ''
+    resources:
+      - configmaps
+    verbs:
+      - list
+      - watch
+# Read access to these named configmaps (e.g. GetCurrentOdigosConfiguration
+# for effective-config, collector config for odigos-data-collection).
   - apiGroups:
       - ''
     resources:
       - configmaps
     resourceNames:
       - odigos-data-collection
+      - effective-config
     verbs:
       - get
       - list
