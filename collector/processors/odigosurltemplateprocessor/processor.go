@@ -13,7 +13,19 @@ import (
 	deprecatedsemconv "go.opentelemetry.io/collector/semconv/v1.18.0"
 	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
 	"go.uber.org/zap"
+
+	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/collector"
 )
+
+// Ensure urlTemplateProcessor implements the callback interface used by the extension.
+var _ collector.WorkloadConfigCacheCallback = (*urlTemplateProcessor)(nil)
+
+// parsedWorkloadEntry holds the result of parsing URL templatization rules for one workload/container.
+// Stored in processorURLTemplateParsedRulesCache so we parse once per entry, not per batch.
+type parsedWorkloadEntry struct {
+	parsedRules map[int][]TemplatizationRule // nil means heuristic-only (no explicit rules)
+}
 
 type urlTemplateProcessor struct {
 	logger              *zap.Logger
@@ -22,6 +34,14 @@ type urlTemplateProcessor struct {
 
 	excludeMatcher *PropertiesMatcher
 	includeMatcher *PropertiesMatcher
+
+	// provider is optionally injected by the extensionStartWrapper at Start() time.
+	// When set, per-workload rules are fetched from the extension cache and the
+	// static include/exclude matchers are bypassed.
+	provider collector.OdigosConfigExtension
+
+	// processorURLTemplateParsedRulesCache caches parsed rules per workload key; updated via extension callback.
+	parsedRulesCache *processorURLTemplateParsedRulesCache
 }
 
 func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTemplateProcessor, error) {
@@ -65,30 +85,86 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 		customIds:           customIdsRegexp,
 		excludeMatcher:      excludeMatcher,
 		includeMatcher:      includeMatcher,
+		parsedRulesCache:    newProcessorURLTemplateParsedRulesCache(),
 	}, nil
 }
 
+// OnSet implements collector.WorkloadConfigCacheCallback; called when the extension cache adds/updates an entry.
+// We only store entries that have rules to avoid cache key bloat; containers with no rules are not cached.
+func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
+	if cfg.UrlTemplatization == nil || len(cfg.UrlTemplatization.TemplatizationRules) == 0 {
+		p.parsedRulesCache.delete(key)
+		p.logger.Debug("workload config cache OnSet: no rules, not storing", zap.String("key", key))
+		return
+	}
+	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.TemplatizationRules)
+	p.parsedRulesCache.set(key, parsedWorkloadEntry{parsedRules: parsedRules})
+	p.logger.Debug("workload config cache OnSet", zap.String("key", key))
+}
+
+// OnDeleteKey implements collector.WorkloadConfigCacheCallback; called when the extension cache removes an entry.
+func (p *urlTemplateProcessor) OnDeleteKey(key string) {
+	p.parsedRulesCache.delete(key)
+	p.logger.Debug("workload config cache OnDeleteKey", zap.String("key", key))
+}
+
+// parseRuleStrings parses a slice of rule strings into a map of segment-count → rules.
+// Each string is parsed via parseUserInputRuleString; invalid rules are skipped with a warning.
+func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]TemplatizationRule {
+	parsed := map[int][]TemplatizationRule{}
+	for _, rule := range ruleStrings {
+		parsedRule, err := parseUserInputRuleString(rule)
+		if err != nil {
+			p.logger.Warn("invalid templatization rule; skipping", zap.String("rule", rule), zap.Error(err))
+			continue
+		}
+		n := len(parsedRule)
+		parsed[n] = append(parsed[n], parsedRule)
+	}
+	return parsed
+}
+
 func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
-	for i := 0; i < td.ResourceSpans().Len(); i++ {
+	resourceSpanCount := td.ResourceSpans().Len()
+	p.logger.Debug("processTraces started", zap.Int("resource_spans", resourceSpanCount))
+	for i := 0; i < resourceSpanCount; i++ {
 		resourceSpans := td.ResourceSpans().At(i)
 
-		// before processing the spans, first check if it should be processed according to the include/exclude matchers
-		if p.excludeMatcher != nil && p.excludeMatcher.Match(resourceSpans.Resource()) {
-			// always skip the resource spans if it matches the exclude matcher
-			continue
-		}
-		// it doesn't make sense to have both include and exclude matchers, but we support it anyway
-		if p.includeMatcher != nil && !p.includeMatcher.Match(resourceSpans.Resource()) {
-			// if we have an include matcher, it must match the resource for it to be processed
-			continue
-		}
-		// it is ok that both include and exclude matchers are nil, in that case we process all spans
-
-		for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
-			scopeSpans := resourceSpans.ScopeSpans().At(j)
-			for k := 0; k < scopeSpans.Spans().Len(); k++ {
-				span := scopeSpans.Spans().At(k)
-				p.processSpan(span)
+		if p.provider != nil {
+			attrs := resourceSpans.Resource().Attributes()
+			key, err := p.provider.GetWorkloadCacheKey(attrs)
+			if err != nil {
+				p.logger.Debug("processTraces skip resource: GetWorkloadCacheKey failed", zap.Error(err))
+				continue
+			}
+			entry, ok := p.parsedRulesCache.get(key)
+			if !ok {
+				// Rely entirely on the extension callback to populate the cache; skip this resource until we have an entry.
+				continue
+			}
+			if entry.parsedRules == nil {
+				continue
+			}
+			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+				scopeSpans := resourceSpans.ScopeSpans().At(j)
+				for k := 0; k < scopeSpans.Spans().Len(); k++ {
+					span := scopeSpans.Spans().At(k)
+					p.processSpanWithRules(span, entry.parsedRules)
+				}
+			}
+		} else {
+			if p.excludeMatcher != nil && p.excludeMatcher.Match(resourceSpans.Resource()) {
+				continue
+			}
+			if p.includeMatcher != nil && !p.includeMatcher.Match(resourceSpans.Resource()) {
+				continue
+			}
+			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
+				scopeSpans := resourceSpans.ScopeSpans().At(j)
+				for k := 0; k < scopeSpans.Spans().Len(); k++ {
+					span := scopeSpans.Spans().At(k)
+					p.processSpan(span)
+				}
 			}
 		}
 	}
@@ -146,7 +222,15 @@ func getFullUrl(attr pcommon.Map) (string, bool) {
 	return "", false
 }
 
-func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
+// applyTemplatizationOnPath applies URL templatization to a path using the given parsed rules and custom IDs.
+// M7: paths that consist only of slashes are normalized to "/" immediately.
+func (p *urlTemplateProcessor) applyTemplatizationOnPathWithRules(path string, rules map[int][]TemplatizationRule, customIds []internalCustomIdConfig) string {
+	// M7: normalize paths that are all slashes (e.g. "//", "///") to "/"
+	if strings.Trim(path, "/") == "" {
+		p.logger.Debug("applyTemplatizationOnPath: all-slashes normalized to /", zap.String("path", path))
+		return "/"
+	}
+
 	hasLeadingSlash := strings.HasPrefix(path, "/")
 	if !hasLeadingSlash {
 		path = "/" + path
@@ -159,40 +243,37 @@ func (p *urlTemplateProcessor) applyTemplatizationOnPath(path string) string {
 		return "/" // always set a leading slash even if missing
 	}
 
-	rules, found := p.templatizationRules[len(inputPathSegments)]
-	if found {
-		for _, rule := range rules {
-			if templatedUrl, matched := attemptTemplateWithRule(inputPathSegments, rule); matched {
-				if hasLeadingSlash {
-					// if the path has a leading slash, we need to add it back
-					templatedUrl = "/" + templatedUrl
+	if rules != nil {
+		ruleList, found := rules[len(inputPathSegments)]
+		if found {
+			for _, rule := range ruleList {
+				if templatedUrl, matched := attemptTemplateWithRule(inputPathSegments, rule); matched {
+					if hasLeadingSlash {
+						templatedUrl = "/" + templatedUrl
+					}
+					return templatedUrl
 				}
-				return templatedUrl
 			}
 		}
 	}
 
-	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, p.customIds)
+	templatedPath, isTemplated := defaultTemplatizeURLPath(inputPathSegments, customIds)
 	if isTemplated {
 		if hasLeadingSlash {
 			// if the path has a leading slash, we need to add it back
 			templatedPath = "/" + templatedPath
 		}
 		return templatedPath
-	} else {
-		// if no templated url is generated, we return the original path
-		return path
 	}
+	p.logger.Debug("applyTemplatizationOnPath: no match, path unchanged", zap.String("path", path))
+	return path
 }
 
-func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttr(attr pcommon.Map) (string, bool) {
-	// this processor enhances url template value, which it extracts from full url or url path.
-	// one of these is required for this processor to handle this span.
+// calculateTemplatedUrlFromAttrWithRules calculates a templated URL using the given rules.
+func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttrWithRules(attr pcommon.Map, rules map[int][]TemplatizationRule) (string, bool) {
 	urlPath, urlPathFound := getUrlPath(attr)
 	if urlPathFound {
-		// if url path is available, we can use it to generate the templated url
-		// in case of query string, we only want the path part of the url (used with deprecated "http.target" attribute)
-		templatedUrl := p.applyTemplatizationOnPath(urlPath)
+		templatedUrl := p.applyTemplatizationOnPathWithRules(urlPath, rules, p.customIds)
 		return templatedUrl, true
 	}
 
@@ -204,7 +285,7 @@ func (p *urlTemplateProcessor) calculateTemplatedUrlFromAttr(attr pcommon.Map) (
 			// so we skip this span
 			return "", false
 		}
-		templatedUrl := p.applyTemplatizationOnPath(parsed.Path)
+		templatedUrl := p.applyTemplatizationOnPathWithRules(parsed.Path, rules, p.customIds)
 		return templatedUrl, true
 	}
 
@@ -232,8 +313,7 @@ func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string
 	span.SetName(newSpanName)
 }
 
-func (p *urlTemplateProcessor) enhanceSpan(span ptrace.Span, httpMethod string, targetAttribute string) {
-
+func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod string, targetAttribute string, rules map[int][]TemplatizationRule) {
 	attr := span.Attributes()
 
 	// edge case: target attribute (http.route) exists but is empty (e.g. no path)
@@ -250,9 +330,9 @@ func (p *urlTemplateProcessor) enhanceSpan(span ptrace.Span, httpMethod string, 
 		return
 	}
 
-	templatedUrl, found := p.calculateTemplatedUrlFromAttr(attr)
+	templatedUrl, found := p.calculateTemplatedUrlFromAttrWithRules(attr, rules)
 	if !found {
-		// don't modify the span if we are unable to calculate the templated url
+		p.logger.Debug("enhanceSpanWithRules: no url/path in attributes, skip", zap.String("span_name", span.Name()))
 		return
 	}
 
@@ -261,8 +341,9 @@ func (p *urlTemplateProcessor) enhanceSpan(span ptrace.Span, httpMethod string, 
 	updateHttpSpanName(span, httpMethod, templatedUrl)
 }
 
-func (p *urlTemplateProcessor) processSpan(span ptrace.Span) {
-
+// processSpanWithRules enhances an HTTP span with templated URL using the given rules.
+// processSpan(span) uses static config rules; extension path uses per-workload rules.
+func (p *urlTemplateProcessor) processSpanWithRules(span ptrace.Span, rules map[int][]TemplatizationRule) {
 	attr := span.Attributes()
 
 	httpMethod, found := getHttpMethod(attr)
@@ -275,13 +356,17 @@ func (p *urlTemplateProcessor) processSpan(span ptrace.Span) {
 
 	case ptrace.SpanKindClient:
 		// client spans write the url templated value in "url.template" attribute.
-		p.enhanceSpan(span, httpMethod, semconv.AttributeURLTemplate)
+		p.enhanceSpanWithRules(span, httpMethod, semconv.AttributeURLTemplate, rules)
 	case ptrace.SpanKindServer:
 		// server spans write the url templated value in "http.route" attribute.
-		p.enhanceSpan(span, httpMethod, semconv.AttributeHTTPRoute)
+		p.enhanceSpanWithRules(span, httpMethod, semconv.AttributeHTTPRoute, rules)
 	default:
 		// http spans are either client or server
 		// all other spans are ignored and never enhanced
 		return
 	}
+}
+
+func (p *urlTemplateProcessor) processSpan(span ptrace.Span) {
+	p.processSpanWithRules(span, p.templatizationRules)
 }

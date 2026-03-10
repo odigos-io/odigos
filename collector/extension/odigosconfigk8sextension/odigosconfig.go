@@ -37,7 +37,11 @@ func NewOdigosConfig(settings component.TelemetrySettings) (*OdigosWorkloadConfi
 // fills the cache with workload sampling configs keyed by WorkloadKey.
 func (o *OdigosWorkloadConfig) Start(ctx context.Context, _ component.Host) error {
 	ctx, o.cancel = context.WithCancel(ctx)
-	return o.startInformer(ctx)
+	err := o.startInformer(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Shutdown stops the informer and clears the cache.
@@ -54,4 +58,28 @@ func (o *OdigosWorkloadConfig) GetFromResource(res pcommon.Resource) (*commonapi
 		return nil, false
 	}
 	return o.cache.Get(key)
+}
+
+// GetWorkloadCacheKey returns the cache key for the container identified by resource attributes.
+// Processors use this to look up their own caches without duplicating key logic.
+// Key format: "namespace/kind/name/containerName".
+func (o *OdigosWorkloadConfig) GetWorkloadCacheKey(attrs pcommon.Map) (string, error) {
+	return workloadKeyFromResourceAttributes(attrs)
+}
+
+// RegisterWorkloadConfigCacheCallback registers a callback that is invoked by the extension
+// cache on every Set/Delete. The extension passes the callback to the cache; the informer
+// only calls cache.Set and cache.Delete. Backfill replays current cache state so the
+// processor starts in sync.
+func (o *OdigosWorkloadConfig) RegisterWorkloadConfigCacheCallback(cb collector.WorkloadConfigCacheCallback) {
+	o.cache.setCallback(cb)
+	o.logger.Debug("workload config cache callback registered")
+	backfillCount := 0
+	o.cache.Range(func(key string, cfg *commonapi.ContainerCollectorConfig) {
+		cb.OnSet(key, cfg)
+		backfillCount++
+	})
+	if backfillCount > 0 {
+		o.logger.Debug("workload config callback backfill replayed", zap.Int("entries", backfillCount))
+	}
 }
