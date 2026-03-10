@@ -226,7 +226,9 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 		// at this point, containerRuntimeDetails can be nil, indicating we have no runtime details for this container
 		// from automatic runtime detection or overrides.
 		containerOverride := ic.GetOverridesForContainer(containerName)
-		currentContainerConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, samplingRules, workloadObj, pw)
+		// URL templatization config is computed inside calculateContainerInstrumentationConfig (using distro getter)
+		// and returned for use by calculateContainerCollectorConfig.
+		currentContainerConfig, urlTemplatizationConfig := calculateContainerInstrumentationConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, rollbackOccurred, existingBackoffReason, cg, irls, containerOverride, agentLevelActions, samplingRules, workloadObj, pw)
 		containersConfig = append(containersConfig, currentContainerConfig)
 		// if at least one container has agent enabled, and pod manifest injection is required,
 		// then the overall pod manifest injection is required.
@@ -234,7 +236,7 @@ func updateInstrumentationConfigSpec(ctx context.Context, c client.Client, pw k8
 			podManifestInjectionOptional = false
 		}
 		// calculate the relevant collector configurations for the container.
-		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, samplingRules, pw)
+		currentContainerCollectorConfig := calculateContainerCollectorConfig(containerName, effectiveConfig, containerRuntimeDetails, distroPerLanguage, distroProvider.Getter, containerOverride, urlTemplatizationConfig, samplingRules, pw)
 		if currentContainerCollectorConfig != nil {
 			collectorConfig = append(collectorConfig, *currentContainerCollectorConfig)
 		}
@@ -473,6 +475,7 @@ func calculateContainerCollectorConfig(containerName string,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
 	containerOverride *odigosv1.ContainerOverride,
+	urlTemplatizationConfig *commonapi.UrlTemplatizationConfig,
 	samplingRules *[]odigosv1.Sampling,
 	pw k8sconsts.PodWorkload,
 ) *commonapi.ContainerCollectorConfig {
@@ -505,8 +508,8 @@ func calculateContainerCollectorConfig(containerName string,
 		TailSampling: &apisampling.TailSamplingSourceConfig{
 			NoisyOperations:          noisyOps,
 			HighlyRelevantOperations: relevantOps,
-			CostReductionRules:       costRules,
-		},
+			CostReductionRules:       costRules},
+		UrlTemplatization: urlTemplatizationConfig,
 	}
 }
 
@@ -524,7 +527,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 	samplingRules *[]odigosv1.Sampling,
 	workloadObj workload.Workload,
 	pw k8sconsts.PodWorkload,
-) odigosv1.ContainerAgentConfig {
+) (odigosv1.ContainerAgentConfig, *commonapi.UrlTemplatizationConfig) {
 	// check if container is ignored by name, assuming IgnoredContainers is a short list.
 	// This should be done first, because user should see workload not instrumented if container is ignored over unknown language in case both exist.
 	for _, ignoredContainer := range effectiveConfig.IgnoredContainers {
@@ -533,7 +536,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 				ContainerName:      containerName,
 				AgentEnabled:       false,
 				AgentEnabledReason: odigosv1.AgentEnabledReasonIgnoredContainer,
-			}
+			}, nil
 		}
 	}
 
@@ -542,7 +545,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 			ContainerName:      containerName,
 			AgentEnabled:       false,
 			AgentEnabledReason: odigosv1.AgentEnabledReasonRuntimeDetailsUnavailable,
-		}
+		}, nil
 	}
 
 	// check unknown language first. if language is not supported, we can skip the rest of the checks.
@@ -551,15 +554,15 @@ func calculateContainerInstrumentationConfig(containerName string,
 			ContainerName:      containerName,
 			AgentEnabled:       false,
 			AgentEnabledReason: odigosv1.AgentEnabledReasonUnsupportedProgrammingLanguage,
-		}
+		}, nil
 	}
-
-	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, containerName, runtimeDetails.Language, pw)
 
 	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
 	if err != nil {
-		return *err
+		return *err, nil
 	}
+	// Use distro-resolved language for URL templatization scope matching (e.g. WorkloadLanguage).
+	filteredTemplateRules := filterUrlTemplateRulesForContainer(agentLevelActions, containerName, d.Language, pw)
 	distroName := d.Name
 
 	tracesEnabled, metricsEnabled, logsEnabled := signalconfig.GetEnabledSignalsForContainer(nodeCollectorsGroup, irls)
@@ -567,22 +570,22 @@ func calculateContainerInstrumentationConfig(containerName string,
 	// at this time, we don't populate the signals specific configs, but we will do it soon
 	tracesConfig, err := signalconfig.CalculateTracesConfig(tracesEnabled, effectiveConfig, containerName, runtimeDetails.Language, filteredTemplateRules, irls, agentLevelActions, samplingRules, workloadObj, pw, d)
 	if err != nil {
-		return *err
+		return *err, nil
 	}
 	metricsConfig, err := signalconfig.CalculateMetricsConfig(metricsEnabled, effectiveConfig, d, containerName)
 	if err != nil {
-		return *err
+		return *err, nil
 	}
 	logsConfig, err := signalconfig.CalculateLogsConfig(logsEnabled, effectiveConfig, containerName)
 	if err != nil {
-		return *err
+		return *err, nil
 	}
 
 	envInjectionDecision, unsupportedDetails := getEnvInjectionDecision(containerName, effectiveConfig, runtimeDetails, d)
 	if unsupportedDetails != nil {
 		// if we have a container agent config with reason and message, we return it.
 		// this is a failure to inject the agent, and we should not proceed with other checks.
-		return *unsupportedDetails
+		return *unsupportedDetails, nil
 	}
 
 	// if no signals are enabled, we don't need to inject the agent.
@@ -594,7 +597,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 			AgentEnabled:        false,
 			AgentEnabledReason:  odigosv1.AgentEnabledReasonNoCollectedSignals,
 			AgentEnabledMessage: "all signals are disabled, no agent will be injected",
-		}
+		}, nil
 	}
 
 	// check if the runtime version is in supported range if it is provided
@@ -606,7 +609,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
 				AgentEnabledMessage: fmt.Sprintf("failed to parse supported versions constraint: %s", d.RuntimeEnvironments[0].SupportedVersions),
-			}
+			}, nil
 		}
 		detectedVersion, err := version.NewVersion(runtimeDetails.RuntimeVersion)
 		if err != nil {
@@ -615,7 +618,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
 				AgentEnabledMessage: fmt.Sprintf("failed to parse runtime version: %s", runtimeDetails.RuntimeVersion),
-			}
+			}, nil
 		}
 		if !constraint.Check(detectedVersion) {
 			return odigosv1.ContainerAgentConfig{
@@ -623,13 +626,13 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonUnsupportedRuntimeVersion,
 				AgentEnabledMessage: fmt.Sprintf("%s runtime not supported by OpenTelemetry. supported versions: '%s', found: %s", d.RuntimeEnvironments[0].Name, constraint, detectedVersion),
-			}
+			}, nil
 		}
 	}
 
 	distroParameters, err := calculateDistroParams(d, runtimeDetails, envInjectionDecision)
 	if err != nil {
-		return *err
+		return *err, nil
 	}
 
 	if rollbackOccurred {
@@ -641,7 +644,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 			AgentEnabledMessage: message,
 			OtelDistroName:      distroName,
 			DistroParams:        distroParameters,
-		}
+		}, nil
 	}
 
 	podManifestInjectionOptional := !distro.IsRestartRequired(d, effectiveConfig)
@@ -654,22 +657,21 @@ func calculateContainerInstrumentationConfig(containerName string,
 				AgentEnabled:        false,
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonOtherAgentDetected,
 				AgentEnabledMessage: fmt.Sprintf("odigos agent not enabled due to other instrumentation agent '%s' detected running in the container", runtimeDetails.OtherAgent.Name),
-			}
-		} else {
-			return odigosv1.ContainerAgentConfig{
-				ContainerName:                containerName,
-				AgentEnabled:                 true,
-				PodManifestInjectionOptional: podManifestInjectionOptional,
-				AgentEnabledReason:           odigosv1.AgentEnabledReasonEnabledSuccessfully,
-				AgentEnabledMessage:          fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
-				OtelDistroName:               distroName,
-				DistroParams:                 distroParameters,
-				EnvInjectionMethod:           envInjectionDecision,
-				Traces:                       tracesConfig,
-				Metrics:                      metricsConfig,
-				Logs:                         logsConfig,
-			}
+			}, nil
 		}
+		return odigosv1.ContainerAgentConfig{
+			ContainerName:                containerName,
+			AgentEnabled:                 true,
+			PodManifestInjectionOptional: podManifestInjectionOptional,
+			AgentEnabledReason:           odigosv1.AgentEnabledReasonEnabledSuccessfully,
+			AgentEnabledMessage:          fmt.Sprintf("we are operating alongside the %s, which is not the recommended configuration. We suggest disabling the %s for optimal performance.", runtimeDetails.OtherAgent.Name, runtimeDetails.OtherAgent.Name),
+			OtelDistroName:               distroName,
+			DistroParams:                 distroParameters,
+			EnvInjectionMethod:           envInjectionDecision,
+			Traces:                       tracesConfig,
+			Metrics:                      metricsConfig,
+			Logs:                         logsConfig,
+		}, filteredTemplateRules
 	}
 
 	return odigosv1.ContainerAgentConfig{
@@ -682,7 +684,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		Traces:                       tracesConfig,
 		Metrics:                      metricsConfig,
 		Logs:                         logsConfig,
-	}
+	}, filteredTemplateRules
 }
 
 func calculateDefaultDistroPerLanguage(defaultDistros map[common.ProgrammingLanguage]string,
