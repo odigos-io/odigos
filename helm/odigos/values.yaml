@@ -393,6 +393,20 @@ autoscaler:
   # @schema
   # description: |-
   #   tolerations for the autoscaler deployment.
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations: []
   # @schema
@@ -433,6 +447,20 @@ scheduler:
   # @schema
   # description: |-
   #   tolerations for the scheduler deployment.
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations: []
   # @schema
@@ -470,6 +498,22 @@ ui:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -597,6 +641,22 @@ instrumentor:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -736,9 +796,24 @@ odiglet:
   #   This toleration with 'Exists' operator and no key/effect specified
   #   will match ALL taints, allowing pods to be scheduled on any node
   #   regardless of its taints (including master/control-plane nodes)
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations:
     - operator: Exists
+
   # @schema
   # additionalProperties: true
   # @schema
@@ -894,6 +969,22 @@ centralProxy:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -1095,6 +1186,14 @@ metricsSources:
     #   default is 60s
     # @schema
     # interval: '60s'
+
+    # @schema
+    # description: |-
+    #   set the time to wait with no activity before expiring span metrics
+    #   format is duration string (15s, 1m, etc)
+    #   default is 5m
+    # @schema
+    # metricsExpiration: '5m'
 
     # @schema
     # description: |-
