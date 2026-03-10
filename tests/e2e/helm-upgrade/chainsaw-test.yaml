@@ -31,11 +31,16 @@ spec:
               helm repo update
 
               echo "🔍 Fetching latest Odigos release from Helm Chart..."
-              IMAGE_TAG=$(helm search repo odigos | awk '$1 == "odigos/odigos" {print $3}')
-              if [[ -z "$IMAGE_TAG" ]]; then
-                echo "❌ ERROR: Failed to fetch latest release, aborting..."
+              if [[ -n "$LATEST_RELEASE_TAG" ]]; then
+                IMAGE_TAG="$LATEST_RELEASE_TAG"
+                echo "✅ Using LATEST_RELEASE_TAG from environment: $IMAGE_TAG"
               else
-                echo "✅ Successfully fetched latest Odigos release from Helm Chart: $IMAGE_TAG"
+                IMAGE_TAG=$(helm search repo odigos | awk '$1 == "odigos/odigos" {print $3}')
+                if [[ -z "$IMAGE_TAG" ]]; then
+                  echo "❌ ERROR: Failed to fetch latest release, aborting..."
+                else
+                  echo "✅ Successfully fetched latest Odigos release from Helm Chart: $IMAGE_TAG"
+                fi
               fi
 
               DOWNLOAD_URL="https://github.com/odigos-io/odigos/releases/download/${IMAGE_TAG}/helm-chart-odigos-${IMAGE_TAG#v}.tgz"
@@ -52,7 +57,7 @@ spec:
                 --set nodeSelector."kubernetes\.io/os"=linux
               kubectl label namespace odigos-test odigos.io/system-object="true"
         - assert:
-            timeout: 1m
+            timeout: 5m
             file: ../../common/assert/latest-odigos-version-installed.yaml
 
     - name: Assert Trace DB is up
