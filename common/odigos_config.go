@@ -220,7 +220,7 @@ type MetricsSourceSpanMetricsConfiguration struct {
 	// Default value when unset:
 	// 		["2ms", "4ms", "6ms", "8ms", "10ms", "50ms", "100ms", "200ms", "400ms", "800ms", "1s", "1400ms", "2s", "5s", "10s", "15s"]
 	// notice that more granular buckets are recommended for better precision but costs more since more metric series are produced.
-	ExplicitHistogramBuckets []string `json:"histogramBuckets,omitempty"`
+	ExplicitHistogramBuckets []string `json:"explicitHistogramBuckets,omitempty"`
 
 	// By default, Odigos does not include process labels - meaning
 	// metrics will be aggregated by container as the lowest level.
