@@ -16,6 +16,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
@@ -263,7 +264,7 @@ func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, acti
 	})
 
 	if changed {
-		logger := ctrl.LoggerFrom(ctx)
+		logger := commonlogger.FromContext(ctx)
 		logger.Info("Action reconciled successfully")
 		err := r.Status().Update(ctx, action)
 		if err != nil {
@@ -275,7 +276,7 @@ func (r *ActionReconciler) reportReconciledToProcessor(ctx context.Context, acti
 }
 
 func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := ctrl.LoggerFrom(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	action := &odigosv1.Action{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -305,7 +306,7 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if statusErr == nil {
 			return utils.K8SUpdateErrorHandler(err)
 		} else {
-			logger := ctrl.LoggerFrom(ctx)
+			logger := commonlogger.FromContext(ctx)
 			logger.Error(statusErr, "Failed to set status on action")
 			return utils.K8SUpdateErrorHandler(err)
 		}

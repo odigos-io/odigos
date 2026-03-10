@@ -2,34 +2,11 @@ package sampling
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/k8sutils/pkg/scope"
 )
 
-func IsServiceInRuleScope(services []v1alpha1.SourcesScope, pw k8sconsts.PodWorkload, containerName string, containerLanguage common.ProgrammingLanguage) bool {
-	if len(services) == 0 {
-		// empty list means all services are matched
-		return true
-	}
-	for _, service := range services {
-		// check any service field if set
-		if service.WorkloadName != "" && service.WorkloadName != pw.Name {
-			continue
-		}
-		if service.WorkloadKind != "" && service.WorkloadKind != pw.Kind {
-			continue
-		}
-		if service.WorkloadNamespace != "" && service.WorkloadNamespace != pw.Namespace {
-			continue
-		}
-		if service.ContainerName != "" && service.ContainerName != containerName {
-			continue
-		}
-		if service.WorkloadLanguage != "" && service.WorkloadLanguage != containerLanguage {
-			continue
-		}
-		// if all fields matched, this source container matches the services filters in the rule and should be taken
-		return true
-	}
-	return false
+// IsServiceInRuleScope returns true if the list is empty (match all) or any scope matches the given workload/container/language.
+func IsServiceInRuleScope(services []scope.SourcesScope, pw k8sconsts.PodWorkload, containerName string, containerLanguage common.ProgrammingLanguage) bool {
+	return scope.AnySourceScopeMatchesContainer(services, pw, containerName, containerLanguage)
 }

@@ -67,6 +67,11 @@ spec:
                   Default: registry.odigos.io
                   Default (OpenShift): registry.connect.redhat.com
                 type: string
+              logLevel:
+                description: |-
+                  (Optional) LogLevel sets the default log level for all Odigos components (e.g. autoscaler, odiglet, scheduler).
+                  Accepted values: debug, info, warn, error. Default=info when unset.
+                type: string
               mountMethod:
                 description: |-
                   (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.

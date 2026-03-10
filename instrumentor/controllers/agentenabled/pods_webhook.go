@@ -15,13 +15,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
@@ -74,7 +74,7 @@ var (
 // If injection fails for any reason, the webhook returns an Allowed response with no changes,
 // ensuring user workloads are never blocked by instrumentation logic.
 func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	var pod corev1.Pod
 	if err := p.Decoder.Decode(req, &pod); err != nil {
@@ -109,7 +109,7 @@ func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admissi
 }
 
 func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req admission.Request) error {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	odigosNamespace := env.GetCurrentNamespace()
 
@@ -279,7 +279,7 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod, req admi
 }
 
 func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
 	if err != nil {
@@ -302,7 +302,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, config)
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger.Logr(), container, otelSdk, runtimeDetails, config)
 		if err != nil {
 			return err
 		}
@@ -351,7 +351,7 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	}
 
 	// URL Templatization configuration
-	urlTemplatizationEnabled := containerConfig.Traces != nil && containerConfig.Traces.UrlTemplatization != nil && len(containerConfig.Traces.UrlTemplatization.Rules) > 0
+	urlTemplatizationEnabled := containerConfig.Traces != nil && containerConfig.Traces.UrlTemplatization != nil && len(containerConfig.Traces.UrlTemplatization.TemplatizationRules) > 0
 	supportsUrlTemplatization := distroMetadata.Traces != nil && distroMetadata.Traces.UrlTemplatization != nil && distroMetadata.Traces.UrlTemplatization.Supported
 	if urlTemplatizationEnabled && supportsUrlTemplatization && distroMetadata.ConfigAsEnvVars {
 		// parse URL templatization config to json using the existing AgentTracesConfig struct

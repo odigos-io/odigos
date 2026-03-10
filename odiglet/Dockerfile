@@ -1,15 +1,5 @@
 ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.11
 
-######### python Native Community Agent #########
-# IMPORTANT: If changing the Python version below, update the Python dependency shared object filenames
-# in odiglet/pkg/instrumentation/fs/agents.go (e.g., cpython-311 must match the Python version).
-FROM python:3.11.9 AS python-builder
-ARG ODIGOS_VERSION
-WORKDIR /python-instrumentation
-COPY agents/python ./agents/configurator
-RUN pip install ./agents/configurator/  --target workspace
-RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
-
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
@@ -25,6 +15,7 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     mv linux-$ARCH_SUFFIX linux-glibc
+
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
     unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
@@ -46,11 +37,10 @@ WORKDIR /instrumentations
 
 # Java
 ARG JAVA_OTEL_VERSION=v2.10.0
-ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
-RUN chmod 644 /instrumentations/java/javaagent.jar
+ADD --chmod=644 https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 
 # Python
-COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.66 /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node

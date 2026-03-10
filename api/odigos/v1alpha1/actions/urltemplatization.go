@@ -2,7 +2,6 @@ package actions
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
-	"github.com/odigos-io/odigos/common"
 )
 
 const ActionNameURLTemplatization = "URLTemplatization"
@@ -24,24 +23,19 @@ type URLTemplatizationRule struct {
 	Notes string `json:"notes,omitempty"`
 }
 
+// UrlTemplatizationRulesGroup is a group of rules that share the same target spans.
+// If SourcesScope is empty, the rules apply to all sources (global).
+// If set, rules apply to selected scope.
+//
 // +kubebuilder:object:generate=true
 // +kubebuilder:deepcopy-gen=true
-// UrlTemplatizationRulesGroup is a group of rules that share the same target spans.
-// For examples, all rules for java spans, all rules for deployment foo in namespace default, etc.
-// Filters, if set, are ANDed together, e.g. for the templatization rules to be applied, all set filters must be true.
-// If no filters are set, the rules will be applied to all spans.
 type UrlTemplatizationRulesGroup struct {
-	FilterProgrammingLanguage *common.ProgrammingLanguage `json:"filterProgrammingLanguage,omitempty"`
-	FilterK8sNamespace        string                      `json:"filterK8sNamespace,omitempty"`
-	FilterK8sWorkloadKind     *k8sconsts.WorkloadKind     `json:"filterK8sWorkloadKind,omitempty"`
-	FilterK8sWorkloadName     string                      `json:"filterK8sWorkloadName,omitempty"`
+	// SourcesScope selects which sources (workloads / containers / languages) the rules apply to.
+	// Empty list means "all sources" (global rules).
+	SourcesScope []k8sconsts.SourcesScope `json:"sourcesScope,omitempty"`
 
 	// the rules that will be applied to the spans matching the above filters.
 	TemplatizationRules []URLTemplatizationRule `json:"templatizationRules,omitempty"`
-
-	// user can add notes about this group for future maintenance purposes. not used by the system.
-	// it can record why this group was added and what endpoints it's targeting.
-	Notes string `json:"notes,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

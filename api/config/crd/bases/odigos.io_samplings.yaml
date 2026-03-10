@@ -49,6 +49,20 @@ spec:
               costReductionRules:
                 items:
                   properties:
+                    disabled:
+                      description: |-
+                        if set to true, the rule will be disabled,
+                        e.g. will not be taken into account for any sampling decisions.
+                        disabled rules still participate in metrics calculations,
+                        allowing enhanced tools and data for troubleshooting and sampling maintenance.
+                      type: boolean
+                    name:
+                      description: |-
+                        user provided name, for easier identification and reference.
+                        use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+                        odigos does not use or assume any meaning from this field,
+                        but it is written as metric attribute, and stored as span attribute on participating spans.
+                      type: string
                     notes:
                       description: |-
                         optional free-form text field that allows you to attach notes
@@ -112,7 +126,6 @@ spec:
                         description: |-
                           define conditions to match specific sources (containers) managed by odigos.
                           a source container matches, if ALL non empty fields match (AND semantics)
-
                           common patterns:
                             - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
                               all containers (usually there is only one with agent injection)
@@ -126,9 +139,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:
@@ -171,6 +181,13 @@ spec:
                     if found anywhere in the trace, the entire trace will be kept
                     regaradless of any cost reduction rules.
                   properties:
+                    disabled:
+                      description: |-
+                        if set to true, the rule will be disabled,
+                        e.g. will not be taken into account for any sampling decisions.
+                        disabled rules still participate in metrics calculations,
+                        allowing enhanced tools and data for troubleshooting and sampling maintenance.
+                      type: boolean
                     durationAtLeastMs:
                       description: if Duration is set, only operations with duration
                         in milli seconds larger then this value are considered
@@ -179,6 +196,13 @@ spec:
                       description: if "Error" is set to true, only spans with SpanStatus
                         set to "Error" are considered
                       type: boolean
+                    name:
+                      description: |-
+                        user provided name, for easier identification and reference.
+                        use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+                        odigos does not use or assume any meaning from this field,
+                        but it is written as metric attribute, and stored as span attribute on participating spans.
+                      type: string
                     notes:
                       description: |-
                         optional free-form text field that allows you to attach notes
@@ -240,7 +264,6 @@ spec:
                         description: |-
                           define conditions to match specific sources (containers) managed by odigos.
                           a source container matches, if ALL non empty fields match (AND semantics)
-
                           common patterns:
                             - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
                               all containers (usually there is only one with agent injection)
@@ -254,9 +277,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:
@@ -300,6 +320,20 @@ spec:
                     - metrics scrape endpoints (prometheus /metrics endpoint)
                     - other agents calling home (outgoing http requests to collector.my.vendor.com)
                   properties:
+                    disabled:
+                      description: |-
+                        if set to true, the rule will be disabled,
+                        e.g. will not be taken into account for any sampling decisions.
+                        disabled rules still participate in metrics calculations,
+                        allowing enhanced tools and data for troubleshooting and sampling maintenance.
+                      type: boolean
+                    name:
+                      description: |-
+                        user provided name, for easier identification and reference.
+                        use short and descriptive name, like "health check", "always keep /transaction in payment service", etc.
+                        odigos does not use or assume any meaning from this field,
+                        but it is written as metric attribute, and stored as span attribute on participating spans.
+                      type: string
                     notes:
                       description: |-
                         optional free-form text field that allows you to attach notes
@@ -324,8 +358,11 @@ spec:
                             serverAddress:
                               description: match server address exactly (e.g. collector.my.vendor.com)
                               type: string
-                            urlPath:
-                              description: match url path exactly (e.g. /api/v1/metrics)
+                            templatedPath:
+                              description: match templated path exactly
+                              type: string
+                            templatedPathPrefix:
+                              description: match preffix of templated path
                               type: string
                           type: object
                         httpServer:
@@ -363,7 +400,6 @@ spec:
                         description: |-
                           define conditions to match specific sources (containers) managed by odigos.
                           a source container matches, if ALL non empty fields match (AND semantics)
-
                           common patterns:
                             - Specific kubernetes workload by name (WorkloadNamespace + WorkloadKind + WorkloadName):
                               all containers (usually there is only one with agent injection)
@@ -377,9 +413,6 @@ spec:
                           containerName:
                             type: string
                           workloadKind:
-                            description: |-
-                              1. the pascal case representation of the workload kind
-                              it is used in k8s api objects as the `Kind` field.
                             type: string
                           workloadLanguage:
                             enum:

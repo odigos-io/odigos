@@ -21,10 +21,12 @@ jobs:
         id: extract_tag
         run: |
           if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            TAG="${{ github.event.inputs.tag }}"
           else
-            echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+            TAG="${GITHUB_REF#refs/*/}"
           fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=${TAG#otelcol-linux/}" >> $GITHUB_OUTPUT
 
       - name: Notify Slack Start
         if: always()
@@ -45,6 +47,15 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: "1.26"
+
+      - name: Set GoReleaser tag
+        run: |
+          git config user.email "ci@odigos.io"
+          git config user.name "Odigos CI"
+          TAG="${{ steps.extract_tag.outputs.tag }}"
+          SEMVER_TAG="${TAG#otelcol-linux/}"
+          echo "GORELEASER_CURRENT_TAG=$SEMVER_TAG" >> $GITHUB_ENV
+          git tag -a -f "$SEMVER_TAG" -m "Release $SEMVER_TAG"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -70,7 +81,7 @@ jobs:
           aws-region: us-east-1
           bucket-name: odigos-releases
           agent-type: 'otelcol'
-          version: ${{ steps.extract_tag.outputs.tag }}
+          version: ${{ steps.extract_tag.outputs.version }}
           package-directory: 'collector/dist'
 
       - name: Notify Slack Success

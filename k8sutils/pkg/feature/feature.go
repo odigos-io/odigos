@@ -67,19 +67,6 @@ func (fs *featureSupport) isEnabled(ml maturityLevel) bool {
 	}
 }
 
-// https://github.com/kubernetes/kubernetes/blob/v1.25.3/pkg/features/kube_features.go#L224
-var (
-	daemonSetUpdateSurge = &featureSupport{
-		alphaVersion: "1.21.0",
-		betaVersion:  "1.22.0",
-		gaVersion:    "1.25.0",
-	}
-
-	DaemonSetUpdateSurge = func(ml maturityLevel) bool {
-		return daemonSetUpdateSurge.isEnabled(ml)
-	}
-)
-
 // https://github.com/kubernetes/kubernetes/blob/v1.26.0/pkg/features/kube_features.go#L775
 var (
 	serviceInternalTrafficPolicy = &featureSupport{

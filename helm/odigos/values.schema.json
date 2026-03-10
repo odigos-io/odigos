@@ -59,6 +59,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for autoscaler. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -118,7 +124,23 @@
         "tolerations": {
           "description": "tolerations for the autoscaler deployment.",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -225,12 +247,27 @@
           "title": "tls"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         }
       },
       "required": [],
@@ -639,6 +676,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for instrumentor. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "mountMethod": {
           "default": "",
           "description": "which mount method to use for odigos agent directory\nk8s-virtual-device: default method using a virtual device\nk8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)\nk8s-init-container: alternative which uses an init container to copy the agent files to the shared volume",
@@ -708,12 +751,27 @@
           "title": "resources"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         }
       },
       "required": [],
@@ -731,6 +789,12 @@
       },
       "required": [],
       "title": "karpenter"
+    },
+    "logLevel": {
+      "default": "info",
+      "description": "Default log level for components when component-level logLevel is not set.\nAccepted values: debug, info, warn, error. Default: info.\nSet via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.",
+      "required": [],
+      "title": "logLevel"
     },
     "metricsSources": {
       "additionalProperties": false,
@@ -941,6 +1005,12 @@
               "required": [],
               "title": "interval"
             },
+            "metricsExpiration": {
+              "default": "5m",
+              "description": "set the time to wait with no activity before expiring span metrics\nformat is duration string (15s, 1m, etc)\ndefault is 5m",
+              "required": [],
+              "title": "metricsExpiration"
+            },
             "resourceMetricsKeyAttributes": {
               "description": "Advanced configuration - avoid using unless you know what you are doing.\nThis list controls which resource attributes are included in the metric stream identity.\nThese attributes are used to determines how span metrics are grouped.",
               "items": {
@@ -1137,6 +1207,12 @@
           "required": [],
           "title": "initContainerResources"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for odiglet. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "noHostNetwork": {
           "default": "false",
           "description": "noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.\nfor k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.\nfor k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.",
@@ -1301,21 +1377,23 @@
         "tolerations": {
           "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
           "items": {
-            "anyOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "operator": {
-                    "default": "Exists",
-                    "title": "operator",
-                    "type": "string"
-                  }
-                },
-                "required": [],
-                "type": "object"
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
               }
-            ],
-            "required": []
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -1500,6 +1578,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for scheduler. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -1559,7 +1643,23 @@
         "tolerations": {
           "description": "tolerations for the scheduler deployment.",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -1628,6 +1728,12 @@
           "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-ui'",
           "required": [],
           "title": "deploymentName"
+        },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for UI. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
         },
         "nodeSelector": {
           "default": "",
@@ -1704,12 +1810,27 @@
           "type": "object"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         },
         "uiMode": {
           "default": "default",

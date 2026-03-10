@@ -205,6 +205,17 @@ type CollectorPodMetrics struct {
 	LastScrape         *string `json:"lastScrape,omitempty"`
 }
 
+type ComponentLogLevelsConfig struct {
+	Default      *OdigosLogLevel `json:"default,omitempty"`
+	Autoscaler   *OdigosLogLevel `json:"autoscaler,omitempty"`
+	Scheduler    *OdigosLogLevel `json:"scheduler,omitempty"`
+	Instrumentor *OdigosLogLevel `json:"instrumentor,omitempty"`
+	Odiglet      *OdigosLogLevel `json:"odiglet,omitempty"`
+	Deviceplugin *OdigosLogLevel `json:"deviceplugin,omitempty"`
+	UI           *OdigosLogLevel `json:"ui,omitempty"`
+	Collector    *OdigosLogLevel `json:"collector,omitempty"`
+}
+
 type ComputePlatform struct {
 	ComputePlatformType  ComputePlatformType    `json:"computePlatformType"`
 	APITokens            []*APIToken            `json:"apiTokens"`
@@ -428,6 +439,7 @@ type EffectiveConfig struct {
 	AllowedTestConnectionHosts       []string                            `json:"allowedTestConnectionHosts,omitempty"`
 	OdigosOwnTelemetryStore          *OdigosOwnTelemetryConfig           `json:"odigosOwnTelemetryStore,omitempty"`
 	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
+	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
 }
 
 type EntityProperty struct {
@@ -799,6 +811,12 @@ type K8sWorkloadContainerOverrides struct {
 }
 
 type K8sWorkloadID struct {
+	Namespace string          `json:"namespace"`
+	Kind      K8sResourceKind `json:"kind"`
+	Name      string          `json:"name"`
+}
+
+type K8sWorkloadIDInput struct {
 	Namespace string          `json:"namespace"`
 	Kind      K8sResourceKind `json:"kind"`
 	Name      string          `json:"name"`
@@ -2170,6 +2188,102 @@ func (e *NumberOperation) UnmarshalGQL(v any) error {
 }
 
 func (e NumberOperation) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OdigosComponent string
+
+const (
+	OdigosComponentAutoscaler   OdigosComponent = "autoscaler"
+	OdigosComponentScheduler    OdigosComponent = "scheduler"
+	OdigosComponentInstrumentor OdigosComponent = "instrumentor"
+	OdigosComponentOdiglet      OdigosComponent = "odiglet"
+	OdigosComponentDeviceplugin OdigosComponent = "deviceplugin"
+	OdigosComponentUI           OdigosComponent = "ui"
+	OdigosComponentCollector    OdigosComponent = "collector"
+)
+
+var AllOdigosComponent = []OdigosComponent{
+	OdigosComponentAutoscaler,
+	OdigosComponentScheduler,
+	OdigosComponentInstrumentor,
+	OdigosComponentOdiglet,
+	OdigosComponentDeviceplugin,
+	OdigosComponentUI,
+	OdigosComponentCollector,
+}
+
+func (e OdigosComponent) IsValid() bool {
+	switch e {
+	case OdigosComponentAutoscaler, OdigosComponentScheduler, OdigosComponentInstrumentor, OdigosComponentOdiglet, OdigosComponentDeviceplugin, OdigosComponentUI, OdigosComponentCollector:
+		return true
+	}
+	return false
+}
+
+func (e OdigosComponent) String() string {
+	return string(e)
+}
+
+func (e *OdigosComponent) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OdigosComponent(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OdigosComponent", str)
+	}
+	return nil
+}
+
+func (e OdigosComponent) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OdigosLogLevel string
+
+const (
+	OdigosLogLevelError OdigosLogLevel = "error"
+	OdigosLogLevelWarn  OdigosLogLevel = "warn"
+	OdigosLogLevelInfo  OdigosLogLevel = "info"
+	OdigosLogLevelDebug OdigosLogLevel = "debug"
+)
+
+var AllOdigosLogLevel = []OdigosLogLevel{
+	OdigosLogLevelError,
+	OdigosLogLevelWarn,
+	OdigosLogLevelInfo,
+	OdigosLogLevelDebug,
+}
+
+func (e OdigosLogLevel) IsValid() bool {
+	switch e {
+	case OdigosLogLevelError, OdigosLogLevelWarn, OdigosLogLevelInfo, OdigosLogLevelDebug:
+		return true
+	}
+	return false
+}
+
+func (e OdigosLogLevel) String() string {
+	return string(e)
+}
+
+func (e *OdigosLogLevel) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OdigosLogLevel(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OdigosLogLevel", str)
+	}
+	return nil
+}
+
+func (e OdigosLogLevel) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

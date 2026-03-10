@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
@@ -32,7 +32,6 @@ import (
 
 type Instrumentor struct {
 	mgr                controllerruntime.Manager
-	logger             logr.Logger
 	certReady          chan struct{}
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
@@ -182,7 +181,6 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 
 	return &Instrumentor{
 		mgr:                mgr,
-		logger:             opts.Logger,
 		certReady:          rotatorSetupFinished,
 		dp:                 dp,
 		webhooksRegistered: webhooksRegistered,
@@ -191,26 +189,14 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 }
 
 func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
+	logger := commonlogger.LoggerCompat().With("subsystem", "instrumentor")
 	g, groupCtx := errgroup.WithContext(ctx)
-
-	// Start pprof server
-	g.Go(func() error {
-		err := common.StartPprofServer(groupCtx, i.logger, int(k8sconsts.DefaultPprofEndpointPort))
-		if err != nil {
-			i.logger.Error(err, "Failed to start pprof server")
-		} else {
-			i.logger.V(0).Info("Pprof server exited")
-		}
-		// if we fail to start the pprof server, don't return an error as it is not critical
-		// and we can run the rest of the components
-		return nil
-	})
 
 	if !odigosTelemetryDisabled {
 		// Start telemetry report
 		g.Go(func() error {
 			report.Start(groupCtx, i.mgr.GetClient())
-			i.logger.V(0).Info("Telemetry reporting exited")
+			logger.Info("Telemetry reporting exited")
 			return nil
 		})
 	}
@@ -219,9 +205,9 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 	g.Go(func() error {
 		err := i.mgr.Start(groupCtx)
 		if err != nil {
-			i.logger.Error(err, "error starting kube manager")
+			logger.Error("error starting kube manager", "err", err)
 		} else {
-			i.logger.V(0).Info("Kube manager exited")
+			logger.Info("Kube manager exited")
 		}
 		return err
 	})
@@ -245,7 +231,7 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		case <-groupCtx.Done():
 			return nil
 		}
-		i.logger.V(0).Info("Cert rotator is ready")
+		logger.Info("Cert rotator is ready")
 		err := controllers.RegisterWebhooks(i.mgr, controllers.WebhookConfig{
 			DistrosProvider: i.dp,
 			WaspMutator:     i.waspMutator,
@@ -254,12 +240,12 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 			return err
 		}
 		i.webhooksRegistered.Store(true)
-		i.logger.V(0).Info("Webhooks registered")
+		logger.Info("Webhooks registered")
 		return nil
 	})
 
 	err := g.Wait()
 	if err != nil {
-		i.logger.Error(err, "Instrumentor exited with error")
+		logger.Error("Instrumentor exited with error", "err", err)
 	}
 }

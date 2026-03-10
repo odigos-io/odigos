@@ -90,7 +90,7 @@ This page lists the Kubernetes Roles and ClusterRoles used by Odigos and the Odi
 		docString += parseRbacRules(permission.Rules)
 	}
 
-	err = os.WriteFile("../../docs/permissions.mdx", []byte(docString), 0644)
+	err = os.WriteFile("../../docs/snippets/shared/permissions.mdx", []byte(docString), 0644)
 	if err != nil {
 		panic(err)
 	}

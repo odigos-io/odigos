@@ -17,7 +17,6 @@ func genericErrorMessage(event sse.MessageEvent, crd string, data string) {
 		Event:   event,
 		Data:    "Something went wrong: " + data,
 		CRDType: crd,
-		Target:  "",
 	})
 }
 

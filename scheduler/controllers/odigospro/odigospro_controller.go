@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -24,7 +24,7 @@ type odigossecretController struct {
 }
 
 func (r *odigossecretController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	odigosNs := env.GetCurrentNamespace()
 
@@ -40,14 +40,14 @@ func (r *odigossecretController) Reconcile(ctx context.Context, _ ctrl.Request) 
 	if apierrors.IsNotFound(err) {
 		deleted := deleteProInfoFromConfigMap(odigosDeploymentConfig)
 		if deleted {
-			logger.V(0).Info("OdigosPro secret not found, deleting pro info from odigos deployment config")
+			logger.Info("OdigosPro secret not found, deleting pro info from odigos deployment config")
 		}
 	} else {
 		err := updateProInfoInConfigMap(odigosDeploymentConfig, proSecret)
 		if err != nil {
 			return ctrl.Result{}, reconcile.TerminalError(err)
 		}
-		logger.V(0).Info("Updated pro info in odigos deployment config")
+		logger.Info("Updated pro info in odigos deployment config")
 	}
 
 	err = r.Client.Update(ctx, odigosDeploymentConfig)
