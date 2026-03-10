@@ -89,7 +89,7 @@ func main() {
 	flag.Parse()
 
 	ctx := ctrl.SetupSignalHandler()
-	go common.StartPprofServer(ctx, setupLog, int(k8sconsts.DefaultPprofEndpointPort))
+	go common.StartPprofServer(ctx, ctrl.Log, int(k8sconsts.DefaultPprofEndpointPort))
 
 	odigosNs := env.GetCurrentNamespace()
 	tier := env.GetOdigosTierFromEnv()
