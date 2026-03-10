@@ -218,9 +218,9 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		i.mgr.GetLogger().Info("start syncing kubernetes cache synchronously", "sequentialCacheLoad", sequentialCacheLoadVal)
 		err := syncCacheSynchronously(groupCtx, i.mgr)
 		if err != nil {
-			i.logger.Error(err, "error syncing kubernetes cache")
+			logger.Error("error syncing kubernetes cache", "err", err)
 		} else {
-			i.logger.Info("kubernetes cache is synced synchronously", "duration", time.Since(startTime))
+			logger.Info("kubernetes cache is synced synchronously", "duration", time.Since(startTime))
 		}
 	}
 
