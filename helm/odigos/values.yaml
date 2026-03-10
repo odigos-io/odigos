@@ -815,19 +815,9 @@ odiglet:
 
   # @schema
   # description: |-
-  #   DaemonSet name. if you want the daemonset (and related pods) to have a specific name.
-  #   default is 'odiglet'
+  #   CSI driver resource configuration.
+  #   Only applied when instrumentor.mountMethod is "k8s-csi-driver"
   # @schema
-  # daemonsetName: 'odiglet'
-
-  # @schema
-  # description: |-
-  #   noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
-  #   for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
-  #   for k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.
-  # @schema
-  # CSI driver resource configuration
-  # Only applied when instrumentor.mountMethod is "k8s-csi-driver"
   csidriver:
     resources:
       requests:
@@ -847,9 +837,19 @@ odiglet:
       periodSeconds: 10
       timeoutSeconds: 10
 
-  # noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
-  # for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
-  # for k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.
+  # @schema
+  # description: |-
+  #   DaemonSet name. if you want the daemonset (and related pods) to have a specific name.
+  #   default is 'odiglet'
+  # @schema
+  # daemonsetName: 'odiglet'
+
+  # @schema
+  # description: |-
+  #   noHostNetwork can be set to true to avoid using hostNetwork in the odiglet daemonset.
+  #   for k8s versions prior to v1.26, hostNetwork is required for OpAmp to work correctly and for some of the OTel agents.
+  #   for k8s v1.26 and later, hostNetwork is not required and this flag is a no-op.
+  # @schema
   noHostNetwork: false
 
   # @schema
