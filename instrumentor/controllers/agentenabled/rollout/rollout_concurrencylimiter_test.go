@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_CustomValues(t *testing.T) {
 	// Arrange: custom values
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	// Assert: limiter is not nil, first 3 TryAcquire calls should succeed, 4th should fail
 	assert.NotNil(t, limiter)
@@ -30,7 +31,7 @@ func Test_NilReceiver_TryAcquire(t *testing.T) {
 
 func Test_SingleConcurrentRollout(t *testing.T) {
 	// Arrange: single concurrent rollout
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	// Assert: first request should succeed, second (different workload) should fail
 	assert.True(t, limiter.TryAcquire("ns/Deployment/app1", 1))
@@ -39,7 +40,7 @@ func Test_SingleConcurrentRollout(t *testing.T) {
 
 func Test_SameWorkloadCanReacquire(t *testing.T) {
 	// Arrange: single concurrent rollout
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	// Assert: same workload can re-acquire its existing slot
 	assert.True(t, limiter.TryAcquire("ns/Deployment/app1", 1))
@@ -49,7 +50,7 @@ func Test_SameWorkloadCanReacquire(t *testing.T) {
 
 func Test_RateLimitingEnabled(t *testing.T) {
 	// Arrange: rate limiting enabled (MaxConcurrentRollouts: 5)
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	// Assert: first 5 TryAcquire calls should succeed, 6th should fail
 	assert.NotNil(t, limiter)
@@ -62,7 +63,7 @@ func Test_RateLimitingEnabled(t *testing.T) {
 
 func Test_RateLimitingDisabled_ZeroValue(t *testing.T) {
 	// Arrange: rate limiting disabled (MaxConcurrentRollouts: 0 means unlimited)
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	// Assert: all requests should succeed (no rate limiting when MaxConcurrentRollouts is 0)
 	assert.NotNil(t, limiter)
@@ -74,7 +75,7 @@ func Test_RateLimitingDisabled_ZeroValue(t *testing.T) {
 
 func Test_Release_ReturnsSlot(t *testing.T) {
 	// Arrange: rate limiter with 1 concurrent rollout
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	key1 := "ns/Deployment/app1"
 	key2 := "ns/Deployment/app2"
@@ -90,7 +91,7 @@ func Test_Release_ReturnsSlot(t *testing.T) {
 
 func Test_Release_MultipleSlots(t *testing.T) {
 	// Arrange: rate limiter with 3 concurrent rollouts
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	keys := []string{
 		"ns/Deployment/app1",
@@ -117,7 +118,7 @@ func Test_Release_MultipleSlots(t *testing.T) {
 }
 
 func Test_Release_NonexistentWorkload_DoesNotAffectOtherSlots(t *testing.T) {
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	// First acquire a slot
 	assert.True(t, limiter.TryAcquire("ns/Deployment/app1", 2), "TryAcquire() 1 should succeed")
@@ -141,7 +142,7 @@ func Test_NilReceiver_Release(t *testing.T) {
 }
 
 func Test_InFlightCount(t *testing.T) {
-	limiter := NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	limiter := NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 
 	assert.Equal(t, 0, limiter.InFlightCount())
 
