@@ -1,8 +1,9 @@
 package matchers
 
 import (
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
 func HeadSamplingOperationMatcher(operation *commonapisampling.HeadSamplingOperationMatcher, span ptrace.Span) bool {

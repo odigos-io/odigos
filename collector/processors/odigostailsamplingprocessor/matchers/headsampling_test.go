@@ -3,10 +3,11 @@ package matchers
 import (
 	"testing"
 
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
 // spanWithAttrsAndKind creates a span with the given kind and attributes (reuses spanWithAttrs from attrgetter_test.go).

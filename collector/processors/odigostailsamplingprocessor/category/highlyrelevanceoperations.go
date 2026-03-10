@@ -1,9 +1,14 @@
 package category
 
 import (
+	"context"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/internal/metadata"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
@@ -16,7 +21,7 @@ type RuleMetrics struct {
 	RuleTotalSpansKeptCount int
 }
 
-func EvaluateHighlyRelevantOperations(trace ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64) (bool, *commonapisampling.HighlyRelevantOperation, map[string]*RuleMetrics) {
+func EvaluateHighlyRelevantOperations(ctx context.Context, trace ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64, telemetryBuilder *metadata.TelemetryBuilder) (bool, *commonapisampling.HighlyRelevantOperation, map[string]*RuleMetrics) {
 
 	// keep a trace for metrics for running rules on this trace.
 	// this map is not expected to be very large,
@@ -66,7 +71,10 @@ func EvaluateHighlyRelevantOperations(trace ptrace.Traces, configProvider collec
 		}
 	}
 
-	for _, metrics := range rulesMetrics {
+	for ruleId, metrics := range rulesMetrics {
+		telemetryBuilder.OdigosSamplingCountTracesChecked.Add(ctx, 1,
+			metric.WithAttributes(attribute.String("rule.id", ruleId)),
+		)
 		metrics.TraceCheckedCount = 1
 	}
 	rulesMetrics = recordMetricsMatchingAndKept(rulesMetrics, matchingRules, tracePercentage, totalSpansCount)

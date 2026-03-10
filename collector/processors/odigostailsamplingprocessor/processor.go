@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
+	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/internal/metadata"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 
 	"github.com/odigos-io/odigos/common/collector"
@@ -20,6 +21,8 @@ type tailSamplingProcessor struct {
 	logger                *zap.Logger
 	config                *Config
 	odigosConfigExtension collector.OdigosConfigExtension
+
+	telemetryBuilder *metadata.TelemetryBuilder
 }
 
 func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
@@ -62,7 +65,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		}
 	}
 
-	matched, highlyRelevantOperationRule, _ := category.EvaluateHighlyRelevantOperations(td, p.odigosConfigExtension, tracePercentage)
+	matched, highlyRelevantOperationRule, _ := category.EvaluateHighlyRelevantOperations(ctx, td, p.odigosConfigExtension, tracePercentage, p.telemetryBuilder)
 	if matched {
 		percentageAtLeast := category.GetPercentageOrDefault(highlyRelevantOperationRule.PercentageAtLeast, 100.0)
 		keepTrace := tracePercentage <= percentageAtLeast
@@ -140,9 +143,14 @@ func (p *tailSamplingProcessor) getTailSamplingConfig(resource pcommon.Resource)
 	return collectorConfig.TailSampling, true
 }
 
-func newTailSamplingProcessor(logger *zap.Logger, cfg *Config) *tailSamplingProcessor {
+func newTailSamplingProcessor(logger *zap.Logger, cfg *Config, set component.TelemetrySettings) *tailSamplingProcessor {
+	telemetryBuilder, err := metadata.NewTelemetryBuilder(set)
+	if err != nil {
+		logger.Error("failed to create telemetry builder", zap.Error(err))
+	}
 	return &tailSamplingProcessor{
-		logger: logger,
-		config: cfg,
+		logger:           logger,
+		config:           cfg,
+		telemetryBuilder: telemetryBuilder,
 	}
 }

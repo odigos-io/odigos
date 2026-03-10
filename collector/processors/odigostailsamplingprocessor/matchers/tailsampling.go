@@ -1,8 +1,9 @@
 package matchers
 
 import (
-	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+
+	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
 func TailSamplingOperationMatcher(operation *commonapisampling.TailSamplingOperationMatcher, span ptrace.Span) bool {

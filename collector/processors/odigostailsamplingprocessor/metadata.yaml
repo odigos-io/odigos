@@ -6,3 +6,15 @@ status:
     beta: [traces]
   codeowners:
     active: [blumamir]
+
+telemetry:
+  metrics:
+    odigos.sampling.count_traces_checked:
+      enabled: true # collected by default by the processor.
+      description: "Number of traces checked for sampling decisions per rule."
+      unit: "{traces}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability:
+        level: development

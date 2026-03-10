@@ -30,7 +30,7 @@ func createTracesProcessor(
 	cfg component.Config,
 	nextConsumer consumer.Traces,
 ) (processor.Traces, error) {
-	proc := newTailSamplingProcessor(set.Logger, cfg.(*Config))
+	proc := newTailSamplingProcessor(set.Logger, cfg.(*Config), set.TelemetrySettings)
 	return processorhelper.NewTraces(
 		ctx,
 		set,
