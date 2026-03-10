@@ -14,7 +14,8 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
-    mv linux-$ARCH_SUFFIX linux-glibc
+    mv linux-$ARCH_SUFFIX linux-glibcite
+
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
     unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
@@ -36,12 +37,9 @@ WORKDIR /instrumentations
 
 # Java
 ARG JAVA_OTEL_VERSION=v2.10.0
-ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
-RUN chmod 644 /instrumentations/java/javaagent.jar
+ADD --chmod=644 https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 
 # Python
-# IMPORTANT: If changing the Python version below, update the Python dependency shared object filenames
-# in odiglet/pkg/instrumentation/fs/agents.go (e.g., cpython-311 must match the Python version).
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.66 /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
