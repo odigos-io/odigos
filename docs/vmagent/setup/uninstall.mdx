@@ -1,23 +1,34 @@
 ---
 title: "Uninstall"
 sidebarTitle: "Uninstall"
+description: "Uninstall the Odigos VM Agent from your Linux host"
 ---
 
-To uninstall Odigos VM Agent, follow the steps below:
+To uninstall the Odigos VM Agent, run the following based on your Linux package manager:
 
 <Tabs>
-  <Tab title="APT">
-    ```shell
-    sudo apt remove odigos
-    # optionally make sure to remove all configuration
-    sudo apt purge odigos
-    ```
-  </Tab>
   <Tab title="DNF">
+    Using `dnf` (RHEL, Fedora, Rocky Linux):
+
     ```shell
     sudo dnf remove odigos
-    # optionally make sure to remove all configuration
-    sudo rm -rf /etc/odigos-vmagent /etc/odigos-otelcol 
+    ```
+  </Tab>
+  <Tab title="APT">
+    Using `apt` (Debian, Ubuntu):
+
+    ```shell
+    sudo apt remove odigos
+    ```
+  </Tab>
+  <Tab title="RPM">
+
+    If you use a package manager other than `dnf` or `apt`, run the following to uninstall the agent:
+
+    <Note>Replace \<otelcol-version\> and \<agent-version\> with the versions you downloaded.</Note>
+
+    ```shell
+    rpm -ev odigos odigos-otelcol
     ```
   </Tab>
 </Tabs>

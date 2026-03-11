@@ -1,0 +1,34 @@
+---
+title: "Configuration Overview"
+sidebarTitle: "Configuration Overview"
+description: "How to configure the Odigos VM Agent: odictl TUI and YAML, and where to add sources, destinations, and actions."
+---
+
+Configuration defines where telemetry comes from (sources), where it is sent (destinations), and optional processing (actions). You can manage all of these using the VM Agent's interactive tool or YAML files.
+
+## Configuration methods
+
+You can configure the Odigos VM Agent in two ways:
+
+- **[odictl](./odictl)** — A terminal user interface (TUI) that you use to add and manage sources, destinations, and actions interactively.
+- **YAML** — Each configuration task (sources, destinations, actions) can be done via YAML; the pages linked below include a YAML tab with examples.
+
+## Configuration tasks
+
+<CardGroup cols={3}>
+  <Card title="Add sources" icon="server" href="./add-sources">
+    Instrument systemd services or Linux processes so the VM Agent collects their telemetry.
+  </Card>
+  <Card title="Add destinations" icon="location-dot" href="./add-destinations">
+    Define where telemetry is sent (for example, OTLP endpoints or supported backends).
+  </Card>
+  <Card title="Add actions" icon="wand-magic-sparkles" href="./actions/overview">
+    Transform, filter, or enrich telemetry before it is sent to destinations.
+  </Card>
+</CardGroup>
+
+<Tip>
+Add a [destination](./add-destinations) first, then [sources](./add-sources), then [actions](./actions/overview) as needed.
+</Tip>
+
+For definitions of sources, destinations, and actions, see [Key concepts](../../overview#key-concepts) in the VM Agent overview.
