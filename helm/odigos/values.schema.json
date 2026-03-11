@@ -1685,7 +1685,7 @@
       "properties": {
         "dryRun": {
           "default": "true",
-          "description": "set to true to enable dry run mode for sampling.\nwhen enabled, odigos will invocae the sampling logic, but will not drop any traces.\nthis is useful while evaluating sampling rules to check for effectiveness and correctness\nbefore committing to any changes that might lose data.",
+          "description": "Set to true to enable dry run mode for sampling.\nWhen enabled, Odigos runs the sampling logic but does not drop any traces; metrics are still\ncalculated so you can evaluate rule effectiveness before committing to changes that might lose data.\nEach span gets an attribute 'odigos.sampling.dry_run.kept' indicating whether it would be kept or dropped once dry run is off.\nWith spanSamplingAttributes enabled, dry-run decisions are also visible as span attributes on each span.",
           "required": [],
           "title": "dryRun"
         },
@@ -1711,7 +1711,7 @@
         },
         "spanSamplingAttributes": {
           "additionalProperties": false,
-          "description": "Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).\nCapturing these attributes gives visibility into sampling decision-making and effective\nsampling percentages when viewing traces or querying the database with tools.",
+          "description": "Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).\nThese attributes add context when viewing traces and inspecting costs, so you can understand\nhow sampling decisions were made for an individual span and apply changes to fine-tune rules.\nWhen dry run is enabled, each span includes the sampling decision (kept or dropped) as it\nwould apply once dry run is disabled.",
           "properties": {
             "disabled": {
               "default": "true",
@@ -1727,13 +1727,13 @@
             },
             "spanDecisionAttributesDisabled": {
               "default": "true",
-              "description": "set to true to disable recording the span decision (if any) as span attributes.\nwhen a specific span matches an enabled sampling rules for a category,\nthe sampling for this span is attributed to this rule and marked as span attribute on the span.\nthis helps track which spans in a trace actually contributed to the final sampling decision on a span level.\nspans can match different rules which are different than the final deciding rule for the trace.\nattributes:\n  - odigos.sampling.span.odigos.sampling.span.deciding_rule.id\n  - odigos.sampling.span.odigos.sampling.span.deciding_rule.name\n  - odigos.sampling.span.odigos.sampling.span.deciding_rule.keep_percentage",
+              "description": "Set to true to disable recording the span-level deciding rule as span attributes.\nThe trace-level decision is an aggregation of all spans in the trace; these attributes record\nwhich spans contributed to it and how, so you can link decisions back to the specific spans and operations.\nFor example, if a trace is kept due to high duration, the attributes pinpoint the span(s) that drove that decision.\nattributes:\n  - odigos.sampling.span.deciding_rule.id\n  - odigos.sampling.span.deciding_rule.name\n  - odigos.sampling.span.deciding_rule.keep_percentage",
               "required": [],
               "title": "spanDecisionAttributesDisabled"
             },
             "traceDecidingRuleDisabled": {
               "default": "true",
-              "description": "set to true to disable recording the trace matching decision (if any) as span attributes.\nwhen a trace matches an enabled sampling rules for a category,\nthe most \"severe\" rule is calculated as the \"deciding rule\" for the trace,\nand the sampling is attributed to this rule and marked as span attribute on the trace spans.\nattributes:\n  - odigos.sampling.trace.odigos.sampling.trace.deciding_rule.id\n  - odigos.sampling.trace.odigos.sampling.trace.deciding_rule.name\n  - odigos.sampling.trace.odigos.sampling.trace.deciding_rule.keep_percentage",
+              "description": "Set to true to disable recording the trace-level deciding rule as span attributes.\nWhen a trace matches an enabled sampling rule for a category, the most \"severe\" rule\nis chosen as the \"deciding rule\" and recorded as span attributes on all spans in the trace.\nIf multiple rules with the same percentage match, one is chosen arbitrarily.\nUse these attributes to find rules that are too permissive (high cost) or too strict (dropping important traces).\nFor example, if a rare and important trace is dropped by a rule that is too strict, increase its keep percentage\nor add a separate rule for that use case. If cost analysis shows expensive traces, find rules that are too permissive\nand decrease their percentage or remove them.\nattributes:\n  - odigos.sampling.trace.deciding_rule.id\n  - odigos.sampling.trace.deciding_rule.name\n  - odigos.sampling.trace.deciding_rule.keep_percentage",
               "required": [],
               "title": "traceDecidingRuleDisabled"
             }
