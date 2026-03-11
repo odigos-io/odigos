@@ -23,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -35,6 +36,59 @@ type Instrumentor struct {
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
 	waspMutator        func(*corev1.Pod, common.OdigosConfiguration) error
+}
+
+// syncCacheSynchronously synchronizes the kubernetes cache synchronously,
+// starting with large objects and ending with small objects.
+// the other objects are assumed to be small and meaningless
+// this is used to mitigate spikes during process startup,
+// ensuring we not "list"ing heavy objects at the same time during process startup.
+// must be called after cache is started.
+func syncCacheSynchronously(ctx context.Context, mgr controllerruntime.Manager) error {
+
+	// pods
+	_, err := mgr.GetCache().GetInformer(ctx, &corev1.Pod{})
+	if err != nil {
+		return err
+	}
+	ok := mgr.GetCache().WaitForCacheSync(ctx)
+	if !ok {
+		return fmt.Errorf("failed to sync kubernetes cache")
+	}
+
+	// deployments
+	_, err = mgr.GetCache().GetInformer(ctx, &appsv1.Deployment{})
+	if err != nil {
+		return err
+	}
+	ok = mgr.GetCache().WaitForCacheSync(ctx)
+	if !ok {
+		return fmt.Errorf("failed to sync kubernetes cache")
+	}
+
+	// stateful sets
+	_, err = mgr.GetCache().GetInformer(ctx, &appsv1.StatefulSet{})
+	if err != nil {
+		return err
+	}
+	ok = mgr.GetCache().WaitForCacheSync(ctx)
+	if !ok {
+		return fmt.Errorf("failed to sync kubernetes cache")
+	}
+
+	// daemon sets
+	_, err = mgr.GetCache().GetInformer(ctx, &appsv1.DaemonSet{})
+	if err != nil {
+		return err
+	}
+	ok = mgr.GetCache().WaitForCacheSync(ctx)
+	if !ok {
+		return fmt.Errorf("failed to sync kubernetes cache")
+	}
+
+	// other objects are assumed to be small and no need to sync there loading into the cache.
+
+	return nil
 }
 
 func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator func(*corev1.Pod, common.OdigosConfiguration) error) (*Instrumentor, error) {
@@ -157,6 +211,18 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		}
 		return err
 	})
+
+	sequentialCacheLoadVal := os.Getenv("ODIGOS_SEQUENTIAL_CACHE_LOAD")
+	if sequentialCacheLoadVal == "true" {
+		startTime := time.Now()
+		i.mgr.GetLogger().Info("start syncing kubernetes cache synchronously", "sequentialCacheLoad", sequentialCacheLoadVal)
+		err := syncCacheSynchronously(groupCtx, i.mgr)
+		if err != nil {
+			logger.Error("error syncing kubernetes cache", "err", err)
+		} else {
+			logger.Info("kubernetes cache is synced synchronously", "duration", time.Since(startTime))
+		}
+	}
 
 	// register webhooks after the certificate is ready
 	g.Go(func() error {
