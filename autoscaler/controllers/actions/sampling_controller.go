@@ -8,12 +8,12 @@ import (
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sampling "github.com/odigos-io/odigos/autoscaler/controllers/actions/sampling"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // DEPRECATED: Use odigosv1.Action instead
@@ -29,9 +29,9 @@ const (
 )
 
 func (r *OdigosSamplingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling Sampling action")
-	logger.V(0).Info("WARNING: Sampling action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
+	logger := commonlogger.FromContext(ctx)
+	logger.Info("Reconciling Sampling action")
+	logger.Info("WARNING: Sampling action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
 	// Find the action type and handler for this request
 	var action metav1.Object
@@ -83,7 +83,7 @@ func (r *OdigosSamplingReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		err = r.Update(ctx, action.(client.Object))
 		return ctrl.Result{}, err
 	}
-	logger.V(0).Info("Migrated Action already exists, skipping update")
+	logger.Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
 }
 
@@ -156,7 +156,7 @@ func samplersConfig(ctx context.Context, client client.Client, namespace string)
 }
 
 func getRelevantActions(ctx context.Context, client client.Client, namespace string) (map[reflect.Type][]metav1.Object, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	relevantActions := make(map[reflect.Type][]metav1.Object)
 
 	for actionType, handler := range sampling.SamplingSupportedActions {
@@ -174,7 +174,7 @@ func getRelevantActions(ctx context.Context, client client.Client, namespace str
 			}
 			// filter actions with invalid configuration
 			if err := handler.ValidateRuleConfig(handler.GetRuleConfig(action)); err != nil {
-				logger.V(0).Error(err, "Failed to validate rule config")
+				logger.Error(err, "Failed to validate rule config")
 				//ReportReconciledToProcessorFailed(ctx, client, action, "FailedToTransformToProcessorReason", err.Error())
 				continue
 			}

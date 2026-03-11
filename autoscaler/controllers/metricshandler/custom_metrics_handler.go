@@ -18,6 +18,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/prometheus/common/expfmt"
@@ -46,7 +48,7 @@ var lastSample sync.Map
 // MetricHandler aggregates gateway rejection metrics across all pods
 func MetricHandler(ctx context.Context, k8sClient client.Client, namespace string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log := ctrl.Log.WithName("gateway-metric-handler")
+		log := commonlogger.WrapLogr(ctrl.Log.WithName("gateway-metric-handler"))
 
 		var podList corev1.PodList
 		err := k8sClient.List(ctx, &podList,
@@ -79,11 +81,11 @@ func MetricHandler(ctx context.Context, k8sClient client.Client, namespace strin
 
 			value, err := scrapeGatewayMetric(pod.Status.PodIP)
 			if err != nil {
-				log.V(1).Info("Failed to scrape gateway pod metrics",
-					"pod", pod.Name,
-					"podIP", pod.Status.PodIP,
-					"error", err,
-				)
+				log.Debug("Failed to scrape gateway pod metrics",
+				"pod", pod.Name,
+				"podIP", pod.Status.PodIP,
+				"err", err,
+			)
 				continue // skip unreachable pods
 			}
 

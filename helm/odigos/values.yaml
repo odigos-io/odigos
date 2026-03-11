@@ -65,6 +65,14 @@ ignoredContainers:
 clusterName: ''
 
 # @schema
+# description: |-
+#   Default log level for components when component-level logLevel is not set.
+#   Accepted values: debug, info, warn, error. Default: info.
+#   Set via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.
+# @schema
+logLevel: "info"
+
+# @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
 # @schema
 userInstrumentationEnvs:
@@ -385,6 +393,11 @@ collectorNode:
 # @schema
 autoscaler:
   # @schema
+  # description: Log level for autoscaler. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
   # nodeSelector:
@@ -393,6 +406,20 @@ autoscaler:
   # @schema
   # description: |-
   #   tolerations for the autoscaler deployment.
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations: []
   # @schema
@@ -425,6 +452,11 @@ autoscaler:
 # @schema
 scheduler:
   # @schema
+  # description: Log level for scheduler. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
   # nodeSelector:
@@ -433,6 +465,20 @@ scheduler:
   # @schema
   # description: |-
   #   tolerations for the scheduler deployment.
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations: []
   # @schema
@@ -465,11 +511,32 @@ scheduler:
 # @schema
 ui:
   # @schema
+  # description: Log level for UI. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -557,6 +624,10 @@ ui:
 # description: Configuration for the instrumentor component.
 # @schema
 instrumentor:
+  # @schema
+  # description: Log level for instrumentor. Defaults to info.
+  # @schema
+  logLevel: "info"
 
   # @schema
   # description: |-
@@ -597,6 +668,22 @@ instrumentor:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -649,6 +736,10 @@ instrumentor:
 # description: Configuration for the odiglet component.
 # @schema
 odiglet:
+  # @schema
+  # description: Log level for odiglet. Defaults to info.
+  # @schema
+  logLevel: "info"
 
   # @schema
   # description: Configuration for the odiglet container.
@@ -736,9 +827,24 @@ odiglet:
   #   This toleration with 'Exists' operator and no key/effect specified
   #   will match ALL taints, allowing pods to be scheduled on any node
   #   regardless of its taints (including master/control-plane nodes)
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations:
     - operator: Exists
+
   # @schema
   # additionalProperties: true
   # @schema
@@ -771,6 +877,40 @@ odiglet:
       limits:
         cpu: 100m
         memory: 300Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+
+  # @schema
+  # description: |-
+  #   CSI driver resource configuration.
+  #   Only applied when instrumentor.mountMethod is "k8s-csi-driver"
+  # @schema
+  csidriver:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 100m
+        memory: 200Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 5
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
 
   # @schema
   # description: |-
@@ -894,6 +1034,22 @@ centralProxy:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -1098,6 +1254,14 @@ metricsSources:
 
     # @schema
     # description: |-
+    #   set the time to wait with no activity before expiring span metrics
+    #   format is duration string (15s, 1m, etc)
+    #   default is 5m
+    # @schema
+    # metricsExpiration: '5m'
+
+    # @schema
+    # description: |-
     #   set additional dimensions for span metrics
     #   format is a list of strings
     # @schema
@@ -1204,6 +1368,17 @@ goAutoOffsetsCron: ''
 #   Custom Offsets support is only available in Odigos pro tier.
 # @schema
 goAutoOffsetsMode: 'off'
+
+# @schema
+# description: Experimental configuration options.
+# @schema
+experimental:
+  # @schema
+  # description: |-
+  #   When true, deployment (instrumentor) and UI fill the internal Kubernetes object cache
+  #   sequentially to reduce memory spikes on application start.
+  # @schema
+  sequentialCacheLoad: false
 
 # @schema
 # description: experimental configuration for own telemetry of odigos on itself

@@ -10,8 +10,8 @@ import (
 	"github.com/cilium/ebpf/features"
 	"github.com/cilium/ebpf/rlimit"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
@@ -48,9 +48,10 @@ type InstrumentationManagerOptions struct {
 // NewManager creates a new instrumentation manager for eBPF which is configured to work with Kubernetes.
 // Instrumentation factories must be provided in order to create the instrumentation objects.
 // Detector options can be provided to configure the process detector, but if not provided, default options will be used.
+// logger is optional; when provided it is used by the instrumentation manager for logging.
 func NewManager(
 	client client.Client,
-	logger logr.Logger,
+	logger *commonlogger.OdigosLogger,
 	opts InstrumentationManagerOptions,
 	configUpdates <-chan instrumentation.ConfigUpdate[K8sConfigGroup],
 	instrumentationRequests <-chan instrumentation.Request[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails],
@@ -143,8 +144,8 @@ func NewManager(
 
 		Logger:                  logger,
 		Factories:               opts.Factories,
-		Handler:                 newHandler(logger, client, opts.DistributionGetter),
-		DetectorOptions:         detector.DefaultK8sDetectorOptions(logger, appendEnvVarSlice),
+		Handler:                 newHandler(client, opts.DistributionGetter),
+		DetectorOptions:         detector.DefaultK8sDetectorOptions(appendEnvVarSlice),
 		ConfigUpdates:           configUpdates,
 		InstrumentationRequests: instrumentationRequests,
 		TracesMap:               tracesMap,
@@ -176,7 +177,7 @@ func NewManager(
 
 	if len(fileOpenTriggers) > 0 {
 		managerOpts.DetectorOptions = append(managerOpts.DetectorOptions, processdetector.WithFilesOpenTrigger(fileOpenTriggers...))
-		logger.V(0).Info("Added file open triggers to the detector", "triggers", fileOpenTriggers)
+		commonlogger.LoggerCompat().With("subsystem", "ebpfcommon").Info("Added file open triggers to the detector", "triggers", fileOpenTriggers)
 	}
 
 	manager, err := instrumentation.NewManager(managerOpts)
@@ -187,7 +188,7 @@ func NewManager(
 	return manager, nil
 }
 
-func newHandler(logger logr.Logger, client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] {
+func newHandler(client client.Client, distributionGetter *distros.Getter) *instrumentation.Handler[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails] {
 	reporter := &k8sReporter{
 		client: client,
 	}

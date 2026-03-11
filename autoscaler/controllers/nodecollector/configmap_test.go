@@ -1,6 +1,7 @@
 package nodecollector
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -126,6 +127,7 @@ func TestCalculateConfigMapData(t *testing.T) {
 	}
 
 	_, got, err := calculateCollectorConfigDomains(
+		context.Background(),
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -191,6 +193,7 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 	}
 
 	_, got, err := calculateCollectorConfigDomains(
+		context.Background(),
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},

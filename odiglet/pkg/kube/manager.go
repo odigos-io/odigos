@@ -6,15 +6,17 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentation"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/odiglet/pkg/ebpf"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/instrumentation_ebpf"
+	"github.com/odigos-io/odigos/odiglet/pkg/kube/loglevel"
 	"github.com/odigos-io/odigos/odiglet/pkg/kube/runtime_details"
-	"github.com/odigos-io/odigos/odiglet/pkg/log"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
 	criwrapper "github.com/odigos-io/odigos/k8sutils/pkg/cri"
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	corev1 "k8s.io/api/core/v1"
@@ -47,8 +49,8 @@ type KubeManagerOptions struct {
 }
 
 func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (ctrl.Manager, error) {
-	log.Logger.V(0).Info("Starting reconcileres for runtime details")
-	ctrl.SetLogger(log.Logger)
+	commonlogger.LoggerCompat().With("subsystem", "runtimedetails").Info("Starting reconcilers for runtime details")
+	ctrl.SetLogger(commonlogger.ToLogr())
 
 	currentNodeSelector := fields.OneTermEqualSelector("spec.nodeName", env.Current.NodeName)
 
@@ -69,6 +71,12 @@ func CreateManager(instrumentationMgrOpts ebpf.InstrumentationManagerOptions) (c
 				&corev1.Pod{}: {
 					Field: currentNodeSelector,
 				},
+				&corev1.ConfigMap{}: {
+					Field: fields.AndSelectors(
+						fields.OneTermEqualSelector("metadata.namespace", env.GetCurrentNamespace()),
+						fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName),
+					),
+				},
 			},
 		},
 		Metrics: metricsserver.Options{
@@ -86,6 +94,10 @@ func SetupWithManager(kubeManagerOptions KubeManagerOptions, distributionGetter 
 
 	err = instrumentation_ebpf.SetupWithManager(kubeManagerOptions.Mgr, kubeManagerOptions.ConfigUpdates, kubeManagerOptions.InstrumentationRequests, distributionGetter)
 	if err != nil {
+		return err
+	}
+
+	if err = loglevel.SetupWithManager(kubeManagerOptions.Mgr); err != nil {
 		return err
 	}
 

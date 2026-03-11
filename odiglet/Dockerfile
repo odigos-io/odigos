@@ -1,15 +1,5 @@
 ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.11
 
-######### python Native Community Agent #########
-# IMPORTANT: If changing the Python version below, update the Python dependency shared object filenames
-# in odiglet/pkg/instrumentation/fs/agents.go (e.g., cpython-311 must match the Python version).
-FROM python:3.11.9 AS python-builder
-ARG ODIGOS_VERSION
-WORKDIR /python-instrumentation
-COPY agents/python ./agents/configurator
-RUN pip install ./agents/configurator/  --target workspace
-RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
-
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
@@ -25,6 +15,7 @@ RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     unzip opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     rm opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && \
     mv linux-$ARCH_SUFFIX linux-glibc
+
 RUN ARCH_SUFFIX=$(cat /tmp/arch_suffix) && \
     wget https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/${DOTNET_OTEL_VERSION}/opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
     unzip -o opentelemetry-dotnet-instrumentation-linux-musl-${ARCH_SUFFIX}.zip && \
@@ -46,11 +37,10 @@ WORKDIR /instrumentations
 
 # Java
 ARG JAVA_OTEL_VERSION=v2.10.0
-ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
-RUN chmod 644 /instrumentations/java/javaagent.jar
+ADD --chmod=644 https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 
 # Python
-COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.66 /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
@@ -69,6 +59,44 @@ COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations
 ARG TARGETARCH
 ARG ODIGOS_LOADER_VERSION=v0.0.6
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
+
+######### Device Plugin builder #########
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS deviceplugin-builder
+WORKDIR /go/src/github.com/odigos-io/odigos
+# Copy local modules required by deviceplugin
+COPY common/ common/
+COPY k8sutils/ k8sutils/
+COPY procdiscovery/ procdiscovery/
+COPY api/ api/
+COPY distros/ distros/
+COPY instrumentation/ instrumentation/
+# Build deviceplugin binary
+WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
+COPY deviceplugin/ .
+ARG TARGETARCH
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
+
+######### CSI Driver builder #########
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS csi-driver-builder
+WORKDIR /go/src/github.com/odigos-io/odigos
+# Copy local modules required by the build
+COPY api/ api/
+COPY common/ common/
+COPY k8sutils/ k8sutils/
+COPY procdiscovery/ procdiscovery/
+COPY opampserver/ opampserver/
+COPY instrumentation/ instrumentation/
+COPY distros/ distros/
+# Build CSI driver binary from odiglet module
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
+COPY odiglet/ .
+ARG TARGETARCH
+ARG LD_FLAGS
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=linux GOARCH=$TARGETARCH go build -ldflags="${LD_FLAGS}" -o odigos-csi-driver ./cmd/csi-driver
 
 ######### Odiglet builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
@@ -94,12 +122,6 @@ RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
 
-# Build deviceplugin binary
-WORKDIR /go/src/github.com/odigos-io/odigos/deviceplugin
-COPY deviceplugin/ .
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH go build -o deviceplugin ./cmd
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
 ARG GRPC_HEALTH_PROBE_VERSION=v0.4.44
@@ -168,7 +190,8 @@ COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/od
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
-COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
@@ -178,7 +201,8 @@ CMD ["/root/odiglet"]
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base:3443777deec6bd5c58be682f286aefffd1c871ae
 COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
-COPY --from=builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
+COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
 COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync

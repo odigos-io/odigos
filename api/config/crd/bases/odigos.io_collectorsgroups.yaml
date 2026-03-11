@@ -189,7 +189,7 @@ spec:
                         items:
                           type: string
                         type: array
-                      histogramBuckets:
+                      explicitHistogramBuckets:
                         description: "explicit buckets list for the histogram metrics.\nformat
                           is duration string (`1us`, `2ms`, `3s`, `4m`, `5h`, `6d`
                           etc).\nif not set, the default buckets list will be used.\nthe

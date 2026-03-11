@@ -7,10 +7,10 @@ import (
 	"time"
 
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const RequeueWaitingForWorkloadRollout = 10 * time.Second
@@ -54,7 +53,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	if configErr != nil {
 		return RolloutResult{}, configErr
 	}
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	workloadObj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	getErr := c.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, workloadObj)
 	if getErr != nil {
@@ -103,7 +102,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 		// and we want to rollout the workload to remove the instrumentation
 		// Note: uninstrumentation rollouts are not rate limited since we can't track completion
 		// (the IC is deleted so we won't get subsequent reconciles)
-		logger.V(2).Info("proceeding with uninstrumentation rollout",
+		logger.Debug("proceeding with uninstrumentation rollout",
 			"workload", pw.Name,
 			"namespace", pw.Namespace)
 		rolloutConcurrencyLimiter.ReleaseWorkloadRolloutSlot(WorkloadKey(pw))
@@ -242,7 +241,7 @@ func Do(ctx context.Context, c client.Client, ic *odigosv1alpha1.Instrumentation
 	}
 
 	if !rolloutConcurrencyLimiter.TryAcquire(workloadKey, rollBackOptions.MaxConcurrentRollouts) {
-		logger.V(2).Info("rate limited instrumentation rollout, requeuing",
+		logger.Debug("rate limited instrumentation rollout, requeuing",
 			"workload", pw.Name,
 			"namespace", pw.Namespace,
 			"requeueAfter", RequeueWaitingForWorkloadRollout)
@@ -502,7 +501,7 @@ func recoverFromRollback(ic *odigosv1alpha1.InstrumentationConfig) bool {
 func triggerRollback(
 	ctx context.Context,
 	c client.Client,
-	logger logr.Logger,
+	logger *commonlogger.ContextLogger,
 	ic *odigosv1alpha1.InstrumentationConfig,
 	workloadObj client.Object,
 	workloadKey string,

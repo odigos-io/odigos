@@ -19,8 +19,7 @@ package nodecollector
 import (
 	"context"
 
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -29,7 +28,7 @@ type CollectorsGroupReconciler struct {
 }
 
 func (r *CollectorsGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling CollectorsGroup")
+	logger := commonlogger.FromContext(ctx)
+	logger.Info("Reconciling CollectorsGroup")
 	return r.reconcileNodeCollector(ctx)
 }

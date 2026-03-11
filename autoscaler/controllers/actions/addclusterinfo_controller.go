@@ -21,12 +21,12 @@ import (
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // DEPRECATED: Use odigosv1.Action instead
@@ -36,9 +36,9 @@ type AddClusterInfoReconciler struct {
 }
 
 func (r *AddClusterInfoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling AddClusterInfo action")
-	logger.V(0).Info("WARNING: AddClusterInfo action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
+	logger := commonlogger.FromContext(ctx)
+	logger.Info("Reconciling AddClusterInfo action")
+	logger.Info("WARNING: AddClusterInfo action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
 	action := &actionv1.AddClusterInfo{}
 	err := r.Get(ctx, req.NamespacedName, action)
@@ -54,7 +54,7 @@ func (r *AddClusterInfoReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		logger.V(0).Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
+		logger.Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
 		// Action doesn't exist, create new one
 		odigosAction = r.createMigratedAction(action, migratedActionName)
 		err = r.Create(ctx, odigosAction)
@@ -70,7 +70,7 @@ func (r *AddClusterInfoReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		err = r.Update(ctx, action)
 		return ctrl.Result{}, err
 	}
-	logger.V(0).Info("Migrated Action already exists, skipping update")
+	logger.Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
 }
 

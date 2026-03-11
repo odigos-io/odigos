@@ -33,6 +33,9 @@ func GetCurrentOdigosConfiguration(ctx context.Context, k8sClient client.Client)
 			return odigosConfiguration, err
 		}
 	}
+	if configMap.Data == nil || configMap.Data[consts.OdigosConfigurationFileName] == "" {
+		return odigosConfiguration, nil
+	}
 	if err := yaml.Unmarshal([]byte(configMap.Data[consts.OdigosConfigurationFileName]), &odigosConfiguration); err != nil {
 		return odigosConfiguration, err
 	}

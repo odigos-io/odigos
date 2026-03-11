@@ -11,10 +11,10 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/scheduler/utils"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func getOwnMetricsConfig(odigosConfiguration *common.OdigosConfiguration, allDestinations *odigosv1.DestinationList) *odigosv1.CollectorsGroupMetricsCollectionSettings {
@@ -156,7 +156,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 // isTailSamplingEnabled returns true if tail sampling is not globally disabled
 // and at least one non-disabled Sampling CR exists.
 func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *common.OdigosConfiguration) bool {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	if odigosConfig.Sampling != nil &&
 		odigosConfig.Sampling.TailSampling != nil &&
@@ -187,7 +187,7 @@ func isTailSamplingEnabled(ctx context.Context, c client.Client, odigosConfig *c
 // resolveTailSamplingConfig returns a fully resolved TailSamplingConfiguration,
 // reading TraceAggregationWaitDuration from odigosConfig if valid, otherwise using the default.
 func resolveTailSamplingConfig(ctx context.Context, odigosConfig *common.OdigosConfiguration, enabled bool) *common.TailSamplingConfiguration {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	resolvedDuration := k8sconsts.OdigosClusterCollectorTraceAggregationWaitDurationDefault
 	if odigosConfig.Sampling != nil &&
