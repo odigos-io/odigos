@@ -1,0 +1,31 @@
+odiglet:
+  disableGoCodeAttributes: true
+collectorNode:
+  otlpExporterConfiguration:
+    retryOnFailure:
+      enabled: false
+    timeout: 300ms
+collectorGateway:
+  serviceGraphDisabled: true
+metricsSources:
+  agentMetrics:
+    spanMetrics:
+      enabled: true
+    runtimeMetrics:
+      java:
+        disabled: true
+  hostMetrics:
+    disabled: true
+  kubeletStats:
+    disabled: true
+  spanMetrics:
+    interval: 60s
+    explicitHistogramBuckets:
+      - 500ms
+      - 1000ms
+      - 2000ms
+      - 5000ms
+    excludedResourceAttributes:
+    - process.command
+    additionalDimensions:
+    - odigos.category

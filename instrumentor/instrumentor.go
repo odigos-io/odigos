@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
 	"github.com/odigos-io/odigos/instrumentor/report"
@@ -23,6 +23,7 @@ import (
 	"github.com/odigos-io/odigos/k8sutils/pkg/feature"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"golang.org/x/sync/errgroup"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	controllerruntime "sigs.k8s.io/controller-runtime"
@@ -31,11 +32,63 @@ import (
 
 type Instrumentor struct {
 	mgr                controllerruntime.Manager
-	logger             logr.Logger
 	certReady          chan struct{}
 	dp                 *distros.Provider
 	webhooksRegistered *atomic.Bool
 	waspMutator        func(*corev1.Pod, common.OdigosConfiguration) error
+}
+
+// syncCacheSynchronously synchronizes the kubernetes cache synchronously,
+// starting with large objects and ending with small objects.
+// the other objects are assumed to be small and meaningless
+// this is used to mitigate spikes during process startup,
+// ensuring we not "list"ing heavy objects at the same time during process startup.
+// must be called after cache is started.
+func syncCacheSynchronously(ctx context.Context, mgr controllerruntime.Manager) error {
+
+	// pods
+	_, err := mgr.GetCache().GetInformer(ctx, &corev1.Pod{})
+	if err != nil {
+		return err
+	}
+	ok := mgr.GetCache().WaitForCacheSync(ctx)
+	if !ok {
+		return fmt.Errorf("failed to sync kubernetes cache")
+	}
+
+	// deployments
+	_, err = mgr.GetCache().GetInformer(ctx, &appsv1.Deployment{})
+	if err != nil {
+		return err
+	}
+	ok = mgr.GetCache().WaitForCacheSync(ctx)
+	if !ok {
+		return fmt.Errorf("failed to sync kubernetes cache")
+	}
+
+	// stateful sets
+	_, err = mgr.GetCache().GetInformer(ctx, &appsv1.StatefulSet{})
+	if err != nil {
+		return err
+	}
+	ok = mgr.GetCache().WaitForCacheSync(ctx)
+	if !ok {
+		return fmt.Errorf("failed to sync kubernetes cache")
+	}
+
+	// daemon sets
+	_, err = mgr.GetCache().GetInformer(ctx, &appsv1.DaemonSet{})
+	if err != nil {
+		return err
+	}
+	ok = mgr.GetCache().WaitForCacheSync(ctx)
+	if !ok {
+		return fmt.Errorf("failed to sync kubernetes cache")
+	}
+
+	// other objects are assumed to be small and no need to sync there loading into the cache.
+
+	return nil
 }
 
 func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator func(*corev1.Pod, common.OdigosConfiguration) error) (*Instrumentor, error) {
@@ -128,7 +181,6 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 
 	return &Instrumentor{
 		mgr:                mgr,
-		logger:             opts.Logger,
 		certReady:          rotatorSetupFinished,
 		dp:                 dp,
 		webhooksRegistered: webhooksRegistered,
@@ -137,15 +189,16 @@ func New(opts controllers.KubeManagerOptions, dp *distros.Provider, waspMutator 
 }
 
 func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
+	logger := commonlogger.LoggerCompat().With("subsystem", "instrumentor")
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	// Start pprof server
 	g.Go(func() error {
-		err := common.StartPprofServer(groupCtx, i.logger, int(k8sconsts.DefaultPprofEndpointPort))
+		err := common.StartPprofServer(groupCtx, commonlogger.ToLogr(), int(k8sconsts.DefaultPprofEndpointPort))
 		if err != nil {
-			i.logger.Error(err, "Failed to start pprof server")
+			logger.Error("Failed to start pprof server", "err", err)
 		} else {
-			i.logger.V(0).Info("Pprof server exited")
+			logger.Info("Pprof server exited")
 		}
 		// if we fail to start the pprof server, don't return an error as it is not critical
 		// and we can run the rest of the components
@@ -156,7 +209,7 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		// Start telemetry report
 		g.Go(func() error {
 			report.Start(groupCtx, i.mgr.GetClient())
-			i.logger.V(0).Info("Telemetry reporting exited")
+			logger.Info("Telemetry reporting exited")
 			return nil
 		})
 	}
@@ -165,12 +218,24 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 	g.Go(func() error {
 		err := i.mgr.Start(groupCtx)
 		if err != nil {
-			i.logger.Error(err, "error starting kube manager")
+			logger.Error("error starting kube manager", "err", err)
 		} else {
-			i.logger.V(0).Info("Kube manager exited")
+			logger.Info("Kube manager exited")
 		}
 		return err
 	})
+
+	sequentialCacheLoadVal := os.Getenv("ODIGOS_SEQUENTIAL_CACHE_LOAD")
+	if sequentialCacheLoadVal == "true" {
+		startTime := time.Now()
+		i.mgr.GetLogger().Info("start syncing kubernetes cache synchronously", "sequentialCacheLoad", sequentialCacheLoadVal)
+		err := syncCacheSynchronously(groupCtx, i.mgr)
+		if err != nil {
+			logger.Error("error syncing kubernetes cache", "err", err)
+		} else {
+			logger.Info("kubernetes cache is synced synchronously", "duration", time.Since(startTime))
+		}
+	}
 
 	// register webhooks after the certificate is ready
 	g.Go(func() error {
@@ -179,7 +244,7 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 		case <-groupCtx.Done():
 			return nil
 		}
-		i.logger.V(0).Info("Cert rotator is ready")
+		logger.Info("Cert rotator is ready")
 		err := controllers.RegisterWebhooks(i.mgr, controllers.WebhookConfig{
 			DistrosProvider: i.dp,
 			WaspMutator:     i.waspMutator,
@@ -188,12 +253,12 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 			return err
 		}
 		i.webhooksRegistered.Store(true)
-		i.logger.V(0).Info("Webhooks registered")
+		logger.Info("Webhooks registered")
 		return nil
 	})
 
 	err := g.Wait()
 	if err != nil {
-		i.logger.Error(err, "Instrumentor exited with error")
+		logger.Error("Instrumentor exited with error", "err", err)
 	}
 }

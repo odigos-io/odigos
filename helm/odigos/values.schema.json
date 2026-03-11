@@ -59,6 +59,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for autoscaler. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -118,7 +124,23 @@
         "tolerations": {
           "description": "tolerations for the autoscaler deployment.",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -225,12 +247,27 @@
           "title": "tls"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         }
       },
       "required": [],
@@ -467,6 +504,20 @@
       "required": [],
       "title": "collectorNode"
     },
+    "experimental": {
+      "additionalProperties": false,
+      "description": "Experimental configuration options.",
+      "properties": {
+        "sequentialCacheLoad": {
+          "default": "false",
+          "description": "When true, deployment (instrumentor) and UI fill the internal Kubernetes object cache\nsequentially to reduce memory spikes on application start.",
+          "required": [],
+          "title": "sequentialCacheLoad"
+        }
+      },
+      "required": [],
+      "title": "experimental"
+    },
     "externalOnpremTokenSecret": {
       "default": "false",
       "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the secret but will still enable Pro features if the secret exists.\nThis is useful for GitOps workflows where secrets are managed separately.",
@@ -625,6 +676,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for instrumentor. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "mountMethod": {
           "default": "",
           "description": "which mount method to use for odigos agent directory\nk8s-virtual-device: default method using a virtual device\nk8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)\nk8s-init-container: alternative which uses an init container to copy the agent files to the shared volume",
@@ -694,12 +751,27 @@
           "title": "resources"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         }
       },
       "required": [],
@@ -717,6 +789,12 @@
       },
       "required": [],
       "title": "karpenter"
+    },
+    "logLevel": {
+      "default": "info",
+      "description": "Default log level for components when component-level logLevel is not set.\nAccepted values: debug, info, warn, error. Default: info.\nSet via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.",
+      "required": [],
+      "title": "logLevel"
     },
     "metricsSources": {
       "additionalProperties": false,
@@ -927,6 +1005,12 @@
               "required": [],
               "title": "interval"
             },
+            "metricsExpiration": {
+              "default": "5m",
+              "description": "set the time to wait with no activity before expiring span metrics\nformat is duration string (15s, 1m, etc)\ndefault is 5m",
+              "required": [],
+              "title": "metricsExpiration"
+            },
             "resourceMetricsKeyAttributes": {
               "description": "Advanced configuration - avoid using unless you know what you are doing.\nThis list controls which resource attributes are included in the metric stream identity.\nThese attributes are used to determines how span metrics are grouped.",
               "items": {
@@ -972,6 +1056,114 @@
           "additionalProperties": true,
           "required": [],
           "title": "affinity"
+        },
+        "csidriver": {
+          "additionalProperties": false,
+          "description": "CSI driver resource configuration.\nOnly applied when instrumentor.mountMethod is \"k8s-csi-driver\"",
+          "properties": {
+            "livenessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "failureThreshold": {
+                  "default": 3,
+                  "title": "failureThreshold",
+                  "type": "integer"
+                },
+                "initialDelaySeconds": {
+                  "default": 10,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "livenessProbe",
+              "type": "object"
+            },
+            "readinessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "failureThreshold": {
+                  "default": 3,
+                  "title": "failureThreshold",
+                  "type": "integer"
+                },
+                "initialDelaySeconds": {
+                  "default": 5,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "readinessProbe",
+              "type": "object"
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "100m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "200Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "50m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "100Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "csidriver"
         },
         "customContainerRuntimeSocketPath": {
           "default": "",
@@ -1019,6 +1211,62 @@
           "additionalProperties": false,
           "description": "Configuration for the device plugin.",
           "properties": {
+            "livenessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "failureThreshold": {
+                  "default": 3,
+                  "title": "failureThreshold",
+                  "type": "integer"
+                },
+                "initialDelaySeconds": {
+                  "default": 10,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "livenessProbe",
+              "type": "object"
+            },
+            "readinessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "failureThreshold": {
+                  "default": 3,
+                  "title": "failureThreshold",
+                  "type": "integer"
+                },
+                "initialDelaySeconds": {
+                  "default": 10,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "readinessProbe",
+              "type": "object"
+            },
             "resources": {
               "additionalProperties": false,
               "properties": {
@@ -1122,6 +1370,12 @@
           },
           "required": [],
           "title": "initContainerResources"
+        },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for odiglet. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
         },
         "noHostNetwork": {
           "default": "false",
@@ -1287,21 +1541,23 @@
         "tolerations": {
           "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
           "items": {
-            "anyOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "operator": {
-                    "default": "Exists",
-                    "title": "operator",
-                    "type": "string"
-                  }
-                },
-                "required": [],
-                "type": "object"
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
               }
-            ],
-            "required": []
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -1486,6 +1742,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for scheduler. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -1545,7 +1807,23 @@
         "tolerations": {
           "description": "tolerations for the scheduler deployment.",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -1614,6 +1892,12 @@
           "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-ui'",
           "required": [],
           "title": "deploymentName"
+        },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for UI. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
         },
         "nodeSelector": {
           "default": "",
@@ -1690,12 +1974,27 @@
           "type": "object"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         },
         "uiMode": {
           "default": "default",

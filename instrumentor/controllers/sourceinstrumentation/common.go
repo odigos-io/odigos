@@ -22,11 +22,11 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -267,7 +267,7 @@ func syncRegexSourceWorkloads(
 // If it is instrumented, it will attempt to create an InstrumentationConfig if one does not exist,
 // or update the existing InstrumentationConfig if necessary.
 func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.Scheme, pw k8sconsts.PodWorkload) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	obj := workload.ClientObjectFromWorkloadKind(pw.Kind)
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: pw.Name, Namespace: pw.Namespace}, obj)
@@ -375,7 +375,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 
 		err = k8sClient.Status().Update(ctx, ic)
 		if err != nil {
-			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", pw.Namespace, "error", err.Error())
+			logger.Info("Failed to update status conditions of InstrumentationConfig", "name", instConfigName, "namespace", pw.Namespace, "err", err)
 			return k8sutils.K8SUpdateErrorHandler(err)
 		}
 	}
@@ -384,7 +384,7 @@ func syncWorkload(ctx context.Context, k8sClient client.Client, scheme *runtime.
 }
 
 func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient client.Client, instConfigName string, namespace string, obj client.Object, scheme *runtime.Scheme, containers []odigosv1.ContainerOverride, containersOverridesHash string, serviceName string, desiredDataStreamsLabels map[string]string, rollbackRecoveryAtAnnotation string) (*odigosv1.InstrumentationConfig, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	annotations := map[string]string{}
 	if rollbackRecoveryAtAnnotation != "" {
@@ -418,12 +418,12 @@ func createInstrumentationConfigForWorkload(ctx context.Context, k8sClient clien
 		return nil, err
 	}
 
-	logger.V(0).Info("Created instrumentation config object for workload to trigger instrumentation", "name", instConfigName, "namespace", namespace)
+	logger.Info("Created instrumentation config object for workload to trigger instrumentation", "name", instConfigName, "namespace", namespace)
 	return &instConfig, nil
 }
 
 func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.Client, pw k8sconsts.PodWorkload) error {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	instrumentationConfigName := workload.CalculateWorkloadRuntimeObjectName(pw.Name, pw.Kind)
 
 	err := kubeClient.Delete(ctx, &odigosv1.InstrumentationConfig{
@@ -436,7 +436,7 @@ func deleteWorkloadInstrumentationConfig(ctx context.Context, kubeClient client.
 		return client.IgnoreNotFound(err)
 	}
 
-	logger.V(1).Info("deleted instrumentationconfig", "name", instrumentationConfigName, "namespace", pw.Namespace)
+	logger.Debug("deleted instrumentationconfig", "name", instrumentationConfigName, "namespace", pw.Namespace)
 
 	return nil
 }

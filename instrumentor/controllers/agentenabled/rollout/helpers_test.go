@@ -11,6 +11,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	"github.com/odigos-io/odigos/instrumentor/internal/testutil"
@@ -283,7 +284,7 @@ func mockICMidRollout(base *odigosv1alpha1.InstrumentationConfig) *odigosv1alpha
 // newRolloutConcurrencyLimiter creates a rollout concurrency limiter.
 // This is the base limiter used by all rate limiting tests.
 func newRolloutConcurrencyLimiter() *rollout.RolloutConcurrencyLimiter {
-	return rollout.NewRolloutConcurrencyLimiter(logr.Discard().WithName("RolloutConcurrencyLimiter"))
+	return rollout.NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(logr.Discard().WithName("RolloutConcurrencyLimiter")))
 }
 
 // newRolloutConcurrencyLimiterNoLimit creates a rollout concurrency limiter with infinite limit (no rate limiting).

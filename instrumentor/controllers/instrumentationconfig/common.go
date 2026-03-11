@@ -1,15 +1,17 @@
 package instrumentationconfig
 
 import (
+	"context"
+
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/instrumentationrules"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/instrumentor/controllers/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList, conf *common.OdigosConfiguration) error {
+func updateInstrumentationConfigForWorkload(ctx context.Context, ic *odigosv1alpha1.InstrumentationConfig, rules *odigosv1alpha1.InstrumentationRuleList, conf *common.OdigosConfiguration) error {
 	workload, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(ic.Name, ic.Namespace)
 	if err != nil {
 		return err
@@ -92,7 +94,7 @@ func updateInstrumentationConfigForWorkload(ic *odigosv1alpha1.InstrumentationCo
 	ic.Spec.SdkConfigs = sdkConfigs
 
 	// populate runtime metrics in sdkConfigs based on effective config and distro support
-	populateRuntimeMetricsInSdkConfigs(ic, conf)
+	populateRuntimeMetricsInSdkConfigs(ctx, ic, conf)
 
 	return nil
 }
@@ -195,8 +197,8 @@ func createDefaultSdkConfig(sdkConfigs []odigosv1alpha1.SdkConfig, containerLang
 	})
 }
 
-func populateRuntimeMetricsInSdkConfigs(ic *odigosv1alpha1.InstrumentationConfig, effectiveConfig *common.OdigosConfiguration) {
-	logger := log.Log.WithName("runtime-metrics")
+func populateRuntimeMetricsInSdkConfigs(ctx context.Context, ic *odigosv1alpha1.InstrumentationConfig, effectiveConfig *common.OdigosConfiguration) {
+	logger := commonlogger.FromContext(ctx).WithName("runtime-metrics")
 
 	// Check if runtime metrics are configured in effective config
 	if effectiveConfig == nil ||
@@ -217,7 +219,7 @@ func populateRuntimeMetricsInSdkConfigs(ic *odigosv1alpha1.InstrumentationConfig
 		switch sdkConfig.Language {
 		case common.JavaProgrammingLanguage:
 			if runtimeMetricsConfig.Java != nil {
-				logger.V(0).Info("Adding runtime metrics to Java sdkConfig", "workload", ic.Name)
+				logger.Info("Adding runtime metrics to Java sdkConfig", "workload", ic.Name)
 				sdkConfig.RuntimeMetrics = &common.MetricsSourceAgentRuntimeMetricsConfiguration{
 					Java: convertJavaRuntimeMetricsConfig(runtimeMetricsConfig.Java),
 				}

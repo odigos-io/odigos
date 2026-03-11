@@ -19,11 +19,11 @@ package sourceinstrumentation
 import (
 	"context"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type NamespaceReconciler struct {
@@ -32,7 +32,7 @@ type NamespaceReconciler struct {
 }
 
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 	logger.Info("Syncing instrumentation for workloads in namespace", "namespace", req.Name)
 
 	var ns corev1.Namespace

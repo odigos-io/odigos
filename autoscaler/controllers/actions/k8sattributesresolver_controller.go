@@ -16,9 +16,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // DEPRECATED: Use odigosv1.Action instead
@@ -171,9 +171,9 @@ func sortByPrecedence(attrs map[string]k8sTagAttribute) []k8sTagAttribute {
 }
 
 func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	logger.V(0).Info("Reconciling K8sAttributes action")
-	logger.V(0).Info("WARNING: K8sAttributes action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
+	logger := commonlogger.FromContext(ctx)
+	logger.Info("Reconciling K8sAttributes action")
+	logger.Info("WARNING: K8sAttributes action is deprecated and will be removed in a future version. Migrate to odigosv1.Action instead.")
 
 	// Get the specific K8sAttributesResolver that triggered this reconcile
 	action := &actionv1.K8sAttributesResolver{}
@@ -190,7 +190,7 @@ func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctr
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
 		}
-		logger.V(0).Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
+		logger.Info("Migrating legacy Action to odigosv1.Action. This is a one-way change, and modifications to the legacy Action will not be reflected in the migrated Action.")
 		// Action doesn't exist, create new one
 		odigosAction = r.createMigratedAction(action, migratedActionName)
 		err = r.Create(ctx, odigosAction)
@@ -207,7 +207,7 @@ func (r *K8sAttributesResolverReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	logger.V(0).Info("Migrated Action already exists, skipping update")
+	logger.Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
 }
 

@@ -8,9 +8,9 @@ import (
 	apiregv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 // CAUpdaterReconciler watches the webhook cert secret and updates the APIService CABundle.
@@ -21,7 +21,7 @@ type CAUpdaterReconciler struct {
 
 // Reconcile ensures the APIService CA bundle stays synced with the Secret's ca.crt.
 func (r *CAUpdaterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	// Only care about the autoscaler cert Secret
 	if req.Name != k8sconsts.AutoscalerWebhookSecretName {
@@ -59,7 +59,7 @@ func (r *CAUpdaterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if string(apiSvc.Spec.CABundle) == string(ca) {
-		logger.V(1).Info("CA bundle already up-to-date")
+		logger.Debug("CA bundle already up-to-date")
 		return ctrl.Result{}, nil
 	}
 

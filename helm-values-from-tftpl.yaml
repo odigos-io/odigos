@@ -1,0 +1,213 @@
+# (c) Copyright 2025-2026 Hewlett Packard Enterprise Development LP
+# Generated from odigos-values.tftpl - replace placeholders with your values.
+
+# By default, images are pulled from odigos registry at `registry.odigos.io`
+# If you use custom or internal registry to serve in your cluster, you can set the imagePrefix to your registry.
+# For example, if you set imagePrefix to `myregistry.io/odigos`, the images will be pulled from `myregistry.io/odigos/odigos-<component>:<tag>`
+imagePrefix: 657273346644.dkr.ecr.us-west-2.amazonaws.com/mirror/registry.odigos.io
+
+# The onpremToken for Odigos installation (set via Terraform or replace with your token)
+onPremToken: ""  # e.g. your onprem_token value
+
+# Optional: enable if using Karpenter (set karpenter_enabled in Terraform)
+# karpenter:
+#   enabled: true
+
+collectorGateway:
+  # the memory request for the cluster gateway collector deployment.
+  # it will be embedded in the deployment as a resource request of the form "memory: <value>Mi".
+  # default value is 500Mi
+  requestMemoryMiB: 500
+
+  # the memory limit for the cluster gateway collector deployment.
+  # it will be embedded in the deployment as a resource limit of the form "memory: <value>Mi".
+  # default value is 625Mi
+  limitMemoryMiB: 625
+
+  # The maxReplicas in the HPA config.
+  maxReplicas: 10
+
+  # the CPU request for the cluster gateway collector deployment.
+  # it will be embedded in the deployment as a resource request of the form "cpu: <value>m".
+  # default value is 500m. If you set only requestCPUm, the limitCPUm will be set to the same value.
+  requestCPUm: 500
+
+  # the CPU limit for the cluster gateway collector deployment.
+  # it will be embedded in the deployment as a resource limit of the form "cpu: <value>m".
+  # default value is 1000m. If you set only limitCPUm, the requestCPUm will be set to the same value.
+  limitCPUm: 1000
+
+  # Service Graph settings
+  # Service Graph is a feature that allows you to visualize the service graph of your application.
+  # It is enabled by default and can be disabled by setting the disabled flag to true.
+  serviceGraphDisabled: true
+
+  # Cluster Metrics settings
+  # Cluster Metrics is a feature that allows you to enable the cluster metrics.
+  # [https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/receiver/k8sclusterreceiver]
+  # It is disabled by default and can be enabled by setting the enabled flag to true.
+  clusterMetricsEnabled: false
+
+collectorNode:
+  memoryLimit: 512  # MiB, set collector_node_limit_memory as needed
+
+  otlpExporterConfiguration:
+    retryOnFailure:
+      # Whether to retry on failure, by default it is enabled.
+      enabled: false
+
+    # Time to wait per individual attempt to send data to a backend
+    timeout: 1s
+
+  # the CPU request for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource request of the form "cpu: <value>m".
+  # default value is 250m. If you set only requestCPUm, the limitCPUm will be set to the same value.
+  requestCPUm: 250
+
+  # the CPU limit for the node collector daemonset.
+  # it will be embedded in the daemonset as a resource limit of the form "cpu: <value>m".
+  # default value is 500m. If you set only limitCPUm, the requestCPUm will be set to the same value.
+  limitCPUm: 500
+
+instrumentor:
+  # Optional: enable pod anti-affinity to spread instrumentor pods across nodes (set instrumentor_pod_anti_affinity_enabled in Terraform)
+  # affinity:
+  #   podAntiAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #       - labelSelector:
+  #           matchLabels:
+  #             app.kubernetes.io/name: odigos-instrumentor
+  #         topologyKey: kubernetes.io/hostname
+
+  # which mount method to use for odigos agent directory
+  # k8s-virtual-device: default method using a virtual device
+  # k8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)
+  # k8s-init-container: alternative which uses an init container to copy the agent files to the shared volume
+  mountMethod: "k8s-virtual-device"
+
+odiglet:
+  # When the code-attributes InstrumentationRule is enabled, you can choose to disable collecting code attributes for Go instrumentation.
+  # Collecting code attributes in Go is resource-intensive and may affect odiglet performance in environments with many Go workloads.
+  # Set this to true to turn off code attribute recording for Go instrumentation.
+  disableGoCodeAttributes: false  # set disable_go_code_attributes as needed
+
+  tolerations:
+    - effect: NoSchedule
+      key: kubernetes.io/arch
+      operator: Equal
+      value: arm64
+    - effect: NoSchedule
+      key: ccsportal/arch
+      operator: Equal
+      value: arm64
+    - effect: PreferNoSchedule
+      key: spotInstance
+      operator: Equal
+      value: "true"
+    - effect: PreferNoSchedule
+      key: onDemand
+      operator: Equal
+      value: "true"
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node.kubernetes.io/node
+                operator: NotIn
+                values: ["cloudops"]
+
+  # Resource configuration for the odiglet daemonset
+  resources:
+    requests:
+      cpu: "100m"    # odiglet_requests_cpu
+      memory: "256Mi" # odiglet_requests_memory
+    limits:
+      cpu: "500m"    # odiglet_limits_cpu
+      memory: "512Mi" # odiglet_limits_memory
+
+# Auto rollback settings
+# The auto‐rollback feature provides a stability window to test instrumented apps.
+# After an application is instrumented, a grace period begins during which we allow the app (and its dependencies) to stabilize and start working.
+# Once the grace period has passed and we are within the stability window, we can decide to uninstrument a crashing application.
+autoRollback:
+  disabled: true
+
+# configuration for metrics sources (where odigos collects metrics from)
+# only relevant when a metrics destination is enabled
+metricsSources:
+  agentMetrics:
+    spanMetrics:
+      enabled: true
+    runtimeMetrics:
+      java:
+        disabled: true
+  hostMetrics:
+    disabled: true
+  kubeletStats:
+    disabled: true
+  spanMetrics:
+    interval: 60s
+    metricsExpiration: 2h
+    # explicitHistogramBuckets: duration strings (was span_metrics_histogram_buckets in Terraform)
+    explicitHistogramBuckets:
+      - 500ms
+      - 1000ms
+      - 2000ms
+      - 5000ms
+    excludedResourceAttributes:
+      - process.command
+      - process.executable.path
+      - process.pid
+      - process.vpid
+      - process.runtime.description
+      - process.runtime.name
+      - process.runtime.version
+      - telemetry.distro.version
+      - telemetry.distro.name
+      - telemetry.auto.version
+      - cloud.account.id
+      - container.id
+      - host.id
+      - host.image.id
+      - host.type
+      - k8s.deployment.uid
+      - k8s.replicaset.uid
+      - k8s.daemonset.uid
+      - k8s.statefulset.uid
+      - k8s.job.uid
+      - k8s.cronjob.uid
+      - service.instance.id
+      - cloud.availability_zone
+      - cloud.platform
+      - cloud.provider
+      - cloud.region
+      - os.description
+      - os.type
+      - host.arch
+      - host.name
+      - odigos.workload.kind
+      - odigos.workload.name
+    additionalDimensions:
+      - odigos.category
+      - odigos.sub_category
+      - odigos.transaction.type
+      - db.system
+      - messaging.system
+      - rpc.system
+      - aws.s3.bucket
+      - exception.type
+      - faas.trigger
+      - feature_flag.key
+      - telemetry.sdk.language
+
+# Enable automatic Go library offsets updates.
+# See https://docs.odigos.io/pipeline/golang/ebpf#go-auto-offsets for more details.
+# cron schedule for automatic Go offsets updates (e.g. "0 0 * * *" for daily at midnight). Set to empty string to disable.
+# Custom Offsets support is only available in Odigos pro tier.
+goAutoOffsetsCron: ""
+
+# mode for automatic Go offsets updates. Options include direct (pull from cloud server), image (pull from local image) and off (disabled).
+# Custom Offsets support is only available in Odigos pro tier.
+goAutoOffsetsMode: ""

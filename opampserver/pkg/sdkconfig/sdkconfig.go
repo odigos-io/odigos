@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/k8sutils/pkg/container"
@@ -22,8 +21,8 @@ type SdkConfigManager struct {
 	odigosNs string
 }
 
-func NewSdkConfigManager(logger logr.Logger, mgr ctrl.Manager, connectionCache *connection.ConnectionsCache, odigosNs string) *SdkConfigManager {
-
+func NewSdkConfigManager(mgr ctrl.Manager, connectionCache *connection.ConnectionsCache, odigosNs string) *SdkConfigManager {
+	logger := mgr.GetLogger().WithName("sdkconfig")
 	sdkConfigManager := &SdkConfigManager{
 		logger:   logger,
 		mgr:      mgr,

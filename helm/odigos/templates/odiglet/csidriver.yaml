@@ -1,0 +1,21 @@
+{{- if eq .Values.instrumentor.mountMethod "k8s-csi-driver" }}
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: odigos.csi.driver
+  labels:
+    app.kubernetes.io/name: odiglet
+    odigos.io/system-object: "true"
+spec:
+  # We don't need volume attachment/detachment since we only do direct node mounts
+  attachRequired: false
+  # We don't need pod info during mount operations
+  podInfoOnMount: false
+  # We support ephemeral inline volumes (volumes defined directly in pod spec)
+  volumeLifecycleModes:
+    - Ephemeral
+  # We don't support persistent volumes or topology-aware scheduling
+  storageCapacity: false
+  # We don't need to know which node a volume can be accessed from
+  requiresRepublish: false
+{{- end }}

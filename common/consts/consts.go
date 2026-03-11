@@ -12,14 +12,13 @@ const (
 	OdigosTierEnvVarName                = "ODIGOS_TIER"
 	DefaultOdigosNamespace              = "odigos-system"
 	OdigosConfigurationName             = "odigos-configuration"
-	// Deprecated: only used for migrations
-	OdigosLegacyConfigName      = "odigos-config"
-	OdigosEffectiveConfigName   = "effective-config"
-	OdigosRemoteConfigName      = "odigos-remote-config"
-	OdigosLocalUiConfigName     = "odigos-local-ui-config"
-	OdigosConfigurationFileName = "config.yaml"
-	OTLPPort                    = 4317
-	OTLPHttpPort                = 4318
+	OdigosEffectiveConfigName           = "effective-config"
+	OdigosRemoteConfigName              = "odigos-remote-config"   // backend/GraphQL overlay (e.g. rollout)
+	OdigosLocalUiConfigName             = "odigos-local-ui-config" // UI overlay (log level, sampling)
+	OdigosLegacyConfigName              = "odigos-config"          // Deprecated: only used for migrations
+	OdigosConfigurationFileName         = "config.yaml"
+	OTLPPort                            = 4317
+	OTLPHttpPort                        = 4318
 
 	// DefaultDataStream is the default data stream name used for telemetry data.
 	DefaultDataStream = "default"
@@ -142,6 +141,10 @@ const (
 	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
 	SmallBatchesProcessor          = "batch/small-batches"
 	GroupByTraceProcessorV2        = "groupbytrace/samplingv2"
+
+	// URLTemplatizationProcessorName is the name of the shared Processor CR and pipeline component for URL templatization.
+	// Used by the autoscaler action controller when creating/watching the Processor CR. Not K8s-specific.
+	URLTemplatizationProcessorName = "odigos-url-templatization"
 )
 
 // Auto rollback related consts

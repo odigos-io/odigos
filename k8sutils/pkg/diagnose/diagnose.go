@@ -88,7 +88,7 @@ func RunDiagnose(
 	if opts.IncludeMetrics {
 		runStage(&wg, StageMetrics, onStageComplete, func() error {
 			metricsDir := GetMetricsDir(rootDir, opts.OdigosNamespace)
-			return FetchOdigosCollectorMetrics(ctx, client, builder, metricsDir, opts.OdigosNamespace)
+			return FetchOdigosMetrics(ctx, client, builder, metricsDir, opts.OdigosNamespace)
 		})
 	}
 
