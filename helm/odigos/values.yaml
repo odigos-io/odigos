@@ -877,6 +877,40 @@ odiglet:
       limits:
         cpu: 100m
         memory: 300Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+
+  # @schema
+  # description: |-
+  #   CSI driver resource configuration.
+  #   Only applied when instrumentor.mountMethod is "k8s-csi-driver"
+  # @schema
+  csidriver:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 100m
+        memory: 200Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 5
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
 
   # @schema
   # description: |-

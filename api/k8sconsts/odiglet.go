@@ -36,6 +36,25 @@ const (
 	OdigletLocalTrafficServiceName = "odiglet-local"
 	OdigletMetricsServerPort       = 8080
 	OdigletWaspServicePort         = 4040
+
+	// CSI Driver identification
+	OdigletCSIDriverName    = "odigos.csi.driver"
+	OdigletCSIDriverVersion = "0.1.0"
+
+	// CSI Socket and endpoint paths
+	OdigletCSISocketPath               = "/csi/csi.sock"
+	OdigletCSIEndpoint                 = "unix:///csi/csi.sock"
+	OdigletCSIRegistrationPath         = "/registration"
+	OdigletCSIRegistrationSocketSuffix = "-reg.sock"
+
+	// Host paths that CSI driver needs access to
+	KubeletDir                = "/var/lib/kubelet"
+	KubeletPluginsRegistryDir = "/var/lib/kubelet/plugins_registry"
+	ProcMountsPath            = "/proc/mounts"
+
+	// Kubelet CSI plugin paths
+	KubeletPluginDir    = "/var/lib/kubelet/plugins/odigos.csi.driver"
+	KubeletPluginSocket = "/var/lib/kubelet/plugins/odigos.csi.driver/csi.sock"
 )
 
 // OffsetCronJobMode represents the mode for the Go offsets cron job
