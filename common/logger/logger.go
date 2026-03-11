@@ -95,7 +95,7 @@ type ContextLogger struct {
 // level immediately because it uses the shared AtomicLevel; no restart is required.
 // For request-scoped identity, add .WithValues("namespace", req.Namespace, "name", req.Name).
 func FromContext(ctx context.Context) *ContextLogger {
-	return &ContextLogger{Logger: rtlog.FromContext(ctx)}
+	return &ContextLogger{Logger: rtlog.FromContext(ctx).WithCallDepth(1)}
 }
 
 // WrapLogr wraps a logr.Logger (e.g. ctrl.Log.WithName("...") or mgr.GetLogger().WithName("..."))
@@ -103,7 +103,7 @@ func FromContext(ctx context.Context) *ContextLogger {
 // so the underlying zap level (atom) is used; e.g. mgr.GetLogger() is that logger when the
 // manager was created after SetLogger.
 func WrapLogr(l logr.Logger) *ContextLogger {
-	return &ContextLogger{Logger: l}
+	return &ContextLogger{Logger: l.WithCallDepth(1)}
 }
 
 // Logr returns the underlying logr.Logger for use with APIs that require logr.Logger (e.g. some libraries).
@@ -158,9 +158,11 @@ type OdigosLogger struct {
 }
 
 // LoggerCompat returns a logger with slog-style API. Use for existing .Info(msg, k, v) call sites.
+// AddCallerSkip(1) skips the OdigosLogger wrapper frame so the caller field points to the
+// actual call site instead of logger/logger.go.
 func LoggerCompat() *OdigosLogger {
 	if instance != nil {
-		return &OdigosLogger{sugared: instance.Sugar()}
+		return &OdigosLogger{sugared: instance.WithOptions(zap.AddCallerSkip(1)).Sugar()}
 	}
 	return &OdigosLogger{sugared: zap.NewNop().Sugar()}
 }
