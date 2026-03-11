@@ -192,6 +192,19 @@ func (i *Instrumentor) Run(ctx context.Context, odigosTelemetryDisabled bool) {
 	logger := commonlogger.LoggerCompat().With("subsystem", "instrumentor")
 	g, groupCtx := errgroup.WithContext(ctx)
 
+	// Start pprof server
+	g.Go(func() error {
+		err := common.StartPprofServer(groupCtx, commonlogger.ToLogr(), int(k8sconsts.DefaultPprofEndpointPort))
+		if err != nil {
+			logger.Error("Failed to start pprof server", "err", err)
+		} else {
+			logger.Info("Pprof server exited")
+		}
+		// if we fail to start the pprof server, don't return an error as it is not critical
+		// and we can run the rest of the components
+		return nil
+	})
+
 	if !odigosTelemetryDisabled {
 		// Start telemetry report
 		g.Go(func() error {
