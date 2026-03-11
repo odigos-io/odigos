@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -214,7 +215,7 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 		if addtionalConfig.Sampling.SpanSamplingAttributes != nil {
 			if baseConfig.Sampling.SpanSamplingAttributes == nil {
-				baseConfig.Sampling.SpanSamplingAttributes = &common.SpanSamplingAttributesConfiguration{}
+				baseConfig.Sampling.SpanSamplingAttributes = &sampling.SpanSamplingAttributesConfiguration{}
 			}
 			if addtionalConfig.Sampling.SpanSamplingAttributes.Disabled != nil {
 				baseConfig.Sampling.SpanSamplingAttributes.Disabled = addtionalConfig.Sampling.SpanSamplingAttributes.Disabled

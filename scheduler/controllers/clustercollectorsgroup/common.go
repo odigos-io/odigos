@@ -8,6 +8,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	k8sutils "github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/scheduler/utils"
@@ -62,7 +63,7 @@ func getOwnMetricsConfig(odigosConfiguration *common.OdigosConfiguration, allDes
 }
 
 func newClusterCollectorGroup(namespace string, resourcesSettings *odigosv1.CollectorsGroupResourcesSettings, serviceGraphDisabled *bool, clusterMetricsEnabled *bool,
-	httpsProxyAddress *string, nodeSelector *map[string]string, deploymentName string, metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, tailSampling *common.TailSamplingConfiguration, dryRun *bool, spanSamplingAttributes *common.SpanSamplingAttributesConfiguration) *odigosv1.CollectorsGroup {
+	httpsProxyAddress *string, nodeSelector *map[string]string, deploymentName string, metricsConfig *odigosv1.CollectorsGroupMetricsCollectionSettings, tailSampling *common.TailSamplingConfiguration, dryRun *bool, spanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration) *odigosv1.CollectorsGroup {
 	return &odigosv1.CollectorsGroup{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CollectorsGroup",
@@ -128,7 +129,7 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	}
 
 	var dryRun *bool
-	var spanSamplingAttributes *common.SpanSamplingAttributesConfiguration
+	var spanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration
 	if odigosConfiguration.Sampling != nil {
 		dryRun = odigosConfiguration.Sampling.DryRun
 		spanSamplingAttributes = odigosConfiguration.Sampling.SpanSamplingAttributes

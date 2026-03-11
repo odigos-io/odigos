@@ -20,6 +20,7 @@ package v1alpha1
 import (
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	common "github.com/odigos-io/odigos/common"
+	sampling "github.com/odigos-io/odigos/common/api/sampling"
 )
 
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
@@ -39,7 +40,7 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	DeploymentName            *string                                                     `json:"deploymentName,omitempty"`
 	TailSampling              *common.TailSamplingConfiguration                           `json:"tailSampling,omitempty"`
 	SamplingDryRun            *bool                                                       `json:"samplingDryRun,omitempty"`
-	SpanSamplingAttributes    *common.SpanSamplingAttributesConfiguration                 `json:"spanSamplingAttributes,omitempty"`
+	SpanSamplingAttributes    *sampling.SpanSamplingAttributesConfiguration               `json:"spanSamplingAttributes,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -163,7 +164,7 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithSamplingDryRun(value bool) *
 // WithSpanSamplingAttributes sets the SpanSamplingAttributes field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SpanSamplingAttributes field is set to the value of the last call.
-func (b *CollectorsGroupSpecApplyConfiguration) WithSpanSamplingAttributes(value common.SpanSamplingAttributesConfiguration) *CollectorsGroupSpecApplyConfiguration {
+func (b *CollectorsGroupSpecApplyConfiguration) WithSpanSamplingAttributes(value sampling.SpanSamplingAttributesConfiguration) *CollectorsGroupSpecApplyConfiguration {
 	b.SpanSamplingAttributes = &value
 	return b
 }

@@ -530,7 +530,7 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 	}
 	if in.SpanSamplingAttributes != nil {
 		in, out := &in.SpanSamplingAttributes, &out.SpanSamplingAttributes
-		*out = new(common.SpanSamplingAttributesConfiguration)
+		*out = new(sampling.SpanSamplingAttributesConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
 }
