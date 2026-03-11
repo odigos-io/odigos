@@ -355,7 +355,7 @@ spec:
 {{- end }}
 # to use device plugins we need to have the "k8s-virtual-device" mount method or non specified (default)
 # and to have hostMounts allowed
-{{- if and (or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device")) }}
+{{- if or (eq .Values.instrumentor.mountMethod "") (eq .Values.instrumentor.mountMethod "k8s-virtual-device") }}
         - name: deviceplugin
           {{- if include "odigos.secretExists" . }}
           image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-odiglet" "Tag" $odigletImageTag) }}
