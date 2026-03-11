@@ -3,7 +3,7 @@ package rollout
 import (
 	"sync"
 
-	"github.com/go-logr/logr"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 )
 
 const (
@@ -12,13 +12,13 @@ const (
 
 type RolloutConcurrencyLimiter struct {
 	mutex  sync.Mutex
-	logger logr.Logger
+	logger *commonlogger.ContextLogger
 	// set of workload keys currently rolling out - we use a map for fast lookup,
 	// and a struct{} for the value to avoid allocating memory for the value
 	inFlightRollouts map[string]struct{}
 }
 
-func NewRolloutConcurrencyLimiter(logger logr.Logger) *RolloutConcurrencyLimiter {
+func NewRolloutConcurrencyLimiter(logger *commonlogger.ContextLogger) *RolloutConcurrencyLimiter {
 	return &RolloutConcurrencyLimiter{
 		logger:           logger,
 		inFlightRollouts: make(map[string]struct{}),
@@ -47,13 +47,13 @@ func (r *RolloutConcurrencyLimiter) TryAcquire(workloadKey string, limit int) bo
 	// Check if under limit
 	if len(r.inFlightRollouts) < limit {
 		r.inFlightRollouts[workloadKey] = struct{}{}
-		r.logger.V(2).Info("Acquired rollout slot", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", limit)
+		r.logger.Debug("Acquired rollout slot", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", limit)
 		return true
 	} else if len(r.inFlightRollouts) == limit {
-		r.logger.V(2).Info("Rollout slot denied - at capacity", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", limit)
+		r.logger.Debug("Rollout slot denied - at capacity", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", limit)
 		return false
 	} else {
-		r.logger.V(2).Info("Rollout slot denied - more rollouts than the limit - this should not happen", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", limit)
+		r.logger.Debug("Rollout slot denied - more rollouts than the limit - this should not happen", "workload", workloadKey, "inFlight", len(r.inFlightRollouts), "limit", limit)
 		return false
 	}
 }
@@ -68,7 +68,7 @@ func (r *RolloutConcurrencyLimiter) ReleaseWorkloadRolloutSlot(workloadKey strin
 	defer r.mutex.Unlock()
 
 	delete(r.inFlightRollouts, workloadKey)
-	r.logger.V(2).Info("Released rollout slot", "workload", workloadKey, "inFlight", len(r.inFlightRollouts))
+	r.logger.Debug("Released rollout slot", "workload", workloadKey, "inFlight", len(r.inFlightRollouts))
 }
 
 // InFlightCount returns the number of workloads currently rolling out (for testing/debugging)

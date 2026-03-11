@@ -714,5 +714,75 @@
       "github": "https://github.com/odigos-io/odigos",
       "slack": "https://odigos.slack.com/join/shared_invite/zt-1d7egaz29-Rwv2T8kyzc3mWP8qKobz~A#/shared-invite/email"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/overview",
+      "destination": "/oss/overview"
+    },
+    {
+      "source": "/quickstart/:slug*",
+      "destination": "/oss/quickstart/:slug*"
+    },
+    {
+      "source": "/setup/:slug*",
+      "destination": "/oss/setup/:slug*"
+    },
+    {
+      "source": "/cli/:slug*",
+      "destination": "/oss/cli/:slug*"
+    },
+    {
+      "source": "/api-reference/:slug*",
+      "destination": "/oss/api-reference/:slug*"
+    },
+    {
+      "source": "/instrumentations/:slug*",
+      "destination": "/oss/instrumentations/:slug*"
+    },
+    {
+      "source": "/pipeline/:slug*",
+      "destination": "/oss/pipeline/:slug*"
+    },
+    {
+      "source": "/backends-overview",
+      "destination": "/oss/backends-overview"
+    },
+    {
+      "source": "/backends/:slug*",
+      "destination": "/oss/backends/:slug*"
+    },
+    {
+      "source": "/telemetry-types",
+      "destination": "/oss/telemetry-types"
+    },
+    {
+      "source": "/custom-resources",
+      "destination": "/oss/custom-resources"
+    },
+    {
+      "source": "/usage-reports",
+      "destination": "/oss/usage-reports"
+    },
+    {
+      "source": "/benchmarks",
+      "destination": "/oss/benchmarks"
+    },
+    {
+      "source": "/permissions",
+      "destination": "/oss/permissions"
+    },
+    {
+      "source": "/features/:slug*",
+      "destination": "/oss/features/:slug*"
+    },
+    {
+      "source": "/adding-new-dest",
+      "destination": "/oss/adding-new-dest"
+    },
+    {
+      "source": "/debugging",
+      "destination": "/oss/debugging"
+    }
+  ]
 }

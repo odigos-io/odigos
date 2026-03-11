@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/rollout"
 	instrumentorpredicate "github.com/odigos-io/odigos/instrumentor/controllers/utils/predicates"
@@ -15,7 +16,7 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager, dp *distros.Provider) error {
 	// Create the limiter - it will be initialized with config on first use in Do()
-	rolloutConcurrencyLimiter := rollout.NewRolloutConcurrencyLimiter(mgr.GetLogger().WithName("RolloutConcurrencyLimiter"))
+	rolloutConcurrencyLimiter := rollout.NewRolloutConcurrencyLimiter(commonlogger.WrapLogr(mgr.GetLogger().WithName("RolloutConcurrencyLimiter")))
 	err := builder.
 		ControllerManagedBy(mgr).
 		Named("agentenabled-collectorsgroup").

@@ -3,13 +3,13 @@ package podsinjectionstatus
 import (
 	"context"
 
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type PodsController struct {
@@ -42,7 +42,7 @@ func (r *PodsController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	err = r.PodsTracker.SetPodWorkload(req, *pw)
 	if err != nil {
-		logger := log.FromContext(ctx)
+		logger := commonlogger.FromContext(ctx)
 		logger.Error(err, "error setting pod id to workload mapping in pods tracker", "pod", req.NamespacedName)
 	}
 
