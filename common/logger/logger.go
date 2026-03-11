@@ -158,9 +158,11 @@ type OdigosLogger struct {
 }
 
 // LoggerCompat returns a logger with slog-style API. Use for existing .Info(msg, k, v) call sites.
+// AddCallerSkip(1) skips the OdigosLogger wrapper frame so the caller field points to the
+// actual call site instead of logger/logger.go.
 func LoggerCompat() *OdigosLogger {
 	if instance != nil {
-		return &OdigosLogger{sugared: instance.Sugar()}
+		return &OdigosLogger{sugared: instance.WithOptions(zap.AddCallerSkip(1)).Sugar()}
 	}
 	return &OdigosLogger{sugared: zap.NewNop().Sugar()}
 }
