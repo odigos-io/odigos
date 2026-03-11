@@ -39,3 +39,22 @@ type SpanSamplingAttributesConfiguration struct {
 	//   - odigos.sampling.span.deciding_rule.keep_percentage
 	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
 }
+
+// TailSamplingConfiguration configures tail sampling behavior.
+// +kubebuilder:object:generate=true
+type TailSamplingConfiguration struct {
+
+	// If set to true, tail sampling will be disabled globally
+	// regardless of any other configurations or rules set.
+	// Can be used to reduce collectors resource usage, troubleshooting, etc,
+	// or when tail-sampling is not needed or desired and should be shut off.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// Time to wait from the first span of a trace until a trace is considered completed.
+	// At this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+	// Introduces this amount of latency in the pipeline and for trace to hit the destination.
+	// Also increases memory usage for keeping spans in memory until the wait duration time is reached.
+	// Setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+	// and broken traces due to sampling each trace in few pieces.
+	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+}

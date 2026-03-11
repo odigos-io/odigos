@@ -232,7 +232,7 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 		if addtionalConfig.Sampling.TailSampling != nil {
 			if baseConfig.Sampling.TailSampling == nil {
-				baseConfig.Sampling.TailSampling = &common.TailSamplingConfiguration{}
+				baseConfig.Sampling.TailSampling = &sampling.TailSamplingConfiguration{}
 			}
 			if addtionalConfig.Sampling.TailSampling.Disabled != nil {
 				baseConfig.Sampling.TailSampling.Disabled = addtionalConfig.Sampling.TailSampling.Disabled

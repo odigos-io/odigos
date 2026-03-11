@@ -38,7 +38,7 @@ type CollectorsGroupSpecApplyConfiguration struct {
 	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
 	NodeSelector              *map[string]string                                          `json:"nodeSelector,omitempty"`
 	DeploymentName            *string                                                     `json:"deploymentName,omitempty"`
-	TailSampling              *common.TailSamplingConfiguration                           `json:"tailSampling,omitempty"`
+	TailSampling              *sampling.TailSamplingConfiguration                         `json:"tailSampling,omitempty"`
 	SamplingDryRun            *bool                                                       `json:"samplingDryRun,omitempty"`
 	SpanSamplingAttributes    *sampling.SpanSamplingAttributesConfiguration               `json:"spanSamplingAttributes,omitempty"`
 }
@@ -148,7 +148,7 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithDeploymentName(value string)
 // WithTailSampling sets the TailSampling field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the TailSampling field is set to the value of the last call.
-func (b *CollectorsGroupSpecApplyConfiguration) WithTailSampling(value common.TailSamplingConfiguration) *CollectorsGroupSpecApplyConfiguration {
+func (b *CollectorsGroupSpecApplyConfiguration) WithTailSampling(value sampling.TailSamplingConfiguration) *CollectorsGroupSpecApplyConfiguration {
 	b.TailSampling = &value
 	return b
 }

@@ -425,24 +425,6 @@ type OdigosOwnTelemetryConfiguration struct {
 	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
 }
 
-// +kubebuilder:object:generate=true
-type TailSamplingConfiguration struct {
-
-	// If set to true, tail sampling will be disabled globally
-	// regardless of any other configurations or rules set.
-	// Can be used to reduce collectors resource usage, troubleshooting, etc,
-	// or when tail-sampling is not needed or desired and should be shut off.
-	Disabled *bool `json:"disabled,omitempty"`
-
-	// Time to wait from the first span of a trace until a trace is considered completed.
-	// At this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
-	// Introduces this amount of latency in the pipeline and for trace to hit the destination.
-	// Also increases memory usage for keeping spans in memory until the wait duration time is reached.
-	// Setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
-	// and broken traces due to sampling each trace in few pieces.
-	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
-}
-
 // Configuration for Odigos auto-kubelet-probes detection and sampling.
 // Odigos can automatically pick up health probes from the k8s manifest,
 // and treat them as "noisy endpoints" to be sampled out.
@@ -478,7 +460,7 @@ type SamplingConfiguration struct {
 	SpanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
 
 	// Configuration for tail sampling.
-	TailSampling *TailSamplingConfiguration `json:"tailSampling,omitempty"`
+	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
 
 	// Configuration for Odigos auto-kubelet-probes detection and sampling.
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
