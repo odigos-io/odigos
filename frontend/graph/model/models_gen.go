@@ -275,6 +275,25 @@ type ContainerRuntimeInfoAnalyze struct {
 	EnvVars        []*EntityProperty `json:"envVars"`
 }
 
+type CostReductionRule struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	SourceScopes     []*SourcesScope               `json:"sourceScopes,omitempty"`
+	Operation        *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost float64                       `json:"percentageAtMost"`
+	Notes            *string                       `json:"notes,omitempty"`
+}
+
+type CostReductionRuleInput struct {
+	Name             *string                            `json:"name,omitempty"`
+	Disabled         *bool                              `json:"disabled,omitempty"`
+	SourceScopes     []*SourcesScopeInput               `json:"sourceScopes,omitempty"`
+	Operation        *TailSamplingOperationMatcherInput `json:"operation,omitempty"`
+	PercentageAtMost float64                            `json:"percentageAtMost"`
+	Notes            *string                            `json:"notes,omitempty"`
+}
+
 type CustomInstrumentations struct {
 	Golang []*GolangCustomProbe `json:"golang,omitempty"`
 	Java   []*JavaCustomProbe   `json:"java,omitempty"`
@@ -500,12 +519,71 @@ type GolangCustomProbeInput struct {
 	ReceiverMethodName *string `json:"receiverMethodName,omitempty"`
 }
 
+type HeadSamplingHTTPClientMatcher struct {
+	ServerAddress       *string `json:"serverAddress,omitempty"`
+	TemplatedPath       *string `json:"templatedPath,omitempty"`
+	TemplatedPathPrefix *string `json:"templatedPathPrefix,omitempty"`
+	Method              *string `json:"method,omitempty"`
+}
+
+type HeadSamplingHTTPClientMatcherInput struct {
+	ServerAddress       *string `json:"serverAddress,omitempty"`
+	TemplatedPath       *string `json:"templatedPath,omitempty"`
+	TemplatedPathPrefix *string `json:"templatedPathPrefix,omitempty"`
+	Method              *string `json:"method,omitempty"`
+}
+
+type HeadSamplingHTTPServerMatcher struct {
+	Route       *string `json:"route,omitempty"`
+	RoutePrefix *string `json:"routePrefix,omitempty"`
+	Method      *string `json:"method,omitempty"`
+}
+
+type HeadSamplingHTTPServerMatcherInput struct {
+	Route       *string `json:"route,omitempty"`
+	RoutePrefix *string `json:"routePrefix,omitempty"`
+	Method      *string `json:"method,omitempty"`
+}
+
+type HeadSamplingOperationMatcher struct {
+	HTTPServer *HeadSamplingHTTPServerMatcher `json:"httpServer,omitempty"`
+	HTTPClient *HeadSamplingHTTPClientMatcher `json:"httpClient,omitempty"`
+}
+
+type HeadSamplingOperationMatcherInput struct {
+	HTTPServer *HeadSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
+	HTTPClient *HeadSamplingHTTPClientMatcherInput `json:"httpClient,omitempty"`
+}
+
 type HeadersCollection struct {
 	HeaderKeys []*string `json:"headerKeys,omitempty"`
 }
 
 type HeadersCollectionInput struct {
 	HeaderKeys []*string `json:"headerKeys,omitempty"`
+}
+
+type HighlyRelevantOperationRule struct {
+	RuleID            string                        `json:"ruleId"`
+	Name              *string                       `json:"name,omitempty"`
+	Disabled          bool                          `json:"disabled"`
+	SourceScopes      []*SourcesScope               `json:"sourceScopes,omitempty"`
+	Error             bool                          `json:"error"`
+	DurationAtLeastMs *int                          `json:"durationAtLeastMs,omitempty"`
+	Operation         *TailSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtLeast *float64                      `json:"percentageAtLeast,omitempty"`
+	Notes             *string                       `json:"notes,omitempty"`
+}
+
+type HighlyRelevantOperationRuleInput struct {
+	Name              *string                            `json:"name,omitempty"`
+	Disabled          *bool                              `json:"disabled,omitempty"`
+	SourceScopes      []*SourcesScopeInput               `json:"sourceScopes,omitempty"`
+	Error             *bool                              `json:"error,omitempty"`
+	DurationAtLeastMs *int                               `json:"durationAtLeastMs,omitempty"`
+	Operation         *TailSamplingOperationMatcherInput `json:"operation,omitempty"`
+	PercentageAtLeast *float64                           `json:"percentageAtLeast,omitempty"`
+	Notes             *string                            `json:"notes,omitempty"`
 }
 
 type HorizontalPodAutoscalerInfo struct {
@@ -999,6 +1077,25 @@ type NodesSummary struct {
 	Ready   int `json:"ready"`
 }
 
+type NoisyOperationRule struct {
+	RuleID           string                        `json:"ruleId"`
+	Name             *string                       `json:"name,omitempty"`
+	Disabled         bool                          `json:"disabled"`
+	SourceScopes     []*SourcesScope               `json:"sourceScopes,omitempty"`
+	Operation        *HeadSamplingOperationMatcher `json:"operation,omitempty"`
+	PercentageAtMost *float64                      `json:"percentageAtMost,omitempty"`
+	Notes            *string                       `json:"notes,omitempty"`
+}
+
+type NoisyOperationRuleInput struct {
+	Name             *string                            `json:"name,omitempty"`
+	Disabled         *bool                              `json:"disabled,omitempty"`
+	SourceScopes     []*SourcesScopeInput               `json:"sourceScopes,omitempty"`
+	Operation        *HeadSamplingOperationMatcherInput `json:"operation,omitempty"`
+	PercentageAtMost *float64                           `json:"percentageAtMost,omitempty"`
+	Notes            *string                            `json:"notes,omitempty"`
+}
+
 type NonIdentifyingAttribute struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -1205,6 +1302,7 @@ type RuntimeInfoAnalyze struct {
 
 type Sampling struct {
 	Configs *SamplingConfigs `json:"configs"`
+	Rules   *SamplingRules   `json:"rules"`
 }
 
 type SamplingConfig struct {
@@ -1222,6 +1320,12 @@ type SamplingConfigs struct {
 	HelmDeployment          *SamplingConfig `json:"helmDeployment,omitempty"`
 	RemoteConfigFromCentral *SamplingConfig `json:"remoteConfigFromCentral,omitempty"`
 	LocalUIConfig           *SamplingConfig `json:"localUiConfig,omitempty"`
+}
+
+type SamplingRules struct {
+	NoisyOperations          []*NoisyOperationRule          `json:"noisyOperations"`
+	HighlyRelevantOperations []*HighlyRelevantOperationRule `json:"highlyRelevantOperations"`
+	CostReductionRules       []*CostReductionRule           `json:"costReductionRules"`
 }
 
 type ServiceMap struct {
@@ -1294,6 +1398,20 @@ type SourceContainer struct {
 	OtelDistroName         *string `json:"otelDistroName,omitempty"`
 }
 
+type SourcesScope struct {
+	WorkloadName      *string              `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind     `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string              `json:"workloadNamespace,omitempty"`
+	WorkloadLanguage  *ProgrammingLanguage `json:"workloadLanguage,omitempty"`
+}
+
+type SourcesScopeInput struct {
+	WorkloadName      *string              `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind     `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string              `json:"workloadNamespace,omitempty"`
+	WorkloadLanguage  *ProgrammingLanguage `json:"workloadLanguage,omitempty"`
+}
+
 type SpanAttributeFilter struct {
 	ServiceName           string                     `json:"serviceName"`
 	AttributeKey          string                     `json:"attributeKey"`
@@ -1333,6 +1451,38 @@ type TailSamplingConfig struct {
 type TailSamplingConfigInput struct {
 	Disabled                     *bool   `json:"disabled,omitempty"`
 	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+}
+
+type TailSamplingHTTPServerMatcher struct {
+	Route       *string `json:"route,omitempty"`
+	RoutePrefix *string `json:"routePrefix,omitempty"`
+	Method      *string `json:"method,omitempty"`
+}
+
+type TailSamplingHTTPServerMatcherInput struct {
+	Route       *string `json:"route,omitempty"`
+	RoutePrefix *string `json:"routePrefix,omitempty"`
+	Method      *string `json:"method,omitempty"`
+}
+
+type TailSamplingKafkaMatcher struct {
+	KafkaTopic *string `json:"kafkaTopic,omitempty"`
+}
+
+type TailSamplingKafkaMatcherInput struct {
+	KafkaTopic *string `json:"kafkaTopic,omitempty"`
+}
+
+type TailSamplingOperationMatcher struct {
+	HTTPServer    *TailSamplingHTTPServerMatcher `json:"httpServer,omitempty"`
+	KafkaConsumer *TailSamplingKafkaMatcher      `json:"kafkaConsumer,omitempty"`
+	KafkaProducer *TailSamplingKafkaMatcher      `json:"kafkaProducer,omitempty"`
+}
+
+type TailSamplingOperationMatcherInput struct {
+	HTTPServer    *TailSamplingHTTPServerMatcherInput `json:"httpServer,omitempty"`
+	KafkaConsumer *TailSamplingKafkaMatcherInput      `json:"kafkaConsumer,omitempty"`
+	KafkaProducer *TailSamplingKafkaMatcherInput      `json:"kafkaProducer,omitempty"`
 }
 
 type TemplatizationWorkloadFilter struct {
