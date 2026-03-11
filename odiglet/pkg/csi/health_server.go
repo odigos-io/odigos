@@ -2,9 +2,9 @@ package csi
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
@@ -12,11 +12,12 @@ import (
 type HealthService struct {
 	grpc_health_v1.UnimplementedHealthServer
 	Identity *IdentityServer
+	Logger   *commonlogger.OdigosLogger
 }
 
 // Check performs the health check by validating CSI driver readiness
 func (h *HealthService) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
-	slog.Debug("Health check requested", "service", req.Service)
+	h.Logger.Debug("Health check requested", "service", req.Service)
 
 	// Check required paths using shared helper
 	if !checkRequiredPaths() {
@@ -27,13 +28,13 @@ func (h *HealthService) Check(ctx context.Context, req *grpc_health_v1.HealthChe
 
 	// Also verify we can call our own CSI Identity service
 	if _, err := h.Identity.GetPluginInfo(ctx, &csi.GetPluginInfoRequest{}); err != nil {
-		slog.Debug("Health check failed - CSI Identity service not responding", "error", err)
+		h.Logger.Debug("Health check failed - CSI Identity service not responding", "error", err)
 		return &grpc_health_v1.HealthCheckResponse{
 			Status: grpc_health_v1.HealthCheckResponse_NOT_SERVING,
 		}, nil
 	}
 
-	slog.Debug("Health check passed - CSI driver healthy")
+	h.Logger.Debug("Health check passed - CSI driver healthy")
 	return &grpc_health_v1.HealthCheckResponse{
 		Status: grpc_health_v1.HealthCheckResponse_SERVING,
 	}, nil

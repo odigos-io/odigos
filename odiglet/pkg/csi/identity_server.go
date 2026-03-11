@@ -2,9 +2,9 @@ package csi
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -21,12 +21,14 @@ type IdentityServer struct {
 	csi.UnimplementedIdentityServer
 	name    string
 	version string
+	logger  *commonlogger.OdigosLogger
 }
 
-func NewIdentityServer(name, version string) *IdentityServer {
+func NewIdentityServer(name, version string, logger *commonlogger.OdigosLogger) *IdentityServer {
 	return &IdentityServer{
 		name:    name,
 		version: version,
+		logger:  logger,
 	}
 }
 
@@ -34,7 +36,7 @@ func NewIdentityServer(name, version string) *IdentityServer {
 // kubelet uses this to identify the driver and match it with CSI volume specs.
 // The name "odigos.csi.driver" must match the driver field in pod CSI volumes.
 func (s *IdentityServer) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	slog.Debug("GetPluginInfo called")
+	s.logger.Debug("GetPluginInfo called")
 	return &csi.GetPluginInfoResponse{
 		Name:          s.name,
 		VendorVersion: s.version,
@@ -45,7 +47,7 @@ func (s *IdentityServer) GetPluginInfo(ctx context.Context, req *csi.GetPluginIn
 // We only implement Node service (not Controller), so we return minimal capabilities.
 // This tells kubelet we handle ephemeral inline volumes but not persistent volumes.
 func (s *IdentityServer) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
-	slog.Debug("GetPluginCapabilities called")
+	s.logger.Debug("GetPluginCapabilities called")
 
 	return &csi.GetPluginCapabilitiesResponse{
 		Capabilities: []*csi.PluginCapability{
@@ -64,7 +66,7 @@ func (s *IdentityServer) GetPluginCapabilities(ctx context.Context, req *csi.Get
 // This method checks that all required host paths are accessible before declaring ready.
 // If any critical path is missing, the driver reports not ready.
 func (s *IdentityServer) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	slog.Debug("Probe called")
+	s.logger.Debug("Probe called")
 
 	// Use shared helper to check required paths
 	if !checkRequiredPaths() {
@@ -73,7 +75,7 @@ func (s *IdentityServer) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi
 		}, nil
 	}
 
-	slog.Debug("All required paths accessible, driver ready")
+	s.logger.Debug("All required paths accessible, driver ready")
 	return &csi.ProbeResponse{
 		Ready: &wrapperspb.BoolValue{Value: true},
 	}, nil

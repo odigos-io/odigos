@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"strings"
 	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -28,10 +28,11 @@ import (
 // This replaces the device plugin approach with a standard CSI interface.
 type NodeServer struct {
 	csi.UnimplementedNodeServer
+	logger *commonlogger.OdigosLogger
 }
 
-func NewNodeServer() *NodeServer {
-	return &NodeServer{}
+func NewNodeServer(logger *commonlogger.OdigosLogger) *NodeServer {
+	return &NodeServer{logger: logger}
 }
 
 func (s *NodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
@@ -70,7 +71,7 @@ func (s *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublish
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to check if path is mounted: %v", err))
 	} else if isMounted {
 		podUID := extractPodUIDFromPath(targetPath)
-		slog.Info("Volume already mounted (idempotent)", "volumeId", volumeId, "podUID", podUID)
+		s.logger.Info("Volume already mounted (idempotent)", "volumeId", volumeId, "podUID", podUID)
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 	// The device plugin returns a Mount configuration that kubelet applies.
@@ -103,7 +104,7 @@ func (s *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublish
 	}
 
 	podUID := extractPodUIDFromPath(targetPath)
-	slog.Info("Successfully mounted volume", "volumeId", req.GetVolumeId(), "podUID", podUID, "sourcePath", sourcePath)
+	s.logger.Info("Successfully mounted volume", "volumeId", req.GetVolumeId(), "podUID", podUID, "sourcePath", sourcePath)
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -126,7 +127,7 @@ func (s *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpub
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to check if path is mounted: %v", err))
 	} else if !isMounted {
 		podUID := extractPodUIDFromPath(targetPath)
-		slog.Info("Volume not mounted (idempotent)", "volumeId", req.GetVolumeId(), "podUID", podUID)
+		s.logger.Info("Volume not mounted (idempotent)", "volumeId", req.GetVolumeId(), "podUID", podUID)
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
@@ -136,7 +137,7 @@ func (s *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpub
 	}
 
 	podUID := extractPodUIDFromPath(targetPath)
-	slog.Info("Successfully unmounted volume", "volumeId", req.GetVolumeId(), "podUID", podUID)
+	s.logger.Info("Successfully unmounted volume", "volumeId", req.GetVolumeId(), "podUID", podUID)
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 

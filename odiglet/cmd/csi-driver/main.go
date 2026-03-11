@@ -12,6 +12,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	odigletcsi "github.com/odigos-io/odigos/odiglet/pkg/csi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -19,14 +20,16 @@ import (
 )
 
 func main() {
-	slog.Info("Starting Odigos CSI Driver", "name", k8sconsts.OdigletCSIDriverName, "version", k8sconsts.OdigletCSIDriverVersion)
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"), "odiglet")
+	logger := commonlogger.LoggerCompat().With("subsystem", "csi-driver")
+	logger.Info("Starting Odigos CSI Driver", "name", k8sconsts.OdigletCSIDriverName, "version", k8sconsts.OdigletCSIDriverVersion)
 
 	// Create CSI driver
-	driver := NewCSIDriver(k8sconsts.OdigletCSIDriverName, k8sconsts.OdigletCSIDriverVersion)
+	driver := NewCSIDriver(k8sconsts.OdigletCSIDriverName, k8sconsts.OdigletCSIDriverVersion, logger)
 
 	// Start gRPC server
-	if err := driver.Run(); err != nil {
-		slog.Error("Failed to start CSI driver", "error", err)
+	if err := driver.Run(logger); err != nil {
+		logger.Error("Failed to start CSI driver", "err", err)
 		os.Exit(1)
 	}
 }
@@ -40,16 +43,16 @@ type CSIDriver struct {
 	node               *odigletcsi.NodeServer
 }
 
-func NewCSIDriver(name, version string) *CSIDriver {
+func NewCSIDriver(name, version string, logger *commonlogger.OdigosLogger) *CSIDriver {
 	return &CSIDriver{
 		name:     name,
 		version:  version,
-		identity: odigletcsi.NewIdentityServer(name, version),
-		node:     odigletcsi.NewNodeServer(),
+		identity: odigletcsi.NewIdentityServer(name, version, logger),
+		node:     odigletcsi.NewNodeServer(logger),
 	}
 }
 
-func (d *CSIDriver) Run() error {
+func (d *CSIDriver) Run(logger *commonlogger.OdigosLogger) error {
 
 	// Remove any existing socket file and ensure directory exists
 	if err := os.Remove(k8sconsts.OdigletCSISocketPath); err != nil && !os.IsNotExist(err) {
@@ -71,7 +74,7 @@ func (d *CSIDriver) Run() error {
 	csi.RegisterNodeServer(d.server, d.node)         // Node: handles actual volume mount/unmount operations
 
 	// Register custom health service that checks CSI driver health
-	healthService := &odigletcsi.HealthService{Identity: d.identity}
+	healthService := &odigletcsi.HealthService{Identity: d.identity, Logger: logger}
 	grpc_health_v1.RegisterHealthServer(d.server, healthService)
 
 	// Create context for coordinated shutdown
@@ -80,12 +83,12 @@ func (d *CSIDriver) Run() error {
 
 	// Start kubelet registration in background
 	go func() {
-		if err := d.registerWithKubelet(ctx); err != nil && err != context.Canceled {
-			slog.Error("Failed to register with kubelet", "error", err)
+		if err := d.registerWithKubelet(ctx, logger); err != nil && err != context.Canceled {
+			logger.Error("Failed to register with kubelet", "err", err)
 		}
 	}()
 
-	slog.Info("Listening on", "endpoint", k8sconsts.OdigletCSIEndpoint)
+	logger.Info("Listening on", "endpoint", k8sconsts.OdigletCSIEndpoint)
 
 	// Handle shutdown gracefully
 	go func() {
@@ -106,7 +109,7 @@ func (d *CSIDriver) Run() error {
 }
 
 // registerWithKubelet registers the CSI driver with kubelet using the plugin registration API
-func (d *CSIDriver) registerWithKubelet(ctx context.Context) error {
+func (d *CSIDriver) registerWithKubelet(ctx context.Context, logger *commonlogger.OdigosLogger) error {
 	pluginRegistrationPath := k8sconsts.OdigletCSIRegistrationPath
 	csiAddress := k8sconsts.OdigletCSISocketPath
 	kubeletRegistrationPath := k8sconsts.KubeletPluginSocket
@@ -127,12 +130,13 @@ func (d *CSIDriver) registerWithKubelet(ctx context.Context) error {
 	}
 	defer lis.Close()
 
-	slog.Info("Starting kubelet registration", "socket", registrationPath)
+	logger.Info("Starting kubelet registration", "socket", registrationPath)
 
 	registrar := &nodeRegistrar{
 		driverName:              d.name,
 		endpoint:                csiAddress,
 		kubeletRegistrationPath: kubeletRegistrationPath,
+		logger:                  logger,
 	}
 
 	d.registrationServer = grpc.NewServer()
@@ -153,10 +157,11 @@ type nodeRegistrar struct {
 	driverName              string
 	endpoint                string
 	kubeletRegistrationPath string
+	logger                  *commonlogger.OdigosLogger
 }
 
 func (r *nodeRegistrar) GetInfo(ctx context.Context, req *v1.InfoRequest) (*v1.PluginInfo, error) {
-	slog.Info("Registration GetInfo called")
+	r.logger.Info("Registration GetInfo called")
 	return &v1.PluginInfo{
 		Type:              v1.CSIPlugin,
 		Name:              r.driverName,
@@ -167,10 +172,10 @@ func (r *nodeRegistrar) GetInfo(ctx context.Context, req *v1.InfoRequest) (*v1.P
 
 func (r *nodeRegistrar) NotifyRegistrationStatus(ctx context.Context, status *v1.RegistrationStatus) (*v1.RegistrationStatusResponse, error) {
 	if !status.PluginRegistered {
-		slog.Error("Registration failed", "message", status.Error)
+		r.logger.Error("Registration failed", "message", status.Error)
 		return nil, fmt.Errorf("registration failed: %s", status.Error)
 	}
 
-	slog.Info("CSI driver successfully registered with kubelet")
+	r.logger.Info("CSI driver successfully registered with kubelet")
 	return &v1.RegistrationStatusResponse{}, nil
 }
