@@ -8,6 +8,8 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/category"
@@ -57,7 +59,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		keepTrace := tracePercentage <= percentageAtMost
 
 		if keepTrace || p.config.DryRun {
-			enrichSpansWithSamplingAttributes(td, "noisy", noisyOperationRule.Id, noisyOperationRule.Name, percentageAtMost, p.config.DryRun, keepTrace)
+			enrichSpansWithSamplingAttributes(td, "noisy", noisyOperationRule.Id, noisyOperationRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
 			return td, nil
 		} else {
 			// drop the trace by not returning anything in the result.
@@ -65,16 +67,30 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		}
 	}
 
-	matched, highlyRelevantOperationRule, _ := category.EvaluateHighlyRelevantOperations(ctx, td, p.odigosConfigExtension, tracePercentage, p.telemetryBuilder)
+	matched, highlyRelevantOperationRule, highlyRelevantOperationRulesMetrics := category.EvaluateHighlyRelevantOperations(ctx, td, p.odigosConfigExtension, tracePercentage)
 	if matched {
 		percentageAtLeast := category.GetPercentageOrDefault(highlyRelevantOperationRule.PercentageAtLeast, 100.0)
 		keepTrace := tracePercentage <= percentageAtLeast
 
 		if keepTrace || p.config.DryRun {
-			enrichSpansWithSamplingAttributes(td, "highly_relevant", highlyRelevantOperationRule.Id, highlyRelevantOperationRule.Name, percentageAtLeast, p.config.DryRun, keepTrace)
+			enrichSpansWithSamplingAttributes(td, "highly_relevant", highlyRelevantOperationRule.Id, highlyRelevantOperationRule.Name, percentageAtLeast, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
 			return td, nil
 		} else {
 			return ptrace.NewTraces(), nil
+		}
+	}
+	for ruleId, metrics := range highlyRelevantOperationRulesMetrics {
+		attrs := []attribute.KeyValue{
+			attribute.String("rule.id", ruleId),
+			attribute.Bool("dry_run", p.config.DryRun),
+		}
+		if metrics.RuleName != "" {
+			attrs = append(attrs, attribute.String("rule.name", metrics.RuleName))
+		}
+
+		p.telemetryBuilder.OdigosSamplingTraceCheckCount.Add(ctx, 1, metric.WithAttributes(attrs...))
+		if metrics.Matched {
+			p.telemetryBuilder.OdigosSamplingTraceMatchCount.Add(ctx, 1, metric.WithAttributes(attrs...))
 		}
 	}
 
@@ -84,7 +100,7 @@ func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Tra
 		keepTrace := tracePercentage <= percentageAtMost
 
 		if keepTrace || p.config.DryRun {
-			enrichSpansWithSamplingAttributes(td, "cost_reduction", costReductionRule.Id, costReductionRule.Name, percentageAtMost, p.config.DryRun, keepTrace)
+			enrichSpansWithSamplingAttributes(td, "cost_reduction", costReductionRule.Id, costReductionRule.Name, percentageAtMost, p.config.DryRun, keepTrace, p.config.SpanSamplingAttributes)
 			return td, nil
 		} else {
 			return ptrace.NewTraces(), nil

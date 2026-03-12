@@ -63,10 +63,6 @@ func EvaluateCostReductionOperations(trace ptrace.Traces, configProvider collect
 		}
 	}
 
-	for _, metrics := range rulesMetrics {
-		metrics.TraceCheckedCount = 1
-	}
-
 	rulesMetrics = recordCostReductionMetricsMatchingAndDropped(rulesMetrics, matchingRules, tracePercentage, totalSpansCount)
 	decidingRule := calculateCostReductionDecidingRule(matchingRules)
 

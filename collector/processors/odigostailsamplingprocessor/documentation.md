@@ -6,9 +6,17 @@
 
 The following telemetry is emitted by this component.
 
-### otelcol_odigos.sampling.count_traces_checked
+### otelcol_odigos.sampling.trace.check_count
 
 Number of traces checked for sampling decisions per rule. [Development]
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {traces} | Sum | Int | true | Development |
+
+### otelcol_odigos.sampling.trace.match_count
+
+Number of traces where this rule was matched at least once. [Development]
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |

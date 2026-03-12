@@ -5,10 +5,7 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 
-	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/internal/metadata"
 	"github.com/odigos-io/odigos/collector/processors/odigostailsamplingprocessor/matchers"
 	commonapisampling "github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/collector"
@@ -21,7 +18,7 @@ type RuleMetrics struct {
 	RuleTotalSpansKeptCount int
 }
 
-func EvaluateHighlyRelevantOperations(ctx context.Context, trace ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64, telemetryBuilder *metadata.TelemetryBuilder) (bool, *commonapisampling.HighlyRelevantOperation, map[string]*RuleMetrics) {
+func EvaluateHighlyRelevantOperations(ctx context.Context, trace ptrace.Traces, configProvider collector.OdigosConfigExtension, tracePercentage float64) (bool, *commonapisampling.HighlyRelevantOperation, map[string]*RuleMetrics) {
 
 	// keep a trace for metrics for running rules on this trace.
 	// this map is not expected to be very large,
@@ -71,13 +68,7 @@ func EvaluateHighlyRelevantOperations(ctx context.Context, trace ptrace.Traces, 
 		}
 	}
 
-	for ruleId, metrics := range rulesMetrics {
-		telemetryBuilder.OdigosSamplingCountTracesChecked.Add(ctx, 1,
-			metric.WithAttributes(attribute.String("rule.id", ruleId)),
-		)
-		metrics.TraceCheckedCount = 1
-	}
-	rulesMetrics = recordMetricsMatchingAndKept(rulesMetrics, matchingRules, tracePercentage, totalSpansCount)
+	rulesMetrics = recordMetricsTracesMatchingAndKept(rulesMetrics, matchingRules, tracePercentage, totalSpansCount)
 	decidingRule := calculateDecidingRule(matchingRules)
 
 	return decidingRule != nil, decidingRule, rulesMetrics
@@ -89,7 +80,13 @@ func recordMetricsInvocationsForSingleSpan(rulesMetrics map[string]*RuleMetrics,
 	for _, rule := range highlyRelevantOperations {
 		metrics, found := rulesMetrics[rule.Id]
 		if !found {
-			metrics = &RuleMetrics{}
+			metrics = &RuleMetrics{
+				CommonRuleMetrics: CommonRuleMetrics{
+					RuleId:         rule.Id,
+					RuleName:       rule.Name,
+					RulePercentage: GetPercentageOrDefault100(rule.PercentageAtLeast),
+				},
+			}
 			rulesMetrics[rule.Id] = metrics
 		}
 		metrics.SpanCheckedCount++
@@ -101,6 +98,7 @@ func recordMetricsInvocationsForSingleSpan(rulesMetrics map[string]*RuleMetrics,
 func recordMetricsMatchingForSingleSpan(rulesMetrics map[string]*RuleMetrics, matchedRules []*commonapisampling.HighlyRelevantOperation) {
 	for _, rule := range matchedRules {
 		metrics := rulesMetrics[rule.Id]
+		metrics.CommonRuleMetrics.Matched = true
 		metrics.SpanMatchingCount++
 	}
 }
@@ -210,10 +208,10 @@ func calculateDecidingRule(matchingRules map[string]*commonapisampling.HighlyRel
 	return selectedRule
 }
 
-// recordMetricsMatchingAndKept updates rulesMetrics for each matching rule:
+// recordMetricsTracesMatchingAndKept updates rulesMetrics for each matching rule:
 // - the trace is counted once for being matched by this rule.
 // - if the rules decision for this trace is "keep", we count the trace once and number of spans in the "kept" metrics.
-func recordMetricsMatchingAndKept(rulesMetrics map[string]*RuleMetrics, matchingRules map[string]*commonapisampling.HighlyRelevantOperation, tracePercentage float64, totalSpansCount int) map[string]*RuleMetrics {
+func recordMetricsTracesMatchingAndKept(rulesMetrics map[string]*RuleMetrics, matchingRules map[string]*commonapisampling.HighlyRelevantOperation, tracePercentage float64, totalSpansCount int) map[string]*RuleMetrics {
 	for _, matchingRule := range matchingRules {
 		kept := tracePercentage <= GetPercentageOrDefault100(matchingRule.PercentageAtLeast)
 		metrics := rulesMetrics[matchingRule.Id] // rule has already been added when we marked the trace as matched by this rule.

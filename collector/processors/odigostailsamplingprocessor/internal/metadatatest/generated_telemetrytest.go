@@ -21,9 +21,9 @@ func NewSettings(tt *componenttest.Telemetry) processor.Settings {
 	return set
 }
 
-func AssertEqualOdigosSamplingCountTracesChecked(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+func AssertEqualOdigosSamplingTraceCheckCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
-		Name:        "otelcol_odigos.sampling.count_traces_checked",
+		Name:        "otelcol_odigos.sampling.trace.check_count",
 		Description: "Number of traces checked for sampling decisions per rule. [Development]",
 		Unit:        "{traces}",
 		Data: metricdata.Sum[int64]{
@@ -32,7 +32,23 @@ func AssertEqualOdigosSamplingCountTracesChecked(t *testing.T, tt *componenttest
 			DataPoints:  dps,
 		},
 	}
-	got, err := tt.GetMetric("otelcol_odigos.sampling.count_traces_checked")
+	got, err := tt.GetMetric("otelcol_odigos.sampling.trace.check_count")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
+func AssertEqualOdigosSamplingTraceMatchCount(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_odigos.sampling.trace.match_count",
+		Description: "Number of traces where this rule was matched at least once. [Development]",
+		Unit:        "{traces}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_odigos.sampling.trace.match_count")
 	require.NoError(t, err)
 	metricdatatest.AssertEqual(t, want, got, opts...)
 }
