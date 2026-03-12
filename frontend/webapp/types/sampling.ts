@@ -79,6 +79,8 @@ export interface CostReductionRule {
 }
 
 export interface SamplingRules {
+  id: string;
+  name?: string | null;
   noisyOperations: NoisyOperationRule[];
   highlyRelevantOperations: HighlyRelevantOperationRule[];
   costReductionRules: CostReductionRule[];

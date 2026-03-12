@@ -3,8 +3,8 @@ import { gql } from '@apollo/client';
 // ---- Noisy Operations ----
 
 export const CREATE_NOISY_OPERATION_RULE = gql`
-  mutation CreateNoisyOperationRule($rule: NoisyOperationRuleInput!) {
-    createNoisyOperationRule(rule: $rule) {
+  mutation CreateNoisyOperationRule($samplingId: ID!, $rule: NoisyOperationRuleInput!) {
+    createNoisyOperationRule(samplingId: $samplingId, rule: $rule) {
       ruleId
       name
       disabled
@@ -20,8 +20,8 @@ export const CREATE_NOISY_OPERATION_RULE = gql`
 `;
 
 export const UPDATE_NOISY_OPERATION_RULE = gql`
-  mutation UpdateNoisyOperationRule($ruleId: ID!, $rule: NoisyOperationRuleInput!) {
-    updateNoisyOperationRule(ruleId: $ruleId, rule: $rule) {
+  mutation UpdateNoisyOperationRule($samplingId: ID!, $ruleId: ID!, $rule: NoisyOperationRuleInput!) {
+    updateNoisyOperationRule(samplingId: $samplingId, ruleId: $ruleId, rule: $rule) {
       ruleId
       name
       disabled
@@ -37,16 +37,16 @@ export const UPDATE_NOISY_OPERATION_RULE = gql`
 `;
 
 export const DELETE_NOISY_OPERATION_RULE = gql`
-  mutation DeleteNoisyOperationRule($ruleId: ID!) {
-    deleteNoisyOperationRule(ruleId: $ruleId)
+  mutation DeleteNoisyOperationRule($samplingId: ID!, $ruleId: ID!) {
+    deleteNoisyOperationRule(samplingId: $samplingId, ruleId: $ruleId)
   }
 `;
 
 // ---- Highly Relevant Operations ----
 
 export const CREATE_HIGHLY_RELEVANT_OPERATION_RULE = gql`
-  mutation CreateHighlyRelevantOperationRule($rule: HighlyRelevantOperationRuleInput!) {
-    createHighlyRelevantOperationRule(rule: $rule) {
+  mutation CreateHighlyRelevantOperationRule($samplingId: ID!, $rule: HighlyRelevantOperationRuleInput!) {
+    createHighlyRelevantOperationRule(samplingId: $samplingId, rule: $rule) {
       ruleId
       name
       disabled
@@ -65,8 +65,8 @@ export const CREATE_HIGHLY_RELEVANT_OPERATION_RULE = gql`
 `;
 
 export const UPDATE_HIGHLY_RELEVANT_OPERATION_RULE = gql`
-  mutation UpdateHighlyRelevantOperationRule($ruleId: ID!, $rule: HighlyRelevantOperationRuleInput!) {
-    updateHighlyRelevantOperationRule(ruleId: $ruleId, rule: $rule) {
+  mutation UpdateHighlyRelevantOperationRule($samplingId: ID!, $ruleId: ID!, $rule: HighlyRelevantOperationRuleInput!) {
+    updateHighlyRelevantOperationRule(samplingId: $samplingId, ruleId: $ruleId, rule: $rule) {
       ruleId
       name
       disabled
@@ -85,16 +85,16 @@ export const UPDATE_HIGHLY_RELEVANT_OPERATION_RULE = gql`
 `;
 
 export const DELETE_HIGHLY_RELEVANT_OPERATION_RULE = gql`
-  mutation DeleteHighlyRelevantOperationRule($ruleId: ID!) {
-    deleteHighlyRelevantOperationRule(ruleId: $ruleId)
+  mutation DeleteHighlyRelevantOperationRule($samplingId: ID!, $ruleId: ID!) {
+    deleteHighlyRelevantOperationRule(samplingId: $samplingId, ruleId: $ruleId)
   }
 `;
 
 // ---- Cost Reduction Rules ----
 
 export const CREATE_COST_REDUCTION_RULE = gql`
-  mutation CreateCostReductionRule($rule: CostReductionRuleInput!) {
-    createCostReductionRule(rule: $rule) {
+  mutation CreateCostReductionRule($samplingId: ID!, $rule: CostReductionRuleInput!) {
+    createCostReductionRule(samplingId: $samplingId, rule: $rule) {
       ruleId
       name
       disabled
@@ -111,8 +111,8 @@ export const CREATE_COST_REDUCTION_RULE = gql`
 `;
 
 export const UPDATE_COST_REDUCTION_RULE = gql`
-  mutation UpdateCostReductionRule($ruleId: ID!, $rule: CostReductionRuleInput!) {
-    updateCostReductionRule(ruleId: $ruleId, rule: $rule) {
+  mutation UpdateCostReductionRule($samplingId: ID!, $ruleId: ID!, $rule: CostReductionRuleInput!) {
+    updateCostReductionRule(samplingId: $samplingId, ruleId: $ruleId, rule: $rule) {
       ruleId
       name
       disabled
@@ -129,7 +129,7 @@ export const UPDATE_COST_REDUCTION_RULE = gql`
 `;
 
 export const DELETE_COST_REDUCTION_RULE = gql`
-  mutation DeleteCostReductionRule($ruleId: ID!) {
-    deleteCostReductionRule(ruleId: $ruleId)
+  mutation DeleteCostReductionRule($samplingId: ID!, $ruleId: ID!) {
+    deleteCostReductionRule(samplingId: $samplingId, ruleId: $ruleId)
   }
 `;
