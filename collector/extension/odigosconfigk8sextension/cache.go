@@ -1,6 +1,7 @@
 package odigosconfigk8sextension
 
 import (
+	"strings"
 	"sync"
 
 	commonapi "github.com/odigos-io/odigos/common/api"
@@ -16,18 +17,32 @@ type workloadKey struct {
 	Name      string
 }
 
+// keyPrefixFromKey returns the workload prefix for a full cache key (e.g. "ns/kind/name/container" -> "ns/kind/name/").
+func keyPrefixFromKey(key string) string {
+	i := strings.LastIndex(key, "/")
+	if i < 0 {
+		return ""
+	}
+	return key[:i+1]
+}
+
 // cache stores workload sampling config by WorkloadKey.
 // When Set or Delete is called, the cache invokes all registered callbacks
 // so consumers stay in sync without the informer knowing about callbacks.
+// workloadKeysIndex maps workload key (e.g. "ns/kind/name/") to set of full cache keys for that workload.
 type cache struct {
-	mu        sync.RWMutex
-	data      map[string]*commonapi.ContainerCollectorConfig
-	callbacks []collector.WorkloadConfigCacheCallback
+	mu                sync.RWMutex
+	data              map[string]*commonapi.ContainerCollectorConfig
+	callbacks         []collector.WorkloadConfigCacheCallback
+	workloadKeysIndex map[string]map[string]struct{}
 }
 
 // newCache creates a new empty cache.
 func newCache() *cache {
-	return &cache{data: make(map[string]*commonapi.ContainerCollectorConfig)}
+	return &cache{
+		data:              make(map[string]*commonapi.ContainerCollectorConfig),
+		workloadKeysIndex: make(map[string]map[string]struct{}),
+	}
 }
 
 // addCallback appends a callback invoked on Set/Delete. Called by the extension when
@@ -46,12 +61,19 @@ func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 	return val, found
 }
 
-// Set stores the required config for the given workload key, then invokes all registered callbacks.
+// Set stores the required config for the given workload key, updates the workload keys index, then invokes all registered callbacks.
 // We snapshot the callback list under the lock (so we never read c.callbacks after unlock, avoiding
 // a race with addCallback), then unlock and invoke each callback.
 func (c *cache) Set(key string, cfg *commonapi.ContainerCollectorConfig) {
 	c.mu.Lock()
 	c.data[key] = cfg
+	workloadKey := keyPrefixFromKey(key)
+	if workloadKey != "" {
+		if c.workloadKeysIndex[workloadKey] == nil {
+			c.workloadKeysIndex[workloadKey] = make(map[string]struct{})
+		}
+		c.workloadKeysIndex[workloadKey][key] = struct{}{}
+	}
 	n := len(c.callbacks)
 	currentCallBacks := make([]collector.WorkloadConfigCacheCallback, n)
 	copy(currentCallBacks, c.callbacks)
@@ -70,12 +92,19 @@ func (c *cache) Range(f func(key string, cfg *commonapi.ContainerCollectorConfig
 	}
 }
 
-// Delete removes the entry for the given key, then invokes all registered callbacks.
+// Delete removes the entry for the given key, updates the workload keys index, then invokes all registered callbacks.
 // We snapshot the callback list under the lock (so we never read c.callbacks after unlock, avoiding
 // a race with addCallback), then unlock and invoke each callback.
 func (c *cache) Delete(key string) {
 	c.mu.Lock()
 	delete(c.data, key)
+	workloadKey := keyPrefixFromKey(key)
+	if workloadKey != "" {
+		delete(c.workloadKeysIndex[workloadKey], key)
+		if len(c.workloadKeysIndex[workloadKey]) == 0 {
+			delete(c.workloadKeysIndex, workloadKey)
+		}
+	}
 	n := len(c.callbacks)
 	currentCallBacks := make([]collector.WorkloadConfigCacheCallback, n)
 	copy(currentCallBacks, c.callbacks)
@@ -83,4 +112,20 @@ func (c *cache) Delete(key string) {
 	for _, cb := range currentCallBacks {
 		cb.OnDeleteKey(key)
 	}
+}
+
+// getKeysForWorkload returns a copy of the full cache keys for the given workload key. Caller must not modify the result.
+func (c *cache) getKeysForWorkload(workloadKey string) []string {
+	c.mu.RLock()
+	set := c.workloadKeysIndex[workloadKey]
+	if len(set) == 0 {
+		c.mu.RUnlock()
+		return nil
+	}
+	out := make([]string, 0, len(set))
+	for k := range set {
+		out = append(out, k)
+	}
+	c.mu.RUnlock()
+	return out
 }

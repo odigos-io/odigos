@@ -64,6 +64,7 @@ func resolveAndRegisterExtension(ctx context.Context, host component.Host, proc 
 	if ext, ok := extensions[directID]; ok {
 		tryRegisterWithExtension(ext, proc, directID.String(), logger)
 	} else {
+		// Fallback when extension is registered with a named ID (e.g. odigos_config_k8s/production).
 		for id, ext := range extensions {
 			if id.Type() == extType {
 				tryRegisterWithExtension(ext, proc, id.String(), logger)
@@ -77,7 +78,7 @@ func resolveAndRegisterExtension(ctx context.Context, host component.Host, proc 
 		}
 	}
 	if proc.provider == nil {
-		logger.Warn("workload config extension not found; processor will apply heuristics to all spans",
+		logger.Info("workload config extension not found; using static rules from config",
 			zap.String("type", extTypeStr))
 	}
 	return nil

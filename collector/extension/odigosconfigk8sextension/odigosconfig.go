@@ -2,8 +2,6 @@ package odigosconfigk8sextension
 
 import (
 	"context"
-	"strings"
-	"sync"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -22,11 +20,6 @@ type OdigosWorkloadConfig struct {
 	logger          *zap.Logger
 	cancel          context.CancelFunc
 	informerFactory dynamicinformer.DynamicSharedInformerFactory // set when in-cluster; nil otherwise
-
-	// workloadKeysIndex maps key prefix (e.g. "ns/kind/name/") to set of full cache keys for that workload.
-	// Used to get keys by prefix without iterating the full cache.
-	workloadKeysIndex map[string]map[string]struct{}
-	workloadIndexMu   sync.RWMutex
 }
 
 // OdigosConfigExtension is the interface that must be implemented by an extension that wants to provide Odigos configuration.
@@ -35,60 +28,9 @@ var _ collector.OdigosConfigExtension = (*OdigosWorkloadConfig)(nil)
 // NewOdigosConfig creates a new OdigosConfig extension.
 func NewOdigosConfig(settings component.TelemetrySettings) (*OdigosWorkloadConfig, error) {
 	return &OdigosWorkloadConfig{
-		cache:             newCache(),
-		logger:            settings.Logger,
-		workloadKeysIndex: make(map[string]map[string]struct{}),
+		cache:  newCache(),
+		logger: settings.Logger,
 	}, nil
-}
-
-// keyPrefixFromKey returns the workload prefix for a full cache key (e.g. "ns/kind/name/container" -> "ns/kind/name/").
-func keyPrefixFromKey(key string) string {
-	i := strings.LastIndex(key, "/")
-	if i < 0 {
-		return ""
-	}
-	return key[:i+1]
-}
-
-func (o *OdigosWorkloadConfig) addKeyToIndex(key string) {
-	prefix := keyPrefixFromKey(key)
-	if prefix == "" {
-		return
-	}
-	o.workloadIndexMu.Lock()
-	defer o.workloadIndexMu.Unlock()
-	if o.workloadKeysIndex[prefix] == nil {
-		o.workloadKeysIndex[prefix] = make(map[string]struct{})
-	}
-	o.workloadKeysIndex[prefix][key] = struct{}{}
-}
-
-func (o *OdigosWorkloadConfig) removeKeyFromIndex(key string) {
-	prefix := keyPrefixFromKey(key)
-	if prefix == "" {
-		return
-	}
-	o.workloadIndexMu.Lock()
-	defer o.workloadIndexMu.Unlock()
-	delete(o.workloadKeysIndex[prefix], key)
-	if len(o.workloadKeysIndex[prefix]) == 0 {
-		delete(o.workloadKeysIndex, prefix)
-	}
-}
-
-// getKeysForPrefix returns a copy of the full cache keys that have the given prefix. Caller must not modify the result.
-func (o *OdigosWorkloadConfig) getKeysForPrefix(prefix string) []string {
-	o.workloadIndexMu.RLock()
-	defer o.workloadIndexMu.RUnlock()
-	set := o.workloadKeysIndex[prefix]
-	if len(set) == 0 {
-		return nil
-	}
-	out := make([]string, 0, len(set))
-	for k := range set {
-		out = append(out, k)
-	}
-	return out
 }
 
 // Start starts the dynamic informer for InstrumentationConfigs. The informer

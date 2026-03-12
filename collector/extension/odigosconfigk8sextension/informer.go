@@ -156,12 +156,11 @@ func (o *OdigosWorkloadConfig) parseWorkloadCollectorConfig(workloadKey workload
 		}
 		if c.ContainerName == "" {
 			// Lookup always uses container-specific key; workload-level "default" is not supported.
-			o.logger.Debug("skipping container collector config with empty containerName", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+			o.logger.Error("skipping container collector config with empty containerName", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
 			continue
 		}
 		key := k8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, c.ContainerName)
-		cCopy := c
-		out = append(out, containerEntry{key: key, cfg: &cCopy})
+		out = append(out, containerEntry{key: key, cfg: &c})
 	}
 	return out
 }
@@ -174,23 +173,21 @@ func (o *OdigosWorkloadConfig) parseWorkloadCollectorConfig(workloadKey workload
 // entries — cache.Delete (cache invokes OnDeleteKey). No span sees a gap.
 func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKey, desired []containerEntry) {
 	workloadKeyStr := WorkloadKeyString(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name)
-	keyPrefix := workloadKeyStr + "/"
+	workloadIndexKey := workloadKeyStr + "/"
 
-	oldKeys := o.getKeysForPrefix(keyPrefix)
+	oldKeys := o.cache.getKeysForWorkload(workloadIndexKey)
 	newKeys := make(map[string]struct{}, len(desired))
 
-	// 1) Apply new/updated entries first (cache.Set triggers OnSet inside cache).
+	// 1) Apply new/updated entries first (cache.Set updates index and triggers OnSet inside cache).
 	for _, e := range desired {
 		o.cache.Set(e.key, e.cfg)
-		o.addKeyToIndex(e.key)
 		newKeys[e.key] = struct{}{}
 	}
 
-	// 2) Remove stale entries (cache.Delete triggers OnDeleteKey inside cache).
+	// 2) Remove stale entries (cache.Delete updates index and triggers OnDeleteKey inside cache).
 	var numRemoved int
 	for _, k := range oldKeys {
 		if _, inNew := newKeys[k]; !inNew {
-			o.removeKeyFromIndex(k)
 			o.cache.Delete(k)
 			numRemoved++
 		}

@@ -160,7 +160,7 @@ func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Trac
 				scopeSpans := resourceSpans.ScopeSpans().At(j)
 				for k := 0; k < scopeSpans.Spans().Len(); k++ {
 					span := scopeSpans.Spans().At(k)
-					p.processSpan(span)
+					p.processSpanWithStaticRules(span)
 				}
 			}
 		}
@@ -339,7 +339,7 @@ func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod
 }
 
 // processSpanWithRules enhances an HTTP span with templated URL using the given rules.
-// processSpan(span) uses static config rules; extension path uses per-workload rules.
+// processSpanWithStaticRules uses static config rules; extension path uses per-workload rules.
 func (p *urlTemplateProcessor) processSpanWithRules(span ptrace.Span, rules map[int][]TemplatizationRule) {
 	attr := span.Attributes()
 
@@ -364,6 +364,6 @@ func (p *urlTemplateProcessor) processSpanWithRules(span ptrace.Span, rules map[
 	}
 }
 
-func (p *urlTemplateProcessor) processSpan(span ptrace.Span) {
+func (p *urlTemplateProcessor) processSpanWithStaticRules(span ptrace.Span) {
 	p.processSpanWithRules(span, p.templatizationRules)
 }
