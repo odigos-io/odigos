@@ -95,13 +95,13 @@ func buildLogsAttrCache(attributesMap *ebpf.Map, logger *zap.Logger) *logsAttrCa
 	ac := newLogsAttrCache()
 
 	var tgidKey uint32
-	var attrValue [1024]byte
+	var attrValue [attrValueMaxSize]byte
 
 	iter := attributesMap.Iterate()
 	for iter.Next(&tgidKey, &attrValue) {
 		attrStr := string(bytes.TrimRight(attrValue[:], "\x00"))
 		if attrStr != "" {
-			ac.cache[tgidKey] = attrStr
+			ac.set(tgidKey, attrStr)
 		}
 	}
 	if err := iter.Err(); err != nil {
@@ -119,7 +119,7 @@ func lookupAttrs(ac *logsAttrCache, attributesMap *ebpf.Map, tgid uint32) string
 	}
 
 	// Cache miss — try direct map lookup (new process registered since cache was built)
-	var attrValue [1024]byte
+	var attrValue [attrValueMaxSize]byte
 	if err := attributesMap.Lookup(tgid, &attrValue); err == nil {
 		attrStr := string(bytes.TrimRight(attrValue[:], "\x00"))
 		if attrStr != "" {
@@ -138,8 +138,12 @@ func (r *ebpfReceiver) logsReadLoop(ctx context.Context, m *ebpf.Map, attributes
 	}
 	defer reader.Close()
 
-	// Build initial TGID -> packed attributes cache from the ext map
+	// Build initial TGID -> packed attributes cache from the attributes map
 	attrCache := buildLogsAttrCache(attributesMap, r.logger)
+
+	r.logger.Debug("logs read loop started, waiting for eBPF log events",
+		zap.Int("ringBuf_fd", m.FD()),
+		zap.Int("attributesMap_fd", attributesMap.FD()))
 
 	var record BufferRecord
 
@@ -215,6 +219,9 @@ func logEventToPdata(event *logEvent) plog.Logs {
 	sl := rl.ScopeLogs().AppendEmpty()
 	lr := sl.LogRecords().AppendEmpty()
 
+	// bpf_ktime_get_ns() returns boot-time nanoseconds (monotonic clock),
+	// not wall-clock time. Use time.Now() for both timestamps since we
+	// are processing events as they arrive.
 	now := pcommon.NewTimestampFromTime(time.Now())
 	lr.SetTimestamp(now)
 	lr.SetObservedTimestamp(now)
