@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
 
@@ -59,24 +60,10 @@ type CustomIdConfig struct {
 type TemplatizationConfig struct {
 
 	// This option allows fine-tuning for specific paths to customize what to templatize and what not.
-	// The rule looks like this: "/v1/{foo:regex}/bar/{baz}".
-	//
-	// Templated segments:
-	// Each segment part in "{}" denote templatization, and all other segments should match the text exactly.
-	// Inside the "{}" you can optionally set the template name and matching regex.
-	// The template name is the name that will be used in the span name and attributes (e.g. "/users/{userId}").
-	// The regex is optional, and if provided, it will be used to match the segment.
-	// If the regex does not match, the rule will be skipped and other rules and templatization will be evaluated.
-	// Example: "/v1/{foo:\d+}" will match "/v1/123" producing "/v1/{foo}", but not with "/v1/abc".
-	//
-	// Non templated segments:
-	// You can match using 3 different ways:
+	// The rule format supports:
 	// 1. Static string: "/v1/users" will match "/v1/users" but not "/v1/admins".
-	// 2. Regex pattern: "/v1/regex:api-v\d+/bar" will match "/v1/api-v1/bar" or "/v1/api-v2/bar" but not "/v1/api/bar".
-	// 3. Wildcard: "/v1/*" will match "/v1/users" or "/v1/admins" but not "/v1/api-v1/bar" since it only captures one segment.
-	//
-	// regex compatible with golang regexp module https://pkg.go.dev/regexp
-	// for performance reasons, avoid using compute-intensive expressions or adding too many values here.
+	// 2. Templated segment: "/v1/{name}" matches any single segment and produces "/v1/{name}". Template name defaults to "id" if omitted.
+	// 3. Wildcard: "/v1/*" will match "/v1/users" or "/v1/admins" (one segment) but not "/v1/a/b".
 	TemplatizationRules []string `mapstructure:"templatization_rules"`
 
 	// CustomIds is a list of additional regex patterns that will be used to match and templated matching path segment.
@@ -96,6 +83,12 @@ type Config struct {
 	// to apply templatization to the path.
 	// It is optional and defaults to empty.
 	TemplatizationConfig `mapstructure:",squash"`
+
+	// WorkloadConfigExtensionID is the OTel component type string of the workload config extension.
+	// When set, the processor reads per-workload templatization rules from the extension cache
+	// instead of using the static TemplatizationConfig above.
+	// The extension must implement OdigosConfigExtension (e.g. odigosconfigk8sextension).
+	WorkloadConfigExtensionID string `mapstructure:"workload_config_extension"`
 }
 
 var _ xconfmap.Validator = (*Config)(nil)
@@ -154,5 +147,13 @@ func (c Config) Validate() error {
 			return fmt.Errorf("invalid custom id regexp: %w", err)
 		}
 	}
+
+	if c.WorkloadConfigExtensionID != "" {
+		// Validate the extension type string is a valid OTel component type.
+		if _, err := component.NewType(c.WorkloadConfigExtensionID); err != nil {
+			return fmt.Errorf("invalid workload_config_extension type %q: %w", c.WorkloadConfigExtensionID, err)
+		}
+	}
+
 	return nil
 }

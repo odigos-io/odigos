@@ -817,20 +817,6 @@ func TestProcessor_TemplatizationRules(t *testing.T) {
 			expectedName:      "GET /user/{id}", // fallback to name "id" when missing
 			expectedHttpRoute: "/user/{id}",
 		},
-		{
-			name:              "static-string-with-regex-match",
-			rules:             []string{"/regex:api-v\\d+/users/{id}"},
-			path:              "/api-v1/users/123",
-			expectedName:      "GET /api-v1/users/{id}",
-			expectedHttpRoute: "/api-v1/users/{id}",
-		},
-		{
-			name:              "static-string-with-regex-match-different-version",
-			rules:             []string{"/regex:api-v\\d+/users/{id}"},
-			path:              "/api-v2/users/456",
-			expectedName:      "GET /api-v2/users/{id}",
-			expectedHttpRoute: "/api-v2/users/{id}",
-		},
 	}
 
 	for _, tc := range tt {
