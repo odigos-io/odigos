@@ -6,7 +6,6 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
-	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
 	"go.uber.org/zap"
@@ -44,34 +43,18 @@ func createTracesProcessor(
 		return nil, err
 	}
 
-	inner, err := processorhelper.NewTraces(ctx, set, cfg, nextConsumer, proc.processTraces, processorhelper.WithCapabilities(consumerCapabilities))
-	if err != nil {
-		return nil, err
+	opts := []processorhelper.Option{processorhelper.WithCapabilities(consumerCapabilities)}
+	if oCfg.WorkloadConfigExtensionID != "" {
+		opts = append(opts, processorhelper.WithStart(func(ctx context.Context, host component.Host) error {
+			return resolveAndRegisterExtension(ctx, host, proc, oCfg.WorkloadConfigExtensionID, set.Logger)
+		}))
 	}
 
-	if oCfg.WorkloadConfigExtensionID == "" {
-		return inner, nil
-	}
-
-	return &extensionStartWrapper{
-		inner:  inner,
-		proc:   proc,
-		cfg:    oCfg,
-		logger: set.Logger,
-	}, nil
+	return processorhelper.NewTraces(ctx, set, cfg, nextConsumer, proc.processTraces, opts...)
 }
 
-// extensionStartWrapper wraps a processor.Traces to inject the OdigosConfigExtension at Start() time.
-// It locates the extension by component type, waits for its cache to sync, and registers the processor as callback.
-type extensionStartWrapper struct {
-	inner  processor.Traces
-	proc   *urlTemplateProcessor
-	cfg    *Config
-	logger *zap.Logger
-}
-
-func (w *extensionStartWrapper) Start(ctx context.Context, host component.Host) error {
-	extTypeStr := w.cfg.WorkloadConfigExtensionID
+// resolveAndRegisterExtension finds the OdigosConfigExtension by type (and optional named instance), registers the processor as callback, and waits for cache sync.
+func resolveAndRegisterExtension(ctx context.Context, host component.Host, proc *urlTemplateProcessor, extTypeStr string, logger *zap.Logger) error {
 	extType, err := component.NewType(extTypeStr)
 	if err != nil {
 		return fmt.Errorf("invalid workload config extension type %q: %w", extTypeStr, err)
@@ -79,45 +62,33 @@ func (w *extensionStartWrapper) Start(ctx context.Context, host component.Host) 
 	extensions := host.GetExtensions()
 	directID := component.NewID(extType)
 	if ext, ok := extensions[directID]; ok {
-		w.tryRegisterWithExtension(ext, directID.String())
+		tryRegisterWithExtension(ext, proc, directID.String(), logger)
 	} else {
 		for id, ext := range extensions {
 			if id.Type() == extType {
-				w.tryRegisterWithExtension(ext, id.String())
+				tryRegisterWithExtension(ext, proc, id.String(), logger)
 				break
 			}
 		}
 	}
-	if w.proc.provider != nil {
-		if !w.proc.provider.WaitForCacheSync(ctx) {
-			w.logger.Warn("workload config extension cache sync did not complete; some spans may be missed on startup")
+	if proc.provider != nil {
+		if !proc.provider.WaitForCacheSync(ctx) {
+			logger.Warn("workload config extension cache sync did not complete; some spans may be missed on startup")
 		}
 	}
-	if w.proc.provider == nil {
-		w.logger.Warn("workload config extension not found; processor will apply heuristics to all spans",
+	if proc.provider == nil {
+		logger.Warn("workload config extension not found; processor will apply heuristics to all spans",
 			zap.String("type", extTypeStr))
 	}
-	return w.inner.Start(ctx, host)
+	return nil
 }
 
-func (w *extensionStartWrapper) tryRegisterWithExtension(ext component.Component, extensionID string) {
+func tryRegisterWithExtension(ext component.Component, proc *urlTemplateProcessor, extensionID string, logger *zap.Logger) {
 	odigosExt, ok := ext.(collector.OdigosConfigExtension)
 	if !ok {
-		w.logger.Warn("extension does not implement OdigosConfigExtension", zap.String("extension_id", extensionID), zap.String("extGoType", fmt.Sprintf("%T", ext)))
+		logger.Warn("extension does not implement OdigosConfigExtension", zap.String("extension_id", extensionID), zap.String("extGoType", fmt.Sprintf("%T", ext)))
 		return
 	}
-	w.proc.provider = odigosExt
-	odigosExt.RegisterWorkloadConfigCacheCallback(w.proc)
-}
-
-func (w *extensionStartWrapper) Shutdown(ctx context.Context) error {
-	return w.inner.Shutdown(ctx)
-}
-
-func (w *extensionStartWrapper) Capabilities() consumer.Capabilities {
-	return w.inner.Capabilities()
-}
-
-func (w *extensionStartWrapper) ConsumeTraces(ctx context.Context, td ptrace.Traces) error {
-	return w.inner.ConsumeTraces(ctx, td)
+	proc.provider = odigosExt
+	odigosExt.RegisterWorkloadConfigCacheCallback(proc)
 }

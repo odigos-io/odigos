@@ -25,10 +25,10 @@ type OdigosConfigExtension interface {
 	// GetFromResource returns the container collector config for the given resource if it exists.
 	GetFromResource(res pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool)
 
-	// GetWorkloadCacheKey returns the cache key for the container identified by resource attributes.
+	// GetWorkloadCacheKey returns the cache key for the container identified by the given resource.
 	// Key format is platform-specific (e.g. "namespace/kind/name/containerName" for K8s). Processors use this
 	// to look up their own caches without duplicating key logic.
-	GetWorkloadCacheKey(attrs pcommon.Map) (string, error)
+	GetWorkloadCacheKey(res pcommon.Resource) (string, error)
 
 	// RegisterWorkloadConfigCacheCallback registers a callback that is invoked when the extension's workload cache is updated.
 	// Processors (e.g. URL templatization) use this to keep their caches in sync without polling.

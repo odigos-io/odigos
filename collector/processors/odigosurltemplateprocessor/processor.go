@@ -35,7 +35,7 @@ type urlTemplateProcessor struct {
 	excludeMatcher *PropertiesMatcher
 	includeMatcher *PropertiesMatcher
 
-	// provider is optionally injected by the extensionStartWrapper at Start() time.
+	// provider is optionally set in Start() when workload_config_extension is configured.
 	// When set, per-workload rules are fetched from the extension cache and the
 	// static include/exclude matchers are bypassed.
 	provider collector.OdigosConfigExtension
@@ -90,11 +90,11 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 }
 
 // OnSet implements collector.WorkloadConfigCacheCallback; called when the extension cache adds/updates an entry.
-// We only store entries that have rules to avoid cache key bloat; containers with no rules are not cached.
+// Empty or nil rules: store entry with parsedRules=nil so the workload gets default heuristic templatization (same as when extension is disabled).
 func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
 	if cfg.UrlTemplatization == nil || len(cfg.UrlTemplatization.TemplatizationRules) == 0 {
-		p.parsedRulesCache.delete(key)
-		p.logger.Debug("workload config cache OnSet: no rules, not storing", zap.String("key", key))
+		p.parsedRulesCache.set(key, parsedWorkloadEntry{parsedRules: nil})
+		p.logger.Debug("workload config cache OnSet: no rules, use default heuristic", zap.String("key", key))
 		return
 	}
 	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.TemplatizationRules)
@@ -131,8 +131,7 @@ func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Trac
 		resourceSpans := td.ResourceSpans().At(i)
 
 		if p.provider != nil {
-			attrs := resourceSpans.Resource().Attributes()
-			key, err := p.provider.GetWorkloadCacheKey(attrs)
+			key, err := p.provider.GetWorkloadCacheKey(resourceSpans.Resource())
 			if err != nil {
 				p.logger.Debug("processTraces skip resource: GetWorkloadCacheKey failed", zap.Error(err))
 				continue
@@ -142,9 +141,7 @@ func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Trac
 				// Rely entirely on the extension callback to populate the cache; skip this resource until we have an entry.
 				continue
 			}
-			if entry.parsedRules == nil {
-				continue
-			}
+			// entry.parsedRules may be nil: extension sent no rules → use default heuristic only (defaultTemplatizeURLPath).
 			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
 				scopeSpans := resourceSpans.ScopeSpans().At(j)
 				for k := 0; k < scopeSpans.Spans().Len(); k++ {

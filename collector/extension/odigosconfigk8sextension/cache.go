@@ -17,14 +17,12 @@ type workloadKey struct {
 }
 
 // cache stores workload sampling config by WorkloadKey.
-// When Set or Delete is called, the cache invokes the registered callback (if any)
+// When Set or Delete is called, the cache invokes all registered callbacks
 // so consumers stay in sync without the informer knowing about callbacks.
 type cache struct {
-	mu   sync.RWMutex
-	data map[string]*commonapi.ContainerCollectorConfig
-
-	cb   collector.WorkloadConfigCacheCallback
-	cbMu sync.RWMutex
+	mu        sync.RWMutex
+	data      map[string]*commonapi.ContainerCollectorConfig
+	callbacks []collector.WorkloadConfigCacheCallback
 }
 
 // newCache creates a new empty cache.
@@ -32,12 +30,12 @@ func newCache() *cache {
 	return &cache{data: make(map[string]*commonapi.ContainerCollectorConfig)}
 }
 
-// setCallback sets the callback invoked on Set/Delete. Called by the extension when
-// a processor registers via RegisterWorkloadConfigCacheCallback.
-func (c *cache) setCallback(cb collector.WorkloadConfigCacheCallback) {
-	c.cbMu.Lock()
-	defer c.cbMu.Unlock()
-	c.cb = cb
+// addCallback appends a callback invoked on Set/Delete. Called by the extension when
+// a processor registers via RegisterWorkloadConfigCacheCallback. Supports multiple processors.
+func (c *cache) addCallback(cb collector.WorkloadConfigCacheCallback) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.callbacks = append(c.callbacks, cb)
 }
 
 // Get returns the WorkloadSamplingConfig for the given workload key, and true if found.
@@ -48,15 +46,17 @@ func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 	return val, found
 }
 
-// Set stores the sampling config for the given workload key, then invokes the callback if set.
+// Set stores the required config for the given workload key, then invokes all registered callbacks.
+// We snapshot the callback list under the lock (so we never read c.callbacks after unlock, avoiding
+// a race with addCallback), then unlock and invoke each callback.
 func (c *cache) Set(key string, cfg *commonapi.ContainerCollectorConfig) {
 	c.mu.Lock()
 	c.data[key] = cfg
+	n := len(c.callbacks)
+	currentCallBacks := make([]collector.WorkloadConfigCacheCallback, n)
+	copy(currentCallBacks, c.callbacks)
 	c.mu.Unlock()
-	c.cbMu.RLock()
-	cb := c.cb
-	c.cbMu.RUnlock()
-	if cb != nil {
+	for _, cb := range currentCallBacks {
 		cb.OnSet(key, cfg)
 	}
 }
@@ -70,15 +70,17 @@ func (c *cache) Range(f func(key string, cfg *commonapi.ContainerCollectorConfig
 	}
 }
 
-// Delete removes the entry for the given key, then invokes the callback if set.
+// Delete removes the entry for the given key, then invokes all registered callbacks.
+// We snapshot the callback list under the lock (so we never read c.callbacks after unlock, avoiding
+// a race with addCallback), then unlock and invoke each callback.
 func (c *cache) Delete(key string) {
 	c.mu.Lock()
 	delete(c.data, key)
+	n := len(c.callbacks)
+	currentCallBacks := make([]collector.WorkloadConfigCacheCallback, n)
+	copy(currentCallBacks, c.callbacks)
 	c.mu.Unlock()
-	c.cbMu.RLock()
-	cb := c.cb
-	c.cbMu.RUnlock()
-	if cb != nil {
+	for _, cb := range currentCallBacks {
 		cb.OnDeleteKey(key)
 	}
 }

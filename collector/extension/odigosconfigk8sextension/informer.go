@@ -173,21 +173,16 @@ func (o *OdigosWorkloadConfig) parseWorkloadCollectorConfig(workloadKey workload
 // Order: (1) apply new/updated entries — cache.Set (cache invokes OnSet); (2) remove stale
 // entries — cache.Delete (cache invokes OnDeleteKey). No span sees a gap.
 func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKey, desired []containerEntry) {
-	keyPrefix := KeyPrefixForWorkload(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name)
 	workloadKeyStr := WorkloadKeyString(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name)
+	keyPrefix := workloadKeyStr + "/"
 
-	var oldKeys []string
-	o.cache.Range(func(k string, _ *commonapi.ContainerCollectorConfig) {
-		if strings.HasPrefix(k, keyPrefix) {
-			oldKeys = append(oldKeys, k)
-		}
-	})
-
+	oldKeys := o.getKeysForPrefix(keyPrefix)
 	newKeys := make(map[string]struct{}, len(desired))
 
 	// 1) Apply new/updated entries first (cache.Set triggers OnSet inside cache).
 	for _, e := range desired {
 		o.cache.Set(e.key, e.cfg)
+		o.addKeyToIndex(e.key)
 		newKeys[e.key] = struct{}{}
 	}
 
@@ -195,6 +190,7 @@ func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKe
 	var numRemoved int
 	for _, k := range oldKeys {
 		if _, inNew := newKeys[k]; !inNew {
+			o.removeKeyFromIndex(k)
 			o.cache.Delete(k)
 			numRemoved++
 		}

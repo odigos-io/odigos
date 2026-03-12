@@ -33,13 +33,3 @@ func (c *processorURLTemplateParsedRulesCache) delete(key string) {
 	defer c.mu.Unlock()
 	delete(c.data, key)
 }
-
-func (c *processorURLTemplateParsedRulesCache) keys() []string {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	keys := make([]string, 0, len(c.data))
-	for k := range c.data {
-		keys = append(keys, k)
-	}
-	return keys
-}
