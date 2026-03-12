@@ -11,5 +11,6 @@ export * from './namespaces';
 export * from './notification';
 export * from './pipeline-collectors';
 export * from './metrics';
+export * from './sampling';
 export * from './sources';
 export * from './tokens';

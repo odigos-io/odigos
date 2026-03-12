@@ -69,10 +69,184 @@ type SamplingConfigs {
     localUiConfig: SamplingConfig
 }
 
-type Sampling {
+# ---- Shared types for sampling rules ----
 
-    # show the configs related to sampling.
+# scope to limit a sampling rule to specific sources
+type SourcesScope {
+    workloadName: String
+    workloadKind: K8sResourceKind
+    workloadNamespace: String
+    workloadLanguage: ProgrammingLanguage
+}
+
+input SourcesScopeInput {
+    workloadName: String
+    workloadKind: K8sResourceKind
+    workloadNamespace: String
+    workloadLanguage: ProgrammingLanguage
+}
+
+# ---- Head sampling operation matchers (used by noisy operations) ----
+
+type HeadSamplingHttpServerMatcher {
+    route: String
+    routePrefix: String
+    method: String
+}
+
+type HeadSamplingHttpClientMatcher {
+    serverAddress: String
+    templatedPath: String
+    templatedPathPrefix: String
+    method: String
+}
+
+type HeadSamplingOperationMatcher {
+    httpServer: HeadSamplingHttpServerMatcher
+    httpClient: HeadSamplingHttpClientMatcher
+}
+
+input HeadSamplingHttpServerMatcherInput {
+    route: String
+    routePrefix: String
+    method: String
+}
+
+input HeadSamplingHttpClientMatcherInput {
+    serverAddress: String
+    templatedPath: String
+    templatedPathPrefix: String
+    method: String
+}
+
+input HeadSamplingOperationMatcherInput {
+    httpServer: HeadSamplingHttpServerMatcherInput
+    httpClient: HeadSamplingHttpClientMatcherInput
+}
+
+# ---- Tail sampling operation matchers (used by highly relevant + cost reduction) ----
+
+type TailSamplingHttpServerMatcher {
+    route: String
+    routePrefix: String
+    method: String
+}
+
+type TailSamplingKafkaMatcher {
+    kafkaTopic: String
+}
+
+type TailSamplingOperationMatcher {
+    httpServer: TailSamplingHttpServerMatcher
+    kafkaConsumer: TailSamplingKafkaMatcher
+    kafkaProducer: TailSamplingKafkaMatcher
+}
+
+input TailSamplingHttpServerMatcherInput {
+    route: String
+    routePrefix: String
+    method: String
+}
+
+input TailSamplingKafkaMatcherInput {
+    kafkaTopic: String
+}
+
+input TailSamplingOperationMatcherInput {
+    httpServer: TailSamplingHttpServerMatcherInput
+    kafkaConsumer: TailSamplingKafkaMatcherInput
+    kafkaProducer: TailSamplingKafkaMatcherInput
+}
+
+# ---- Sampling rule types ----
+
+type NoisyOperationRule {
+    ruleId: ID!
+    name: String
+    disabled: Boolean!
+    sourceScopes: [SourcesScope!]
+    operation: HeadSamplingOperationMatcher
+    # percentage (0-100) of matching traces to keep. unset defaults to 0% (drop all).
+    percentageAtMost: Float
+    notes: String
+}
+
+type HighlyRelevantOperationRule {
+    ruleId: ID!
+    name: String
+    disabled: Boolean!
+    sourceScopes: [SourcesScope!]
+    # if true, only spans with SpanStatus set to Error are considered
+    error: Boolean!
+    # if set, only operations with duration in ms larger than this value are considered
+    durationAtLeastMs: Int
+    operation: TailSamplingOperationMatcher
+    # percentage (0-100) of matching traces to keep. unset defaults to 100% (keep all).
+    percentageAtLeast: Float
+    notes: String
+}
+
+type CostReductionRule {
+    ruleId: ID!
+    name: String
+    disabled: Boolean!
+    sourceScopes: [SourcesScope!]
+    operation: TailSamplingOperationMatcher
+    # percentage (0-100) of matching traces to keep. required field.
+    percentageAtMost: Float!
+    notes: String
+}
+
+# ---- Sampling rule inputs ----
+
+input NoisyOperationRuleInput {
+    name: String
+    disabled: Boolean
+    sourceScopes: [SourcesScopeInput!]
+    operation: HeadSamplingOperationMatcherInput
+    percentageAtMost: Float
+    notes: String
+}
+
+input HighlyRelevantOperationRuleInput {
+    name: String
+    disabled: Boolean
+    sourceScopes: [SourcesScopeInput!]
+    error: Boolean
+    durationAtLeastMs: Int
+    operation: TailSamplingOperationMatcherInput
+    percentageAtLeast: Float
+    notes: String
+}
+
+input CostReductionRuleInput {
+    name: String
+    disabled: Boolean
+    sourceScopes: [SourcesScopeInput!]
+    operation: TailSamplingOperationMatcherInput
+    percentageAtMost: Float!
+    notes: String
+}
+
+# ---- Container for all sampling rules ----
+
+type SamplingRules {
+    # stable identifier for this rule group (k8s metadata.name of the Sampling CR)
+    id: ID!
+    # user-facing display name for this rule group
+    name: String
+    noisyOperations: [NoisyOperationRule!]!
+    highlyRelevantOperations: [HighlyRelevantOperationRule!]!
+    costReductionRules: [CostReductionRule!]!
+}
+
+# ---- Root sampling type ----
+
+type Sampling {
+    # global sampling configs (tail sampling, health probes, etc.)
     configs: SamplingConfigs!
+    # sampling rule groups (one per Sampling CR)
+    rules: [SamplingRules!]!
 }
 
 extend type Query {
@@ -85,4 +259,19 @@ extend type Mutation {
     # if nil is provided, the local ui config will be reset (using helm deployment, remote config from central, or defaults)
     # each value in the config is optional, and if not provided, the corresponding config will be left unchanged.
     updateLocalUiSamplingConfig(config: SamplingConfigInput): Boolean!
+
+    # ---- Noisy operations CRUD ----
+    createNoisyOperationRule(samplingId: ID!, rule: NoisyOperationRuleInput!): NoisyOperationRule!
+    updateNoisyOperationRule(samplingId: ID!, ruleId: ID!, rule: NoisyOperationRuleInput!): NoisyOperationRule!
+    deleteNoisyOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
+
+    # ---- Highly relevant operations CRUD ----
+    createHighlyRelevantOperationRule(samplingId: ID!, rule: HighlyRelevantOperationRuleInput!): HighlyRelevantOperationRule!
+    updateHighlyRelevantOperationRule(samplingId: ID!, ruleId: ID!, rule: HighlyRelevantOperationRuleInput!): HighlyRelevantOperationRule!
+    deleteHighlyRelevantOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
+
+    # ---- Cost reduction CRUD ----
+    createCostReductionRule(samplingId: ID!, rule: CostReductionRuleInput!): CostReductionRule!
+    updateCostReductionRule(samplingId: ID!, ruleId: ID!, rule: CostReductionRuleInput!): CostReductionRule!
+    deleteCostReductionRule(samplingId: ID!, ruleId: ID!): Boolean!
 }

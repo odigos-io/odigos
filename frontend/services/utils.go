@@ -114,8 +114,52 @@ func DerefString(s *string) string {
 	return ""
 }
 
+func DerefBool(b *bool) bool {
+	if b != nil {
+		return *b
+	}
+	return false
+}
+
 func StringPtr(s string) *string {
 	return &s
+}
+
+func StringPtrIfNotEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func DerefK8sResourceKind(k *model.K8sResourceKind) string {
+	if k != nil {
+		return string(*k)
+	}
+	return ""
+}
+
+func K8sResourceKindPtrIfNotEmpty(s string) *model.K8sResourceKind {
+	if s == "" {
+		return nil
+	}
+	k := model.K8sResourceKind(s)
+	return &k
+}
+
+func DerefProgrammingLanguage(p *model.ProgrammingLanguage) common.ProgrammingLanguage {
+	if p != nil {
+		return common.ProgrammingLanguage(*p)
+	}
+	return ""
+}
+
+func ProgrammingLanguagePtrIfNotEmpty(p common.ProgrammingLanguage) *model.ProgrammingLanguage {
+	if p == "" {
+		return nil
+	}
+	pl := model.ProgrammingLanguage(p)
+	return &pl
 }
 
 func Metav1TimeToString(latestStatusTime metav1.Time) string {
