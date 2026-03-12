@@ -65,6 +65,14 @@ ignoredContainers:
 clusterName: ''
 
 # @schema
+# description: |-
+#   Default log level for components when component-level logLevel is not set.
+#   Accepted values: debug, info, warn, error. Default: info.
+#   Set via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.
+# @schema
+logLevel: "info"
+
+# @schema
 # description: Configuration for OpenTelemetry (OTEL) agents instrumentation environment variables.
 # @schema
 userInstrumentationEnvs:
@@ -385,6 +393,11 @@ collectorNode:
 # @schema
 autoscaler:
   # @schema
+  # description: Log level for autoscaler. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
   # nodeSelector:
@@ -393,6 +406,20 @@ autoscaler:
   # @schema
   # description: |-
   #   tolerations for the autoscaler deployment.
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations: []
   # @schema
@@ -425,6 +452,11 @@ autoscaler:
 # @schema
 scheduler:
   # @schema
+  # description: Log level for scheduler. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
   # nodeSelector:
@@ -433,6 +465,20 @@ scheduler:
   # @schema
   # description: |-
   #   tolerations for the scheduler deployment.
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations: []
   # @schema
@@ -465,11 +511,32 @@ scheduler:
 # @schema
 ui:
   # @schema
+  # description: Log level for UI. Defaults to info.
+  # @schema
+  logLevel: "info"
+
+  # @schema
   # description: Override the global nodeSelector (values.nodeSelector) for this component
   # @schema
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -557,6 +624,10 @@ ui:
 # description: Configuration for the instrumentor component.
 # @schema
 instrumentor:
+  # @schema
+  # description: Log level for instrumentor. Defaults to info.
+  # @schema
+  logLevel: "info"
 
   # @schema
   # description: |-
@@ -597,6 +668,22 @@ instrumentor:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -649,6 +736,10 @@ instrumentor:
 # description: Configuration for the odiglet component.
 # @schema
 odiglet:
+  # @schema
+  # description: Log level for odiglet. Defaults to info.
+  # @schema
+  logLevel: "info"
 
   # @schema
   # description: Configuration for the odiglet container.
@@ -736,9 +827,24 @@ odiglet:
   #   This toleration with 'Exists' operator and no key/effect specified
   #   will match ALL taints, allowing pods to be scheduled on any node
   #   regardless of its taints (including master/control-plane nodes)
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
   # @schema
   tolerations:
     - operator: Exists
+
   # @schema
   # additionalProperties: true
   # @schema
@@ -771,6 +877,40 @@ odiglet:
       limits:
         cpu: 100m
         memory: 300Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+
+  # @schema
+  # description: |-
+  #   CSI driver resource configuration.
+  #   Only applied when instrumentor.mountMethod is "k8s-csi-driver"
+  # @schema
+  csidriver:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 100Mi
+      limits:
+        cpu: 100m
+        memory: 200Mi
+    livenessProbe:
+      initialDelaySeconds: 10
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
+    readinessProbe:
+      initialDelaySeconds: 5
+      failureThreshold: 3
+      periodSeconds: 10
+      timeoutSeconds: 10
 
   # @schema
   # description: |-
@@ -894,6 +1034,22 @@ centralProxy:
   # nodeSelector:
   #   kubernetes.io/os: linux
 
+  # @schema
+  # items:
+  #   description: |-
+  #     A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+  #     Common fields: key, operator, value, effect, tolerationSeconds.
+  #   type: object
+  #   properties:
+  #     key:
+  #       type: string
+  #     operator:
+  #       type: string
+  #     value:
+  #       type: string
+  #     effect:
+  #       type: string
+  # @schema
   tolerations: []
   # @schema
   # additionalProperties: true
@@ -1098,6 +1254,14 @@ metricsSources:
 
     # @schema
     # description: |-
+    #   set the time to wait with no activity before expiring span metrics
+    #   format is duration string (15s, 1m, etc)
+    #   default is 5m
+    # @schema
+    # metricsExpiration: '5m'
+
+    # @schema
+    # description: |-
     #   set additional dimensions for span metrics
     #   format is a list of strings
     # @schema
@@ -1206,6 +1370,17 @@ goAutoOffsetsCron: ''
 goAutoOffsetsMode: 'off'
 
 # @schema
+# description: Experimental configuration options.
+# @schema
+experimental:
+  # @schema
+  # description: |-
+  #   When true, deployment (instrumentor) and UI fill the internal Kubernetes object cache
+  #   sequentially to reduce memory spikes on application start.
+  # @schema
+  sequentialCacheLoad: false
+
+# @schema
 # description: experimental configuration for own telemetry of odigos on itself
 # @schema
 ownTelemetry:
@@ -1222,6 +1397,72 @@ ownTelemetry:
 # description: global configurations for sampling.
 # @schema
 sampling:
+
+  # @schema
+  # description: |-
+  #   Set to true to enable dry run mode for sampling.
+  #   When enabled, Odigos runs the sampling logic but does not drop any traces; metrics are still
+  #   calculated so you can evaluate rule effectiveness before committing to changes that might lose data.
+  #   Each span gets an attribute 'odigos.sampling.dry_run.kept' indicating whether it would be kept or dropped once dry run is off.
+  #   With spanSamplingAttributes enabled, dry-run decisions are also visible as span attributes on each span.
+  # @schema
+  # dryRun: true
+
+  # @schema
+  # description: |-
+  #   Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+  #   These attributes add context when viewing traces and inspecting costs, so you can understand
+  #   how sampling decisions were made for an individual span and apply changes to fine-tune rules.
+  #   When dry run is enabled, each span includes the sampling decision (kept or dropped) as it
+  #   would apply once dry run is disabled.
+  # @schema
+  spanSamplingAttributes:
+
+    # @schema
+    # description: |-
+    #   set to true to disable span sampling attributes.
+    #   when disabled, odigos will not set span attributes for sampling decisions
+    #   (unless explicitly enabled for specific attributes set).
+    # @schema
+    # disabled: true
+
+    # @schema
+    # description: |-
+    #   set to true to disable recording the sampling category as a span attribute.
+    #   attributes:
+    #     - odigos.sampling.category (noise, highly relevant, cost reduction, or empty)
+    # @schema
+    # samplingCategoryDisabled: true
+
+    # @schema
+    # description: |-
+    #   Set to true to disable recording the trace-level deciding rule as span attributes.
+    #   When a trace matches an enabled sampling rule for a category, the most "severe" rule
+    #   is chosen as the "deciding rule" and recorded as span attributes on all spans in the trace.
+    #   If multiple rules with the same percentage match, one is chosen arbitrarily.
+    #   Use these attributes to find rules that are too permissive (high cost) or too strict (dropping important traces).
+    #   For example, if a rare and important trace is dropped by a rule that is too strict, increase its keep percentage
+    #   or add a separate rule for that use case. If cost analysis shows expensive traces, find rules that are too permissive
+    #   and decrease their percentage or remove them.
+    #   attributes:
+    #     - odigos.sampling.trace.deciding_rule.id
+    #     - odigos.sampling.trace.deciding_rule.name
+    #     - odigos.sampling.trace.deciding_rule.keep_percentage
+    # @schema
+    # traceDecidingRuleDisabled: true
+
+    # @schema
+    # description: |-
+    #   Set to true to disable recording the span-level deciding rule as span attributes.
+    #   The trace-level decision is an aggregation of all spans in the trace; these attributes record
+    #   which spans contributed to it and how, so you can link decisions back to the specific spans and operations.
+    #   For example, if a trace is kept due to high duration, the attributes pinpoint the span(s) that drove that decision.
+    #   attributes:
+    #     - odigos.sampling.span.deciding_rule.id
+    #     - odigos.sampling.span.deciding_rule.name
+    #     - odigos.sampling.span.deciding_rule.keep_percentage
+    # @schema
+    # spanDecisionAttributesDisabled: true
 
   # @schema
   # description: configuration for tail sampling.

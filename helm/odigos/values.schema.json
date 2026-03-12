@@ -59,6 +59,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for autoscaler. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "nodeSelector": {
           "default": "",
           "description": "Override the global nodeSelector (values.nodeSelector) for this component",
@@ -118,7 +124,23 @@
         "tolerations": {
           "description": "tolerations for the autoscaler deployment.",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -225,12 +247,27 @@
           "title": "tls"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         }
       },
       "required": [],
@@ -467,6 +504,20 @@
       "required": [],
       "title": "collectorNode"
     },
+    "experimental": {
+      "additionalProperties": false,
+      "description": "Experimental configuration options.",
+      "properties": {
+        "sequentialCacheLoad": {
+          "default": "false",
+          "description": "When true, deployment (instrumentor) and UI fill the internal Kubernetes object cache\nsequentially to reduce memory spikes on application start.",
+          "required": [],
+          "title": "sequentialCacheLoad"
+        }
+      },
+      "required": [],
+      "title": "experimental"
+    },
     "externalOnpremTokenSecret": {
       "default": "false",
       "description": "Set to true if you are providing the odigos-pro secret externally (not managed by this chart).\nWhen true, the chart will not create the secret but will still enable Pro features if the secret exists.\nThis is useful for GitOps workflows where secrets are managed separately.",
@@ -625,6 +676,12 @@
           "required": [],
           "title": "deploymentName"
         },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for instrumentor. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
+        },
         "mountMethod": {
           "default": "",
           "description": "which mount method to use for odigos agent directory\nk8s-virtual-device: default method using a virtual device\nk8s-host-path: alternative which uses hostPath volume (recommended if supported, requires hostPath volume to be enabled in the cluster)\nk8s-init-container: alternative which uses an init container to copy the agent files to the shared volume",
@@ -694,12 +751,27 @@
           "title": "resources"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         }
       },
       "required": [],
@@ -717,6 +789,12 @@
       },
       "required": [],
       "title": "karpenter"
+    },
+    "logLevel": {
+      "default": "info",
+      "description": "Default log level for components when component-level logLevel is not set.\nAccepted values: debug, info, warn, error. Default: info.\nSet via ODIGOS_LOG_LEVEL env; change requires pod restart or rollout.",
+      "required": [],
+      "title": "logLevel"
     },
     "metricsSources": {
       "additionalProperties": false,
@@ -927,6 +1005,12 @@
               "required": [],
               "title": "interval"
             },
+            "metricsExpiration": {
+              "default": "5m",
+              "description": "set the time to wait with no activity before expiring span metrics\nformat is duration string (15s, 1m, etc)\ndefault is 5m",
+              "required": [],
+              "title": "metricsExpiration"
+            },
             "resourceMetricsKeyAttributes": {
               "description": "Advanced configuration - avoid using unless you know what you are doing.\nThis list controls which resource attributes are included in the metric stream identity.\nThese attributes are used to determines how span metrics are grouped.",
               "items": {
@@ -972,6 +1056,114 @@
           "additionalProperties": true,
           "required": [],
           "title": "affinity"
+        },
+        "csidriver": {
+          "additionalProperties": false,
+          "description": "CSI driver resource configuration.\nOnly applied when instrumentor.mountMethod is \"k8s-csi-driver\"",
+          "properties": {
+            "livenessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "failureThreshold": {
+                  "default": 3,
+                  "title": "failureThreshold",
+                  "type": "integer"
+                },
+                "initialDelaySeconds": {
+                  "default": 10,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "livenessProbe",
+              "type": "object"
+            },
+            "readinessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "failureThreshold": {
+                  "default": 3,
+                  "title": "failureThreshold",
+                  "type": "integer"
+                },
+                "initialDelaySeconds": {
+                  "default": 5,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "readinessProbe",
+              "type": "object"
+            },
+            "resources": {
+              "additionalProperties": false,
+              "properties": {
+                "limits": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "100m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "200Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "limits",
+                  "type": "object"
+                },
+                "requests": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cpu": {
+                      "default": "50m",
+                      "title": "cpu",
+                      "type": "string"
+                    },
+                    "memory": {
+                      "default": "100Mi",
+                      "title": "memory",
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "title": "requests",
+                  "type": "object"
+                }
+              },
+              "required": [],
+              "title": "resources",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "csidriver"
         },
         "customContainerRuntimeSocketPath": {
           "default": "",
@@ -1019,6 +1211,62 @@
           "additionalProperties": false,
           "description": "Configuration for the device plugin.",
           "properties": {
+            "livenessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "failureThreshold": {
+                  "default": 3,
+                  "title": "failureThreshold",
+                  "type": "integer"
+                },
+                "initialDelaySeconds": {
+                  "default": 10,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "livenessProbe",
+              "type": "object"
+            },
+            "readinessProbe": {
+              "additionalProperties": false,
+              "properties": {
+                "failureThreshold": {
+                  "default": 3,
+                  "title": "failureThreshold",
+                  "type": "integer"
+                },
+                "initialDelaySeconds": {
+                  "default": 10,
+                  "title": "initialDelaySeconds",
+                  "type": "integer"
+                },
+                "periodSeconds": {
+                  "default": 10,
+                  "title": "periodSeconds",
+                  "type": "integer"
+                },
+                "timeoutSeconds": {
+                  "default": 10,
+                  "title": "timeoutSeconds",
+                  "type": "integer"
+                }
+              },
+              "required": [],
+              "title": "readinessProbe",
+              "type": "object"
+            },
             "resources": {
               "additionalProperties": false,
               "properties": {
@@ -1122,6 +1370,12 @@
           },
           "required": [],
           "title": "initContainerResources"
+        },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for odiglet. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
         },
         "noHostNetwork": {
           "default": "false",
@@ -1287,21 +1541,23 @@
         "tolerations": {
           "description": "This toleration with 'Exists' operator and no key/effect specified\nwill match ALL taints, allowing pods to be scheduled on any node\nregardless of its taints (including master/control-plane nodes)",
           "items": {
-            "anyOf": [
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "operator": {
-                    "default": "Exists",
-                    "title": "operator",
-                    "type": "string"
-                  }
-                },
-                "required": [],
-                "type": "object"
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
               }
-            ],
-            "required": []
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -1427,6 +1683,12 @@
       "additionalProperties": false,
       "description": "global configurations for sampling.",
       "properties": {
+        "dryRun": {
+          "default": "true",
+          "description": "Set to true to enable dry run mode for sampling.\nWhen enabled, Odigos runs the sampling logic but does not drop any traces; metrics are still\ncalculated so you can evaluate rule effectiveness before committing to changes that might lose data.\nEach span gets an attribute 'odigos.sampling.dry_run.kept' indicating whether it would be kept or dropped once dry run is off.\nWith spanSamplingAttributes enabled, dry-run decisions are also visible as span attributes on each span.",
+          "required": [],
+          "title": "dryRun"
+        },
         "k8sHealthProbesSampling": {
           "additionalProperties": false,
           "description": "configuration for odigos auto-kubelet-probes detection and sampling.\nodigos can automatically pick up health probes from the k8s manifest,\nand treat them as \"noisy endpoints\" to be sampled out.\nmost users get little or no value from tracing health probes,\nand it is recommended to enable and use it.\nit will be used with head sampling where the agent support it.\nwhen tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.",
@@ -1446,6 +1708,38 @@
           },
           "required": [],
           "title": "k8sHealthProbesSampling"
+        },
+        "spanSamplingAttributes": {
+          "additionalProperties": false,
+          "description": "Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).\nThese attributes add context when viewing traces and inspecting costs, so you can understand\nhow sampling decisions were made for an individual span and apply changes to fine-tune rules.\nWhen dry run is enabled, each span includes the sampling decision (kept or dropped) as it\nwould apply once dry run is disabled.",
+          "properties": {
+            "disabled": {
+              "default": "true",
+              "description": "set to true to disable span sampling attributes.\nwhen disabled, odigos will not set span attributes for sampling decisions\n(unless explicitly enabled for specific attributes set).",
+              "required": [],
+              "title": "disabled"
+            },
+            "samplingCategoryDisabled": {
+              "default": "true",
+              "description": "set to true to disable recording the sampling category as a span attribute.\nattributes:\n  - odigos.sampling.category (noise, highly relevant, cost reduction, or empty)",
+              "required": [],
+              "title": "samplingCategoryDisabled"
+            },
+            "spanDecisionAttributesDisabled": {
+              "default": "true",
+              "description": "Set to true to disable recording the span-level deciding rule as span attributes.\nThe trace-level decision is an aggregation of all spans in the trace; these attributes record\nwhich spans contributed to it and how, so you can link decisions back to the specific spans and operations.\nFor example, if a trace is kept due to high duration, the attributes pinpoint the span(s) that drove that decision.\nattributes:\n  - odigos.sampling.span.deciding_rule.id\n  - odigos.sampling.span.deciding_rule.name\n  - odigos.sampling.span.deciding_rule.keep_percentage",
+              "required": [],
+              "title": "spanDecisionAttributesDisabled"
+            },
+            "traceDecidingRuleDisabled": {
+              "default": "true",
+              "description": "Set to true to disable recording the trace-level deciding rule as span attributes.\nWhen a trace matches an enabled sampling rule for a category, the most \"severe\" rule\nis chosen as the \"deciding rule\" and recorded as span attributes on all spans in the trace.\nIf multiple rules with the same percentage match, one is chosen arbitrarily.\nUse these attributes to find rules that are too permissive (high cost) or too strict (dropping important traces).\nFor example, if a rare and important trace is dropped by a rule that is too strict, increase its keep percentage\nor add a separate rule for that use case. If cost analysis shows expensive traces, find rules that are too permissive\nand decrease their percentage or remove them.\nattributes:\n  - odigos.sampling.trace.deciding_rule.id\n  - odigos.sampling.trace.deciding_rule.name\n  - odigos.sampling.trace.deciding_rule.keep_percentage",
+              "required": [],
+              "title": "traceDecidingRuleDisabled"
+            }
+          },
+          "required": [],
+          "title": "spanSamplingAttributes"
         },
         "tailSampling": {
           "additionalProperties": false,
@@ -1485,6 +1779,12 @@
           "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-scheduler'",
           "required": [],
           "title": "deploymentName"
+        },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for scheduler. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
         },
         "nodeSelector": {
           "default": "",
@@ -1545,7 +1845,23 @@
         "tolerations": {
           "description": "tolerations for the scheduler deployment.",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
           "required": [],
           "title": "tolerations"
@@ -1614,6 +1930,12 @@
           "description": "Deployment name. if you want the deployment (and related pods) to have a specific name.\ndefault is 'odigos-ui'",
           "required": [],
           "title": "deploymentName"
+        },
+        "logLevel": {
+          "default": "info",
+          "description": "Log level for UI. Defaults to info.",
+          "required": [],
+          "title": "logLevel"
         },
         "nodeSelector": {
           "default": "",
@@ -1690,12 +2012,27 @@
           "type": "object"
         },
         "tolerations": {
-          "description": "  kubernetes.io/os: linux",
           "items": {
-            "required": []
+            "description": "A Kubernetes Toleration. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/\nCommon fields: key, operator, value, effect, tolerationSeconds.",
+            "properties": {
+              "effect": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "operator": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "type": "object"
           },
-          "title": "tolerations",
-          "type": "array"
+          "required": [],
+          "title": "tolerations"
         },
         "uiMode": {
           "default": "default",

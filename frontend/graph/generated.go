@@ -196,6 +196,17 @@ type ComplexityRoot struct {
 		Window             func(childComplexity int) int
 	}
 
+	ComponentLogLevelsConfig struct {
+		Autoscaler   func(childComplexity int) int
+		Collector    func(childComplexity int) int
+		Default      func(childComplexity int) int
+		Deviceplugin func(childComplexity int) int
+		Instrumentor func(childComplexity int) int
+		Odiglet      func(childComplexity int) int
+		Scheduler    func(childComplexity int) int
+		UI           func(childComplexity int) int
+	}
+
 	ComputePlatform struct {
 		APITokens            func(childComplexity int) int
 		Actions              func(childComplexity int) int
@@ -357,6 +368,7 @@ type ComplexityRoot struct {
 		ClusterName                      func(childComplexity int) int
 		CollectorGateway                 func(childComplexity int) int
 		CollectorNode                    func(childComplexity int) int
+		ComponentLogLevels               func(childComplexity int) int
 		ConfigVersion                    func(childComplexity int) int
 		CustomContainerRuntimeSocketPath func(childComplexity int) int
 		GoAutoOffsetsCron                func(childComplexity int) int
@@ -829,6 +841,7 @@ type ComplexityRoot struct {
 		RecoverFromRollbackForWorkload func(childComplexity int, sourceID model.K8sSourceID) int
 		RestartPod                     func(childComplexity int, namespace string, name string) int
 		RestartWorkloads               func(childComplexity int, sourceIds []*model.K8sSourceID) int
+		SetComponentLogLevel           func(childComplexity int, component *model.OdigosComponent, level model.OdigosLogLevel) int
 		TestConnectionForDestination   func(childComplexity int, destination model.DestinationInput) int
 		UninstrumentCluster            func(childComplexity int) int
 		UpdateAPIToken                 func(childComplexity int, token string) int
@@ -1242,6 +1255,7 @@ type MutationResolver interface {
 	DeleteCentralProxy(ctx context.Context) (bool, error)
 	RecoverFromRollbackForWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error)
 	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (bool, error)
+	SetComponentLogLevel(ctx context.Context, component *model.OdigosComponent, level model.OdigosLogLevel) (bool, error)
 	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 }
@@ -1998,6 +2012,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CollectorPodMetrics.Window(childComplexity), true
 
+	case "ComponentLogLevelsConfig.autoscaler":
+		if e.complexity.ComponentLogLevelsConfig.Autoscaler == nil {
+			break
+		}
+
+		return e.complexity.ComponentLogLevelsConfig.Autoscaler(childComplexity), true
+
+	case "ComponentLogLevelsConfig.collector":
+		if e.complexity.ComponentLogLevelsConfig.Collector == nil {
+			break
+		}
+
+		return e.complexity.ComponentLogLevelsConfig.Collector(childComplexity), true
+
+	case "ComponentLogLevelsConfig.default":
+		if e.complexity.ComponentLogLevelsConfig.Default == nil {
+			break
+		}
+
+		return e.complexity.ComponentLogLevelsConfig.Default(childComplexity), true
+
+	case "ComponentLogLevelsConfig.deviceplugin":
+		if e.complexity.ComponentLogLevelsConfig.Deviceplugin == nil {
+			break
+		}
+
+		return e.complexity.ComponentLogLevelsConfig.Deviceplugin(childComplexity), true
+
+	case "ComponentLogLevelsConfig.instrumentor":
+		if e.complexity.ComponentLogLevelsConfig.Instrumentor == nil {
+			break
+		}
+
+		return e.complexity.ComponentLogLevelsConfig.Instrumentor(childComplexity), true
+
+	case "ComponentLogLevelsConfig.odiglet":
+		if e.complexity.ComponentLogLevelsConfig.Odiglet == nil {
+			break
+		}
+
+		return e.complexity.ComponentLogLevelsConfig.Odiglet(childComplexity), true
+
+	case "ComponentLogLevelsConfig.scheduler":
+		if e.complexity.ComponentLogLevelsConfig.Scheduler == nil {
+			break
+		}
+
+		return e.complexity.ComponentLogLevelsConfig.Scheduler(childComplexity), true
+
+	case "ComponentLogLevelsConfig.ui":
+		if e.complexity.ComponentLogLevelsConfig.UI == nil {
+			break
+		}
+
+		return e.complexity.ComponentLogLevelsConfig.UI(childComplexity), true
+
 	case "ComputePlatform.apiTokens":
 		if e.complexity.ComputePlatform.APITokens == nil {
 			break
@@ -2728,6 +2798,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EffectiveConfig.CollectorNode(childComplexity), true
+
+	case "EffectiveConfig.componentLogLevels":
+		if e.complexity.EffectiveConfig.ComponentLogLevels == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.ComponentLogLevels(childComplexity), true
 
 	case "EffectiveConfig.configVersion":
 		if e.complexity.EffectiveConfig.ConfigVersion == nil {
@@ -4790,6 +4867,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RestartWorkloads(childComplexity, args["sourceIds"].([]*model.K8sSourceID)), true
+
+	case "Mutation.setComponentLogLevel":
+		if e.complexity.Mutation.SetComponentLogLevel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setComponentLogLevel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetComponentLogLevel(childComplexity, args["component"].(*model.OdigosComponent), args["level"].(model.OdigosLogLevel)), true
 
 	case "Mutation.testConnectionForDestination":
 		if e.complexity.Mutation.TestConnectionForDestination == nil {
@@ -6916,6 +7005,57 @@ func (ec *executionContext) field_Mutation_restartWorkloads_argsSourceIds(
 	}
 
 	var zeroVal []*model.K8sSourceID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_setComponentLogLevel_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_setComponentLogLevel_argsComponent(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["component"] = arg0
+	arg1, err := ec.field_Mutation_setComponentLogLevel_argsLevel(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["level"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_setComponentLogLevel_argsComponent(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*model.OdigosComponent, error) {
+	if _, ok := rawArgs["component"]; !ok {
+		var zeroVal *model.OdigosComponent
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("component"))
+	if tmp, ok := rawArgs["component"]; ok {
+		return ec.unmarshalOOdigosComponent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosComponent(ctx, tmp)
+	}
+
+	var zeroVal *model.OdigosComponent
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_setComponentLogLevel_argsLevel(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.OdigosLogLevel, error) {
+	if _, ok := rawArgs["level"]; !ok {
+		var zeroVal model.OdigosLogLevel
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("level"))
+	if tmp, ok := rawArgs["level"]; ok {
+		return ec.unmarshalNOdigosLogLevel2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, tmp)
+	}
+
+	var zeroVal model.OdigosLogLevel
 	return zeroVal, nil
 }
 
@@ -12354,6 +12494,334 @@ func (ec *executionContext) fieldContext_CollectorPodMetrics_lastScrape(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComponentLogLevelsConfig_default(ctx context.Context, field graphql.CollectedField, obj *model.ComponentLogLevelsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComponentLogLevelsConfig_default(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Default, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_default(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComponentLogLevelsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComponentLogLevelsConfig_autoscaler(ctx context.Context, field graphql.CollectedField, obj *model.ComponentLogLevelsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComponentLogLevelsConfig_autoscaler(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Autoscaler, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_autoscaler(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComponentLogLevelsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComponentLogLevelsConfig_scheduler(ctx context.Context, field graphql.CollectedField, obj *model.ComponentLogLevelsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComponentLogLevelsConfig_scheduler(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scheduler, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_scheduler(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComponentLogLevelsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComponentLogLevelsConfig_instrumentor(ctx context.Context, field graphql.CollectedField, obj *model.ComponentLogLevelsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComponentLogLevelsConfig_instrumentor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Instrumentor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_instrumentor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComponentLogLevelsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComponentLogLevelsConfig_odiglet(ctx context.Context, field graphql.CollectedField, obj *model.ComponentLogLevelsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComponentLogLevelsConfig_odiglet(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Odiglet, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_odiglet(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComponentLogLevelsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComponentLogLevelsConfig_deviceplugin(ctx context.Context, field graphql.CollectedField, obj *model.ComponentLogLevelsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComponentLogLevelsConfig_deviceplugin(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Deviceplugin, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_deviceplugin(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComponentLogLevelsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComponentLogLevelsConfig_ui(ctx context.Context, field graphql.CollectedField, obj *model.ComponentLogLevelsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComponentLogLevelsConfig_ui(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UI, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_ui(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComponentLogLevelsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ComponentLogLevelsConfig_collector(ctx context.Context, field graphql.CollectedField, obj *model.ComponentLogLevelsConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ComponentLogLevelsConfig_collector(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Collector, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_collector(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ComponentLogLevelsConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
 		},
 	}
 	return fc, nil
@@ -18586,6 +19054,65 @@ func (ec *executionContext) fieldContext_EffectiveConfig_imagePullSecrets(_ cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EffectiveConfig_componentLogLevels(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_componentLogLevels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ComponentLogLevels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ComponentLogLevelsConfig)
+	fc.Result = res
+	return ec.marshalOComponentLogLevelsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComponentLogLevelsConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_componentLogLevels(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "default":
+				return ec.fieldContext_ComponentLogLevelsConfig_default(ctx, field)
+			case "autoscaler":
+				return ec.fieldContext_ComponentLogLevelsConfig_autoscaler(ctx, field)
+			case "scheduler":
+				return ec.fieldContext_ComponentLogLevelsConfig_scheduler(ctx, field)
+			case "instrumentor":
+				return ec.fieldContext_ComponentLogLevelsConfig_instrumentor(ctx, field)
+			case "odiglet":
+				return ec.fieldContext_ComponentLogLevelsConfig_odiglet(ctx, field)
+			case "deviceplugin":
+				return ec.fieldContext_ComponentLogLevelsConfig_deviceplugin(ctx, field)
+			case "ui":
+				return ec.fieldContext_ComponentLogLevelsConfig_ui(ctx, field)
+			case "collector":
+				return ec.fieldContext_ComponentLogLevelsConfig_collector(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ComponentLogLevelsConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -30903,6 +31430,61 @@ func (ec *executionContext) fieldContext_Mutation_updateRemoteConfig(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_setComponentLogLevel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_setComponentLogLevel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SetComponentLogLevel(rctx, fc.Args["component"].(*model.OdigosComponent), fc.Args["level"].(model.OdigosLogLevel))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setComponentLogLevel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setComponentLogLevel_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_restartPod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_restartPod(ctx, field)
 	if err != nil {
@@ -36076,6 +36658,8 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_odigosOwnTelemetryStore(ctx, field)
 			case "imagePullSecrets":
 				return ec.fieldContext_EffectiveConfig_imagePullSecrets(ctx, field)
+			case "componentLogLevels":
+				return ec.fieldContext_EffectiveConfig_componentLogLevels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EffectiveConfig", field.Name)
 		},
@@ -45257,6 +45841,56 @@ func (ec *executionContext) _CollectorPodMetrics(ctx context.Context, sel ast.Se
 	return out
 }
 
+var componentLogLevelsConfigImplementors = []string{"ComponentLogLevelsConfig"}
+
+func (ec *executionContext) _ComponentLogLevelsConfig(ctx context.Context, sel ast.SelectionSet, obj *model.ComponentLogLevelsConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, componentLogLevelsConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ComponentLogLevelsConfig")
+		case "default":
+			out.Values[i] = ec._ComponentLogLevelsConfig_default(ctx, field, obj)
+		case "autoscaler":
+			out.Values[i] = ec._ComponentLogLevelsConfig_autoscaler(ctx, field, obj)
+		case "scheduler":
+			out.Values[i] = ec._ComponentLogLevelsConfig_scheduler(ctx, field, obj)
+		case "instrumentor":
+			out.Values[i] = ec._ComponentLogLevelsConfig_instrumentor(ctx, field, obj)
+		case "odiglet":
+			out.Values[i] = ec._ComponentLogLevelsConfig_odiglet(ctx, field, obj)
+		case "deviceplugin":
+			out.Values[i] = ec._ComponentLogLevelsConfig_deviceplugin(ctx, field, obj)
+		case "ui":
+			out.Values[i] = ec._ComponentLogLevelsConfig_ui(ctx, field, obj)
+		case "collector":
+			out.Values[i] = ec._ComponentLogLevelsConfig_collector(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var computePlatformImplementors = []string{"ComputePlatform"}
 
 func (ec *executionContext) _ComputePlatform(ctx context.Context, sel ast.SelectionSet, obj *model.ComputePlatform) graphql.Marshaler {
@@ -46688,6 +47322,8 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_odigosOwnTelemetryStore(ctx, field, obj)
 		case "imagePullSecrets":
 			out.Values[i] = ec._EffectiveConfig_imagePullSecrets(ctx, field, obj)
+		case "componentLogLevels":
+			out.Values[i] = ec._EffectiveConfig_componentLogLevels(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -50413,6 +51049,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateRemoteConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateRemoteConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setComponentLogLevel":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setComponentLogLevel(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -55877,6 +56520,16 @@ func (ec *executionContext) marshalNOdigosAnalyze2ᚖgithubᚗcomᚋodigosᚑio�
 	return ec._OdigosAnalyze(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNOdigosLogLevel2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx context.Context, v any) (model.OdigosLogLevel, error) {
+	var res model.OdigosLogLevel
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOdigosLogLevel2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx context.Context, sel ast.SelectionSet, v model.OdigosLogLevel) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNOtelAgentsAnalyze2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOtelAgentsAnalyze(ctx context.Context, sel ast.SelectionSet, v *model.OtelAgentsAnalyze) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -57239,6 +57892,13 @@ func (ec *executionContext) marshalOCollectorPodMetrics2ᚖgithubᚗcomᚋodigos
 		return graphql.Null
 	}
 	return ec._CollectorPodMetrics(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOComponentLogLevelsConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComponentLogLevelsConfig(ctx context.Context, sel ast.SelectionSet, v *model.ComponentLogLevelsConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ComponentLogLevelsConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOComputePlatform2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐComputePlatform(ctx context.Context, sel ast.SelectionSet, v *model.ComputePlatform) graphql.Marshaler {
@@ -58727,6 +59387,38 @@ func (ec *executionContext) unmarshalONumberConditionInput2ᚖgithubᚗcomᚋodi
 	}
 	res, err := ec.unmarshalInputNumberConditionInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOOdigosComponent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosComponent(ctx context.Context, v any) (*model.OdigosComponent, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.OdigosComponent)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOOdigosComponent2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosComponent(ctx context.Context, sel ast.SelectionSet, v *model.OdigosComponent) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx context.Context, v any) (*model.OdigosLogLevel, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.OdigosLogLevel)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx context.Context, sel ast.SelectionSet, v *model.OdigosLogLevel) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOOdigosOwnTelemetryConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosOwnTelemetryConfig(ctx context.Context, sel ast.SelectionSet, v *model.OdigosOwnTelemetryConfig) graphql.Marshaler {

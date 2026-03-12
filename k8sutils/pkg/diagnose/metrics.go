@@ -15,28 +15,30 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
-// Stage constant for the collector metrics diagnose phase.
+// Stage constant for the metrics diagnose phase.
 const StageMetrics Stage = "metrics"
 
-// FetchOdigosCollectorMetrics collects Prometheus metrics from Odigos collectors
-func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interface, builder Builder, metricsDir, odigosNamespace string) error {
-	klog.V(2).InfoS("Fetching Odigos Collector Metrics", "namespace", odigosNamespace)
+// FetchOdigosMetrics gathers Prometheus metrics from Odigos system components:
+// - Odiglet pods (odiglet container + data-collection container per pod)
+// - Gateway collector pods
+func FetchOdigosMetrics(ctx context.Context, client kubernetes.Interface, builder Builder, metricsDir, odigosNamespace string) error {
+	klog.V(2).InfoS("Fetching Odigos metrics", "namespace", odigosNamespace)
 
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := collectMetricsForRole(ctx, client, builder, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleClusterGateway); err != nil {
-			klog.V(1).ErrorS(err, "Failed to get metrics data", "collectorRole", k8sconsts.CollectorsRoleClusterGateway)
+		if err := fetchMetricsFromOdigletPods(ctx, client, builder, odigosNamespace, metricsDir); err != nil {
+			klog.V(1).ErrorS(err, "Failed to get metrics from odiglet pods")
 		}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := collectMetricsForRole(ctx, client, builder, odigosNamespace, metricsDir, k8sconsts.CollectorsRoleNodeCollector); err != nil {
-			klog.V(1).ErrorS(err, "Failed to get metrics data", "collectorRole", k8sconsts.CollectorsRoleNodeCollector)
+		if err := fetchMetricsFromGatewayPods(ctx, client, builder, odigosNamespace, metricsDir); err != nil {
+			klog.V(1).ErrorS(err, "Failed to get metrics from gateway pods")
 		}
 	}()
 
@@ -44,70 +46,90 @@ func FetchOdigosCollectorMetrics(ctx context.Context, client kubernetes.Interfac
 	return nil
 }
 
-func collectMetricsForRole(
-	ctx context.Context,
-	client kubernetes.Interface,
-	builder Builder,
-	odigosNamespace string,
-	metricsDir string,
-	collectorRole k8sconsts.CollectorRole,
-) error {
-	collectorPods, err := client.CoreV1().Pods(odigosNamespace).List(ctx, metav1.ListOptions{
-		LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(collectorRole),
+// fetchMetricsFromOdigletPods gathers metrics from every container in each odiglet pod:
+// the odiglet container (metrics port) and the data-collection container (collector metrics).
+func fetchMetricsFromOdigletPods(ctx context.Context, client kubernetes.Interface, builder Builder, namespace, metricsDir string) error {
+	pods, err := client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(k8sconsts.CollectorsRoleNodeCollector),
 	})
 	if err != nil {
-		klog.V(1).InfoS("Failed to list collector pods", "role", collectorRole, "err", err)
 		return err
 	}
-
-	if len(collectorPods.Items) == 0 {
+	if len(pods.Items) == 0 {
 		return nil
 	}
 
-	var wg sync.WaitGroup
-
-	for i := 0; i < len(collectorPods.Items); i++ {
-		pod := &collectorPods.Items[i]
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-			klog.V(2).InfoS("Fetching metrics for pod", "podName", pod.Name)
-
-			data, err := captureMetrics(ctx, client, pod.Name, odigosNamespace, collectorRole)
-			if err != nil {
-				klog.V(1).ErrorS(err, "Failed to get metrics data", "podName", pod.Name)
-				return
-			}
-
-			filename := pod.Name
-			if err := builder.AddFile(metricsDir, filename, data); err != nil {
-				klog.V(1).ErrorS(err, "Failed to save metrics", "podName", pod.Name)
-			}
-		}()
+	endpoints := []struct {
+		fileSuffix string
+		port       int32
+	}{
+		{k8sconsts.OdigletContainerName, k8sconsts.OdigletMetricsServerPort},
+		{k8sconsts.OdigosNodeCollectorContainerName, k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault},
 	}
 
+	var wg sync.WaitGroup
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		podName := pod.Name
+		for _, ep := range endpoints {
+			ep := ep
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				klog.V(2).InfoS("Fetching metrics for odiglet pod", "podName", podName, "container", ep.fileSuffix)
+				data, err := captureMetrics(ctx, client, podName, namespace, ep.port)
+				if err != nil {
+					klog.V(1).ErrorS(err, "Failed to get metrics", "podName", podName, "container", ep.fileSuffix)
+					return
+				}
+				filename := podName + "-" + ep.fileSuffix
+				if err := builder.AddFile(metricsDir, filename, data); err != nil {
+					klog.V(1).ErrorS(err, "Failed to save metrics", "podName", podName, "filename", filename)
+				}
+			}()
+		}
+	}
 	wg.Wait()
 	return nil
 }
 
-func captureMetrics(
-	ctx context.Context,
-	client kubernetes.Interface,
-	podName string,
-	namespace string,
-	collectorRole k8sconsts.CollectorRole,
-) ([]byte, error) {
-	portNumber := ""
-	switch collectorRole {
-	case k8sconsts.CollectorsRoleClusterGateway:
-		portNumber = strconv.Itoa(int(k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault))
-	case k8sconsts.CollectorsRoleNodeCollector:
-		portNumber = strconv.Itoa(int(k8sconsts.OdigosNodeCollectorOwnTelemetryPortDefault))
-	default:
-		return nil, nil
+// fetchMetricsFromGatewayPods gathers metrics from each gateway collector pod.
+func fetchMetricsFromGatewayPods(ctx context.Context, client kubernetes.Interface, builder Builder, namespace, metricsDir string) error {
+	pods, err := client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: k8sconsts.OdigosCollectorRoleLabel + "=" + string(k8sconsts.CollectorsRoleClusterGateway),
+	})
+	if err != nil {
+		return err
+	}
+	if len(pods.Items) == 0 {
+		return nil
 	}
 
+	port := k8sconsts.OdigosClusterCollectorOwnTelemetryPortDefault
+	var wg sync.WaitGroup
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		podName := pod.Name
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			klog.V(2).InfoS("Fetching metrics for gateway pod", "podName", podName)
+			data, err := captureMetrics(ctx, client, podName, namespace, port)
+			if err != nil {
+				klog.V(1).ErrorS(err, "Failed to get metrics", "podName", podName)
+				return
+			}
+			if err := builder.AddFile(metricsDir, podName, data); err != nil {
+				klog.V(1).ErrorS(err, "Failed to save metrics", "podName", podName)
+			}
+		}()
+	}
+	wg.Wait()
+	return nil
+}
+
+func captureMetrics(ctx context.Context, client kubernetes.Interface, podName, namespace string, port int32) ([]byte, error) {
+	portNumber := strconv.Itoa(int(port))
 	proxyURL := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s:%s/proxy/metrics", namespace, podName, portNumber)
 
 	request := client.CoreV1().RESTClient().
@@ -120,11 +142,9 @@ func captureMetrics(
 		return nil, fmt.Errorf("%w: %s", err, string(response))
 	}
 
-	// Copy the response to a buffer
 	var buf bytes.Buffer
 	if _, err := io.Copy(&buf, bytes.NewReader(response)); err != nil {
 		return nil, err
 	}
-
 	return buf.Bytes(), nil
 }

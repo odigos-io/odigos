@@ -520,7 +520,17 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 	}
 	if in.TailSampling != nil {
 		in, out := &in.TailSampling, &out.TailSampling
-		*out = new(common.TailSamplingConfiguration)
+		*out = new(sampling.TailSamplingConfiguration)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.SamplingDryRun != nil {
+		in, out := &in.SamplingDryRun, &out.SamplingDryRun
+		*out = new(bool)
+		**out = **in
+	}
+	if in.SpanSamplingAttributes != nil {
+		in, out := &in.SpanSamplingAttributes, &out.SpanSamplingAttributes
+		*out = new(sampling.SpanSamplingAttributesConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
 }

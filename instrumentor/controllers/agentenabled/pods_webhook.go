@@ -15,13 +15,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentor/controllers/agentenabled/podswebhook"
@@ -74,7 +74,7 @@ var (
 // If injection fails for any reason, the webhook returns an Allowed response with no changes,
 // ensuring user workloads are never blocked by instrumentation logic.
 func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	var pod corev1.Pod
 	if err := p.Decoder.Decode(req, &pod); err != nil {
@@ -109,7 +109,7 @@ func (p *PodsWebhook) Handle(ctx context.Context, req admission.Request) admissi
 }
 
 func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req admission.Request) error {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	odigosNamespace := env.GetCurrentNamespace()
 
@@ -165,13 +165,14 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 
 	karpenterDisabled := odigosConfiguration.KarpenterEnabled == nil || !*odigosConfiguration.KarpenterEnabled
 	mountIsHostPath := odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sHostPathMountMethod
+	mountIsCsiDriver := odigosConfiguration.MountMethod != nil && *odigosConfiguration.MountMethod == common.K8sCsiDriverMountMethod
 
 	// Add odiglet-installed node affinity to the pod for non-Karpenter installations,
-	// but only when the mount method is hostPath. This ensures that the pod is scheduled
-	// only on nodes where odiglet is already installed.
-	// For the device mount method, this is unnecessary because the device is guaranteed
-	// to be present on the node before the pod is scheduled.
-	if karpenterDisabled && mountIsHostPath {
+	// for mount methods that require odiglet to be present on the node.
+	// - hostPath: requires odiglet to have prepared /var/odigos directory
+	// - csi-driver: requires odiglet CSI driver container to be running and the odiglet init to prepare the /var/odigos directory
+	// - virtual-device: unnecessary because device availability guarantees odiglet presence
+	if karpenterDisabled && (mountIsHostPath || mountIsCsiDriver) {
 		podutils.AddOdigletInstalledAffinity(pod)
 	}
 
@@ -222,6 +223,11 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 			// Create the init container that will copy the directories to the empty dir based on dirsToCopy
 			createInitContainer(pod, dirsToCopy, odigosConfiguration)
 		}
+	}
+
+	if mountMethod == common.K8sCsiDriverMountMethod && volumeMounted {
+		// Use CSI driver for volume mounting
+		podswebhook.MountPodVolumeToCSI(pod)
 	}
 
 	if odigosConfiguration.WaspEnabled != nil && *odigosConfiguration.WaspEnabled && waspSupported && p.WaspMutator != nil {
@@ -279,7 +285,7 @@ func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod, req admi
 }
 
 func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *corev1.Pod, ic *odigosv1.InstrumentationConfig, pw *k8sconsts.PodWorkload, config *common.OdigosConfiguration) error {
-	logger := log.FromContext(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	otelSdkToUse, err := getRelevantOtelSDKs(ctx, p.Client, *pw)
 	if err != nil {
@@ -302,7 +308,7 @@ func (p *PodsWebhook) injectOdigosInstrumentation(ctx context.Context, pod *core
 			continue
 		}
 
-		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger, container, otelSdk, runtimeDetails, config)
+		err = webhookenvinjector.InjectOdigosAgentEnvVars(ctx, logger.Logr(), container, otelSdk, runtimeDetails, config)
 		if err != nil {
 			return err
 		}
@@ -389,8 +395,10 @@ func (p *PodsWebhook) injectOdigosToContainer(containerConfig *odigosv1.Containe
 	volumeMounted := false
 	containerDirsToCopy := make(map[string]struct{})
 	if distroMetadata.RuntimeAgent != nil {
-		if *config.MountMethod == common.K8sHostPathMountMethod || *config.MountMethod == common.K8sInitContainerMountMethod {
-			// mount directory only if the mount type is host-path or init container
+		if *config.MountMethod == common.K8sHostPathMountMethod ||
+			*config.MountMethod == common.K8sInitContainerMountMethod ||
+			*config.MountMethod == common.K8sCsiDriverMountMethod {
+			// mount directory for host-path, init container, or CSI driver
 			for _, agentDirectoryName := range distroMetadata.RuntimeAgent.DirectoryNames {
 				containerDirsToCopy[agentDirectoryName] = struct{}{}
 				podswebhook.MountDirectory(podContainerSpec, agentDirectoryName)

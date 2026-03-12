@@ -13,6 +13,8 @@ metadata:
 data:
   config.yaml: |
     configVersion: 1
+    componentLogLevels:
+      default: {{ .Values.logLevel | default "info" }}
     {{- if .Values.clusterName }}
     clusterName: {{ .Values.clusterName }}
     {{- end }}
@@ -141,10 +143,10 @@ data:
     ignoreOdigosNamespace: true
     {{- end }}
     {{- if .Values.instrumentor.mountMethod }}
-      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container") }}
+      {{- if has .Values.instrumentor.mountMethod (list "k8s-host-path" "k8s-virtual-device" "k8s-init-container" "k8s-csi-driver") }}
     mountMethod: {{ .Values.instrumentor.mountMethod }}
       {{- else }}
-        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device' and 'k8s-init-container'." }}
+        {{- fail "Error: Invalid mountMethod. Supported values are 'k8s-host-path', 'k8s-virtual-device', 'k8s-init-container' and 'k8s-csi-driver'." }}
       {{- end }}
     {{- end }}
     {{- if .Values.instrumentor.checkDeviceHealthBeforeInjection }}
@@ -227,8 +229,26 @@ data:
     imagePullSecrets:
       {{- toYaml .Values.imagePullSecrets | nindent 6 }}
     {{- end }}
-    {{- if or .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
+    {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
     sampling:
+      {{- if ne .Values.sampling.dryRun nil }}
+      dryRun: {{ .Values.sampling.dryRun }}
+      {{- end }}
+      {{- if .Values.sampling.spanSamplingAttributes }}
+      spanSamplingAttributes:
+        {{- if ne .Values.sampling.spanSamplingAttributes.disabled nil }}
+        disabled: {{ .Values.sampling.spanSamplingAttributes.disabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.samplingCategoryDisabled nil }}
+        samplingCategoryDisabled: {{ .Values.sampling.spanSamplingAttributes.samplingCategoryDisabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.traceDecidingRuleDisabled nil }}
+        traceDecidingRuleDisabled: {{ .Values.sampling.spanSamplingAttributes.traceDecidingRuleDisabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.spanDecisionAttributesDisabled nil }}
+        spanDecisionAttributesDisabled: {{ .Values.sampling.spanSamplingAttributes.spanDecisionAttributesDisabled }}
+        {{- end }}
+      {{- end }}
       {{- if .Values.sampling.tailSampling }}
       tailSampling:
         {{- if .Values.sampling.tailSampling.disabled }}

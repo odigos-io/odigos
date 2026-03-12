@@ -6,8 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,8 +21,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"k8s.io/klog/v2"
+
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
@@ -38,7 +40,6 @@ import (
 	"github.com/odigos-io/odigos/frontend/services/sse"
 	"github.com/odigos-io/odigos/frontend/version"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 )
 
 const (
@@ -109,19 +110,16 @@ func startWatchers(ctx context.Context) error {
 	return nil
 }
 
-func startDatabase() error {
-
+func startDatabase(logger *commonlogger.OdigosLogger) error {
 	database, err := db.NewSQLiteDB("/data/data.db")
-
 	if err != nil {
 		// TODO: Move to fatal once db required
 		// return err
-		log.Println(err, "Failed to connect to DB")
-	} else {
-		defer database.Close()
-		db.InitializeDatabaseSchema(database.GetDB())
+		logger.Error("Failed to connect to DB", "err", err)
+		return nil
 	}
-
+	defer database.Close()
+	db.InitializeDatabaseSchema(database.GetDB())
 	return nil
 }
 
@@ -272,6 +270,12 @@ func main() {
 		return
 	}
 
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"), "ui")
+	logger := commonlogger.ToLogr()
+	ctrl.SetLogger(logger)
+	klog.SetLogger(logger)
+	log := commonlogger.LoggerCompat().With("subsystem", "startup")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
@@ -280,33 +284,35 @@ func main() {
 		cancel()
 	}()
 
-	logger := logr.FromSlogHandler(slog.Default().Handler())
-	ctrl.SetLogger(logger)
 	go common.StartPprofServer(ctx, logger, int(k8sconsts.DefaultPprofEndpointPort))
 
 	// Load destinations data
 	err := destinations.Load()
 	if err != nil {
-		log.Fatalf("Error loading destinations data: %s", err)
+		log.Error("Error loading destinations data", "err", err)
+		os.Exit(1)
 	}
 
 	// Start SQLite database
-	err = startDatabase()
+	err = startDatabase(log)
 	if err != nil {
-		log.Fatalf("Error starting database: %s", err)
+		log.Error("Error starting database", "err", err)
+		os.Exit(1)
 	}
 
 	// Connect to Kubernetes
 	err = initKubernetesClient(&flags)
 	if err != nil {
-		log.Fatalf("Error creating Kubernetes client: %s", err)
+		log.Error("Error creating Kubernetes client", "err", err)
+		os.Exit(1)
 	}
 
 	// Setup Source cache - this initializes a controller-runtime cache for Source resources
 	// from all namespaces, providing fast read access without hitting the Kubernetes API
 	k8sCacheClient, err := kube.SetupK8sCache(ctx, flags.KubeConfig, flags.KubeContext, flags.Namespace)
 	if err != nil {
-		log.Fatalf("Error setting up kubernetes objects cache: %s", err)
+		log.Error("Error setting up kubernetes objects cache", "err", err)
+		os.Exit(1)
 	}
 
 	odigosMetrics := collectormetrics.NewOdigosMetrics()
@@ -320,13 +326,14 @@ func main() {
 	// Start watchers
 	err = startWatchers(ctx)
 	if err != nil {
-		log.Fatalf("Error starting watchers: %s", err)
+		log.Error("Error starting watchers", "err", err)
+		os.Exit(1)
 	}
 
 	var promAPI v1.API
 	metricsURL := fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
 	if api, err := metrics.NewAPIFromURL(metricsURL); err != nil {
-		log.Printf("Warning: failed to initialize VictoriaMetrics API (url=%s): %v", metricsURL, err)
+		log.Warn("failed to initialize VictoriaMetrics API", "url", metricsURL, "err", err)
 	} else {
 		promAPI = api
 	}
@@ -334,26 +341,29 @@ func main() {
 	// Start server
 	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI)
 	if err != nil {
-		log.Fatalf("Error starting server: %s", err)
+		log.Error("Error starting server", "err", err)
+		os.Exit(1)
 	}
 
 	// Serve client (react/next app)
 	dist, err := fs.Sub(uiFS, "webapp/out")
 	if err != nil {
-		log.Fatalf("Error reading webapp/out directory: %s", err)
+		log.Error("Error reading webapp/out directory", "err", err)
+		os.Exit(1)
 	}
 	serveClientFiles(ctx, r, dist)
 
 	go func() {
-		log.Printf("Odigos UI is available at: http://%s:%d", flags.Address, flags.Port)
+		log.Info("Odigos UI is available", "address", fmt.Sprintf("http://%s:%d", flags.Address, flags.Port))
 		err = r.Run(fmt.Sprintf("%s:%d", flags.Address, flags.Port))
 		if err != nil {
-			log.Fatalf("Error starting server: %s", err)
+			log.Error("Error starting server", "err", err)
+			os.Exit(1)
 		}
 	}()
 
 	<-ch
-	log.Println("Shutting down Odigos UI...")
+	log.Info("Shutting down Odigos UI...")
 	cancel()
 	wg.Wait()
 }

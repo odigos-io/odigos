@@ -9,7 +9,9 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/sizing"
 	"github.com/odigos-io/odigos/profiles"
@@ -28,7 +30,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 )
@@ -42,7 +43,7 @@ type odigosConfigurationController struct {
 }
 
 func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
-	logger := ctrl.LoggerFrom(ctx)
+	logger := commonlogger.FromContext(ctx)
 
 	odigosConfigMap, err := r.getOdigosConfigMap(ctx)
 	if err != nil {
@@ -67,17 +68,16 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		logger.Error(err, "Failed to get remote config, using only helm-managed config")
 	} else if remoteConfig != nil {
 		mergeConfigs(&odigosConfiguration, remoteConfig)
-		logger.V(1).Info("Merged remote config into effective config")
+		logger.Debug("Merged remote config into effective config")
 	}
 
-	// Read and merge local ui config (from local ui) if it exists
-	// Local ui config takes precedence over helm-managed config and remote config
+	// Read and merge local UI config (log level, sampling) if it exists.
 	localUiConfig, err := r.getAdditionalConfig(ctx, consts.OdigosLocalUiConfigName)
 	if err != nil {
-		logger.Error(err, "Failed to get local ui config, using only helm-managed config")
+		logger.Error(err, "Failed to get local UI config, using only helm-managed config")
 	} else if localUiConfig != nil {
 		mergeConfigs(&odigosConfiguration, localUiConfig)
-		logger.V(1).Info("Merged local ui config into effective config")
+		logger.Debug("Merged local UI config into effective config")
 	}
 
 	// effective profiles are what is actually used in the cluster (minus non existing profiles and plus dependencies)
@@ -210,9 +210,29 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		if baseConfig.Sampling == nil {
 			baseConfig.Sampling = &common.SamplingConfiguration{}
 		}
+		if addtionalConfig.Sampling.DryRun != nil {
+			baseConfig.Sampling.DryRun = addtionalConfig.Sampling.DryRun
+		}
+		if addtionalConfig.Sampling.SpanSamplingAttributes != nil {
+			if baseConfig.Sampling.SpanSamplingAttributes == nil {
+				baseConfig.Sampling.SpanSamplingAttributes = &sampling.SpanSamplingAttributesConfiguration{}
+			}
+			if addtionalConfig.Sampling.SpanSamplingAttributes.Disabled != nil {
+				baseConfig.Sampling.SpanSamplingAttributes.Disabled = addtionalConfig.Sampling.SpanSamplingAttributes.Disabled
+			}
+			if addtionalConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled != nil {
+				baseConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled
+			}
+			if addtionalConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled != nil {
+				baseConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled
+			}
+			if addtionalConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled != nil {
+				baseConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled
+			}
+		}
 		if addtionalConfig.Sampling.TailSampling != nil {
 			if baseConfig.Sampling.TailSampling == nil {
-				baseConfig.Sampling.TailSampling = &common.TailSamplingConfiguration{}
+				baseConfig.Sampling.TailSampling = &sampling.TailSamplingConfiguration{}
 			}
 			if addtionalConfig.Sampling.TailSampling.Disabled != nil {
 				baseConfig.Sampling.TailSampling.Disabled = addtionalConfig.Sampling.TailSampling.Disabled
@@ -231,6 +251,37 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			if addtionalConfig.Sampling.K8sHealthProbesSampling.KeepPercentage != nil {
 				baseConfig.Sampling.K8sHealthProbesSampling.KeepPercentage = addtionalConfig.Sampling.K8sHealthProbesSampling.KeepPercentage
 			}
+		}
+	}
+
+	if addtionalConfig.ComponentLogLevels != nil {
+		if baseConfig.ComponentLogLevels == nil {
+			baseConfig.ComponentLogLevels = &common.ComponentLogLevels{}
+		}
+		src, dst := addtionalConfig.ComponentLogLevels, baseConfig.ComponentLogLevels
+		if src.Default != "" {
+			dst.Default = src.Default
+		}
+		if src.Autoscaler != "" {
+			dst.Autoscaler = src.Autoscaler
+		}
+		if src.Scheduler != "" {
+			dst.Scheduler = src.Scheduler
+		}
+		if src.Instrumentor != "" {
+			dst.Instrumentor = src.Instrumentor
+		}
+		if src.Odiglet != "" {
+			dst.Odiglet = src.Odiglet
+		}
+		if src.Deviceplugin != "" {
+			dst.Deviceplugin = src.Deviceplugin
+		}
+		if src.UI != "" {
+			dst.UI = src.UI
+		}
+		if src.Collector != "" {
+			dst.Collector = src.Collector
 		}
 	}
 
@@ -285,7 +336,11 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 		return err
 	}
 
-	logger := ctrl.LoggerFrom(ctx)
+	if effectiveConfig.ComponentLogLevels != nil {
+		commonlogger.SetLevel(effectiveConfig.ComponentLogLevels.Resolve("scheduler"))
+	}
+
+	logger := commonlogger.FromContext(ctx)
 	logger.Info("Successfully persisted effective configuration")
 
 	return nil
@@ -429,7 +484,7 @@ func getInitContainerResources(config *common.OdigosConfiguration) *common.Agent
 		defaultAgentsInitContainerRequestMemoryMiB = 300
 		defaultAgentsInitContainerLimitMemoryMiB   = 300
 	)
-	logger := log.FromContext(context.Background())
+	logger := commonlogger.FromContext(context.Background())
 
 	cpuRequest := defaultAgentsInitContainerRequestCPUm
 	cpuLimit := defaultAgentsInitContainerLimitCPUm
@@ -504,6 +559,8 @@ func resolveMountMethod(odigosConfiguration *common.OdigosConfiguration) {
 		return
 	case common.K8sInitContainerMountMethod:
 		odigosConfiguration.AgentsInitContainerResources = getInitContainerResources(odigosConfiguration)
+		return
+	case common.K8sCsiDriverMountMethod:
 		return
 	default:
 		// any illegal value will be defaulted to host-path

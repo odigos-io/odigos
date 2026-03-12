@@ -119,6 +119,8 @@ service:
       - otlp/in
       - odigosebpf
   telemetry:
+    logs:
+      level: info
     metrics:
       level: detailed
       readers:

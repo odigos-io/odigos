@@ -19,15 +19,17 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"os"
 	"time"
 
-	"github.com/go-logr/zapr"
-	bridge "github.com/odigos-io/opentelemetry-zap-bridge"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/odigos-io/odigos/common"
+
+	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -36,13 +38,6 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/odigos-io/odigos/api/k8sconsts"
-	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
-	"github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/destinations"
-	"github.com/odigos-io/odigos/k8sutils/pkg/configmaps"
-	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -53,7 +48,12 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/odigos-io/odigos/api/k8sconsts"
+	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/common/consts"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/destinations"
 
 	"github.com/odigos-io/odigos/scheduler/clusterinfo"
 	"github.com/odigos-io/odigos/scheduler/controllers/clustercollectorsgroup"
@@ -64,8 +64,7 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme = runtime.NewScheme()
 )
 
 func init() {
@@ -75,6 +74,10 @@ func init() {
 }
 
 func main() {
+	commonlogger.Init(os.Getenv("ODIGOS_LOG_LEVEL"), "scheduler")
+	ctrl.SetLogger(commonlogger.ToLogr())
+	logger := commonlogger.LoggerCompat().With("subsystem", "startup")
+
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -83,19 +86,10 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	opts := ctrlzap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	zapLogger := ctrlzap.NewRaw(ctrlzap.UseFlagOptions(&opts))
-	zapLogger = bridge.AttachToZapLogger(zapLogger)
-	logger := zapr.NewLogger(zapLogger)
-	ctrl.SetLogger(logger)
-
 	ctx := ctrl.SetupSignalHandler()
-	go common.StartPprofServer(ctx, setupLog, int(k8sconsts.DefaultPprofEndpointPort))
+	go common.StartPprofServer(ctx, ctrl.Log, int(k8sconsts.DefaultPprofEndpointPort))
 
 	odigosNs := env.GetCurrentNamespace()
 	tier := env.GetOdigosTierFromEnv()
@@ -103,7 +97,8 @@ func main() {
 
 	err := destinations.Load()
 	if err != nil {
-		log.Fatalf("Error loading destinations data: %s", err)
+		logger.Error("Error loading destinations data", "err", err)
+		os.Exit(1)
 	}
 
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
@@ -181,66 +176,66 @@ func main() {
 		LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		logger.Error("unable to start manager", "err", err)
 		os.Exit(1)
 	}
 
 	// create dynamic k8s client to apply profile manifests
 	dyanmicClient, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
-		setupLog.Error(err, "unable to create dynamic client")
+		logger.Error("unable to create dynamic client", "err", err)
 		os.Exit(1)
 	}
 
 	clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
 	if err != nil {
-		setupLog.Error(err, "unable to create kubernetes client")
+		logger.Error("unable to create kubernetes client", "err", err)
 		os.Exit(1)
 	}
 	err = clusterinfo.RecordClusterInfo(context.Background(), clientset, odigosNs)
 	if err != nil {
-		setupLog.Error(err, "unable to record cluster info, skipping")
+		logger.Error("unable to record cluster info, skipping", "err", err)
 	}
 
 	err = clustercollectorsgroup.SetupWithManager(mgr)
 	if err != nil {
-		setupLog.Error(err, "unable to create controllers for cluster collectors group")
+		logger.Error("unable to create controllers for cluster collectors group", "err", err)
 		os.Exit(1)
 	}
 	err = nodecollectorsgroup.SetupWithManager(mgr)
 	if err != nil {
-		setupLog.Error(err, "unable to create controllers for node collectors group")
+		logger.Error("unable to create controllers for node collectors group", "err", err)
 		os.Exit(1)
 	}
 	err = odigosconfiguration.SetupWithManager(mgr, tier, odigosVersion, dyanmicClient)
 	if err != nil {
-		setupLog.Error(err, "unable to create controllers for odigos configuration")
+		logger.Error("unable to create controllers for odigos configuration", "err", err)
 		os.Exit(1)
 	}
 	err = odigospro.SetupWithManager(mgr, odigosVersion)
 	if err != nil {
-		setupLog.Error(err, "unable to create controller for odigos pro")
+		logger.Error("unable to create controller for odigos pro", "err", err)
 		os.Exit(1)
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up health check")
+		logger.Error("unable to set up health check", "err", err)
 		os.Exit(1)
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		setupLog.Error(err, "unable to set up ready check")
+		logger.Error("unable to set up ready check", "err", err)
 		os.Exit(1)
 	}
 
 	// remove the legacy configmap if it exists
-	mgr.Add(&configmaps.ConfigMapDeleteMigration{Client: mgr.GetClient(), Logger: setupLog, ConfigMap: types.NamespacedName{
+	mgr.Add(&configmaps.ConfigMapDeleteMigration{Client: mgr.GetClient(), Logger: commonlogger.ToLogr(), ConfigMap: types.NamespacedName{
 		Namespace: env.GetCurrentNamespace(),
 		Name:      consts.OdigosLegacyConfigName,
 	}})
 
-	setupLog.Info("starting manager")
+	logger.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
+		logger.Error("problem running manager", "err", err)
 		os.Exit(1)
 	}
 }
