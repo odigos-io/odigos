@@ -25,8 +25,8 @@ type OdigosWorkloadConfig struct {
 
 	// workloadKeysIndex maps key prefix (e.g. "ns/kind/name/") to set of full cache keys for that workload.
 	// Used to get keys by prefix without iterating the full cache.
-	workloadKeysIndex   map[string]map[string]struct{}
-	workloadIndexMu     sync.RWMutex
+	workloadKeysIndex map[string]map[string]struct{}
+	workloadIndexMu   sync.RWMutex
 }
 
 // OdigosConfigExtension is the interface that must be implemented by an extension that wants to provide Odigos configuration.
