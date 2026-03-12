@@ -78,6 +78,9 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 			&odigosv1.Source{}:                  {},
 			&odigosv1.InstrumentationConfig{}:   {},
 			&odigosv1.InstrumentationInstance{}: {},
+			&odigosv1.Sampling{}: {
+				Field: nsSelector,
+			},
 		},
 	}
 
