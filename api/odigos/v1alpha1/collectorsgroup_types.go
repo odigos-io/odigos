@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -205,7 +206,18 @@ type CollectorsGroupSpec struct {
 
 	// Sampling holds the sampling configuration derived from the OdigosConfiguration.
 	// Currently this is only relevant for the cluster gateway collector.
-	TailSampling *common.TailSamplingConfiguration `json:"tailSampling,omitempty"`
+	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
+
+	// Set to true to enable dry run mode for sampling.
+	// When enabled, odigos will invoke the sampling logic, but will not drop any traces.
+	// This is useful while evaluating sampling rules to check for effectiveness and correctness
+	// before committing to any changes that might lose data.
+	SamplingDryRun *bool `json:"samplingDryRun,omitempty"`
+
+	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+	// Capturing these attributes gives visibility into sampling decision-making and effective
+	// sampling percentages when viewing traces or querying the database with tools.
+	SpanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
 }
 
 // CollectorsGroupStatus defines the observed state of Collector

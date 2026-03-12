@@ -9,6 +9,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1alpha1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -209,9 +210,29 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		if baseConfig.Sampling == nil {
 			baseConfig.Sampling = &common.SamplingConfiguration{}
 		}
+		if addtionalConfig.Sampling.DryRun != nil {
+			baseConfig.Sampling.DryRun = addtionalConfig.Sampling.DryRun
+		}
+		if addtionalConfig.Sampling.SpanSamplingAttributes != nil {
+			if baseConfig.Sampling.SpanSamplingAttributes == nil {
+				baseConfig.Sampling.SpanSamplingAttributes = &sampling.SpanSamplingAttributesConfiguration{}
+			}
+			if addtionalConfig.Sampling.SpanSamplingAttributes.Disabled != nil {
+				baseConfig.Sampling.SpanSamplingAttributes.Disabled = addtionalConfig.Sampling.SpanSamplingAttributes.Disabled
+			}
+			if addtionalConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled != nil {
+				baseConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled
+			}
+			if addtionalConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled != nil {
+				baseConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled
+			}
+			if addtionalConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled != nil {
+				baseConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled
+			}
+		}
 		if addtionalConfig.Sampling.TailSampling != nil {
 			if baseConfig.Sampling.TailSampling == nil {
-				baseConfig.Sampling.TailSampling = &common.TailSamplingConfiguration{}
+				baseConfig.Sampling.TailSampling = &sampling.TailSamplingConfiguration{}
 			}
 			if addtionalConfig.Sampling.TailSampling.Disabled != nil {
 				baseConfig.Sampling.TailSampling.Disabled = addtionalConfig.Sampling.TailSampling.Disabled
