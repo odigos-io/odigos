@@ -870,19 +870,19 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateAction                      func(childComplexity int, action model.ActionInput) int
-		CreateCostReductionRule           func(childComplexity int, rule model.CostReductionRuleInput) int
-		CreateHighlyRelevantOperationRule func(childComplexity int, rule model.HighlyRelevantOperationRuleInput) int
+		CreateCostReductionRule           func(childComplexity int, samplingID string, rule model.CostReductionRuleInput) int
+		CreateHighlyRelevantOperationRule func(childComplexity int, samplingID string, rule model.HighlyRelevantOperationRuleInput) int
 		CreateInstrumentationRule         func(childComplexity int, instrumentationRule model.InstrumentationRuleInput) int
 		CreateNewDestination              func(childComplexity int, destination model.DestinationInput) int
-		CreateNoisyOperationRule          func(childComplexity int, rule model.NoisyOperationRuleInput) int
+		CreateNoisyOperationRule          func(childComplexity int, samplingID string, rule model.NoisyOperationRuleInput) int
 		DeleteAction                      func(childComplexity int, id string, actionType string) int
 		DeleteCentralProxy                func(childComplexity int) int
-		DeleteCostReductionRule           func(childComplexity int, ruleID string) int
+		DeleteCostReductionRule           func(childComplexity int, samplingID string, ruleID string) int
 		DeleteDataStream                  func(childComplexity int, id string) int
 		DeleteDestination                 func(childComplexity int, id string, currentStreamName string) int
-		DeleteHighlyRelevantOperationRule func(childComplexity int, ruleID string) int
+		DeleteHighlyRelevantOperationRule func(childComplexity int, samplingID string, ruleID string) int
 		DeleteInstrumentationRule         func(childComplexity int, ruleID string) int
-		DeleteNoisyOperationRule          func(childComplexity int, ruleID string) int
+		DeleteNoisyOperationRule          func(childComplexity int, samplingID string, ruleID string) int
 		PauseOdigos                       func(childComplexity int) int
 		PersistK8sNamespaces              func(childComplexity int, namespaces []*model.PersistNamespaceItemInput) int
 		PersistK8sSources                 func(childComplexity int, sources []*model.PersistNamespaceSourceInput) int
@@ -894,14 +894,14 @@ type ComplexityRoot struct {
 		UninstrumentCluster               func(childComplexity int) int
 		UpdateAPIToken                    func(childComplexity int, token string) int
 		UpdateAction                      func(childComplexity int, id string, action model.ActionInput) int
-		UpdateCostReductionRule           func(childComplexity int, ruleID string, rule model.CostReductionRuleInput) int
+		UpdateCostReductionRule           func(childComplexity int, samplingID string, ruleID string, rule model.CostReductionRuleInput) int
 		UpdateDataStream                  func(childComplexity int, id string, dataStream model.DataStreamInput) int
 		UpdateDestination                 func(childComplexity int, id string, destination model.DestinationInput) int
-		UpdateHighlyRelevantOperationRule func(childComplexity int, ruleID string, rule model.HighlyRelevantOperationRuleInput) int
+		UpdateHighlyRelevantOperationRule func(childComplexity int, samplingID string, ruleID string, rule model.HighlyRelevantOperationRuleInput) int
 		UpdateInstrumentationRule         func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
 		UpdateK8sActualSource             func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
 		UpdateLocalUISamplingConfig       func(childComplexity int, config *model.SamplingConfigInput) int
-		UpdateNoisyOperationRule          func(childComplexity int, ruleID string, rule model.NoisyOperationRuleInput) int
+		UpdateNoisyOperationRule          func(childComplexity int, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) int
 		UpdateRemoteConfig                func(childComplexity int, config model.RemoteConfigInput) int
 	}
 
@@ -1133,6 +1133,8 @@ type ComplexityRoot struct {
 	SamplingRules struct {
 		CostReductionRules       func(childComplexity int) int
 		HighlyRelevantOperations func(childComplexity int) int
+		ID                       func(childComplexity int) int
+		Name                     func(childComplexity int) int
 		NoisyOperations          func(childComplexity int) int
 	}
 
@@ -1349,15 +1351,15 @@ type MutationResolver interface {
 	SetComponentLogLevel(ctx context.Context, component *model.OdigosComponent, level model.OdigosLogLevel) (bool, error)
 	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
-	CreateNoisyOperationRule(ctx context.Context, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
-	UpdateNoisyOperationRule(ctx context.Context, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
-	DeleteNoisyOperationRule(ctx context.Context, ruleID string) (bool, error)
-	CreateHighlyRelevantOperationRule(ctx context.Context, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error)
-	UpdateHighlyRelevantOperationRule(ctx context.Context, ruleID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error)
-	DeleteHighlyRelevantOperationRule(ctx context.Context, ruleID string) (bool, error)
-	CreateCostReductionRule(ctx context.Context, rule model.CostReductionRuleInput) (*model.CostReductionRule, error)
-	UpdateCostReductionRule(ctx context.Context, ruleID string, rule model.CostReductionRuleInput) (*model.CostReductionRule, error)
-	DeleteCostReductionRule(ctx context.Context, ruleID string) (bool, error)
+	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
+	UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
+	DeleteNoisyOperationRule(ctx context.Context, samplingID string, ruleID string) (bool, error)
+	CreateHighlyRelevantOperationRule(ctx context.Context, samplingID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error)
+	UpdateHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error)
+	DeleteHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string) (bool, error)
+	CreateCostReductionRule(ctx context.Context, samplingID string, rule model.CostReductionRuleInput) (*model.CostReductionRule, error)
+	UpdateCostReductionRule(ctx context.Context, samplingID string, ruleID string, rule model.CostReductionRuleInput) (*model.CostReductionRule, error)
+	DeleteCostReductionRule(ctx context.Context, samplingID string, ruleID string) (bool, error)
 }
 type QueryResolver interface {
 	ComputePlatform(ctx context.Context) (*model.ComputePlatform, error)
@@ -1387,7 +1389,7 @@ type QueryResolver interface {
 	Namespaces(ctx context.Context) ([]*model.K8sNamespace, error)
 }
 type SamplingResolver interface {
-	Rules(ctx context.Context, obj *model.Sampling) (*model.SamplingRules, error)
+	Rules(ctx context.Context, obj *model.Sampling) ([]*model.SamplingRules, error)
 }
 type SamplingConfigsResolver interface {
 	Effective(ctx context.Context, obj *model.SamplingConfigs) (*model.SamplingConfig, error)
@@ -5015,7 +5017,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateCostReductionRule(childComplexity, args["rule"].(model.CostReductionRuleInput)), true
+		return e.complexity.Mutation.CreateCostReductionRule(childComplexity, args["samplingId"].(string), args["rule"].(model.CostReductionRuleInput)), true
 
 	case "Mutation.createHighlyRelevantOperationRule":
 		if e.complexity.Mutation.CreateHighlyRelevantOperationRule == nil {
@@ -5027,7 +5029,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateHighlyRelevantOperationRule(childComplexity, args["rule"].(model.HighlyRelevantOperationRuleInput)), true
+		return e.complexity.Mutation.CreateHighlyRelevantOperationRule(childComplexity, args["samplingId"].(string), args["rule"].(model.HighlyRelevantOperationRuleInput)), true
 
 	case "Mutation.createInstrumentationRule":
 		if e.complexity.Mutation.CreateInstrumentationRule == nil {
@@ -5063,7 +5065,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateNoisyOperationRule(childComplexity, args["rule"].(model.NoisyOperationRuleInput)), true
+		return e.complexity.Mutation.CreateNoisyOperationRule(childComplexity, args["samplingId"].(string), args["rule"].(model.NoisyOperationRuleInput)), true
 
 	case "Mutation.deleteAction":
 		if e.complexity.Mutation.DeleteAction == nil {
@@ -5094,7 +5096,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteCostReductionRule(childComplexity, args["ruleId"].(string)), true
+		return e.complexity.Mutation.DeleteCostReductionRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string)), true
 
 	case "Mutation.deleteDataStream":
 		if e.complexity.Mutation.DeleteDataStream == nil {
@@ -5130,7 +5132,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteHighlyRelevantOperationRule(childComplexity, args["ruleId"].(string)), true
+		return e.complexity.Mutation.DeleteHighlyRelevantOperationRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string)), true
 
 	case "Mutation.deleteInstrumentationRule":
 		if e.complexity.Mutation.DeleteInstrumentationRule == nil {
@@ -5154,7 +5156,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteNoisyOperationRule(childComplexity, args["ruleId"].(string)), true
+		return e.complexity.Mutation.DeleteNoisyOperationRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string)), true
 
 	case "Mutation.pauseOdigos":
 		if e.complexity.Mutation.PauseOdigos == nil {
@@ -5288,7 +5290,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateCostReductionRule(childComplexity, args["ruleId"].(string), args["rule"].(model.CostReductionRuleInput)), true
+		return e.complexity.Mutation.UpdateCostReductionRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string), args["rule"].(model.CostReductionRuleInput)), true
 
 	case "Mutation.updateDataStream":
 		if e.complexity.Mutation.UpdateDataStream == nil {
@@ -5324,7 +5326,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateHighlyRelevantOperationRule(childComplexity, args["ruleId"].(string), args["rule"].(model.HighlyRelevantOperationRuleInput)), true
+		return e.complexity.Mutation.UpdateHighlyRelevantOperationRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string), args["rule"].(model.HighlyRelevantOperationRuleInput)), true
 
 	case "Mutation.updateInstrumentationRule":
 		if e.complexity.Mutation.UpdateInstrumentationRule == nil {
@@ -5372,7 +5374,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateNoisyOperationRule(childComplexity, args["ruleId"].(string), args["rule"].(model.NoisyOperationRuleInput)), true
+		return e.complexity.Mutation.UpdateNoisyOperationRule(childComplexity, args["samplingId"].(string), args["ruleId"].(string), args["rule"].(model.NoisyOperationRuleInput)), true
 
 	case "Mutation.updateRemoteConfig":
 		if e.complexity.Mutation.UpdateRemoteConfig == nil {
@@ -6369,6 +6371,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SamplingRules.HighlyRelevantOperations(childComplexity), true
 
+	case "SamplingRules.id":
+		if e.complexity.SamplingRules.ID == nil {
+			break
+		}
+
+		return e.complexity.SamplingRules.ID(childComplexity), true
+
+	case "SamplingRules.name":
+		if e.complexity.SamplingRules.Name == nil {
+			break
+		}
+
+		return e.complexity.SamplingRules.Name(childComplexity), true
+
 	case "SamplingRules.noisyOperations":
 		if e.complexity.SamplingRules.NoisyOperations == nil {
 			break
@@ -7189,13 +7205,36 @@ func (ec *executionContext) field_Mutation_createAction_argsAction(
 func (ec *executionContext) field_Mutation_createCostReductionRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_createCostReductionRule_argsRule(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_createCostReductionRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["rule"] = arg0
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_createCostReductionRule_argsRule(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["rule"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_createCostReductionRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_createCostReductionRule_argsRule(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -7217,13 +7256,36 @@ func (ec *executionContext) field_Mutation_createCostReductionRule_argsRule(
 func (ec *executionContext) field_Mutation_createHighlyRelevantOperationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_createHighlyRelevantOperationRule_argsRule(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_createHighlyRelevantOperationRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["rule"] = arg0
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_createHighlyRelevantOperationRule_argsRule(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["rule"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_createHighlyRelevantOperationRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_createHighlyRelevantOperationRule_argsRule(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -7301,13 +7363,36 @@ func (ec *executionContext) field_Mutation_createNewDestination_argsDestination(
 func (ec *executionContext) field_Mutation_createNoisyOperationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_createNoisyOperationRule_argsRule(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_createNoisyOperationRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["rule"] = arg0
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_createNoisyOperationRule_argsRule(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["rule"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_createNoisyOperationRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_createNoisyOperationRule_argsRule(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -7380,13 +7465,36 @@ func (ec *executionContext) field_Mutation_deleteAction_argsActionType(
 func (ec *executionContext) field_Mutation_deleteCostReductionRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_deleteCostReductionRule_argsRuleID(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_deleteCostReductionRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["ruleId"] = arg0
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_deleteCostReductionRule_argsRuleID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ruleId"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_deleteCostReductionRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteCostReductionRule_argsRuleID(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -7487,13 +7595,36 @@ func (ec *executionContext) field_Mutation_deleteDestination_argsCurrentStreamNa
 func (ec *executionContext) field_Mutation_deleteHighlyRelevantOperationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_deleteHighlyRelevantOperationRule_argsRuleID(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_deleteHighlyRelevantOperationRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["ruleId"] = arg0
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_deleteHighlyRelevantOperationRule_argsRuleID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ruleId"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_deleteHighlyRelevantOperationRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteHighlyRelevantOperationRule_argsRuleID(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -7543,13 +7674,36 @@ func (ec *executionContext) field_Mutation_deleteInstrumentationRule_argsRuleID(
 func (ec *executionContext) field_Mutation_deleteNoisyOperationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_deleteNoisyOperationRule_argsRuleID(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_deleteNoisyOperationRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["ruleId"] = arg0
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_deleteNoisyOperationRule_argsRuleID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["ruleId"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_deleteNoisyOperationRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteNoisyOperationRule_argsRuleID(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -7892,18 +8046,41 @@ func (ec *executionContext) field_Mutation_updateApiToken_argsToken(
 func (ec *executionContext) field_Mutation_updateCostReductionRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_updateCostReductionRule_argsRuleID(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_updateCostReductionRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["ruleId"] = arg0
-	arg1, err := ec.field_Mutation_updateCostReductionRule_argsRule(ctx, rawArgs)
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_updateCostReductionRule_argsRuleID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["rule"] = arg1
+	args["ruleId"] = arg1
+	arg2, err := ec.field_Mutation_updateCostReductionRule_argsRule(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["rule"] = arg2
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_updateCostReductionRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_updateCostReductionRule_argsRuleID(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -8045,18 +8222,41 @@ func (ec *executionContext) field_Mutation_updateDestination_argsDestination(
 func (ec *executionContext) field_Mutation_updateHighlyRelevantOperationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_updateHighlyRelevantOperationRule_argsRuleID(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_updateHighlyRelevantOperationRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["ruleId"] = arg0
-	arg1, err := ec.field_Mutation_updateHighlyRelevantOperationRule_argsRule(ctx, rawArgs)
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_updateHighlyRelevantOperationRule_argsRuleID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["rule"] = arg1
+	args["ruleId"] = arg1
+	arg2, err := ec.field_Mutation_updateHighlyRelevantOperationRule_argsRule(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["rule"] = arg2
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_updateHighlyRelevantOperationRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_updateHighlyRelevantOperationRule_argsRuleID(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -8226,18 +8426,41 @@ func (ec *executionContext) field_Mutation_updateLocalUiSamplingConfig_argsConfi
 func (ec *executionContext) field_Mutation_updateNoisyOperationRule_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_updateNoisyOperationRule_argsRuleID(ctx, rawArgs)
+	arg0, err := ec.field_Mutation_updateNoisyOperationRule_argsSamplingID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["ruleId"] = arg0
-	arg1, err := ec.field_Mutation_updateNoisyOperationRule_argsRule(ctx, rawArgs)
+	args["samplingId"] = arg0
+	arg1, err := ec.field_Mutation_updateNoisyOperationRule_argsRuleID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["rule"] = arg1
+	args["ruleId"] = arg1
+	arg2, err := ec.field_Mutation_updateNoisyOperationRule_argsRule(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["rule"] = arg2
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_updateNoisyOperationRule_argsSamplingID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["samplingId"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingId"))
+	if tmp, ok := rawArgs["samplingId"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_updateNoisyOperationRule_argsRuleID(
 	ctx context.Context,
 	rawArgs map[string]any,
@@ -33582,7 +33805,7 @@ func (ec *executionContext) _Mutation_createNoisyOperationRule(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateNoisyOperationRule(rctx, fc.Args["rule"].(model.NoisyOperationRuleInput))
+		return ec.resolvers.Mutation().CreateNoisyOperationRule(rctx, fc.Args["samplingId"].(string), fc.Args["rule"].(model.NoisyOperationRuleInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33653,7 +33876,7 @@ func (ec *executionContext) _Mutation_updateNoisyOperationRule(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateNoisyOperationRule(rctx, fc.Args["ruleId"].(string), fc.Args["rule"].(model.NoisyOperationRuleInput))
+		return ec.resolvers.Mutation().UpdateNoisyOperationRule(rctx, fc.Args["samplingId"].(string), fc.Args["ruleId"].(string), fc.Args["rule"].(model.NoisyOperationRuleInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33724,7 +33947,7 @@ func (ec *executionContext) _Mutation_deleteNoisyOperationRule(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteNoisyOperationRule(rctx, fc.Args["ruleId"].(string))
+		return ec.resolvers.Mutation().DeleteNoisyOperationRule(rctx, fc.Args["samplingId"].(string), fc.Args["ruleId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33779,7 +34002,7 @@ func (ec *executionContext) _Mutation_createHighlyRelevantOperationRule(ctx cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateHighlyRelevantOperationRule(rctx, fc.Args["rule"].(model.HighlyRelevantOperationRuleInput))
+		return ec.resolvers.Mutation().CreateHighlyRelevantOperationRule(rctx, fc.Args["samplingId"].(string), fc.Args["rule"].(model.HighlyRelevantOperationRuleInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33854,7 +34077,7 @@ func (ec *executionContext) _Mutation_updateHighlyRelevantOperationRule(ctx cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateHighlyRelevantOperationRule(rctx, fc.Args["ruleId"].(string), fc.Args["rule"].(model.HighlyRelevantOperationRuleInput))
+		return ec.resolvers.Mutation().UpdateHighlyRelevantOperationRule(rctx, fc.Args["samplingId"].(string), fc.Args["ruleId"].(string), fc.Args["rule"].(model.HighlyRelevantOperationRuleInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33929,7 +34152,7 @@ func (ec *executionContext) _Mutation_deleteHighlyRelevantOperationRule(ctx cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteHighlyRelevantOperationRule(rctx, fc.Args["ruleId"].(string))
+		return ec.resolvers.Mutation().DeleteHighlyRelevantOperationRule(rctx, fc.Args["samplingId"].(string), fc.Args["ruleId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -33984,7 +34207,7 @@ func (ec *executionContext) _Mutation_createCostReductionRule(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateCostReductionRule(rctx, fc.Args["rule"].(model.CostReductionRuleInput))
+		return ec.resolvers.Mutation().CreateCostReductionRule(rctx, fc.Args["samplingId"].(string), fc.Args["rule"].(model.CostReductionRuleInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -34055,7 +34278,7 @@ func (ec *executionContext) _Mutation_updateCostReductionRule(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateCostReductionRule(rctx, fc.Args["ruleId"].(string), fc.Args["rule"].(model.CostReductionRuleInput))
+		return ec.resolvers.Mutation().UpdateCostReductionRule(rctx, fc.Args["samplingId"].(string), fc.Args["ruleId"].(string), fc.Args["rule"].(model.CostReductionRuleInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -34126,7 +34349,7 @@ func (ec *executionContext) _Mutation_deleteCostReductionRule(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteCostReductionRule(rctx, fc.Args["ruleId"].(string))
+		return ec.resolvers.Mutation().DeleteCostReductionRule(rctx, fc.Args["samplingId"].(string), fc.Args["ruleId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40693,9 +40916,9 @@ func (ec *executionContext) _Sampling_rules(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.SamplingRules)
+	res := resTmp.([]*model.SamplingRules)
 	fc.Result = res
-	return ec.marshalNSamplingRules2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingRules(ctx, field.Selections, res)
+	return ec.marshalNSamplingRules2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingRulesᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Sampling_rules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -40706,6 +40929,10 @@ func (ec *executionContext) fieldContext_Sampling_rules(_ context.Context, field
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_SamplingRules_id(ctx, field)
+			case "name":
+				return ec.fieldContext_SamplingRules_name(ctx, field)
 			case "noisyOperations":
 				return ec.fieldContext_SamplingRules_noisyOperations(ctx, field)
 			case "highlyRelevantOperations":
@@ -40996,6 +41223,91 @@ func (ec *executionContext) fieldContext_SamplingConfigs_localUiConfig(_ context
 				return ec.fieldContext_SamplingConfig_k8sHealthProbesSampling(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SamplingConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SamplingRules_id(ctx context.Context, field graphql.CollectedField, obj *model.SamplingRules) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SamplingRules_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SamplingRules_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SamplingRules",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SamplingRules_name(ctx context.Context, field graphql.CollectedField, obj *model.SamplingRules) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SamplingRules_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SamplingRules_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SamplingRules",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -57611,6 +57923,13 @@ func (ec *executionContext) _SamplingRules(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("SamplingRules")
+		case "id":
+			out.Values[i] = ec._SamplingRules_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "name":
+			out.Values[i] = ec._SamplingRules_name(ctx, field, obj)
 		case "noisyOperations":
 			field := field
 
@@ -61799,8 +62118,48 @@ func (ec *executionContext) marshalNSamplingConfigs2ᚖgithubᚗcomᚋodigosᚑi
 	return ec._SamplingConfigs(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNSamplingRules2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingRules(ctx context.Context, sel ast.SelectionSet, v model.SamplingRules) graphql.Marshaler {
-	return ec._SamplingRules(ctx, sel, &v)
+func (ec *executionContext) marshalNSamplingRules2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingRulesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.SamplingRules) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSamplingRules2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingRules(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNSamplingRules2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐSamplingRules(ctx context.Context, sel ast.SelectionSet, v *model.SamplingRules) graphql.Marshaler {

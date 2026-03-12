@@ -1302,7 +1302,7 @@ type RuntimeInfoAnalyze struct {
 
 type Sampling struct {
 	Configs *SamplingConfigs `json:"configs"`
-	Rules   *SamplingRules   `json:"rules"`
+	Rules   []*SamplingRules `json:"rules"`
 }
 
 type SamplingConfig struct {
@@ -1323,6 +1323,8 @@ type SamplingConfigs struct {
 }
 
 type SamplingRules struct {
+	ID                       string                         `json:"id"`
+	Name                     *string                        `json:"name,omitempty"`
 	NoisyOperations          []*NoisyOperationRule          `json:"noisyOperations"`
 	HighlyRelevantOperations []*HighlyRelevantOperationRule `json:"highlyRelevantOperations"`
 	CostReductionRules       []*CostReductionRule           `json:"costReductionRules"`

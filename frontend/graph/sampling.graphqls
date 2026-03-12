@@ -231,6 +231,10 @@ input CostReductionRuleInput {
 # ---- Container for all sampling rules ----
 
 type SamplingRules {
+    # stable identifier for this rule group (k8s metadata.name of the Sampling CR)
+    id: ID!
+    # user-facing display name for this rule group
+    name: String
     noisyOperations: [NoisyOperationRule!]!
     highlyRelevantOperations: [HighlyRelevantOperationRule!]!
     costReductionRules: [CostReductionRule!]!
@@ -241,8 +245,8 @@ type SamplingRules {
 type Sampling {
     # global sampling configs (tail sampling, health probes, etc.)
     configs: SamplingConfigs!
-    # sampling rules (noisy operations, highly relevant, cost reduction)
-    rules: SamplingRules!
+    # sampling rule groups (one per Sampling CR)
+    rules: [SamplingRules!]!
 }
 
 extend type Query {
@@ -257,17 +261,17 @@ extend type Mutation {
     updateLocalUiSamplingConfig(config: SamplingConfigInput): Boolean!
 
     # ---- Noisy operations CRUD ----
-    createNoisyOperationRule(rule: NoisyOperationRuleInput!): NoisyOperationRule!
-    updateNoisyOperationRule(ruleId: ID!, rule: NoisyOperationRuleInput!): NoisyOperationRule!
-    deleteNoisyOperationRule(ruleId: ID!): Boolean!
+    createNoisyOperationRule(samplingId: ID!, rule: NoisyOperationRuleInput!): NoisyOperationRule!
+    updateNoisyOperationRule(samplingId: ID!, ruleId: ID!, rule: NoisyOperationRuleInput!): NoisyOperationRule!
+    deleteNoisyOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
 
     # ---- Highly relevant operations CRUD ----
-    createHighlyRelevantOperationRule(rule: HighlyRelevantOperationRuleInput!): HighlyRelevantOperationRule!
-    updateHighlyRelevantOperationRule(ruleId: ID!, rule: HighlyRelevantOperationRuleInput!): HighlyRelevantOperationRule!
-    deleteHighlyRelevantOperationRule(ruleId: ID!): Boolean!
+    createHighlyRelevantOperationRule(samplingId: ID!, rule: HighlyRelevantOperationRuleInput!): HighlyRelevantOperationRule!
+    updateHighlyRelevantOperationRule(samplingId: ID!, ruleId: ID!, rule: HighlyRelevantOperationRuleInput!): HighlyRelevantOperationRule!
+    deleteHighlyRelevantOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
 
     # ---- Cost reduction CRUD ----
-    createCostReductionRule(rule: CostReductionRuleInput!): CostReductionRule!
-    updateCostReductionRule(ruleId: ID!, rule: CostReductionRuleInput!): CostReductionRule!
-    deleteCostReductionRule(ruleId: ID!): Boolean!
+    createCostReductionRule(samplingId: ID!, rule: CostReductionRuleInput!): CostReductionRule!
+    updateCostReductionRule(samplingId: ID!, ruleId: ID!, rule: CostReductionRuleInput!): CostReductionRule!
+    deleteCostReductionRule(samplingId: ID!, ruleId: ID!): Boolean!
 }

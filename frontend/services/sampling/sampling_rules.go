@@ -7,54 +7,18 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
+	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// getOrCreateSamplingCR returns the single Sampling CR, creating it if it doesn't exist.
-func getOrCreateSamplingCR(ctx context.Context) (*v1alpha1.Sampling, error) {
+func getSamplingCRByID(ctx context.Context, samplingID string) (*v1alpha1.Sampling, error) {
 	odigosNs := env.GetCurrentNamespace()
-
-	list, err := kube.DefaultClient.OdigosClient.Samplings(odigosNs).List(ctx, metav1.ListOptions{})
+	cr, err := kube.DefaultClient.OdigosClient.Samplings(odigosNs).Get(ctx, samplingID, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list sampling CRs: %w", err)
+		return nil, fmt.Errorf("sampling CR %q not found: %w", samplingID, err)
 	}
-
-	// Currently we assume a single Sampling CR for all rules.
-	// When grouping is introduced, this will need to accept a group identifier.
-	if len(list.Items) > 0 {
-		return &list.Items[0], nil
-	}
-
-	cr := &v1alpha1.Sampling{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "sampling-",
-		},
-		Spec: v1alpha1.SamplingSpec{},
-	}
-
-	created, err := kube.DefaultClient.OdigosClient.Samplings(odigosNs).Create(ctx, cr, metav1.CreateOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create sampling CR: %w", err)
-	}
-	return created, nil
-}
-
-// getSamplingCR returns the single Sampling CR or an error if none exists.
-func getSamplingCR(ctx context.Context) (*v1alpha1.Sampling, error) {
-	odigosNs := env.GetCurrentNamespace()
-
-	list, err := kube.DefaultClient.OdigosClient.Samplings(odigosNs).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list sampling CRs: %w", err)
-	}
-
-	if len(list.Items) == 0 {
-		return nil, fmt.Errorf("no sampling CR found")
-	}
-	// Currently we assume a single Sampling CR for all rules.
-	// When grouping is introduced, this will need to accept a group identifier.
-	return &list.Items[0], nil
+	return cr, nil
 }
 
 func updateSamplingCR(ctx context.Context, cr *v1alpha1.Sampling) (*v1alpha1.Sampling, error) {
@@ -66,9 +30,9 @@ func updateSamplingCR(ctx context.Context, cr *v1alpha1.Sampling) (*v1alpha1.Sam
 	return updated, nil
 }
 
-// ---- Noisy Operations ----
-
-func GetNoisyOperationRules(ctx context.Context) ([]*model.NoisyOperationRule, error) {
+// GetAllSamplingRuleGroups lists all Sampling CRs and returns each as a SamplingRules group
+// with rules eagerly populated.
+func GetAllSamplingRuleGroups(ctx context.Context) ([]*model.SamplingRules, error) {
 	odigosNs := env.GetCurrentNamespace()
 
 	list, err := kube.DefaultClient.OdigosClient.Samplings(odigosNs).List(ctx, metav1.ListOptions{})
@@ -76,18 +40,43 @@ func GetNoisyOperationRules(ctx context.Context) ([]*model.NoisyOperationRule, e
 		return nil, fmt.Errorf("failed to list sampling CRs: %w", err)
 	}
 
-	var rules []*model.NoisyOperationRule
+	groups := make([]*model.SamplingRules, 0, len(list.Items))
 	for i := range list.Items {
 		cr := &list.Items[i]
-		for j := range cr.Spec.NoisyOperations {
-			rules = append(rules, convertNoisyOperationToModel(&cr.Spec.NoisyOperations[j]))
-		}
+		groups = append(groups, samplingCRToModel(cr))
 	}
-	return rules, nil
+	return groups, nil
 }
 
-func CreateNoisyOperationRule(ctx context.Context, input model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
-	cr, err := getOrCreateSamplingCR(ctx)
+func samplingCRToModel(cr *v1alpha1.Sampling) *model.SamplingRules {
+	noisy := make([]*model.NoisyOperationRule, 0, len(cr.Spec.NoisyOperations))
+	for j := range cr.Spec.NoisyOperations {
+		noisy = append(noisy, convertNoisyOperationToModel(&cr.Spec.NoisyOperations[j]))
+	}
+
+	relevant := make([]*model.HighlyRelevantOperationRule, 0, len(cr.Spec.HighlyRelevantOperations))
+	for j := range cr.Spec.HighlyRelevantOperations {
+		relevant = append(relevant, convertHighlyRelevantOperationToModel(&cr.Spec.HighlyRelevantOperations[j]))
+	}
+
+	cost := make([]*model.CostReductionRule, 0, len(cr.Spec.CostReductionRules))
+	for j := range cr.Spec.CostReductionRules {
+		cost = append(cost, convertCostReductionRuleToModel(&cr.Spec.CostReductionRules[j]))
+	}
+
+	return &model.SamplingRules{
+		ID:                       cr.Name,
+		Name:                     services.StringPtrIfNotEmpty(cr.Spec.Name),
+		NoisyOperations:          noisy,
+		HighlyRelevantOperations: relevant,
+		CostReductionRules:       cost,
+	}
+}
+
+// ---- Noisy Operations ----
+
+func CreateNoisyOperationRule(ctx context.Context, samplingID string, input model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,15 +90,15 @@ func CreateNoisyOperationRule(ctx context.Context, input model.NoisyOperationRul
 	return convertNoisyOperationToModel(&rule), nil
 }
 
-func UpdateNoisyOperationRule(ctx context.Context, ruleID string, input model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
-	cr, err := getSamplingCR(ctx)
+func UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, input model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return nil, err
 	}
 
 	idx := findNoisyOperationByHash(cr.Spec.NoisyOperations, ruleID)
 	if idx < 0 {
-		return nil, fmt.Errorf("noisy operation rule %s not found", ruleID)
+		return nil, fmt.Errorf("noisy operation rule %s not found in sampling %s", ruleID, samplingID)
 	}
 
 	rule := noisyOperationFromInput(input)
@@ -121,15 +110,15 @@ func UpdateNoisyOperationRule(ctx context.Context, ruleID string, input model.No
 	return convertNoisyOperationToModel(&rule), nil
 }
 
-func DeleteNoisyOperationRule(ctx context.Context, ruleID string) (bool, error) {
-	cr, err := getSamplingCR(ctx)
+func DeleteNoisyOperationRule(ctx context.Context, samplingID string, ruleID string) (bool, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return false, err
 	}
 
 	idx := findNoisyOperationByHash(cr.Spec.NoisyOperations, ruleID)
 	if idx < 0 {
-		return false, fmt.Errorf("noisy operation rule %s not found", ruleID)
+		return false, fmt.Errorf("noisy operation rule %s not found in sampling %s", ruleID, samplingID)
 	}
 
 	cr.Spec.NoisyOperations = append(cr.Spec.NoisyOperations[:idx], cr.Spec.NoisyOperations[idx+1:]...)
@@ -151,26 +140,8 @@ func findNoisyOperationByHash(rules []v1alpha1.NoisyOperation, hash string) int 
 
 // ---- Highly Relevant Operations ----
 
-func GetHighlyRelevantOperationRules(ctx context.Context) ([]*model.HighlyRelevantOperationRule, error) {
-	odigosNs := env.GetCurrentNamespace()
-
-	list, err := kube.DefaultClient.OdigosClient.Samplings(odigosNs).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list sampling CRs: %w", err)
-	}
-
-	var rules []*model.HighlyRelevantOperationRule
-	for i := range list.Items {
-		cr := &list.Items[i]
-		for j := range cr.Spec.HighlyRelevantOperations {
-			rules = append(rules, convertHighlyRelevantOperationToModel(&cr.Spec.HighlyRelevantOperations[j]))
-		}
-	}
-	return rules, nil
-}
-
-func CreateHighlyRelevantOperationRule(ctx context.Context, input model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
-	cr, err := getOrCreateSamplingCR(ctx)
+func CreateHighlyRelevantOperationRule(ctx context.Context, samplingID string, input model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return nil, err
 	}
@@ -184,15 +155,15 @@ func CreateHighlyRelevantOperationRule(ctx context.Context, input model.HighlyRe
 	return convertHighlyRelevantOperationToModel(&rule), nil
 }
 
-func UpdateHighlyRelevantOperationRule(ctx context.Context, ruleID string, input model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
-	cr, err := getSamplingCR(ctx)
+func UpdateHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string, input model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return nil, err
 	}
 
 	idx := findHighlyRelevantOperationByHash(cr.Spec.HighlyRelevantOperations, ruleID)
 	if idx < 0 {
-		return nil, fmt.Errorf("highly relevant operation rule %s not found", ruleID)
+		return nil, fmt.Errorf("highly relevant operation rule %s not found in sampling %s", ruleID, samplingID)
 	}
 
 	rule := highlyRelevantOperationFromInput(input)
@@ -204,15 +175,15 @@ func UpdateHighlyRelevantOperationRule(ctx context.Context, ruleID string, input
 	return convertHighlyRelevantOperationToModel(&rule), nil
 }
 
-func DeleteHighlyRelevantOperationRule(ctx context.Context, ruleID string) (bool, error) {
-	cr, err := getSamplingCR(ctx)
+func DeleteHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string) (bool, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return false, err
 	}
 
 	idx := findHighlyRelevantOperationByHash(cr.Spec.HighlyRelevantOperations, ruleID)
 	if idx < 0 {
-		return false, fmt.Errorf("highly relevant operation rule %s not found", ruleID)
+		return false, fmt.Errorf("highly relevant operation rule %s not found in sampling %s", ruleID, samplingID)
 	}
 
 	cr.Spec.HighlyRelevantOperations = append(cr.Spec.HighlyRelevantOperations[:idx], cr.Spec.HighlyRelevantOperations[idx+1:]...)
@@ -234,26 +205,8 @@ func findHighlyRelevantOperationByHash(rules []v1alpha1.HighlyRelevantOperation,
 
 // ---- Cost Reduction Rules ----
 
-func GetCostReductionRules(ctx context.Context) ([]*model.CostReductionRule, error) {
-	odigosNs := env.GetCurrentNamespace()
-
-	list, err := kube.DefaultClient.OdigosClient.Samplings(odigosNs).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list sampling CRs: %w", err)
-	}
-
-	var rules []*model.CostReductionRule
-	for i := range list.Items {
-		cr := &list.Items[i]
-		for j := range cr.Spec.CostReductionRules {
-			rules = append(rules, convertCostReductionRuleToModel(&cr.Spec.CostReductionRules[j]))
-		}
-	}
-	return rules, nil
-}
-
-func CreateCostReductionRule(ctx context.Context, input model.CostReductionRuleInput) (*model.CostReductionRule, error) {
-	cr, err := getOrCreateSamplingCR(ctx)
+func CreateCostReductionRule(ctx context.Context, samplingID string, input model.CostReductionRuleInput) (*model.CostReductionRule, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return nil, err
 	}
@@ -267,15 +220,15 @@ func CreateCostReductionRule(ctx context.Context, input model.CostReductionRuleI
 	return convertCostReductionRuleToModel(&rule), nil
 }
 
-func UpdateCostReductionRule(ctx context.Context, ruleID string, input model.CostReductionRuleInput) (*model.CostReductionRule, error) {
-	cr, err := getSamplingCR(ctx)
+func UpdateCostReductionRule(ctx context.Context, samplingID string, ruleID string, input model.CostReductionRuleInput) (*model.CostReductionRule, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return nil, err
 	}
 
 	idx := findCostReductionRuleByHash(cr.Spec.CostReductionRules, ruleID)
 	if idx < 0 {
-		return nil, fmt.Errorf("cost reduction rule %s not found", ruleID)
+		return nil, fmt.Errorf("cost reduction rule %s not found in sampling %s", ruleID, samplingID)
 	}
 
 	rule := costReductionRuleFromInput(input)
@@ -287,15 +240,15 @@ func UpdateCostReductionRule(ctx context.Context, ruleID string, input model.Cos
 	return convertCostReductionRuleToModel(&rule), nil
 }
 
-func DeleteCostReductionRule(ctx context.Context, ruleID string) (bool, error) {
-	cr, err := getSamplingCR(ctx)
+func DeleteCostReductionRule(ctx context.Context, samplingID string, ruleID string) (bool, error) {
+	cr, err := getSamplingCRByID(ctx, samplingID)
 	if err != nil {
 		return false, err
 	}
 
 	idx := findCostReductionRuleByHash(cr.Spec.CostReductionRules, ruleID)
 	if idx < 0 {
-		return false, fmt.Errorf("cost reduction rule %s not found", ruleID)
+		return false, fmt.Errorf("cost reduction rule %s not found in sampling %s", ruleID, samplingID)
 	}
 
 	cr.Spec.CostReductionRules = append(cr.Spec.CostReductionRules[:idx], cr.Spec.CostReductionRules[idx+1:]...)

@@ -23,48 +23,48 @@ func (r *mutationResolver) UpdateLocalUISamplingConfig(ctx context.Context, conf
 }
 
 // CreateNoisyOperationRule is the resolver for the createNoisyOperationRule field.
-func (r *mutationResolver) CreateNoisyOperationRule(ctx context.Context, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
-	return sampling.CreateNoisyOperationRule(ctx, rule)
+func (r *mutationResolver) CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
+	return sampling.CreateNoisyOperationRule(ctx, samplingID, rule)
 }
 
 // UpdateNoisyOperationRule is the resolver for the updateNoisyOperationRule field.
-func (r *mutationResolver) UpdateNoisyOperationRule(ctx context.Context, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
-	return sampling.UpdateNoisyOperationRule(ctx, ruleID, rule)
+func (r *mutationResolver) UpdateNoisyOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error) {
+	return sampling.UpdateNoisyOperationRule(ctx, samplingID, ruleID, rule)
 }
 
 // DeleteNoisyOperationRule is the resolver for the deleteNoisyOperationRule field.
-func (r *mutationResolver) DeleteNoisyOperationRule(ctx context.Context, ruleID string) (bool, error) {
-	return sampling.DeleteNoisyOperationRule(ctx, ruleID)
+func (r *mutationResolver) DeleteNoisyOperationRule(ctx context.Context, samplingID string, ruleID string) (bool, error) {
+	return sampling.DeleteNoisyOperationRule(ctx, samplingID, ruleID)
 }
 
 // CreateHighlyRelevantOperationRule is the resolver for the createHighlyRelevantOperationRule field.
-func (r *mutationResolver) CreateHighlyRelevantOperationRule(ctx context.Context, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
-	return sampling.CreateHighlyRelevantOperationRule(ctx, rule)
+func (r *mutationResolver) CreateHighlyRelevantOperationRule(ctx context.Context, samplingID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
+	return sampling.CreateHighlyRelevantOperationRule(ctx, samplingID, rule)
 }
 
 // UpdateHighlyRelevantOperationRule is the resolver for the updateHighlyRelevantOperationRule field.
-func (r *mutationResolver) UpdateHighlyRelevantOperationRule(ctx context.Context, ruleID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
-	return sampling.UpdateHighlyRelevantOperationRule(ctx, ruleID, rule)
+func (r *mutationResolver) UpdateHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string, rule model.HighlyRelevantOperationRuleInput) (*model.HighlyRelevantOperationRule, error) {
+	return sampling.UpdateHighlyRelevantOperationRule(ctx, samplingID, ruleID, rule)
 }
 
 // DeleteHighlyRelevantOperationRule is the resolver for the deleteHighlyRelevantOperationRule field.
-func (r *mutationResolver) DeleteHighlyRelevantOperationRule(ctx context.Context, ruleID string) (bool, error) {
-	return sampling.DeleteHighlyRelevantOperationRule(ctx, ruleID)
+func (r *mutationResolver) DeleteHighlyRelevantOperationRule(ctx context.Context, samplingID string, ruleID string) (bool, error) {
+	return sampling.DeleteHighlyRelevantOperationRule(ctx, samplingID, ruleID)
 }
 
 // CreateCostReductionRule is the resolver for the createCostReductionRule field.
-func (r *mutationResolver) CreateCostReductionRule(ctx context.Context, rule model.CostReductionRuleInput) (*model.CostReductionRule, error) {
-	return sampling.CreateCostReductionRule(ctx, rule)
+func (r *mutationResolver) CreateCostReductionRule(ctx context.Context, samplingID string, rule model.CostReductionRuleInput) (*model.CostReductionRule, error) {
+	return sampling.CreateCostReductionRule(ctx, samplingID, rule)
 }
 
 // UpdateCostReductionRule is the resolver for the updateCostReductionRule field.
-func (r *mutationResolver) UpdateCostReductionRule(ctx context.Context, ruleID string, rule model.CostReductionRuleInput) (*model.CostReductionRule, error) {
-	return sampling.UpdateCostReductionRule(ctx, ruleID, rule)
+func (r *mutationResolver) UpdateCostReductionRule(ctx context.Context, samplingID string, ruleID string, rule model.CostReductionRuleInput) (*model.CostReductionRule, error) {
+	return sampling.UpdateCostReductionRule(ctx, samplingID, ruleID, rule)
 }
 
 // DeleteCostReductionRule is the resolver for the deleteCostReductionRule field.
-func (r *mutationResolver) DeleteCostReductionRule(ctx context.Context, ruleID string) (bool, error) {
-	return sampling.DeleteCostReductionRule(ctx, ruleID)
+func (r *mutationResolver) DeleteCostReductionRule(ctx context.Context, samplingID string, ruleID string) (bool, error) {
+	return sampling.DeleteCostReductionRule(ctx, samplingID, ruleID)
 }
 
 // Sampling is the resolver for the sampling field.
@@ -75,8 +75,8 @@ func (r *queryResolver) Sampling(ctx context.Context) (*model.Sampling, error) {
 }
 
 // Rules is the resolver for the rules field.
-func (r *samplingResolver) Rules(ctx context.Context, obj *model.Sampling) (*model.SamplingRules, error) {
-	return &model.SamplingRules{}, nil
+func (r *samplingResolver) Rules(ctx context.Context, obj *model.Sampling) ([]*model.SamplingRules, error) {
+	return sampling.GetAllSamplingRuleGroups(ctx)
 }
 
 // Effective is the resolver for the effective field.
@@ -117,17 +117,17 @@ func (r *samplingConfigsResolver) LocalUIConfig(ctx context.Context, obj *model.
 
 // NoisyOperations is the resolver for the noisyOperations field.
 func (r *samplingRulesResolver) NoisyOperations(ctx context.Context, obj *model.SamplingRules) ([]*model.NoisyOperationRule, error) {
-	return sampling.GetNoisyOperationRules(ctx)
+	return obj.NoisyOperations, nil
 }
 
 // HighlyRelevantOperations is the resolver for the highlyRelevantOperations field.
 func (r *samplingRulesResolver) HighlyRelevantOperations(ctx context.Context, obj *model.SamplingRules) ([]*model.HighlyRelevantOperationRule, error) {
-	return sampling.GetHighlyRelevantOperationRules(ctx)
+	return obj.HighlyRelevantOperations, nil
 }
 
 // CostReductionRules is the resolver for the costReductionRules field.
 func (r *samplingRulesResolver) CostReductionRules(ctx context.Context, obj *model.SamplingRules) ([]*model.CostReductionRule, error) {
-	return sampling.GetCostReductionRules(ctx)
+	return obj.CostReductionRules, nil
 }
 
 // Sampling returns SamplingResolver implementation.
