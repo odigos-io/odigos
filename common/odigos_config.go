@@ -1,5 +1,9 @@
 package common
 
+import (
+	"github.com/odigos-io/odigos/common/api/sampling"
+)
+
 type ProfileName string
 
 // OdigosLogLevel is the log level for components (error, warn, info, debug).
@@ -421,35 +425,17 @@ type OdigosOwnTelemetryConfiguration struct {
 	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
 }
 
-// +kubebuilder:object:generate=true
-type TailSamplingConfiguration struct {
-
-	// if set to true, tail sampling will be disabled globally
-	// regardless of any other configurations or rules set.
-	// can be used to reduce collectors resource usage, troubleshooting, etc,
-	// or when tail-sampling is not needed or desired and should be shut off.
-	Disabled *bool `json:"disabled,omitempty"`
-
-	// time to wait from the first span of a trace until a trace is considered completed.
-	// at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
-	// introduces this amount of latency in the pipeline and for trace to hit the destination.
-	// also increases memory usage for keeping spans in memory until the wait duration time is reached.
-	// setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
-	// and broken traces due to sampling each trace in few pieces.
-	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
-}
-
-// configuration for odigos auto-kubelet-probes detection and sampling.
-// odigos can automatically pick up health probes from the k8s manifest,
+// Configuration for Odigos auto-kubelet-probes detection and sampling.
+// Odigos can automatically pick up health probes from the k8s manifest,
 // and treat them as "noisy endpoints" to be sampled out.
-// most users get little or no value from tracing health probes,
+// Most users get little or no value from tracing health probes,
 // and it is recommended to enable and use it.
-// it will be used with head sampling where the agent support it.
-// when tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.
+// It will be used with head sampling where the agent support it.
+// When tail sampling is enabled, the kubelet-health-probes will be sampled out by tail sampler.
 type K8sHealthProbesSamplingConfiguration struct {
-	// if set to true, odigos will automatically detect and sample out health probes.
-	// this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
-	// users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
+	// If set to true, Odigos will automatically detect and sample out health probes.
+	// This is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
+	// Users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// percentage % (0-100) of health probes to keep.
@@ -460,10 +446,23 @@ type K8sHealthProbesSamplingConfiguration struct {
 
 type SamplingConfiguration struct {
 
-	// configuration for tail sampling.
-	TailSampling *TailSamplingConfiguration `json:"tailSampling,omitempty"`
+	// Set to true to enable dry run mode for sampling.
+	// When enabled, Odigos runs the sampling logic but does not drop any traces; metrics are still
+	// calculated so you can evaluate rule effectiveness before committing to changes that might lose data.
+	// Each span gets an attribute 'odigos.sampling.dry_run.kept' indicating whether it would be kept or dropped once dry run is off.
+	// With spanSamplingAttributes enabled, dry-run decisions are also visible as span attributes on each span.
+	DryRun *bool `json:"dryRun,omitempty"`
 
-	// configuration for odigos auto-kubelet-probes detection and sampling.
+	// Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).
+	// These attributes add context when viewing traces and inspecting costs, so you can understand
+	// how sampling decisions were made for an individual span and apply changes to fine-tune rules.
+	// When dry run is enabled, each span includes the sampling decision (kept or dropped) as it would apply once dry run is disabled.
+	SpanSamplingAttributes *sampling.SpanSamplingAttributesConfiguration `json:"spanSamplingAttributes,omitempty"`
+
+	// Configuration for tail sampling.
+	TailSampling *sampling.TailSamplingConfiguration `json:"tailSampling,omitempty"`
+
+	// Configuration for Odigos auto-kubelet-probes detection and sampling.
 	K8sHealthProbesSampling *K8sHealthProbesSamplingConfiguration `json:"k8sHealthProbesSampling,omitempty"`
 }
 

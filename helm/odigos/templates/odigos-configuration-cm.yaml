@@ -229,8 +229,26 @@ data:
     imagePullSecrets:
       {{- toYaml .Values.imagePullSecrets | nindent 6 }}
     {{- end }}
-    {{- if or .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
+    {{- if or .Values.sampling.dryRun .Values.sampling.spanSamplingAttributes .Values.sampling.tailSampling .Values.sampling.k8sHealthProbesSampling }}
     sampling:
+      {{- if ne .Values.sampling.dryRun nil }}
+      dryRun: {{ .Values.sampling.dryRun }}
+      {{- end }}
+      {{- if .Values.sampling.spanSamplingAttributes }}
+      spanSamplingAttributes:
+        {{- if ne .Values.sampling.spanSamplingAttributes.disabled nil }}
+        disabled: {{ .Values.sampling.spanSamplingAttributes.disabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.samplingCategoryDisabled nil }}
+        samplingCategoryDisabled: {{ .Values.sampling.spanSamplingAttributes.samplingCategoryDisabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.traceDecidingRuleDisabled nil }}
+        traceDecidingRuleDisabled: {{ .Values.sampling.spanSamplingAttributes.traceDecidingRuleDisabled }}
+        {{- end }}
+        {{- if ne .Values.sampling.spanSamplingAttributes.spanDecisionAttributesDisabled nil }}
+        spanDecisionAttributesDisabled: {{ .Values.sampling.spanSamplingAttributes.spanDecisionAttributesDisabled }}
+        {{- end }}
+      {{- end }}
       {{- if .Values.sampling.tailSampling }}
       tailSampling:
         {{- if .Values.sampling.tailSampling.disabled }}
