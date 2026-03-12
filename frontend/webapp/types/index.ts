@@ -4,4 +4,5 @@ export * from './config';
 export * from './destinations';
 export * from './namespaces';
 export * from './sources';
+export * from './sampling';
 export * from './workloads';
