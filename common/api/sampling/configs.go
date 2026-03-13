@@ -9,11 +9,11 @@ type SpanSamplingAttributesConfiguration struct {
 	// Set to true to disable span sampling attributes.
 	// When disabled, Odigos will not set span attributes for sampling decisions
 	// (unless explicitly enabled for specific attributes set).
-	Disabled *bool `json:"disabled,omitempty"`
+	Disabled *bool `json:"disabled,omitempty" mapstructure:"disabled"`
 
 	// Set to true to disable recording the sampling category as a span attribute.
 	// Attributes: odigos.sampling.category (noise, highly relevant, cost reduction, or empty)
-	SamplingCategoryDisabled *bool `json:"samplingCategoryDisabled,omitempty"`
+	SamplingCategoryDisabled *bool `json:"samplingCategoryDisabled,omitempty" mapstructure:"sampling_category_disabled"`
 
 	// Set to true to disable recording the trace-level deciding rule as span attributes.
 	// When a trace matches an enabled sampling rule for a category, the most "severe" rule
@@ -27,7 +27,7 @@ type SpanSamplingAttributesConfiguration struct {
 	//   - odigos.sampling.trace.deciding_rule.id
 	//   - odigos.sampling.trace.deciding_rule.name
 	//   - odigos.sampling.trace.deciding_rule.keep_percentage
-	TraceDecidingRuleDisabled *bool `json:"traceDecidingRuleDisabled,omitempty"`
+	TraceDecidingRuleDisabled *bool `json:"traceDecidingRuleDisabled,omitempty" mapstructure:"trace_deciding_rule_disabled"`
 
 	// Set to true to disable recording the span-level deciding rule as span attributes.
 	// The trace-level decision is an aggregation of all spans in the trace; these attributes record
@@ -37,7 +37,7 @@ type SpanSamplingAttributesConfiguration struct {
 	//   - odigos.sampling.span.deciding_rule.id
 	//   - odigos.sampling.span.deciding_rule.name
 	//   - odigos.sampling.span.deciding_rule.keep_percentage
-	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty" mapstructure:"span_decision_attributes_disabled"`
 }
 
 // TailSamplingConfiguration configures tail sampling behavior.
@@ -48,7 +48,7 @@ type TailSamplingConfiguration struct {
 	// regardless of any other configurations or rules set.
 	// Can be used to reduce collectors resource usage, troubleshooting, etc,
 	// or when tail-sampling is not needed or desired and should be shut off.
-	Disabled *bool `json:"disabled,omitempty"`
+	Disabled *bool `json:"disabled,omitempty" mapstructure:"disabled"`
 
 	// Time to wait from the first span of a trace until a trace is considered completed.
 	// At this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
@@ -56,5 +56,5 @@ type TailSamplingConfiguration struct {
 	// Also increases memory usage for keeping spans in memory until the wait duration time is reached.
 	// Setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
 	// and broken traces due to sampling each trace in few pieces.
-	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty"`
+	TraceAggregationWaitDuration *string `json:"traceAggregationWaitDuration,omitempty" mapstructure:"traceAggregationWaitDuration"`
 }
