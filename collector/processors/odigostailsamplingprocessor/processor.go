@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap"
@@ -21,7 +22,26 @@ type tailSamplingProcessor struct {
 }
 
 func (p *tailSamplingProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
-	// Tail sampling logic will be added in a follow-up PR.
+	if p.odigosConfigExtension == nil {
+		p.logger.Error("odigos config extension is not set, skipping tail sampling")
+		return td, nil // for auto generated tests, and not to crash in case it somehow happens
+	}
+	if td.ResourceSpans().Len() == 0 || td.ResourceSpans().At(0).ScopeSpans().Len() == 0 || td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().Len() == 0 {
+		return td, nil // no spans to process
+	}
+
+	traceID, ok := assertAllSpansBelongToTheSameTrace(td)
+	if !ok {
+		p.logger.Error("not all spans belong to the same trace", zap.String("trace_id", traceID.String()))
+		return td, nil // not all spans belong to the same trace
+	}
+
+	rnd := sampling.TraceIDToRandomness(traceID)
+	// convert from range [0-MaxAdjustedCount] to range [0-100]
+	tracePercentage := float64(rnd.Unsigned()) / float64(sampling.MaxAdjustedCount) * 100.0
+
+	// Tail sampling logic (category evaluation, drop/keep decisions) will be added in a follow-up PR.
+	_ = tracePercentage
 	return td, nil
 }
 
