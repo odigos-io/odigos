@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/common/config"
 	"github.com/odigos-io/odigos/common/consts"
 )
@@ -25,6 +26,8 @@ type GatewayConfigOptions struct {
 	// Sampling config option
 	SamplingEnabled              *bool
 	TraceAggregationWaitDuration *string
+	SamplingDryRun               bool
+	SamplingSpanAttributes       *sampling.SpanSamplingAttributesConfiguration
 }
 
 func GetGatewayConfig(
@@ -82,13 +85,39 @@ func CalculateGatewayConfig(
 	}
 
 	// If sampling v2 is enabled, we need to add the groupbytrace processor to the traces processors.
-	if gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled {
+	if gatewayOptions.SamplingEnabled != nil && *gatewayOptions.SamplingEnabled && gatewayOptions.OdigosConfigExtensionName != nil {
+
 		groupbytraceProcessor := config.GenericMap{
 			"wait_duration": gatewayOptions.TraceAggregationWaitDuration,
 		}
 		currentConfig.Processors[consts.GroupByTraceProcessorV2] = groupbytraceProcessor
+
+		tailSamplingProcessorCfg := config.GenericMap{
+			"odigos_config_extension": *gatewayOptions.OdigosConfigExtensionName,
+		}
+		if gatewayOptions.SamplingDryRun {
+			tailSamplingProcessorCfg["dry_run"] = true
+		}
+		if gatewayOptions.SamplingSpanAttributes != nil {
+			spanSamplingAttributesCfg := config.GenericMap{}
+			if gatewayOptions.SamplingSpanAttributes.Disabled != nil {
+				spanSamplingAttributesCfg["disabled"] = *gatewayOptions.SamplingSpanAttributes.Disabled
+			}
+			if gatewayOptions.SamplingSpanAttributes.SamplingCategoryDisabled != nil {
+				spanSamplingAttributesCfg["sampling_category_disabled"] = *gatewayOptions.SamplingSpanAttributes.SamplingCategoryDisabled
+			}
+			if gatewayOptions.SamplingSpanAttributes.TraceDecidingRuleDisabled != nil {
+				spanSamplingAttributesCfg["trace_deciding_rule_disabled"] = *gatewayOptions.SamplingSpanAttributes.TraceDecidingRuleDisabled
+			}
+			if gatewayOptions.SamplingSpanAttributes.SpanDecisionAttributesDisabled != nil {
+				spanSamplingAttributesCfg["span_decision_attributes_disabled"] = *gatewayOptions.SamplingSpanAttributes.SpanDecisionAttributesDisabled
+			}
+			tailSamplingProcessorCfg["span_sampling_attributes"] = spanSamplingAttributesCfg
+		}
+		currentConfig.Processors[consts.OdigosTailSamplingProcessorName] = tailSamplingProcessorCfg
+
 		// add the groupbytrace processor to the beginning of the traces processors
-		processorsResults.TracesProcessors = append([]string{consts.GroupByTraceProcessorV2}, processorsResults.TracesProcessors...)
+		processorsResults.TracesProcessors = append([]string{consts.GroupByTraceProcessorV2, consts.OdigosTailSamplingProcessorName}, processorsResults.TracesProcessors...)
 	}
 
 	allTracesProcessors := make([]string, 0, len(processorsResults.TracesProcessors)+len(processorsResults.TracesProcessorsPostSpanMetrics))
