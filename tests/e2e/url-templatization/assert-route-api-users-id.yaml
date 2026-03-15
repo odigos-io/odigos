@@ -1,0 +1,7 @@
+apiVersion: e2e.tests.odigos.io/v1
+kind: TraceTest
+description: url-demo-app span with http.route /api/users/{id}
+query: |
+  length([?span.serviceName == 'url-demo-app' && span.spanAttributes."http.route" == '/api/users/{id}']) > `0`
+expected:
+  minimum: 1

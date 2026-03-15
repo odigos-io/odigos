@@ -1,0 +1,23 @@
+apiVersion: odigos.io/v1alpha1
+kind: Action
+metadata:
+  name: url-templatization-e2e
+  namespace: odigos-test
+  labels:
+    odigos.io/action-type: url-templatization
+spec:
+  signals:
+    - TRACES
+  urlTemplatization:
+    templatizationRulesGroups:
+      - sourcesScope:
+          - workloadNamespace: default
+            workloadKind: Deployment
+            workloadName: url-demo-app
+        templatizationRules:
+          - template: "/api/users/{id}"
+          - template: "/api/items/{itemId}"
+      - sourcesScope: []
+        templatizationRules:
+          - template: "/api/users/{userId}/orders/{orderId}"
+          - template: "/v1/tenants/{tenantId}/resources/{resourceId}"
