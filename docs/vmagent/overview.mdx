@@ -1,12 +1,24 @@
 ---
 title: "Overview"
 sidebarTitle: "Overview"
+description: "The Odigos VM Agent instruments Linux processes and systemd services using eBPF. Because instrumentation runs in the kernel, impact on applications is negligible. Telemetry is exported to any of the supported destinations of your choice."
 ---
 
-Odigos automatic OpenTelemetry instrumentation agent for Linux [Systemd](https://systemd.io/) service manager.
+import EnterpriseVMAgent from '../../../snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
+
+<EnterpriseVMAgent />
 
 ## Features
 
-- Instrument systemd services running on a Linux VM.
-- No code changes - automatic OpenTelemetry instrumentation with eBPF
-- Instant distributed traces - seamless context propagation
+- Instrument [systemd](https://systemd.io/) services and Linux processes
+- Automatic OpenTelemetry instrumentation via eBPF with no code changes
+- Distributed traces with seamless context propagation
+
+## Key concepts
+
+- **Sources**: The systemd services or Linux processes you instrument with the VM Agent. 
+See [Add Sources](./setup/configuration/add-sources) to get started.
+- **Destinations**: The backends that receive your telemetry data. 
+See [Add Destinations](./setup/configuration/add-destinations) to get started.
+- **Actions**: Processors that transform, filter, or enrich telemetry before it is sent to destinations. 
+See [Actions overview](./setup/configuration/actions/overview) to add and manage actions.

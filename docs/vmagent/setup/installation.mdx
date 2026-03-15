@@ -1,39 +1,96 @@
 ---
 title: "Installation"
 sidebarTitle: "Installation"
+description: "Install the Odigos VM Agent on your Linux host"
 ---
 
-<Info> Odigos VM Agent is currently available with the Odigos Pro plan. Contact us for more info </Info>
+import EnterpriseVMAgent from '../../../snippets/enterprise/vmagent/enterprise-vm-agent.mdx'
 
-1. After [setting up Odigos repositories](/vmagent/setup/preparation), `odigos` package is available through system's package manager:
+<EnterpriseVMAgent />
+
+
+## Configuring Package Sources (apt, dnf, rpm)
+To install the Odigos VM Agent, configure your package manager or obtain the RPM files.
 
 <Tabs>
-  <Tab title="APT">
+  <Tab title="DNF">
+    Using `dnf` (RHEL, Fedora, Rocky Linux):
+
     ```shell
-    sudo apt update
-    sudo apt install odigos
+    sudo rm /etc/yum.repos.d/odigos.repo
+    sudo tee /etc/yum.repos.d/odigos.repo > /dev/null <<'EOF'
+    [odigos]
+    name=Odigos Packages
+    baseurl=https://yum.odigos.io/projects/odigos-cloud/odigos-rpm
+    enabled=1
+    gpgcheck=0
+    repo_gpgcheck=0
+    EOF
+
+    sudo dnf makecache
     ```
   </Tab>
+  <Tab title="APT">
+    Using `apt` (Debian, Ubuntu):
+
+    ```shell
+    wget -q -O - https://apt.odigos.io/doc/repo-signing-key.gpg \
+    | gpg --dearmor \
+    | sudo tee /etc/apt/keyrings/odigos-prod.gpg > /dev/null
+
+    echo "deb [signed-by=/etc/apt/keyrings/odigos-prod.gpg] https://apt.odigos.io/projects/odigos-cloud odigos-apt main" \
+    | sudo tee /etc/apt/sources.list.d/odigos-prod.list
+
+    sudo apt update
+    ```
+  </Tab>
+  <Tab title="RPM">
+
+    If you use a package manager other than `dnf` or `apt`, or prefer to install via RPM files, you can
+    install the VM Agent using RPM files. There are two files you will need to obtain:
+
+    - odigos-otelcol-\<otelcol-version\>.rpm
+    - odigos-\<agent-version\>.rpm
+
+    <Note>Obtain the rpm files from your Odigos support team</Note>
+
+  </Tab>
+</Tabs>
+
+## Installation
+
+<Tabs>
   <Tab title="DNF">
+    Using `dnf` (RHEL, Fedora, Rocky Linux):
+
     ```shell
     sudo dnf install odigos
     ```
   </Tab>
+  <Tab title="APT">
+    Using `apt` (Debian, Ubuntu):
+
+    ```shell
+    sudo apt install odigos
+    ```
+  </Tab>
+  <Tab title="RPM">
+
+    If you use a package manager other than `dnf` or `apt`, run the following to install the agent:
+
+    <Note>Replace \<otelcol-version\> and \<agent-version\> with the versions you downloaded.</Note>
+
+    ```shell
+    rpm -ivh odigos-otelcol-<otelcol-version>.rpm odigos-<agent-version>.rpm
+    ```
+  </Tab>
 </Tabs>
 
-2. Add your Odigos Pro license key to the agent configuration file `/etc/odigos-vmagent/service.yaml`:
+## Enabling the Odigos OpenTelemetry Collector and VM Agent service
+
+Once the installation is complete, enable the VM Agent service to start automatically on system startup:
 
 ```shell
-on_prem:
-  token: "<your_license_key>"
+sudo systemctl enable --now odigos-otelcol.service
+sudo systemctl enable --now odigos-vmagent.service
 ```
-
-3. Configure which systemd services to instrument and where to send telemetry data by editing the agent configuration file `/etc/odigos-vmagent/agent.yaml`. After installation, only `debug` destination is configured. That helps you to validate that Odigos is picking up telemetry on instrumented applications and can be removed once you don't need it. See the [Reference](/vmagent/configuration/reference) for more information.
-
-4. Start the Odigos VM Agent systemd service:
-
-```shell
-sudo systemctl enable --now odigos-vmagent
-```
-
-Odigos VM Agent is now installed on your system and enabled as a systemd service.
