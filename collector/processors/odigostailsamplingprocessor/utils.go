@@ -67,11 +67,8 @@ func enrichSpansWithSamplingAttributes(td ptrace.Traces, category string, ruleId
 	}
 }
 
-// processor should be placed in the pipeline after the "groupbytraceid" processor,
-// so all spans in a single batch should belong to the same trace.
-// this function asserts this assumption, in case of misconfigurations, bugs etc,
-// to protect us from making mistakes.
-// returns the trace ID if all spans belong to the same trace, and a boolean indicating if the assertion is successful.
+// assertAllSpansBelongToTheSameTrace asserts that all spans in the batch belong to the same trace.
+// The processor should be placed in the pipeline after the "groupbytraceid" processor.
 func assertAllSpansBelongToTheSameTrace(td ptrace.Traces) (pcommon.TraceID, bool) {
 	traceID := td.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0).TraceID()
 	for i := 0; i < td.ResourceSpans().Len(); i++ {

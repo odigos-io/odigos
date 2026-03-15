@@ -478,6 +478,7 @@ input ActionFieldsInput {
 input URLTemplatizationRuleInput {
   template: String!
   notes: String
+  examples: [String!]
 }
 
 input TemplatizationWorkloadFilterInput {
@@ -595,6 +596,7 @@ type ActionFields {
 type URLTemplatizationRule {
   template: String!
   notes: String
+  examples: [String!]
 }
 
 type TemplatizationWorkloadFilter {
