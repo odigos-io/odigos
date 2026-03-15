@@ -1506,13 +1506,15 @@ type TestConnectionResponse struct {
 }
 
 type URLTemplatizationRule struct {
-	Template string  `json:"template"`
-	Notes    *string `json:"notes,omitempty"`
+	Template string   `json:"template"`
+	Notes    *string  `json:"notes,omitempty"`
+	Examples []string `json:"examples,omitempty"`
 }
 
 type URLTemplatizationRuleInput struct {
-	Template string  `json:"template"`
-	Notes    *string `json:"notes,omitempty"`
+	Template string   `json:"template"`
+	Notes    *string  `json:"notes,omitempty"`
+	Examples []string `json:"examples,omitempty"`
 }
 
 type URLTemplatizationRulesGroup struct {
