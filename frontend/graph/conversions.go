@@ -8,6 +8,7 @@ import (
 
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/api/sampling"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/services"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
@@ -586,7 +587,7 @@ func convertSamplingConfigInputToOdigosConfig(config *model.SamplingConfigInput)
 	}
 	result := &common.SamplingConfiguration{}
 	if config.TailSampling != nil {
-		result.TailSampling = &common.TailSamplingConfiguration{
+		result.TailSampling = &sampling.TailSamplingConfiguration{
 			Disabled:                     config.TailSampling.Disabled,
 			TraceAggregationWaitDuration: config.TailSampling.TraceAggregationWaitDuration,
 		}

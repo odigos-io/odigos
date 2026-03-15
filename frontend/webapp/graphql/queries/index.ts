@@ -11,4 +11,5 @@ export * from './peer-sources';
 export * from './service-map';
 export * from './source';
 export * from './tokens';
+export * from './sampling';
 export * from './workload';
