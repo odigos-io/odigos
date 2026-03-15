@@ -138,13 +138,11 @@ const (
 
 // Processor related consts
 const (
-	GenericBatchProcessorConfigKey = "batch/generic-batch-processor"
-	SmallBatchesProcessor          = "batch/small-batches"
-	GroupByTraceProcessorV2        = "groupbytrace/samplingv2"
-
-	// URLTemplatizationProcessorName is the name of the shared Processor CR and pipeline component for URL templatization.
-	// Used by the autoscaler action controller when creating/watching the Processor CR. Not K8s-specific.
-	URLTemplatizationProcessorName = "odigos-url-templatization"
+	GenericBatchProcessorConfigKey  = "batch/generic-batch-processor"
+	SmallBatchesProcessor           = "batch/small-batches"
+	GroupByTraceProcessorV2         = "groupbytrace/samplingv2"
+	OdigosTailSamplingProcessorName = "odigostailsampling"
+	URLTemplatizationProcessorName  = "odigos-url-templatization"
 )
 
 // Auto rollback related consts
