@@ -142,6 +142,16 @@ type RetryOnFailure struct {
 	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`
 }
 
+// ServiceGraphOptions groups all service graph connector settings for use at the
+// function-signature level (e.g. in GatewayConfigOptions and collector group construction).
+// It is never serialized directly — the individual fields are stored flat in
+// CollectorGatewayConfiguration and CollectorsGroupSpec to preserve backward compatibility.
+type ServiceGraphOptions struct {
+	Disabled                  *bool
+	ExtraDimensions           []string
+	VirtualNodePeerAttributes []string
+}
+
 type CollectorGatewayConfiguration struct {
 	// MinReplicas is the number of replicas for the cluster gateway collector deployment.
 	// Also set the minReplicas for the HPA to this value.
@@ -188,6 +198,17 @@ type CollectorGatewayConfiguration struct {
 	// ServiceGraphDisabled is a feature that allows you to visualize the service graph of your application.
 	// It is enabled by default and can be disabled by setting the disabled flag to true.
 	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
+
+	// ServiceGraphExtraDimensions are additional span attribute names to include as dimensions
+	// in the service graph metrics, on top of the default service.name dimension.
+	// For example, adding "server.address" helps distinguish multiple instances of the same service type.
+	ServiceGraphExtraDimensions []string `json:"serviceGraphExtraDimensions,omitempty"`
+
+	// ServiceGraphVirtualNodePeerAttributes is an ordered list of span attributes used to identify
+	// uninstrumented (virtual) nodes in the service graph (e.g. Redis, Kafka).
+	// The connector picks the first attribute that has a value on the span.
+	// When nil/empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+	ServiceGraphVirtualNodePeerAttributes []string `json:"serviceGraphVirtualNodePeerAttributes,omitempty"`
 
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver

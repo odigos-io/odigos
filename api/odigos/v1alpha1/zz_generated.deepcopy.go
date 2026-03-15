@@ -482,6 +482,16 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.ServiceGraphExtraDimensions != nil {
+		in, out := &in.ServiceGraphExtraDimensions, &out.ServiceGraphExtraDimensions
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ServiceGraphVirtualNodePeerAttributes != nil {
+		in, out := &in.ServiceGraphVirtualNodePeerAttributes, &out.ServiceGraphVirtualNodePeerAttributes
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.EnableDataCompression != nil {
 		in, out := &in.EnableDataCompression, &out.EnableDataCompression
 		*out = new(bool)
