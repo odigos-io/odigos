@@ -28,6 +28,24 @@ type gvkToTransformFunc map[k8sschema.GroupVersionKind]cache.TransformFunc
 // this is to guarantee that we ignore an object if it has been transformed already.
 var objectTransformedAnnotation = "odigos.io/cache-transformed"
 
+// Controller-Runtime framework uses the k8s client-go project for the objects cache.
+// Client-go uses informers to fill and maintain the cache.
+// for large objects, we use Transform to strip irrelevant fields and keep in memory just what we need.
+// however, during initialization, the informer will run a single list operation to fill the cache,
+// and then watch for changes. the initial list pulls into memory all the objects of a specific kind at once.
+// unfortunatly, the transform function is called only after the full list is fetched,
+// which can cause high spikes in memory at startup and OOM.
+// This function receives the map of objects to transform, and wraps the informer so the transform happens
+// per list page (500 objects) and not on the full list, thus reducing the memory we have to keep at single time.
+//
+// the result of this function can be used as a parameter to the cache.Options.NewInformer field.
+// example:
+//
+//	cacheOptions := cache.Options{
+//		Scheme:                      scheme,
+//		ByObject:                    cacheByObjectConfig,
+//		NewInformer:                 CreateNewInformerWithTransofrmFunc(scheme, cacheByObjectConfig),
+//	}
 func CreateNewInformerWithTransofrmFunc(scheme *runtime.Scheme, cacheByObjectConfig map[client.Object]ctrlcache.ByObject) NewImformerFunc {
 	transformFuncs := objectsTransformFromControllerRuntimeCache(scheme, cacheByObjectConfig)
 	return func(originalListerWatcher cache.ListerWatcher, exampleObject runtime.Object, defaultEventHandlerResyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
