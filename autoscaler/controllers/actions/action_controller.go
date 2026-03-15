@@ -15,8 +15,11 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
 )
 
@@ -218,6 +221,76 @@ func convertToDefaultProcessor(action *odigosv1.Action, actionConfig ActionConfi
 	return &processor, nil
 }
 
+func hasAnyUrlTemplatizationAction(ctx context.Context, c client.Client, namespace string) (bool, error) {
+	var list odigosv1.ActionList
+	if err := c.List(ctx, &list, client.InNamespace(namespace)); err != nil {
+		return false, err
+	}
+	for i := range list.Items {
+		a := &list.Items[i]
+		if a.Spec.URLTemplatization != nil && !a.Spec.Disabled {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func buildUrlTemplatizationProcessor(namespace string) (*odigosv1.Processor, error) {
+	cfg := actions.URLTemplatizationConfig{}
+	configJSON, err := json.Marshal(map[string]interface{}{
+		"workload_config_extension": k8sconsts.OdigosConfigK8sExtensionType,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("marshal url templatization processor config: %w", err)
+	}
+	roles := make([]odigosv1.CollectorsGroupRole, 0, len(cfg.CollectorRoles()))
+	for _, r := range cfg.CollectorRoles() {
+		roles = append(roles, odigosv1.CollectorsGroupRole(r))
+	}
+	return &odigosv1.Processor{
+		TypeMeta: metav1.TypeMeta{APIVersion: "odigos.io/v1alpha1", Kind: "Processor"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      consts.URLTemplatizationProcessorName,
+			Namespace: namespace,
+		},
+		Spec: odigosv1.ProcessorSpec{
+			Type:            cfg.ProcessorType(),
+			ProcessorName:   "URL Templatization",
+			Disabled:        false,
+			Signals:         []common.ObservabilitySignal{common.TracesObservabilitySignal},
+			CollectorRoles:  roles,
+			OrderHint:       cfg.OrderHint(),
+			ProcessorConfig: runtime.RawExtension{Raw: configJSON},
+		},
+	}, nil
+}
+
+// SyncUrlTemplatizationProcessor creates or deletes the shared URL-templatization Processor to match Actions.
+// When fromActionController is true, skips build+Apply if the Processor already exists (only create when missing).
+// When false (e.g. clustercollector), always build and Apply when need so edits/deletes are reverted.
+func SyncUrlTemplatizationProcessor(ctx context.Context, c client.Client, fromActionController bool) error {
+	ns := env.GetCurrentNamespace()
+	need, err := hasAnyUrlTemplatizationAction(ctx, c, ns)
+	if err != nil {
+		return fmt.Errorf("list actions: %w", err)
+	}
+	if !need {
+		proc := &odigosv1.Processor{ObjectMeta: metav1.ObjectMeta{Namespace: ns, Name: consts.URLTemplatizationProcessorName}}
+		return client.IgnoreNotFound(c.Delete(ctx, proc))
+	}
+	if fromActionController {
+		existing := &odigosv1.Processor{}
+		if err := c.Get(ctx, client.ObjectKey{Namespace: ns, Name: consts.URLTemplatizationProcessorName}, existing); err == nil {
+			return nil
+		}
+	}
+	proc, err := buildUrlTemplatizationProcessor(ns)
+	if err != nil {
+		return err
+	}
+	return c.Patch(ctx, proc, client.Apply, client.FieldOwner("action-controller"), client.ForceOwnership)
+}
+
 func (r *ActionReconciler) reportReconciledToProcessorFailed(ctx context.Context, action *odigosv1.Action, reason odigosv1.ActionTransformedToProcessorReason, err error) error {
 	changed := meta.SetStatusCondition(&action.Status.Conditions, metav1.Condition{
 		Type:               odigosv1.ActionTransformedToProcessorType,
@@ -283,14 +356,13 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	// If the action is a URL templatization action, we should not need to transform it to a processor CR.
+	if err := SyncUrlTemplatizationProcessor(ctx, r.Client, true); err != nil {
+		logger.Error(err, "Sync URL templatization processor")
+		return ctrl.Result{}, err
+	}
 	if action.Spec.URLTemplatization != nil {
-		err = r.reportProcessorNotRequired(ctx, action)
-		if err != nil {
-			return ctrl.Result{}, client.IgnoreNotFound(err)
-		}
-		return ctrl.Result{}, nil
+		err = r.reportReconciledToProcessor(ctx, action)
+		return utils.K8SUpdateErrorHandler(err)
 	}
 
 	processor, err := convertActionToProcessor(ctx, r.Client, action)

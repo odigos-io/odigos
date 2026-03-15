@@ -104,33 +104,21 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfig(obj interface{}) {
 
 	specMap, ok, _ := unstructured.NestedMap(u.Object, "spec")
 	if !ok || len(specMap) == 0 {
-		o.logger.Info("failed to get instrumentation config spec", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+		o.logger.Info("failed to get instrumentation config spec; clearing workload state", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+		o.syncWorkloadToDesiredState(workloadKey, nil)
 		return
 	}
 
 	workloadCollectorConfigSlice, ok, _ := unstructured.NestedSlice(specMap, "workloadCollectorConfig")
 	if !ok || len(workloadCollectorConfigSlice) == 0 {
-		o.logger.Debug("failed to get workload collector config from instrumentation config", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+		o.syncWorkloadToDesiredState(workloadKey, nil)
 		return
 	}
-
-	for _, item := range workloadCollectorConfigSlice {
-		itemMap, ok := item.(map[string]interface{})
-		if !ok {
-			o.logger.Info("failed to get container collector config from workload collector config", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
-			return
-		}
-		var c commonapi.ContainerCollectorConfig
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(itemMap, &c); err != nil {
-			continue
-		}
-		cacheKey := k8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, c.ContainerName)
-		o.cache.Set(cacheKey, &c)
-	}
-
-	o.logger.Debug("updated workload sampling cache", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+	desired := o.parseWorkloadCollectorConfig(workloadKey, workloadCollectorConfigSlice)
+	o.syncWorkloadToDesiredState(workloadKey, desired)
 }
 
+// handleInstrumentationConfigDelete is called when an IC is removed. Desired state for this workload is empty.
 func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}) {
 	u, ok := obj.(*unstructured.Unstructured)
 	if !ok {
@@ -139,11 +127,73 @@ func (o *OdigosWorkloadConfig) handleInstrumentationConfigDelete(obj interface{}
 		}
 		return
 	}
-	key, ok := workloadKeyFromObject(u)
-	if ok {
-		o.cache.DeleteWorkload(key)
-		o.logger.Debug("removed workload from sampling cache", zap.String("namespace", key.Namespace), zap.String("kind", key.Kind), zap.String("name", key.Name))
+	workloadKey, ok := workloadKeyFromObject(u)
+	if !ok {
+		return
 	}
+	o.syncWorkloadToDesiredState(workloadKey, nil)
+}
+
+// containerEntry is a single container's cache key and config for the desired state.
+type containerEntry struct {
+	key string
+	cfg *commonapi.ContainerCollectorConfig
+}
+
+// parseWorkloadCollectorConfig turns the IC's workloadCollectorConfig slice into a list of containerEntry.
+// Invalid or empty-container entries are skipped.
+func (o *OdigosWorkloadConfig) parseWorkloadCollectorConfig(workloadKey workloadKey, slice []interface{}) []containerEntry {
+	var out []containerEntry
+	for _, item := range slice {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			o.logger.Info("failed to get container collector config from workload collector config", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+			continue
+		}
+		var c commonapi.ContainerCollectorConfig
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(itemMap, &c); err != nil {
+			continue
+		}
+		if c.ContainerName == "" {
+			// Lookup always uses container-specific key; workload-level "default" is not supported.
+			o.logger.Error("skipping container collector config with empty containerName", zap.String("namespace", workloadKey.Namespace), zap.String("kind", workloadKey.Kind), zap.String("name", workloadKey.Name))
+			continue
+		}
+		key := k8sSourceKey(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name, c.ContainerName)
+		out = append(out, containerEntry{key: key, cfg: &c})
+	}
+	return out
+}
+
+// syncWorkloadToDesiredState makes the extension cache match the desired state. The cache
+// notifies the callback internally on each Set/Delete. desired == nil or empty means
+// "no containers for this workload" (e.g. IC deleted or spec has no workloadCollectorConfig).
+//
+// Order: (1) apply new/updated entries — cache.Set (cache invokes OnSet); (2) remove stale
+// entries — cache.Delete (cache invokes OnDeleteKey). No span sees a gap.
+func (o *OdigosWorkloadConfig) syncWorkloadToDesiredState(workloadKey workloadKey, desired []containerEntry) {
+	workloadKeyStr := WorkloadKeyString(workloadKey.Namespace, workloadKey.Kind, workloadKey.Name)
+	workloadIndexKey := workloadKeyStr + "/"
+
+	oldKeys := o.cache.getKeysForWorkload(workloadIndexKey)
+	newKeys := make(map[string]struct{}, len(desired))
+
+	// 1) Apply new/updated entries first (cache.Set updates index and triggers OnSet inside cache).
+	for _, e := range desired {
+		o.cache.Set(e.key, e.cfg)
+		newKeys[e.key] = struct{}{}
+	}
+
+	// 2) Remove stale entries (cache.Delete updates index and triggers OnDeleteKey inside cache).
+	var numRemoved int
+	for _, k := range oldKeys {
+		if _, inNew := newKeys[k]; !inNew {
+			o.cache.Delete(k)
+			numRemoved++
+		}
+	}
+
+	o.logger.Debug("synced workload to desired state", zap.String("workload", workloadKeyStr), zap.Int("desired", len(desired)), zap.Int("removed", numRemoved))
 }
 
 // workloadKeyFromObject returns a WorkloadKey from the InstrumentationConfig's metadata.

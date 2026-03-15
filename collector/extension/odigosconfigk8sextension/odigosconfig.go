@@ -55,3 +55,27 @@ func (o *OdigosWorkloadConfig) GetFromResource(res pcommon.Resource) (*commonapi
 	}
 	return o.cache.Get(key)
 }
+
+// GetWorkloadCacheKey returns the cache key for the container identified by the given resource.
+// Processors use this to look up their own caches without duplicating key logic.
+// Key format: "namespace/kind/name/containerName".
+func (o *OdigosWorkloadConfig) GetWorkloadCacheKey(res pcommon.Resource) (string, error) {
+	return workloadKeyFromResourceAttributes(res.Attributes())
+}
+
+// RegisterWorkloadConfigCacheCallback registers a callback that is invoked by the extension
+// cache on every Set/Delete. The extension passes the callback to the cache; the informer
+// only calls cache.Set and cache.Delete. Backfill replays current cache state so the
+// processor starts in sync.
+func (o *OdigosWorkloadConfig) RegisterWorkloadConfigCacheCallback(cb collector.WorkloadConfigCacheCallback) {
+	o.cache.addCallback(cb)
+	o.logger.Debug("workload config cache callback registered")
+	backfillCount := 0
+	o.cache.Range(func(key string, cfg *commonapi.ContainerCollectorConfig) {
+		cb.OnSet(key, cfg)
+		backfillCount++
+	})
+	if backfillCount > 0 {
+		o.logger.Debug("workload config callback backfill replayed", zap.Int("entries", backfillCount))
+	}
+}
