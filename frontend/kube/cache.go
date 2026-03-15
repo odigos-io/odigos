@@ -10,6 +10,7 @@ import (
 	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	cacheutils "github.com/odigos-io/odigos/k8sutils/pkg/cache"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -50,52 +51,58 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 	utilruntime.Must(openshiftappsv1.AddToScheme(scheme))
 
 	nsSelector := client.InNamespace(odigosNs).AsSelector()
-	// Create cache options
-	cacheOptions := cache.Options{
-		Scheme:                      scheme,
-		ReaderFailOnMissingInformer: true,
-		DefaultTransform:            cache.TransformStripManagedFields(),
-		ByObject: map[client.Object]cache.ByObject{
-			&corev1.ConfigMap{}: {
-				Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
-			},
-			&corev1.Pod{}: {
-				Transform: podsTransformFunc,
-			},
-			&corev1.Namespace{}: {},
-			&appsv1.Deployment{}: {
-				Transform: deploymentsTransformFunc,
-			},
-			&appsv1.DaemonSet{}: {
-				Transform: daemonsetsTransformFunc,
-			},
-			&appsv1.StatefulSet{}: {
-				Transform: statefulsetsTransformFunc,
-			},
-			&batchv1.CronJob{}: {
-				Transform: cronjobsTransformFunc,
-			},
-			&odigosv1.Source{}:                  {},
-			&odigosv1.InstrumentationConfig{}:   {},
-			&odigosv1.InstrumentationInstance{}: {},
-			&odigosv1.Sampling{}: {
-				Field: nsSelector,
-			},
+
+	cacheByObjectConfig := map[client.Object]cache.ByObject{
+		&corev1.ConfigMap{}: {
+			Field: nsSelector, // odigos effective config, collector configs, odigos deployment etc
+		},
+		&corev1.Pod{}: {
+			Transform: podsTransformFunc,
+		},
+		&corev1.Namespace{}: {},
+		&appsv1.Deployment{}: {
+			Transform: deploymentsTransformFunc,
+		},
+		&appsv1.DaemonSet{}: {
+			Transform: daemonsetsTransformFunc,
+		},
+		&appsv1.StatefulSet{}: {
+			Transform: statefulsetsTransformFunc,
+		},
+		&batchv1.CronJob{}: {
+			Transform: cronjobsTransformFunc,
+		},
+		&odigosv1.Source{}:                  {},
+		&odigosv1.InstrumentationConfig{}:   {},
+		&odigosv1.InstrumentationInstance{}: {},
+		&odigosv1.Sampling{}: {
+			Field: nsSelector,
 		},
 	}
 
 	// if argo rollout is available, add it to the cache as well
 	if IsArgoRolloutAvailable {
-		cacheOptions.ByObject[&argorolloutsv1alpha1.Rollout{}] = cache.ByObject{
+		cacheByObjectConfig[&argorolloutsv1alpha1.Rollout{}] = cache.ByObject{
 			Transform: argoRolloutsTransformFunc,
 		}
 	}
 
 	// if open shift deployment config is available, add it to the cache as well
 	if IsOpenShiftDeploymentConfigAvailable {
-		cacheOptions.ByObject[&openshiftappsv1.DeploymentConfig{}] = cache.ByObject{
+		cacheByObjectConfig[&openshiftappsv1.DeploymentConfig{}] = cache.ByObject{
 			Transform: deploymentConfigsTransformFunc,
 		}
+	}
+
+	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransofrmFunc(scheme, cacheByObjectConfig)
+
+	// Create cache options
+	cacheOptions := cache.Options{
+		Scheme:                      scheme,
+		ReaderFailOnMissingInformer: true,
+		DefaultTransform:            cache.TransformStripManagedFields(),
+		ByObject:                    cacheByObjectConfig,
+		NewInformer:                 newInformerWithTransformFunc,
 	}
 
 	// Create the cache
