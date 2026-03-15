@@ -216,6 +216,13 @@
                           "oss/pipeline/actions/sampling/spanattributesampler"
                         ]
                       },
+                      {
+                        "group": "Transformation",
+                        "icon": "route",
+                        "pages": [
+                          "oss/pipeline/actions/transformation/urltemplatization"
+                        ]
+                      },
                       "oss/pipeline/actions/crd",
                       "oss/pipeline/actions/troubleshooting"
                     ]
@@ -505,6 +512,13 @@
                           "enterprise/pipeline/actions/sampling/probabilisticsampler",
                           "enterprise/pipeline/actions/sampling/servicenamesampler",
                           "enterprise/pipeline/actions/sampling/spanattributesampler"
+                        ]
+                      },
+                      {
+                        "group": "Transformation",
+                        "icon": "route",
+                        "pages": [
+                          "enterprise/pipeline/actions/transformation/urltemplatization"
                         ]
                       },
                       "enterprise/pipeline/actions/crd",
