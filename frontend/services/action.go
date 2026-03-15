@@ -6,7 +6,10 @@ import (
 	"fmt"
 
 	actionsv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
+	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1"
+	urlactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
+	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/frontend/graph/model"
 	"github.com/odigos-io/odigos/frontend/kube"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
@@ -44,6 +47,9 @@ func deriveTypeFromAction(action *model.Action) model.ActionType {
 	}
 	if len(action.Fields.AttributeFilters) > 0 {
 		return model.ActionTypeSpanAttributeSampler
+	}
+	if action.Fields.URLTemplatizationRulesGroups != nil {
+		return model.ActionTypeURLTemplatization
 	}
 
 	return model.ActionTypeUnknownType
@@ -186,6 +192,7 @@ func getSpecFromInput(input model.ActionInput, existingAction *v1alpha1.Action) 
 
 	spec.PiiMasking = convertPiiMaskingFromInput(input.Fields, existingAction)
 	spec.Samplers = convertSamplersFromInput(input.Fields, existingAction)
+	spec.URLTemplatization = convertUrlTemplatizationFromInput(input.Fields, existingAction)
 
 	return &spec, nil
 }
@@ -599,16 +606,19 @@ func convertActionToModel(action *v1alpha1.Action) (*model.Action, error) {
 		attributeFilters = convertAttributeFiltersToModel(action.Spec.Samplers.SpanAttributeSampler.AttributeFilters)
 	}
 
+	urlTemplatizationGroups := convertUrlTemplatizationToModel(action.Spec.URLTemplatization)
+
 	responseFields := &model.ActionFields{
-		LabelsAttributes:      labelAttrs,
-		AnnotationsAttributes: annotAttrs,
-		ClusterAttributes:     clustAttrs,
-		Renames:               renames,
-		PiiCategories:         piiCategories,
-		FallbackSamplingRatio: fallbackSamplingRatio,
-		EndpointsFilters:      endpointsFilters,
-		ServicesNameFilters:   servicesNameFilters,
-		AttributeFilters:      attributeFilters,
+		LabelsAttributes:             labelAttrs,
+		AnnotationsAttributes:        annotAttrs,
+		ClusterAttributes:            clustAttrs,
+		Renames:                      renames,
+		PiiCategories:                piiCategories,
+		FallbackSamplingRatio:        fallbackSamplingRatio,
+		EndpointsFilters:             endpointsFilters,
+		ServicesNameFilters:          servicesNameFilters,
+		AttributeFilters:             attributeFilters,
+		URLTemplatizationRulesGroups: urlTemplatizationGroups,
 	}
 
 	// Handle K8sAttributes fields
@@ -822,4 +832,113 @@ func stringifyMap(m map[string]string) (string, error) {
 		return "", fmt.Errorf("failed to marshal map: %v", err)
 	}
 	return string(json), nil
+}
+
+func convertUrlTemplatizationFromInput(details *model.ActionFieldsInput, existingAction *v1alpha1.Action) *urlactions.URLTemplatizationConfig {
+	if details.URLTemplatizationRulesGroups == nil {
+		if existingAction != nil && existingAction.Spec.URLTemplatization != nil {
+			return existingAction.Spec.URLTemplatization
+		}
+		return nil
+	}
+
+	groups := make([]urlactions.UrlTemplatizationRulesGroup, 0, len(details.URLTemplatizationRulesGroups))
+	for _, g := range details.URLTemplatizationRulesGroups {
+		group := urlactions.UrlTemplatizationRulesGroup{}
+
+		var sourcesScope []k8sconsts.SourcesScope
+		if len(g.WorkloadFilters) > 0 {
+			for _, wf := range g.WorkloadFilters {
+				scope := k8sconsts.SourcesScope{}
+				if g.FilterK8sNamespace != nil {
+					scope.WorkloadNamespace = *g.FilterK8sNamespace
+				}
+				if wf.Kind != nil {
+					scope.WorkloadKind = string(*wf.Kind)
+				}
+				if wf.Name != nil {
+					scope.WorkloadName = *wf.Name
+				}
+				if g.FilterProgrammingLanguage != nil {
+					scope.WorkloadLanguage = common.ProgrammingLanguage(*g.FilterProgrammingLanguage)
+				}
+				sourcesScope = append(sourcesScope, scope)
+			}
+		} else if g.FilterK8sNamespace != nil || g.FilterK8sWorkloadKind != nil || g.FilterK8sWorkloadName != nil || g.FilterProgrammingLanguage != nil {
+			scope := k8sconsts.SourcesScope{}
+			if g.FilterK8sNamespace != nil {
+				scope.WorkloadNamespace = *g.FilterK8sNamespace
+			}
+			if g.FilterK8sWorkloadKind != nil {
+				scope.WorkloadKind = string(*g.FilterK8sWorkloadKind)
+			}
+			if g.FilterK8sWorkloadName != nil {
+				scope.WorkloadName = *g.FilterK8sWorkloadName
+			}
+			if g.FilterProgrammingLanguage != nil {
+				scope.WorkloadLanguage = common.ProgrammingLanguage(*g.FilterProgrammingLanguage)
+			}
+			sourcesScope = append(sourcesScope, scope)
+		}
+		group.SourcesScope = sourcesScope
+
+		for _, rule := range g.TemplatizationRules {
+			r := urlactions.URLTemplatizationRule{
+				Template: rule.Template,
+				Notes:    DerefString(rule.Notes),
+				Examples: rule.Examples,
+			}
+			group.TemplatizationRules = append(group.TemplatizationRules, r)
+		}
+		groups = append(groups, group)
+	}
+
+	return &urlactions.URLTemplatizationConfig{
+		TemplatizationRulesGroups: groups,
+	}
+}
+
+func convertUrlTemplatizationToModel(cfg *urlactions.URLTemplatizationConfig) []*model.URLTemplatizationRulesGroup {
+	if cfg == nil {
+		return nil
+	}
+
+	var result []*model.URLTemplatizationRulesGroup
+	for _, g := range cfg.TemplatizationRulesGroups {
+		group := &model.URLTemplatizationRulesGroup{}
+
+		for _, scope := range g.SourcesScope {
+			if scope.WorkloadKind != "" || scope.WorkloadName != "" {
+				filter := &model.TemplatizationWorkloadFilter{}
+				if scope.WorkloadKind != "" {
+					kind := model.K8sResourceKind(scope.WorkloadKind)
+					filter.Kind = &kind
+				}
+				if scope.WorkloadName != "" {
+					filter.Name = &scope.WorkloadName
+				}
+				group.WorkloadFilters = append(group.WorkloadFilters, filter)
+			}
+
+			if scope.WorkloadNamespace != "" && group.FilterK8sNamespace == nil {
+				group.FilterK8sNamespace = &scope.WorkloadNamespace
+			}
+			if scope.WorkloadLanguage != "" && group.FilterProgrammingLanguage == nil {
+				lang := string(scope.WorkloadLanguage)
+				group.FilterProgrammingLanguage = &lang
+			}
+		}
+
+		for _, rule := range g.TemplatizationRules {
+			notes := rule.Notes
+			r := &model.URLTemplatizationRule{
+				Template: rule.Template,
+				Notes:    &notes,
+				Examples: rule.Examples,
+			}
+			group.TemplatizationRules = append(group.TemplatizationRules, r)
+		}
+		result = append(result, group)
+	}
+	return result
 }
