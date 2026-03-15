@@ -93,6 +93,7 @@ jobs:
           - "instrumentation-rollback-stability-window"
           - "environment-variables"
           - "trace-collection"
+          - "url-templatization"
           - "source"
           - "webhooks"
           - "env-injection"
@@ -155,6 +156,12 @@ jobs:
         run: |
           kind load image-archive odigos-images.tar
           kind load image-archive cli-image.tar
+
+      - name: Build and load url-demo-app image
+        if: matrix.test-scenario == 'url-templatization'
+        run: |
+          docker build -t url-demo-app:e2e-test tests/e2e/url-templatization/app
+          kind load docker-image url-demo-app:e2e-test
 
       - name: Restore cached CLI binary
         id: restore-cli-cache

@@ -1,0 +1,63 @@
+# url-demo-app for URL templatization e2e. Image url-demo-app:e2e-test is built in CI from tests/e2e/url-templatization/app.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: url-demo-app
+  namespace: default
+  labels:
+    app: url-demo-app
+    odigos.io/e2e: test-workload
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: url-demo-app
+  template:
+    metadata:
+      labels:
+        app: url-demo-app
+    spec:
+      containers:
+        - name: url-demo-app
+          image: url-demo-app:e2e-test
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: "url-demo-app"
+            - name: BASE_URL
+              value: "http://url-demo-app.default.svc.cluster.local"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: url-demo-app
+  namespace: default
+spec:
+  selector:
+    app: url-demo-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
