@@ -1,0 +1,29 @@
+type: odigostailsampling
+
+status:
+  class: processor
+  stability:
+    beta: [traces]
+  codeowners:
+    active: [blumamir]
+
+telemetry:
+  metrics:
+    odigos.sampling.trace.check_count:
+      enabled: true # collected by default by the processor.
+      description: "Number of traces checked for sampling decisions per rule."
+      unit: "{traces}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability:
+        level: development
+    odigos.sampling.trace.match_count:
+      enabled: true # collected by default by the processor.
+      description: "Number of traces where this rule was matched at least once."
+      unit: "{traces}"
+      sum:
+        value_type: int
+        monotonic: true
+      stability:
+        level: development
