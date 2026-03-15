@@ -1170,6 +1170,7 @@ type ComplexityRoot struct {
 	}
 
 	URLTemplatizationRule struct {
+		Examples func(childComplexity int) int
 		Notes    func(childComplexity int) int
 		Template func(childComplexity int) int
 	}
@@ -6299,6 +6300,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TestConnectionResponse.Succeeded(childComplexity), true
+
+	case "URLTemplatizationRule.examples":
+		if e.complexity.URLTemplatizationRule.Examples == nil {
+			break
+		}
+
+		return e.complexity.URLTemplatizationRule.Examples(childComplexity), true
 
 	case "URLTemplatizationRule.notes":
 		if e.complexity.URLTemplatizationRule.Notes == nil {
@@ -40706,6 +40714,47 @@ func (ec *executionContext) fieldContext_URLTemplatizationRule_notes(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _URLTemplatizationRule_examples(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_URLTemplatizationRule_examples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Examples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_URLTemplatizationRule_examples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "URLTemplatizationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UrlTemplatizationRulesGroup_filterK8sNamespace(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sNamespace(ctx, field)
 	if err != nil {
@@ -40960,6 +41009,8 @@ func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_templatizat
 				return ec.fieldContext_URLTemplatizationRule_template(ctx, field)
 			case "notes":
 				return ec.fieldContext_URLTemplatizationRule_notes(ctx, field)
+			case "examples":
+				return ec.fieldContext_URLTemplatizationRule_examples(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type URLTemplatizationRule", field.Name)
 		},
@@ -44923,7 +44974,7 @@ func (ec *executionContext) unmarshalInputURLTemplatizationRuleInput(ctx context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"template", "notes"}
+	fieldsInOrder := [...]string{"template", "notes", "examples"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -44944,6 +44995,13 @@ func (ec *executionContext) unmarshalInputURLTemplatizationRuleInput(ctx context
 				return it, err
 			}
 			it.Notes = data
+		case "examples":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("examples"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Examples = data
 		}
 	}
 
@@ -53924,6 +53982,8 @@ func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.
 			}
 		case "notes":
 			out.Values[i] = ec._URLTemplatizationRule_notes(ctx, field, obj)
+		case "examples":
+			out.Values[i] = ec._URLTemplatizationRule_examples(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
