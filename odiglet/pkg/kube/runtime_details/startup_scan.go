@@ -51,16 +51,24 @@ func (s *startupRuntimeDetection) scan(ctx context.Context) (int, error) {
 
 	var podList corev1.PodList
 	if err := s.client.List(ctx, &podList); err != nil {
-		return 0, fmt.Errorf("failed to liast pods: %w", err)
+		return 0, fmt.Errorf("failed to list pods: %w", err)
 	}
 
-	icPods := make(map[*odigosv1.InstrumentationConfig][]corev1.Pod)
+	icPods := make([]struct  {
+		ic   *odigosv1.InstrumentationConfig
+		pods []corev1.Pod
+	}, 0, len(icList.Items))
+
+	// group pods and instrumentation config they are associated to
 	for i, ic := range icList.Items {
-		pods, err := kubecommon.MatchingPodsForWorkloadOnNode(s.client, ctx, &ic, podList)
+		pods, err := kubecommon.MatchingPodsForWorkloadOnNode(&ic, podList)
 		if err != nil {
 			return 0, fmt.Errorf("failed to get matching pods for ic: %w", err)
 		}
-		icPods[&icList.Items[i]] = pods
+		icPods = append(icPods, struct{ic *odigosv1.InstrumentationConfig; pods []corev1.Pod}{
+			ic: &icList.Items[i],
+			pods: pods,
+		})
 	}
 
 	if len(icPods) == 0 {
@@ -69,10 +77,10 @@ func (s *startupRuntimeDetection) scan(ctx context.Context) (int, error) {
 
 	// Build the full set of (podUID, containerName) across all pods.
 	var allPCs []process.PodContainerUID
-	for _, pods := range icPods {
-		for i := range pods {
-			uid := workload.PodUID(&pods[i])
-			for _, c := range pods[i].Spec.Containers {
+	for _, entry := range icPods {
+		for i := range entry.pods {
+			uid := workload.PodUID(&entry.pods[i])
+			for _, c := range entry.pods[i].Spec.Containers {
 				allPCs = append(allPCs, process.PodContainerUID{
 					PodUID:        uid,
 					ContainerName: c.Name,
@@ -90,8 +98,8 @@ func (s *startupRuntimeDetection) scan(ctx context.Context) (int, error) {
 	// For each IC, run runtimeInspection with pre-grouped PIDs.
 	// and persist the result to the matching instrumentation config
 	var inspectionErr error
-	for ic, pods := range icPods {
-		results, err := runtimeInspectionFromGroupedPIDs(ctx, pods, groups, s.criClient, s.runtimeDetectionEnvs)
+	for _, entry := range icPods {
+		results, err := runtimeInspectionFromGroupedPIDs(ctx, entry.pods, groups, s.criClient, s.runtimeDetectionEnvs)
 		if err != nil {
 			inspectionErr = errors.Join(inspectionErr, err)
 			continue
@@ -104,7 +112,7 @@ func (s *startupRuntimeDetection) scan(ctx context.Context) (int, error) {
 			Jitter:   0.1,
 			Steps:    5,
 		}, func() (bool, error) {
-			err := persistRuntimeDetailsToInstrumentationConfig(ctx, s.client, ic, results)
+			err := persistRuntimeDetailsToInstrumentationConfig(ctx, s.client, entry.ic, results)
 			if err != nil {
 				return false, nil
 			}

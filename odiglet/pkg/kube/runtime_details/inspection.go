@@ -122,7 +122,8 @@ func runtimeInspectionFromGroupedPIDs(ctx context.Context, pods []corev1.Pod, gr
 			pidSet := groupedPIDs[pc]
 			processes := make([]procdiscovery.Details, 0, len(pidSet))
 			for pid := range pidSet {
-				processes = append(processes, procdiscovery.GetPidDetails(pid, runtimeDetectionEnvs))
+				procDetails := procdiscovery.GetPidDetails(pid, runtimeDetectionEnvs)
+				processes = append(processes, procDetails)
 			}
 
 			inspectContainerProcesses(ctx, logger, pod, container, processes, criClient, resultsMap)
@@ -196,11 +197,13 @@ func inspectContainerProcesses(ctx context.Context, logger *commonlogger.OdigosL
 			}
 		}
 
+		// Agent that can be detected using environment variables
 		val, ok := inspectProc.Environments.OverwriteEnvs[consts.LdPreloadEnvVarName]
 		if ok && strings.Contains(val, procdiscovery.DynatraceFullStackEnvValuePrefix) {
 			detectedAgent = &odigosv1.OtherAgent{Name: procdiscovery.DynatraceAgentName}
 		}
 
+		// Inspecting libc type is expensive and not relevant for all languages
 		if libc.ShouldInspectForLanguage(langDetails.Language) {
 			typeFound, err := libc.InspectType(inspectProc)
 			if err == nil {
