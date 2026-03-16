@@ -35,7 +35,7 @@ func GetGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	gatewayOptions GatewayConfigOptions,
+	gatewayOptions *GatewayConfigOptions,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	currentConfig := GetBasicConfig()
 	return CalculateGatewayConfig(currentConfig, dests, processors, applySelfTelemetry, dataStreamsDetails, gatewayOptions)
@@ -48,7 +48,7 @@ func CalculateGatewayConfig(
 	processors []config.ProcessorConfigurer,
 	applySelfTelemetry func(c *config.Config, destinationPipelineNames []string, signalsRootPipelines []string) error,
 	dataStreamsDetails []DataStreams,
-	gatewayOptions GatewayConfigOptions,
+	gatewayOptions *GatewayConfigOptions,
 ) (string, error, *config.ResourceStatuses, []common.ObservabilitySignal) {
 	configers, err := config.LoadConfigers()
 	if err != nil {
@@ -452,7 +452,7 @@ func insertClusterMetricsResources(currentConfig *config.Config, odigosNs string
 	currentConfig.Service.Pipelines[rootPipelineName] = pipeline
 }
 
-func getTailSamplingProcessors(gatewayOptions GatewayConfigOptions) ([]string, map[string]config.GenericMap) {
+func getTailSamplingProcessors(gatewayOptions *GatewayConfigOptions) ([]string, map[string]config.GenericMap) {
 	tailSamplingProcessorCfg := config.GenericMap{
 		"odigos_config_extension": *gatewayOptions.OdigosConfigExtensionName,
 	}

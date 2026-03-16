@@ -86,7 +86,7 @@ func TestCalculateMinimal(t *testing.T) {
 		make([]config.ExporterConfigurer, 0),
 		make([]config.ProcessorConfigurer, 0),
 		nil,
-		nil, gatewayOptions,
+		nil, &gatewayOptions,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -110,7 +110,7 @@ func TestCalculate(t *testing.T) {
 		},
 		make([]config.ProcessorConfigurer, 0),
 		nil,
-		nil, gatewayOptions,
+		nil, &gatewayOptions,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, want, config)
@@ -150,7 +150,7 @@ func TestCalculateWithBaseMinimal(t *testing.T) {
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 		nil,
-		nil, gatewayOptions,
+		nil, &gatewayOptions,
 	)
 	assert.Nil(t, err)
 	assert.Equal(t, config, want)
@@ -178,7 +178,7 @@ func TestCalculateWithBaseNoOTLP(t *testing.T) {
 		[]config.ExporterConfigurer{},
 		[]config.ProcessorConfigurer{},
 		nil,
-		nil, gatewayOptions,
+		nil, &gatewayOptions,
 	)
 	assert.Contains(t, err.Error(), "required receiver")
 	assert.Equal(t, len(statuses.Destination), 0)
@@ -234,7 +234,7 @@ func TestCalculateDataStreamAndDestinations(t *testing.T) {
 		},
 		[]config.ExporterConfigurer{dummyDest},
 		dummyProcessors,
-		nil, dataStreamDetails, gatewayOptions,
+		nil, dataStreamDetails, &gatewayOptions,
 	)
 
 	assert.Equal(t, config, want)
@@ -294,7 +294,7 @@ func TestCalculateDataStreamMissingSources(t *testing.T) {
 		},
 		[]config.ExporterConfigurer{dummyDest},
 		dummyProcessors,
-		nil, dataStreamDetails, gatewayOptions,
+		nil, dataStreamDetails, &gatewayOptions,
 	)
 
 	assert.Equal(t, config, want)
@@ -370,7 +370,7 @@ func TestServiceGraphOptions(t *testing.T) {
 				baseConfigWithSelfMetrics(),
 				[]config.ExporterConfigurer{DummyTraceDestination{ID: "t1"}},
 				[]config.ProcessorConfigurer{},
-				nil, nil, gatewayOptions,
+				nil, nil, &gatewayOptions,
 			)
 			require.NoError(t, err)
 
@@ -450,7 +450,7 @@ func TestCalculateDataStreamMissingDestinatin(t *testing.T) {
 		},
 		[]config.ExporterConfigurer{},
 		dummyProcessors,
-		nil, dataStreamDetails, gatewayOptions,
+		nil, dataStreamDetails, &gatewayOptions,
 	)
 
 	assert.Equal(t, want, config)

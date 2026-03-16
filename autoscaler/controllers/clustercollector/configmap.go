@@ -210,7 +210,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			}
 			return nil
 		},
-		dataStreams, gatewayOptions,
+		dataStreams, &gatewayOptions,
 	)
 
 	if err != nil {
