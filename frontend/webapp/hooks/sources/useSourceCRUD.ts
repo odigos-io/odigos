@@ -5,7 +5,7 @@ import { useLazyQuery, useMutation } from '@apollo/client';
 import { getIdFromSseTarget, getSseTargetFromId } from '@odigos/ui-kit/functions';
 import { DISPLAY_TITLES, FORM_ALERTS } from '@odigos/ui-kit/constants';
 import type { SourceInstrumentInput, WorkloadResponse } from '@/types';
-import { mapWorkloadToSource, sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
+import { mapWorkloadToSource, mapConditionsToConditionArray, sortSources, prepareNamespacePayloads, prepareSourcePayloads } from '@/utils';
 import { GET_PEER_SOURCES, GET_SOURCE, GET_SOURCE_LIBRARIES, GET_WORKLOADS, GET_WORKLOADS_BY_IDS, PERSIST_SOURCES, UPDATE_K8S_ACTUAL_SOURCE } from '@/graphql';
 import { type WorkloadId, type Source, type SourceFormData, type PeerSources, EntityTypes, StatusType, Crud, InstrumentationInstanceComponent } from '@odigos/ui-kit/types';
 import {
@@ -141,6 +141,7 @@ export const useSourceCRUD = (): UseSourceCrud => {
     if (workload) {
       const enrichedSource: Source = {
         ...source,
+        conditions: mapConditionsToConditionArray(workload.conditions),
         workloadOdigosHealthStatus: workload.workloadOdigosHealthStatus,
         podsAgentInjectionStatus: workload.podsAgentInjectionStatus,
         rollbackOccurred: workload.rollbackOccurred,
