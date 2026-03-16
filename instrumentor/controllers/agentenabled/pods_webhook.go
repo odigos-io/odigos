@@ -113,7 +113,7 @@ func (p *PodsWebhook) injectOdigos(ctx context.Context, pod *corev1.Pod, req adm
 
 	odigosNamespace := env.GetCurrentNamespace()
 
-	pw, err := p.podWorkload(ctx, pod, req)
+	pw, err := p.podWorkload(pod, req)
 	if err != nil {
 		// TODO: if the webhook is enabled for all pods, this is not necessarily an error
 		logger.Error(err, "failed to get pod workload details. Skipping Injection of ODIGOS agent")
@@ -261,8 +261,8 @@ func mergeMaps[T any](a, b map[string]T) map[string]T {
 	return a
 }
 
-func (p *PodsWebhook) podWorkload(ctx context.Context, pod *corev1.Pod, req admission.Request) (*k8sconsts.PodWorkload, error) {
-	pw, err := workload.PodWorkloadObject(ctx, pod)
+func (p *PodsWebhook) podWorkload(pod *corev1.Pod, req admission.Request) (*k8sconsts.PodWorkload, error) {
+	pw, err := workload.PodWorkloadObject(pod)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract pod workload details from pod: %w", err)
 	}

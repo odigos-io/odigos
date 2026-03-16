@@ -36,48 +36,8 @@ func isInPodContainersBatchPredicate(podContainers []PodContainerUID) func(int) 
 	}
 }
 
-func isPodContainerPredicate(podUID string, containerName string) func(int) bool {
-
-	// Added trailing slash to avoid substring collisions like "membership" matching "membership1".
-	// Real m.Root ends with runtime ID (e.g., .../containers/membership/<runtime-id>), so exact match fails.
-	// Using slash ensures we only match full "containers/<name>/" segments in mount paths.
-	expectedMountRoot := []byte(fmt.Sprintf("%s/containers/%s/", podUID, containerName))
-
-	return func(pid int) bool {
-		mountInfoFile := process.ProcFilePath(pid, "mountinfo")
-		f, err := os.Open(mountInfoFile)
-		if err != nil {
-			return false
-		}
-		defer f.Close()
-
-		scanner := bufio.NewScanner(f)
-		for scanner.Scan() {
-			if bytes.Contains(scanner.Bytes(), expectedMountRoot) {
-				return true
-			}
-		}
-
-		return false
-	}
-}
-
 type PodContainerUID struct {
 	PodUID, ContainerName string
-}
-
-func FindAllInContainer(podUID string, containerName string, runtimeDetectionEnvs map[string]struct{}) ([]process.Details, error) {
-	pids, err :=  process.FindAllProcesses(isPodContainerPredicate(podUID, containerName))
-	if err != nil {
-		return nil, fmt.Errorf("failed to find processes for container %s :%w", containerName, err)
-	}
-
-	details := make([]process.Details, len(pids))
-	for i, pid := range pids {
-		details[i] = process.GetPidDetails(pid, runtimeDetectionEnvs)
-	}
-
-	return details, nil
 }
 
 // GroupByPodContainer groups all the current active processes by (podUID, containerName) using the provided list of PodContainerUIDs to filter relevant processes.

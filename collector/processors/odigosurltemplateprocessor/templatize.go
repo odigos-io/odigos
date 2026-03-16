@@ -83,11 +83,6 @@ type RulePathSegment struct {
 
 	// it this rule segment path is replaced with templated name, the TemplateName will be non-empty
 	TemplateName string
-
-	// for templated segment names, a user can also include an optional regexp
-	// which must match for the rule to be applied.
-	// it templatedName is unset, the regexp will be used to match the path segment but not template them.
-	RegexpPattern *regexp.Regexp
 }
 
 type TemplatizationRule []RulePathSegment
