@@ -1,10 +1,10 @@
 ---
 title: "URL Templatization"
 sidebarTitle: "URL Templatization"
-description: "Replace dynamic URL parts with parameter placeholders in VM Agent trace data"
+description: "Replace dynamic URL parts with parameter placeholders in VM Agent OpenTelemetry signals"
 ---
 
-[URL templatization](./overview#url-templatization) replaces variable parts of URLs with parameter placeholders before the URL is recorded in trace data (e.g., `/users/123` → `/users/{id}`), keeping cardinality under control and making it easier to group traffic by endpoint pattern.
+[URL templatization](./overview#url-templatization) replaces variable parts of URLs with parameter placeholders before the URL is recorded in OpenTelemetry signals (e.g., `/users/123` → `/users/{id}`), keeping cardinality under control and making it easier to group traffic by endpoint pattern.
 
 There are two ways to add a URL templatization action: using `odictl` or using YAML files.
 

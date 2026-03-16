@@ -661,12 +661,19 @@
                   "vmagent/setup/configuration/add-destinations",
                   "vmagent/setup/configuration/add-sources",
                   {
-                    "group": "Adding Actions",
+                    "group": "Actions",
                     "pages": [
                       "vmagent/setup/configuration/actions/overview",
                       "vmagent/setup/configuration/actions/processor-addition",
                       "vmagent/setup/configuration/actions/span-metrics",
                       "vmagent/setup/configuration/actions/url-templatization"
+                    ]
+                  },
+                  {
+                    "group": "Instrumentation Rules",
+                    "pages": [
+                      "vmagent/setup/configuration/instrumentation-rules/overview",
+                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation"
                     ]
                   }
                 ]

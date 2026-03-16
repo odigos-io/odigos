@@ -1,10 +1,10 @@
 ---
-title: "Adding Destinations"
-sidebarTitle: "Adding Destinations"
+title: "Destinations"
+sidebarTitle: "Destinations"
 description: "Add destinations to the Odigos VM Agent so telemetry can be sent to your backends."
 ---
 
-There are two ways to add [destinations](../../overview#key-concepts) to the Odigos VM Agent: use `odictl` or use YAML files.
+There are two ways to add [destinations](../../../overview#key-concepts) to the Odigos VM Agent: use `odictl` or use YAML files.
 
 <Tabs>
   <Tab title="odictl">
@@ -18,7 +18,7 @@ There are two ways to add [destinations](../../overview#key-concepts) to the Odi
       Use `Tab` to focus on the Destinations pane or press `d`, then press `Enter` or click `+ Add Destination` with your mouse.
 
       <img 
-        src="../../../images/vmagent/adddestination/odictl-destination-select.png" 
+        src="../../../images/vmagent/destination/odictl-destination-select.png" 
         alt="Select Destination section of the odictl interface"
         style={{    
           width: "700px",
@@ -33,7 +33,7 @@ There are two ways to add [destinations](../../overview#key-concepts) to the Odi
       of destinations. Once your destination is highlighted, press `Enter`.
 
       <img 
-        src="../../../images/vmagent/adddestination/odictl-destination-type.png" 
+        src="../../../images/vmagent/destination/odictl-destination-type.png" 
         alt="Select Destination"
         style={{    
           width: "700px",
@@ -44,12 +44,12 @@ There are two ways to add [destinations](../../overview#key-concepts) to the Odi
       />
     </Step>
     <Step title="Configure destination">
-      Set each field according to your destination type. See [Destinations](../../../enterprise/backends-overview) 
+      Set each field according to your destination type. See [Destinations](../../../../enterprise/backends-overview) 
       for field details and requirements.
 
-      <Frame caption="Example of an [OTLP http](../../../enterprise/backends-overview) destination">
+      <Frame caption="Example of an [OTLP http](../../../../enterprise/backends-overview) destination">
         <img 
-          src="../../../images/vmagent/adddestination/odictl-destination-configure.png" 
+          src="../../../images/vmagent/destination/odictl-destination-configure.png" 
           alt="Configure Destination"
           style={{    
             width: "700px",
@@ -68,7 +68,7 @@ There are two ways to add [destinations](../../overview#key-concepts) to the Odi
       Select `OK`.
 
       <img 
-        src="../../../images/vmagent/adddestination/odictl-destination-finish.png" 
+        src="../../../images/vmagent/destination/odictl-destination-finish.png" 
         alt="Complete Adding Destination"
         style={{    
           width: "500px",
@@ -81,7 +81,7 @@ There are two ways to add [destinations](../../overview#key-concepts) to the Odi
       Your destination appears in the `Destinations` section in `odictl`.
 
       <img 
-        src="../../../images/vmagent/adddestination/odictl-destination-end.png" 
+        src="../../../images/vmagent/destination/odictl-destination-end.png" 
         alt="Verify Destination"
         style={{    
           width: "700px",
@@ -114,7 +114,7 @@ There are two ways to add [destinations](../../overview#key-concepts) to the Odi
       </Step>
       <Step title="Add the destination configuration">
 
-        Set each field according to your destination type. See [Destinations](../../../enterprise/backends-overview) for field details and requirements.
+        Set each field according to your destination type. See [Destinations](../../../../enterprise/backends-overview) for field details and requirements.
 
 
         For example:
@@ -130,7 +130,7 @@ There are two ways to add [destinations](../../overview#key-concepts) to the Odi
           signals:
             - TRACES
         ```
-        <Info>The above is an example of an [OTLP http](../../../enterprise/backends-overview) destination.</Info>
+        <Info>The above is an example of an [OTLP http](../../../../enterprise/backends-overview) destination.</Info>
 
         <Note>You can define multiple destinations in a single YAML file, and you can organize destinations across multiple YAML files.</Note>
 

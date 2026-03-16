@@ -1,10 +1,10 @@
 ---
-title: "Adding Sources"
-sidebarTitle: "Adding Sources"
+title: "Sources"
+sidebarTitle: "Sources"
 description: "Add or instrument sources in the Odigos VM Agent so the agent can collect their telemetry."
 ---
 
-There are two ways to add [sources](../../overview#key-concepts) to the Odigos VM Agent: use `odictl` or use YAML files.
+There are two ways to add [sources](../../../overview#key-concepts) to the Odigos VM Agent: use `odictl` or use YAML files.
 
 <Tip>It is recommended to [add a destination](./add-destinations) before adding a source.</Tip>
 
@@ -20,7 +20,7 @@ There are two ways to add [sources](../../overview#key-concepts) to the Odigos V
       Use `Tab` to focus on the Sources pane or press `o`, then press `Enter` or click `+ Add Source` with your mouse.
 
       <img 
-        src="../../../images/vmagent/addsource/odictl-sources-select.png" 
+        src="../../../images/vmagent/source/odictl-sources-select.png" 
         alt="Select Sources pane of the odictl interface"
         style={{    
           width: "700px",
@@ -35,7 +35,7 @@ There are two ways to add [sources](../../overview#key-concepts) to the Odigos V
       of sources. Once your source is highlighted, press `Enter`.
 
       <img 
-        src="../../../images/vmagent/addsource/odictl-sources-process.png" 
+        src="../../../images/vmagent/source/odictl-sources-process.png" 
         alt="Select Source"
         style={{    
           width: "700px",
@@ -72,7 +72,7 @@ There are two ways to add [sources](../../overview#key-concepts) to the Odigos V
       <br />
 
       <img 
-        src="../../../images/vmagent/addsource/odictl-sources-properties.png" 
+        src="../../../images/vmagent/source/odictl-sources-properties.png" 
         alt="Instrument Source"
         style={{    
           width: "700px",
@@ -91,7 +91,7 @@ There are two ways to add [sources](../../overview#key-concepts) to the Odigos V
       Select `OK`.
 
       <img 
-        src="../../../images/vmagent/addsource/odictl-sources-finish.png" 
+        src="../../../images/vmagent/source/odictl-sources-finish.png" 
         alt="Complete Instrumentation"
         style={{    
           width: "500px",
@@ -104,7 +104,7 @@ There are two ways to add [sources](../../overview#key-concepts) to the Odigos V
       The service or process will restart automatically to apply instrumentation. After it comes back up, it appears in the `Sources` list with a `Health` status of `Success`.
 
       <img 
-        src="../../../images/vmagent/addsource/odictl-sources-end.png" 
+        src="../../../images/vmagent/source/odictl-sources-end.png" 
         alt="Verify Instrumentation"
         style={{    
           width: "700px",

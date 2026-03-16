@@ -15,7 +15,7 @@ You can configure the Odigos VM Agent in two ways:
 
 ## Configuration tasks
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
   <Card title="Add sources" icon="server" href="./add-sources">
     Instrument systemd services or Linux processes so the VM Agent collects their telemetry.
   </Card>
@@ -25,10 +25,13 @@ You can configure the Odigos VM Agent in two ways:
   <Card title="Add actions" icon="wand-magic-sparkles" href="./actions/overview">
     Transform, filter, or enrich telemetry before it is sent to destinations.
   </Card>
+  <Card title="Instrumentation rules" icon="list-check" href="./instrumentation-rules/overview">
+    Control how telemetry is recorded from your sources (attributes, headers, payloads and custom instrumentation rules).
+  </Card>
 </CardGroup>
 
 <Tip>
-Add a [destination](./add-destinations) first, then [sources](./add-sources), then [actions](./actions/overview) as needed.
+Add a [destination](./add-destinations) first, then [sources](./add-sources), then [actions](./actions/overview) and [instrumentation rules](./instrumentation-rules/overview) as needed.
 </Tip>
 
 For definitions of sources, destinations, and actions, see [Key concepts](../../overview#key-concepts) in the VM Agent overview.

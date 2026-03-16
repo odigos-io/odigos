@@ -79,7 +79,7 @@ To navigate:
 </Accordion>
 </AccordionGroup>
 
-## Services Section
+## Services Panel
 
 The Services section shows the status of the two services that run the Odigos VM Agent:
 <Badge color="blue">odigos-vmagent</Badge> and <Badge color="blue">odigos-otelcol</Badge>. When you highlight a service,
@@ -108,13 +108,13 @@ and <Badge color="blue">odigos-otelcol</Badge> in the Logs section.
   src="../../../images/vmagent/odictl/odictl-services-video.mp4"
 ></video>
 
-## Logs Section
+## Logs Panel
 
 The Logs section shows a live stream of logs for the <Badge color="blue">odigos-vmagent</Badge> and
 <Badge color="blue">odigos-otelcol</Badge> Odigos services. When the section is focused, use the ↑ / ↓ keys
 or the mouse wheel to scroll through the logs.
 
-## Sources Section
+## Sources Panel
 
 Sources is where you define the systemd services or Linux processes on the host system that you want to instrument with
 the Odigos VM Agent. See [Add Sources](./add-sources) to learn how.
@@ -130,9 +130,9 @@ the Odigos VM Agent. See [Add Sources](./add-sources) to learn how.
   }}
 />
 
-## Destinations Section
+## Destinations Panel
 
-[Destinations](../../../enterprise/backends-overview) are backends that accept data from the Odigos VM Agent.
+[Destinations](../../../../enterprise/backends-overview) are backends that accept data from the Odigos VM Agent.
 Odigos lets you [add as many destinations](./add-destinations) as you like, enabling you to
 execute different use cases such as:
 
@@ -151,20 +151,39 @@ execute different use cases such as:
   }}
 />
 
-## Actions Section
+## Actions Panel
 
 Actions let you modify OpenTelemetry data from Odigos Sources before it is exported to your destinations. Odigos
 implements actions using OpenTelemetry Collector processors—components that transform, filter, or enrich telemetry
 before it is sent to your destinations.
 
 See [Actions overview](./actions/overview) to add or edit actions. For action types and processor options, see
-[Odigos Actions](../../../enterprise/pipeline/actions/introduction).
+[Odigos Actions](../../../../enterprise/pipeline/actions/introduction).
 
 <img 
   src="../../../images/vmagent/odictl/odictl-actions-screen.png" 
   alt="Actions screen"
   style={{    
     width: "400px",
+    height: "auto",
+    display: "block",
+    margin: "0 auto"
+  }}
+/>
+
+## Instrumentation Rules Panel
+
+Instrumentation Rules control how telemetry is recorded from your instrumented sources. A rule can be applied to
+specific sources and instrumentation libraries, letting you control what attributes, headers, or payloads are collected
+and how custom instrumentations behave.
+
+For rule types and configuration options, see [Instrumentation rules overview](./instrumentation-rules/overview).
+
+<img 
+  src="../../../images/vmagent/odictl/odictl-rules-screen.png" 
+  alt="Instrumentation Rules screen"
+  style={{    
+    width: "500px",
     height: "auto",
     display: "block",
     margin: "0 auto"

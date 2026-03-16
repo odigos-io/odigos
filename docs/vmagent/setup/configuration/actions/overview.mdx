@@ -1,14 +1,14 @@
 ---
-title: "Actions Overview"
-sidebarTitle: "Actions Overview"
+title: "Overview"
+sidebarTitle: "Overview"
 description: "What Odigos VM Agent actions are, their benefits, and the three types: processor addition, span metrics, and URL templatization."
 ---
 
-Actions modify trace data produced by your sources before it is exported to destinations. They run in the VM Agent, so processing is decoupled from your applications and applies consistently to all traces from the agent.
+Actions modify OpenTelemetry Signals produced by your sources before it is exported to destinations. They run in the VM Agent, so processing is decoupled from your applications and applies consistently to all signals from the agent.
 
 ## Benefits
 
-- **Language and source agnostic** — Actions run in the OpenTelemetry pipeline and can transform, filter, or enrich trace data regardless of the instrumented process or language.
+- **Language and source agnostic** — Actions run in the OpenTelemetry pipeline and can transform, filter, or enrich OpenTelemetry signals regardless of the instrumented process or language.
 - **Lower impact on workloads** — Processing happens in the agent instead of inside your services, so CPU and memory stay on the agent.
 - **Control cost and volume** — You can reduce or shape the data sent to backends (e.g., sampling, dropping attributes, aggregating spans into metrics) to limit export volume and cost.
 - **Reusable building blocks** — The VM Agent supports the OpenTelemetry Collector processors defined in the [Odigos collector builder config](https://github.com/odigos-io/odigos/blob/main/collector/builder-config.yaml#L61); you can combine and configure those processors to match your needs.
@@ -19,7 +19,7 @@ The VM Agent supports three kinds of actions. Each type has a dedicated page wit
 
 ### Processor addition
 
-Add an OpenTelemetry Collector processor to transform, filter, or enrich traces (e.g., add or delete attributes, batch, sample, mask PII). Processors defined in the [Odigos collector builder config](https://github.com/odigos-io/odigos/blob/main/collector/builder-config.yaml#L61) are supported; for each processor's configuration options, see the [OpenTelemetry Collector Contrib documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor). See [Processor addition](./processor-addition) for configuration steps.
+Add an OpenTelemetry Collector processor to transform, filter, or enrich signals (e.g., add or delete attributes, batch, sample, mask PII). Processors defined in the [Odigos collector builder config](https://github.com/odigos-io/odigos/blob/main/collector/builder-config.yaml#L61) are supported; for each processor's configuration options, see the [OpenTelemetry Collector Contrib documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor). See [Processor addition](./processor-addition) for configuration steps.
 
 ### Span metrics
 
@@ -27,4 +27,4 @@ Convert tracing spans into aggregated metrics (e.g., request counts, latency his
 
 ### URL templatization
 
-Replace variable parts of URLs with parameter placeholders (e.g., `/users/123` → `/users/{id}`) before recording in trace data to control cardinality and group traffic by endpoint pattern. See [URL templatization](./url-templatization) for configuration steps.
+Replace variable parts of URLs with parameter placeholders (e.g., `/users/123` → `/users/{id}`) before recording in signals to control cardinality and group traffic by endpoint pattern. See [URL templatization](./url-templatization) for configuration steps.
