@@ -219,6 +219,13 @@
                       "oss/pipeline/actions/crd",
                       "oss/pipeline/actions/troubleshooting"
                     ]
+                  },
+                  {
+                    "group": "Advanced",
+                    "icon": "sliders",
+                    "pages": [
+                      "oss/pipeline/service-graph"
+                    ]
                   }
                 ]
               },
@@ -509,6 +516,13 @@
                       },
                       "enterprise/pipeline/actions/crd",
                       "enterprise/pipeline/actions/troubleshooting"
+                    ]
+                  },
+                  {
+                    "group": "Advanced",
+                    "icon": "sliders",
+                    "pages": [
+                      "enterprise/pipeline/service-graph"
                     ]
                   }
                 ]
