@@ -671,7 +671,7 @@ func fetchWorkloadPods(ctx context.Context, logger logr.Logger, filters *Workloa
 		if _, ok := filters.IgnoredNamespaces[pod.Namespace]; ok {
 			continue
 		}
-		pw, err := workload.PodWorkloadObject(ctx, &pod)
+		pw, err := workload.PodWorkloadObject(&pod)
 		if err != nil || pw == nil {
 			// skip pods not relevant for odigos
 			continue

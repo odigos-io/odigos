@@ -37,6 +37,11 @@ func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv
 		return nil, err
 	}
 
+	return MatchingPodsForWorkloadOnNode(ic, podList)
+}
+
+// MatchingPodsForWorkloadOnNode returns the running pods on the node from the given pod list that are associated with the workload instrumented by ic.
+func MatchingPodsForWorkloadOnNode(ic *odigosv1.InstrumentationConfig, podList corev1.PodList) ([]corev1.Pod, error) {
 	var selectedPods []corev1.Pod
 	for _, pod := range podList.Items {
 		// skip pods that are being deleted or not ready
@@ -50,7 +55,7 @@ func WorkloadPodsOnCurrentNode(c client.Client, ctx context.Context, ic *odigosv
 		if !IsPodInCurrentNode(&pod) {
 			continue
 		}
-		podWorkload, err := workload.PodWorkloadObject(ctx, &pod)
+		podWorkload, err := workload.PodWorkloadObject(&pod)
 		if errors.Is(err, workload.ErrKindNotSupported) {
 			continue
 		}
