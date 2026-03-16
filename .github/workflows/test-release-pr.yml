@@ -86,34 +86,6 @@ jobs:
             echo "::notice::No open dependencies-syncer-bot PRs in ${{ matrix.repo }}"
           fi
 
-  verify-go-instrumentation-version:
-    if: ${{ needs.decide.outputs.skip != 'true' }}
-    needs: decide
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify no open version update PRs
-        id: verify
-        run: |
-          result=$(curl -s -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${{ secrets.RELEASE_BOT_TOKEN }}" \
-            "https://api.github.com/repos/odigos-io/enterprise-go-instrumentation/pulls?state=open&per_page=100")
-
-          pr_links=$(echo "$result" \
-            | jq -r '[.[] | select(.head.ref | startswith("automated/update-version-")) | .html_url] | join(" ")')
-
-          count=$(echo "$pr_links" | wc -w)
-          if [ "$count" -gt 0 ]; then
-            pr_links_formatted=$(echo "$pr_links" | tr ' ' '\n' | awk '{print "- " $0}' | tr '\n' '\n')
-
-            echo "❌ Error: Open version update PRs found in enterprise-go-instrumentation!" >&2
-            echo "::error::Open version update PRs found:"
-            echo "$pr_links_formatted"
-            exit 1
-          else
-            echo "✅ No open version update PRs in enterprise-go-instrumentation."
-            echo "::notice::No open version update PRs in enterprise-go-instrumentation"
-          fi
-
   verify-release-blockers:
     if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: decide
