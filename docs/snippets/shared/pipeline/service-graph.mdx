@@ -1,0 +1,95 @@
+import GettingHelp from '/snippets/shared/getting-help-section.mdx'
+
+## Overview
+
+The Service Graph is a live topology map that shows which services call each other and how those calls are performing.
+It is built entirely from your distributed traces — no additional instrumentation or agents are required.
+
+Odigos generates the service graph automatically when traces are enabled and at least one tracing destination is configured.
+
+## How It Works
+
+Odigos uses the OpenTelemetry [Service Graph Connector](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/connector/servicegraphconnector) inside the Cluster Gateway Collector. The pipeline looks like this:
+
+```
+Instrumented services
+       │ (OTLP traces)
+       ▼
+ Node Collector (DaemonSet)
+       │ (OTLP traces)
+       ▼
+ Cluster Gateway Collector
+       ├──► servicegraph connector ──► Odigos UI (topology map)
+```
+
+1. The **servicegraph connector** receives every trace that passes through the gateway.
+   It matches CLIENT spans with their corresponding SERVER spans to detect service-to-service calls.
+2. For each matched pair it emits a metric labelled with the `client` and `server` service names plus any configured extra dimensions, which the Odigos UI uses to render the interactive topology map.
+
+### Virtual Nodes (Uninstrumented Dependencies)
+
+When a service calls an uninstrumented dependency (Redis, Kafka, a third-party API, …) there is no SERVER span.
+The connector handles this with **virtual nodes**: it reads certain attributes from the CLIENT span to infer the name of the remote endpoint and creates a synthetic node in the graph.
+
+The attributes checked — in priority order — are configured via `serviceGraphVirtualNodePeerAttributes`.
+The connector picks the **first attribute that is present** on the CLIENT span.
+
+<Info>
+  Only **span-level attributes** are read when resolving virtual node identities (e.g. `server.address`, `db.system`, `peer.service`).
+</Info>
+
+## Enabling and Disabling
+
+The service graph is **enabled by default** when traces are active.
+Disabling it removes the `servicegraph` connector from the gateway pipeline and stops emitting the related metrics.
+
+<Warning>
+  Disabling the service graph also removes the load balancing behavior between the node collectors and the gateway, because the gateway no longer needs to aggregate spans from the same trace.
+</Warning>
+
+```yaml
+# values.yaml
+collectorGateway:
+  serviceGraphDisabled: true   # set to true to disable
+```
+
+## Configuration Options
+
+All options live under `collectorGateway` in your `values.yaml` (Helm) or by manually editing the `odigos-configuration` ConfigMap in your cluster.
+
+### Extra Dimensions
+
+By default the graph distinguishes services by `service.name` only.
+`serviceGraphExtraDimensions` adds more labels to the edge metrics, creating a separate node for each unique combination of values.
+
+**When to use it:** multiple deployments share the same `service.name` (e.g. the same service deployed in `staging` and `production` namespaces).
+
+```yaml
+collectorGateway:
+  serviceGraphExtraDimensions:
+    - k8s.namespace.name   # separate nodes per namespace
+```
+
+<Note>
+  Both span-level and resource-level attributes are supported for extra dimensions — the connector reads from the full span resource context.
+  Avoid high-cardinality attributes such as `k8s.pod.name`; each unique value creates a separate time series in Prometheus.
+</Note>
+
+### Virtual Node Peer Attributes
+
+`serviceGraphVirtualNodePeerAttributes` controls which span attribute is used to name uninstrumented dependencies.
+The connector evaluates the list in order and uses the first attribute that has a non-empty value.
+
+**When to use it:** multiple instances of the same technology (e.g. a Redis Cluster with several shards, or two separate Redis caches) are collapsing into a single node because they all resolve to the same value (e.g. `db.system=redis`).
+
+```yaml
+collectorGateway:
+  serviceGraphVirtualNodePeerAttributes:
+    - peer.service      # explicit logical name — highest priority
+    - server.address    # hostname of the specific instance (e.g. redis-cache.default.svc.cluster.local)
+    - net.peer.name     # older convention, wide SDK support
+    - db.name           # database index (rarely useful for Redis — most apps use index 0)
+    - db.system         # technology name (e.g. "redis") — last resort, not instance-specific
+```
+
+<GettingHelp />

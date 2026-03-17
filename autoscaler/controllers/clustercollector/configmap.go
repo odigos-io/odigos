@@ -160,7 +160,11 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 
 	odigosConfigExtensionName := k8sconsts.OdigosConfigK8sExtensionType
 	gatewayOptions := pipelinegen.GatewayConfigOptions{
-		ServiceGraphDisabled:      gateway.Spec.ServiceGraphDisabled,
+		ServiceGraph: odigoscommon.ServiceGraphOptions{
+			Disabled:                  gateway.Spec.ServiceGraphDisabled,
+			ExtraDimensions:           gateway.Spec.ServiceGraphExtraDimensions,
+			VirtualNodePeerAttributes: gateway.Spec.ServiceGraphVirtualNodePeerAttributes,
+		},
 		ClusterMetricsEnabled:     gateway.Spec.ClusterMetricsEnabled,
 		OdigosNamespace:           env.GetCurrentNamespace(),
 		OdigosConfigExtensionName: &odigosConfigExtensionName,
@@ -206,7 +210,7 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 			}
 			return nil
 		},
-		dataStreams, gatewayOptions,
+		dataStreams, &gatewayOptions,
 	)
 
 	if err != nil {
