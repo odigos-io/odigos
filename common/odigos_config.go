@@ -210,7 +210,7 @@ type CollectorGatewayConfiguration struct {
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 
 	// ServiceGraph holds all configuration for the service graph connector.
-	ServiceGraph ServiceGraphOptions `json:"serviceGraph,omitempty"`
+	ServiceGraph *ServiceGraphOptions `json:"serviceGraph,omitempty"`
 
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver
