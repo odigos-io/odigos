@@ -24,6 +24,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
+	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
 	openshiftappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -111,11 +112,18 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
+	ownerRef := ownerReferences[0]
+	workloadKind := k8sconsts.WorkloadKind(ownerRef.Kind)
+	if pod, ok := workloadObject.(*corev1.Pod); ok && workload.IsStaticPod(pod) {
+		workloadKind = k8sconsts.WorkloadKindStaticPod
+	}
+
 	pw := k8sconsts.PodWorkload{
 		Name:      workloadObject.GetName(),
 		Namespace: workloadObject.GetNamespace(),
-		Kind:      k8sconsts.WorkloadKind(workloadObject.GetObjectKind().GroupVersionKind().Kind),
+		Kind:      workloadKind,
 	}
+
 	sources, err := odigosv1.GetSources(ctx, r.Client, pw)
 
 	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
