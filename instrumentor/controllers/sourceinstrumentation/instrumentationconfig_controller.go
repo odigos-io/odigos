@@ -18,73 +18,16 @@ package sourceinstrumentation
 
 import (
 	"context"
-	"fmt"
 
-	argorolloutsv1alpha1 "github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
-	"github.com/odigos-io/odigos/api/k8sconsts"
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sourceutils "github.com/odigos-io/odigos/k8sutils/pkg/source"
 	"github.com/odigos-io/odigos/k8sutils/pkg/workload"
-	openshiftappsv1 "github.com/openshift/api/apps/v1"
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 
 	commonlogger "github.com/odigos-io/odigos/common/logger"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func getObjectByOwnerReference(ctx context.Context, k8sClient client.Client, ownerRef metav1.OwnerReference, namespace string) (client.Object, error) {
-	key := client.ObjectKey{
-		Name:      ownerRef.Name,
-		Namespace: namespace,
-	}
-
-	if ownerRef.Kind == "Deployment" {
-		dep := &appsv1.Deployment{}
-		err := k8sClient.Get(ctx, key, dep)
-		return dep, err
-	}
-	if ownerRef.Kind == "DaemonSet" {
-		ds := &appsv1.DaemonSet{}
-		err := k8sClient.Get(ctx, key, ds)
-		return ds, err
-	}
-	if ownerRef.Kind == "StatefulSet" {
-		ss := &appsv1.StatefulSet{}
-		err := k8sClient.Get(ctx, key, ss)
-		return ss, err
-	}
-
-	if ownerRef.Kind == "CronJob" {
-		cj := &batchv1.CronJob{}
-		err := k8sClient.Get(ctx, key, cj)
-		return cj, err
-	}
-
-	if ownerRef.Kind == "DeploymentConfig" {
-		dc := &openshiftappsv1.DeploymentConfig{}
-		err := k8sClient.Get(ctx, key, dc)
-		return dc, err
-	}
-
-	if ownerRef.Kind == string(k8sconsts.WorkloadKindArgoRollout) {
-		rollout := &argorolloutsv1alpha1.Rollout{}
-		err := k8sClient.Get(ctx, key, rollout)
-		return rollout, err
-	}
-
-	if ownerRef.Kind == "Pod" {
-		pod := &corev1.Pod{}
-		err := k8sClient.Get(ctx, key, pod)
-		return pod, err
-	}
-
-	return nil, fmt.Errorf("unsupported owner kind %s", ownerRef.Kind)
-}
 
 type InstrumentationConfigReconciler struct {
 	client.Client
@@ -99,33 +42,12 @@ func (r *InstrumentationConfigReconciler) Reconcile(ctx context.Context, req ctr
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	// find the workload object which is the owner of the InstrumentationConfig
-	ownerReferences := instrumentationConfig.GetOwnerReferences()
-	if len(ownerReferences) != 1 {
-		logger.Info("InstrumentationConfig should have exactly one owner reference")
-		return ctrl.Result{}, nil
-	}
-	workloadObject, err := getObjectByOwnerReference(ctx, r.Client, ownerReferences[0], req.Namespace)
+	pw, err := workload.ExtractWorkloadInfoFromRuntimeObjectName(req.Name, req.Namespace)
 	if err != nil {
-		logger.Error(err, "error fetching owner object")
 		return ctrl.Result{}, err
 	}
 
-	ownerRef := ownerReferences[0]
-	workloadKind := k8sconsts.WorkloadKind(ownerRef.Kind)
-	if pod, ok := workloadObject.(*corev1.Pod); ok && workload.IsStaticPod(pod) {
-		workloadKind = k8sconsts.WorkloadKindStaticPod
-	}
-
-	pw := k8sconsts.PodWorkload{
-		Name:      workloadObject.GetName(),
-		Namespace: workloadObject.GetNamespace(),
-		Kind:      workloadKind,
-	}
-
 	sources, err := odigosv1.GetSources(ctx, r.Client, pw)
-
 	enabled, _, err := sourceutils.IsObjectInstrumentedBySource(ctx, sources, err)
 	if err != nil {
 		return ctrl.Result{}, err
