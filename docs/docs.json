@@ -658,37 +658,38 @@
             "group": "VM Agent",
             "pages": [
               "vmagent/overview",
-              "vmagent/architecture",
               {
-                "group": "Quickstart",
+                "group": "Setup and Maintenance",
                 "pages": [
-                  "vmagent/quickstart/preparation",
-                  "vmagent/quickstart/introduction",
-                  "vmagent/quickstart/installation",
-                  "vmagent/quickstart/building-a-pipeline",
-                  "vmagent/quickstart/generating-data"
-                ]
-              },
-              {
-                "group": "Setup",
-                "pages": [
-                  "vmagent/setup/preparation",
+                  "vmagent/setup/system-requirements",
                   "vmagent/setup/installation",
-                  {
-                    "group": "Configuration",
-                    "pages": [
-                      "vmagent/setup/configuration/service",
-                      "vmagent/setup/configuration/agent"
-                    ]
-                  },
+                  "vmagent/setup/upgrade",
                   "vmagent/setup/uninstall"
                 ]
               },
               {
                 "group": "Configuration",
                 "pages": [
-                  "vmagent/configuration/reference",
-                  "vmagent/configuration/updating"
+                  "vmagent/setup/configuration/overview",
+                  "vmagent/setup/configuration/odictl",
+                  "vmagent/setup/configuration/add-destinations",
+                  "vmagent/setup/configuration/add-sources",
+                  {
+                    "group": "Actions",
+                    "pages": [
+                      "vmagent/setup/configuration/actions/overview",
+                      "vmagent/setup/configuration/actions/processor-addition",
+                      "vmagent/setup/configuration/actions/span-metrics",
+                      "vmagent/setup/configuration/actions/url-templatization"
+                    ]
+                  },
+                  {
+                    "group": "Instrumentation Rules",
+                    "pages": [
+                      "vmagent/setup/configuration/instrumentation-rules/overview",
+                      "vmagent/setup/configuration/instrumentation-rules/custom-instrumentation"
+                    ]
+                  }
                 ]
               }
             ]
