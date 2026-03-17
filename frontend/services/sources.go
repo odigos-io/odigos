@@ -463,6 +463,13 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
 	}
 
+	if workloadKind == WorkloadKindStaticPod {
+		config := GetConfig(ctx)
+		if config.Tier != model.TierOnprem {
+			return nil, fmt.Errorf("StaticPod instrumentation is an enterprise (on-prem) feature")
+		}
+	}
+
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
 	if err != nil && !apierrors.IsNotFound(err) {
 		// unexpected error occurred while trying to get the source
