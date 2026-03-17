@@ -105,17 +105,11 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 	}
 	resourceSettings := getGatewayResourceSettings(&odigosConfiguration)
 
-	// Build service graph options from the flat config fields.
+	serviceGraph := odigosConfiguration.CollectorGateway.ServiceGraph
 	// Default Disabled to false (feature is enabled by default).
-	serviceGraphDisabled := odigosConfiguration.CollectorGateway.ServiceGraphDisabled
-	if serviceGraphDisabled == nil {
+	if serviceGraph.Disabled == nil {
 		disabled := false
-		serviceGraphDisabled = &disabled
-	}
-	serviceGraph := common.ServiceGraphOptions{
-		Disabled:                  serviceGraphDisabled,
-		ExtraDimensions:           odigosConfiguration.CollectorGateway.ServiceGraphExtraDimensions,
-		VirtualNodePeerAttributes: odigosConfiguration.CollectorGateway.ServiceGraphVirtualNodePeerAttributes,
+		serviceGraph.Disabled = &disabled
 	}
 
 	// default cluster metrics is disabled (clusterMetricsEnabled to false)
