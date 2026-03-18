@@ -473,7 +473,7 @@ func fetchWorkloadManifests(ctx context.Context, logger logr.Logger, filters *Wo
 	}
 
 	staticPodsList := &corev1.PodList{}
-	err = k8sCacheClient.List(ctx, staticPodsList, client.InNamespace(filters.NamespaceString), client.MatchingLabels(map[string]string{k8sconsts.OdigosVirtualStaticPodNameLabel: "true"}))
+	err = k8sCacheClient.List(ctx, staticPodsList, client.InNamespace(filters.NamespaceString), client.HasLabels{k8sconsts.OdigosVirtualStaticPodNameLabel})
 	if err != nil {
 		return nil, err
 	}
