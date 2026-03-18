@@ -19,9 +19,12 @@ package actions_test
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
+	odigosactions "github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -29,6 +32,7 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	sampling "github.com/odigos-io/odigos/autoscaler/controllers/actions/sampling"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 // Helper function to extract rule details from raw JSON
@@ -381,6 +385,65 @@ var _ = Describe("Action Controller", func() {
 				}
 
 				return fallbackRatio == 20.0
+			}, timeout, interval).Should(BeTrue())
+		})
+	})
+
+	Context("When deleting URL templatization actions", func() {
+		It("Should remove the shared URL templatization Processor when the last action is deleted", func() {
+			By("Setting the controller namespace env var to the test namespace")
+			prevNs, hadPrevNs := os.LookupEnv(consts.CurrentNamespaceEnvVar)
+			Expect(os.Setenv(consts.CurrentNamespaceEnvVar, ActionNamespace)).Should(Succeed())
+			defer func() {
+				if hadPrevNs {
+					_ = os.Setenv(consts.CurrentNamespaceEnvVar, prevNs)
+				} else {
+					_ = os.Unsetenv(consts.CurrentNamespaceEnvVar)
+				}
+			}()
+
+			By("Creating a URL templatization Action")
+			action := &odigosv1.Action{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      ActionName + "-url",
+					Namespace: ActionNamespace,
+				},
+				Spec: odigosv1.ActionSpec{
+					ActionName: "test-url-templatization",
+					Signals:    []common.ObservabilitySignal{common.TracesObservabilitySignal},
+					URLTemplatization: &odigosactions.URLTemplatizationConfig{
+						TemplatizationRulesGroups: []odigosactions.UrlTemplatizationRulesGroup{
+							{
+								TemplatizationRules: []odigosactions.URLTemplatizationRule{
+									{Template: "/orders/{id}"},
+								},
+							},
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(testCtx, action)).Should(Succeed())
+
+			By("Waiting for the shared URL templatization Processor to exist")
+			processor := &odigosv1.Processor{}
+			Eventually(func() bool {
+				err := k8sClient.Get(testCtx, types.NamespacedName{
+					Name:      consts.URLTemplatizationProcessorName,
+					Namespace: ActionNamespace,
+				}, processor)
+				return err == nil
+			}, timeout, interval).Should(BeTrue())
+
+			By("Deleting the URL templatization Action")
+			Expect(k8sClient.Delete(testCtx, action)).Should(Succeed())
+
+			By("Waiting for the shared URL templatization Processor to be deleted")
+			Eventually(func() bool {
+				err := k8sClient.Get(testCtx, types.NamespacedName{
+					Name:      consts.URLTemplatizationProcessorName,
+					Namespace: ActionNamespace,
+				}, processor)
+				return apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())
 		})
 	})
