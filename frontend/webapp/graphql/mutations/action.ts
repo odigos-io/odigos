@@ -59,6 +59,22 @@ export const CREATE_ACTION = gql`
             }
           }
         }
+        urlTemplatizationRulesGroups {
+          filterK8sNamespace
+          filterK8sWorkloadKind
+          filterK8sWorkloadName
+          filterProgrammingLanguage
+          notes
+          workloadFilters {
+            kind
+            name
+          }
+          templatizationRules {
+            template
+            notes
+            examples
+          }
+        }
       }
       conditions {
         status
@@ -128,6 +144,22 @@ export const UPDATE_ACTION = gql`
               operation
               expectedValue
             }
+          }
+        }
+        urlTemplatizationRulesGroups {
+          filterK8sNamespace
+          filterK8sWorkloadKind
+          filterK8sWorkloadName
+          filterProgrammingLanguage
+          notes
+          workloadFilters {
+            kind
+            name
+          }
+          templatizationRules {
+            template
+            notes
+            examples
           }
         }
       }

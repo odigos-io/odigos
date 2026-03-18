@@ -235,6 +235,41 @@ collectorGateway:
   serviceGraphDisabled: false
 
   # @schema
+  # type: array
+  # items:
+  #   type: string
+  # description: |-
+  #   Extra attribute names to include as additional dimensions in service graph metrics,
+  #   on top of the default service.name dimension.
+  #   Use this when multiple services share the same service.name but should appear as distinct
+  #   nodes in the graph. For example, if the same service is deployed in multiple namespaces
+  #   (e.g. staging and production in the same cluster), adding "k8s.namespace.name" will
+  #   produce a separate node per namespace instead of merging them into one.
+  #   NOTE: both span-level and resource-level attributes (e.g. k8s.namespace.name) are
+  #   supported here.
+  # @schema
+  # serviceGraphExtraDimensions:
+  #   - k8s.namespace.name
+
+  # @schema
+  # type: array
+  # items:
+  #   type: string
+  # description: |-
+  #   Ordered list of span-level attributes used to identify uninstrumented (virtual) nodes in the service graph.
+  #   The connector picks the first attribute that has a value on the CLIENT span and uses it as the node name.
+  #   When not set, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+  #   Add "server.address" before "db.system" to distinguish individual Redis/DB instances by hostname.
+  #   IMPORTANT: only span-level attributes work here (e.g. server.address, db.system, peer.service).
+  # @schema
+  # serviceGraphVirtualNodePeerAttributes:
+  #   - peer.service
+  #   - server.address
+  #   - net.peer.name
+  #   - db.name
+  #   - db.system
+
+  # @schema
   # description: |-
   #   Cluster Metrics settings
   #   Cluster Metrics is a feature that allows you to enable the cluster metrics.

@@ -58,7 +58,16 @@ data:
       memoryLimiterLimitMiB: {{ $gwLimiter.limitMiB }}
       memoryLimiterSpikeLimitMiB: {{ $gwLimiter.spikeMiB }}
       goMemLimitMiB: {{ $gwLimiter.goMiB }}
-      serviceGraphDisabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
+      serviceGraph:
+        disabled: {{ .Values.collectorGateway.serviceGraphDisabled }}
+        {{- if .Values.collectorGateway.serviceGraphExtraDimensions }}
+        extraDimensions:
+          {{- toYaml .Values.collectorGateway.serviceGraphExtraDimensions | nindent 10 }}
+        {{- end }}
+        {{- if .Values.collectorGateway.serviceGraphVirtualNodePeerAttributes }}
+        virtualNodePeerAttributes:
+          {{- toYaml .Values.collectorGateway.serviceGraphVirtualNodePeerAttributes | nindent 10 }}
+        {{- end }}
       clusterMetricsEnabled: {{ .Values.collectorGateway.clusterMetricsEnabled }}
       {{- with .Values.collectorGateway.httpsProxyAddress }}
       httpsProxyAddress: {{ . }}

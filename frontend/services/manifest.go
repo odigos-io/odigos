@@ -82,7 +82,7 @@ func K8sManifest(ctx context.Context, namespace string, kind model.K8sResourceKi
 		}
 		return string(yb), nil
 
-	case model.K8sResourceKindPod:
+	case model.K8sResourceKindPod, model.K8sResourceKindStaticPod:
 		obj, err := kube.DefaultClient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return "", err

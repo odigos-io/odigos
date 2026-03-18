@@ -353,6 +353,22 @@ spec:
                   ServiceGraphEnabled is a feature that allows you to visualize the service graph of your application.
                   It is enabled by default and can be disabled by setting the enabled flag to false.
                 type: boolean
+              serviceGraphExtraDimensions:
+                description: |-
+                  ServiceGraphExtraDimensions are additional span attribute names to include as dimensions
+                  in the service graph metrics, on top of the default service.name dimension.
+                items:
+                  type: string
+                type: array
+              serviceGraphVirtualNodePeerAttributes:
+                description: |-
+                  ServiceGraphVirtualNodePeerAttributes is an ordered list of span attributes used to identify
+                  uninstrumented (virtual) nodes in the service graph.
+                  The connector picks the first attribute that has a value on the span.
+                  When nil/empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+                items:
+                  type: string
+                type: array
               spanSamplingAttributes:
                 description: |-
                   Controls whether spans are enhanced with sampling attributes (e.g. category and decisions).

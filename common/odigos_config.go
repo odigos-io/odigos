@@ -142,6 +142,30 @@ type RetryOnFailure struct {
 	MaxElapsedTime  string `json:"maxElapsedTime,omitempty"`
 }
 
+// ServiceGraphOptions holds all configuration for the OpenTelemetry service graph connector.
+// It is serialized as a nested "serviceGraph" block inside CollectorGatewayConfiguration.
+// CollectorsGroupSpec (CRD) still stores these as flat fields to preserve CRD backward compatibility.
+// At the function-signature level it is also used directly in GatewayConfigOptions and
+// collector group construction.
+type ServiceGraphOptions struct {
+	// Disabled controls whether the service graph connector is active.
+	// Defaults to false (enabled). When disabled, the topology map in the UI will be unavailable
+	// and load-balancing between node collectors and the gateway is also removed.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// ExtraDimensions are additional attribute names to include as dimensions in the
+	// service graph metrics, on top of the default service.name dimension.
+	// Both span-level and resource-level attributes are supported.
+	ExtraDimensions []string `json:"extraDimensions,omitempty"`
+
+	// VirtualNodePeerAttributes is an ordered list of span-level attributes used to identify
+	// uninstrumented (virtual) nodes (e.g. Redis, Kafka). The connector picks the first
+	// attribute that has a value on the CLIENT span.
+	// When empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+	// Only span-level attributes are supported here; resource attributes are silently ignored.
+	VirtualNodePeerAttributes []string `json:"virtualNodePeerAttributes,omitempty"`
+}
+
 type CollectorGatewayConfiguration struct {
 	// MinReplicas is the number of replicas for the cluster gateway collector deployment.
 	// Also set the minReplicas for the HPA to this value.
@@ -185,9 +209,8 @@ type CollectorGatewayConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 
-	// ServiceGraphDisabled is a feature that allows you to visualize the service graph of your application.
-	// It is enabled by default and can be disabled by setting the disabled flag to true.
-	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
+	// ServiceGraph holds all configuration for the service graph connector.
+	ServiceGraph *ServiceGraphOptions `json:"serviceGraph,omitempty"`
 
 	// ClusterMetricsEnabled is a feature that allows you to enable the cluster metrics.
 	// https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/k8sclusterreceiver

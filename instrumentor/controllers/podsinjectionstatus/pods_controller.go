@@ -29,7 +29,7 @@ func (r *PodsController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	pw, err := workload.PodWorkloadObject(ctx, &pod)
+	pw, err := workload.PodWorkloadObject(&pod)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
