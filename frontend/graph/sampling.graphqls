@@ -71,19 +71,29 @@ type SamplingConfigs {
 
 # ---- Shared types for sampling rules ----
 
+enum SamplingWorkloadLanguage {
+    java
+    python
+    go
+    dotnet
+    javascript
+    php
+    ruby
+}
+
 # scope to limit a sampling rule to specific sources
 type SourcesScope {
     workloadName: String
     workloadKind: K8sResourceKind
     workloadNamespace: String
-    workloadLanguage: ProgrammingLanguage
+    workloadLanguage: SamplingWorkloadLanguage
 }
 
 input SourcesScopeInput {
     workloadName: String
     workloadKind: K8sResourceKind
     workloadNamespace: String
-    workloadLanguage: ProgrammingLanguage
+    workloadLanguage: SamplingWorkloadLanguage
 }
 
 # ---- Head sampling operation matchers (used by noisy operations) ----

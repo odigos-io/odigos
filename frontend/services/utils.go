@@ -162,6 +162,21 @@ func ProgrammingLanguagePtrIfNotEmpty(p common.ProgrammingLanguage) *model.Progr
 	return &pl
 }
 
+func DerefSamplingWorkloadLanguage(p *model.SamplingWorkloadLanguage) common.ProgrammingLanguage {
+	if p != nil {
+		return common.ProgrammingLanguage(*p)
+	}
+	return ""
+}
+
+func SamplingWorkloadLanguagePtrIfNotEmpty(p common.ProgrammingLanguage) *model.SamplingWorkloadLanguage {
+	if p == "" {
+		return nil
+	}
+	lang := model.SamplingWorkloadLanguage(p)
+	return &lang
+}
+
 func Metav1TimeToString(latestStatusTime metav1.Time) string {
 	if latestStatusTime.IsZero() {
 		return ""

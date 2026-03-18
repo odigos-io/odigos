@@ -1401,17 +1401,17 @@ type SourceContainer struct {
 }
 
 type SourcesScope struct {
-	WorkloadName      *string              `json:"workloadName,omitempty"`
-	WorkloadKind      *K8sResourceKind     `json:"workloadKind,omitempty"`
-	WorkloadNamespace *string              `json:"workloadNamespace,omitempty"`
-	WorkloadLanguage  *ProgrammingLanguage `json:"workloadLanguage,omitempty"`
+	WorkloadName      *string                   `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
+	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
 }
 
 type SourcesScopeInput struct {
-	WorkloadName      *string              `json:"workloadName,omitempty"`
-	WorkloadKind      *K8sResourceKind     `json:"workloadKind,omitempty"`
-	WorkloadNamespace *string              `json:"workloadNamespace,omitempty"`
-	WorkloadLanguage  *ProgrammingLanguage `json:"workloadLanguage,omitempty"`
+	WorkloadName      *string                   `json:"workloadName,omitempty"`
+	WorkloadKind      *K8sResourceKind          `json:"workloadKind,omitempty"`
+	WorkloadNamespace *string                   `json:"workloadNamespace,omitempty"`
+	WorkloadLanguage  *SamplingWorkloadLanguage `json:"workloadLanguage,omitempty"`
 }
 
 type SpanAttributeFilter struct {
@@ -2579,6 +2579,57 @@ func (e *ProgrammingLanguage) UnmarshalGQL(v any) error {
 }
 
 func (e ProgrammingLanguage) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type SamplingWorkloadLanguage string
+
+const (
+	SamplingWorkloadLanguageJava       SamplingWorkloadLanguage = "java"
+	SamplingWorkloadLanguagePython     SamplingWorkloadLanguage = "python"
+	SamplingWorkloadLanguageGo         SamplingWorkloadLanguage = "go"
+	SamplingWorkloadLanguageDotnet     SamplingWorkloadLanguage = "dotnet"
+	SamplingWorkloadLanguageJavascript SamplingWorkloadLanguage = "javascript"
+	SamplingWorkloadLanguagePhp        SamplingWorkloadLanguage = "php"
+	SamplingWorkloadLanguageRuby       SamplingWorkloadLanguage = "ruby"
+)
+
+var AllSamplingWorkloadLanguage = []SamplingWorkloadLanguage{
+	SamplingWorkloadLanguageJava,
+	SamplingWorkloadLanguagePython,
+	SamplingWorkloadLanguageGo,
+	SamplingWorkloadLanguageDotnet,
+	SamplingWorkloadLanguageJavascript,
+	SamplingWorkloadLanguagePhp,
+	SamplingWorkloadLanguageRuby,
+}
+
+func (e SamplingWorkloadLanguage) IsValid() bool {
+	switch e {
+	case SamplingWorkloadLanguageJava, SamplingWorkloadLanguagePython, SamplingWorkloadLanguageGo, SamplingWorkloadLanguageDotnet, SamplingWorkloadLanguageJavascript, SamplingWorkloadLanguagePhp, SamplingWorkloadLanguageRuby:
+		return true
+	}
+	return false
+}
+
+func (e SamplingWorkloadLanguage) String() string {
+	return string(e)
+}
+
+func (e *SamplingWorkloadLanguage) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SamplingWorkloadLanguage(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SamplingWorkloadLanguage", str)
+	}
+	return nil
+}
+
+func (e SamplingWorkloadLanguage) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

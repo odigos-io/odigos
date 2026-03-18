@@ -43,7 +43,13 @@ interface UseSamplingRuleCrud {
 }
 
 function updateGroup(groups: SamplingRules[], samplingId: string, updater: (group: SamplingRules) => SamplingRules): SamplingRules[] {
-  return groups.map((g) => (g.id === samplingId ? updater(g) : g));
+  const found = groups.some((g) => g.id === samplingId);
+  if (found) {
+    return groups.map((g) => (g.id === samplingId ? updater(g) : g));
+  }
+
+  const emptyGroup: SamplingRules = { id: samplingId, noisyOperations: [], highlyRelevantOperations: [], costReductionRules: [] };
+  return [...groups, updater(emptyGroup)];
 }
 
 export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
@@ -93,10 +99,11 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
       onCompleted: (res, opts) => {
         const updated = res.updateNoisyOperationRule;
         const sid = opts?.variables?.samplingId as string;
+        const oldRuleId = opts?.variables?.ruleId as string;
         setSamplingRules((prev) =>
           updateGroup(prev, sid, (g) => ({
             ...g,
-            noisyOperations: g.noisyOperations.map((r) => (r.ruleId === updated.ruleId ? updated : r)),
+            noisyOperations: g.noisyOperations.map((r) => (r.ruleId === oldRuleId ? updated : r)),
           })),
         );
         notifyUser(StatusType.Success, Crud.Update, `Successfully updated noisy operation rule "${updated.name || updated.ruleId}"`);
@@ -142,10 +149,11 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     onCompleted: (res, opts) => {
       const updated = res.updateHighlyRelevantOperationRule;
       const sid = opts?.variables?.samplingId as string;
+      const oldRuleId = opts?.variables?.ruleId as string;
       setSamplingRules((prev) =>
         updateGroup(prev, sid, (g) => ({
           ...g,
-          highlyRelevantOperations: g.highlyRelevantOperations.map((r) => (r.ruleId === updated.ruleId ? updated : r)),
+          highlyRelevantOperations: g.highlyRelevantOperations.map((r) => (r.ruleId === oldRuleId ? updated : r)),
         })),
       );
       notifyUser(StatusType.Success, Crud.Update, `Successfully updated highly relevant operation rule "${updated.name || updated.ruleId}"`);
@@ -186,10 +194,11 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
       onCompleted: (res, opts) => {
         const updated = res.updateCostReductionRule;
         const sid = opts?.variables?.samplingId as string;
+        const oldRuleId = opts?.variables?.ruleId as string;
         setSamplingRules((prev) =>
           updateGroup(prev, sid, (g) => ({
             ...g,
-            costReductionRules: g.costReductionRules.map((r) => (r.ruleId === updated.ruleId ? updated : r)),
+            costReductionRules: g.costReductionRules.map((r) => (r.ruleId === oldRuleId ? updated : r)),
           })),
         );
         notifyUser(StatusType.Success, Crud.Update, `Successfully updated cost reduction rule "${updated.name || updated.ruleId}"`);

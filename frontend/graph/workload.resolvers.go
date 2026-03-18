@@ -582,6 +582,9 @@ func (r *k8sWorkloadResolver) NumberOfInstances(ctx context.Context, obj *model.
 	if err != nil {
 		return nil, err
 	}
+	if workloadManifest == nil {
+		return nil, nil
+	}
 	count := int(workloadManifest.AvailableReplicas)
 	return &count, nil
 }

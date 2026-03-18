@@ -97,7 +97,7 @@ func sourcesScopeInputToCRD(scopes []*model.SourcesScopeInput) []k8sconsts.Sourc
 			WorkloadName:      services.DerefString(s.WorkloadName),
 			WorkloadKind:      services.DerefK8sResourceKind(s.WorkloadKind),
 			WorkloadNamespace: services.DerefString(s.WorkloadNamespace),
-			WorkloadLanguage:  services.DerefProgrammingLanguage(s.WorkloadLanguage),
+			WorkloadLanguage:  services.DerefSamplingWorkloadLanguage(s.WorkloadLanguage),
 		}
 	}
 	return result
@@ -113,7 +113,7 @@ func sourcesScopeCRDToModel(scopes []k8sconsts.SourcesScope) []*model.SourcesSco
 			WorkloadName:      services.StringPtrIfNotEmpty(s.WorkloadName),
 			WorkloadKind:      services.K8sResourceKindPtrIfNotEmpty(s.WorkloadKind),
 			WorkloadNamespace: services.StringPtrIfNotEmpty(s.WorkloadNamespace),
-			WorkloadLanguage:  services.ProgrammingLanguagePtrIfNotEmpty(s.WorkloadLanguage),
+			WorkloadLanguage:  services.SamplingWorkloadLanguagePtrIfNotEmpty(s.WorkloadLanguage),
 		}
 	}
 	return result
