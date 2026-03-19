@@ -14,7 +14,6 @@ export const GET_GATEWAY_INFO = gql`
           type
           reason
           message
-          lastTransitionTime
         }
       }
       resources {
