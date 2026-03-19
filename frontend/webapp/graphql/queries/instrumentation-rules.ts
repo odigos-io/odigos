@@ -16,7 +16,6 @@ export const GET_INSTRUMENTATION_RULES = gql`
           type
           reason
           message
-          lastTransitionTime
         }
         payloadCollection {
           httpRequest {
@@ -50,7 +49,7 @@ export const GET_INSTRUMENTATION_RULES = gql`
           headerKeys
         }
         customInstrumentations {
-          golang{
+          golang {
             packageName
             functionName
             receiverName

@@ -96,7 +96,6 @@ type Condition {
   type: String!
   reason: String
   message: String
-  lastTransitionTime: String
 }
 
 type K8sActualNamespace {
