@@ -34,7 +34,6 @@ export const CREATE_DESTINATION = gql`
         type
         reason
         message
-        lastTransitionTime
       }
     }
   }
