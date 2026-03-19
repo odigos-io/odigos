@@ -87,7 +87,6 @@ export const GET_DESTINATIONS = gql`
           type
           reason
           message
-          lastTransitionTime
         }
       }
     }

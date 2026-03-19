@@ -81,7 +81,6 @@ export const CREATE_ACTION = gql`
         type
         reason
         message
-        lastTransitionTime
       }
     }
   }
@@ -168,7 +167,6 @@ export const UPDATE_ACTION = gql`
         type
         reason
         message
-        lastTransitionTime
       }
     }
   }

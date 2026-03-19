@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"path"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 
@@ -70,11 +69,10 @@ func ConvertConditions(conditions []metav1.Condition) []*model.Condition {
 			}
 
 			result = append(result, &model.Condition{
-				Status:             TransformConditionStatus(c.Status, c.Type, reason),
-				Type:               c.Type,
-				Reason:             &reason,
-				Message:            &message,
-				LastTransitionTime: k8sLastTransitionTimeToGql(c.LastTransitionTime),
+				Status:  TransformConditionStatus(c.Status, c.Type, reason),
+				Type:    c.Type,
+				Reason:  &reason,
+				Message: &message,
 			})
 		}
 	}
@@ -201,29 +199,6 @@ func TransformConditionStatus(condStatus metav1.ConditionStatus, condType string
 	}
 
 	return status
-}
-
-func SortConditions(conditions []*model.Condition) {
-	sort.Slice(conditions, func(i, j int) bool {
-		if conditions[i].LastTransitionTime == nil {
-			return false
-		}
-		if conditions[j].LastTransitionTime == nil {
-			return true
-		}
-
-		timeI, errI := time.Parse(time.RFC3339, *conditions[i].LastTransitionTime)
-		timeJ, errJ := time.Parse(time.RFC3339, *conditions[j].LastTransitionTime)
-
-		if errI != nil {
-			return false
-		}
-		if errJ != nil {
-			return true
-		}
-
-		return timeI.Before(timeJ)
-	})
 }
 
 func randString(nByte int) (string, error) {

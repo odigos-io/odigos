@@ -223,11 +223,10 @@ type ComplexityRoot struct {
 	}
 
 	Condition struct {
-		LastTransitionTime func(childComplexity int) int
-		Message            func(childComplexity int) int
-		Reason             func(childComplexity int) int
-		Status             func(childComplexity int) int
-		Type               func(childComplexity int) int
+		Message func(childComplexity int) int
+		Reason  func(childComplexity int) int
+		Status  func(childComplexity int) int
+		Type    func(childComplexity int) int
 	}
 
 	Config struct {
@@ -2258,13 +2257,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ComputePlatform.Sources(childComplexity), true
-
-	case "Condition.lastTransitionTime":
-		if e.complexity.Condition.LastTransitionTime == nil {
-			break
-		}
-
-		return e.complexity.Condition.LastTransitionTime(childComplexity), true
 
 	case "Condition.message":
 		if e.complexity.Condition.Message == nil {
@@ -9522,8 +9514,6 @@ func (ec *executionContext) fieldContext_Action_conditions(_ context.Context, fi
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -14715,47 +14705,6 @@ func (ec *executionContext) fieldContext_Condition_message(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Condition_lastTransitionTime(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Condition_lastTransitionTime(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastTransitionTime, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Condition_lastTransitionTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Condition",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Config_readonly(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Config_readonly(ctx, field)
 	if err != nil {
@@ -17230,8 +17179,6 @@ func (ec *executionContext) fieldContext_Destination_conditions(_ context.Contex
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -22535,8 +22482,6 @@ func (ec *executionContext) fieldContext_HorizontalPodAutoscalerInfo_conditions(
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -23827,8 +23772,6 @@ func (ec *executionContext) fieldContext_InstrumentationRule_conditions(_ contex
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -25049,8 +24992,6 @@ func (ec *executionContext) fieldContext_K8sActualSource_conditions(_ context.Co
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -42912,8 +42853,6 @@ func (ec *executionContext) fieldContext_SourceConditions_conditions(_ context.C
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -50712,8 +50651,6 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Condition_reason(ctx, field, obj)
 		case "message":
 			out.Values[i] = ec._Condition_message(ctx, field, obj)
-		case "lastTransitionTime":
-			out.Values[i] = ec._Condition_lastTransitionTime(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
