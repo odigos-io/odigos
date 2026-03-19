@@ -152,8 +152,6 @@ func (r *computePlatformResolver) Source(ctx context.Context, obj *model.Compute
 		payload.Conditions = append(payload.Conditions, item.Conditions...)
 	}
 
-	services.SortConditions(payload.Conditions)
-
 	return payload, nil
 }
 

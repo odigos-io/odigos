@@ -872,7 +872,6 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 			conditionsMap[key] = instanceItem
 		} else {
 			conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, instanceItem.Conditions...)
-			SortConditions(conditionsMap[key].Conditions)
 		}
 	}
 
