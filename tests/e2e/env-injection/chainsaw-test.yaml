@@ -28,13 +28,10 @@ spec:
             timeout: 30s
             content: ../../common/assert_config_value.sh -k agentEnvVarsInjectionMethod -v loader-fallback-to-pod-manifest
 
-    - name: Verify Node Odiglet label has been added
+    - name: Assert Node Odiglet label and Trace DB is up
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-
-    - name: Assert Trace DB is up
-      try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
@@ -48,21 +45,18 @@ spec:
             timeout: 150s
             file: 01-assert-apps-installed.yaml
 
-    - name: Instrument Namespace
+    - name: Instrument Namespace and Add Destination
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
+        - apply:
+            file: ../../common/apply/add-simple-trace-db-destination.yaml
 
     - name: Assert Runtime Detected
       try:
         - assert:
             timeout: 3m
             file: 01-assert-runtime-detected.yaml
-
-    - name: Add Destination
-      try:
-        - apply:
-            file: ../../common/apply/add-simple-trace-db-destination.yaml
 
     - name: Odigos pipeline ready
       try:

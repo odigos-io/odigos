@@ -8,13 +8,10 @@ spec:
     It tests Node.js, Java, Python, and C++ workloads to ensure proper language and version detection.
   skipDelete: true
   steps:
-    - name: Prepare destination
+    - name: Prepare destination and Install Test Apps
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
-
-    - name: Install Test Apps
-      try:
         - apply:
             file: install-test-apps.yaml
 
@@ -36,30 +33,21 @@ spec:
               ../../common/verify_odigos_installation.sh odigos-test
             timeout: 1m
 
-    - name: Verify Node Odiglet label has been added
+    - name: Assert Node Odiglet label, Trace DB up, and Apps installed
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-
-    - name: Assert Trace DB is up
-      try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-
-    - name: Assert Apps installed
-      try:
         - assert:
             timeout: 5m
             file: assert-apps-ready.yaml
 
-    - name: Instrument Namespaces
+    - name: Instrument Namespaces and Add Destination
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: Add Destination
-      try:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 

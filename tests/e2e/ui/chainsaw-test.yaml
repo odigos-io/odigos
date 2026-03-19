@@ -6,13 +6,10 @@ spec:
   description: Run E2E tests against Odigos UI using Cypress
   skipDelete: true
   steps:
-    - name: Install - Jaeger
+    - name: Install Jaeger and Simple Demo Apps
       try:
         - apply:
             file: ../../common/apply/install-jaeger.yaml
-
-    - name: Install - Simple Demo Apps
-      try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
 
@@ -28,13 +25,10 @@ spec:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
-    - name: Verify - Jaeger Installed
+    - name: Assert Jaeger and Simple Demo Apps Installed
       try:
         - assert:
             file: ../../common/assert/jaeger-installed.yaml
-
-    - name: Assert - Simple Demo Apps Installed
-      try:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml

@@ -61,13 +61,10 @@ spec:
               echo "📝 Describing all resources in namespace 'odigos-test'..."
               kubectl describe all -n odigos-test
 
-    - name: Verify Node Odiglet label has been added
+    - name: Assert Node Odiglet label and Trace DB is up
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-
-    - name: Assert Trace DB is up
-      try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
@@ -88,13 +85,10 @@ spec:
         - assert:
             file: ../../common/assert/crash-demo/crash-demo-installed.yaml
 
-    - name: Instrument Namespace
+    - name: Instrument Namespace and Add Destination
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: Add Destination
-      try:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 

@@ -8,13 +8,10 @@ spec:
     It deploys instrumented workloads, generates traffic, and verifies traces are collected.
   skipDelete: true
   steps:
-    - name: Prepare destination
+    - name: Prepare destination and Install Test Apps
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
-
-    - name: Install Test Apps
-      try:
         - apply:
             file: install-test-apps.yaml
 
@@ -30,25 +27,19 @@ spec:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
-    - name: Assert Trace DB is up
+    - name: Assert Trace DB up and Apps installed
       try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-
-    - name: Assert Apps installed
-      try:
         - assert:
             timeout: 5m
             file: assert-apps-ready.yaml
 
-    - name: Instrument Namespaces
+    - name: Instrument Namespaces and Add Destination
       try:
         - apply:
             file: ../../common/apply/instrument-default-ns.yaml
-
-    - name: Add Destination
-      try:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
@@ -70,34 +61,19 @@ spec:
             timeout: 30s
             file: assert-instrumentation-configs.yaml
 
-    ############# Generate Traffic #############
-    - name: Apply Traffic Generator
+    ############# Generate Traffic and Wait for Traces #############
+    - name: Generate Traffic
       try:
         - apply:
             file: apply-traffic-generator.yaml
-
-    - name: Assert Traffic Job Complete
-      try:
         - script:
             timeout: 2m
-            content: |
-              kubectl wait --for=condition=complete job/step-01-generate-traffic --timeout=120s
-
-    - name: Cleanup Traffic Generator
-      try:
+            content: kubectl wait --for=condition=complete job/step-01-generate-traffic --timeout=120s
         - delete:
             file: delete-traffic-generator.yaml
 
-    ############# Wait for Traces #############
     - name: Assert Initial Traces
       try:
         - script:
             timeout: 3m
-            content: |
-              while true; do
-                ../../common/simple_trace_db_query_runner.sh initial-trace-validation.yaml
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-                sleep 1
-              done
+            content: ../../common/wait_for_trace_query.sh initial-trace-validation.yaml
