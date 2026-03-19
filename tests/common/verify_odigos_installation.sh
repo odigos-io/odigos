@@ -6,30 +6,31 @@ TIMEOUT="4m"
 
 echo "Verifying Odigos installation in namespace: $NAMESPACE"
 
-# Function to check if a command succeeded
-check_command() {
-    if [ $? -eq 0 ]; then
-        echo "✅ $1"
+FAIL=0
+
+# Wait for all resource creation in parallel
+wait_for_create() {
+    local resource=$1
+    local name=$2
+    if kubectl wait --for=create "$resource/$name" -n "$NAMESPACE" --timeout="$TIMEOUT"; then
+        echo "✅ $name created"
     else
-        echo "❌ $1"
-        exit 1
+        echo "❌ $name not created"
+        FAIL=1
     fi
 }
 
-kubectl wait --for=create deployment/odigos-instrumentor -n $NAMESPACE --timeout=$TIMEOUT
-check_command "Odigos Instrumentor deployment created"
+wait_for_create deployment odigos-instrumentor &
+wait_for_create deployment odigos-autoscaler &
+wait_for_create deployment odigos-scheduler &
+wait_for_create deployment odigos-ui &
+wait_for_create daemonset odiglet &
+wait
 
-kubectl wait --for=create deployment/odigos-autoscaler -n $NAMESPACE --timeout=$TIMEOUT
-check_command "Odigos Autoscaler deployment created"
-
-kubectl wait --for=create deployment/odigos-scheduler -n $NAMESPACE --timeout=$TIMEOUT
-check_command "Odigos Scheduler deployment created"
-
-kubectl wait --for=create deployment/odigos-ui -n $NAMESPACE --timeout=$TIMEOUT
-check_command "Odigos UI deployment created"
-
-kubectl wait --for=create daemonset/odiglet -n $NAMESPACE --timeout=$TIMEOUT
-check_command "Odiglet DaemonSet created"
+if [ $FAIL -ne 0 ]; then
+    echo "❌ One or more resources failed to be created"
+    exit 1
+fi
 
 # Wait for pods to be created first
 until kubectl get pods -n $NAMESPACE 2>/dev/null | grep -q .; do
@@ -37,7 +38,11 @@ until kubectl get pods -n $NAMESPACE 2>/dev/null | grep -q .; do
 done
 
 # Now wait for pods to be ready
-kubectl wait --for=condition=ready pods --all -n $NAMESPACE --timeout=$TIMEOUT
-check_command "All pods are ready"
+if kubectl wait --for=condition=ready pods --all -n $NAMESPACE --timeout=$TIMEOUT; then
+    echo "✅ All pods are ready"
+else
+    echo "❌ Not all pods are ready"
+    exit 1
+fi
 
 echo "✅ Odigos installation verification completed successfully" 

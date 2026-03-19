@@ -6,13 +6,10 @@ spec:
   description: This e2e test runs a multi-apps scenario testing both init-container and CSI driver mount methods
   skipDelete: true
   steps:
-    - name: '[1 - Setup] Install - Simple Demo Apps'
+    - name: '[1 - Setup] Install Simple Demo Apps and Prepare destination'
       try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
-
-    - name: '[1 - Setup] Prepare destination'
-      try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
 
@@ -62,14 +59,11 @@ spec:
 
     # mount method is k8s-init-container, so node is not labeled by odigos.
 
-    - name: '[1 - Setup]Assert Trace DB is up'
+    - name: '[1 - Setup] Assert Trace DB is up and Add Destination'
       try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-
-    - name: '[1 - Setup] Add Destination'
-      try:
         - apply:
             file: ../../common/apply/add-simple-trace-db-destination.yaml
 
@@ -100,29 +94,14 @@ spec:
             timeout: 2m
             content: ../../common/wait_for_rollout.sh
 
-    - name: '[2 - Workload Instrumentation] Generate Traffic'
-      try:
-        - apply:
-            file: ../../common/apply/generate-traffic-job.yaml
-        - script:
-            timeout: 1m
-            content: |
-              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-        - delete:
-            file: ../../common/apply/generate-traffic-job.yaml
-
-    - name: '[2 - Workload Instrumentation] Wait For Trace'
+    - name: '[2 - Workload Instrumentation] Generate Traffic and Wait For Trace'
       try:
         - script:
+            timeout: 2m
+            content: ../../common/generate_traffic_and_wait.sh
+        - script:
             timeout: 1m
-            content: |
-              while true; do
-                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-                sleep 1
-              done
+            content: ../../common/wait_for_trace_query.sh ../../common/queries/wait-for-trace.yaml
       catch:
         - script:
             content: |
@@ -195,29 +174,14 @@ spec:
             timeout: 2m
             file: simple-demo-instrumented-with-csi.yaml
 
-    - name: '[3 - CSI Driver Test] Generate Traffic with CSI driver'
-      try:
-        - apply:
-            file: ../../common/apply/generate-traffic-job.yaml
-        - script:
-            timeout: 1m
-            content: |
-              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-        - delete:
-            file: ../../common/apply/generate-traffic-job.yaml
-
-    - name: '[3 - CSI Driver Test] Wait For CSI Trace'
+    - name: '[3 - CSI Driver Test] Generate Traffic and Wait For CSI Trace'
       try:
         - script:
+            timeout: 2m
+            content: ../../common/generate_traffic_and_wait.sh
+        - script:
             timeout: 1m
-            content: |
-              while true; do
-                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace.yaml
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-                sleep 1
-              done
+            content: ../../common/wait_for_trace_query.sh ../../common/queries/wait-for-trace.yaml
 
     - name: 'Uninstall Odigos'
       try:

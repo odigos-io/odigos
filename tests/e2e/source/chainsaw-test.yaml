@@ -6,13 +6,10 @@ spec:
   description: This e2e test runs a multi-apps scenario with Source instrumentation
   skipDelete: true
   steps:
-    - name: '[1 - Setup] Prepare destination'
+    - name: '[1 - Setup] Prepare destination and Install Simple Demo Apps'
       try:
         - apply:
             file: ../../common/apply/simple-trace-db-deployment.yaml
-
-    - name: '[1 - Setup] Install - Simple Demo Apps'
-      try:
         - apply:
             file: ../../common/apply/install-simple-demo.yaml
 
@@ -33,19 +30,13 @@ spec:
             timeout: 3m
             file: ../../common/assert/odigos-installed.yaml
 
-    - name: '[1 - Setup] Verify Node Odiglet label has been added'
+    - name: '[1 - Setup] Assert Node Odiglet label, Trace DB up, and Simple Demo Apps Installed'
       try:
         - assert:
             file: ../../common/assert/node-odiglet-label.yaml
-
-    - name: '[1 - Setup]Assert Trace DB is up'
-      try:
         - assert:
             timeout: 1m
             file: ../../common/assert/simple-trace-db-running.yaml
-
-    - name: '[1 - Setup] Assert - Simple Demo Apps Installed'
-      try:
         - assert:
             timeout: 3m
             file: ../../common/assert/simple-demo-installed.yaml
@@ -86,29 +77,14 @@ spec:
             timeout: 70s
             content: ../../common/wait_for_rollout.sh
 
-    - name: '[2 - Workload Instrumentation] Generate Traffic'
-      try:
-        - apply:
-            file: ../../common/apply/generate-traffic-job.yaml
-        - script:
-            timeout: 1m
-            content: |
-              kubectl wait --for=condition=complete job/$(kubectl get -f ../../common/apply/generate-traffic-job.yaml -o=jsonpath='{.metadata.name}')
-        - delete:
-            file: ../../common/apply/generate-traffic-job.yaml
-
-    - name: '[2 - Workload Instrumentation] Wait For Trace'
+    - name: '[2 - Workload Instrumentation] Generate Traffic and Wait For Trace'
       try:
         - script:
+            timeout: 2m
+            content: ../../common/generate_traffic_and_wait.sh
+        - script:
             timeout: 1m
-            content: |
-              while true; do
-                ../../common/simple_trace_db_query_runner.sh ../../common/queries/wait-for-trace-reported.yaml
-                if [ $? -eq 0 ]; then
-                  break
-                fi
-                sleep 1
-              done
+            content: ../../common/wait_for_trace_query.sh ../../common/queries/wait-for-trace-reported.yaml
       catch:
         - script:
             content: |
