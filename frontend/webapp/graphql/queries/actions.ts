@@ -82,7 +82,6 @@ export const GET_ACTIONS = gql`
           type
           reason
           message
-          lastTransitionTime
         }
       }
     }

@@ -1,7 +1,17 @@
 FROM --platform=$BUILDPLATFORM node:20.19.0 AS deps
 WORKDIR /app
 COPY frontend/webapp/package.json frontend/webapp/yarn.lock ./
-RUN yarn install --frozen-lockfile
+COPY frontend/webapp/.yalc* ./.yalc/
+
+# This allows us to deploy the UI to local clusters with the yalc-linked version of the UI kit.
+RUN if [ -d .yalc ] && [ "$(ls -A .yalc 2>/dev/null)" ]; then \
+      echo "Using yalc"; \
+      npm install -g yalc; \
+      yarn install; \
+    else \
+      echo "Using frozen lockfile"; \
+      yarn install --frozen-lockfile; \
+    fi
 
 FROM --platform=$BUILDPLATFORM node:20.19.0 AS builder
 WORKDIR /webapp
