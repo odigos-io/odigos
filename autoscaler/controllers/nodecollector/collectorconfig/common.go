@@ -8,6 +8,7 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/config"
+	"github.com/odigos-io/odigos/common/datacollectorcfg"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
@@ -16,9 +17,7 @@ const (
 )
 
 const (
-	healthCheckExtensionName            = "health_check"
 	odigosEbpfReceiverName              = "odigosebpf"
-	pprofExtensionName                  = "pprof"
 	batchProcessorName                  = "batch"
 	memoryLimiterProcessorName          = "memory_limiter"
 	balancerName                        = "round_robin"
@@ -57,8 +56,6 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 
 var staticProcessors config.GenericMap
 var commonReceivers config.GenericMap
-var commonExtensions config.GenericMap
-var commonService config.Service
 
 func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfiguration, odigosNamespace string) config.GenericMap {
 
@@ -141,18 +138,6 @@ func init() {
 		odigosEbpfReceiverName: config.GenericMap{},
 	}
 
-	commonExtensions = config.GenericMap{
-		healthCheckExtensionName: config.GenericMap{
-			"endpoint": "0.0.0.0:13133",
-		},
-		pprofExtensionName: config.GenericMap{
-			"endpoint": "0.0.0.0:1777",
-		},
-	}
-
-	commonService = config.Service{
-		Extensions: []string{healthCheckExtensionName, pprofExtensionName},
-	}
 }
 
 func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bool, odigosNamespace string) config.Config {
@@ -164,9 +149,12 @@ func CommonApplicationTelemetryConfig(nodeCG *odigosv1.CollectorsGroup, onGKE bo
 }
 
 func CommonConfig() config.Config {
+	basic := datacollectorcfg.GetBasicConfig(datacollectorcfg.BasicConfigOptions{})
 	return config.Config{
-		Extensions: commonExtensions,
-		Service:    commonService,
+		Extensions: basic.Extensions,
+		Service: config.Service{
+			Extensions: basic.Service.Extensions,
+		},
 	}
 }
 

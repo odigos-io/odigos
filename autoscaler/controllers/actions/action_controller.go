@@ -18,6 +18,7 @@ import (
 	"github.com/odigos-io/odigos/api/odigos/v1alpha1/actions"
 	"github.com/odigos-io/odigos/common"
 	"github.com/odigos-io/odigos/common/consts"
+	"github.com/odigos-io/odigos/common/datacollectorcfg"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	"github.com/odigos-io/odigos/k8sutils/pkg/utils"
@@ -64,7 +65,7 @@ func convertActionToProcessor(ctx context.Context, k8sclient client.Client, acti
 	}
 
 	if action.Spec.RenameAttribute != nil {
-		config, err := renameAttributeConfig(action.Spec.RenameAttribute.Renames, action.Spec.Signals)
+		config, err := datacollectorcfg.RenameAttributeConfig(action.Spec.RenameAttribute.Renames, action.Spec.Signals)
 		if err != nil {
 			return nil, err
 		}
