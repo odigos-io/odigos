@@ -11,6 +11,7 @@ export const ROUTES = {
   INSTRUMENTATION_RULES: '/instrumentation-rules',
   SERVICE_MAP: '/service-map',
   PIPELINE_COLLECTORS: '/pipeline-collectors',
+  SAMPLING: '/sampling',
 };
 
 export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';
