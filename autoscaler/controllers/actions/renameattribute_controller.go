@@ -18,11 +18,9 @@ package actions
 
 import (
 	"context"
-	"fmt"
 
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
-	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,83 +72,6 @@ func (r *RenameAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 	logger.Info("Migrated Action already exists, skipping update")
 	return ctrl.Result{}, nil
-}
-
-func renameAttributeConfig(cfg map[string]string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
-	config := TransformProcessorConfig{
-		ErrorMode: "ignore",
-	}
-
-	if signals == nil {
-		return TransformProcessorConfig{}, fmt.Errorf("Signals must be set")
-	}
-
-	// Every rename produces 2 OTTL statement
-	ottlStatements := make([]string, 2*len(cfg))
-	i := 0
-	for from, to := range cfg {
-		ottlStatements[i] = fmt.Sprintf("set(attributes[\"%s\"], attributes[\"%s\"])", to, from)
-		ottlStatements[i+1] = fmt.Sprintf("delete_key(attributes, \"%s\")", from)
-		i += 2
-	}
-
-	for _, signal := range signals {
-		switch signal {
-
-		case common.LogsObservabilitySignal:
-			config.LogStatements = []OttlStatementConfig{
-				{
-					Context:    "resource",
-					Statements: ottlStatements,
-				},
-				{
-					Context:    "scope",
-					Statements: ottlStatements,
-				},
-				{
-					Context:    "log",
-					Statements: ottlStatements,
-				},
-			}
-
-		case common.MetricsObservabilitySignal:
-			config.MetricStatements = []OttlStatementConfig{
-				{
-					Context:    "resource",
-					Statements: ottlStatements,
-				},
-				{
-					Context:    "scope",
-					Statements: ottlStatements,
-				},
-				{
-					Context:    "datapoint",
-					Statements: ottlStatements,
-				},
-			}
-
-		case common.TracesObservabilitySignal:
-			config.TraceStatements = []OttlStatementConfig{
-				{
-					Context:    "resource",
-					Statements: ottlStatements,
-				},
-				{
-					Context:    "scope",
-					Statements: ottlStatements,
-				},
-				{
-					Context:    "span",
-					Statements: ottlStatements,
-				},
-				{
-					Context:    "spanevent",
-					Statements: ottlStatements,
-				},
-			}
-		}
-	}
-	return config, nil
 }
 
 func (r *RenameAttributeReconciler) createMigratedAction(action *actionv1.RenameAttribute, migratedActionName string) *v1.Action {

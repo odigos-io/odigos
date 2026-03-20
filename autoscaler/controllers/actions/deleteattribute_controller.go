@@ -23,6 +23,7 @@ import (
 	actionv1 "github.com/odigos-io/odigos/api/actions/v1alpha1"
 	v1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
+	"github.com/odigos-io/odigos/common/datacollectorcfg"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,8 +77,8 @@ func (r *DeleteAttributeReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (TransformProcessorConfig, error) {
-	config := TransformProcessorConfig{
+func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (datacollectorcfg.TransformProcessorConfig, error) {
+	config := datacollectorcfg.TransformProcessorConfig{
 		ErrorMode: "propagate", // deleting attributes is a security sensitive operation, so we should propagate errors
 	}
 
@@ -94,7 +95,7 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 		switch signal {
 
 		case common.LogsObservabilitySignal:
-			config.LogStatements = []OttlStatementConfig{
+			config.LogStatements = []datacollectorcfg.OttlStatementConfig{
 				{
 					Context:    "resource",
 					Statements: ottlDeleteKeyStatements,
@@ -110,7 +111,7 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 			}
 
 		case common.MetricsObservabilitySignal:
-			config.MetricStatements = []OttlStatementConfig{
+			config.MetricStatements = []datacollectorcfg.OttlStatementConfig{
 				{
 					Context:    "resource",
 					Statements: ottlDeleteKeyStatements,
@@ -126,7 +127,7 @@ func deleteAttributeConfig(cfg []string, signals []common.ObservabilitySignal) (
 			}
 
 		case common.TracesObservabilitySignal:
-			config.TraceStatements = []OttlStatementConfig{
+			config.TraceStatements = []datacollectorcfg.OttlStatementConfig{
 				{
 					Context:    "resource",
 					Statements: ottlDeleteKeyStatements,
