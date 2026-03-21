@@ -158,7 +158,9 @@ func getListerWatcherForGvk(gvk k8sschema.GroupVersionKind,
 func createListWatchWrapperWithTransform(transformFunc cache.TransformFunc, originalListerWatcherWithContext cache.ListerWatcherWithContext) cache.ListerWatcherWithContext {
 	return &cache.ListWatch{
 		ListWithContextFunc: func(ctx context.Context, options metav1.ListOptions) (runtime.Object, error) {
-			options.ResourceVersion = ""
+			if options.ResourceVersion == "0" {
+				options.ResourceVersion = ""
+			}
 			list, err := originalListerWatcherWithContext.ListWithContext(ctx, options)
 			if err != nil {
 				return nil, err
