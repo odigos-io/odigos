@@ -94,7 +94,7 @@ func SetupK8sCache(ctx context.Context, kubeConfig string, kubeContext string, o
 		}
 	}
 
-	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransofrmFunc(scheme, cacheByObjectConfig)
+	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransformFunc(scheme, cacheByObjectConfig)
 
 	// Create cache options
 	cacheOptions := cache.Options{

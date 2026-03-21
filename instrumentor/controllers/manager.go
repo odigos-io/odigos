@@ -108,7 +108,7 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		},
 	}
 
-	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransofrmFunc(scheme, cacheByObjectConfig)
+	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransformFunc(scheme, cacheByObjectConfig)
 
 	mgrOptions := ctrl.Options{
 		Scheme: scheme,
