@@ -14,6 +14,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~!!! Important info regarding memory spikes during cache initialization !!!~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// we use the client-go SharedIndexInformer to fill the cache.
+// the cache is managed by the client-go and we populate it and react to changes via informers.
+// the informers sync the cache generically for all objects by using a ListerWatcher interface.
+// paging is used by default with limit of 500 objects per list operation.
+// the informer also sets resourceVersion to 0 which performs a fast and efficient list operation,
+// serverd from the api server watch cache instead of expensive etcd requests.
+// however, there is a caveat: the api server watch cache cannot support paging list requests,
+// thus it returns the full list of objects in a single response.
+// see: https://github.com/kubernetes/kubernetes/issues/118394
+// so setting resourceVersion to 0 means efficient list but no paging, which overloads our component
+// with a huge initial list of objects that have to all be stored in memory at once.
+// this can easily exhaust the GOMEMELIMIT in large clusters and cause OOM to the process.
+// see also where client-go sets resourceVersion to 0 by default:
+// https://github.com/kubernetes/client-go/blob/01310540169fb3613931c57443e1e4155684d8ac/tools/cache/reflector.go#L1127
+//
+// to bypass this issue for high memory objects (pods and deployments), we override the list operation to set resourceVersion to "" and perform a full list operation.
+// this is a trade-off between memory and performance, as the full list operation is more resource intensive for the api server and etcd,
+// but allows us to fetch, decode, and transform each page individually, without having to store the full raw list in memory at once.
+// this is done by wrapping the original lister watcher with a custom list watch wrapper that applies the transform function to each page of objects.
+// we minimize this to only pods and deployments for now, as they are the ones with large number of objects,
+// and major memory spikes causes issues in the cache initialization process.
+//
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+
 // this is the same interface as what controller-runtime cache is using for it's options:
 // https://github.com/kubernetes-sigs/controller-runtime/blob/37c380b7405b67e31ca8feaf0e2132b747d940aa/pkg/cache/cache.go#L260
 // allowing us to use it as a replacement for the default NewInformer func.
@@ -27,6 +56,12 @@ type gvkToTransformFunc map[k8sschema.GroupVersionKind]cache.TransformFunc
 // we add an annotation after transforming an object to indicate that it has been transformed.
 // this is to guarantee that we ignore an object if it has been transformed already.
 var objectTransformedAnnotation = "odigos.io/cache-transformed"
+
+// GVKs for kinds that use per-page list transform + empty resourceVersion (see package comment).
+var (
+	gvkPod        = k8sschema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"}
+	gvkDeployment = k8sschema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"}
+)
 
 // Controller-Runtime framework uses the k8s client-go project for the objects cache.
 // Client-go uses informers to fill and maintain the cache.
@@ -56,22 +91,9 @@ func CreateNewInformerWithTransofrmFunc(scheme *runtime.Scheme, cacheByObjectCon
 			return cache.NewSharedIndexInformer(originalListerWatcher, exampleObject, defaultEventHandlerResyncPeriod, indexers)
 		}
 
-		transformFunc, ok := transformFuncs[*gvk]
-		if !ok {
-			// for gvk for which no transform function is defined, we use the original lister watcher (noop)
-			return cache.NewSharedIndexInformer(originalListerWatcher, exampleObject, defaultEventHandlerResyncPeriod, indexers)
-		}
+		listerWatcher := getListerWatcherForGvk(*gvk, originalListerWatcher, transformFuncs)
 
-		originalListerWatcherWithContext := cache.ToListerWatcherWithContext(originalListerWatcher)
-		listerWatcherContextWrapped := createListWatchWrapperWithTransform(transformFunc, originalListerWatcherWithContext)
-		listerWatcherWrapped, ok := listerWatcherContextWrapped.(cache.ListerWatcher)
-		if !ok {
-			// this should never happen, but just in case
-			return cache.NewSharedIndexInformer(originalListerWatcher, exampleObject, defaultEventHandlerResyncPeriod, indexers)
-		}
-
-		// return the informer with the wrapped lister watcher
-		return cache.NewSharedIndexInformer(listerWatcherWrapped, exampleObject, defaultEventHandlerResyncPeriod, indexers)
+		return cache.NewSharedIndexInformer(listerWatcher, exampleObject, defaultEventHandlerResyncPeriod, indexers)
 	}
 }
 
@@ -100,9 +122,43 @@ func MarkObjectAsTransformed(obj metav1.Object) {
 	obj.SetAnnotations(annotations)
 }
 
+// given a GVK, return the appropriate lister watcher with the transform function applied if needed.
+// we use this to wrap the original lister watcher with the transform function if needed,
+// and also make sure list requests for api server are paginated to avoid memory spikes.
+func getListerWatcherForGvk(gvk k8sschema.GroupVersionKind,
+	originalListerWatcher cache.ListerWatcher,
+	transformFuncs gvkToTransformFunc) cache.ListerWatcher {
+
+	// only handle pods and deployments for now, as they are the ones with large number of objects
+	// and major memory spikes causes issues in the cache initialization process.
+	switch gvk {
+	case gvkPod, gvkDeployment:
+		// continue below
+	default:
+		return originalListerWatcher
+	}
+
+	transformFunc, ok := transformFuncs[gvk]
+	if !ok {
+		// for gvk for which no transform function is defined, we use the original lister watcher (noop)
+		return originalListerWatcher
+	}
+
+	originalListerWatcherWithContext := cache.ToListerWatcherWithContext(originalListerWatcher)
+	listerWatcherContextWrapped := createListWatchWrapperWithTransform(transformFunc, originalListerWatcherWithContext)
+	listerWatcherWrapped, ok := listerWatcherContextWrapped.(cache.ListerWatcher)
+	if !ok {
+		// this should never happen, but just in case
+		return originalListerWatcher
+	}
+
+	return listerWatcherWrapped
+}
+
 func createListWatchWrapperWithTransform(transformFunc cache.TransformFunc, originalListerWatcherWithContext cache.ListerWatcherWithContext) cache.ListerWatcherWithContext {
 	return &cache.ListWatch{
 		ListWithContextFunc: func(ctx context.Context, options metav1.ListOptions) (runtime.Object, error) {
+			options.ResourceVersion = ""
 			list, err := originalListerWatcherWithContext.ListWithContext(ctx, options)
 			if err != nil {
 				return nil, err
