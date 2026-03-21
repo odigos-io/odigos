@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -354,7 +355,16 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	action := &odigosv1.Action{}
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		// Delete events arrive as NotFound on Get; still sync shared URL-templatization
+		// processor so deleting the last action actually removes the shared processor.
+		if apierrors.IsNotFound(err) {
+			if syncErr := SyncUrlTemplatizationProcessor(ctx, r.Client, true); syncErr != nil {
+				logger.Error(syncErr, "Sync URL templatization processor on action delete")
+				return ctrl.Result{}, syncErr
+			}
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
 	}
 	if err := SyncUrlTemplatizationProcessor(ctx, r.Client, true); err != nil {
 		logger.Error(err, "Sync URL templatization processor")
