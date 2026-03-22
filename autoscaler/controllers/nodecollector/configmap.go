@@ -13,8 +13,8 @@ import (
 	commonconf "github.com/odigos-io/odigos/autoscaler/controllers/common"
 	"github.com/odigos-io/odigos/autoscaler/controllers/nodecollector/collectorconfig"
 	odigoscommon "github.com/odigos-io/odigos/common"
-	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/common/config"
+	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/k8sutils/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -172,6 +172,10 @@ func calculateCollectorConfigDomains(
 		return nil, "", err
 	}
 	configDomains["processors"] = processorsResults.ProcessorsConfig
+
+	if collectorconfig.NodeHasURLTemplateProcessor(processors) {
+		configDomains["odigos_config_extension"] = collectorconfig.NodeOdigosExtDomain()
+	}
 
 	configDomains["common_application_telemetry"] = collectorconfig.CommonApplicationTelemetryConfig(nodeCG, onGKE, odigosNamespace)
 

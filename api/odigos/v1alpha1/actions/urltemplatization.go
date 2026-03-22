@@ -2,6 +2,7 @@ package actions
 
 import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	"github.com/odigos-io/odigos/common/consts"
 )
 
 const ActionNameURLTemplatization = "URLTemplatization"
@@ -52,15 +53,28 @@ type URLTemplatizationConfig struct {
 }
 
 func (URLTemplatizationConfig) ProcessorType() string {
-	return "odigosurltemplate"
+	return consts.OdigosURLTemplateProcessorType
 }
 
+// OrderHint is 1 so URL templatization runs before spans reach the spanmetrics connector on the data-collector.
 func (URLTemplatizationConfig) OrderHint() int {
 	return 1
 }
 
+// CollectorRoles satisfies ActionConfig for generic action-backed Processor CRs.
+// The shared URL-templatization Processor uses SharedProcessorCollectorRoles(spanMetricsEnabled) instead.
 func (URLTemplatizationConfig) CollectorRoles() []k8sconsts.CollectorRole {
 	return []k8sconsts.CollectorRole{
 		k8sconsts.CollectorsRoleClusterGateway,
 	}
+}
+
+// SharedProcessorCollectorRoles returns where the shared URL-templatization Processor should run.
+// When span metrics are enabled on the node collectors group, the processor must run on the node
+// collector so routes are templated before span metrics record span names and http.route.
+func (URLTemplatizationConfig) SharedProcessorCollectorRoles(spanMetricsEnabled bool) []k8sconsts.CollectorRole {
+	if spanMetricsEnabled {
+		return []k8sconsts.CollectorRole{k8sconsts.CollectorsRoleNodeCollector}
+	}
+	return []k8sconsts.CollectorRole{k8sconsts.CollectorsRoleClusterGateway}
 }
