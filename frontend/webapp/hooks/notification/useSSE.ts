@@ -160,19 +160,21 @@ export const useSSE = () => {
             fetchDestinations();
           });
         } else if (isDiagnoseRequested) {
-          const totalCount = safeJsonParse<string[]>(data.data, []).length;
+          const events = safeJsonParse<string[]>(data.data, []);
 
           useProgressStore.getState().setProgress(ProgressKeys.DownloadingDiagnose, {
-            total: totalCount,
+            total: events.length,
             current: 0,
             percentage: 0,
+            list: events.map((event) => ({ label: event, status: StatusType.Default })),
           });
         } else if (isDiagnoseCompleted) {
-          const { status, message } = safeJsonParse<{ stage: string; status: StatusType; message?: string }>(data.data, { stage: '', status: StatusType.Success });
+          const { stage, status, message } = safeJsonParse<{ stage: string; status: StatusType; message?: string }>(data.data, { stage: '', status: StatusType.Success });
 
           if (status === StatusType.Success) {
-            useProgressStore.getState().addProgress(ProgressKeys.DownloadingDiagnose, 1);
+            useProgressStore.getState().addProgress(ProgressKeys.DownloadingDiagnose, 1, { label: stage, status });
           } else {
+            useProgressStore.getState().addProgress(ProgressKeys.DownloadingDiagnose, 0, { label: stage, status });
             addNotification({ type: StatusType.Error, title: 'Diagnose failed', message, crdType: '' });
           }
         } else {
