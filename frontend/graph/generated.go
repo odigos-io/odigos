@@ -1148,6 +1148,7 @@ type ComplexityRoot struct {
 
 	ServiceMapToSource struct {
 		DateTime    func(childComplexity int) int
+		IsVirtual   func(childComplexity int) int
 		Requests    func(childComplexity int) int
 		ServiceName func(childComplexity int) int
 	}
@@ -6412,6 +6413,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ServiceMapToSource.DateTime(childComplexity), true
+
+	case "ServiceMapToSource.isVirtual":
+		if e.complexity.ServiceMapToSource.IsVirtual == nil {
+			break
+		}
+
+		return e.complexity.ServiceMapToSource.IsVirtual(childComplexity), true
 
 	case "ServiceMapToSource.requests":
 		if e.complexity.ServiceMapToSource.Requests == nil {
@@ -36796,6 +36804,8 @@ func (ec *executionContext) fieldContext_PeerSources_inbound(_ context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "isVirtual":
+				return ec.fieldContext_ServiceMapToSource_isVirtual(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_ServiceMapToSource_serviceName(ctx, field)
 			case "requests":
@@ -36848,6 +36858,8 @@ func (ec *executionContext) fieldContext_PeerSources_outbound(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "isVirtual":
+				return ec.fieldContext_ServiceMapToSource_isVirtual(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_ServiceMapToSource_serviceName(ctx, field)
 			case "requests":
@@ -41579,6 +41591,8 @@ func (ec *executionContext) fieldContext_ServiceMapFromSource_services(_ context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "isVirtual":
+				return ec.fieldContext_ServiceMapToSource_isVirtual(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_ServiceMapToSource_serviceName(ctx, field)
 			case "requests":
@@ -41587,6 +41601,50 @@ func (ec *executionContext) fieldContext_ServiceMapFromSource_services(_ context
 				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceMapToSource_isVirtual(ctx context.Context, field graphql.CollectedField, obj *model.ServiceMapToSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ServiceMapToSource_isVirtual(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsVirtual, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ServiceMapToSource_isVirtual(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceMapToSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -58150,6 +58208,11 @@ func (ec *executionContext) _ServiceMapToSource(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ServiceMapToSource")
+		case "isVirtual":
+			out.Values[i] = ec._ServiceMapToSource_isVirtual(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "serviceName":
 			out.Values[i] = ec._ServiceMapToSource_serviceName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

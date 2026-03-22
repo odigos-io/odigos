@@ -926,6 +926,7 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 		for toServiceName, info := range toServices {
 			to = append(to, &model.ServiceMapToSource{
 				ServiceName: toServiceName,
+				IsVirtual:   info.ToNodeIsVirtual,
 				Requests:    int(info.RequestCount),
 				DateTime:    info.LastUpdated.Format(time.RFC3339),
 			})
