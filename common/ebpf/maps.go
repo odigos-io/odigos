@@ -66,7 +66,7 @@ func CreateMetricsMaps() (*cilumebpf.Map, *cilumebpf.Map, error) {
 
 	metricsAttributesMap, err := cilumebpf.NewMap(attributesSpec)
 	if err != nil {
-		metricsMap.Close()
+		_ = metricsMap.Close()
 		return nil, nil, fmt.Errorf("failed to create metrics attributes eBPF map: %w", err)
 	}
 
