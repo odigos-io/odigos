@@ -31,7 +31,6 @@ type InstrumentationRuleSpecApplyConfiguration struct {
 	Workloads                    *[]k8sconsts.PodWorkload                            `json:"workloads,omitempty"`
 	InstrumentationLibraries     *[]InstrumentationLibraryGlobalIdApplyConfiguration `json:"instrumentationLibraries,omitempty"`
 	PayloadCollection            *instrumentationrules.PayloadCollection             `json:"payloadCollection,omitempty"`
-	OtelSdks                     *instrumentationrules.OtelSdks                      `json:"otelSdks,omitempty"`
 	OtelDistros                  *instrumentationrules.OtelDistros                   `json:"otelDistros,omitempty"`
 	CodeAttributes               *instrumentationrules.CodeAttributes                `json:"codeAttributes,omitempty"`
 	HeadersCollection            *instrumentationrules.HttpHeadersCollection         `json:"headersCollection,omitempty"`
@@ -103,14 +102,6 @@ func (b *InstrumentationRuleSpecApplyConfiguration) WithInstrumentationLibraries
 // If called multiple times, the PayloadCollection field is set to the value of the last call.
 func (b *InstrumentationRuleSpecApplyConfiguration) WithPayloadCollection(value instrumentationrules.PayloadCollection) *InstrumentationRuleSpecApplyConfiguration {
 	b.PayloadCollection = &value
-	return b
-}
-
-// WithOtelSdks sets the OtelSdks field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the OtelSdks field is set to the value of the last call.
-func (b *InstrumentationRuleSpecApplyConfiguration) WithOtelSdks(value instrumentationrules.OtelSdks) *InstrumentationRuleSpecApplyConfiguration {
-	b.OtelSdks = &value
 	return b
 }
 

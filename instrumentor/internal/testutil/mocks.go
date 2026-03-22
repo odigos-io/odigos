@@ -323,11 +323,3 @@ func NewMockDataCollection() *odigosv1.CollectorsGroup {
 func generateUUIDNamespace(baseName string) string {
 	return fmt.Sprintf("%s-%s", baseName, uuid.New().String())
 }
-
-func MockGetDefaultSDKs() map[common.ProgrammingLanguage]common.OtelSdk {
-	return mockDefaultSDKs
-}
-
-func SetDefaultSDK(language common.ProgrammingLanguage, sdk common.OtelSdk) {
-	mockDefaultSDKs[language] = sdk
-}
