@@ -6,6 +6,9 @@ WORKDIR /go/src/collector
 
 ARG TARGETARCH
 ARG RHEL=false
+# Use all available cores for Go/OCB build (e.g. 32 on a 32-core VM)
+ARG MAX_PROCS=32
+ENV GOMAXPROCS=$MAX_PROCS
 RUN GOOS=linux GOARCH=$TARGETARCH make build-odigoscol
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
