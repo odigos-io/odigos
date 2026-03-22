@@ -49,7 +49,6 @@ func (p *PythonInspector) DeepScan(pcx *process.ProcessContext) (common.Programm
 }
 
 func (p *PythonInspector) GetRuntimeVersion(proc *process.ProcessContext, containerURL string) string {
-
 	// 1. PYTHON_VERSION env var (set by official Docker images)
 	if value, exists := proc.GetDetailedEnvsValue(process.PythonVersionConst); exists {
 		return value
