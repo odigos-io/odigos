@@ -126,7 +126,7 @@ type RuntimeAgent struct {
 
 type Option struct {
 	// The name of the option, which is used to identify it and reference it in the configuration.
-	Name  string `yaml:"name"`
+	Name string `yaml:"name"`
 	// The value of the option, which is used to configure the agent in a specific way.
 	Value string `yaml:"value"`
 }
