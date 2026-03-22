@@ -42,7 +42,32 @@ import (
 // and major memory spikes cause issues in the cache initialization process.
 //
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~ How it works with the new WatchList API ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
+// the new WatchList API is a new way to setup a list then watch on api server,
+// in a way that streams the initial list of objects instead of returning them all at once.
+// this helps in mitigating large memory spikes in api server and in clients like odigos components.
+//
+// the way that watchlist works is be doing a single watch operation and setting the following options:
+// - Watch: true
+// - AllowWatchBookmarks: true
+// - SendInitialEvents: true
+// - ResourceVersionMatch: [NotOlderThan, Exact]
+//
+// Read more here: https://kubernetes.io/blog/2025/05/09/kubernetes-v1-33-streaming-list-responses/
+// WatchList client implementation does the transform right after reading each individual object:
+// https://github.com/kubernetes/kubernetes/pull/131799 thus avoiding the memory spikes issue automatically.
+//
+// For watchlist, the issue with memory bursts is solved, thus the changes in this module are not needed.
+// However, since we can't tell for sure if the api server supports watchlist, and client-go itself checks
+// this and fallback to the old list/watch API if it doesn't, we still need to keep this module for now.
+// If the client is using watchlist, it invokes the watchWithContext function on our patched lister watcher,
+// which is unmodified.
+//
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // this is the same interface as what controller-runtime cache is using for its options:
 // https://github.com/kubernetes-sigs/controller-runtime/blob/37c380b7405b67e31ca8feaf0e2132b747d940aa/pkg/cache/cache.go#L260
