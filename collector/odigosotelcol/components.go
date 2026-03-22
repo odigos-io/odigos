@@ -158,7 +158,7 @@ func components() (otelcol.Factories, error) {
 	factories.ReceiverModules[hostmetricsreceiver.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.141.0"
 	factories.ReceiverModules[prometheusreceiver.NewFactory().Type()] = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.141.0"
 	factories.ReceiverModules[odigosebpfreceiver.NewFactory().Type()] = "github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.141.0"
-	factories.ReceiverModules[collector.NewFactory().Type()] = "go.opentelemetry.io/ebpf-profiler v0.0.202547"
+	factories.ReceiverModules[collector.NewFactory().Type()] = "go.opentelemetry.io/ebpf-profiler v0.0.202610"
 
 	factories.Exporters, err = otelcol.MakeFactoryMap[exporter.Factory](
 		debugexporter.NewFactory(),

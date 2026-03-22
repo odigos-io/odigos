@@ -97,7 +97,8 @@ receivers:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.141.0
   - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.141.0
   # eBPF profiling receiver: collects CPU profiles from all processes on the node (profiling signal).
-  - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202547
+  # Latest release tag: https://github.com/open-telemetry/opentelemetry-ebpf-profiler/releases (CalVer v0.0.YYYYMMDD)
+  - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202610
     import: go.opentelemetry.io/ebpf-profiler/collector
 
 # https://github.com/open-telemetry/opentelemetry-collector/issues/8127
