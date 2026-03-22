@@ -1339,6 +1339,7 @@ type ServiceMapFromSource struct {
 }
 
 type ServiceMapToSource struct {
+	IsVirtual   bool   `json:"isVirtual"`
 	ServiceName string `json:"serviceName"`
 	Requests    int    `json:"requests"`
 	DateTime    string `json:"dateTime"`
