@@ -221,26 +221,6 @@ spec:
                 required:
                 - otelDistroNames
                 type: object
-              otelSdks:
-                description: 'Deprecated: use OtelDistros instead.'
-                properties:
-                  otelSdkByLanguage:
-                    additionalProperties:
-                      properties:
-                        sdkTier:
-                          type: string
-                        sdkType:
-                          description: 'Odigos supports two types of OpenTelemetry
-                            SDKs: native and ebpf.'
-                          type: string
-                      required:
-                      - sdkTier
-                      - sdkType
-                      type: object
-                    type: object
-                required:
-                - otelSdkByLanguage
-                type: object
               payloadCollection:
                 description: Allows to configure payload collection aspects for different
                   types of payloads.
