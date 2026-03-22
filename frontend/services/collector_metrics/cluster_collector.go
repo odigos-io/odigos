@@ -427,8 +427,11 @@ type ServiceGraph struct {
 }
 
 type ServiceGraphEdge struct {
-	RequestCount int64
-	LastUpdated  time.Time
+
+	// set to true if the "To" side of the edge is for a virtual node
+	ToNodeIsVirtual bool
+	RequestCount    int64
+	LastUpdated     time.Time
 }
 
 func newServiceGraph() *ServiceGraph {
@@ -469,9 +472,12 @@ func (sg *ServiceGraph) UpdateFromDataPoint(dp pmetric.NumberDataPoint) {
 
 	edge, exists := sg.edges[clientID][serverID]
 	if !exists {
+		// a server node is not virtual if it has service.name attribute
+		_, isServerInstrumentedNode := attrs.Get("server_service_name")
 		sg.edges[clientID][serverID] = &ServiceGraphEdge{
-			RequestCount: val,
-			LastUpdated:  timestamp,
+			ToNodeIsVirtual: !isServerInstrumentedNode,
+			RequestCount:    val,
+			LastUpdated:     timestamp,
 		}
 	} else {
 		// always overwrite because it's a cumulative counter

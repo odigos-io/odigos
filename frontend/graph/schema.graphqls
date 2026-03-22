@@ -884,6 +884,11 @@ type ServiceMapFromSource {
 }
 
 type ServiceMapToSource {
+
+  # Virtual nodes, for example: databases, external services, are not instrumented,
+  # and are inferred from the client span that calls them.
+  # we do not know anything about them (name, language, external connections, etc.)
+  isVirtual: Boolean!
   serviceName: String!
   requests: Int!
   dateTime: String!
