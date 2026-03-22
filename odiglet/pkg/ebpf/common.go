@@ -3,40 +3,20 @@ package ebpf
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
-	"github.com/cilium/ebpf"
-	"github.com/cilium/ebpf/features"
 	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
+	ebpfcommon "github.com/odigos-io/odigos/common/ebpf"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/distros/distro"
 	"github.com/odigos-io/odigos/instrumentation"
 	"github.com/odigos-io/odigos/odiglet/pkg/detector"
 
-	cilumebpf "github.com/cilium/ebpf"
 	processdetector "github.com/odigos-io/runtime-detector"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	numOfPages = 2048
-
-	// JVM metrics eBPF map sizing constants.
-	// Uses a hash-of-maps architecture: one outer HashOfMaps keyed by UUID containing
-	// per-process inner maps, plus a separate attributes map for resource attributes.
-	ProcessKeySize      = 64   // Size of UUID key
-	InnerMapIDSize      = 4    // Size of inner map ID (should be 4 bytes hard coded)
-	MaxProcessesCount   = 512  // Max number of processes that can have metrics
-	AttributesValueSize = 1024 // Size of packed resource attributes value buffer
-
-	// Inner Map configuration
-	MetricKeySize    = 4   // uint32 metric_key
-	MetricValueSize  = 40  // struct metric_value (40 bytes - size of largest union member: histogram_value)
-	MaxMetricsPerMap = 256 // MAX_METRICS per process
 )
 
 type InstrumentationManagerOptions struct {
@@ -76,68 +56,15 @@ func NewManager(
 		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
 	}
 
-	mapType := cilumebpf.PerfEventArray
-	spec := &cilumebpf.MapSpec{
-		Type: mapType,
-		Name: "traces",
-	}
-
-	// Check if the current kernel supports the ring buffer
-	ringEn := features.HaveMapType(ebpf.RingBuf) == nil
-
-	if ringEn {
-		mapType = cilumebpf.RingBuf
-		spec.Type = mapType
-		// Set MaxEntries for ring buffer: MaxEntries = numOfPages * os.Getpagesize()
-		spec.MaxEntries = uint32(numOfPages * os.Getpagesize())
-	}
-
-	tracesMap, err := cilumebpf.NewMap(spec)
+	tracesMap, err := ebpfcommon.CreateTracesMap()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create traces map: %w", err)
 	}
 
-	// Create the metrics eBPF map - always HashOfMaps type
-	// The key for the hash of maps is a unique identifier for java process
-	// The value for the hash of maps is a pointer to a metrics map
-	metricsSpec := &cilumebpf.MapSpec{
-		Type:       cilumebpf.HashOfMaps,
-		Name:       "metrics",
-		KeySize:    ProcessKeySize,
-		ValueSize:  InnerMapIDSize,
-		MaxEntries: MaxProcessesCount,
-		// InnerMap spec should be the same as the ones created in the instrumentations.
-		InnerMap: &ebpf.MapSpec{
-			Name:       "jvm_metrics_inner_map",
-			Type:       ebpf.Hash,
-			KeySize:    MetricKeySize,
-			ValueSize:  MetricValueSize,
-			MaxEntries: MaxMetricsPerMap,
-		},
-	}
-
-	metricsMap, err := cilumebpf.NewMap(metricsSpec)
-	if err != nil {
-		tracesMap.Close() // Cleanup traces map on error
-		return nil, err
-	}
-
-	// Create the metrics attributes eBPF map - simple Hash map for UUID -> packed resource attributes.
-	// This map stores resource attributes separately from the HashOfMaps key, allowing attributes
-	// to exceed the eBPF key size limit.
-	attributesSpec := &cilumebpf.MapSpec{
-		Type:       cilumebpf.Hash,
-		Name:       "metrics_attributes",
-		KeySize:    ProcessKeySize,
-		ValueSize:  AttributesValueSize,
-		MaxEntries: MaxProcessesCount,
-	}
-
-	metricsAttributesMap, err := cilumebpf.NewMap(attributesSpec)
+	metricsMap, metricsAttributesMap, err := ebpfcommon.CreateMetricsMaps()
 	if err != nil {
 		tracesMap.Close()
-		metricsMap.Close()
-		return nil, fmt.Errorf("failed to create metrics attributes eBPF map: %w", err)
+		return nil, fmt.Errorf("failed to create metrics attributes eBPF maps: %w", err)
 	}
 
 	managerOpts := instrumentation.ManagerOptions[K8sProcessGroup, K8sConfigGroup, *K8sProcessDetails]{
