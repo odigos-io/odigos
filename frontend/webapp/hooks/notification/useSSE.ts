@@ -1,16 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { API } from '@/utils';
 import { useSourceCRUD } from '../sources';
-import { EntityTypes, type WorkloadId } from '@odigos/ui-kit/types';
 import { useDestinationCRUD } from '../destinations';
-import { getIdFromSseTarget } from '@odigos/ui-kit/functions';
-import { type NotifyPayload, useEntityStore, useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
+import { EntityTypes, StatusType, type WorkloadId } from '@odigos/ui-kit/types';
+import { getIdFromSseTarget, safeJsonParse } from '@odigos/ui-kit/functions';
+import { useEntityStore, useNotificationStore, useProgressStore, ProgressKeys } from '@odigos/ui-kit/store';
 
 enum EventTypes {
   CONNECTED = 'CONNECTED',
   ADDED = 'Added',
   MODIFIED = 'Modified',
   DELETED = 'Deleted',
+  DiagnoseStagesRequested = 'DiagnoseStagesRequested',
+  DiagnoseStageCompleted = 'DiagnoseStageCompleted',
 }
 
 enum CrdTypes {
@@ -93,29 +95,18 @@ export const useSSE = () => {
         const data = JSON.parse(event.data);
         const targets: string[] = data.targets || [];
 
-        const notification: NotifyPayload = {
-          type: data.type,
-          title: data.event || '',
-          message: data.data || '',
-          crdType: data.crdType || '',
-        };
-
-        const isConnected = notification.crdType === EventTypes.CONNECTED;
-        const isSource = notification.crdType === CrdTypes.InstrumentationConfig;
-        const isDestination = notification.crdType === CrdTypes.Destination;
-
-        // do not notify for: connected, modified events, or sources
-        if ((notification.title || notification.message) && !isConnected && notification.title !== EventTypes.MODIFIED && !isSource) {
-          addNotification(notification);
-        }
+        const isSource = data.crdType === CrdTypes.InstrumentationConfig;
+        const isDestination = data.crdType === CrdTypes.Destination;
+        const isDiagnoseRequested = data.event === EventTypes.DiagnoseStagesRequested;
+        const isDiagnoseCompleted = data.event === EventTypes.DiagnoseStageCompleted;
 
         if (isSource) {
-          switch (notification.title) {
+          switch (data.event) {
             case EventTypes.ADDED:
-              const newCreated = Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              const newCreated = Number(data.data?.toString().replace(/[^\d]/g, '') || 0);
               useProgressStore.getState().addProgress(ProgressKeys.Instrumenting, newCreated);
 
-              handleEvent(EventTypes.ADDED, targets, (accumulatedTargets) => {
+              handleEvent(data.event, targets, (accumulatedTargets) => {
                 const { resetProgress } = useProgressStore.getState();
                 resetProgress(ProgressKeys.Instrumenting);
 
@@ -130,7 +121,7 @@ export const useSSE = () => {
             case EventTypes.MODIFIED:
               const { progress } = useProgressStore.getState();
               if (!progress[ProgressKeys.Instrumenting] && !progress[ProgressKeys.Uninstrumenting]) {
-                handleEvent(EventTypes.MODIFIED, targets, (accumulatedTargets) => {
+                handleEvent(data.event, targets, (accumulatedTargets) => {
                   if (accumulatedTargets.length > 0) {
                     fetchSourcesByTargets(accumulatedTargets);
                   } else {
@@ -141,10 +132,10 @@ export const useSSE = () => {
               break;
 
             case EventTypes.DELETED:
-              const newDeleted = Number(notification.message?.toString().replace(/[^\d]/g, '') || 0);
+              const newDeleted = Number(data.data?.toString().replace(/[^\d]/g, '') || 0);
               useProgressStore.getState().addProgress(ProgressKeys.Uninstrumenting, newDeleted);
 
-              handleEvent(EventTypes.DELETED, targets, (accumulatedTargets) => {
+              handleEvent(data.event, targets, (accumulatedTargets) => {
                 const { resetProgress } = useProgressStore.getState();
                 resetProgress(ProgressKeys.Uninstrumenting);
 
@@ -161,11 +152,31 @@ export const useSSE = () => {
               break;
           }
         } else if (isDestination) {
-          handleEvent(EventTypes.MODIFIED, targets, () => {
+          // only notify for: destination created/deleted
+          if (data.event === EventTypes.ADDED || data.event === EventTypes.DELETED) {
+            addNotification({ type: data.type, title: data.event, message: data.data, crdType: data.crdType });
+          }
+          handleEvent(data.event, targets, () => {
             fetchDestinations();
           });
+        } else if (isDiagnoseRequested) {
+          const totalCount = safeJsonParse<string[]>(data.data, []).length;
+
+          useProgressStore.getState().setProgress(ProgressKeys.DownloadingDiagnose, {
+            total: totalCount,
+            current: 0,
+            percentage: 0,
+          });
+        } else if (isDiagnoseCompleted) {
+          const { status, message } = safeJsonParse<{ stage: string; status: StatusType; message?: string }>(data.data, { stage: '', status: StatusType.Success });
+
+          if (status === StatusType.Success) {
+            useProgressStore.getState().addProgress(ProgressKeys.DownloadingDiagnose, 1);
+          } else {
+            addNotification({ type: StatusType.Error, title: 'Diagnose failed', message, crdType: '' });
+          }
         } else {
-          console.warn('Unhandled SSE for CRD type:', notification.crdType);
+          console.warn('Unhandled SSE for CRD type:', data.crdType);
         }
 
         retryCount.current = 0;
