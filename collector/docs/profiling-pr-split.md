@@ -22,11 +22,13 @@ PR7 optional last (docs + heavy fixtures).
 
 - `collector/builder-config.yaml`
 - `collector/Dockerfile`
+- `collector/README.md`, `collector/receivers/README.md` (pattern vs `odigosebpfreceiver`)
 - `collector/odigosotelcol/components.go`
 - `collector/odigosotelcol/go.mod`
 - `collector/odigosotelcol/go.sum`
 - `collector/odigosotelcol/main.go`
 - `collector/odigosotelcol/main_windows.go`
+- `collector/docs/profiling-pr-split.md` (this roadmap; optional to merge with PR1 or a meta-PR)
 
 **Review focus:** OCB module pins, import path `.../ebpf-profiler/collector`, Dockerfile `GOMAXPROCS`.
 
@@ -188,7 +190,7 @@ If all work lives on one branch (e.g. `pr-profiler-testing1`):
 ## Workspace notes
 
 - **PR split plan** lives in this file; update checkboxes as PRs merge.
-- **PR1** (`profiling/pr-1-collector-ebpf-receiver`): adds `go.opentelemetry.io/ebpf-profiler` to `builder-config.yaml`, Dockerfile `GOMAXPROCS`, and regenerates `collector/odigosotelcol/` via `make genodigoscol`.  
+- **PR1** (`profiling/pr-1-collector-ebpf-receiver`): adds `go.opentelemetry.io/ebpf-profiler` to `builder-config.yaml`, Dockerfile `GOMAXPROCS`, and regenerates `collector/odigosotelcol/` via `make genodigoscol`. Documents the **same receiver wiring pattern** as `odigosebpfreceiver` (see `collector/receivers/README.md`).  
   - **Upstream version:** pin the **latest git tag** from [open-telemetry/opentelemetry-ebpf-profiler](https://github.com/open-telemetry/opentelemetry-ebpf-profiler/releases) (CalVer `v0.0.YYYYMMDD`). As of this doc, **`v0.0.202610`** (verify with `git ls-remote --tags` before release).  
   - On **macOS**, `make genodigoscol` may fail at the final compile step (`unix.Prlimit` in ebpf-profiler). **Linux** (CI or `docker build -f collector/Dockerfile`) is the source of truth for a green binary build.
 - If you **stashed** the full feature branch before splitting: `git stash list` then `git stash pop` on your integration branch (e.g. `pr-profiler-testing1`) to restore remaining work after PR1 is committed/pushed.

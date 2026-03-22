@@ -27,6 +27,10 @@ To generate metadata for a component, create `metadata.yaml` in the component's 
 make generate
 ```
 
+## Receivers
+
+- **In-repo:** [`receivers/odigosebpfreceiver`](receivers/odigosebpfreceiver) is wired via `replaces:` in `builder-config.yaml` (same pattern as Odigos processors under `collector/processors/`).
+- **Upstream profiling:** [`go.opentelemetry.io/ebpf-profiler`](https://github.com/open-telemetry/opentelemetry-ebpf-profiler) supplies the **`profiling`** receiver (`import: .../ebpf-profiler/collector`). No local `replaces:` line—bump the tagged version on the `gomod:` entry and regenerate. See [`receivers/README.md`](receivers/README.md) for a side-by-side comparison.
 
 ## Troubleshooting
 
@@ -51,3 +55,7 @@ Those issues can happen because of stale files and dependencies, fixing them can
 ```bash
 git clean -d -x -f
 ```
+
+### eBPF profiler receiver (`go.opentelemetry.io/ebpf-profiler`)
+
+The final link step may fail on **macOS** (e.g. `unix.Prlimit` in upstream `rlimit` code). **Linux** is the supported build environment for that dependency—use CI, a Linux VM, or `docker build` with `collector/Dockerfile` (same as production images).
