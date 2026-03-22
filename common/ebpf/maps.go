@@ -5,22 +5,23 @@ import (
 	"os"
 
 	cilumebpf "github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/features"
 )
 
-func CreateTracesMap(isRingBufferSupported bool) (*cilumebpf.Map, error) {
-	mapType := cilumebpf.PerfEventArray
+func CreateTracesMap() (*cilumebpf.Map, error) {
 	spec := &cilumebpf.MapSpec{
-		Type: mapType,
 		Name: "traces",
 	}
 
-	if isRingBufferSupported {
-		mapType = cilumebpf.RingBuf
-		spec.Type = mapType
+	// Check if the current kernel supports the ring buffer
+	if features.HaveMapType(cilumebpf.RingBuf) == nil {
+		spec.Type = cilumebpf.RingBuf
 		// Set MaxEntries for ring buffer: MaxEntries = NumOfPages * os.Getpagesize()
 		spec.MaxEntries = uint32(NumOfPages * os.Getpagesize())
+	} else {
+		// If not, default to the old buffer
+		spec.Type = cilumebpf.PerfEventArray
 	}
-
 	m, err := cilumebpf.NewMap(spec)
 	if err != nil {
 		return nil, fmt.Errorf("create traces eBPF map: %w", err)

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cilium/ebpf"
-	"github.com/cilium/ebpf/features"
 	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -57,10 +55,8 @@ func NewManager(
 	if err := rlimit.RemoveMemlock(); err != nil {
 		return nil, fmt.Errorf("failed to remove memlock rlimit: %w", err)
 	}
-	// Check if the current kernel supports the ring buffer
-	isRingBufferSupported := features.HaveMapType(ebpf.RingBuf) == nil
 
-	tracesMap, err := ebpfcommon.CreateTracesMap(isRingBufferSupported)
+	tracesMap, err := ebpfcommon.CreateTracesMap()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create traces map: %w", err)
 	}

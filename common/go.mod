@@ -3,7 +3,7 @@ module github.com/odigos-io/odigos/common
 go 1.26.0
 
 require (
-	github.com/cilium/ebpf v0.19.1-0.20250815145053-c9de60689836
+	github.com/cilium/ebpf v0.19.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/pdata v1.47.0
 	go.opentelemetry.io/otel/trace v1.38.0
