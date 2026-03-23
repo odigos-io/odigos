@@ -63,6 +63,7 @@ RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/
 
 ######### Device Plugin builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS deviceplugin-builder
+ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by deviceplugin
 COPY common/ common/
@@ -81,6 +82,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 ######### CSI Driver builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS csi-driver-builder
+ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -101,6 +103,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 ######### Odiglet builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
+ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
