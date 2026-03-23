@@ -20,7 +20,8 @@ spec:
               # Create the argo-rollouts namespace if it doesn't exist
               kubectl create namespace argo-rollouts --dry-run=client -o yaml | kubectl apply -f -
               # Install Argo Rollouts controller
-              kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/download/v1.8.4/install.yaml
+              # Adding --validate=false since argo dropped support for k8s < 1.23 which we test.
+              kubectl apply -n argo-rollouts --validate=false -f https://github.com/argoproj/argo-rollouts/releases/download/v1.8.4/install.yaml
               # Wait for the controller to be ready
               kubectl wait --for=condition=available --timeout=120s deployment/argo-rollouts -n argo-rollouts
 
