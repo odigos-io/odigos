@@ -13,8 +13,12 @@ func CSRFMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		csrfService := services.GetCSRFService()
 
-		// Skip CSRF for GraphQL playground requests (they come from the playground page)
-		if !strings.HasPrefix(c.Request.URL.Path, "/graphql") || c.Request.Header.Get("Referer") != "" && strings.Contains(c.Request.Header.Get("Referer"), "/playground") {
+		// Skip CSRF for safe methods and known same-origin APIs: GET/HEAD/OPTIONS, GraphQL, profiling.
+		if c.Request.Method == http.MethodGet ||
+			c.Request.Method == http.MethodHead ||
+			c.Request.Method == http.MethodOptions ||
+			strings.Contains(c.Request.URL.Path, "graphql") ||
+			strings.Contains(c.Request.URL.Path, "/profiling") {
 			c.Next()
 			return
 		}

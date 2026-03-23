@@ -326,6 +326,11 @@ func getDesiredDeployment(ctx context.Context, c client.Client, enabledDests *od
 			"--feature-gates=clickhouse.json",
 		)
 	}
+	// Enable profiles signal in OTLP receiver and pipelines for verification export.
+	desiredDeployment.Spec.Template.Spec.Containers[0].Args = append(
+		desiredDeployment.Spec.Template.Spec.Containers[0].Args,
+		"--feature-gates=service.profilesSupport",
+	)
 
 	err = ctrl.SetControllerReference(gateway, desiredDeployment, scheme)
 	if err != nil {

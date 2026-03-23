@@ -1,0 +1,43 @@
+{
+  "resourceProfiles": [
+    {
+      "resource": { "attributes": [] },
+      "scopeProfiles": [
+        {
+          "scope": { "name": "test" },
+          "profiles": [
+            {
+              "sampleType": { "typeStrindex": 0, "unitStrindex": 1 },
+              "periodType": { "typeStrindex": 0, "unitStrindex": 1 },
+              "period": "1",
+              "timeUnixNano": "1000000000",
+              "samples": [
+                {
+                  "attributeIndices": [0, 1, 2],
+                  "timestampsUnixNano": ["1000000000"]
+                },
+                {
+                  "attributeIndices": [0, 1],
+                  "timestampsUnixNano": ["1000000001"]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "dictionary": {
+    "stringTable": ["", "cpu", "samples", "runtime.main", "main.foo", "main.bar"],
+    "functionTable": [
+      { "nameStrindex": 3 },
+      { "nameStrindex": 4 },
+      { "nameStrindex": 5 }
+    ],
+    "locationTable": [
+      { "line": [{ "functionIndex": 0 }] },
+      { "line": [{ "functionIndex": 1 }] },
+      { "line": [{ "functionIndex": 2 }] }
+    ]
+  }
+}

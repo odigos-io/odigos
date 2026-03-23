@@ -1,0 +1,74 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    ODIGOS FRONTEND — PROFILING BACKEND                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  GATEWAY / NODE COLLECTORS                                                   │
+│  (eBPF profiler → OTLP Profiles export)                                      │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │
+                                    │  gRPC OTLP Profiles
+                                    │  → odigos-ui.<ns>.svc:4318
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FRONTEND BACKEND (main.go)                                                   │
+│                                                                              │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  OTLP PROFILES RECEIVER  :4318  (receiver.go)                          │  │
+│  │  ENABLE_PROFILES_RECEIVER=true                                         │  │
+│  └─────────────────────────────────┬─────────────────────────────────────┘  │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  PROFILES CONSUMER  (consumer.go)                                      │  │
+│  │                                                                        │  │
+│  │  for each ResourceProfile in batch:                                    │  │
+│  │    key, ok := SourceKeyFromResource(attrs)   ◄── source_key.go         │  │
+│  │    if !ok     → drop (log if PROFILING_DEBUG)                          │  │
+│  │    if !Active → drop (not viewing)                                     │  │
+│  │    else       → store.AddProfileData(key, jsonChunk)                   │  │
+│  └─────────────────────────────────┬─────────────────────────────────────┘  │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  PROFILE STORE  (store.go)                                            │  │
+│  │  slots: map[sourceKey]*Slot    key = "namespace/Kind/name"            │  │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │  │
+│  │  │  Slot "otel-demo/Deployment/recommendation"                        │ │  │
+│  │  │    LastRequestAt,  Buffer (BoundedBuffer, max 20MB chunks)        │ │  │
+│  │  │  Slot "default/Deployment/frontend"  ...                          │ │  │
+│  │  │  maxSlots=10, TTL=30s, cleanup every 15s → evict → flush          │ │  │
+│  │  └─────────────────────────────────────────────────────────────────┘ │  │
+│  │  StartViewing(key)  GetProfileData(key)  IsActive(key)  AddProfileData │  │
+│  └─────────────────────────────────┬─────────────────────────────────────┘  │
+│                                    │                                         │
+│  ┌─────────────────────────────────┴─────────────────────────────────────┐  │
+│  │  HTTP API  (handlers.go)  under /api                                  │  │
+│  │  PUT  /sources/:ns/:kind/:name/profiling/enable  → StartViewing(key)   │  │
+│  │  GET  /sources/:ns/:kind/:name/profiling         → StartViewing + Get  │  │
+│  │       → { "chunks": [ "<otlp-json>", ... ] }                          │  │
+│  └─────────────────────────────────┬─────────────────────────────────────┘  │
+└────────────────────────────────────┼────────────────────────────────────────┘
+                                     │
+                                     │  PUT enable (open Profiling tab)
+                                     │  GET polling (every 5–10s)
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  WEBAPP (browser)  —  Profiling page, FlameGraph, useProfiling hook          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+  SOURCE KEY DERIVATION (source_key.go)
+  ─────────────────────────────────────
+  API path  :namespace/:kind/:name   ──►  SourceKeyFromSourceID  ──►  "ns/Kind/name"
+  OTLP attrs: k8s.namespace.name,
+              k8s.deployment.name (or statefulset/daemonset/job/cronjob/rollout)
+              ──►  SourceKeyFromResource  ──►  same "ns/Kind/name"
+
+
+  “ONLY WHEN VIEWING” FLOW
+  ────────────────────────
+  User opens Profiling  ──►  PUT enable  ──►  StartViewing(key)  ──►  slot exists
+  Gateway sends all     ──►  Consumer    ──►  IsActive(key)?  ──yes──►  AddProfileData
+  User polls GET        ──►  GetProfileData  ──►  chunks to UI; LastRequestAt refreshed
+  User leaves           ──►  no GET 30s   ──►  cleanup evicts slot  ──►  stop accepting

@@ -1,0 +1,22 @@
+{
+  "resourceProfiles": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "k8s.namespace.name", "value": { "stringValue": "default" } },
+          { "key": "k8s.deployment.name", "value": { "stringValue": "my-app" } },
+          { "key": "k8s.pod.name", "value": { "stringValue": "my-app-7d4f8b-xyz12" } },
+          { "key": "k8s.node.name", "value": { "stringValue": "i-0d965742871b8fd3f" } },
+          { "key": "container.id", "value": { "stringValue": "01c19dcbaaf926d69c3574d07aee65fa74c97afdaceede93be27abdae9b2ae49" } },
+          { "key": "service.name", "value": { "stringValue": "my-app" } }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": { "name": "go.opentelemetry.io/ebpf-profiler" },
+          "profiles": []
+        }
+      ]
+    }
+  ]
+}

@@ -18,6 +18,7 @@ const (
 const (
 	healthCheckExtensionName            = "health_check"
 	odigosEbpfReceiverName              = "odigosebpf"
+	profilingReceiverName              = "profiling" // eBPF profiling receiver (go.opentelemetry.io/ebpf-profiler)
 	pprofExtensionName                  = "pprof"
 	batchProcessorName                  = "batch"
 	memoryLimiterProcessorName          = "memory_limiter"
@@ -25,8 +26,10 @@ const (
 	nodeNameProcessorName               = "resource/node-name"
 	clusterCollectorTracesExporterName  = "otlp/out-cluster-collector-traces"
 	clusterCollectorMetricsExporterName = "otlp/out-cluster-collector-metrics"
-	clusterCollectorLogsExporterName    = "otlp/out-cluster-collector-logs"
+	clusterCollectorLogsExporterName     = "otlp/out-cluster-collector-logs"
+	clusterCollectorProfilesExporterName = "otlp/out-cluster-collector-profiles"
 	resourceDetectionProcessorName      = "resourcedetection"
+	k8sattributesProcessorName          = "k8sattributes"
 )
 
 func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) config.GenericMap {
@@ -67,7 +70,7 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 		compression = "gzip"
 	}
 
-	// Build the common exporter configuration (used by metrics and logs)
+	// Build the common exporter configuration (used by metrics, logs, and profiles)
 	commonExporterConfig := buildBaseExporterConfig(odigosNamespace, compression)
 
 	// Build the trace exporter configuration with the same base config
@@ -77,19 +80,12 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 		traceExporterConfig["timeout"] = otlpExporterConfiguration.Timeout
 	}
 
-	// Add retry_on_failure configuration if present
+	// Retry config: from CRD when present, otherwise default so metrics/logs/profiles retry on gateway errors instead of failing.
+	retryConfig := config.GenericMap{"enabled": true, "initial_interval": "5s", "max_interval": "30s", "max_elapsed_time": "5m"}
 	if otlpExporterConfiguration != nil && otlpExporterConfiguration.RetryOnFailure != nil {
-
-		retryConfig := config.GenericMap{}
-		// Only set enabled if not nil to avoid possible nil pointer dereference
 		if otlpExporterConfiguration.RetryOnFailure.Enabled != nil {
 			retryConfig["enabled"] = *otlpExporterConfiguration.RetryOnFailure.Enabled
-		} else {
-			// by default, retry on failure is enabled
-			retryConfig["enabled"] = true
 		}
-
-		// Only add the interval fields if they are not empty
 		if otlpExporterConfiguration.RetryOnFailure.InitialInterval != "" {
 			retryConfig["initial_interval"] = otlpExporterConfiguration.RetryOnFailure.InitialInterval
 		}
@@ -99,14 +95,16 @@ func getCommonExporters(otlpExporterConfiguration *common.OtlpExporterConfigurat
 		if otlpExporterConfiguration.RetryOnFailure.MaxElapsedTime != "" {
 			retryConfig["max_elapsed_time"] = otlpExporterConfiguration.RetryOnFailure.MaxElapsedTime
 		}
-
-		traceExporterConfig["retry_on_failure"] = retryConfig
 	}
 
+	traceExporterConfig["retry_on_failure"] = retryConfig
+	commonExporterConfig["retry_on_failure"] = retryConfig
+
 	return config.GenericMap{
-		clusterCollectorTracesExporterName:  traceExporterConfig,
+		clusterCollectorTracesExporterName:   traceExporterConfig,
 		clusterCollectorMetricsExporterName: commonExporterConfig,
-		clusterCollectorLogsExporterName:    commonExporterConfig,
+		clusterCollectorLogsExporterName:     commonExporterConfig,
+		clusterCollectorProfilesExporterName: commonExporterConfig,
 	}
 }
 
@@ -139,6 +137,7 @@ func init() {
 			},
 		},
 		odigosEbpfReceiverName: config.GenericMap{},
+		profilingReceiverName:  config.GenericMap{}, // in-node eBPF CPU profiling; requires Linux, privileged
 	}
 
 	commonExtensions = config.GenericMap{

@@ -35,6 +35,7 @@ import (
 	"github.com/odigos-io/odigos/frontend/middlewares"
 	"github.com/odigos-io/odigos/frontend/services"
 	collectormetrics "github.com/odigos-io/odigos/frontend/services/collector_metrics"
+	collectorprofiles "github.com/odigos-io/odigos/frontend/services/collector_profiles"
 	"github.com/odigos-io/odigos/frontend/services/db"
 	metrics "github.com/odigos-io/odigos/frontend/services/metrics"
 	"github.com/odigos-io/odigos/frontend/services/sse"
@@ -111,7 +112,11 @@ func startWatchers(ctx context.Context) error {
 }
 
 func startDatabase(logger *commonlogger.OdigosLogger) error {
-	database, err := db.NewSQLiteDB("/data/data.db")
+	dbPath := os.Getenv("ODIGOS_UI_DB_PATH")
+	if dbPath == "" {
+		dbPath = "/data/data.db"
+	}
+	database, err := db.NewSQLiteDB(dbPath)
 	if err != nil {
 		// TODO: Move to fatal once db required
 		// return err
@@ -151,7 +156,7 @@ func serveClientFiles(ctx context.Context, r *gin.Engine, dist fs.FS) {
 	})
 }
 
-func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client, promAPI v1.API) (*gin.Engine, error) {
+func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odigosMetrics *collectormetrics.OdigosMetricsConsumer, k8sCacheClient client.Client, promAPI v1.API, profileStore collectorprofiles.ProfileStoreRef) (*gin.Engine, error) {
 	var r *gin.Engine
 	if flags.Debug {
 		r = gin.Default()
@@ -161,8 +166,12 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 		r.Use(gin.Recovery())
 	}
 
-	// Enable CORS
-	r.Use(cors.Default())
+	// Enable CORS (allow dev UI on different port to send X-CSRF-Token and X-Odigos-Dev)
+	r.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Accept", "Authorization", "X-CSRF-Token", "X-Odigos-Dev"},
+	}))
 
 	// Add security headers middleware
 	r.Use(middlewares.SecurityHeadersMiddleware)
@@ -258,6 +267,11 @@ func startHTTPServer(ctx context.Context, flags *Flags, logger logr.Logger, odig
 	// Diagnose download endpoint (used by GraphQL diagnose query)
 	r.GET("/diagnose/download", services.DiagnoseDownload)
 
+	// Profiling: enable continuous profiling and get profile data per source
+	if profileStore != nil {
+		collectorprofiles.RegisterProfilingRoutes(r.Group("/api"), profileStore)
+	}
+
 	return r, nil
 }
 
@@ -323,6 +337,19 @@ func main() {
 		odigosMetrics.Run(ctx, flags.Namespace)
 	}()
 
+	// Profiles store and OTLP profiles receiver (port 4318, feature-gated by ENABLE_PROFILES_RECEIVER).
+	// Store limits are configurable via env (Helm: ui.profiling.*).
+	maxSlots, ttlSec, slotMaxBytes, cleanupInt := collectorprofiles.StoreConfigFromEnv()
+	profileStore := collectorprofiles.NewProfileStore(maxSlots, ttlSec, slotMaxBytes, cleanupInt)
+	profileStore.RunCleanup(ctx)
+	defer profileStore.StopCleanup()
+	profileStoreRef, profilesWg := collectorprofiles.RunWithStore(ctx, profileStore)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		profilesWg.Wait()
+	}()
+
 	// Start watchers
 	err = startWatchers(ctx)
 	if err != nil {
@@ -331,7 +358,10 @@ func main() {
 	}
 
 	var promAPI v1.API
-	metricsURL := fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
+	metricsURL := os.Getenv("VICTORIA_METRICS_URL")
+	if metricsURL == "" {
+		metricsURL = fmt.Sprintf("http://%s.%s.svc:8428", metrics.VictoriaMetricsServiceName, flags.Namespace)
+	}
 	if api, err := metrics.NewAPIFromURL(metricsURL); err != nil {
 		log.Warn("failed to initialize VictoriaMetrics API", "url", metricsURL, "err", err)
 	} else {
@@ -339,7 +369,7 @@ func main() {
 	}
 
 	// Start server
-	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI)
+	r, err := startHTTPServer(ctx, &flags, logger, odigosMetrics, k8sCacheClient, promAPI, profileStoreRef)
 	if err != nil {
 		log.Error("Error starting server", "err", err)
 		os.Exit(1)

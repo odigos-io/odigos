@@ -7,6 +7,8 @@ const (
 	OdigosNodeCollectorOwnTelemetryPortDefault = int32(55682)
 
 	OdigosNodeCollectorConfigMapConfigDomainsName = "odigos-node-collector-config-domains"
+	// Optional Helm-driven ConfigMap to override the node collector profiles pipeline (key "profiles").
+	OdigosNodeCollectorProfilesConfigMapName = "odigos-node-collector-profiles-config"
 
 	OdigosNodeCollectorLocalTrafficServiceName = "odigos-data-collection-local-traffic"
 

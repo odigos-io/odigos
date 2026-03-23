@@ -1,0 +1,5230 @@
+{
+  "resourceProfiles": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 43,
+                  "attributeIndices": [
+                    119,
+                    120,
+                    121,
+                    122,
+                    123,
+                    15
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781456916906098"
+                  ]
+                },
+                {
+                  "stackIndex": 44,
+                  "attributeIndices": [
+                    119,
+                    120,
+                    121,
+                    122,
+                    123,
+                    15
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781459267429046"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781456916906098",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 48,
+                  "attributeIndices": [
+                    144,
+                    145,
+                    146,
+                    147,
+                    148,
+                    24
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781500236479567"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781500236479567",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 46,
+                  "attributeIndices": [
+                    114,
+                    115,
+                    116,
+                    117,
+                    118,
+                    16
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781503040616169"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781503040616169",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 50,
+                  "attributeIndices": [
+                    122,
+                    123,
+                    124,
+                    125,
+                    126,
+                    55
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781513679771663"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781513679771663",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 3,
+                  "attributeIndices": [
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    9
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781546123053033"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781546123053033",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 8,
+                  "attributeIndices": [
+                    27,
+                    28,
+                    29,
+                    30,
+                    31,
+                    32
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781558690080725"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781558690080725",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 7,
+                  "attributeIndices": [
+                    24,
+                    25,
+                    26,
+                    27,
+                    28,
+                    8
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781564411763710"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781564411763710",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 65,
+                  "attributeIndices": [
+                    112,
+                    113,
+                    114,
+                    115,
+                    116,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781609628252672"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781609628252672",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 43,
+                  "attributeIndices": [
+                    137,
+                    138,
+                    139,
+                    140,
+                    141,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781616576676126"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781616576676126",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 68,
+                  "attributeIndices": [
+                    157,
+                    158,
+                    159,
+                    160,
+                    161,
+                    11
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781630525106298"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781630525106298",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 2,
+                  "attributeIndices": [
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781633184958130"
+                  ]
+                },
+                {
+                  "stackIndex": 3,
+                  "attributeIndices": [
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    23
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781633999331950"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781633184958130",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 17,
+                  "attributeIndices": [
+                    46,
+                    47,
+                    48,
+                    49,
+                    50,
+                    7
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781651525155731"
+                  ]
+                },
+                {
+                  "stackIndex": 18,
+                  "attributeIndices": [
+                    53,
+                    47,
+                    48,
+                    49,
+                    54,
+                    19
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781652370524752"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781651525155731",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 55,
+                  "attributeIndices": [
+                    128,
+                    129,
+                    130,
+                    131,
+                    132,
+                    22
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781653772582821"
+                  ]
+                },
+                {
+                  "stackIndex": 56,
+                  "attributeIndices": [
+                    128,
+                    129,
+                    130,
+                    131,
+                    132,
+                    7
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781657978737664"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781653772582821",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 62,
+                  "attributeIndices": [
+                    129,
+                    130,
+                    131,
+                    132,
+                    133,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781659380783415"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781659380783415",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 66,
+                  "attributeIndices": [
+                    156,
+                    157,
+                    158,
+                    159,
+                    160,
+                    11
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781667824099328"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781667824099328",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 18,
+                  "attributeIndices": [
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    37
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781714865353298"
+                  ]
+                },
+                {
+                  "stackIndex": 19,
+                  "attributeIndices": [
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    37
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781715566383862"
+                  ]
+                },
+                {
+                  "stackIndex": 20,
+                  "attributeIndices": [
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    37
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781716267420913"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781714865353298",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 55,
+                  "attributeIndices": [
+                    131,
+                    132,
+                    133,
+                    134,
+                    135,
+                    35
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781728885970303"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781728885970303",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 1,
+                  "attributeIndices": [
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781737308657830"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781737308657830",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 33,
+                  "attributeIndices": [
+                    110,
+                    111,
+                    112,
+                    113,
+                    114,
+                    50
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781741958133562"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781741958133562",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 77,
+                  "attributeIndices": [
+                    141,
+                    142,
+                    143,
+                    144,
+                    145,
+                    7
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781748267433887"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781748267433887",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 194,
+                  "attributeIndices": [
+                    155,
+                    156,
+                    157,
+                    158,
+                    159,
+                    9
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781757628220088"
+                  ]
+                },
+                {
+                  "stackIndex": 195,
+                  "attributeIndices": [
+                    155,
+                    156,
+                    157,
+                    158,
+                    159,
+                    9
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781759731310789"
+                  ]
+                },
+                {
+                  "stackIndex": 196,
+                  "attributeIndices": [
+                    155,
+                    156,
+                    157,
+                    158,
+                    159,
+                    26
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781760432316379"
+                  ]
+                },
+                {
+                  "stackIndex": 197,
+                  "attributeIndices": [
+                    155,
+                    156,
+                    157,
+                    158,
+                    159,
+                    7
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781761834422849"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781757628220088",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 10,
+                  "attributeIndices": [
+                    25,
+                    26,
+                    27,
+                    28,
+                    29,
+                    15
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781762751957956"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781762751957956",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 91,
+                  "attributeIndices": [
+                    179,
+                    180,
+                    181,
+                    182,
+                    183,
+                    9
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781771452988122"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781771452988122",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 2,
+                  "attributeIndices": [
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781806875664432"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781806875664432",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 27,
+                  "attributeIndices": [
+                    72,
+                    73,
+                    74,
+                    75,
+                    76,
+                    26
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781818762236419"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781818762236419",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 47,
+                  "attributeIndices": [
+                    129,
+                    130,
+                    131,
+                    132,
+                    133,
+                    27
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781828648851360"
+                  ]
+                },
+                {
+                  "stackIndex": 48,
+                  "attributeIndices": [
+                    136,
+                    130,
+                    131,
+                    132,
+                    137,
+                    11
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781825556024955"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781825556024955",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 48,
+                  "attributeIndices": [
+                    110,
+                    111,
+                    112,
+                    113,
+                    114,
+                    19
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781833009634158"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781833009634158",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 8,
+                  "attributeIndices": [
+                    30,
+                    31,
+                    32,
+                    33,
+                    34,
+                    17
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781857999385077"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781857999385077",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 60,
+                  "attributeIndices": [
+                    131,
+                    132,
+                    133,
+                    134,
+                    135,
+                    24
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781878009684068"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781878009684068",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 58,
+                  "attributeIndices": [
+                    107,
+                    108,
+                    109,
+                    110,
+                    111,
+                    12
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781885638523059"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781885638523059",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 3,
+                  "attributeIndices": [
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    12
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781905257053901"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781905257053901",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 38,
+                  "attributeIndices": [
+                    81,
+                    82,
+                    83,
+                    84,
+                    85,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781924885972572"
+                  ]
+                },
+                {
+                  "stackIndex": 39,
+                  "attributeIndices": [
+                    81,
+                    82,
+                    83,
+                    84,
+                    85,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781925587003422"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781924885972572",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 7,
+                  "attributeIndices": [
+                    39,
+                    40,
+                    41,
+                    42,
+                    43,
+                    14
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781937617920618"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781937617920618",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 6,
+                  "attributeIndices": [
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    15
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781948071528825"
+                  ]
+                },
+                {
+                  "stackIndex": 7,
+                  "attributeIndices": [
+                    23,
+                    24,
+                    25,
+                    26,
+                    28,
+                    11
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781951081799065"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781948071528825",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 36,
+                  "attributeIndices": [
+                    72,
+                    73,
+                    74,
+                    75,
+                    76,
+                    12
+                  ],
+                  "timestampsUnixNano": [
+                    "1773781999061218835"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773781999061218835",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 1,
+                  "attributeIndices": [
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782003659114252"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782003659114252",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 52,
+                  "attributeIndices": [
+                    128,
+                    129,
+                    130,
+                    131,
+                    132,
+                    12
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782016824104572"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782016824104572",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 8,
+                  "attributeIndices": [
+                    25,
+                    26,
+                    27,
+                    28,
+                    29,
+                    14
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782036855041396"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782036855041396",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 2,
+                  "attributeIndices": [
+                    19,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782069514831801"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782069514831801",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 46,
+                  "attributeIndices": [
+                    103,
+                    104,
+                    105,
+                    106,
+                    107,
+                    7
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782074092159296"
+                  ]
+                },
+                {
+                  "stackIndex": 47,
+                  "attributeIndices": [
+                    108,
+                    104,
+                    105,
+                    106,
+                    109,
+                    17
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782075236473194"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782074092159296",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 31,
+                  "attributeIndices": [
+                    104,
+                    105,
+                    106,
+                    107,
+                    108,
+                    20
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782082123055280"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782082123055280",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 58,
+                  "attributeIndices": [
+                    103,
+                    104,
+                    105,
+                    106,
+                    107,
+                    18
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782096339574560"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782096339574560",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 47,
+                  "attributeIndices": [
+                    129,
+                    130,
+                    131,
+                    132,
+                    133,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782119092123512"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782119092123512",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 69,
+                  "attributeIndices": [
+                    128,
+                    129,
+                    130,
+                    131,
+                    132,
+                    18
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782138349883911"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782138349883911",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 29,
+                  "attributeIndices": [
+                    82,
+                    83,
+                    84,
+                    85,
+                    86,
+                    16
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782155947791863"
+                  ]
+                },
+                {
+                  "stackIndex": 30,
+                  "attributeIndices": [
+                    82,
+                    83,
+                    84,
+                    85,
+                    86,
+                    29
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782159452966056"
+                  ]
+                },
+                {
+                  "stackIndex": 31,
+                  "attributeIndices": [
+                    82,
+                    83,
+                    84,
+                    85,
+                    86,
+                    29
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782160153996774"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782155947791863",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 10,
+                  "attributeIndices": [
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782168081839626"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782168081839626",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 32,
+                  "attributeIndices": [
+                    71,
+                    72,
+                    73,
+                    74,
+                    75,
+                    12
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782178380801239"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782178380801239",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 3,
+                  "attributeIndices": [
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782179782817927"
+                  ]
+                },
+                {
+                  "stackIndex": 4,
+                  "attributeIndices": [
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782179081786416"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782179081786416",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 29,
+                  "attributeIndices": [
+                    78,
+                    79,
+                    80,
+                    81,
+                    82,
+                    36
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782186092125478"
+                  ]
+                },
+                {
+                  "stackIndex": 30,
+                  "attributeIndices": [
+                    85,
+                    79,
+                    80,
+                    81,
+                    86,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782188009681784"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782186092125478",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 15,
+                  "attributeIndices": [
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    12
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782193422017948"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782193422017948",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 12,
+                  "attributeIndices": [
+                    35,
+                    36,
+                    37,
+                    38,
+                    39,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782215648820575"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782215648820575",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 5,
+                  "attributeIndices": [
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782233411708863"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782233411708863",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 63,
+                  "attributeIndices": [
+                    139,
+                    140,
+                    141,
+                    142,
+                    143,
+                    59
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782252793192567"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782252793192567",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 49,
+                  "attributeIndices": [
+                    122,
+                    123,
+                    124,
+                    125,
+                    126,
+                    34
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782277535445428"
+                  ]
+                },
+                {
+                  "stackIndex": 50,
+                  "attributeIndices": [
+                    122,
+                    123,
+                    124,
+                    125,
+                    126,
+                    19
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782278556046620"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782277535445428",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 53,
+                  "attributeIndices": [
+                    142,
+                    143,
+                    144,
+                    145,
+                    146,
+                    11
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782288628226747"
+                  ]
+                },
+                {
+                  "stackIndex": 54,
+                  "attributeIndices": [
+                    149,
+                    143,
+                    144,
+                    145,
+                    150,
+                    23
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782290050881699"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782288628226747",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 33,
+                  "attributeIndices": [
+                    98,
+                    99,
+                    100,
+                    101,
+                    102,
+                    10
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782299019931772"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782299019931772",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "container.id",
+            "value": {
+              "stringValue": "1b3faf086cabd9edb7293eb5ec2f0f6832d36be685dbc38eb3c8145c994f04b6"
+            }
+          },
+          {
+            "key": "k8s.node.name",
+            "value": {
+              "stringValue": "i-03dc2a66e51bb7193"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.pod.name",
+            "value": {
+              "stringValue": "accounting-7d5679759c-5c5kg"
+            }
+          },
+          {
+            "key": "k8s.namespace.name",
+            "value": {
+              "stringValue": "otel-demo"
+            }
+          },
+          {
+            "key": "k8s.deployment.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          },
+          {
+            "key": "k8s.container.name",
+            "value": {
+              "stringValue": "accounting"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {
+            "name": "go.opentelemetry.io/ebpf-profiler"
+          },
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "samples": [
+                {
+                  "stackIndex": 14,
+                  "attributeIndices": [
+                    48,
+                    49,
+                    50,
+                    51,
+                    52,
+                    26
+                  ],
+                  "timestampsUnixNano": [
+                    "1773782307112774023"
+                  ]
+                }
+              ],
+              "timeUnixNano": "1773782307112774023",
+              "periodType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "period": "10309278"
+            }
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+        }
+      ],
+      "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
+    }
+  ],
+  "dictionary": {}
+}
