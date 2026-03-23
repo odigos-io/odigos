@@ -23,8 +23,8 @@ require (
 
 require (
 	github.com/go-logr/zapr v1.3.0 // indirect
-	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
-	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/tools v0.38.0 // indirect
 	sigs.k8s.io/controller-runtime v0.22.1 // indirect
 )
 
