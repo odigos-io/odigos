@@ -229,6 +229,11 @@ type OtelDistro struct {
 	// while java-script can run in both nodejs and browser, the distribution should specify where it is intended to run.
 	RuntimeEnvironments []RuntimeEnvironment `yaml:"runtimeEnvironments"`
 
+	// If the detected runtime version does not satisfy this distro's SupportedVersions,
+	// fall back to this distro name and repeat the version check.
+	// This forms an explicit ordered chain from newest to oldest supported version range.
+	FallbackDistro *string `yaml:"fallbackDistro,omitempty"`
+
 	// A list of frameworks this distribution targets (can be left empty)
 	Frameworks []Framework `yaml:"frameworks"`
 

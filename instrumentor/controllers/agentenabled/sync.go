@@ -493,7 +493,7 @@ func calculateContainerCollectorConfig(containerName string,
 		return nil
 	}
 
-	containerDistro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
+	containerDistro, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, runtimeDetails.RuntimeVersion, distroPerLanguage, distroGetter)
 	// This is not a real error but a containerAgentConfig pointer with the appropriate reason and message for the failure.
 	// In this case, we are not updating the ContainerAgentConfig so we can continue with the next container.
 	if err != nil {
@@ -556,7 +556,7 @@ func calculateContainerInstrumentationConfig(containerName string,
 		}, nil
 	}
 
-	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, distroPerLanguage, distroGetter)
+	d, err := resolveContainerDistro(containerName, containerOverride, runtimeDetails.Language, runtimeDetails.RuntimeVersion, distroPerLanguage, distroGetter)
 	if err != nil {
 		return *err, nil
 	}
@@ -802,6 +802,7 @@ func resolveContainerDistro(
 	containerName string,
 	containerOverride *odigosv1.ContainerOverride,
 	containerLanguage common.ProgrammingLanguage,
+	runtimeVersion string,
 	distroPerLanguage map[common.ProgrammingLanguage]string,
 	distroGetter *distros.Getter,
 ) (*distro.OtelDistro, *odigosv1.ContainerAgentConfig) {
@@ -854,6 +855,9 @@ func resolveContainerDistro(
 				}
 			}
 		}
+
+		// Walk the fallbackDistro chain to resolve the best-matching distro name for the runtime version.
+		distroName = distroGetter.ResolveDistroNameForVersion(distroName, runtimeVersion)
 
 		distro := distroGetter.GetDistroByName(distroName)
 		if distro == nil { // not expected to happen, here for safety net
