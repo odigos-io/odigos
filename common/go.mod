@@ -1,6 +1,6 @@
 module github.com/odigos-io/odigos/common
 
-go 1.26.0
+go 1.26.1
 
 require (
 	github.com/cilium/ebpf v0.19.0
