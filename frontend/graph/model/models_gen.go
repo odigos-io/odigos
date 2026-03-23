@@ -1334,11 +1334,13 @@ type ServiceMap struct {
 }
 
 type ServiceMapFromSource struct {
+	NodeID      string                `json:"nodeId"`
 	ServiceName string                `json:"serviceName"`
 	Services    []*ServiceMapToSource `json:"services"`
 }
 
 type ServiceMapToSource struct {
+	NodeID      string `json:"nodeId"`
 	IsVirtual   bool   `json:"isVirtual"`
 	ServiceName string `json:"serviceName"`
 	Requests    int    `json:"requests"`
