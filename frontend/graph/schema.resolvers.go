@@ -918,27 +918,29 @@ func (r *queryResolver) GetServiceMap(ctx context.Context) (*model.ServiceMap, e
 	}
 
 	serviceMap := r.MetricsConsumer.GetServiceGraphEdges()
-	services := make([]*model.ServiceMapFromSource, 0)
+	mapServices := make([]*model.ServiceMapFromSource, 0)
 
-	for serviceName, toServices := range serviceMap {
+	for compositeKey, toServices := range serviceMap {
 		to := make([]*model.ServiceMapToSource, 0)
 
-		for toServiceName, info := range toServices {
+		for toCompositeKey, info := range toServices {
 			to = append(to, &model.ServiceMapToSource{
-				ServiceName: toServiceName,
+				NodeID:      toCompositeKey,
+				ServiceName: services.BaseServiceName(toCompositeKey),
 				IsVirtual:   info.ToNodeIsVirtual,
 				Requests:    int(info.RequestCount),
 				DateTime:    info.LastUpdated.Format(time.RFC3339),
 			})
 		}
 
-		services = append(services, &model.ServiceMapFromSource{
-			ServiceName: serviceName,
+		mapServices = append(mapServices, &model.ServiceMapFromSource{
+			NodeID:      compositeKey,
+			ServiceName: services.BaseServiceName(compositeKey),
 			Services:    to,
 		})
 	}
 
-	return &model.ServiceMap{Services: services}, nil
+	return &model.ServiceMap{Services: mapServices}, nil
 }
 
 // PeerSources is the resolver for the peerSources field.
