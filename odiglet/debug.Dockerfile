@@ -85,7 +85,7 @@ COPY --from=public.ecr.aws/odigos/agents/php-community:v0.2.6 /instrumentations/
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby
 
 # loader
-ARG ODIGOS_LOADER_VERSION=v0.0.6
+ARG ODIGOS_LOADER_VERSION=v0.0.7
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 FROM ${ODIGLET_BASE_IMAGE} AS rsync-base

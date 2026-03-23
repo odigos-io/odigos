@@ -58,7 +58,7 @@ COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations
 
 # loader
 ARG TARGETARCH
-ARG ODIGOS_LOADER_VERSION=v0.0.6
+ARG ODIGOS_LOADER_VERSION=v0.0.7
 RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/$ODIGOS_LOADER_VERSION/$TARGETARCH/loader.so
 
 ######### Device Plugin builder #########
