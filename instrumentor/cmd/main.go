@@ -24,13 +24,13 @@ import (
 	"github.com/odigos-io/odigos/distros"
 	"github.com/odigos-io/odigos/instrumentor"
 	"github.com/odigos-io/odigos/instrumentor/controllers"
-	"github.com/odigos-io/odigos/instrumentor/sdks"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	_ "net/http/pprof"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 func main() {
@@ -50,9 +50,6 @@ func main() {
 
 	ctrl.SetLogger(commonlogger.ToLogr())
 	managerOptions.Logger = commonlogger.ToLogr()
-
-	// TODO: remove once the webhook stops using the default SDKs from the sdks package
-	sdks.SetDefaultSDKs()
 
 	logger.Info("Starting Odigos Community Instrumentor")
 

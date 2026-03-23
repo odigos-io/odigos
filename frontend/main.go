@@ -302,11 +302,11 @@ func main() {
 	}
 
 	// Start SQLite database
-	err = startDatabase(log)
-	if err != nil {
-		log.Error("Error starting database", "err", err)
-		os.Exit(1)
-	}
+	// err = startDatabase(log)
+	// if err != nil {
+	// 	log.Error("Error starting database", "err", err)
+	// 	os.Exit(1)
+	// }
 
 	// Connect to Kubernetes
 	err = initKubernetesClient(&flags)
