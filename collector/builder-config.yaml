@@ -96,9 +96,6 @@ receivers:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.141.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.141.0
   - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.141.0
-  # OpenTelemetry eBPF profiler: CPU profiles (profiles signal). Upstream module; receiver package is
-  # .../collector so OCB needs `import` (unlike odigosebpfreceiver, which is in-repo under replaces:).
-  # Pin to latest tag: https://github.com/open-telemetry/opentelemetry-ebpf-profiler/releases
   - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202610
     import: go.opentelemetry.io/ebpf-profiler/collector
 

@@ -28,5 +28,10 @@ yalc.lock
 *.log
 *.logs
 
+# Profiling PR iteration notes (keep locally; do not commit)
+docs/profiling-pr1-handoff.md
+collector/docs/profiling-pr-split.md
+collector/receivers/README.md
+
 # CLI embedded Helm charts (generated during build)
 cli/pkg/helm/embedded/*.tgz

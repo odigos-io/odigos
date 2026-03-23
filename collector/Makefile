@@ -38,8 +38,12 @@ test-odigossamplingprocessor:
 	@echo "Running tests for odigossamplingprocessor at $(PROCESSOR_DIR)"
 	cd $(PROCESSOR_DIR) && GOOS=$(HOST_GOOS) GOARCH=$(HOST_GOARCH) $(GOCMD) test ./...
 
+.PHONY: test-odigosotelcol
+test-odigosotelcol:
+	cd odigosotelcol && $(GOCMD) test --ldflags="-checklinkname=0" -count=1 ./...
+
 .PHONY: build-odigoscol
-build-odigoscol: download_builder test-odigossamplingprocessor
+build-odigoscol: download_builder test-odigossamplingprocessor test-odigosotelcol
 	$(BUILDER) --ldflags="-checklinkname=0" --config builder-config.yaml --skip-generate --skip-get-modules
 
 .PHONY: install-tools
