@@ -85,6 +85,7 @@ func main() {
 
 func ebpfInstrumentationFactories() map[string]commonInstrumentation.Factory {
 	return map[string]commonInstrumentation.Factory{
-		"golang-community": sdks.NewGoInstrumentationFactory(),
+		"golang-community":                  sdks.NewGoInstrumentationFactory(),
+		k8sconsts.OdigosDistroNameOBI: sdks.NewOBIInstrumentationFactory(),
 	}
 }

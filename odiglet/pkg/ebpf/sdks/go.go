@@ -78,7 +78,7 @@ func (g *GoOtelEbpfSdk) Load(ctx context.Context) (instrumentation.Status, error
 	return instrumentation.Status{}, loadErr
 }
 
-func (g *GoOtelEbpfSdk) Close(_ context.Context) error {
+func (g *GoOtelEbpfSdk) Close(_ context.Context, _ int) error {
 	return g.inst.Close()
 }
 

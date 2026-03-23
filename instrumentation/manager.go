@@ -213,7 +213,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				return
 			default:
 				if details.inst != nil {
-					if err := details.inst.Close(ctx); err != nil {
+					if err := details.inst.Close(ctx, pid); err != nil {
 						m.logger.Error("failed to close instrumentation", "err", err, "pid", pid)
 					}
 				}
@@ -387,7 +387,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentatio
 	m.logger.Info("cleaning instrumentation resources", "pid", pid, "process group details", details.pd)
 
 	if details.inst != nil {
-		err := details.inst.Close(ctx)
+		err := details.inst.Close(ctx, pid)
 		if err != nil {
 			m.logger.Error("failed to close instrumentation", "err", err)
 		}

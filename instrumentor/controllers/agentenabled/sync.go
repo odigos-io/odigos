@@ -704,6 +704,14 @@ func calculateDefaultDistroPerLanguage(defaultDistros map[common.ProgrammingLang
 				continue
 			}
 
+			// opentelemetry-ebpf-instrumentation supports any language; apply to all languages
+			if distroName == k8sconsts.OdigosDistroNameOBI {
+				for lang := range defaultDistros {
+					distrosPerLanguage[lang] = distroName
+				}
+				continue
+			}
+
 			lang := distro.Language
 			distrosPerLanguage[lang] = distroName
 		}
@@ -821,6 +829,11 @@ func resolveContainerDistro(
 				AgentEnabledReason:  odigosv1.AgentEnabledReasonNoAvailableAgent,
 				AgentEnabledMessage: message,
 			}
+		}
+
+		// OBI is language-agnostic (eBPF); skip language match when user explicitly selected it.
+		if overwriteDistroName == k8sconsts.OdigosDistroNameOBI {
+			return distro, nil
 		}
 
 		// verify the distro matches the language, since it might be overridden by the container override.

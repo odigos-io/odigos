@@ -73,9 +73,10 @@ type Instrumentation interface {
 	// Run will return when either a fatal error occurs, the context is canceled, or Close is called.
 	Run(ctx context.Context) error
 
-	// Close will stop the instrumentation (Stop the Run function) and clean up all the resources associated with it.
-	// When it returns, the instrumentation is stopped and all resources are cleaned up.
-	Close(ctx context.Context) error
+	// Close will stop the instrumentation for the given process and clean up resources associated with it.
+	// pid is the process ID being uninstrumented (e.g. so OBI can remove it from the dynamic selector).
+	// When it returns, the instrumentation for that process is stopped and related resources are cleaned up.
+	Close(ctx context.Context, pid int) error
 
 	// ApplyConfig will send a configuration update to the instrumentation.
 	ApplyConfig(ctx context.Context, config Config) error
