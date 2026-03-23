@@ -19,6 +19,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	go.opentelemetry.io/collector/featuregate v1.47.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
+	k8s.io/client-go v0.35.0 // indirect
 )
 
 require (

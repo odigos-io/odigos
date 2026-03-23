@@ -29,6 +29,7 @@ require (
 	go.opentelemetry.io/collector/pipeline v1.47.0 // indirect
 	go.opentelemetry.io/collector/processor/xprocessor v0.141.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	k8s.io/client-go v0.35.0 // indirect
 )
 
 require (

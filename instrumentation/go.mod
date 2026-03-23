@@ -23,6 +23,7 @@ require (
 	go.uber.org/zap v1.27.1 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
+	k8s.io/client-go v0.35.0 // indirect
 	sigs.k8s.io/controller-runtime v0.22.1 // indirect
 )
 

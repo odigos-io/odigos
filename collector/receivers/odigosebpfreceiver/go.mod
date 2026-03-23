@@ -23,6 +23,7 @@ require (
 
 require (
 	github.com/go-logr/zapr v1.3.0 // indirect
+	k8s.io/client-go v0.35.0 // indirect
 	sigs.k8s.io/controller-runtime v0.22.1 // indirect
 )
 
