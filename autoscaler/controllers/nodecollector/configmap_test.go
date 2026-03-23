@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -128,6 +129,7 @@ func TestCalculateConfigMapData(t *testing.T) {
 
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
+		fake.NewClientBuilder().Build(),
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},
@@ -194,6 +196,7 @@ func TestCalculateConfigMapDataTracesOnlyNoLoadBalancing(t *testing.T) {
 
 	_, got, err := calculateCollectorConfigDomains(
 		context.Background(),
+		fake.NewClientBuilder().Build(),
 		"odigos-system",
 		&odigosv1.CollectorsGroup{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-collector-group"},

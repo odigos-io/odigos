@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
@@ -147,6 +149,40 @@ func addSelfTelemetryPipeline(c *config.Config, ownTelemetryPort int32, destinat
 	return nil
 }
 
+// getProfilesExporterConfigFromEnv returns timeout and retry_on_failure for profile OTLP exporters.
+// Set via Helm (PROFILES_EXPORTER_* env vars); defaults used when unset so helm upgrade can tune without rebuilding image.
+func getProfilesExporterConfigFromEnv() config.GenericMap {
+	timeout := os.Getenv("PROFILES_EXPORTER_TIMEOUT")
+	if timeout == "" {
+		timeout = "120s"
+	}
+	retryEnabled := true
+	if v := os.Getenv("PROFILES_EXPORTER_RETRY_ENABLED"); v != "" {
+		retryEnabled, _ = strconv.ParseBool(v)
+	}
+	initialInterval := os.Getenv("PROFILES_EXPORTER_RETRY_INITIAL_INTERVAL")
+	if initialInterval == "" {
+		initialInterval = "5s"
+	}
+	maxInterval := os.Getenv("PROFILES_EXPORTER_RETRY_MAX_INTERVAL")
+	if maxInterval == "" {
+		maxInterval = "30s"
+	}
+	maxElapsedTime := os.Getenv("PROFILES_EXPORTER_RETRY_MAX_ELAPSED_TIME")
+	if maxElapsedTime == "" {
+		maxElapsedTime = "5m"
+	}
+	return config.GenericMap{
+		"timeout": timeout,
+		"retry_on_failure": config.GenericMap{
+			"enabled":          retryEnabled,
+			"initial_interval": initialInterval,
+			"max_interval":     maxInterval,
+			"max_elapsed_time": maxElapsedTime,
+		},
+	}
+}
+
 func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigosv1.ProcessorList, gateway *odigosv1.CollectorsGroup, ctx context.Context, c client.Client, scheme *runtime.Scheme) ([]odigoscommon.ObservabilitySignal, error) {
 	logger := commonlogger.FromContext(ctx)
 
@@ -206,6 +242,42 @@ func syncConfigMap(enabledDests *odigosv1.DestinationList, allProcessors *odigos
 					if err := addOwnMetricsPipeline(c, ownMetricsConfig, env.GetCurrentNamespace(), gateway.Spec.CollectorOwnMetricsPort, destinationPipelineNames); err != nil {
 						return err
 					}
+				}
+			}
+			// Profiles pipeline: gateway receives profiles from node collectors, forwards to configurable OTLP endpoint(s) (e.g. Pyroscope, frontend).
+			// Do not use batch processor here: generic batch does not support the profiles signal.
+			uiEp := os.Getenv("PROFILES_OTLP_ENDPOINT_UI")
+			if uiEp != "" {
+				if c.Exporters == nil {
+					c.Exporters = make(config.GenericMap)
+				}
+				profileExporterCommon := getProfilesExporterConfigFromEnv()
+				var profileExporters []string
+				const profilesUIExporter = "otlp/profiles-ui"
+				c.Exporters[profilesUIExporter] = config.GenericMap{
+					"endpoint":         uiEp,
+					"tls":              config.GenericMap{"insecure": true},
+					"timeout":          profileExporterCommon["timeout"],
+					"retry_on_failure": profileExporterCommon["retry_on_failure"],
+				}
+				profileExporters = append(profileExporters, profilesUIExporter)
+				// Optional: debug exporter logs the same profile payload (including dictionary) to gateway stdout.
+				// Enable via Helm: autoscaler.profilesDebugExport: true (sets PROFILE_DEBUG_EXPORT on autoscaler).
+				// Capture: kubectl logs -f deployment/<gateway> -n <ns> > gateway-profiles-debug.log
+				if strings.ToLower(strings.TrimSpace(os.Getenv("PROFILE_DEBUG_EXPORT"))) == "true" {
+					const profilesDebugExporter = "debug/profiles-debug"
+					c.Exporters[profilesDebugExporter] = config.GenericMap{
+						"verbosity": "detailed",
+					}
+					profileExporters = append(profileExporters, profilesDebugExporter)
+				}
+				if c.Service.Pipelines == nil {
+					c.Service.Pipelines = make(map[string]config.Pipeline)
+				}
+				c.Service.Pipelines["profiles"] = config.Pipeline{
+					Receivers:  []string{"otlp"},
+					Processors: []string{}, // batch processor does not support profiles signal
+					Exporters:  profileExporters,
 				}
 			}
 			return nil
