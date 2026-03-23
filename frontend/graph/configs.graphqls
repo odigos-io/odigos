@@ -251,6 +251,26 @@ input RemoteConfigInput {
   rollout: RemoteConfigRolloutInput
 }
 
+type ConfigYamlField {
+  displayName: String!
+  componentType: String!
+  isHelmOnly: Boolean!
+  description: String!
+  helmValuePath: String!
+  docsLink: String
+  componentProps: String
+}
+
+type ConfigYaml {
+  name: String!
+  displayName: String!
+  fields: [ConfigYamlField!]!
+}
+
+type GetConfigYamls {
+  configs: [ConfigYaml!]!
+}
+
 extend type Query {
   # key information about the cluster and the installation (self-defined config for UI control and usage)
   config: Config
@@ -258,9 +278,14 @@ extend type Query {
   remoteConfig: RemoteConfig
   # effective-config ConfigMap, reflects the actual values applied to the cluster (by odigos-configuration, odigos-remote-config, etc.)
   effectiveConfig: EffectiveConfig
+  # config yamls, used for UI to display the config options
+  configYamls: GetConfigYamls
 }
 
 extend type Mutation {
   updateRemoteConfig(config: RemoteConfigInput!): Boolean!
-  setComponentLogLevel(component: OdigosComponent, level: OdigosLogLevel!): Boolean!
+  setComponentLogLevel(
+    component: OdigosComponent
+    level: OdigosLogLevel!
+  ): Boolean!
 }

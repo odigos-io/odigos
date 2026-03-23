@@ -247,6 +247,22 @@ type Config struct {
 	IsCentralProxyRunning *bool               `json:"isCentralProxyRunning,omitempty"`
 }
 
+type ConfigYaml struct {
+	Name        string             `json:"name"`
+	DisplayName string             `json:"displayName"`
+	Fields      []*ConfigYamlField `json:"fields"`
+}
+
+type ConfigYamlField struct {
+	DisplayName    string  `json:"displayName"`
+	ComponentType  string  `json:"componentType"`
+	IsHelmOnly     bool    `json:"isHelmOnly"`
+	Description    string  `json:"description"`
+	HelmValuePath  string  `json:"helmValuePath"`
+	DocsLink       *string `json:"docsLink,omitempty"`
+	ComponentProps *string `json:"componentProps,omitempty"`
+}
+
 type ContainerAgentConfigAnalyze struct {
 	ContainerName  *EntityProperty `json:"containerName"`
 	AgentEnabled   *EntityProperty `json:"agentEnabled"`
@@ -498,6 +514,10 @@ type GatewayDeploymentInfo struct {
 	RolloutInProgress bool                         `json:"rolloutInProgress"`
 	ManifestYaml      string                       `json:"manifestYAML"`
 	ConfigMapYaml     string                       `json:"configMapYAML"`
+}
+
+type GetConfigYamls struct {
+	Configs []*ConfigYaml `json:"configs"`
 }
 
 type GetDestinationCategories struct {
@@ -1339,6 +1359,7 @@ type ServiceMapFromSource struct {
 }
 
 type ServiceMapToSource struct {
+	IsVirtual   bool   `json:"isVirtual"`
 	ServiceName string `json:"serviceName"`
 	Requests    int    `json:"requests"`
 	DateTime    string `json:"dateTime"`

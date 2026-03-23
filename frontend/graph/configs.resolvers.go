@@ -64,3 +64,10 @@ func (r *queryResolver) EffectiveConfig(ctx context.Context) (*model.EffectiveCo
 	}
 	return EffectiveConfigToModel(config)
 }
+
+// ConfigYamls is the resolver for the configYamls field.
+func (r *queryResolver) ConfigYamls(ctx context.Context) (*model.GetConfigYamls, error) {
+	configYamls := services.GetConfigYamls()
+
+	return &configYamls, nil
+}

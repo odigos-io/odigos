@@ -1,0 +1,38 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Configuration
+metadata:
+  name: advanced
+  displayName: Advanced
+spec:
+  fields:
+    - displayName: Go Auto Offsets Cron
+      componentType: input
+      isHelmOnly: false
+      description: Cron expression for Go auto-offsets calculation schedule.
+      helmValuePath: goAutoOffsetsCron
+    - displayName: Go Auto Offsets Mode
+      componentType: input
+      isHelmOnly: false
+      description: Mode for Go auto-offsets (e.g. production, development).
+      helmValuePath: goAutoOffsetsMode
+    - displayName: Karpenter Enabled
+      componentType: toggle
+      isHelmOnly: true
+      description: Enable Karpenter node provisioner integration.
+      helmValuePath: karpenterEnabled
+      docsLink: https://docs.odigos.io/setup/odigos-with-helm/configuration/#
+    - displayName: Node Selector
+      componentType: keyValuePairs
+      isHelmOnly: true
+      description: Node labels required for scheduling Odigos components.
+      helmValuePath: nodeSelector
+    - displayName: Central Backend URL
+      componentType: input
+      isHelmOnly: true
+      description: URL of the Odigos Central backend for proxy mode.
+      helmValuePath: centralBackendURL
+    - displayName: Odigos Own Telemetry Store Disabled
+      componentType: toggle
+      isHelmOnly: true
+      description: When true, Odigos will not deploy its own metrics store (VictoriaMetrics).
+      helmValuePath: odigosOwnTelemetryStore.metricsStoreDisabled
