@@ -165,10 +165,7 @@ func getListerWatcherForGvk(gvk k8sschema.GroupVersionKind,
 	transformFuncs gvkToTransformFunc) cache.ListerWatcher {
 	// only handle pods and deployments for now, as they are the ones with large number of objects
 	// and major memory spikes cause issues in the cache initialization process.
-	switch gvk {
-	case gvkPod, gvkDeployment:
-		// continue below
-	default:
+	if !isHighMemoryGvk(gvk) {
 		return originalListerWatcher
 	}
 
@@ -254,4 +251,10 @@ func objectsTransformFromControllerRuntimeCache(
 		transformFuncs[*gvk] = transformFunc
 	}
 	return transformFuncs
+}
+
+// only handle pods and deployments for now, as they are the ones with large number of objects.
+// other resources consumes few MBs of memory, so we can spare this overhead for them.
+func isHighMemoryGvk(gvk k8sschema.GroupVersionKind) bool {
+	return gvk == gvkPod || gvk == gvkDeployment
 }
