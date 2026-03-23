@@ -5,9 +5,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+
+	commonapi "github.com/odigos-io/odigos/common/api"
+	"github.com/odigos-io/odigos/common/collector"
 )
 
 func generateTraceData(serviceName, spanName string, kind ptrace.SpanKind, spanAttrs map[string]any) ptrace.Traces {
@@ -1045,4 +1049,120 @@ func TestProcessor_IncludeExclude(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOnSet_UrlTemplatizationNilVsEmptyRules(t *testing.T) {
+	set := processortest.NewNopSettings(processortest.NopType)
+	p, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+
+	p.OnSet("ns/Deployment/shop/api", &commonapi.ContainerCollectorConfig{
+		UrlTemplatization: &commonapi.UrlTemplatizationConfig{TemplatizationRules: []string{"/x/{id}"}},
+	})
+	_, ok := p.parsedRulesCache.get("ns/Deployment/shop/api")
+	require.True(t, ok)
+	p.OnSet("ns/Deployment/shop/api", &commonapi.ContainerCollectorConfig{
+		UrlTemplatization: nil,
+	})
+	_, ok = p.parsedRulesCache.get("ns/Deployment/shop/api")
+	require.False(t, ok, "nil UrlTemplatization must not keep a processor cache entry")
+
+	p.OnSet("ns/Deployment/shop/worker", &commonapi.ContainerCollectorConfig{
+		UrlTemplatization: &commonapi.UrlTemplatizationConfig{TemplatizationRules: []string{}},
+	})
+	e, ok := p.parsedRulesCache.get("ns/Deployment/shop/worker")
+	require.True(t, ok)
+	require.NotNil(t, e.parsedRules, "empty rule list still participates — use non-nil map for heuristic-only")
+	require.Empty(t, e.parsedRules)
+
+	p.OnSet("ns/Deployment/shop/front", &commonapi.ContainerCollectorConfig{
+		UrlTemplatization: &commonapi.UrlTemplatizationConfig{TemplatizationRules: []string{"/users/{id}"}},
+	})
+	e, ok = p.parsedRulesCache.get("ns/Deployment/shop/front")
+	require.True(t, ok)
+	require.NotEmpty(t, e.parsedRules)
+}
+
+func TestApplyTemplatizationOnPathWithRules_NilRulesLeavesPathUnchanged(t *testing.T) {
+	set := processortest.NewNopSettings(processortest.NopType)
+	p, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+
+	out := p.applyTemplatizationOnPathWithRules("/user/123e4567-e89b-12d3-a456-426614174000", nil, p.customIds)
+	require.Equal(t, "/user/123e4567-e89b-12d3-a456-426614174000", out, "nil rules must not run default heuristic")
+}
+
+func TestApplyTemplatizationOnPathWithRules_EmptyMapUsesDefaultHeuristic(t *testing.T) {
+	set := processortest.NewNopSettings(processortest.NopType)
+	p, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+
+	emptyRules := map[int][]TemplatizationRule{}
+	out := p.applyTemplatizationOnPathWithRules("/user/123e4567-e89b-12d3-a456-426614174000", emptyRules, p.customIds)
+	require.Equal(t, "/user/{id}", out)
+}
+
+// stubOdigosConfigExtension implements collector.OdigosConfigExtension for processTraces integration tests.
+type stubOdigosConfigExtension struct {
+	cacheKey            string
+	getFromResourceCfg  *commonapi.ContainerCollectorConfig
+	getFromResourceFound bool
+}
+
+func (s *stubOdigosConfigExtension) GetFromResource(pcommon.Resource) (*commonapi.ContainerCollectorConfig, bool) {
+	if !s.getFromResourceFound {
+		return nil, false
+	}
+	return s.getFromResourceCfg, true
+}
+
+func (s *stubOdigosConfigExtension) GetWorkloadCacheKey(pcommon.Resource) (string, error) {
+	return s.cacheKey, nil
+}
+
+func (s *stubOdigosConfigExtension) RegisterWorkloadConfigCacheCallback(collector.WorkloadConfigCacheCallback) {}
+
+func (s *stubOdigosConfigExtension) WaitForCacheSync(context.Context) bool {
+	return true
+}
+
+func TestProcessTraces_ExtensionPath_DisabledSkipsTemplatization(t *testing.T) {
+	const key = "default/Deployment/myapp/api"
+	set := processortest.NewNopSettings(processortest.NopType)
+	p, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+	p.provider = &stubOdigosConfigExtension{
+		cacheKey:             key,
+		getFromResourceCfg:   &commonapi.ContainerCollectorConfig{UrlTemplatization: nil},
+		getFromResourceFound: true,
+	}
+
+	traces := generateTraceData("myapp", "GET", ptrace.SpanKindServer, map[string]any{
+		"http.request.method": "GET",
+		"url.path":            "/user/123e4567-e89b-12d3-a456-426614174000",
+	})
+	out, err := p.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	assertSpanNameAndAttribute(t, span, "GET", "http.route", "")
+}
+
+func TestProcessTraces_ExtensionPath_EmptyRulesAppliesHeuristic(t *testing.T) {
+	const key = "default/Deployment/myapp/api"
+	set := processortest.NewNopSettings(processortest.NopType)
+	p, err := newUrlTemplateProcessor(set, &Config{})
+	require.NoError(t, err)
+	p.provider = &stubOdigosConfigExtension{cacheKey: key}
+	p.OnSet(key, &commonapi.ContainerCollectorConfig{
+		UrlTemplatization: &commonapi.UrlTemplatizationConfig{TemplatizationRules: []string{}},
+	})
+
+	traces := generateTraceData("myapp", "GET", ptrace.SpanKindServer, map[string]any{
+		"http.request.method": "GET",
+		"url.path":            "/user/123e4567-e89b-12d3-a456-426614174000",
+	})
+	out, err := p.processTraces(context.Background(), traces)
+	require.NoError(t, err)
+	span := out.ResourceSpans().At(0).ScopeSpans().At(0).Spans().At(0)
+	assertSpanNameAndAttribute(t, span, "GET /user/{id}", "http.route", "/user/{id}")
 }
