@@ -354,7 +354,16 @@ func (r *ActionReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	action := &odigosv1.Action{}
 	err := r.Get(ctx, req.NamespacedName, action)
 	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		}
+		// Action was deleted. Sync the shared URL-templatization Processor so it is removed when
+		// this was the last URL-templatization Action (Reconcile would otherwise return here and skip Sync).
+		if syncErr := SyncUrlTemplatizationProcessor(ctx, r.Client, true); syncErr != nil {
+			logger.Error(syncErr, "Sync URL templatization processor after action delete")
+			return ctrl.Result{}, syncErr
+		}
+		return ctrl.Result{}, nil
 	}
 	if err := SyncUrlTemplatizationProcessor(ctx, r.Client, true); err != nil {
 		logger.Error(err, "Sync URL templatization processor")

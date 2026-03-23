@@ -21,10 +21,11 @@ import (
 // Ensure urlTemplateProcessor implements the callback interface used by the extension.
 var _ collector.WorkloadConfigCacheCallback = (*urlTemplateProcessor)(nil)
 
-// parsedWorkloadEntry holds the result of parsing URL templatization rules for one workload/container.
-// Stored in processorURLTemplateParsedRulesCache so we parse once per entry, not per batch.
+// parsedWorkloadEntry holds parsed URL templatization rules for one workload/container key.
+// Only workloads that participate in URL templatization are stored (non-nil parsedRules map, possibly empty).
+// Workloads with UrlTemplatization == nil are not kept in the processor cache; processTraces resolves via GetFromResource on miss.
 type parsedWorkloadEntry struct {
-	parsedRules map[int][]TemplatizationRule // nil means heuristic-only (no explicit rules)
+	parsedRules map[int][]TemplatizationRule // always non-nil when an entry exists
 }
 
 type urlTemplateProcessor struct {
@@ -90,11 +91,23 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 }
 
 // OnSet implements collector.WorkloadConfigCacheCallback; called when the extension cache adds/updates an entry.
-// Empty or nil rules: store entry with parsedRules=nil so the workload gets default heuristic templatization (same as when extension is disabled).
+// UrlTemplatization nil: workload does not participate — remove any cached parsed rules for this key (do not store).
+// Non-nil with empty rules: participates, default heuristic only — store empty map.
+// Non-nil with rules: parse and store.
 func (p *urlTemplateProcessor) OnSet(key string, cfg *commonapi.ContainerCollectorConfig) {
-	if cfg.UrlTemplatization == nil || len(cfg.UrlTemplatization.TemplatizationRules) == 0 {
-		p.parsedRulesCache.set(key, parsedWorkloadEntry{parsedRules: nil})
-		p.logger.Debug("workload config cache OnSet: no rules, use default heuristic", zap.String("key", key))
+	if cfg == nil {
+		p.parsedRulesCache.delete(key)
+		p.logger.Debug("workload config cache OnSet: nil config for workload", zap.String("key", key))
+		return
+	}
+	if cfg.UrlTemplatization == nil {
+		p.parsedRulesCache.delete(key)
+		p.logger.Debug("workload config cache OnSet: URL templatization disabled for workload", zap.String("key", key))
+		return
+	}
+	if len(cfg.UrlTemplatization.TemplatizationRules) == 0 {
+		p.parsedRulesCache.set(key, parsedWorkloadEntry{parsedRules: map[int][]TemplatizationRule{}})
+		p.logger.Debug("workload config cache OnSet: no explicit rules, use default heuristic", zap.String("key", key))
 		return
 	}
 	parsedRules := p.parseRuleStrings(cfg.UrlTemplatization.TemplatizationRules)
@@ -124,6 +137,29 @@ func (p *urlTemplateProcessor) parseRuleStrings(ruleStrings []string) map[int][]
 	return parsed
 }
 
+// resolveRulesForExtensionResource returns parsed rules when this resource should be templatized.
+// Second return is false if the extension has no config for the resource yet, or URL templatization is off (nil in config).
+func (p *urlTemplateProcessor) resolveRulesForExtensionResource(res pcommon.Resource, key string) (map[int][]TemplatizationRule, bool) {
+	if entry, ok := p.parsedRulesCache.get(key); ok {
+		return entry.parsedRules, true
+	}
+	cfg, found := p.provider.GetFromResource(res)
+	if !found {
+		return nil, false
+	}
+	if cfg.UrlTemplatization == nil {
+		return nil, false
+	}
+	var rules map[int][]TemplatizationRule
+	if len(cfg.UrlTemplatization.TemplatizationRules) == 0 {
+		rules = map[int][]TemplatizationRule{}
+	} else {
+		rules = p.parseRuleStrings(cfg.UrlTemplatization.TemplatizationRules)
+	}
+	p.parsedRulesCache.set(key, parsedWorkloadEntry{parsedRules: rules})
+	return rules, true
+}
+
 func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
 	resourceSpanCount := td.ResourceSpans().Len()
 	p.logger.Debug("processTraces started", zap.Int("resource_spans", resourceSpanCount))
@@ -136,17 +172,15 @@ func (p *urlTemplateProcessor) processTraces(ctx context.Context, td ptrace.Trac
 				p.logger.Debug("processTraces skip resource: GetWorkloadCacheKey failed", zap.Error(err))
 				continue
 			}
-			entry, ok := p.parsedRulesCache.get(key)
+			rules, ok := p.resolveRulesForExtensionResource(resourceSpans.Resource(), key)
 			if !ok {
-				// Rely entirely on the extension callback to populate the cache; skip this resource until we have an entry.
 				continue
 			}
-			// entry.parsedRules may be nil: extension sent no rules → use default heuristic only (defaultTemplatizeURLPath).
 			for j := 0; j < resourceSpans.ScopeSpans().Len(); j++ {
 				scopeSpans := resourceSpans.ScopeSpans().At(j)
 				for k := 0; k < scopeSpans.Spans().Len(); k++ {
 					span := scopeSpans.Spans().At(k)
-					p.processSpanWithRules(span, entry.parsedRules)
+					p.processSpanWithRules(span, rules)
 				}
 			}
 		} else {
@@ -240,16 +274,19 @@ func (p *urlTemplateProcessor) applyTemplatizationOnPathWithRules(path string, r
 		return "/" // always set a leading slash even if missing
 	}
 
-	if rules != nil {
-		ruleList, found := rules[len(inputPathSegments)]
-		if found {
-			for _, rule := range ruleList {
-				if templatedUrl, matched := attemptTemplateWithRule(inputPathSegments, rule); matched {
-					if hasLeadingSlash {
-						templatedUrl = "/" + templatedUrl
-					}
-					return templatedUrl
+	if rules == nil {
+		// Caller should skip workloads with templatization disabled before reaching here; static config always passes a non-nil map.
+		return path
+	}
+
+	ruleList, found := rules[len(inputPathSegments)]
+	if found {
+		for _, rule := range ruleList {
+			if templatedUrl, matched := attemptTemplateWithRule(inputPathSegments, rule); matched {
+				if hasLeadingSlash {
+					templatedUrl = "/" + templatedUrl
 				}
+				return templatedUrl
 			}
 		}
 	}
@@ -311,6 +348,11 @@ func updateHttpSpanName(span ptrace.Span, httpMethod string, templatedUrl string
 }
 
 func (p *urlTemplateProcessor) enhanceSpanWithRules(span ptrace.Span, httpMethod string, targetAttribute string, rules map[int][]TemplatizationRule) {
+	// Extension path skips resources when templatization is disabled; static path always passes a non-nil rules map.
+	if rules == nil {
+		return
+	}
+
 	attr := span.Attributes()
 
 	// edge case: target attribute (http.route) exists but is empty (e.g. no path)
