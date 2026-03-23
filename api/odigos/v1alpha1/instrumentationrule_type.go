@@ -66,9 +66,6 @@ type InstrumentationRuleSpec struct {
 	// Allows to configure payload collection aspects for different types of payloads.
 	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 
-	// Deprecated: use OtelDistros instead.
-	OtelSdks *instrumentationrules.OtelSdks `json:"otelSdks,omitempty"`
-
 	// Set the otel distros to use instead of the defaults.
 	OtelDistros *instrumentationrules.OtelDistros `json:"otelDistros,omitempty"`
 
