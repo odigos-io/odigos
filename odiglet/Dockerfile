@@ -40,8 +40,8 @@ ARG JAVA_OTEL_VERSION=v2.10.0
 ADD --chmod=644 https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/$JAVA_OTEL_VERSION/opentelemetry-javaagent.jar /instrumentations/java/javaagent.jar
 
 # Python
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.67-py3.8 /python-instrumentation/workspace /instrumentations/python3.8
-COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.68 /python-instrumentation/workspace /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.70-py3.8 /python-instrumentation/workspace /instrumentations/python3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.69 /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
