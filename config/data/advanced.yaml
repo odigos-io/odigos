@@ -19,8 +19,8 @@ spec:
       componentType: toggle
       isHelmOnly: true
       description: Enable Karpenter node provisioner integration.
-      helmValuePath: karpenterEnabled
-      docsLink: https://docs.odigos.io/setup/odigos-with-helm/configuration/#
+      helmValuePath: karpenter.enabled
+      docsLink: https://docs.odigos.io/oss/setup/odigos-with-karpenter
     - displayName: Node Selector
       componentType: keyValuePairs
       isHelmOnly: true

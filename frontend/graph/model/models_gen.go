@@ -254,13 +254,13 @@ type ConfigYaml struct {
 }
 
 type ConfigYamlField struct {
-	DisplayName    string  `json:"displayName"`
-	ComponentType  string  `json:"componentType"`
-	IsHelmOnly     bool    `json:"isHelmOnly"`
-	Description    string  `json:"description"`
-	HelmValuePath  string  `json:"helmValuePath"`
-	DocsLink       *string `json:"docsLink,omitempty"`
-	ComponentProps *string `json:"componentProps,omitempty"`
+	DisplayName    string    `json:"displayName"`
+	ComponentType  FieldType `json:"componentType"`
+	IsHelmOnly     bool      `json:"isHelmOnly"`
+	Description    string    `json:"description"`
+	HelmValuePath  string    `json:"helmValuePath"`
+	DocsLink       *string   `json:"docsLink,omitempty"`
+	ComponentProps *string   `json:"componentProps,omitempty"`
 }
 
 type ContainerAgentConfigAnalyze struct {
@@ -474,6 +474,7 @@ type EffectiveConfig struct {
 	OdigosOwnTelemetryStore          *OdigosOwnTelemetryConfig           `json:"odigosOwnTelemetryStore,omitempty"`
 	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
+	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
 
 type EntityProperty struct {
@@ -514,10 +515,6 @@ type GatewayDeploymentInfo struct {
 	RolloutInProgress bool                         `json:"rolloutInProgress"`
 	ManifestYaml      string                       `json:"manifestYAML"`
 	ConfigMapYaml     string                       `json:"configMapYAML"`
-}
-
-type GetConfigYamls struct {
-	Configs []*ConfigYaml `json:"configs"`
 }
 
 type GetDestinationCategories struct {
@@ -1898,6 +1895,57 @@ func (e *EnvInjectionMethod) UnmarshalGQL(v any) error {
 }
 
 func (e EnvInjectionMethod) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FieldType string
+
+const (
+	FieldTypeInput         FieldType = "input"
+	FieldTypeMultiInput    FieldType = "multiInput"
+	FieldTypeKeyValuePairs FieldType = "keyValuePairs"
+	FieldTypeTextarea      FieldType = "textarea"
+	FieldTypeDropdown      FieldType = "dropdown"
+	FieldTypeCheckbox      FieldType = "checkbox"
+	FieldTypeToggle        FieldType = "toggle"
+)
+
+var AllFieldType = []FieldType{
+	FieldTypeInput,
+	FieldTypeMultiInput,
+	FieldTypeKeyValuePairs,
+	FieldTypeTextarea,
+	FieldTypeDropdown,
+	FieldTypeCheckbox,
+	FieldTypeToggle,
+}
+
+func (e FieldType) IsValid() bool {
+	switch e {
+	case FieldTypeInput, FieldTypeMultiInput, FieldTypeKeyValuePairs, FieldTypeTextarea, FieldTypeDropdown, FieldTypeCheckbox, FieldTypeToggle:
+		return true
+	}
+	return false
+}
+
+func (e FieldType) String() string {
+	return string(e)
+}
+
+func (e *FieldType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FieldType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FieldType", str)
+	}
+	return nil
+}
+
+func (e FieldType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

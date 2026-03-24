@@ -9,7 +9,7 @@ spec:
       componentType: dropdown
       isHelmOnly: true
       description: How Odigos injects instrumentation agents into workload pods.
-      helmValuePath: mountMethod
+      helmValuePath: instrumentor.mountMethod
       componentProps:
         options:
           - k8s-virtual-device
@@ -20,7 +20,7 @@ spec:
       componentType: dropdown
       isHelmOnly: false
       description: How environment variables are injected for instrumentation agents.
-      helmValuePath: agentEnvVarsInjectionMethod
+      helmValuePath: instrumentor.agentEnvVarsInjectionMethod
       componentProps:
         options:
           - loader
@@ -30,14 +30,14 @@ spec:
       componentType: toggle
       isHelmOnly: false
       description: Allow multiple instrumentation agents to run concurrently in the same pod.
-      helmValuePath: allowConcurrentAgents
+      helmValuePath: allowConcurrentAgents.enabled
     - displayName: Check Device Health Before Injection
       componentType: toggle
       isHelmOnly: false
       description: Verify the virtual device health before injecting instrumentation into a pod.
-      helmValuePath: checkDeviceHealthBeforeInjection
+      helmValuePath: instrumentor.checkDeviceHealthBeforeInjection
     - displayName: Wasp Enabled
       componentType: toggle
       isHelmOnly: false
       description: Enable Wasp-based instrumentation.
-      helmValuePath: waspEnabled
+      helmValuePath: wasp.enabled

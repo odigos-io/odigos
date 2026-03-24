@@ -406,6 +406,7 @@ type ComplexityRoot struct {
 		ImagePrefix                      func(childComplexity int) int
 		ImagePullSecrets                 func(childComplexity int) int
 		KarpenterEnabled                 func(childComplexity int) int
+		ManifestYaml                     func(childComplexity int) int
 		MetricsSources                   func(childComplexity int) int
 		MountMethod                      func(childComplexity int) int
 		NodeSelector                     func(childComplexity int) int
@@ -457,10 +458,6 @@ type ComplexityRoot struct {
 		Resources         func(childComplexity int) int
 		RolloutInProgress func(childComplexity int) int
 		Status            func(childComplexity int) int
-	}
-
-	GetConfigYamls struct {
-		Configs func(childComplexity int) int
 	}
 
 	GetDestinationCategories struct {
@@ -1406,7 +1403,7 @@ type QueryResolver interface {
 	Config(ctx context.Context) (*model.Config, error)
 	RemoteConfig(ctx context.Context) (*model.RemoteConfig, error)
 	EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error)
-	ConfigYamls(ctx context.Context) (*model.GetConfigYamls, error)
+	ConfigYamls(ctx context.Context) ([]*model.ConfigYaml, error)
 	Pod(ctx context.Context, namespace string, name string) (*model.PodDetails, error)
 	Sampling(ctx context.Context) (*model.Sampling, error)
 	Workloads(ctx context.Context, filter *model.WorkloadFilter) ([]*model.K8sWorkload, error)
@@ -3123,6 +3120,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EffectiveConfig.KarpenterEnabled(childComplexity), true
 
+	case "EffectiveConfig.manifestYAML":
+		if e.complexity.EffectiveConfig.ManifestYaml == nil {
+			break
+		}
+
+		return e.complexity.EffectiveConfig.ManifestYaml(childComplexity), true
+
 	case "EffectiveConfig.metricsSources":
 		if e.complexity.EffectiveConfig.MetricsSources == nil {
 			break
@@ -3395,13 +3399,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GatewayDeploymentInfo.Status(childComplexity), true
-
-	case "GetConfigYamls.configs":
-		if e.complexity.GetConfigYamls.Configs == nil {
-			break
-		}
-
-		return e.complexity.GetConfigYamls.Configs(childComplexity), true
 
 	case "GetDestinationCategories.categories":
 		if e.complexity.GetDestinationCategories.Categories == nil {
@@ -15399,9 +15396,9 @@ func (ec *executionContext) _ConfigYamlField_componentType(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(model.FieldType)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNFieldType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ConfigYamlField_componentType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -15411,7 +15408,7 @@ func (ec *executionContext) fieldContext_ConfigYamlField_componentType(_ context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type FieldType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -21066,6 +21063,47 @@ func (ec *executionContext) fieldContext_EffectiveConfig_componentLogLevels(_ co
 	return fc, nil
 }
 
+func (ec *executionContext) _EffectiveConfig_manifestYAML(ctx context.Context, field graphql.CollectedField, obj *model.EffectiveConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EffectiveConfig_manifestYAML(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ManifestYaml, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EffectiveConfig_manifestYAML(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EffectiveConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _EntityProperty_name(ctx context.Context, field graphql.CollectedField, obj *model.EntityProperty) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_EntityProperty_name(ctx, field)
 	if err != nil {
@@ -21809,58 +21847,6 @@ func (ec *executionContext) fieldContext_GatewayDeploymentInfo_configMapYAML(_ c
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _GetConfigYamls_configs(ctx context.Context, field graphql.CollectedField, obj *model.GetConfigYamls) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_GetConfigYamls_configs(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Configs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ConfigYaml)
-	fc.Result = res
-	return ec.marshalNConfigYaml2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConfigYamlᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_GetConfigYamls_configs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "GetConfigYamls",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_ConfigYaml_name(ctx, field)
-			case "displayName":
-				return ec.fieldContext_ConfigYaml_displayName(ctx, field)
-			case "fields":
-				return ec.fieldContext_ConfigYaml_fields(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ConfigYaml", field.Name)
 		},
 	}
 	return fc, nil
@@ -40353,6 +40339,8 @@ func (ec *executionContext) fieldContext_Query_effectiveConfig(_ context.Context
 				return ec.fieldContext_EffectiveConfig_imagePullSecrets(ctx, field)
 			case "componentLogLevels":
 				return ec.fieldContext_EffectiveConfig_componentLogLevels(ctx, field)
+			case "manifestYAML":
+				return ec.fieldContext_EffectiveConfig_manifestYAML(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EffectiveConfig", field.Name)
 		},
@@ -40381,11 +40369,14 @@ func (ec *executionContext) _Query_configYamls(ctx context.Context, field graphq
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.GetConfigYamls)
+	res := resTmp.([]*model.ConfigYaml)
 	fc.Result = res
-	return ec.marshalOGetConfigYamls2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGetConfigYamls(ctx, field.Selections, res)
+	return ec.marshalNConfigYaml2ᚕᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐConfigYamlᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_configYamls(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -40396,10 +40387,14 @@ func (ec *executionContext) fieldContext_Query_configYamls(_ context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "configs":
-				return ec.fieldContext_GetConfigYamls_configs(ctx, field)
+			case "name":
+				return ec.fieldContext_ConfigYaml_name(ctx, field)
+			case "displayName":
+				return ec.fieldContext_ConfigYaml_displayName(ctx, field)
+			case "fields":
+				return ec.fieldContext_ConfigYaml_fields(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type GetConfigYamls", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ConfigYaml", field.Name)
 		},
 	}
 	return fc, nil
@@ -52689,6 +52684,8 @@ func (ec *executionContext) _EffectiveConfig(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._EffectiveConfig_imagePullSecrets(ctx, field, obj)
 		case "componentLogLevels":
 			out.Values[i] = ec._EffectiveConfig_componentLogLevels(ctx, field, obj)
+		case "manifestYAML":
+			out.Values[i] = ec._EffectiveConfig_manifestYAML(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -52889,45 +52886,6 @@ func (ec *executionContext) _GatewayDeploymentInfo(ctx context.Context, sel ast.
 			}
 		case "configMapYAML":
 			out.Values[i] = ec._GatewayDeploymentInfo_configMapYAML(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var getConfigYamlsImplementors = []string{"GetConfigYamls"}
-
-func (ec *executionContext) _GetConfigYamls(ctx context.Context, sel ast.SelectionSet, obj *model.GetConfigYamls) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, getConfigYamlsImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("GetConfigYamls")
-		case "configs":
-			out.Values[i] = ec._GetConfigYamls_configs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -58194,13 +58152,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "configYamls":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_configYamls(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -61669,6 +61630,16 @@ func (ec *executionContext) unmarshalNFieldInput2ᚖgithubᚗcomᚋodigosᚑio�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNFieldType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldType(ctx context.Context, v any) (model.FieldType, error) {
+	var res model.FieldType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFieldType2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐFieldType(ctx context.Context, sel ast.SelectionSet, v model.FieldType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
 	res, err := graphql.UnmarshalFloatContext(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -64640,13 +64611,6 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	}
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
-}
-
-func (ec *executionContext) marshalOGetConfigYamls2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGetConfigYamls(ctx context.Context, sel ast.SelectionSet, v *model.GetConfigYamls) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._GetConfigYamls(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOGetDestinationCategories2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐGetDestinationCategories(ctx context.Context, sel ast.SelectionSet, v *model.GetDestinationCategories) graphql.Marshaler {

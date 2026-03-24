@@ -448,7 +448,9 @@ func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration) (*
 	if gw.GoMemLimitMib != 0 {
 		result.GoMemLimitMiB = &gw.GoMemLimitMib
 	}
-	result.ServiceGraphDisabled = gw.ServiceGraph.Disabled
+	if gw.ServiceGraph != nil {
+		result.ServiceGraphDisabled = gw.ServiceGraph.Disabled
+	}
 	result.ClusterMetricsEnabled = gw.ClusterMetricsEnabled
 	result.HTTPSProxyAddress = gw.HttpsProxyAddress
 
