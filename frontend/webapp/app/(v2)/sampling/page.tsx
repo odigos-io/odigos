@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_WORKLOADS } from '@/graphql';
 import { useSamplingRuleCRUD } from '@/hooks';
@@ -21,14 +21,29 @@ import {
   SAMPLING_CATEGORY_LIST_TITLES,
   CATEGORY_TO_RULE_CATEGORY,
   buildSamplingRuleItems,
+  buildNoisySummary,
+  buildHighlyRelevantSummary,
+  buildCostReductionSummary,
   lookupViewRuleData,
   type ViewRuleData,
   type SamplingRuleItem,
   type SamplingRuleFormState,
 } from '@odigos/ui-kit/containers/v2';
 import { StatusType } from '@odigos/ui-kit/types';
+import type { NoisyOperationRule, HighlyRelevantOperationRule, CostReductionRule, SamplingRuleType } from '@/types';
 import { DOCS_URL, PAGE_TITLE, PAGE_DESCRIPTION, BTN_SAMPLING_DOCS, BTN_REFRESH, BTN_CREATE_RULE } from './constants';
 import { Button, ButtonSize, ButtonVariants, Note, Segment, SegmentVariant } from '@odigos/ui-kit/components/v2';
+
+function buildSummaryForRule(category: SamplingRuleType, rule: NoisyOperationRule | HighlyRelevantOperationRule | CostReductionRule) {
+  switch (category) {
+    case 'noisy':
+      return buildNoisySummary(rule as NoisyOperationRule);
+    case 'highlyRelevant':
+      return buildHighlyRelevantSummary(rule as HighlyRelevantOperationRule);
+    case 'costReduction':
+      return buildCostReductionSummary(rule as CostReductionRule);
+  }
+}
 
 const Header = styled(FlexRow)`
   align-items: center;
@@ -55,6 +70,48 @@ export default function Page() {
   const [viewRuleData, setViewRuleData] = useState<ViewRuleData | null>(null);
   const [viewEditMode, setViewEditMode] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const viewRuleRef = useRef(viewRuleData);
+  viewRuleRef.current = viewRuleData;
+
+  useEffect(() => {
+    const current = viewRuleRef.current;
+    if (!current) return;
+
+    for (const group of samplingRules) {
+      if (group.id !== current.samplingId) continue;
+
+      switch (current.category) {
+        case 'noisy': {
+          const rule = group.noisyOperations.find((r) => r.ruleId === current.rule.ruleId);
+          if (rule) {
+            setViewRuleData({ category: 'noisy', samplingId: group.id, summary: buildNoisySummary(rule), rule });
+            return;
+          }
+          break;
+        }
+        case 'highlyRelevant': {
+          const rule = group.highlyRelevantOperations.find((r) => r.ruleId === current.rule.ruleId);
+          if (rule) {
+            setViewRuleData({ category: 'highlyRelevant', samplingId: group.id, summary: buildHighlyRelevantSummary(rule), rule });
+            return;
+          }
+          break;
+        }
+        case 'costReduction': {
+          const rule = group.costReductionRules.find((r) => r.ruleId === current.rule.ruleId);
+          if (rule) {
+            setViewRuleData({ category: 'costReduction', samplingId: group.id, summary: buildCostReductionSummary(rule), rule });
+            return;
+          }
+          break;
+        }
+      }
+    }
+
+    setViewRuleData(null);
+    setViewEditMode(false);
+  }, [samplingRules]);
 
   const ruleItems = useMemo(() => buildSamplingRuleItems(samplingRules, selectedCategory), [samplingRules, selectedCategory]);
 
@@ -138,7 +195,7 @@ export default function Page() {
           const match = all.find((x) => x.rule.ruleId === ruleId);
           if (match) {
             setViewEditMode(true);
-            setViewRuleData({ category: match.category, rule: match.rule, samplingId, summary: [] } as ViewRuleData);
+            setViewRuleData({ category: match.category, rule: match.rule, samplingId, summary: buildSummaryForRule(match.category, match.rule) } as ViewRuleData);
             return;
           }
         }
@@ -172,18 +229,20 @@ export default function Page() {
 
   const handleToggleDisabled = useCallback(
     (ruleId: string, samplingId: string, enabled: boolean) => {
-      const category = viewRuleData?.category;
-      if (!category) return;
+      if (!viewRuleData) return;
+
+      const { category, rule } = viewRuleData;
+      const base = { name: rule.name, disabled: !enabled, sourceScopes: rule.sourceScopes, operation: rule.operation, notes: rule.notes };
 
       switch (category) {
         case 'noisy':
-          updateNoisyOperationRule(samplingId, ruleId, { disabled: !enabled });
+          updateNoisyOperationRule(samplingId, ruleId, { ...base, percentageAtMost: rule.percentageAtMost });
           break;
         case 'highlyRelevant':
-          updateHighlyRelevantOperationRule(samplingId, ruleId, { disabled: !enabled });
+          updateHighlyRelevantOperationRule(samplingId, ruleId, { ...base, error: rule.error, durationAtLeastMs: rule.durationAtLeastMs, percentageAtLeast: rule.percentageAtLeast });
           break;
         case 'costReduction':
-          updateCostReductionRule(samplingId, ruleId, { disabled: !enabled, percentageAtMost: viewRuleData.rule.percentageAtMost });
+          updateCostReductionRule(samplingId, ruleId, { ...base, percentageAtMost: rule.percentageAtMost });
           break;
       }
     },
