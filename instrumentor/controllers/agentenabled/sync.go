@@ -837,7 +837,7 @@ func resolveContainerDistro(
 
 	} else { // use the default distro for the language
 
-		distroName, ok := distroPerLanguage[containerLanguage]
+		defaultDistroName, ok := distroPerLanguage[containerLanguage]
 		if !ok {
 			if containerLanguage == common.UnknownProgrammingLanguage {
 				return nil, &odigosv1.ContainerAgentConfig{
@@ -857,11 +857,11 @@ func resolveContainerDistro(
 		}
 
 		// Walk the fallbackDistro chain to resolve the best-matching distro name for the runtime version.
-		distroName = distroGetter.ResolveDistroNameForVersion(distroName, runtimeVersion)
+		effectiveDistroName := distroGetter.ResolveDistroNameForVersion(defaultDistroName, runtimeVersion)
 
-		distro := distroGetter.GetDistroByName(distroName)
+		distro := distroGetter.GetDistroByName(effectiveDistroName)
 		if distro == nil { // not expected to happen, here for safety net
-			message := fmt.Sprintf("otel distro %s is not available in this odigos tier", distroName)
+			message := fmt.Sprintf("otel distro %s is not available in this odigos tier", effectiveDistroName)
 			return nil, &odigosv1.ContainerAgentConfig{
 				ContainerName:       containerName,
 				AgentEnabled:        false,
