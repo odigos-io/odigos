@@ -126,7 +126,7 @@ type RuntimeAgent struct {
 
 type Option struct {
 	// The name of the option, which is used to identify it and reference it in the configuration.
-	Name  string `yaml:"name"`
+	Name string `yaml:"name"`
 	// The value of the option, which is used to configure the agent in a specific way.
 	Value string `yaml:"value"`
 }
@@ -228,6 +228,11 @@ type OtelDistro struct {
 	// examples: nodejs, JVM, CPython, etc.
 	// while java-script can run in both nodejs and browser, the distribution should specify where it is intended to run.
 	RuntimeEnvironments []RuntimeEnvironment `yaml:"runtimeEnvironments"`
+
+	// If the detected runtime version does not satisfy this distro's SupportedVersions,
+	// fall back to this distro name and repeat the version check.
+	// This forms an explicit ordered chain from newest to oldest supported version range.
+	FallbackDistro *string `yaml:"fallbackDistro,omitempty"`
 
 	// A list of frameworks this distribution targets (can be left empty)
 	Frameworks []Framework `yaml:"frameworks"`
