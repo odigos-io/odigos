@@ -3,13 +3,6 @@ ARG ODIGLET_BASE_IMAGE=registry.odigos.io/odiglet-base:v1.11
 
 ######### python Native Community Agent #########
 
-FROM python:3.11.9 AS python-builder
-ARG ODIGOS_VERSION
-WORKDIR /python-instrumentation
-COPY agents/python ./agents/configurator
-RUN pip install ./agents/configurator/  --target workspace
-RUN echo "VERSION = \"$ODIGOS_VERSION\";" > /python-instrumentation/workspace/initializer/version.py
-
 FROM --platform=$BUILDPLATFORM busybox:1.36.1 AS dotnet-builder
 WORKDIR /dotnet-instrumentation
 ARG DOTNET_OTEL_VERSION=v1.9.0
@@ -69,7 +62,8 @@ ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/release
 RUN chmod 644 /instrumentations/java/javaagent.jar
 
 # Python
-COPY --from=python-builder /python-instrumentation/workspace /instrumentations/python
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.71-py3.8 /python-instrumentation/workspace /instrumentations/python3.8
+COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.70 /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
 COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.8 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
