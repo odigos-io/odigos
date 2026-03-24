@@ -65,42 +65,50 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 	odigosEffectiveConfigNameSelector := fields.OneTermEqualSelector("metadata.name", consts.OdigosEffectiveConfigName)
 	odigosEffectiveConfigSelector := fields.AndSelectors(nsSelector, odigosEffectiveConfigNameSelector)
 
-	podsTransformFunc := func(obj interface{}) (interface{}, error) {
-		pod, ok := obj.(*corev1.Pod)
-		if !ok {
-			return nil, fmt.Errorf("expected a Pod, got %T", obj)
-		}
-
-		stripedStatus := corev1.PodStatus{
-			Phase:                 pod.Status.Phase,
-			ContainerStatuses:     pod.Status.ContainerStatuses,
-			InitContainerStatuses: pod.Status.InitContainerStatuses, // needed for backoff detection
-			Message:               pod.Status.Message,
-			Reason:                pod.Status.Reason,
-			StartTime:             pod.Status.StartTime,
-		}
-		strippedPod := corev1.Pod{
-			ObjectMeta: pod.ObjectMeta,
-			Status:     stripedStatus,
-		}
-		if workload.IsStaticPod(pod) {
-			strippedPod.Spec = pod.Spec
-		}
-		strippedPod.SetManagedFields(nil) // don't store managed fields in the cache
-		// remove non relevant data such as un-relevant annotations and container statuses fields which are not used
-		cacheutils.StripPod(&strippedPod)
-		return &strippedPod, nil
+	cacheByObjectConfig := map[client.Object]cache.ByObject{
+		&corev1.Pod{}: {
+			Transform: podTransformFunc,
+		},
+		&corev1.ConfigMap{}: {
+			Field: odigosEffectiveConfigSelector,
+		},
+		&appsv1.Deployment{}: {
+			Transform: workloadTransformFunc,
+		},
+		&appsv1.StatefulSet{}: {
+			Transform: workloadTransformFunc,
+		},
+		&appsv1.DaemonSet{}: {
+			Transform: workloadTransformFunc,
+		},
+		&odigosv1.CollectorsGroup{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.Destination{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.InstrumentationRule{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.Action{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.InstrumentationConfig{}: {
+			// all instrumentation configs are managed by this controller
+			// and should be pulled into the cache
+		},
+		&corev1.Secret{}: {
+			Field: nsSelector,
+		},
+		&odigosv1.Sampling{}: {
+			// currently it is assumed all sampling rules are in the odigos namespace.
+			// this can be extended in the future, to allow sampling in any namespace,
+			// but need to consider the RBAC and semantics of such a change.
+			Field: nsSelector,
+		},
 	}
 
-	workloadTransformFunc := func(obj interface{}) (interface{}, error) {
-		clientObj, ok := obj.(client.Object)
-		if !ok {
-			return nil, fmt.Errorf("expected a client.Object, got %T", obj)
-		}
-		clientObj.SetManagedFields(nil)
-		cacheutils.StripWorkloadSpecTemplate(clientObj)
-		return clientObj, nil
-	}
+	newInformerWithTransformFunc := cacheutils.CreateNewInformerWithTransformFunc(scheme, cacheByObjectConfig)
 
 	mgrOptions := ctrl.Options{
 		Scheme: scheme,
@@ -140,48 +148,8 @@ func CreateManager(opts KubeManagerOptions) (ctrl.Manager, error) {
 		LeaderElectionReleaseOnCancel: true,
 		Cache: cache.Options{
 			DefaultTransform: cache.TransformStripManagedFields(),
-			ByObject: map[client.Object]cache.ByObject{
-				&corev1.Pod{}: {
-					Transform: podsTransformFunc,
-				},
-				&corev1.ConfigMap{}: {
-					Field: odigosEffectiveConfigSelector,
-				},
-				&appsv1.Deployment{}: {
-					Transform: workloadTransformFunc,
-				},
-				&appsv1.StatefulSet{}: {
-					Transform: workloadTransformFunc,
-				},
-				&appsv1.DaemonSet{}: {
-					Transform: workloadTransformFunc,
-				},
-				&odigosv1.CollectorsGroup{}: {
-					Field: nsSelector,
-				},
-				&odigosv1.Destination{}: {
-					Field: nsSelector,
-				},
-				&odigosv1.InstrumentationRule{}: {
-					Field: nsSelector,
-				},
-				&odigosv1.Action{}: {
-					Field: nsSelector,
-				},
-				&odigosv1.InstrumentationConfig{}: {
-					// all instrumentation configs are managed by this controller
-					// and should be pulled into the cache
-				},
-				&corev1.Secret{}: {
-					Field: nsSelector,
-				},
-				&odigosv1.Sampling{}: {
-					// currently it is assumed all sampling rules are in the odigos namespace.
-					// this can be extended in the future, to allow sampling in any namespace,
-					// but need to consider the RBAC and semantics of such a change.
-					Field: nsSelector,
-				},
-			},
+			ByObject:         cacheByObjectConfig,
+			NewInformer:      newInformerWithTransformFunc,
 		},
 	}
 
@@ -264,4 +232,50 @@ func RegisterWebhooks(mgr manager.Manager, config WebhookConfig) error {
 	)
 
 	return nil
+}
+
+func podTransformFunc(obj interface{}) (interface{}, error) {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return nil, fmt.Errorf("expected a Pod, got %T", obj)
+	}
+
+	if cacheutils.IsObjectTransformed(pod) {
+		return pod, nil
+	}
+
+	stripedStatus := corev1.PodStatus{
+		Phase:                 pod.Status.Phase,
+		ContainerStatuses:     pod.Status.ContainerStatuses,
+		InitContainerStatuses: pod.Status.InitContainerStatuses, // needed for backoff detection
+		Message:               pod.Status.Message,
+		Reason:                pod.Status.Reason,
+		StartTime:             pod.Status.StartTime,
+	}
+	strippedPod := corev1.Pod{
+		ObjectMeta: pod.ObjectMeta,
+		Status:     stripedStatus,
+	}
+	if workload.IsStaticPod(pod) {
+		strippedPod.Spec = pod.Spec
+	}
+	strippedPod.SetManagedFields(nil) // don't store managed fields in the cache
+	// remove non relevant data such as un-relevant annotations and container statuses fields which are not used
+	cacheutils.StripPod(&strippedPod)
+	cacheutils.MarkObjectAsTransformed(&strippedPod)
+	return &strippedPod, nil
+}
+
+func workloadTransformFunc(obj interface{}) (interface{}, error) {
+	clientObj, ok := obj.(client.Object)
+	if !ok {
+		return nil, fmt.Errorf("expected a client.Object, got %T", obj)
+	}
+	if cacheutils.IsObjectTransformed(clientObj) {
+		return clientObj, nil
+	}
+	clientObj.SetManagedFields(nil)
+	cacheutils.StripWorkloadSpecTemplate(clientObj)
+	cacheutils.MarkObjectAsTransformed(clientObj)
+	return clientObj, nil
 }
