@@ -82,7 +82,7 @@ jobs:
         run: |
           export AGENT_DISTRO="${{ steps.agent.outputs.agent_type }}"
           export AGENT_VERSION="${{ steps.agent.outputs.agent_version }}"
-          make upgrade-odiglet-agent-version
+          make -f deps.mk upgrade-odiglet-agent-version
 
       - name: Get agent version updater token
         id: agent-version-sts
