@@ -11,6 +11,7 @@ spec:
   displayName: 'Node.js Community Native Instrumentation'
   description: |
     This distribution is for Node.js applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  isEbpf: false
   environmentVariables:
     opAmpClientEnvironments: true
     otlpHttpLocalNode: true
