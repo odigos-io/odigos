@@ -1,0 +1,127 @@
+name: Update Instrumentation Agents Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      agents_category: 
+        description: "Category of the agents to update (supported values: nodejs, php, ruby)"
+        required: true
+        type: string
+      new_agent_version:
+        description: "Version of the agent to update (example: v0.11.0)"
+        required: true
+        type: string
+  repository_dispatch:
+    types:
+      - update-instrumentation-agents-version
+
+permissions: read-all
+
+jobs:
+  update-version-and-create-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Get ro token for odigos
+        id: sts-odigos
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: ro
+
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          token: ${{ steps.sts-odigos.outputs.GH_TOKEN }}
+
+      - name: Determine agent type and version
+        id: agent
+        run: |
+          # Extract agents_category and new_agent_version from inputs
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            AGENTS_CATEGORY="${{ github.event.inputs.agents_category }}"
+            AGENT_VERSION="${{ github.event.inputs.new_agent_version }}"
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            AGENTS_CATEGORY="${{ github.event.client_payload.agents_category }}"
+            AGENT_VERSION="${{ github.event.client_payload.new_agent_version }}"
+            if [ -z "$AGENTS_CATEGORY" ] || [ -z "$AGENT_VERSION" ]; then
+              echo "ERROR: agents_category and new_agent_version are required in client_payload"
+              exit 1
+            fi
+          fi
+          
+          # Normalize agents category and determine agent type
+          AGENTS_CATEGORY_LOWER=$(echo "$AGENTS_CATEGORY" | tr '[:upper:]' '[:lower:]')
+          
+          if [ "$AGENTS_CATEGORY_LOWER" = "nodejs-community" ] || \
+             [ "$AGENTS_CATEGORY_LOWER" = "nodejs" ]; then
+            AGENT_TYPE="java-community"
+            echo "agent_type=nodejs-community" >> $GITHUB_OUTPUT
+            echo "agent_version=$AGENT_VERSION" >> $GITHUB_OUTPUT
+          elif [ "$AGENTS_CATEGORY_LOWER" = "php-community" ] || \
+               [ "$AGENTS_CATEGORY_LOWER" = "php" ]; then
+            AGENT_TYPE="php-community"
+            echo "agent_type=php-community" >> $GITHUB_OUTPUT
+            echo "agent_version=$AGENT_VERSION" >> $GITHUB_OUTPUT
+          elif [ "$AGENTS_CATEGORY_LOWER" = "ruby-community" ] || \
+               [ "$AGENTS_CATEGORY_LOWER" = "ruby" ]; then
+            AGENT_TYPE="ruby-community"
+            echo "agent_type=ruby-community" >> $GITHUB_OUTPUT
+            echo "agent_version=$AGENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "ERROR: Invalid agents_category '$AGENTS_CATEGORY'. Supported values: nodejs-community, nodejs, php-community, php"
+            exit 1
+          fi
+          
+          echo "agents_category=$AGENTS_CATEGORY" >> $GITHUB_OUTPUT
+
+      - name: Update Agent Version
+        working-directory: ./odiglet
+        run: |
+          export AGENT_DISTRO="${{ steps.agent.outputs.agent_type }}"
+          export AGENT_VERSION="${{ steps.agent.outputs.agent_version }}"
+          make upgrade-odiglet-agent-version
+
+      - name: Get agent version updater token
+        id: agent-version-sts
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: agent-version-updater
+          output-git-config: 'false'
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v8
+        id: cpr
+        with:
+          token: ${{ steps.agent-version-sts.outputs.GH_TOKEN }}
+          branch: update-${{ steps.agent.outputs.agent_type }}-agents-version-${{ steps.agent.outputs.agent_version }}
+          title: "chore: update ${{ steps.agent.outputs.agents_category }} version to ${{ steps.agent.outputs.agent_version }}"
+          body: |
+            This PR updates the ${{ steps.agent.outputs.agents_category }} version in Dockerfile, and debug.Dockerfile to ${{ steps.agent.outputs.agent_version }}.
+
+            **Triggered by:** ${{ github.event_name }}
+          commit-message: "chore: update ${{ steps.agent.outputs.agents_category }} version to ${{ steps.agent.outputs.agent_version }}"
+          delete-branch: true
+          sign-commits: true
+          labels: |
+            new-agent-version
+            release-bot
+          
+      - name: Enable Pull Request Automerge
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ steps.agent-version-sts.outputs.GH_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
+
+      - name: Notify Slack
+        if: steps.cpr.outputs.pull-request-number != ''
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Created PR to update ${{ steps.agent.outputs.agents_category }} version to ${{ steps.agent.outputs.agent_version }}. Please review and approve: ${{ steps.cpr.outputs.pull-request-url }}/changes"
+          failure-description: "ERROR: Failed to create PR for updating ${{ steps.agent.outputs.agents_category }} version"
