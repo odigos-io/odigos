@@ -254,7 +254,7 @@ type OtelDistro struct {
 	// used for java as temporary solution until we have a better way to configure the agent.
 	ConfigAsEnvVars bool `yaml:"configAsEnvVars,omitempty"`
 
-	// if true, this distro is eBPF-based and does not require runtime agent injection.
+	// if true, this distro is eBPF-based.
 	IsEbpf bool `yaml:"isEbpf,omitempty"`
 
 	// document support for metrics produced directly from the runtime
