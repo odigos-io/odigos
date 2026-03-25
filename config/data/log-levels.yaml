@@ -1,0 +1,95 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Configuration
+metadata:
+  name: log-levels
+  displayName: Component Log Levels
+spec:
+  fields:
+    - displayName: Default Log Level
+      componentType: dropdown
+      isHelmOnly: false
+      description: Set the default log level for all Odigos components.
+      helmValuePath: componentLogLevels.default
+      componentProps:
+        options:
+          - error
+          - warn
+          - info
+          - debug
+    - displayName: Autoscaler Log Level
+      componentType: dropdown
+      isHelmOnly: false
+      description: Set the log level for the autoscaler component.
+      helmValuePath: componentLogLevels.autoscaler
+      componentProps:
+        options:
+          - error
+          - warn
+          - info
+          - debug
+    - displayName: Scheduler Log Level
+      componentType: dropdown
+      isHelmOnly: false
+      description: Set the log level for the scheduler component.
+      helmValuePath: componentLogLevels.scheduler
+      componentProps:
+        options:
+          - error
+          - warn
+          - info
+          - debug
+    - displayName: Instrumentor Log Level
+      componentType: dropdown
+      isHelmOnly: false
+      description: Set the log level for the instrumentor component.
+      helmValuePath: componentLogLevels.instrumentor
+      componentProps:
+        options:
+          - error
+          - warn
+          - info
+          - debug
+    - displayName: Odiglet Log Level
+      componentType: dropdown
+      isHelmOnly: false
+      description: Set the log level for the odiglet component.
+      helmValuePath: componentLogLevels.odiglet
+      componentProps:
+        options:
+          - error
+          - warn
+          - info
+          - debug
+    - displayName: Deviceplugin Log Level
+      componentType: dropdown
+      isHelmOnly: false
+      description: Set the log level for the deviceplugin component.
+      helmValuePath: componentLogLevels.deviceplugin
+      componentProps:
+        options:
+          - error
+          - warn
+          - info
+          - debug
+    - displayName: UI Log Level
+      componentType: dropdown
+      isHelmOnly: false
+      description: Set the log level for the UI component.
+      helmValuePath: componentLogLevels.ui
+      componentProps:
+        options:
+          - error
+          - warn
+          - info
+          - debug
+    - displayName: Collector Log Level
+      componentType: dropdown
+      isHelmOnly: false
+      description: Set the log level for the collector component.
+      helmValuePath: componentLogLevels.collector
+      componentProps:
+        options:
+          - error
+          - warn
+          - info
+          - debug

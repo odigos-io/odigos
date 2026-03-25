@@ -232,6 +232,7 @@ type EffectiveConfig {
   odigosOwnTelemetryStore: OdigosOwnTelemetryConfig
   imagePullSecrets: [String!]
   componentLogLevels: ComponentLogLevelsConfig
+  manifestYAML: String
 }
 
 # Remote configuration managed by central-backend
@@ -251,6 +252,22 @@ input RemoteConfigInput {
   rollout: RemoteConfigRolloutInput
 }
 
+type ConfigYamlField {
+  displayName: String!
+  componentType: FieldType!
+  isHelmOnly: Boolean!
+  description: String!
+  helmValuePath: String!
+  docsLink: String
+  componentProps: String # JSON string representation of map[string]any
+}
+
+type ConfigYaml {
+  name: String!
+  displayName: String!
+  fields: [ConfigYamlField!]!
+}
+
 extend type Query {
   # key information about the cluster and the installation (self-defined config for UI control and usage)
   config: Config
@@ -258,9 +275,14 @@ extend type Query {
   remoteConfig: RemoteConfig
   # effective-config ConfigMap, reflects the actual values applied to the cluster (by odigos-configuration, odigos-remote-config, etc.)
   effectiveConfig: EffectiveConfig
+  # config yamls, used for UI to display the config options
+  configYamls: [ConfigYaml!]!
 }
 
 extend type Mutation {
   updateRemoteConfig(config: RemoteConfigInput!): Boolean!
-  setComponentLogLevel(component: OdigosComponent, level: OdigosLogLevel!): Boolean!
+  setComponentLogLevel(
+    component: OdigosComponent
+    level: OdigosLogLevel!
+  ): Boolean!
 }
