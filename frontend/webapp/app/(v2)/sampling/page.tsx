@@ -21,29 +21,16 @@ import {
   SAMPLING_CATEGORY_LIST_TITLES,
   CATEGORY_TO_RULE_CATEGORY,
   buildSamplingRuleItems,
-  buildNoisySummary,
-  buildHighlyRelevantSummary,
-  buildCostReductionSummary,
+  buildSummaryForRule,
+  refreshViewRuleData,
   lookupViewRuleData,
   type ViewRuleData,
   type SamplingRuleItem,
   type SamplingRuleFormState,
 } from '@odigos/ui-kit/containers/v2';
 import { StatusType } from '@odigos/ui-kit/types';
-import type { NoisyOperationRule, HighlyRelevantOperationRule, CostReductionRule, SamplingRuleType } from '@/types';
-import { DOCS_URL, PAGE_TITLE, PAGE_DESCRIPTION, BTN_SAMPLING_DOCS, BTN_REFRESH, BTN_CREATE_RULE } from './constants';
-import { Button, ButtonSize, ButtonVariants, Note, Segment, SegmentVariant } from '@odigos/ui-kit/components/v2';
-
-function buildSummaryForRule(category: SamplingRuleType, rule: NoisyOperationRule | HighlyRelevantOperationRule | CostReductionRule) {
-  switch (category) {
-    case 'noisy':
-      return buildNoisySummary(rule as NoisyOperationRule);
-    case 'highlyRelevant':
-      return buildHighlyRelevantSummary(rule as HighlyRelevantOperationRule);
-    case 'costReduction':
-      return buildCostReductionSummary(rule as CostReductionRule);
-  }
-}
+import { DOCS_URL, PAGE_TITLE, PAGE_DESCRIPTION, BTN_SAMPLING_DOCS, BTN_REFRESH, BTN_CREATE_RULE, DELETE_MODAL_TITLE, DELETE_MODAL_DESCRIPTION, DELETE_MODAL_APPROVE, DELETE_MODAL_CANCEL } from './constants';
+import { Button, ButtonSize, ButtonVariants, Note, Segment, SegmentVariant, WarningModal } from '@odigos/ui-kit/components/v2';
 
 const Header = styled(FlexRow)`
   align-items: center;
@@ -61,15 +48,14 @@ export default function Page() {
     updateHighlyRelevantOperationRule,
     createCostReductionRule,
     updateCostReductionRule,
-    deleteNoisyOperationRule,
-    deleteHighlyRelevantOperationRule,
-    deleteCostReductionRule,
+    deleteSamplingRule,
   } = useSamplingRuleCRUD();
   const { data: workloadsData } = useQuery<{ workloads: { id: { namespace: string; kind: string; name: string } }[] }>(GET_WORKLOADS);
   const [selectedCategory, setSelectedCategory] = useState<SamplingCategory>(SamplingCategory.Noisy);
   const [viewRuleData, setViewRuleData] = useState<ViewRuleData | null>(null);
   const [viewEditMode, setViewEditMode] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ ruleId: string; samplingId: string } | null>(null);
 
   const viewRuleRef = useRef(viewRuleData);
   viewRuleRef.current = viewRuleData;
@@ -78,39 +64,13 @@ export default function Page() {
     const current = viewRuleRef.current;
     if (!current) return;
 
-    for (const group of samplingRules) {
-      if (group.id !== current.samplingId) continue;
-
-      switch (current.category) {
-        case 'noisy': {
-          const rule = group.noisyOperations.find((r) => r.ruleId === current.rule.ruleId);
-          if (rule) {
-            setViewRuleData({ category: 'noisy', samplingId: group.id, summary: buildNoisySummary(rule), rule });
-            return;
-          }
-          break;
-        }
-        case 'highlyRelevant': {
-          const rule = group.highlyRelevantOperations.find((r) => r.ruleId === current.rule.ruleId);
-          if (rule) {
-            setViewRuleData({ category: 'highlyRelevant', samplingId: group.id, summary: buildHighlyRelevantSummary(rule), rule });
-            return;
-          }
-          break;
-        }
-        case 'costReduction': {
-          const rule = group.costReductionRules.find((r) => r.ruleId === current.rule.ruleId);
-          if (rule) {
-            setViewRuleData({ category: 'costReduction', samplingId: group.id, summary: buildCostReductionSummary(rule), rule });
-            return;
-          }
-          break;
-        }
-      }
+    const refreshed = refreshViewRuleData(samplingRules, current);
+    if (refreshed) {
+      setViewRuleData(refreshed);
+    } else {
+      setViewRuleData(null);
+      setViewEditMode(false);
     }
-
-    setViewRuleData(null);
-    setViewEditMode(false);
   }, [samplingRules]);
 
   const ruleItems = useMemo(() => buildSamplingRuleItems(samplingRules, selectedCategory), [samplingRules, selectedCategory]);
@@ -221,7 +181,6 @@ export default function Page() {
           break;
       }
 
-      setViewRuleData(null);
       setViewEditMode(false);
     },
     [viewRuleData, updateNoisyOperationRule, updateHighlyRelevantOperationRule, updateCostReductionRule],
@@ -249,28 +208,24 @@ export default function Page() {
     [viewRuleData, updateNoisyOperationRule, updateHighlyRelevantOperationRule, updateCostReductionRule],
   );
 
-  const handleDeleteRule = useCallback(
-    (ruleId: string, samplingId: string) => {
-      const category = viewRuleData?.category;
-      const cat = category || CATEGORY_TO_RULE_CATEGORY[selectedCategory];
+  const handleDeleteRule = useCallback((ruleId: string, samplingId: string) => {
+    setDeleteTarget({ ruleId, samplingId });
+  }, []);
 
-      switch (cat) {
-        case 'noisy':
-          deleteNoisyOperationRule(samplingId, ruleId);
-          break;
-        case 'highlyRelevant':
-          deleteHighlyRelevantOperationRule(samplingId, ruleId);
-          break;
-        case 'costReduction':
-          deleteCostReductionRule(samplingId, ruleId);
-          break;
-      }
+  const confirmDelete = useCallback(() => {
+    if (!deleteTarget) return;
+    const { ruleId, samplingId } = deleteTarget;
+    const cat = viewRuleData?.category || CATEGORY_TO_RULE_CATEGORY[selectedCategory];
 
-      setViewRuleData(null);
-      setViewEditMode(false);
-    },
-    [viewRuleData, selectedCategory, deleteNoisyOperationRule, deleteHighlyRelevantOperationRule, deleteCostReductionRule],
-  );
+    deleteSamplingRule(samplingId, ruleId, cat);
+    setViewRuleData(null);
+    setViewEditMode(false);
+    setDeleteTarget(null);
+  }, [deleteTarget, viewRuleData, selectedCategory, deleteSamplingRule]);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeleteTarget(null);
+  }, []);
 
   return (
     <PageContent>
@@ -310,6 +265,16 @@ export default function Page() {
       />
 
       <CreateSamplingRuleDrawer isOpen={isCreateOpen} category={CATEGORY_TO_RULE_CATEGORY[selectedCategory]} onClose={handleCloseCreateDrawer} onSubmit={handleCreateSubmit} sourceOptions={sourceOptions} namespaceOptions={namespaceOptions} />
+
+      <WarningModal
+        title={DELETE_MODAL_TITLE}
+        description={DELETE_MODAL_DESCRIPTION}
+        isOpen={!!deleteTarget}
+        onClose={handleCancelDelete}
+        onApprove={confirmDelete}
+        approveLabel={DELETE_MODAL_APPROVE}
+        denyLabel={DELETE_MODAL_CANCEL}
+      />
     </PageContent>
   );
 }

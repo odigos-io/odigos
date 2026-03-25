@@ -16,6 +16,7 @@ import {
 } from '@/graphql/mutations';
 import type {
   SamplingRules,
+  SamplingRuleType,
   NoisyOperationRule,
   NoisyOperationRuleInput,
   HighlyRelevantOperationRule,
@@ -31,15 +32,14 @@ interface UseSamplingRuleCrud {
 
   createNoisyOperationRule: (samplingId: string, rule: NoisyOperationRuleInput) => void;
   updateNoisyOperationRule: (samplingId: string, ruleId: string, rule: NoisyOperationRuleInput) => void;
-  deleteNoisyOperationRule: (samplingId: string, ruleId: string) => void;
 
   createHighlyRelevantOperationRule: (samplingId: string, rule: HighlyRelevantOperationRuleInput) => void;
   updateHighlyRelevantOperationRule: (samplingId: string, ruleId: string, rule: HighlyRelevantOperationRuleInput) => void;
-  deleteHighlyRelevantOperationRule: (samplingId: string, ruleId: string) => void;
 
   createCostReductionRule: (samplingId: string, rule: CostReductionRuleInput) => void;
   updateCostReductionRule: (samplingId: string, ruleId: string, rule: CostReductionRuleInput) => void;
-  deleteCostReductionRule: (samplingId: string, ruleId: string) => void;
+
+  deleteSamplingRule: (samplingId: string, ruleId: string, category: SamplingRuleType) => void;
 }
 
 function updateGroup(groups: SamplingRules[], samplingId: string, updater: (group: SamplingRules) => SamplingRules): SamplingRules[] {
@@ -231,20 +231,12 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     mutateUpdateNoisy({ variables: { samplingId, ruleId, rule } });
   };
 
-  const deleteNoisyOperationRule: UseSamplingRuleCrud['deleteNoisyOperationRule'] = (samplingId, ruleId) => {
-    mutateDeleteNoisy({ variables: { samplingId, ruleId } });
-  };
-
   const createHighlyRelevantOperationRule: UseSamplingRuleCrud['createHighlyRelevantOperationRule'] = (samplingId, rule) => {
     mutateCreateHighlyRelevant({ variables: { samplingId, rule } });
   };
 
   const updateHighlyRelevantOperationRule: UseSamplingRuleCrud['updateHighlyRelevantOperationRule'] = (samplingId, ruleId, rule) => {
     mutateUpdateHighlyRelevant({ variables: { samplingId, ruleId, rule } });
-  };
-
-  const deleteHighlyRelevantOperationRule: UseSamplingRuleCrud['deleteHighlyRelevantOperationRule'] = (samplingId, ruleId) => {
-    mutateDeleteHighlyRelevant({ variables: { samplingId, ruleId } });
   };
 
   const createCostReductionRule: UseSamplingRuleCrud['createCostReductionRule'] = (samplingId, rule) => {
@@ -255,8 +247,18 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     mutateUpdateCostReduction({ variables: { samplingId, ruleId, rule } });
   };
 
-  const deleteCostReductionRule: UseSamplingRuleCrud['deleteCostReductionRule'] = (samplingId, ruleId) => {
-    mutateDeleteCostReduction({ variables: { samplingId, ruleId } });
+  const deleteSamplingRule: UseSamplingRuleCrud['deleteSamplingRule'] = (samplingId, ruleId, category) => {
+    switch (category) {
+      case 'noisy':
+        mutateDeleteNoisy({ variables: { samplingId, ruleId } });
+        break;
+      case 'highlyRelevant':
+        mutateDeleteHighlyRelevant({ variables: { samplingId, ruleId } });
+        break;
+      case 'costReduction':
+        mutateDeleteCostReduction({ variables: { samplingId, ruleId } });
+        break;
+    }
   };
 
   useEffect(() => {
@@ -269,12 +271,10 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     fetchSamplingRules,
     createNoisyOperationRule,
     updateNoisyOperationRule,
-    deleteNoisyOperationRule,
     createHighlyRelevantOperationRule,
     updateHighlyRelevantOperationRule,
-    deleteHighlyRelevantOperationRule,
     createCostReductionRule,
     updateCostReductionRule,
-    deleteCostReductionRule,
+    deleteSamplingRule,
   };
 };

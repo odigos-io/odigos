@@ -6,3 +6,8 @@ export const PAGE_DESCRIPTION = 'Control how traces are categorized based on "Im
 export const BTN_SAMPLING_DOCS = 'Sampling docs';
 export const BTN_REFRESH = 'Refresh';
 export const BTN_CREATE_RULE = 'Create rule';
+
+export const DELETE_MODAL_TITLE = 'Delete rule?';
+export const DELETE_MODAL_DESCRIPTION = 'Are you sure you want to delete this sampling rule?';
+export const DELETE_MODAL_APPROVE = 'Delete';
+export const DELETE_MODAL_CANCEL = 'Cancel';
