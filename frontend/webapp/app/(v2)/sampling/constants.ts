@@ -11,3 +11,5 @@ export const DELETE_MODAL_TITLE = 'Delete rule?';
 export const DELETE_MODAL_DESCRIPTION = 'Are you sure you want to delete this sampling rule?';
 export const DELETE_MODAL_APPROVE = 'Delete';
 export const DELETE_MODAL_CANCEL = 'Cancel';
+
+export const AUTO_RULE_TITLE = 'Auto rule - Kubernetes Health Probes';
