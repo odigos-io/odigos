@@ -8,7 +8,7 @@ import styled from 'styled-components';
 import { FlexColumn, FlexRow, PageContent } from '@odigos/ui-kit/components';
 import { BookIcon, PlusIcon, RefreshIcon, SamplingIcon } from '@odigos/ui-kit/icons';
 import {
-  PageTitle,
+  RichTitle,
   AutoRuleCard,
   buildAutoRuleSummary,
   EditAutoRuleDrawer,
@@ -254,7 +254,7 @@ export default function Page() {
   return (
     <PageContent>
       <Header>
-        <PageTitle icon={SamplingIcon} title={PAGE_TITLE} description={PAGE_DESCRIPTION} />
+        <RichTitle icon={SamplingIcon} title={PAGE_TITLE} subTitle={PAGE_DESCRIPTION} />
 
         <FlexRow $gap={8} $alignItems='center'>
           <Button label={BTN_SAMPLING_DOCS} leftIcon={BookIcon} size={ButtonSize.S} variant={ButtonVariants.Text} onClick={handleDocs} />
@@ -274,6 +274,7 @@ export default function Page() {
         title={SAMPLING_CATEGORY_LIST_TITLES[selectedCategory]}
         items={ruleItems}
         isLoading={loading}
+        showTypeFilter={selectedCategory === SamplingCategory.HighlyRelevant}
         onRuleClick={handleRuleClick}
         onEditRule={handleEditRule}
         onDeleteRule={handleDeleteRule}
