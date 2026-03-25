@@ -11,7 +11,6 @@ var GreatwallProfile = profile.Profile{
 	ShortDescription: "Bundle profile that includes " +
 		"specific preset for on-premises installations.",
 	Dependencies: []common.ProfileName{
-		"java-ebpf-instrumentations",
 		"legacy-dotnet-instrumentation",
 		"pod-manifest-env-var-injection",
 	},

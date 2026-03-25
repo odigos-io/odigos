@@ -28,6 +28,7 @@ var AllProfiles = []profile.Profile{
 
 	instrumentation.AllowConcurrentAgents,
 	instrumentation.JavaEbpfInstrumentationsProfile,
+	instrumentation.JavaEnterpriseProfile,
 	instrumentation.JavaNativeInstrumentationsProfile,
 	instrumentation.LegacyDotNetProfile,
 	instrumentation.MountMethodK8sHostPathProfile,

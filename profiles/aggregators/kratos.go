@@ -24,6 +24,7 @@ var KratosProfile = profile.Profile{
 		"disable-gin",
 		"semconvdynamo",
 		"semconvredis",
+		"java-enterprise",
 	},
 	ModifyConfigFunc: func(config *common.OdigosConfiguration) {
 		disabled := true
