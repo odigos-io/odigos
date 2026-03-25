@@ -15,8 +15,8 @@ require (
 	github.com/odigos-io/odigos/procdiscovery v0.0.0-00010101000000-000000000000
 	github.com/odigos-io/runtime-detector v0.0.24
 	go.opentelemetry.io/auto v0.21.0
-	// OBI: damemi fork at commit 04c05253
-	go.opentelemetry.io/obi v0.0.0-20260320160438-04c05253c320
+	// OBI: damemi fork at commit 9d0e32f8
+	go.opentelemetry.io/obi v0.0.0-20260325211536-9d0e32f8f630
 	go.opentelemetry.io/otel v1.42.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.42.0
 	go.opentelemetry.io/otel/metric v1.42.0
@@ -259,5 +259,5 @@ replace (
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/opampserver => ../opampserver
 	github.com/odigos-io/odigos/procdiscovery => ../procdiscovery
-	go.opentelemetry.io/obi => github.com/damemi/opentelemetry-ebpf-instrumentation v0.0.0-20260320160438-04c05253c320
+	go.opentelemetry.io/obi => github.com/damemi/opentelemetry-ebpf-instrumentation v0.0.0-20260325211536-9d0e32f8f630
 )
