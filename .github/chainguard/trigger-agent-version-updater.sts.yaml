@@ -1,0 +1,7 @@
+issuer: https://token.actions.githubusercontent.com
+subject_pattern: repo:odigos-io/*:ref:refs/tags/.*
+
+permissions:
+
+  # needed to trigger repository_dispatch event
+  contents: write
