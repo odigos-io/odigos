@@ -13,20 +13,24 @@ import {
   CREATE_COST_REDUCTION_RULE,
   UPDATE_COST_REDUCTION_RULE,
   DELETE_COST_REDUCTION_RULE,
+  UPDATE_LOCAL_UI_SAMPLING_CONFIG,
 } from '@/graphql/mutations';
 import type {
   SamplingRules,
   SamplingRuleType,
+  SamplingQueryResponse,
   NoisyOperationRule,
   NoisyOperationRuleInput,
   HighlyRelevantOperationRule,
   HighlyRelevantOperationRuleInput,
   CostReductionRule,
   CostReductionRuleInput,
+  K8sHealthProbesSamplingConfig,
 } from '@/types';
 
 interface UseSamplingRuleCrud {
   samplingRules: SamplingRules[];
+  k8sHealthProbesConfig: K8sHealthProbesSamplingConfig | null;
   loading: boolean;
   fetchSamplingRules: () => void;
 
@@ -40,6 +44,8 @@ interface UseSamplingRuleCrud {
   updateCostReductionRule: (samplingId: string, ruleId: string, rule: CostReductionRuleInput) => void;
 
   deleteSamplingRule: (samplingId: string, ruleId: string, category: SamplingRuleType) => void;
+
+  updateK8sHealthProbesConfig: (enabled: boolean, keepPercentage: number) => void;
 }
 
 function updateGroup(groups: SamplingRules[], samplingId: string, updater: (group: SamplingRules) => SamplingRules): SamplingRules[] {
@@ -55,6 +61,7 @@ function updateGroup(groups: SamplingRules[], samplingId: string, updater: (grou
 export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
   const { addNotification } = useNotificationStore();
   const [samplingRules, setSamplingRules] = useState<SamplingRules[]>([]);
+  const [k8sHealthProbesConfig, setK8sHealthProbesConfig] = useState<K8sHealthProbesSamplingConfig | null>(null);
   const [loading, setLoading] = useState(false);
 
   const notifyUser = useCallback(
@@ -66,7 +73,7 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
 
   // ---- Fetch ----
 
-  const [fetchAll] = useLazyQuery<{ sampling: { rules: SamplingRules[] } }>(GET_SAMPLING_RULES, { fetchPolicy: 'network-only' });
+  const [fetchAll] = useLazyQuery<SamplingQueryResponse>(GET_SAMPLING_RULES, { fetchPolicy: 'network-only' });
 
   const fetchSamplingRules = useCallback(async () => {
     setLoading(true);
@@ -74,8 +81,9 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
 
     if (error) {
       notifyUser(StatusType.Error, Crud.Read, error.cause?.message || error.message);
-    } else if (data?.sampling?.rules) {
+    } else if (data?.sampling) {
       setSamplingRules(data.sampling.rules);
+      setK8sHealthProbesConfig(data.sampling.configs?.effective?.k8sHealthProbesSampling ?? null);
     }
     setLoading(false);
   }, [fetchAll, notifyUser]);
@@ -221,6 +229,22 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     },
   });
 
+  // ---- Sampling Config ----
+
+  const [mutateUpdateConfig] = useMutation<{ updateLocalUiSamplingConfig: boolean }, { config: { k8sHealthProbesSampling: { enabled: boolean; keepPercentage: number } } }>(
+    UPDATE_LOCAL_UI_SAMPLING_CONFIG,
+    {
+      onError: (error) => notifyUser(StatusType.Error, Crud.Update, error.cause?.message || error.message),
+      onCompleted: (_res, opts) => {
+        const input = opts?.variables?.config.k8sHealthProbesSampling;
+        if (input) {
+          setK8sHealthProbesConfig({ enabled: input.enabled, keepPercentage: input.keepPercentage });
+        }
+        notifyUser(StatusType.Success, Crud.Update, 'Successfully updated auto rule configuration');
+      },
+    },
+  );
+
   // ---- Public API ----
 
   const createNoisyOperationRule: UseSamplingRuleCrud['createNoisyOperationRule'] = (samplingId, rule) => {
@@ -261,12 +285,17 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     }
   };
 
+  const updateK8sHealthProbesConfig: UseSamplingRuleCrud['updateK8sHealthProbesConfig'] = (enabled, keepPercentage) => {
+    mutateUpdateConfig({ variables: { config: { k8sHealthProbesSampling: { enabled, keepPercentage } } } });
+  };
+
   useEffect(() => {
     fetchSamplingRules();
   }, []);
 
   return {
     samplingRules,
+    k8sHealthProbesConfig,
     loading,
     fetchSamplingRules,
     createNoisyOperationRule,
@@ -276,5 +305,6 @@ export const useSamplingRuleCRUD = (): UseSamplingRuleCrud => {
     createCostReductionRule,
     updateCostReductionRule,
     deleteSamplingRule,
+    updateK8sHealthProbesConfig,
   };
 };
