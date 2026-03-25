@@ -199,7 +199,6 @@ func NewManager[processGroup ProcessGroup, configGroup ConfigGroup, processDetai
 	}, nil
 }
 
-
 func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx context.Context) {
 	// cleanup all instrumentations on shutdown
 	defer func() {
@@ -213,7 +212,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) runEventLoop(ctx co
 				return
 			default:
 				if details.inst != nil {
-					if err := details.inst.Close(ctx, pid); err != nil {
+					if err := details.inst.Close(ctx); err != nil {
 						m.logger.Error("failed to close instrumentation", "err", err, "pid", pid)
 					}
 				}
@@ -336,7 +335,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) Run(ctx context.Con
 		// Start the FD server
 		server := &unixfd.Server{
 			SocketPath: unixfd.DefaultSocketPath,
-			Logger:    commonlogger.ToLogr(),
+			Logger:     commonlogger.ToLogr(),
 			TracesFDProvider: func() int {
 				return m.tracesMap.FD()
 			},
@@ -387,7 +386,7 @@ func (m *manager[ProcessGroup, ConfigGroup, ProcessDetails]) cleanInstrumentatio
 	m.logger.Info("cleaning instrumentation resources", "pid", pid, "process group details", details.pd)
 
 	if details.inst != nil {
-		err := details.inst.Close(ctx, pid)
+		err := details.inst.Close(ctx)
 		if err != nil {
 			m.logger.Error("failed to close instrumentation", "err", err)
 		}
