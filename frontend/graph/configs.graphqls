@@ -252,6 +252,72 @@ input RemoteConfigInput {
   rollout: RemoteConfigRolloutInput
 }
 
+input LocalUiConfigRolloutInput {
+  automaticRolloutDisabled: Boolean
+  maxConcurrentRollouts: Int
+}
+
+input LocalUiConfigAutoRollbackInput {
+  disabled: Boolean
+  graceTime: String
+  stabilityWindowTime: String
+}
+
+input LocalUiConfigInstrumentorInput {
+  agentEnvVarsInjectionMethod: EnvInjectionMethod
+  checkDeviceHealthBeforeInjection: Boolean
+}
+
+input LocalUiConfigAllowConcurrentAgentsInput {
+  enabled: Boolean
+}
+
+input LocalUiConfigWaspInput {
+  enabled: Boolean
+}
+
+input LocalUiConfigSpanSamplingAttributesInput {
+  disabled: Boolean
+  samplingCategoryDisabled: Boolean
+  traceDecidingRuleDisabled: Boolean
+  spanDecisionAttributesDisabled: Boolean
+}
+
+input LocalUiConfigSamplingInput {
+  dryRun: Boolean
+  spanSamplingAttributes: LocalUiConfigSpanSamplingAttributesInput
+  tailSampling: TailSamplingConfigInput
+  k8sHealthProbesSampling: K8sHealthProbesSamplingConfigInput
+}
+
+input LocalUiConfigComponentLogLevelsInput {
+  default: OdigosLogLevel
+  autoscaler: OdigosLogLevel
+  scheduler: OdigosLogLevel
+  instrumentor: OdigosLogLevel
+  odiglet: OdigosLogLevel
+  deviceplugin: OdigosLogLevel
+  ui: OdigosLogLevel
+  collector: OdigosLogLevel
+}
+
+input LocalUiConfigInput {
+  telemetryEnabled: Boolean
+  ignoredNamespaces: [String!]
+  ignoredContainers: [String!]
+  ignoreOdigosNamespace: Boolean
+  clusterName: String
+  instrumentor: LocalUiConfigInstrumentorInput
+  allowConcurrentAgents: LocalUiConfigAllowConcurrentAgentsInput
+  wasp: LocalUiConfigWaspInput
+  rollout: LocalUiConfigRolloutInput
+  autoRollback: LocalUiConfigAutoRollbackInput
+  goAutoOffsetsCron: String
+  goAutoOffsetsMode: String
+  sampling: LocalUiConfigSamplingInput
+  componentLogLevels: LocalUiConfigComponentLogLevelsInput
+}
+
 type ConfigYamlField {
   displayName: String!
   componentType: FieldType!
@@ -285,4 +351,5 @@ extend type Mutation {
     component: OdigosComponent
     level: OdigosLogLevel!
   ): Boolean!
+  updateLocalUiConfig(config: LocalUiConfigInput!): Boolean!
 }

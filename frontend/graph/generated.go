@@ -916,6 +916,7 @@ type ComplexityRoot struct {
 		UpdateHighlyRelevantOperationRule func(childComplexity int, samplingID string, ruleID string, rule model.HighlyRelevantOperationRuleInput) int
 		UpdateInstrumentationRule         func(childComplexity int, ruleID string, instrumentationRule model.InstrumentationRuleInput) int
 		UpdateK8sActualSource             func(childComplexity int, sourceID model.K8sSourceID, patchSourceRequest model.PatchSourceRequestInput) int
+		UpdateLocalUIConfig               func(childComplexity int, config model.LocalUIConfigInput) int
 		UpdateLocalUISamplingConfig       func(childComplexity int, config *model.SamplingConfigInput) int
 		UpdateNoisyOperationRule          func(childComplexity int, samplingID string, ruleID string, rule model.NoisyOperationRuleInput) int
 		UpdateRemoteConfig                func(childComplexity int, config model.RemoteConfigInput) int
@@ -1370,6 +1371,7 @@ type MutationResolver interface {
 	RecoverFromRollbackForWorkload(ctx context.Context, sourceID model.K8sSourceID) (bool, error)
 	UpdateRemoteConfig(ctx context.Context, config model.RemoteConfigInput) (bool, error)
 	SetComponentLogLevel(ctx context.Context, component *model.OdigosComponent, level model.OdigosLogLevel) (bool, error)
+	UpdateLocalUIConfig(ctx context.Context, config model.LocalUIConfigInput) (bool, error)
 	RestartPod(ctx context.Context, namespace string, name string) (bool, error)
 	UpdateLocalUISamplingConfig(ctx context.Context, config *model.SamplingConfigInput) (bool, error)
 	CreateNoisyOperationRule(ctx context.Context, samplingID string, rule model.NoisyOperationRuleInput) (*model.NoisyOperationRule, error)
@@ -5444,6 +5446,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateK8sActualSource(childComplexity, args["sourceId"].(model.K8sSourceID), args["patchSourceRequest"].(model.PatchSourceRequestInput)), true
 
+	case "Mutation.updateLocalUiConfig":
+		if e.complexity.Mutation.UpdateLocalUIConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateLocalUiConfig_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateLocalUIConfig(childComplexity, args["config"].(model.LocalUIConfigInput)), true
+
 	case "Mutation.updateLocalUiSamplingConfig":
 		if e.complexity.Mutation.UpdateLocalUISamplingConfig == nil {
 			break
@@ -7100,6 +7114,15 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputK8sNamespaceId,
 		ec.unmarshalInputK8sSourceId,
 		ec.unmarshalInputK8sWorkloadIdInput,
+		ec.unmarshalInputLocalUiConfigAllowConcurrentAgentsInput,
+		ec.unmarshalInputLocalUiConfigAutoRollbackInput,
+		ec.unmarshalInputLocalUiConfigComponentLogLevelsInput,
+		ec.unmarshalInputLocalUiConfigInput,
+		ec.unmarshalInputLocalUiConfigInstrumentorInput,
+		ec.unmarshalInputLocalUiConfigRolloutInput,
+		ec.unmarshalInputLocalUiConfigSamplingInput,
+		ec.unmarshalInputLocalUiConfigSpanSamplingAttributesInput,
+		ec.unmarshalInputLocalUiConfigWaspInput,
 		ec.unmarshalInputMessagingPayloadCollectionInput,
 		ec.unmarshalInputNoisyOperationRuleInput,
 		ec.unmarshalInputNumberConditionInput,
@@ -8519,6 +8542,34 @@ func (ec *executionContext) field_Mutation_updateK8sActualSource_argsPatchSource
 	}
 
 	var zeroVal model.PatchSourceRequestInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateLocalUiConfig_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateLocalUiConfig_argsConfig(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["config"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateLocalUiConfig_argsConfig(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (model.LocalUIConfigInput, error) {
+	if _, ok := rawArgs["config"]; !ok {
+		var zeroVal model.LocalUIConfigInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
+	if tmp, ok := rawArgs["config"]; ok {
+		return ec.unmarshalNLocalUiConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInput(ctx, tmp)
+	}
+
+	var zeroVal model.LocalUIConfigInput
 	return zeroVal, nil
 }
 
@@ -34248,6 +34299,61 @@ func (ec *executionContext) fieldContext_Mutation_setComponentLogLevel(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_updateLocalUiConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateLocalUiConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateLocalUIConfig(rctx, fc.Args["config"].(model.LocalUIConfigInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateLocalUiConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateLocalUiConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_restartPod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_restartPod(ctx, field)
 	if err != nil {
@@ -49289,6 +49395,459 @@ func (ec *executionContext) unmarshalInputK8sWorkloadIdInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputLocalUiConfigAllowConcurrentAgentsInput(ctx context.Context, obj any) (model.LocalUIConfigAllowConcurrentAgentsInput, error) {
+	var it model.LocalUIConfigAllowConcurrentAgentsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigAutoRollbackInput(ctx context.Context, obj any) (model.LocalUIConfigAutoRollbackInput, error) {
+	var it model.LocalUIConfigAutoRollbackInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"disabled", "graceTime", "stabilityWindowTime"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "disabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Disabled = data
+		case "graceTime":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("graceTime"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GraceTime = data
+		case "stabilityWindowTime":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("stabilityWindowTime"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StabilityWindowTime = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigComponentLogLevelsInput(ctx context.Context, obj any) (model.LocalUIConfigComponentLogLevelsInput, error) {
+	var it model.LocalUIConfigComponentLogLevelsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"default", "autoscaler", "scheduler", "instrumentor", "odiglet", "deviceplugin", "ui", "collector"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "default":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("default"))
+			data, err := ec.unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Default = data
+		case "autoscaler":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoscaler"))
+			data, err := ec.unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Autoscaler = data
+		case "scheduler":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("scheduler"))
+			data, err := ec.unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Scheduler = data
+		case "instrumentor":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentor"))
+			data, err := ec.unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Instrumentor = data
+		case "odiglet":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("odiglet"))
+			data, err := ec.unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Odiglet = data
+		case "deviceplugin":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deviceplugin"))
+			data, err := ec.unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Deviceplugin = data
+		case "ui":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ui"))
+			data, err := ec.unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UI = data
+		case "collector":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("collector"))
+			data, err := ec.unmarshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Collector = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigInput(ctx context.Context, obj any) (model.LocalUIConfigInput, error) {
+	var it model.LocalUIConfigInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"telemetryEnabled", "ignoredNamespaces", "ignoredContainers", "ignoreOdigosNamespace", "clusterName", "instrumentor", "allowConcurrentAgents", "wasp", "rollout", "autoRollback", "goAutoOffsetsCron", "goAutoOffsetsMode", "sampling", "componentLogLevels"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "telemetryEnabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("telemetryEnabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TelemetryEnabled = data
+		case "ignoredNamespaces":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ignoredNamespaces"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IgnoredNamespaces = data
+		case "ignoredContainers":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ignoredContainers"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IgnoredContainers = data
+		case "ignoreOdigosNamespace":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ignoreOdigosNamespace"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IgnoreOdigosNamespace = data
+		case "clusterName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clusterName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClusterName = data
+		case "instrumentor":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("instrumentor"))
+			data, err := ec.unmarshalOLocalUiConfigInstrumentorInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInstrumentorInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Instrumentor = data
+		case "allowConcurrentAgents":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("allowConcurrentAgents"))
+			data, err := ec.unmarshalOLocalUiConfigAllowConcurrentAgentsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigAllowConcurrentAgentsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AllowConcurrentAgents = data
+		case "wasp":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wasp"))
+			data, err := ec.unmarshalOLocalUiConfigWaspInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigWaspInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Wasp = data
+		case "rollout":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rollout"))
+			data, err := ec.unmarshalOLocalUiConfigRolloutInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigRolloutInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Rollout = data
+		case "autoRollback":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoRollback"))
+			data, err := ec.unmarshalOLocalUiConfigAutoRollbackInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigAutoRollbackInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutoRollback = data
+		case "goAutoOffsetsCron":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("goAutoOffsetsCron"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GoAutoOffsetsCron = data
+		case "goAutoOffsetsMode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("goAutoOffsetsMode"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.GoAutoOffsetsMode = data
+		case "sampling":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sampling"))
+			data, err := ec.unmarshalOLocalUiConfigSamplingInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigSamplingInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Sampling = data
+		case "componentLogLevels":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("componentLogLevels"))
+			data, err := ec.unmarshalOLocalUiConfigComponentLogLevelsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigComponentLogLevelsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ComponentLogLevels = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigInstrumentorInput(ctx context.Context, obj any) (model.LocalUIConfigInstrumentorInput, error) {
+	var it model.LocalUIConfigInstrumentorInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"agentEnvVarsInjectionMethod", "checkDeviceHealthBeforeInjection"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "agentEnvVarsInjectionMethod":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("agentEnvVarsInjectionMethod"))
+			data, err := ec.unmarshalOEnvInjectionMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnvInjectionMethod(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AgentEnvVarsInjectionMethod = data
+		case "checkDeviceHealthBeforeInjection":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("checkDeviceHealthBeforeInjection"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CheckDeviceHealthBeforeInjection = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigRolloutInput(ctx context.Context, obj any) (model.LocalUIConfigRolloutInput, error) {
+	var it model.LocalUIConfigRolloutInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"automaticRolloutDisabled", "maxConcurrentRollouts"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "automaticRolloutDisabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("automaticRolloutDisabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AutomaticRolloutDisabled = data
+		case "maxConcurrentRollouts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxConcurrentRollouts"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaxConcurrentRollouts = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigSamplingInput(ctx context.Context, obj any) (model.LocalUIConfigSamplingInput, error) {
+	var it model.LocalUIConfigSamplingInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"dryRun", "spanSamplingAttributes", "tailSampling", "k8sHealthProbesSampling"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "dryRun":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dryRun"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DryRun = data
+		case "spanSamplingAttributes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("spanSamplingAttributes"))
+			data, err := ec.unmarshalOLocalUiConfigSpanSamplingAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigSpanSamplingAttributesInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SpanSamplingAttributes = data
+		case "tailSampling":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tailSampling"))
+			data, err := ec.unmarshalOTailSamplingConfigInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐTailSamplingConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TailSampling = data
+		case "k8sHealthProbesSampling":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("k8sHealthProbesSampling"))
+			data, err := ec.unmarshalOK8sHealthProbesSamplingConfigInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐK8sHealthProbesSamplingConfigInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.K8sHealthProbesSampling = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigSpanSamplingAttributesInput(ctx context.Context, obj any) (model.LocalUIConfigSpanSamplingAttributesInput, error) {
+	var it model.LocalUIConfigSpanSamplingAttributesInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"disabled", "samplingCategoryDisabled", "traceDecidingRuleDisabled", "spanDecisionAttributesDisabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "disabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Disabled = data
+		case "samplingCategoryDisabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("samplingCategoryDisabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SamplingCategoryDisabled = data
+		case "traceDecidingRuleDisabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("traceDecidingRuleDisabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TraceDecidingRuleDisabled = data
+		case "spanDecisionAttributesDisabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("spanDecisionAttributesDisabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SpanDecisionAttributesDisabled = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLocalUiConfigWaspInput(ctx context.Context, obj any) (model.LocalUIConfigWaspInput, error) {
+	var it model.LocalUIConfigWaspInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"enabled"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "enabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Enabled = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMessagingPayloadCollectionInput(ctx context.Context, obj any) (model.MessagingPayloadCollectionInput, error) {
 	var it model.MessagingPayloadCollectionInput
 	asMap := map[string]any{}
@@ -56603,6 +57162,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateLocalUiConfig":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateLocalUiConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "restartPod":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_restartPod(ctx, field)
@@ -62688,6 +63254,11 @@ func (ec *executionContext) marshalNK8sWorkloadTelemetryMetricsExpectingTelemetr
 	return ec._K8sWorkloadTelemetryMetricsExpectingTelemetryStatus(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNLocalUiConfigInput2githubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInput(ctx context.Context, v any) (model.LocalUIConfigInput, error) {
+	res, err := ec.unmarshalInputLocalUiConfigInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNMetricsSourceAgentRuntimeMetricConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMetricsSourceAgentRuntimeMetricConfig(ctx context.Context, sel ast.SelectionSet, v *model.MetricsSourceAgentRuntimeMetricConfig) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -65694,6 +66265,70 @@ func (ec *executionContext) marshalOK8sWorkloadRuntimeInfoContainer2ᚖgithubᚗ
 		return graphql.Null
 	}
 	return ec._K8sWorkloadRuntimeInfoContainer(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigAllowConcurrentAgentsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigAllowConcurrentAgentsInput(ctx context.Context, v any) (*model.LocalUIConfigAllowConcurrentAgentsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigAllowConcurrentAgentsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigAutoRollbackInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigAutoRollbackInput(ctx context.Context, v any) (*model.LocalUIConfigAutoRollbackInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigAutoRollbackInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigComponentLogLevelsInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigComponentLogLevelsInput(ctx context.Context, v any) (*model.LocalUIConfigComponentLogLevelsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigComponentLogLevelsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigInstrumentorInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigInstrumentorInput(ctx context.Context, v any) (*model.LocalUIConfigInstrumentorInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigInstrumentorInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigRolloutInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigRolloutInput(ctx context.Context, v any) (*model.LocalUIConfigRolloutInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigRolloutInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigSamplingInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigSamplingInput(ctx context.Context, v any) (*model.LocalUIConfigSamplingInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigSamplingInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigSpanSamplingAttributesInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigSpanSamplingAttributesInput(ctx context.Context, v any) (*model.LocalUIConfigSpanSamplingAttributesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigSpanSamplingAttributesInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLocalUiConfigWaspInput2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐLocalUIConfigWaspInput(ctx context.Context, v any) (*model.LocalUIConfigWaspInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLocalUiConfigWaspInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOMessagingPayloadCollection2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMessagingPayloadCollection(ctx context.Context, sel ast.SelectionSet, v *model.MessagingPayloadCollection) graphql.Marshaler {

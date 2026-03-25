@@ -40,6 +40,12 @@ func (r *mutationResolver) SetComponentLogLevel(ctx context.Context, component *
 	return err == nil, err
 }
 
+// UpdateLocalUIConfig is the resolver for the updateLocalUiConfig field.
+func (r *mutationResolver) UpdateLocalUIConfig(ctx context.Context, config model.LocalUIConfigInput) (bool, error) {
+	err := services.UpdateLocalUIConfig(ctx, r.K8sCacheClient, config)
+	return err == nil, err
+}
+
 // Config is the resolver for the config field.
 func (r *queryResolver) Config(ctx context.Context) (*model.Config, error) {
 	config := services.GetConfig(ctx)

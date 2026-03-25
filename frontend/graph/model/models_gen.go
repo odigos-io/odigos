@@ -1005,6 +1005,72 @@ type LanguageConfig struct {
 	EnvVars *string `json:"envVars,omitempty"`
 }
 
+type LocalUIConfigAllowConcurrentAgentsInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
+type LocalUIConfigAutoRollbackInput struct {
+	Disabled            *bool   `json:"disabled,omitempty"`
+	GraceTime           *string `json:"graceTime,omitempty"`
+	StabilityWindowTime *string `json:"stabilityWindowTime,omitempty"`
+}
+
+type LocalUIConfigComponentLogLevelsInput struct {
+	Default      *OdigosLogLevel `json:"default,omitempty"`
+	Autoscaler   *OdigosLogLevel `json:"autoscaler,omitempty"`
+	Scheduler    *OdigosLogLevel `json:"scheduler,omitempty"`
+	Instrumentor *OdigosLogLevel `json:"instrumentor,omitempty"`
+	Odiglet      *OdigosLogLevel `json:"odiglet,omitempty"`
+	Deviceplugin *OdigosLogLevel `json:"deviceplugin,omitempty"`
+	UI           *OdigosLogLevel `json:"ui,omitempty"`
+	Collector    *OdigosLogLevel `json:"collector,omitempty"`
+}
+
+type LocalUIConfigInput struct {
+	TelemetryEnabled      *bool                                    `json:"telemetryEnabled,omitempty"`
+	IgnoredNamespaces     []string                                 `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers     []string                                 `json:"ignoredContainers,omitempty"`
+	IgnoreOdigosNamespace *bool                                    `json:"ignoreOdigosNamespace,omitempty"`
+	ClusterName           *string                                  `json:"clusterName,omitempty"`
+	Instrumentor          *LocalUIConfigInstrumentorInput          `json:"instrumentor,omitempty"`
+	AllowConcurrentAgents *LocalUIConfigAllowConcurrentAgentsInput `json:"allowConcurrentAgents,omitempty"`
+	Wasp                  *LocalUIConfigWaspInput                  `json:"wasp,omitempty"`
+	Rollout               *LocalUIConfigRolloutInput               `json:"rollout,omitempty"`
+	AutoRollback          *LocalUIConfigAutoRollbackInput          `json:"autoRollback,omitempty"`
+	GoAutoOffsetsCron     *string                                  `json:"goAutoOffsetsCron,omitempty"`
+	GoAutoOffsetsMode     *string                                  `json:"goAutoOffsetsMode,omitempty"`
+	Sampling              *LocalUIConfigSamplingInput              `json:"sampling,omitempty"`
+	ComponentLogLevels    *LocalUIConfigComponentLogLevelsInput    `json:"componentLogLevels,omitempty"`
+}
+
+type LocalUIConfigInstrumentorInput struct {
+	AgentEnvVarsInjectionMethod      *EnvInjectionMethod `json:"agentEnvVarsInjectionMethod,omitempty"`
+	CheckDeviceHealthBeforeInjection *bool               `json:"checkDeviceHealthBeforeInjection,omitempty"`
+}
+
+type LocalUIConfigRolloutInput struct {
+	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+	MaxConcurrentRollouts    *int  `json:"maxConcurrentRollouts,omitempty"`
+}
+
+type LocalUIConfigSamplingInput struct {
+	DryRun                  *bool                                     `json:"dryRun,omitempty"`
+	SpanSamplingAttributes  *LocalUIConfigSpanSamplingAttributesInput `json:"spanSamplingAttributes,omitempty"`
+	TailSampling            *TailSamplingConfigInput                  `json:"tailSampling,omitempty"`
+	K8sHealthProbesSampling *K8sHealthProbesSamplingConfigInput       `json:"k8sHealthProbesSampling,omitempty"`
+}
+
+type LocalUIConfigSpanSamplingAttributesInput struct {
+	Disabled                       *bool `json:"disabled,omitempty"`
+	SamplingCategoryDisabled       *bool `json:"samplingCategoryDisabled,omitempty"`
+	TraceDecidingRuleDisabled      *bool `json:"traceDecidingRuleDisabled,omitempty"`
+	SpanDecisionAttributesDisabled *bool `json:"spanDecisionAttributesDisabled,omitempty"`
+}
+
+type LocalUIConfigWaspInput struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
+
 type MessagingPayloadCollection struct {
 	MaxPayloadLength    *int  `json:"maxPayloadLength,omitempty"`
 	DropPartialPayloads *bool `json:"dropPartialPayloads,omitempty"`
