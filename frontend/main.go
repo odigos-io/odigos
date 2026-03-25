@@ -27,6 +27,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/config"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
@@ -293,12 +294,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Start SQLite database
-	err = startDatabase(log)
+	// Load config data
+	err = config.Load()
 	if err != nil {
-		log.Error("Error starting database", "err", err)
+		log.Error("Error loading config data", "err", err)
 		os.Exit(1)
 	}
+
+	// Start SQLite database
+	// err = startDatabase(log)
+	// if err != nil {
+	// 	log.Error("Error starting database", "err", err)
+	// 	os.Exit(1)
+	// }
 
 	// Connect to Kubernetes
 	err = initKubernetesClient(&flags)

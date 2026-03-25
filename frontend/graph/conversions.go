@@ -448,7 +448,9 @@ func convertCollectorGatewayToModel(gw *common.CollectorGatewayConfiguration) (*
 	if gw.GoMemLimitMib != 0 {
 		result.GoMemLimitMiB = &gw.GoMemLimitMib
 	}
-	result.ServiceGraphDisabled = gw.ServiceGraph.Disabled
+	if gw.ServiceGraph != nil {
+		result.ServiceGraphDisabled = gw.ServiceGraph.Disabled
+	}
 	result.ClusterMetricsEnabled = gw.ClusterMetricsEnabled
 	result.HTTPSProxyAddress = gw.HttpsProxyAddress
 
@@ -495,9 +497,6 @@ func convertCollectorNodeToModel(node *common.CollectorNodeConfiguration) *model
 	}
 	if node.GoMemLimitMib != 0 {
 		result.GoMemLimitMiB = &node.GoMemLimitMib
-	}
-	if node.K8sNodeLogsDirectory != "" {
-		result.K8sNodeLogsDirectory = &node.K8sNodeLogsDirectory
 	}
 	result.EnableDataCompression = node.EnableDataCompression
 

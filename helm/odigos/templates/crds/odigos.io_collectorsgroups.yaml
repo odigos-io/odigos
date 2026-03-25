@@ -68,11 +68,6 @@ spec:
                   for destinations that uses https for exporting data, this value can be used to set the address for an https proxy.
                   when unset or empty, no proxy will be used.
                 type: string
-              k8sNodeLogsDirectory:
-                description: |-
-                  Additional directory to mount in the node collector pod for logs.
-                  This is used to allow the collector to read logs from the host node if /var/log is  symlinked to another directory.
-                type: string
               metrics:
                 description: |-
                   configuration for metrics handling in this collectors group

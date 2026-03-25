@@ -1,0 +1,54 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Configuration
+metadata:
+  name: sampling
+  displayName: Sampling
+spec:
+  fields:
+    - displayName: Dry Run
+      componentType: toggle
+      isHelmOnly: false
+      description: Run sampling logic without actually dropping traces, for evaluation purposes.
+      helmValuePath: sampling.dryRun
+    - displayName: Span Sampling Attributes Disabled
+      componentType: toggle
+      isHelmOnly: false
+      description: Disable span sampling attributes. When disabled, Odigos will not set span attributes for sampling decisions.
+      helmValuePath: sampling.spanSamplingAttributes.disabled
+    - displayName: Sampling Category Disabled
+      componentType: toggle
+      isHelmOnly: false
+      description: Disable recording the sampling category as a span attribute.
+      helmValuePath: sampling.spanSamplingAttributes.samplingCategoryDisabled
+    - displayName: Trace Deciding Rule Disabled
+      componentType: toggle
+      isHelmOnly: false
+      description: Disable recording the trace-level deciding rule as span attributes.
+      helmValuePath: sampling.spanSamplingAttributes.traceDecidingRuleDisabled
+    - displayName: Span Decision Attributes Disabled
+      componentType: toggle
+      isHelmOnly: false
+      description: Disable recording the span-level deciding rule as span attributes.
+      helmValuePath: sampling.spanSamplingAttributes.spanDecisionAttributesDisabled
+    - displayName: Tail Sampling Disabled
+      componentType: toggle
+      isHelmOnly: false
+      description: Disable tail-based sampling globally regardless of any other configurations or rules.
+      helmValuePath: sampling.tailSampling.disabled
+    - displayName: Trace Aggregation Wait Duration
+      componentType: input
+      isHelmOnly: false
+      description: How long to wait for spans to arrive before making a tail sampling decision (e.g. 30s).
+      helmValuePath: sampling.tailSampling.traceAggregationWaitDuration
+    - displayName: K8s Health Probes Sampling Enabled
+      componentType: toggle
+      isHelmOnly: false
+      description: Automatically detect and sample out Kubernetes health probe traces.
+      helmValuePath: sampling.k8sHealthProbesSampling.enabled
+    - displayName: Health Probes Keep Percentage
+      componentType: input
+      isHelmOnly: false
+      description: Percentage (0-100) of health probe traces to keep. Default is 0 (drop all).
+      helmValuePath: sampling.k8sHealthProbesSampling.keepPercentage
+      componentProps:
+        type: number

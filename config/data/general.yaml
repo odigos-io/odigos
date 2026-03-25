@@ -1,0 +1,27 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Configuration
+metadata:
+  name: general
+  displayName: General
+spec:
+  fields:
+    - displayName: Cluster Name
+      componentType: input
+      isHelmOnly: false
+      description: The name of the cluster as it appears in Odigos.
+      helmValuePath: clusterName
+    - displayName: Telemetry Enabled
+      componentType: toggle
+      isHelmOnly: false
+      description: Enable anonymous usage telemetry to help improve Odigos.
+      helmValuePath: telemetryEnabled
+    - displayName: OpenShift Enabled
+      componentType: toggle
+      isHelmOnly: true
+      description: Enable OpenShift-specific features and compatibility.
+      helmValuePath: openshiftEnabled
+    - displayName: Resource Size Preset
+      componentType: input
+      isHelmOnly: true
+      description: Predefined resource allocation preset (size_s, size_m, size_l).
+      helmValuePath: resourceSizePreset

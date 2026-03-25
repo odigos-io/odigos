@@ -79,10 +79,20 @@ func RunDiagnose(
 	}
 
 	if opts.IncludeProfiles {
-		runStage(&wg, StageProfiles, onStageComplete, func() error {
-			profileDir := GetProfileDir(rootDir, opts.OdigosNamespace)
-			return FetchOdigosProfiles(ctx, client, builder, profileDir, opts.OdigosNamespace)
-		})
+		profileDir := GetProfileDir(rootDir, opts.OdigosNamespace)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, svcName := range ProfileServiceNames() {
+				err := FetchServiceProfiles(ctx, client, builder, profileDir, opts.OdigosNamespace, svcName)
+				if err != nil {
+					klog.V(1).ErrorS(err, "Stage failed", "stage", StageProfileService(svcName))
+				}
+				if onStageComplete != nil {
+					onStageComplete <- StageResult{Stage: StageProfileService(svcName), Status: err}
+				}
+			}
+		}()
 	}
 
 	if opts.IncludeMetrics {
@@ -124,7 +134,9 @@ func RequestedStages(opts Options) []Stage {
 		stages = append(stages, StageCRDs)
 	}
 	if opts.IncludeProfiles {
-		stages = append(stages, StageProfiles)
+		for _, svcName := range ProfileServiceNames() {
+			stages = append(stages, StageProfileService(svcName))
+		}
 	}
 	if opts.IncludeMetrics {
 		stages = append(stages, StageMetrics)

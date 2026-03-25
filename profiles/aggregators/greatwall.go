@@ -20,9 +20,6 @@ var GreatwallProfile = profile.Profile{
 		if config.CollectorNode == nil {
 			config.CollectorNode = &common.CollectorNodeConfiguration{}
 		}
-		if config.CollectorNode.K8sNodeLogsDirectory == "" {
-			config.CollectorNode.K8sNodeLogsDirectory = "/mnt/var/log"
-		}
 		if config.CheckDeviceHealthBeforeInjection == nil {
 			checkDeviceHealthBeforeInjection := true
 			config.CheckDeviceHealthBeforeInjection = &checkDeviceHealthBeforeInjection

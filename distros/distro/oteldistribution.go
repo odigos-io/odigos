@@ -126,7 +126,7 @@ type RuntimeAgent struct {
 
 type Option struct {
 	// The name of the option, which is used to identify it and reference it in the configuration.
-	Name  string `yaml:"name"`
+	Name string `yaml:"name"`
 	// The value of the option, which is used to configure the agent in a specific way.
 	Value string `yaml:"value"`
 }
@@ -229,6 +229,11 @@ type OtelDistro struct {
 	// while java-script can run in both nodejs and browser, the distribution should specify where it is intended to run.
 	RuntimeEnvironments []RuntimeEnvironment `yaml:"runtimeEnvironments"`
 
+	// If the detected runtime version does not satisfy this distro's SupportedVersions,
+	// fall back to this distro name and repeat the version check.
+	// This forms an explicit ordered chain from newest to oldest supported version range.
+	FallbackDistro *string `yaml:"fallbackDistro,omitempty"`
+
 	// A list of frameworks this distribution targets (can be left empty)
 	Frameworks []Framework `yaml:"frameworks"`
 
@@ -248,6 +253,9 @@ type OtelDistro struct {
 	// these pods will require a restart to apply the new configuration.
 	// used for java as temporary solution until we have a better way to configure the agent.
 	ConfigAsEnvVars bool `yaml:"configAsEnvVars,omitempty"`
+
+	// if true, this distro is eBPF-based.
+	IsEbpf bool `yaml:"isEbpf,omitempty"`
 
 	// document support for metrics produced directly from the runtime
 	AgentMetrics *AgentMetrics `yaml:"agentMetrics,omitempty"`
