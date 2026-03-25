@@ -8,7 +8,10 @@ import styled from 'styled-components';
 import { FlexColumn, FlexRow, PageContent } from '@odigos/ui-kit/components';
 import { BookIcon, PlusIcon, RefreshIcon, SamplingIcon } from '@odigos/ui-kit/icons';
 import {
-  PageTitle,
+  RichTitle,
+  AutoRuleCard,
+  buildAutoRuleSummary,
+  EditAutoRuleDrawer,
   SamplingRulesList,
   ViewSamplingRuleDrawer,
   CreateSamplingRuleDrawer,
@@ -29,7 +32,7 @@ import {
   type SamplingRuleFormState,
 } from '@odigos/ui-kit/containers/v2';
 import { StatusType } from '@odigos/ui-kit/types';
-import { DOCS_URL, PAGE_TITLE, PAGE_DESCRIPTION, BTN_SAMPLING_DOCS, BTN_REFRESH, BTN_CREATE_RULE, DELETE_MODAL_TITLE, DELETE_MODAL_DESCRIPTION, DELETE_MODAL_APPROVE, DELETE_MODAL_CANCEL } from './constants';
+import { DOCS_URL, PAGE_TITLE, PAGE_DESCRIPTION, BTN_SAMPLING_DOCS, BTN_REFRESH, BTN_CREATE_RULE, DELETE_MODAL_TITLE, DELETE_MODAL_DESCRIPTION, DELETE_MODAL_APPROVE, DELETE_MODAL_CANCEL, AUTO_RULE_TITLE } from './constants';
 import { Button, ButtonSize, ButtonVariants, Note, Segment, SegmentVariant, WarningModal } from '@odigos/ui-kit/components/v2';
 
 const Header = styled(FlexRow)`
@@ -40,6 +43,7 @@ const Header = styled(FlexRow)`
 export default function Page() {
   const {
     samplingRules,
+    k8sHealthProbesConfig,
     loading,
     fetchSamplingRules,
     createNoisyOperationRule,
@@ -49,6 +53,7 @@ export default function Page() {
     createCostReductionRule,
     updateCostReductionRule,
     deleteSamplingRule,
+    updateK8sHealthProbesConfig,
   } = useSamplingRuleCRUD();
   const { data: workloadsData } = useQuery<{ workloads: { id: { namespace: string; kind: string; name: string } }[] }>(GET_WORKLOADS);
   const [selectedCategory, setSelectedCategory] = useState<SamplingCategory>(SamplingCategory.Noisy);
@@ -56,6 +61,9 @@ export default function Page() {
   const [viewEditMode, setViewEditMode] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ ruleId: string; samplingId: string } | null>(null);
+  const [isAutoRuleDrawerOpen, setIsAutoRuleDrawerOpen] = useState(false);
+
+  const autoRuleSummary = useMemo(() => buildAutoRuleSummary(k8sHealthProbesConfig), [k8sHealthProbesConfig]);
 
   const viewRuleRef = useRef(viewRuleData);
   viewRuleRef.current = viewRuleData;
@@ -227,10 +235,26 @@ export default function Page() {
     setDeleteTarget(null);
   }, []);
 
+  const handleEditAutoRule = useCallback(() => {
+    setIsAutoRuleDrawerOpen(true);
+  }, []);
+
+  const handleCloseAutoRuleDrawer = useCallback(() => {
+    setIsAutoRuleDrawerOpen(false);
+  }, []);
+
+  const handleSaveAutoRule = useCallback(
+    (enabled: boolean, keepPercentage: number) => {
+      updateK8sHealthProbesConfig(enabled, keepPercentage);
+      setIsAutoRuleDrawerOpen(false);
+    },
+    [updateK8sHealthProbesConfig],
+  );
+
   return (
     <PageContent>
       <Header>
-        <PageTitle icon={SamplingIcon} title={PAGE_TITLE} description={PAGE_DESCRIPTION} />
+        <RichTitle icon={SamplingIcon} title={PAGE_TITLE} subTitle={PAGE_DESCRIPTION} />
 
         <FlexRow $gap={8} $alignItems='center'>
           <Button label={BTN_SAMPLING_DOCS} leftIcon={BookIcon} size={ButtonSize.S} variant={ButtonVariants.Text} onClick={handleDocs} />
@@ -244,10 +268,13 @@ export default function Page() {
         <Note status={StatusType.Default} message={SAMPLING_CATEGORY_NOTES[selectedCategory]} />
       </FlexColumn>
 
+      {selectedCategory === SamplingCategory.Noisy && <AutoRuleCard title={AUTO_RULE_TITLE} summary={autoRuleSummary} onEdit={handleEditAutoRule} />}
+
       <SamplingRulesList
         title={SAMPLING_CATEGORY_LIST_TITLES[selectedCategory]}
         items={ruleItems}
         isLoading={loading}
+        showTypeFilter={selectedCategory === SamplingCategory.HighlyRelevant}
         onRuleClick={handleRuleClick}
         onEditRule={handleEditRule}
         onDeleteRule={handleDeleteRule}
@@ -265,6 +292,14 @@ export default function Page() {
       />
 
       <CreateSamplingRuleDrawer isOpen={isCreateOpen} category={CATEGORY_TO_RULE_CATEGORY[selectedCategory]} onClose={handleCloseCreateDrawer} onSubmit={handleCreateSubmit} sourceOptions={sourceOptions} namespaceOptions={namespaceOptions} />
+
+      <EditAutoRuleDrawer
+        isOpen={isAutoRuleDrawerOpen}
+        enabled={k8sHealthProbesConfig?.enabled ?? false}
+        keepPercentage={k8sHealthProbesConfig?.keepPercentage ?? 0}
+        onClose={handleCloseAutoRuleDrawer}
+        onSave={handleSaveAutoRule}
+      />
 
       <WarningModal
         title={DELETE_MODAL_TITLE}
