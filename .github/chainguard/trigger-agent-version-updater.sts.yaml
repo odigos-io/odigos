@@ -1,5 +1,5 @@
 issuer: https://token.actions.githubusercontent.com
-subject_pattern: repo:odigos-io/*:ref:refs/tags/.*
+subject_pattern: repo:odigos-io/(opentelemetry-node|opentelemetry-ruby|opentelemetry-php):ref:refs/tags/.*
 
 permissions:
 
