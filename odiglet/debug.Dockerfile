@@ -66,8 +66,8 @@ COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.71-py3.8 /python-
 COPY --from=public.ecr.aws/odigos/agents/python-community:v1.0.70 /python-instrumentation/workspace /instrumentations/python
 
 # NodeJS
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.13 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
-COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.13 /instrumentations/nodejs-community /instrumentations/nodejs-community
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v1.2.3 /instrumentations/opentelemetry-node /instrumentations/opentelemetry-node
+COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v1.2.3 /instrumentations/nodejs-community /instrumentations/nodejs-community
 
 # .NET
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
