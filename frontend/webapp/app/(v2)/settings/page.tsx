@@ -13,8 +13,7 @@ export default function Page() {
   const onSave = useCallback(
     async (config: LocalUiConfigInput) => {
       await updateLocalUiConfig(config);
-      // Refetch is in timeout so the backend can reconcile the config first
-      setTimeout(() => refetchEffectiveConfig(), 3000);
+      await refetchEffectiveConfig();
     },
     [updateLocalUiConfig, refetchEffectiveConfig],
   );
