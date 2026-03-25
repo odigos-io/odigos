@@ -1,0 +1,35 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: OtelDistribution
+metadata:
+  name: python-community3.8
+spec:
+  name: python-community3.8
+  language: python
+  runtimeEnvironments:
+    - name: python-runtime
+      supportedVersions: '>= 3.8'
+  displayName: Python Community Native Instrumentation (Python 3.8)
+  description: |
+    This distribution is for Python 3.8 applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  isEbpf: false
+  environmentVariables:
+    opAmpClientEnvironments: true
+    otlpHttpLocalNode: true
+    staticVariables:
+      - envName: OTEL_PYTHON_CONFIGURATOR
+        envValue: 'odigos-python-configurator'
+    appendOdigosVariables:
+      - envName: PYTHONPATH
+        replacePattern: '{{ORIGINAL_ENV_VALUE}}:{{ODIGOS_AGENTS_DIR}}/python3.8:{{ODIGOS_AGENTS_DIR}}/python3.8/opentelemetry/instrumentation/auto_instrumentation'
+  runtimeAgent:
+    directoryNames:
+      - "{{ODIGOS_AGENTS_DIR}}/python3.8"
+    device: 'instrumentation.odigos.io/generic'
+    k8sAttrsViaEnvVars: true
+    ldPreloadInjectionSupported: true
+  traces:
+    headSampling:
+      supported: true
+      urlPathAttributeKey: "http.target"
+      httpRequestMethodAttributeKey: "http.method"
+      serverAddressAttributeKey: "net.peer.name"

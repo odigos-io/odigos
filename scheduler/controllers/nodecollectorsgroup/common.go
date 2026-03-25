@@ -281,11 +281,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		ownMetricsPort = odigosConfiguration.CollectorNode.CollectorOwnMetricsPort
 	}
 
-	k8sNodeLogsDirectory := ""
-	if odigosConfiguration.CollectorNode != nil && odigosConfiguration.CollectorNode.K8sNodeLogsDirectory != "" {
-		k8sNodeLogsDirectory = odigosConfiguration.CollectorNode.K8sNodeLogsDirectory
-	}
-
 	otlpExporterConfiguration := odigosConfiguration.CollectorNode.OtlpExporterConfiguration
 	// TODO: remove after sometime it is a temporary workaround to support the deprecated field CollectorNode.EnableDataCompression
 	// which replaced with OtlpExporterConfiguration.EnableDataCompression.
@@ -307,7 +302,6 @@ func newNodeCollectorGroup(odigosConfiguration common.OdigosConfiguration, allDe
 		Spec: odigosv1.CollectorsGroupSpec{
 			Role:                      odigosv1.CollectorsGroupRoleNodeCollector,
 			CollectorOwnMetricsPort:   ownMetricsPort,
-			K8sNodeLogsDirectory:      k8sNodeLogsDirectory,
 			ResourcesSettings:         getResourceSettings(odigosConfiguration),
 			OtlpExporterConfiguration: otlpExporterConfiguration,
 			Metrics:                   metricsConfig,
@@ -360,4 +354,3 @@ func sync(ctx context.Context, c client.Client, scheme *runtime.Scheme) error {
 
 	return nil
 }
-

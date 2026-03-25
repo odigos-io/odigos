@@ -14,6 +14,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/odigos-io/odigos/api v0.0.0
 	github.com/odigos-io/odigos/common v0.0.0
+	github.com/odigos-io/odigos/config v0.0.0
 	github.com/odigos-io/odigos/destinations v0.0.0
 	github.com/odigos-io/odigos/k8sutils v0.0.0
 	github.com/odigos-io/odigos/odigosauth v0.0.0
@@ -211,6 +212,7 @@ require (
 replace (
 	github.com/odigos-io/odigos/api => ../api
 	github.com/odigos-io/odigos/common => ../common
+	github.com/odigos-io/odigos/config => ../config
 	github.com/odigos-io/odigos/destinations => ../destinations
 	github.com/odigos-io/odigos/k8sutils => ../k8sutils
 	github.com/odigos-io/odigos/odigosauth => ../odigosauth

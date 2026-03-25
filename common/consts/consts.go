@@ -88,7 +88,6 @@ const (
 	IgnoredContainersProperty          = "ignored-containers"
 	MountMethodProperty                = "mount-method"
 	CustomContainerRuntimeSocketPath   = "custom-container-runtime-socket-path"
-	K8sNodeLogsDirectory               = "k8s-node-logs-directory"
 	UserInstrumentationEnvsProperty    = "user-instrumentation-envs"
 	AgentEnvVarsInjectionMethod        = "agent-env-vars-injection-method"
 	NodeSelectorProperty               = "node-selector"
@@ -143,6 +142,7 @@ const (
 	GroupByTraceProcessorV2         = "groupbytrace/samplingv2"
 	OdigosTailSamplingProcessorName = "odigostailsampling"
 	URLTemplatizationProcessorName  = "odigos-url-templatization"
+	OdigosURLTemplateProcessorType  = "odigosurltemplate"
 )
 
 // Auto rollback related consts

@@ -74,6 +74,11 @@ var OdigosCollectorsGroupNodePredicate = ObjectNamePredicate{
 	AllowedObjectName: k8sconsts.OdigosNodeCollectorCollectorGroupName,
 }
 
+// OdigosURLTemplatizationProcessorPredicate filters events for the shared URL-templatization Processor CR.
+var OdigosURLTemplatizationProcessorPredicate = ObjectNamePredicate{
+	AllowedObjectName: consts.URLTemplatizationProcessorName,
+}
+
 // use this event filter to reconcile only collectors group events for cluster collectors group objects
 // this is useful if you reconcile only depends on changes from the cluster collectors group and should not react to node collectors group changes
 // example usage:

@@ -33,3 +33,10 @@ func (c *processorURLTemplateParsedRulesCache) delete(key string) {
 	defer c.mu.Unlock()
 	delete(c.data, key)
 }
+
+// clear removes all cached entries. The processor calls this from Shutdown so the cache can be released after the component is removed from the pipeline.
+func (c *processorURLTemplateParsedRulesCache) clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.data = make(map[string]parsedWorkloadEntry)
+}

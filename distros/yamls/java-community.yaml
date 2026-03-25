@@ -11,6 +11,7 @@ spec:
   displayName: Java Community Native Instrumentation
   description: |
     This distribution is for JVM-based applications (Java, Scala, Kotlin, etc.) using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  isEbpf: false
   environmentVariables:
     otlpHttpLocalNode: true
     appendOdigosVariables:

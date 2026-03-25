@@ -11,7 +11,6 @@ var GreatwallProfile = profile.Profile{
 	ShortDescription: "Bundle profile that includes " +
 		"specific preset for on-premises installations.",
 	Dependencies: []common.ProfileName{
-		"java-ebpf-instrumentations",
 		"legacy-dotnet-instrumentation",
 		"pod-manifest-env-var-injection",
 	},
@@ -19,9 +18,6 @@ var GreatwallProfile = profile.Profile{
 		// temporary set in profile until we add auto discovery for /var/log symlink target
 		if config.CollectorNode == nil {
 			config.CollectorNode = &common.CollectorNodeConfiguration{}
-		}
-		if config.CollectorNode.K8sNodeLogsDirectory == "" {
-			config.CollectorNode.K8sNodeLogsDirectory = "/mnt/var/log"
 		}
 		if config.CheckDeviceHealthBeforeInjection == nil {
 			checkDeviceHealthBeforeInjection := true

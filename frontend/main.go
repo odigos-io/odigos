@@ -27,6 +27,7 @@ import (
 	"github.com/odigos-io/odigos/api/k8sconsts"
 	"github.com/odigos-io/odigos/common"
 	commonlogger "github.com/odigos-io/odigos/common/logger"
+	"github.com/odigos-io/odigos/config"
 	"github.com/odigos-io/odigos/destinations"
 	"github.com/odigos-io/odigos/frontend/graph"
 	"github.com/odigos-io/odigos/frontend/graph/loaders"
@@ -290,6 +291,13 @@ func main() {
 	err := destinations.Load()
 	if err != nil {
 		log.Error("Error loading destinations data", "err", err)
+		os.Exit(1)
+	}
+
+	// Load config data
+	err = config.Load()
+	if err != nil {
+		log.Error("Error loading config data", "err", err)
 		os.Exit(1)
 	}
 

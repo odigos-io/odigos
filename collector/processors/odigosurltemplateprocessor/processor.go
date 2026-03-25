@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
@@ -29,15 +30,15 @@ type parsedWorkloadEntry struct {
 
 type urlTemplateProcessor struct {
 	logger              *zap.Logger
+	cfg                 *Config
 	templatizationRules map[int][]TemplatizationRule // group templatization rules by segments length
 	customIds           []internalCustomIdConfig
 
 	excludeMatcher *PropertiesMatcher
 	includeMatcher *PropertiesMatcher
 
-	// provider is optionally set in Start() when workload_config_extension is configured.
-	// When set, per-workload rules are fetched from the extension cache and the
-	// static include/exclude matchers are bypassed.
+	// provider is set in Start() when odigos_config_extension is present (the default in Odigos-managed configs).
+	// Per-workload rules come from the extension cache; include/exclude matchers apply only on the legacy static path.
 	provider collector.OdigosConfigExtension
 
 	// processorURLTemplateParsedRulesCache caches parsed rules per workload key; updated via extension callback.
@@ -81,12 +82,50 @@ func newUrlTemplateProcessor(set processor.Settings, config *Config) (*urlTempla
 
 	return &urlTemplateProcessor{
 		logger:              set.Logger,
+		cfg:                 config,
 		templatizationRules: parsedRules,
 		customIds:           customIdsRegexp,
 		excludeMatcher:      excludeMatcher,
 		includeMatcher:      includeMatcher,
 		parsedRulesCache:    newProcessorURLTemplateParsedRulesCache(),
 	}, nil
+}
+
+// Start resolves odigos_config_extension (default in Odigos) and registers for workload config updates.
+func (p *urlTemplateProcessor) Start(ctx context.Context, host component.Host) error {
+	if p.cfg.OdigosConfigExtension == nil {
+		p.logger.Warn("odigos_config_extension unset, ensure processor contains the templatization rules")
+		return nil
+	}
+	extID := p.cfg.OdigosConfigExtension
+	extensions := host.GetExtensions()
+	if ext, ok := extensions[*extID]; ok {
+		return p.registerOdigosConfigExtension(ctx, ext, extID.String())
+	}
+	return fmt.Errorf("odigos config extension %q not found or no instance implements OdigosConfigExtension", extID.String())
+}
+
+func (p *urlTemplateProcessor) registerOdigosConfigExtension(ctx context.Context, ext component.Component, extensionID string) error {
+	odigosExt, ok := ext.(collector.OdigosConfigExtension)
+	if !ok {
+		return fmt.Errorf("extension %q is not an OdigosConfigExtension (got %T)", extensionID, ext)
+	}
+	p.provider = odigosExt
+	odigosExt.RegisterWorkloadConfigCacheCallback(p)
+	if !p.provider.WaitForCacheSync(ctx) {
+		p.logger.Warn("odigos config extension cache sync did not complete; some spans may be missed on startup")
+	}
+	return nil
+}
+
+// Shutdown unregisters from the extension and clears local caches.
+func (p *urlTemplateProcessor) Shutdown(context.Context) error {
+	if p.provider != nil {
+		p.provider.UnregisterWorkloadConfigCacheCallback(p)
+		p.provider = nil
+	}
+	p.parsedRulesCache.clear()
+	return nil
 }
 
 // OnSet implements collector.WorkloadConfigCacheCallback; called when the extension cache adds/updates an entry.

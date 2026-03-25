@@ -1,0 +1,22 @@
+apiVersion: internal.odigos.io/v1beta1
+kind: Configuration
+metadata:
+  name: namespaces
+  displayName: Namespaces & Filtering
+spec:
+  fields:
+    - displayName: Ignored Namespaces
+      componentType: multiInput
+      isHelmOnly: false
+      description: Namespaces that Odigos will not instrument.
+      helmValuePath: ignoredNamespaces
+    - displayName: Ignored Containers
+      componentType: multiInput
+      isHelmOnly: false
+      description: Container names that Odigos will skip during instrumentation.
+      helmValuePath: ignoredContainers
+    - displayName: Ignore Odigos Namespace
+      componentType: toggle
+      isHelmOnly: false
+      description: When true, the Odigos system namespace is excluded from instrumentation.
+      helmValuePath: ignoreOdigosNamespace

@@ -7,10 +7,12 @@ spec:
   language: python
   runtimeEnvironments:
     - name: python-runtime
-      supportedVersions: '>= 3.8'
+      supportedVersions: '>= 3.9'
+  fallbackDistro: python-community3.8
   displayName: Python Community Native Instrumentation
   description: |
     This distribution is for Python applications using OpenTelemetry Native SDK and instrumentation libraries from the OpenTelemetry community.
+  isEbpf: false
   environmentVariables:
     opAmpClientEnvironments: true
     otlpHttpLocalNode: true

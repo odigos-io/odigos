@@ -53,6 +53,28 @@ func (c *cache) addCallback(cb collector.WorkloadConfigCacheCallback) {
 	c.callbacks = append(c.callbacks, cb)
 }
 
+// removeCallback removes the callback so it is no longer invoked on Set/Delete.
+// Processors call this in Shutdown so the extension stops holding a reference and the processor can release its cache.
+func (c *cache) removeCallback(cb collector.WorkloadConfigCacheCallback) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for i, candidate := range c.callbacks {
+		if candidate == cb {
+			c.callbacks = append(c.callbacks[:i], c.callbacks[i+1:]...)
+			return
+		}
+	}
+}
+
+// clear removes all cache data and callbacks. Used in extension Shutdown to release memory.
+func (c *cache) clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.data = make(map[string]*commonapi.ContainerCollectorConfig)
+	c.workloadKeysIndex = make(map[string]map[string]struct{})
+	c.callbacks = nil
+}
+
 // Get returns the WorkloadSamplingConfig for the given workload key, and true if found.
 func (c *cache) Get(key string) (*commonapi.ContainerCollectorConfig, bool) {
 	c.mu.RLock()

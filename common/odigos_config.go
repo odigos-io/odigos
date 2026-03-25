@@ -111,13 +111,6 @@ type CollectorNodeConfiguration struct {
 	// if not specified, it will be set to 80% of the hard limit of the memory limiter.
 	GoMemLimitMib int `json:"goMemLimitMiB,omitempty"`
 
-	// Odigos will by default attempt to collect logs from '/var/log' on each k8s node.
-	// Sometimes, this directory is actually a symlink to another directory.
-	// In this case, for logs collection to work, we need to add a mount to the target directory.
-	// This field is used to specify this target directory in these cases.
-	// A common target directory is '/mnt/var/log'.
-	K8sNodeLogsDirectory string `json:"k8sNodeLogsDirectory,omitempty"`
-
 	// Deprecated - use OtlpExporterConfiguration instead.
 	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
