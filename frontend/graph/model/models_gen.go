@@ -230,11 +230,10 @@ type ComputePlatform struct {
 }
 
 type Condition struct {
-	Status             ConditionStatus `json:"status"`
-	Type               string          `json:"type"`
-	Reason             *string         `json:"reason,omitempty"`
-	Message            *string         `json:"message,omitempty"`
-	LastTransitionTime *string         `json:"lastTransitionTime,omitempty"`
+	Status  ConditionStatus `json:"status"`
+	Type    string          `json:"type"`
+	Reason  *string         `json:"reason,omitempty"`
+	Message *string         `json:"message,omitempty"`
 }
 
 type Config struct {
@@ -1335,11 +1334,14 @@ type ServiceMap struct {
 }
 
 type ServiceMapFromSource struct {
+	NodeID      string                `json:"nodeId"`
 	ServiceName string                `json:"serviceName"`
 	Services    []*ServiceMapToSource `json:"services"`
 }
 
 type ServiceMapToSource struct {
+	NodeID      string `json:"nodeId"`
+	IsVirtual   bool   `json:"isVirtual"`
 	ServiceName string `json:"serviceName"`
 	Requests    int    `json:"requests"`
 	DateTime    string `json:"dateTime"`
@@ -1506,13 +1508,15 @@ type TestConnectionResponse struct {
 }
 
 type URLTemplatizationRule struct {
-	Template string  `json:"template"`
-	Notes    *string `json:"notes,omitempty"`
+	Template string   `json:"template"`
+	Notes    *string  `json:"notes,omitempty"`
+	Examples []string `json:"examples,omitempty"`
 }
 
 type URLTemplatizationRuleInput struct {
-	Template string  `json:"template"`
-	Notes    *string `json:"notes,omitempty"`
+	Template string   `json:"template"`
+	Notes    *string  `json:"notes,omitempty"`
+	Examples []string `json:"examples,omitempty"`
 }
 
 type URLTemplatizationRulesGroup struct {

@@ -48,7 +48,7 @@ function mapContainerToSourceContainer(c: K8sWorkloadContainerResponse): SourceC
   };
 }
 
-function mapConditionsToConditionArray(conditions: K8sWorkloadConditions | null): Condition[] | null {
+export function mapConditionsToConditionArray(conditions: K8sWorkloadConditions | null): Condition[] | null {
   if (!conditions) return null;
 
   const result: Condition[] = [];
@@ -63,7 +63,6 @@ function mapConditionsToConditionArray(conditions: K8sWorkloadConditions | null)
       status: mapDesiredStatusToConditionStatus(dcs.status),
       reason: dcs.reasonEnum ?? null,
       message: dcs.message ?? null,
-      lastTransitionTime: '',
     });
   }
 

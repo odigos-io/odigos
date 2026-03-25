@@ -223,11 +223,10 @@ type ComplexityRoot struct {
 	}
 
 	Condition struct {
-		LastTransitionTime func(childComplexity int) int
-		Message            func(childComplexity int) int
-		Reason             func(childComplexity int) int
-		Status             func(childComplexity int) int
-		Type               func(childComplexity int) int
+		Message func(childComplexity int) int
+		Reason  func(childComplexity int) int
+		Status  func(childComplexity int) int
+		Type    func(childComplexity int) int
 	}
 
 	Config struct {
@@ -1143,12 +1142,15 @@ type ComplexityRoot struct {
 	}
 
 	ServiceMapFromSource struct {
+		NodeID      func(childComplexity int) int
 		ServiceName func(childComplexity int) int
 		Services    func(childComplexity int) int
 	}
 
 	ServiceMapToSource struct {
 		DateTime    func(childComplexity int) int
+		IsVirtual   func(childComplexity int) int
+		NodeID      func(childComplexity int) int
 		Requests    func(childComplexity int) int
 		ServiceName func(childComplexity int) int
 	}
@@ -1263,6 +1265,7 @@ type ComplexityRoot struct {
 	}
 
 	URLTemplatizationRule struct {
+		Examples func(childComplexity int) int
 		Notes    func(childComplexity int) int
 		Template func(childComplexity int) int
 	}
@@ -2257,13 +2260,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ComputePlatform.Sources(childComplexity), true
-
-	case "Condition.lastTransitionTime":
-		if e.complexity.Condition.LastTransitionTime == nil {
-			break
-		}
-
-		return e.complexity.Condition.LastTransitionTime(childComplexity), true
 
 	case "Condition.message":
 		if e.complexity.Condition.Message == nil {
@@ -6399,6 +6395,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ServiceMap.Services(childComplexity), true
 
+	case "ServiceMapFromSource.nodeId":
+		if e.complexity.ServiceMapFromSource.NodeID == nil {
+			break
+		}
+
+		return e.complexity.ServiceMapFromSource.NodeID(childComplexity), true
+
 	case "ServiceMapFromSource.serviceName":
 		if e.complexity.ServiceMapFromSource.ServiceName == nil {
 			break
@@ -6419,6 +6422,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ServiceMapToSource.DateTime(childComplexity), true
+
+	case "ServiceMapToSource.isVirtual":
+		if e.complexity.ServiceMapToSource.IsVirtual == nil {
+			break
+		}
+
+		return e.complexity.ServiceMapToSource.IsVirtual(childComplexity), true
+
+	case "ServiceMapToSource.nodeId":
+		if e.complexity.ServiceMapToSource.NodeID == nil {
+			break
+		}
+
+		return e.complexity.ServiceMapToSource.NodeID(childComplexity), true
 
 	case "ServiceMapToSource.requests":
 		if e.complexity.ServiceMapToSource.Requests == nil {
@@ -6860,6 +6877,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TestConnectionResponse.Succeeded(childComplexity), true
+
+	case "URLTemplatizationRule.examples":
+		if e.complexity.URLTemplatizationRule.Examples == nil {
+			break
+		}
+
+		return e.complexity.URLTemplatizationRule.Examples(childComplexity), true
 
 	case "URLTemplatizationRule.notes":
 		if e.complexity.URLTemplatizationRule.Notes == nil {
@@ -9514,8 +9538,6 @@ func (ec *executionContext) fieldContext_Action_conditions(_ context.Context, fi
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -14707,47 +14729,6 @@ func (ec *executionContext) fieldContext_Condition_message(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Condition_lastTransitionTime(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Condition_lastTransitionTime(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastTransitionTime, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Condition_lastTransitionTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Condition",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Config_readonly(ctx context.Context, field graphql.CollectedField, obj *model.Config) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Config_readonly(ctx, field)
 	if err != nil {
@@ -17222,8 +17203,6 @@ func (ec *executionContext) fieldContext_Destination_conditions(_ context.Contex
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -22527,8 +22506,6 @@ func (ec *executionContext) fieldContext_HorizontalPodAutoscalerInfo_conditions(
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -23819,8 +23796,6 @@ func (ec *executionContext) fieldContext_InstrumentationRule_conditions(_ contex
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -25041,8 +25016,6 @@ func (ec *executionContext) fieldContext_K8sActualSource_conditions(_ context.Co
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -36847,6 +36820,10 @@ func (ec *executionContext) fieldContext_PeerSources_inbound(_ context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "nodeId":
+				return ec.fieldContext_ServiceMapToSource_nodeId(ctx, field)
+			case "isVirtual":
+				return ec.fieldContext_ServiceMapToSource_isVirtual(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_ServiceMapToSource_serviceName(ctx, field)
 			case "requests":
@@ -36899,6 +36876,10 @@ func (ec *executionContext) fieldContext_PeerSources_outbound(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "nodeId":
+				return ec.fieldContext_ServiceMapToSource_nodeId(ctx, field)
+			case "isVirtual":
+				return ec.fieldContext_ServiceMapToSource_isVirtual(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_ServiceMapToSource_serviceName(ctx, field)
 			case "requests":
@@ -41536,12 +41517,58 @@ func (ec *executionContext) fieldContext_ServiceMap_services(_ context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "nodeId":
+				return ec.fieldContext_ServiceMapFromSource_nodeId(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_ServiceMapFromSource_serviceName(ctx, field)
 			case "services":
 				return ec.fieldContext_ServiceMapFromSource_services(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapFromSource", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceMapFromSource_nodeId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceMapFromSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ServiceMapFromSource_nodeId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ServiceMapFromSource_nodeId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceMapFromSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -41630,6 +41657,10 @@ func (ec *executionContext) fieldContext_ServiceMapFromSource_services(_ context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "nodeId":
+				return ec.fieldContext_ServiceMapToSource_nodeId(ctx, field)
+			case "isVirtual":
+				return ec.fieldContext_ServiceMapToSource_isVirtual(ctx, field)
 			case "serviceName":
 				return ec.fieldContext_ServiceMapToSource_serviceName(ctx, field)
 			case "requests":
@@ -41638,6 +41669,94 @@ func (ec *executionContext) fieldContext_ServiceMapFromSource_services(_ context
 				return ec.fieldContext_ServiceMapToSource_dateTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ServiceMapToSource", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceMapToSource_nodeId(ctx context.Context, field graphql.CollectedField, obj *model.ServiceMapToSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ServiceMapToSource_nodeId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ServiceMapToSource_nodeId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceMapToSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ServiceMapToSource_isVirtual(ctx context.Context, field graphql.CollectedField, obj *model.ServiceMapToSource) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ServiceMapToSource_isVirtual(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsVirtual, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ServiceMapToSource_isVirtual(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ServiceMapToSource",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -42904,8 +43023,6 @@ func (ec *executionContext) fieldContext_SourceConditions_conditions(_ context.C
 				return ec.fieldContext_Condition_reason(ctx, field)
 			case "message":
 				return ec.fieldContext_Condition_message(ctx, field)
-			case "lastTransitionTime":
-				return ec.fieldContext_Condition_lastTransitionTime(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Condition", field.Name)
 		},
@@ -44604,6 +44721,47 @@ func (ec *executionContext) fieldContext_URLTemplatizationRule_notes(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _URLTemplatizationRule_examples(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRule) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_URLTemplatizationRule_examples(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Examples, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_URLTemplatizationRule_examples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "URLTemplatizationRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _UrlTemplatizationRulesGroup_filterK8sNamespace(ctx context.Context, field graphql.CollectedField, obj *model.URLTemplatizationRulesGroup) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_UrlTemplatizationRulesGroup_filterK8sNamespace(ctx, field)
 	if err != nil {
@@ -44858,6 +45016,8 @@ func (ec *executionContext) fieldContext_UrlTemplatizationRulesGroup_templatizat
 				return ec.fieldContext_URLTemplatizationRule_template(ctx, field)
 			case "notes":
 				return ec.fieldContext_URLTemplatizationRule_notes(ctx, field)
+			case "examples":
+				return ec.fieldContext_URLTemplatizationRule_examples(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type URLTemplatizationRule", field.Name)
 		},
@@ -49301,7 +49461,7 @@ func (ec *executionContext) unmarshalInputURLTemplatizationRuleInput(ctx context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"template", "notes"}
+	fieldsInOrder := [...]string{"template", "notes", "examples"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -49322,6 +49482,13 @@ func (ec *executionContext) unmarshalInputURLTemplatizationRuleInput(ctx context
 				return it, err
 			}
 			it.Notes = data
+		case "examples":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("examples"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Examples = data
 		}
 	}
 
@@ -50654,8 +50821,6 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Condition_reason(ctx, field, obj)
 		case "message":
 			out.Values[i] = ec._Condition_message(ctx, field, obj)
-		case "lastTransitionTime":
-			out.Values[i] = ec._Condition_lastTransitionTime(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -58111,6 +58276,11 @@ func (ec *executionContext) _ServiceMapFromSource(ctx context.Context, sel ast.S
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ServiceMapFromSource")
+		case "nodeId":
+			out.Values[i] = ec._ServiceMapFromSource_nodeId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "serviceName":
 			out.Values[i] = ec._ServiceMapFromSource_serviceName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -58155,6 +58325,16 @@ func (ec *executionContext) _ServiceMapToSource(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ServiceMapToSource")
+		case "nodeId":
+			out.Values[i] = ec._ServiceMapToSource_nodeId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isVirtual":
+			out.Values[i] = ec._ServiceMapToSource_isVirtual(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "serviceName":
 			out.Values[i] = ec._ServiceMapToSource_serviceName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -59000,6 +59180,8 @@ func (ec *executionContext) _URLTemplatizationRule(ctx context.Context, sel ast.
 			}
 		case "notes":
 			out.Values[i] = ec._URLTemplatizationRule_notes(ctx, field, obj)
+		case "examples":
+			out.Values[i] = ec._URLTemplatizationRule_examples(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

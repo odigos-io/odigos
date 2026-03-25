@@ -1,6 +1,7 @@
 package collectormetrics
 
 import (
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -426,8 +427,11 @@ type ServiceGraph struct {
 }
 
 type ServiceGraphEdge struct {
-	RequestCount int64
-	LastUpdated  time.Time
+
+	// set to true if the "To" side of the edge is for a virtual node
+	ToNodeIsVirtual bool
+	RequestCount    int64
+	LastUpdated     time.Time
 }
 
 func newServiceGraph() *ServiceGraph {
@@ -437,14 +441,17 @@ func newServiceGraph() *ServiceGraph {
 }
 
 func (sg *ServiceGraph) UpdateFromDataPoint(dp pmetric.NumberDataPoint) {
-	attrs := dp.Attributes().AsRaw()
+	attrs := dp.Attributes()
 
-	client, ok1 := attrs["client"].(string)
-	server, ok2 := attrs["server"].(string)
+	clientBase, ok1 := attrs.Get("client")
+	serverBase, ok2 := attrs.Get("server")
 
-	if !ok1 || !ok2 || client == "unknown" || server == "unknown" {
+	if !ok1 || !ok2 || clientBase.Str() == "unknown" || serverBase.Str() == "unknown" {
 		return
 	}
+
+	clientID := buildNodeID(clientBase.Str(), "client", attrs)
+	serverID := buildNodeID(serverBase.Str(), "server", attrs)
 
 	val := int64(0)
 	switch dp.ValueType() {
@@ -459,19 +466,62 @@ func (sg *ServiceGraph) UpdateFromDataPoint(dp pmetric.NumberDataPoint) {
 	sg.mu.Lock()
 	defer sg.mu.Unlock()
 
-	if _, ok := sg.edges[client]; !ok {
-		sg.edges[client] = make(map[string]*ServiceGraphEdge)
+	if _, ok := sg.edges[clientID]; !ok {
+		sg.edges[clientID] = make(map[string]*ServiceGraphEdge)
 	}
 
-	edge, exists := sg.edges[client][server]
+	edge, exists := sg.edges[clientID][serverID]
 	if !exists {
-		sg.edges[client][server] = &ServiceGraphEdge{
-			RequestCount: val,
-			LastUpdated:  timestamp,
+		// a server node is not virtual if it has service.name attribute
+		_, isServerInstrumentedNode := attrs.Get("server_service_name")
+		sg.edges[clientID][serverID] = &ServiceGraphEdge{
+			ToNodeIsVirtual: !isServerInstrumentedNode,
+			RequestCount:    val,
+			LastUpdated:     timestamp,
 		}
 	} else {
 		// always overwrite because it's a cumulative counter
 		edge.RequestCount = val
 		edge.LastUpdated = timestamp
 	}
+}
+
+// buildNodeID constructs a composite node identifier from a base service name and
+// any extra dimensions the servicegraph connector attached to this side of the edge.
+// Extra dimensions appear as "<side>_<attr>" attributes (e.g. "client_k8s_namespace_name").
+// The connector always emits "client_service_name" / "server_service_name" (the service.name
+// dimension, with dots normalized to underscores by the Prometheus round-trip), which are
+// redundant with the base name and therefore skipped.
+// Keys are sorted before appending so the resulting ID is deterministic regardless of
+// attribute map iteration order.
+// When no extra dimensions are configured the function returns just the base name,
+// preserving full backward compatibility.
+func buildNodeID(base string, side string, attrs pcommon.Map) string {
+	prefix := side + "_"
+	// Prometheus [exporter] normalizes dots → underscores in label names, so "service.name"
+	// arrives here as "service_name".
+	skip := prefix + "service_name"
+
+	var extraKeys []string
+	attrs.Range(func(k string, _ pcommon.Value) bool {
+		if strings.HasPrefix(k, prefix) && k != skip {
+			extraKeys = append(extraKeys, k)
+		}
+		return true
+	})
+
+	if len(extraKeys) == 0 {
+		return base
+	}
+
+	sort.Strings(extraKeys)
+
+	parts := make([]string, 0, 1+len(extraKeys))
+	parts = append(parts, base)
+	for _, k := range extraKeys {
+		if v, ok := attrs.Get(k); ok {
+			parts = append(parts, v.Str())
+		}
+	}
+	return strings.Join(parts, "|")
 }

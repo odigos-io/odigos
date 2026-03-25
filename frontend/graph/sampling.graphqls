@@ -1,287 +1,303 @@
-
 type TailSamplingConfig {
+  # if set to true, tail sampling will be disabled globally
+  # regardless of any other configurations or rules set.
+  # can be used to reduce collectors resource usage, troubleshooting, etc,
+  # or when tail-sampling is not needed or desired and should be shut off.
+  disabled: Boolean
 
-	# if set to true, tail sampling will be disabled globally
-	# regardless of any other configurations or rules set.
-	# can be used to reduce collectors resource usage, troubleshooting, etc,
-	# or when tail-sampling is not needed or desired and should be shut off.
-    disabled: Boolean
-
-	# time to wait from the first span of a trace until a trace is considered completed.
-	# at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
-	# introduces this amount of latency in the pipeline and for trace to hit the destination.
-	# also increases memory usage for keeping spans in memory until the wait duration time is reached.
-	# setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
-	# and broken traces due to sampling each trace in few pieces.
-	traceAggregationWaitDuration: String
+  # time to wait from the first span of a trace until a trace is considered completed.
+  # at this time, all spans received for this trace are aggregated and a tail-sampling decision is applied.
+  # introduces this amount of latency in the pipeline and for trace to hit the destination.
+  # also increases memory usage for keeping spans in memory until the wait duration time is reached.
+  # setting it too low might introduce fragmentation of traces - sampling decisions based on incomplete traces,
+  # and broken traces due to sampling each trace in few pieces.
+  traceAggregationWaitDuration: String
 }
 
 type K8sHealthProbesSamplingConfig {
-    # if set to true, odigos will automatically detect and sample out health probes.
-    # this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
-    # users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
-    enabled: Boolean
+  # if set to true, odigos will automatically detect and sample out health probes.
+  # this is a global knob to enable health probes auto-detection and sampling completely for all sources in the cluster.
+  # users that are uninterested in tracing health probes (or collect less of these traces) can set this to true.
+  enabled: Boolean
 
-    # percentage % (0-100) of health probes to keep.
-    # if not set, it is defaulted to 0% -> all health probes will be sampled out.
-    # set to some low value (like 1%) to still keep some health-probes traces.
-    keepPercentage: Float
+  # percentage % (0-100) of health probes to keep.
+  # if not set, it is defaulted to 0% -> all health probes will be sampled out.
+  # set to some low value (like 1%) to still keep some health-probes traces.
+  keepPercentage: Float
 }
 
 type SamplingConfig {
+  # configuration for tail sampling.
+  tailSampling: TailSamplingConfig
 
-    # configuration for tail sampling.
-    tailSampling: TailSamplingConfig
-
-    # configuration for odigos auto-kubelet-probes detection and sampling.
-    k8sHealthProbesSampling: K8sHealthProbesSamplingConfig
+  # configuration for odigos auto-kubelet-probes detection and sampling.
+  k8sHealthProbesSampling: K8sHealthProbesSamplingConfig
 }
 
 # Input type for mutation arguments (GraphQL only allows input types as operation args).
 input TailSamplingConfigInput {
-    disabled: Boolean
-    traceAggregationWaitDuration: String
+  disabled: Boolean
+  traceAggregationWaitDuration: String
 }
 
 input K8sHealthProbesSamplingConfigInput {
-    enabled: Boolean
-    keepPercentage: Float
+  enabled: Boolean
+  keepPercentage: Float
 }
 
 input SamplingConfigInput {
-    tailSampling: TailSamplingConfigInput
-    k8sHealthProbesSampling: K8sHealthProbesSamplingConfigInput
+  tailSampling: TailSamplingConfigInput
+  k8sHealthProbesSampling: K8sHealthProbesSamplingConfigInput
 }
 
 type SamplingConfigs {
+  # shows the effective config which is used in practice in odigos.
+  # this is the merge of all configs and potentially profiles.
+  effective: SamplingConfig
 
-    # shows the effective config which is used in practice in odigos.
-    # this is the merge of all configs and potentially profiles.
-    effective: SamplingConfig
+  # shows the config which is used in the helm deployment or cli.
+  helmDeployment: SamplingConfig
 
-    # shows the config which is used in the helm deployment or cli.
-    helmDeployment: SamplingConfig
+  # shows the config which is managed by central-backend.
+  remoteConfigFromCentral: SamplingConfig
 
-    # shows the config which is managed by central-backend.
-    remoteConfigFromCentral: SamplingConfig
-
-    # shows the config which is managed by local ui.
-    localUiConfig: SamplingConfig
+  # shows the config which is managed by local ui.
+  localUiConfig: SamplingConfig
 }
 
 # ---- Shared types for sampling rules ----
 
 enum SamplingWorkloadLanguage {
-    java
-    python
-    go
-    dotnet
-    javascript
-    php
-    ruby
+  java
+  python
+  go
+  dotnet
+  javascript
+  php
+  ruby
 }
 
 # scope to limit a sampling rule to specific sources
 type SourcesScope {
-    workloadName: String
-    workloadKind: K8sResourceKind
-    workloadNamespace: String
-    workloadLanguage: SamplingWorkloadLanguage
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  workloadLanguage: SamplingWorkloadLanguage
 }
 
 input SourcesScopeInput {
-    workloadName: String
-    workloadKind: K8sResourceKind
-    workloadNamespace: String
-    workloadLanguage: SamplingWorkloadLanguage
+  workloadName: String
+  workloadKind: K8sResourceKind
+  workloadNamespace: String
+  workloadLanguage: SamplingWorkloadLanguage
 }
 
 # ---- Head sampling operation matchers (used by noisy operations) ----
 
 type HeadSamplingHttpServerMatcher {
-    route: String
-    routePrefix: String
-    method: String
+  route: String
+  routePrefix: String
+  method: String
 }
 
 type HeadSamplingHttpClientMatcher {
-    serverAddress: String
-    templatedPath: String
-    templatedPathPrefix: String
-    method: String
+  serverAddress: String
+  templatedPath: String
+  templatedPathPrefix: String
+  method: String
 }
 
 type HeadSamplingOperationMatcher {
-    httpServer: HeadSamplingHttpServerMatcher
-    httpClient: HeadSamplingHttpClientMatcher
+  httpServer: HeadSamplingHttpServerMatcher
+  httpClient: HeadSamplingHttpClientMatcher
 }
 
 input HeadSamplingHttpServerMatcherInput {
-    route: String
-    routePrefix: String
-    method: String
+  route: String
+  routePrefix: String
+  method: String
 }
 
 input HeadSamplingHttpClientMatcherInput {
-    serverAddress: String
-    templatedPath: String
-    templatedPathPrefix: String
-    method: String
+  serverAddress: String
+  templatedPath: String
+  templatedPathPrefix: String
+  method: String
 }
 
 input HeadSamplingOperationMatcherInput {
-    httpServer: HeadSamplingHttpServerMatcherInput
-    httpClient: HeadSamplingHttpClientMatcherInput
+  httpServer: HeadSamplingHttpServerMatcherInput
+  httpClient: HeadSamplingHttpClientMatcherInput
 }
 
 # ---- Tail sampling operation matchers (used by highly relevant + cost reduction) ----
 
 type TailSamplingHttpServerMatcher {
-    route: String
-    routePrefix: String
-    method: String
+  route: String
+  routePrefix: String
+  method: String
 }
 
 type TailSamplingKafkaMatcher {
-    kafkaTopic: String
+  kafkaTopic: String
 }
 
 type TailSamplingOperationMatcher {
-    httpServer: TailSamplingHttpServerMatcher
-    kafkaConsumer: TailSamplingKafkaMatcher
-    kafkaProducer: TailSamplingKafkaMatcher
+  httpServer: TailSamplingHttpServerMatcher
+  kafkaConsumer: TailSamplingKafkaMatcher
+  kafkaProducer: TailSamplingKafkaMatcher
 }
 
 input TailSamplingHttpServerMatcherInput {
-    route: String
-    routePrefix: String
-    method: String
+  route: String
+  routePrefix: String
+  method: String
 }
 
 input TailSamplingKafkaMatcherInput {
-    kafkaTopic: String
+  kafkaTopic: String
 }
 
 input TailSamplingOperationMatcherInput {
-    httpServer: TailSamplingHttpServerMatcherInput
-    kafkaConsumer: TailSamplingKafkaMatcherInput
-    kafkaProducer: TailSamplingKafkaMatcherInput
+  httpServer: TailSamplingHttpServerMatcherInput
+  kafkaConsumer: TailSamplingKafkaMatcherInput
+  kafkaProducer: TailSamplingKafkaMatcherInput
 }
 
 # ---- Sampling rule types ----
 
 type NoisyOperationRule {
-    ruleId: ID!
-    name: String
-    disabled: Boolean!
-    sourceScopes: [SourcesScope!]
-    operation: HeadSamplingOperationMatcher
-    # percentage (0-100) of matching traces to keep. unset defaults to 0% (drop all).
-    percentageAtMost: Float
-    notes: String
+  ruleId: ID!
+  name: String
+  disabled: Boolean!
+  sourceScopes: [SourcesScope!]
+  operation: HeadSamplingOperationMatcher
+  # percentage (0-100) of matching traces to keep. unset defaults to 0% (drop all).
+  percentageAtMost: Float
+  notes: String
 }
 
 type HighlyRelevantOperationRule {
-    ruleId: ID!
-    name: String
-    disabled: Boolean!
-    sourceScopes: [SourcesScope!]
-    # if true, only spans with SpanStatus set to Error are considered
-    error: Boolean!
-    # if set, only operations with duration in ms larger than this value are considered
-    durationAtLeastMs: Int
-    operation: TailSamplingOperationMatcher
-    # percentage (0-100) of matching traces to keep. unset defaults to 100% (keep all).
-    percentageAtLeast: Float
-    notes: String
+  ruleId: ID!
+  name: String
+  disabled: Boolean!
+  sourceScopes: [SourcesScope!]
+  # if true, only spans with SpanStatus set to Error are considered
+  error: Boolean!
+  # if set, only operations with duration in ms larger than this value are considered
+  durationAtLeastMs: Int
+  operation: TailSamplingOperationMatcher
+  # percentage (0-100) of matching traces to keep. unset defaults to 100% (keep all).
+  percentageAtLeast: Float
+  notes: String
 }
 
 type CostReductionRule {
-    ruleId: ID!
-    name: String
-    disabled: Boolean!
-    sourceScopes: [SourcesScope!]
-    operation: TailSamplingOperationMatcher
-    # percentage (0-100) of matching traces to keep. required field.
-    percentageAtMost: Float!
-    notes: String
+  ruleId: ID!
+  name: String
+  disabled: Boolean!
+  sourceScopes: [SourcesScope!]
+  operation: TailSamplingOperationMatcher
+  # percentage (0-100) of matching traces to keep. required field.
+  percentageAtMost: Float!
+  notes: String
 }
 
 # ---- Sampling rule inputs ----
 
 input NoisyOperationRuleInput {
-    name: String
-    disabled: Boolean
-    sourceScopes: [SourcesScopeInput!]
-    operation: HeadSamplingOperationMatcherInput
-    percentageAtMost: Float
-    notes: String
+  name: String
+  disabled: Boolean
+  sourceScopes: [SourcesScopeInput!]
+  operation: HeadSamplingOperationMatcherInput
+  percentageAtMost: Float
+  notes: String
 }
 
 input HighlyRelevantOperationRuleInput {
-    name: String
-    disabled: Boolean
-    sourceScopes: [SourcesScopeInput!]
-    error: Boolean
-    durationAtLeastMs: Int
-    operation: TailSamplingOperationMatcherInput
-    percentageAtLeast: Float
-    notes: String
+  name: String
+  disabled: Boolean
+  sourceScopes: [SourcesScopeInput!]
+  error: Boolean
+  durationAtLeastMs: Int
+  operation: TailSamplingOperationMatcherInput
+  percentageAtLeast: Float
+  notes: String
 }
 
 input CostReductionRuleInput {
-    name: String
-    disabled: Boolean
-    sourceScopes: [SourcesScopeInput!]
-    operation: TailSamplingOperationMatcherInput
-    percentageAtMost: Float!
-    notes: String
+  name: String
+  disabled: Boolean
+  sourceScopes: [SourcesScopeInput!]
+  operation: TailSamplingOperationMatcherInput
+  percentageAtMost: Float!
+  notes: String
 }
 
 # ---- Container for all sampling rules ----
 
 type SamplingRules {
-    # stable identifier for this rule group (k8s metadata.name of the Sampling CR)
-    id: ID!
-    # user-facing display name for this rule group
-    name: String
-    noisyOperations: [NoisyOperationRule!]!
-    highlyRelevantOperations: [HighlyRelevantOperationRule!]!
-    costReductionRules: [CostReductionRule!]!
+  # stable identifier for this rule group (k8s metadata.name of the Sampling CR)
+  id: ID!
+  # user-facing display name for this rule group
+  name: String
+  noisyOperations: [NoisyOperationRule!]!
+  highlyRelevantOperations: [HighlyRelevantOperationRule!]!
+  costReductionRules: [CostReductionRule!]!
 }
 
 # ---- Root sampling type ----
 
 type Sampling {
-    # global sampling configs (tail sampling, health probes, etc.)
-    configs: SamplingConfigs!
-    # sampling rule groups (one per Sampling CR)
-    rules: [SamplingRules!]!
+  # global sampling configs (tail sampling, health probes, etc.)
+  configs: SamplingConfigs!
+  # sampling rule groups (one per Sampling CR)
+  rules: [SamplingRules!]!
 }
 
 extend type Query {
-    sampling: Sampling!
+  sampling: Sampling!
 }
 
 extend type Mutation {
+  # update the local ui sampling config.
+  # if nil is provided, the local ui config will be reset (using helm deployment, remote config from central, or defaults)
+  # each value in the config is optional, and if not provided, the corresponding config will be left unchanged.
+  updateLocalUiSamplingConfig(config: SamplingConfigInput): Boolean!
 
-    # update the local ui sampling config.
-    # if nil is provided, the local ui config will be reset (using helm deployment, remote config from central, or defaults)
-    # each value in the config is optional, and if not provided, the corresponding config will be left unchanged.
-    updateLocalUiSamplingConfig(config: SamplingConfigInput): Boolean!
+  # ---- Noisy operations CRUD ----
+  createNoisyOperationRule(
+    samplingId: ID!
+    rule: NoisyOperationRuleInput!
+  ): NoisyOperationRule!
+  updateNoisyOperationRule(
+    samplingId: ID!
+    ruleId: ID!
+    rule: NoisyOperationRuleInput!
+  ): NoisyOperationRule!
+  deleteNoisyOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
 
-    # ---- Noisy operations CRUD ----
-    createNoisyOperationRule(samplingId: ID!, rule: NoisyOperationRuleInput!): NoisyOperationRule!
-    updateNoisyOperationRule(samplingId: ID!, ruleId: ID!, rule: NoisyOperationRuleInput!): NoisyOperationRule!
-    deleteNoisyOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
+  # ---- Highly relevant operations CRUD ----
+  createHighlyRelevantOperationRule(
+    samplingId: ID!
+    rule: HighlyRelevantOperationRuleInput!
+  ): HighlyRelevantOperationRule!
+  updateHighlyRelevantOperationRule(
+    samplingId: ID!
+    ruleId: ID!
+    rule: HighlyRelevantOperationRuleInput!
+  ): HighlyRelevantOperationRule!
+  deleteHighlyRelevantOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
 
-    # ---- Highly relevant operations CRUD ----
-    createHighlyRelevantOperationRule(samplingId: ID!, rule: HighlyRelevantOperationRuleInput!): HighlyRelevantOperationRule!
-    updateHighlyRelevantOperationRule(samplingId: ID!, ruleId: ID!, rule: HighlyRelevantOperationRuleInput!): HighlyRelevantOperationRule!
-    deleteHighlyRelevantOperationRule(samplingId: ID!, ruleId: ID!): Boolean!
-
-    # ---- Cost reduction CRUD ----
-    createCostReductionRule(samplingId: ID!, rule: CostReductionRuleInput!): CostReductionRule!
-    updateCostReductionRule(samplingId: ID!, ruleId: ID!, rule: CostReductionRuleInput!): CostReductionRule!
-    deleteCostReductionRule(samplingId: ID!, ruleId: ID!): Boolean!
+  # ---- Cost reduction CRUD ----
+  createCostReductionRule(
+    samplingId: ID!
+    rule: CostReductionRuleInput!
+  ): CostReductionRule!
+  updateCostReductionRule(
+    samplingId: ID!
+    ruleId: ID!
+    rule: CostReductionRuleInput!
+  ): CostReductionRule!
+  deleteCostReductionRule(samplingId: ID!, ruleId: ID!): Boolean!
 }

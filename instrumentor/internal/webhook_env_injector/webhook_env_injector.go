@@ -11,17 +11,18 @@ import (
 	odigosv1 "github.com/odigos-io/odigos/api/odigos/v1alpha1"
 	"github.com/odigos-io/odigos/common"
 	commonconsts "github.com/odigos-io/odigos/common/consts"
-	"github.com/odigos-io/odigos/common/envOverwrite"
+	distroTypes "github.com/odigos-io/odigos/distros/distro"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/odigos-io/odigos/api/k8sconsts"
 )
 
 func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, container *corev1.Container,
-	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer, config *common.OdigosConfiguration) error {
+	otelDistro *distroTypes.OtelDistro, runtimeDetails *odigosv1.RuntimeDetailsByContainer, config *common.OdigosConfiguration) error {
 
-	envVarsPerLanguage := getEnvVarNamesForLanguage(runtimeDetails.Language)
-	if envVarsPerLanguage == nil {
+	appendEnvVars := otelDistro.EnvironmentVariables.AppendOdigosVariables
+
+	if len(appendEnvVars) == 0 {
 		// no env vars to inject for this language
 		return nil
 	}
@@ -79,15 +80,17 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, container
 	// 3. Sets environment variables with Odigos defaults when they are not defined in either the manifest or the runtime.
 
 	isOdigosAgentEnvAppended := false
-	for _, envVarName := range envVarsPerLanguage {
+	for i := range appendEnvVars {
+		appendEnvVar := &appendEnvVars[i]
+
 		// 1.
-		if handleManifestEnvVar(container, envVarName, otelsdk, logger) {
+		if handleManifestEnvVar(container, appendEnvVar, logger) {
 			isOdigosAgentEnvAppended = true
 			continue
 		}
 
 		// 2.
-		if injectEnvVarsFromRuntime(logger, container, envVarName, otelsdk, runtimeDetails) {
+		if injectEnvVarsFromRuntime(logger, container, appendEnvVar, runtimeDetails) {
 			isOdigosAgentEnvAppended = true
 			continue
 		}
@@ -95,7 +98,7 @@ func InjectOdigosAgentEnvVars(ctx context.Context, logger logr.Logger, container
 
 	// 3.
 	if !isOdigosAgentEnvAppended {
-		applyOdigosEnvDefaults(container, envVarsPerLanguage, otelsdk)
+		applyOdigosEnvDefaults(container, appendEnvVars, logger)
 	}
 
 	return nil
@@ -110,30 +113,20 @@ func getEnvVarFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContai
 	return "", false
 }
 
-func getEnvVarNamesForLanguage(pl common.ProgrammingLanguage) []string {
-	return envOverwrite.EnvVarsForLanguage[pl]
-}
-
 // Return true if further processing should be skipped, either because it was already handled or due to a potential error (e.g., missing possible values)
 // Return false if the env was not processed using the manifest value and requires further handling by other methods.
-func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsdk common.OtelSdk, logger logr.Logger) bool {
+func handleManifestEnvVar(container *corev1.Container, appendEnvVar *distroTypes.AppendOdigosEnvironmentVariable, logger logr.Logger) bool {
+	envVarName := appendEnvVar.EnvName
 	manifestEnvVar := getContainerEnvVarPointer(&container.Env, envVarName)
 	if manifestEnvVar == nil || (manifestEnvVar.ValueFrom == nil && manifestEnvVar.Value == "") {
 		return false // Not found in manifest. further process it
 	}
 
-	possibleValues := envOverwrite.GetPossibleValuesPerEnv(manifestEnvVar.Name)
-	if possibleValues == nil {
-		return true // Skip further processing
-	}
-
-	odigosValueForOtelSdk := possibleValues[otelsdk]
-
 	// In case of env configured as ValueFrom [env[name].valueFrom.configMapKeyRef.key]
 	// We are changing the user MY_ENV to ORIGINAL_{MY_ENV}
 	// and setting MY_ENV to be ORIGINAL_MY_ENV value + Odigos additions
 	if isValueFromConfigmap(manifestEnvVar) {
-		handleValueFromEnvVar(container, manifestEnvVar, envVarName, odigosValueForOtelSdk)
+		handleValueFromEnvVar(container, manifestEnvVar, appendEnvVar, logger)
 		return true // Handled, no need for further processing
 	}
 
@@ -143,44 +136,32 @@ func handleManifestEnvVar(container *corev1.Container, envVarName string, otelsd
 		return true // Skip further processing
 	}
 
-	updatedEnvValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, manifestEnvVar.Value, odigosValueForOtelSdk)
-	if updatedEnvValue != nil {
-		manifestEnvVar.Value = *updatedEnvValue
-		logger.Info("updated manifest environment variable", "envVarName", envVarName, "value", *updatedEnvValue)
-	}
+	updatedEnvValue := distroTypes.EvaluateReplacePattern(appendEnvVar.ReplacePattern, manifestEnvVar.Value, k8sconsts.OdigosAgentsDirectory)
+	manifestEnvVar.Value = updatedEnvValue
 	return true // Handled, no need for further processing
 }
 
-func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, envVarName string,
-	otelsdk common.OtelSdk, runtimeDetails *odigosv1.RuntimeDetailsByContainer) bool {
-	logger.Info("Inject Odigos values based on runtime details", "envVarName", envVarName, "container", container.Name)
+func injectEnvVarsFromRuntime(logger logr.Logger, container *corev1.Container, appendEnvVar *distroTypes.AppendOdigosEnvironmentVariable,
+	runtimeDetails *odigosv1.RuntimeDetailsByContainer) bool {
 
 	if !shouldInject(runtimeDetails, logger, container.Name) {
 		return false
 	}
 
-	envVarsToInject := processEnvVarsFromRuntimeDetails(runtimeDetails, envVarName, otelsdk)
+	envVarsToInject := processEnvVarsFromRuntimeDetails(runtimeDetails, appendEnvVar, logger)
 	if len(envVarsToInject) > 0 {
 		container.Env = append(container.Env, envVarsToInject...)
 		return true
 	}
+
 	return false
 }
 
-func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, envVarName string, otelsdk common.OtelSdk) []corev1.EnvVar {
+func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByContainer, appendEnvVar *distroTypes.AppendOdigosEnvironmentVariable, logger logr.Logger) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
+	envVarName := appendEnvVar.EnvName
 
-	odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
-	if odigosValueForOtelSdk == nil { // No odigos values for this env var
-		return envVars
-	}
-	valueToInject, ok := odigosValueForOtelSdk[otelsdk]
-	if !ok { // No odigos value for this SDK
-		return envVars
-	}
 	for _, envVar := range runtimeDetails.EnvFromContainerRuntime {
-
-		// Get the relevant envVar that we're iterating over
 		if envVar.Name != envVarName {
 			continue
 		}
@@ -190,29 +171,26 @@ func processEnvVarsFromRuntimeDetails(runtimeDetails *odigosv1.RuntimeDetailsByC
 			// from the env appending perspective, this is the same as not having it at all
 			// we want to set it to the odigos value
 			// this will be done at the last step
+			logger.Info("[DEBUG] env var found in runtime but value is empty, will fall through to default", "envName", envVarName)
 			continue
 		}
 
-		patchedEnvVarValue := envOverwrite.AppendOdigosAdditionsToEnvVar(envVarName, envVar.Value, valueToInject)
-		envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: *patchedEnvVarValue})
+		patchedEnvVarValue := distroTypes.EvaluateReplacePattern(appendEnvVar.ReplacePattern, envVar.Value, k8sconsts.OdigosAgentsDirectory)
+		logger.Info("[DEBUG] patched env var from runtime", "envName", envVarName, "originalValue", envVar.Value, "patchedValue", patchedEnvVarValue)
+		envVars = append(envVars, corev1.EnvVar{Name: envVarName, Value: patchedEnvVarValue})
 	}
 
 	return envVars
 }
 
-func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []string, otelsdk common.OtelSdk) {
-	for _, envVarName := range envVarsPerLanguage {
-		odigosValueForOtelSdk := envOverwrite.GetPossibleValuesPerEnv(envVarName)
-		if odigosValueForOtelSdk == nil { // No Odigos values for this env var
-			continue
-		}
+func applyOdigosEnvDefaults(container *corev1.Container, appendEnvVars []distroTypes.AppendOdigosEnvironmentVariable, logger logr.Logger) {
+	for i := range appendEnvVars {
+		appendEnvVar := &appendEnvVars[i]
+		// EvaluateReplacePattern with empty originalValue strips the placeholder and any
+		// adjacent delimiter, giving the pure odigos default value.
+		valueToInject := distroTypes.EvaluateReplacePattern(appendEnvVar.ReplacePattern, "", k8sconsts.OdigosAgentsDirectory)
 
-		valueToInject, ok := odigosValueForOtelSdk[otelsdk]
-		if !ok { // No Odigos value for this SDK
-			continue
-		}
-
-		existingEnv := getContainerEnvVarPointer(&container.Env, envVarName)
+		existingEnv := getContainerEnvVarPointer(&container.Env, appendEnvVar.EnvName)
 		if existingEnv != nil && existingEnv.ValueFrom == nil {
 			if existingEnv.Value == "" {
 				existingEnv.Value = valueToInject
@@ -221,7 +199,7 @@ func applyOdigosEnvDefaults(container *corev1.Container, envVarsPerLanguage []st
 		}
 
 		container.Env = append(container.Env, corev1.EnvVar{
-			Name:  envVarName,
+			Name:  appendEnvVar.EnvName,
 			Value: valueToInject,
 		})
 	}
@@ -262,13 +240,15 @@ func isValueFromConfigmap(envVar *corev1.EnvVar) bool {
 	return envVar.ValueFrom != nil
 }
 
-func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, originalName, odigosValue string) {
+// handleValueFromEnvVar deals with env vars that use valueFrom (e.g. ConfigMap/Secret reference).
+// Since we can't append to a valueFrom directly, we rename the original env var to ORIGINAL_<name>
+// (keeping its valueFrom intact) and create a new plain env var that combines the renamed reference
+// with the odigos agent value via k8s variable expansion: $(ORIGINAL_<name>) + odigos addition.
+func handleValueFromEnvVar(container *corev1.Container, envVar *corev1.EnvVar, appendEnvVar *distroTypes.AppendOdigosEnvironmentVariable, logger logr.Logger) {
 	originalNewKey := "ORIGINAL_" + envVar.Name
 
-	combinedValue := envOverwrite.AppendOdigosAdditionsToEnvVar(originalName, fmt.Sprintf("$(%s)", originalNewKey), odigosValue)
-	if combinedValue != nil {
-		envVar.Name = originalNewKey
-		newEnv := corev1.EnvVar{Name: originalName, Value: *combinedValue}
-		container.Env = append(container.Env, newEnv)
-	}
+	combinedValue := distroTypes.EvaluateReplacePattern(appendEnvVar.ReplacePattern, fmt.Sprintf("$(%s)", originalNewKey), k8sconsts.OdigosAgentsDirectory)
+	envVar.Name = originalNewKey
+	newEnv := corev1.EnvVar{Name: appendEnvVar.EnvName, Value: combinedValue}
+	container.Env = append(container.Env, newEnv)
 }

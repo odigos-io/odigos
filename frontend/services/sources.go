@@ -457,10 +457,17 @@ func EnsureSourceCRD(ctx context.Context, nsName string, workloadName string, wo
 
 	switch workloadKind {
 	// Namespace is not a workload, but we need it to "select future apps" by creating a Source CRD for it
-	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob, WorkloadKindDeploymentConfig, WorkloadKindArgoRollout:
+	case WorkloadKindNamespace, WorkloadKindDeployment, WorkloadKindStatefulSet, WorkloadKindDaemonSet, WorkloadKindCronJob, WorkloadKindDeploymentConfig, WorkloadKindArgoRollout, WorkloadKindStaticPod:
 		break
 	default:
 		return nil, errors.New("unsupported workload kind: " + string(workloadKind))
+	}
+
+	if workloadKind == WorkloadKindStaticPod {
+		config := GetConfig(ctx)
+		if config.Tier != model.TierOnprem {
+			return nil, fmt.Errorf("StaticPod instrumentation is an enterprise (on-prem) feature")
+		}
 	}
 
 	source, err := GetSourceCRD(ctx, nsName, workloadName, workloadKind)
@@ -690,14 +697,12 @@ func getInstrumentationInstancesConditions(ctx context.Context, namespace string
 
 		reason := v1alpha1.InstrumentationInstancesHealth
 		message := fmt.Sprintf("%d/%d instances are healthy", instanceCounts.HealthyInstances, instanceCounts.TotalInstances)
-		lastTransitionTime := Metav1TimeToString(metav1.NewTime(time.Now()))
 
 		item.Conditions = append(item.Conditions, &model.Condition{
-			Type:               reason,
-			Status:             status,
-			Reason:             &reason,
-			Message:            &message,
-			LastTransitionTime: &lastTransitionTime,
+			Type:    reason,
+			Status:  status,
+			Reason:  &reason,
+			Message: &message,
 		})
 
 		result = append(result, item)
@@ -744,14 +749,12 @@ func getWorkloadsConditions(ctx context.Context, namespace string, name string, 
 
 			for _, c := range dep.Status.Conditions {
 				status := TransformConditionStatus(metav1.ConditionStatus(c.Status), string(c.Type), c.Reason)
-				lastTransitionTime := Metav1TimeToString(c.LastTransitionTime)
 
 				conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, &model.Condition{
-					Status:             status,
-					Type:               string(c.Type),
-					Reason:             &c.Reason,
-					Message:            &c.Message,
-					LastTransitionTime: &lastTransitionTime,
+					Status:  status,
+					Type:    string(c.Type),
+					Reason:  &c.Reason,
+					Message: &c.Message,
 				})
 			}
 		}
@@ -791,14 +794,12 @@ func getWorkloadsConditions(ctx context.Context, namespace string, name string, 
 
 			for _, c := range ds.Status.Conditions {
 				status := TransformConditionStatus(metav1.ConditionStatus(c.Status), string(c.Type), c.Reason)
-				lastTransitionTime := Metav1TimeToString(c.LastTransitionTime)
 
 				conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, &model.Condition{
-					Status:             status,
-					Type:               string(c.Type),
-					Reason:             &c.Reason,
-					Message:            &c.Message,
-					LastTransitionTime: &lastTransitionTime,
+					Status:  status,
+					Type:    string(c.Type),
+					Reason:  &c.Reason,
+					Message: &c.Message,
 				})
 			}
 		}
@@ -838,14 +839,12 @@ func getWorkloadsConditions(ctx context.Context, namespace string, name string, 
 
 			for _, c := range ss.Status.Conditions {
 				status := TransformConditionStatus(metav1.ConditionStatus(c.Status), string(c.Type), c.Reason)
-				lastTransitionTime := Metav1TimeToString(c.LastTransitionTime)
 
 				conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, &model.Condition{
-					Status:             status,
-					Type:               string(c.Type),
-					Reason:             &c.Reason,
-					Message:            &c.Message,
-					LastTransitionTime: &lastTransitionTime,
+					Status:  status,
+					Type:    string(c.Type),
+					Reason:  &c.Reason,
+					Message: &c.Message,
 				})
 			}
 		}
@@ -873,7 +872,6 @@ func GetOtherConditionsForSources(ctx context.Context, namespace string, name st
 			conditionsMap[key] = instanceItem
 		} else {
 			conditionsMap[key].Conditions = append(conditionsMap[key].Conditions, instanceItem.Conditions...)
-			SortConditions(conditionsMap[key].Conditions)
 		}
 	}
 

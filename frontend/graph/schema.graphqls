@@ -96,7 +96,6 @@ type Condition {
   type: String!
   reason: String
   message: String
-  lastTransitionTime: String
 }
 
 type K8sActualNamespace {
@@ -478,6 +477,7 @@ input ActionFieldsInput {
 input URLTemplatizationRuleInput {
   template: String!
   notes: String
+  examples: [String!]
 }
 
 input TemplatizationWorkloadFilterInput {
@@ -595,6 +595,7 @@ type ActionFields {
 type URLTemplatizationRule {
   template: String!
   notes: String
+  examples: [String!]
 }
 
 type TemplatizationWorkloadFilter {
@@ -878,11 +879,17 @@ type ServiceMap {
 }
 
 type ServiceMapFromSource {
+  nodeId: String!
   serviceName: String!
   services: [ServiceMapToSource!]!
 }
 
 type ServiceMapToSource {
+  nodeId: String!
+  # Virtual nodes, for example: databases, external services, are not instrumented,
+  # and are inferred from the client span that calls them.
+  # we do not know anything about them (name, language, external connections, etc.)
+  isVirtual: Boolean!
   serviceName: String!
   requests: Int!
   dateTime: String!

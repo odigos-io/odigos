@@ -482,6 +482,16 @@ func (in *CollectorsGroupSpec) DeepCopyInto(out *CollectorsGroupSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.ServiceGraphExtraDimensions != nil {
+		in, out := &in.ServiceGraphExtraDimensions, &out.ServiceGraphExtraDimensions
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.ServiceGraphVirtualNodePeerAttributes != nil {
+		in, out := &in.ServiceGraphVirtualNodePeerAttributes, &out.ServiceGraphVirtualNodePeerAttributes
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.EnableDataCompression != nil {
 		in, out := &in.EnableDataCompression, &out.EnableDataCompression
 		*out = new(bool)
@@ -1440,11 +1450,6 @@ func (in *InstrumentationRuleSpec) DeepCopyInto(out *InstrumentationRuleSpec) {
 	if in.PayloadCollection != nil {
 		in, out := &in.PayloadCollection, &out.PayloadCollection
 		*out = new(instrumentationrules.PayloadCollection)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.OtelSdks != nil {
-		in, out := &in.OtelSdks, &out.OtelSdks
-		*out = new(instrumentationrules.OtelSdks)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.OtelDistros != nil {

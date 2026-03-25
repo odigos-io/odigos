@@ -167,7 +167,17 @@ func (r *k8sWorkloadResolver) Conditions(ctx context.Context, obj *model.K8sWork
 	if err != nil {
 		return nil, err
 	}
-	telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, nil)
+	workloadMetrics, ok := r.MetricsConsumer.GetSingleSourceMetrics(frontendcommon.SourceID{
+		Namespace: obj.ID.Namespace,
+		Kind:      k8sconsts.WorkloadKind(obj.ID.Kind),
+		Name:      obj.ID.Name,
+	})
+	var totalDataSent *int
+	if ok {
+		tds := int(workloadMetrics.TotalDataSent())
+		totalDataSent = &tds
+	}
+	telemetryMetrics := status.CalculateExpectingTelemetryStatus(ic, pods, totalDataSent)
 
 	return &model.K8sWorkloadConditions{
 		RuntimeDetection:      runtimeDetection,

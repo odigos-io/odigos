@@ -26,21 +26,23 @@ import (
 // CollectorsGroupSpecApplyConfiguration represents a declarative configuration of the CollectorsGroupSpec type for use
 // with apply.
 type CollectorsGroupSpecApplyConfiguration struct {
-	Role                      *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
-	CollectorOwnMetricsPort   *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
-	K8sNodeLogsDirectory      *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
-	ResourcesSettings         *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
-	ServiceGraphDisabled      *bool                                                       `json:"serviceGraphDisabled,omitempty"`
-	EnableDataCompression     *bool                                                       `json:"enableDataCompression,omitempty"`
-	OtlpExporterConfiguration *common.OtlpExporterConfiguration                           `json:"otlpExporterConfiguration,omitempty"`
-	ClusterMetricsEnabled     *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
-	HttpsProxyAddress         *string                                                     `json:"httpsProxyAddress,omitempty"`
-	Metrics                   *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
-	NodeSelector              *map[string]string                                          `json:"nodeSelector,omitempty"`
-	DeploymentName            *string                                                     `json:"deploymentName,omitempty"`
-	TailSampling              *sampling.TailSamplingConfiguration                         `json:"tailSampling,omitempty"`
-	SamplingDryRun            *bool                                                       `json:"samplingDryRun,omitempty"`
-	SpanSamplingAttributes    *sampling.SpanSamplingAttributesConfiguration               `json:"spanSamplingAttributes,omitempty"`
+	Role                                  *odigosv1alpha1.CollectorsGroupRole                         `json:"role,omitempty"`
+	CollectorOwnMetricsPort               *int32                                                      `json:"collectorOwnMetricsPort,omitempty"`
+	K8sNodeLogsDirectory                  *string                                                     `json:"k8sNodeLogsDirectory,omitempty"`
+	ResourcesSettings                     *CollectorsGroupResourcesSettingsApplyConfiguration         `json:"resourcesSettings,omitempty"`
+	ServiceGraphDisabled                  *bool                                                       `json:"serviceGraphDisabled,omitempty"`
+	ServiceGraphExtraDimensions           []string                                                    `json:"serviceGraphExtraDimensions,omitempty"`
+	ServiceGraphVirtualNodePeerAttributes []string                                                    `json:"serviceGraphVirtualNodePeerAttributes,omitempty"`
+	EnableDataCompression                 *bool                                                       `json:"enableDataCompression,omitempty"`
+	OtlpExporterConfiguration             *common.OtlpExporterConfiguration                           `json:"otlpExporterConfiguration,omitempty"`
+	ClusterMetricsEnabled                 *bool                                                       `json:"clusterMetricsEnabled,omitempty"`
+	HttpsProxyAddress                     *string                                                     `json:"httpsProxyAddress,omitempty"`
+	Metrics                               *CollectorsGroupMetricsCollectionSettingsApplyConfiguration `json:"metrics,omitempty"`
+	NodeSelector                          *map[string]string                                          `json:"nodeSelector,omitempty"`
+	DeploymentName                        *string                                                     `json:"deploymentName,omitempty"`
+	TailSampling                          *sampling.TailSamplingConfiguration                         `json:"tailSampling,omitempty"`
+	SamplingDryRun                        *bool                                                       `json:"samplingDryRun,omitempty"`
+	SpanSamplingAttributes                *sampling.SpanSamplingAttributesConfiguration               `json:"spanSamplingAttributes,omitempty"`
 }
 
 // CollectorsGroupSpecApplyConfiguration constructs a declarative configuration of the CollectorsGroupSpec type for use with
@@ -86,6 +88,26 @@ func (b *CollectorsGroupSpecApplyConfiguration) WithResourcesSettings(value *Col
 // If called multiple times, the ServiceGraphDisabled field is set to the value of the last call.
 func (b *CollectorsGroupSpecApplyConfiguration) WithServiceGraphDisabled(value bool) *CollectorsGroupSpecApplyConfiguration {
 	b.ServiceGraphDisabled = &value
+	return b
+}
+
+// WithServiceGraphExtraDimensions adds the given value to the ServiceGraphExtraDimensions field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ServiceGraphExtraDimensions field.
+func (b *CollectorsGroupSpecApplyConfiguration) WithServiceGraphExtraDimensions(values ...string) *CollectorsGroupSpecApplyConfiguration {
+	for i := range values {
+		b.ServiceGraphExtraDimensions = append(b.ServiceGraphExtraDimensions, values[i])
+	}
+	return b
+}
+
+// WithServiceGraphVirtualNodePeerAttributes adds the given value to the ServiceGraphVirtualNodePeerAttributes field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ServiceGraphVirtualNodePeerAttributes field.
+func (b *CollectorsGroupSpecApplyConfiguration) WithServiceGraphVirtualNodePeerAttributes(values ...string) *CollectorsGroupSpecApplyConfiguration {
+	for i := range values {
+		b.ServiceGraphVirtualNodePeerAttributes = append(b.ServiceGraphVirtualNodePeerAttributes, values[i])
+	}
 	return b
 }
 

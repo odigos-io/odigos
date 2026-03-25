@@ -169,6 +169,16 @@ type CollectorsGroupSpec struct {
 	// It is enabled by default and can be disabled by setting the enabled flag to false.
 	ServiceGraphDisabled *bool `json:"serviceGraphDisabled,omitempty"`
 
+	// ServiceGraphExtraDimensions are additional span attribute names to include as dimensions
+	// in the service graph metrics, on top of the default service.name dimension.
+	ServiceGraphExtraDimensions []string `json:"serviceGraphExtraDimensions,omitempty"`
+
+	// ServiceGraphVirtualNodePeerAttributes is an ordered list of span attributes used to identify
+	// uninstrumented (virtual) nodes in the service graph.
+	// The connector picks the first attribute that has a value on the span.
+	// When nil/empty, the connector uses its built-in defaults: [peer.service, db.name, db.system].
+	ServiceGraphVirtualNodePeerAttributes []string `json:"serviceGraphVirtualNodePeerAttributes,omitempty"`
+
 	// Deprecated - use OtlpExporterConfiguration instead.
 	// EnableDataCompression is a feature that allows you to enable data compression before sending data to the Gateway collector.
 	// It is disabled by default and can be enabled by setting the enabled flag to true.
