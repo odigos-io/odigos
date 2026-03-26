@@ -93,7 +93,7 @@ jobs:
               { service: 'cli', project_id: '6942c2f81da89bd45870abaa' },
             ];
 
-            const inputs = github.context.payload.inputs || {};
+            const inputs = context.payload.inputs || {};
             const tag = (inputs.tag || '').trim();
             const dryRun = inputs.dry_run === 'true';
             const runAll = inputs.run_all !== 'false';
