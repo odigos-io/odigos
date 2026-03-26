@@ -3,10 +3,10 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[{"apiVersion":"operator.odigos.io/v1alpha1", "kind":"Odigos",
-      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.8.7"}}]'
+      "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.22.2"}}]'
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-operator-certified:v1.8.7
+    containerImage: registry.odigos.io/odigos-operator-rhel-certified:v1.22.2
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -19,7 +19,7 @@ metadata:
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for
       enterprise features)
     support: Odigos
-  name: odigos-operator.v1.8.7
+  name: odigos-operator.v1.22.2
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -75,6 +75,11 @@ spec:
           Default (OpenShift): registry.connect.redhat.com
         displayName: Image Prefix
         path: imagePrefix
+      - description: |-
+          (Optional) LogLevel sets the default log level for all Odigos components (e.g. autoscaler, odiglet, scheduler).
+          Accepted values: debug, info, warn, error. Default=info when unset.
+        displayName: Log Level
+        path: logLevel
       - description: |-
           (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
           One of "k8s-virtual-device" (default) or "k8s-host-path".
@@ -152,4 +157,4 @@ spec:
   provider:
     name: Odigos
     url: https://odigos.io
-  version: 1.8.7
+  version: 1.22.2

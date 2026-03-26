@@ -19,8 +19,8 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.connect.redhat.com/odigos/odigos-operator-certified:v1.8.7
-    createdAt: "2026-01-22T17:18:22Z"
+    containerImage: registry.odigos.io/odigos-operator-rhel-certified:v1.22.2
+    createdAt: "2026-03-26T16:47:23Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -32,10 +32,10 @@ metadata:
     features.operators.openshift.io/token-auth-gcp: "false"
     operators.openshift.io/valid-subscription: Odigos Enterprise subscription (for
       enterprise features)
-    operators.operatorframework.io/builder: operator-sdk-v1.41.1
+    operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     support: Odigos
-  name: odigos-operator.v1.8.7
+  name: odigos-operator.v1.22.2
   namespace: odigos-operator-system
 spec:
   apiservicedefinitions: {}
@@ -91,6 +91,11 @@ spec:
           Default (OpenShift): registry.connect.redhat.com
         displayName: Image Prefix
         path: imagePrefix
+      - description: |-
+          (Optional) LogLevel sets the default log level for all Odigos components (e.g. autoscaler, odiglet, scheduler).
+          Accepted values: debug, info, warn, error. Default=info when unset.
+        displayName: Log Level
+        path: logLevel
       - description: |-
           (Optional) MountMethod optionally defines the mechanism for mounting Odigos files into instrumented pods.
           One of "k8s-virtual-device" (default) or "k8s-host-path".
@@ -188,11 +193,11 @@ spec:
         - apiGroups:
           - ""
           resources:
-          - nodes/proxy
           - nodes/stats
           verbs:
           - get
           - list
+          - watch
         - apiGroups:
           - ""
           resources:
@@ -427,6 +432,18 @@ spec:
           - patch
           - update
         - apiGroups:
+          - odigos.io
+          resources:
+          - sampling
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - operator.odigos.io
           resources:
           - odigos
@@ -531,24 +548,24 @@ spec:
                   valueFrom:
                     configMapKeyRef:
                       key: ODIGOS_VERSION
-                      name: odigos-operator-odigos-version-mgk5m6d4f5
+                      name: odigos-operator-odigos-version-4f7dm2ggkb
                 - name: RELATED_IMAGE_AUTOSCALER
-                  value: registry.connect.redhat.com/odigos/odigos-autoscaler-certified:v1.8.7
+                  value: registry.odigos.io/odigos-autoscaler-rhel-certified:v1.22.2
                 - name: RELATED_IMAGE_COLLECTOR
-                  value: registry.connect.redhat.com/odigos/odigos-collector-certified:v1.8.7
+                  value: registry.odigos.io/odigos-collector-rhel-certified:v1.22.2
                 - name: RELATED_IMAGE_FRONTEND
-                  value: registry.connect.redhat.com/odigos/odigos-ui-certified:v1.8.7
+                  value: registry.odigos.io/odigos-ui-rhel-certified:v1.22.2
                 - name: RELATED_IMAGE_INSTRUMENTOR
-                  value: registry.connect.redhat.com/odigos/odigos-instrumentor-certified:v1.8.7
+                  value: registry.odigos.io/odigos-instrumentor-rhel-certified:v1.22.2
                 - name: RELATED_IMAGE_ENTERPRISE_INSTRUMENTOR
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified:v1.8.7
+                  value: registry.odigos.io/odigos-enterprise-instrumentor-rhel-certified:v1.22.2
                 - name: RELATED_IMAGE_ODIGLET
-                  value: registry.connect.redhat.com/odigos/odigos-odiglet-certified:v1.8.7
+                  value: registry.odigos.io/odigos-odiglet-rhel-certified:v1.22.2
                 - name: RELATED_IMAGE_ENTERPRISE_ODIGLET
-                  value: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified:v1.8.7
+                  value: registry.odigos.io/odigos-enterprise-odiglet-rhel-certified:v1.22.2
                 - name: RELATED_IMAGE_SCHEDULER
-                  value: registry.connect.redhat.com/odigos/odigos-scheduler-certified:v1.8.7
-                image: registry.connect.redhat.com/odigos/odigos-operator-certified:v1.8.7
+                  value: registry.odigos.io/odigos-scheduler-rhel-certified:v1.22.2
+                image: registry.odigos.io/odigos-operator-rhel-certified:v1.22.2
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -646,20 +663,20 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
-  - image: registry.connect.redhat.com/odigos/odigos-autoscaler-certified:v1.8.7
+  - image: registry.odigos.io/odigos-autoscaler-rhel-certified:v1.22.2
     name: autoscaler
-  - image: registry.connect.redhat.com/odigos/odigos-collector-certified:v1.8.7
+  - image: registry.odigos.io/odigos-collector-rhel-certified:v1.22.2
     name: collector
-  - image: registry.connect.redhat.com/odigos/odigos-ui-certified:v1.8.7
+  - image: registry.odigos.io/odigos-ui-rhel-certified:v1.22.2
     name: frontend
-  - image: registry.connect.redhat.com/odigos/odigos-instrumentor-certified:v1.8.7
+  - image: registry.odigos.io/odigos-instrumentor-rhel-certified:v1.22.2
     name: instrumentor
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified:v1.8.7
+  - image: registry.odigos.io/odigos-enterprise-instrumentor-rhel-certified:v1.22.2
     name: enterprise-instrumentor
-  - image: registry.connect.redhat.com/odigos/odigos-odiglet-certified:v1.8.7
+  - image: registry.odigos.io/odigos-odiglet-rhel-certified:v1.22.2
     name: odiglet
-  - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified:v1.8.7
+  - image: registry.odigos.io/odigos-enterprise-odiglet-rhel-certified:v1.22.2
     name: enterprise-odiglet
-  - image: registry.connect.redhat.com/odigos/odigos-scheduler-certified:v1.8.7
+  - image: registry.odigos.io/odigos-scheduler-rhel-certified:v1.22.2
     name: scheduler
-  version: 1.8.7
+  version: 1.22.2
