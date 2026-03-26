@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.odigos.io/odigos-operator-rhel-certified:v1.22.2
-    createdAt: "2026-03-26T16:47:23Z"
+    createdAt: "2026-03-26T17:49:28Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -170,7 +170,10 @@ spec:
           - events
           verbs:
           - create
+          - get
+          - list
           - patch
+          - watch
         - apiGroups:
           - ""
           resources:
@@ -179,6 +182,19 @@ spec:
           - get
           - list
           - patch
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces/status
+          - nodes/spec
+          - nodes/stats
+          - replicationcontrollers
+          - replicationcontrollers/status
+          - resourcequotas
+          verbs:
+          - get
+          - list
           - watch
         - apiGroups:
           - ""
@@ -193,14 +209,6 @@ spec:
         - apiGroups:
           - ""
           resources:
-          - nodes/stats
-          verbs:
-          - get
-          - list
-          - watch
-        - apiGroups:
-          - ""
-          resources:
           - pods
           verbs:
           - delete
@@ -211,6 +219,7 @@ spec:
           - ""
           resources:
           - pods/log
+          - pods/proxy
           - pods/status
           verbs:
           - get
@@ -353,8 +362,10 @@ spec:
           - create
           - delete
           - get
+          - list
           - patch
           - update
+          - watch
         - apiGroups:
           - batch
           resources:
@@ -393,6 +404,16 @@ spec:
           - discovery.k8s.io
           resources:
           - endpointslices
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - extensions
+          resources:
+          - daemonsets
+          - deployments
+          - replicasets
           verbs:
           - get
           - list
