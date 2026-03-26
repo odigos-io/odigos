@@ -34,6 +34,10 @@ type OdigosConfigExtension interface {
 	// Processors (e.g. URL templatization) use this to keep their caches in sync without polling.
 	RegisterWorkloadConfigCacheCallback(cb WorkloadConfigCacheCallback)
 
+	// UnregisterWorkloadConfigCacheCallback removes the callback. Processors should call this in Shutdown so the extension
+	// stops invoking the callback and can release references; allows the collector to prune caches when a processor is removed from the pipeline.
+	UnregisterWorkloadConfigCacheCallback(cb WorkloadConfigCacheCallback)
+
 	// WaitForCacheSync blocks until the extension's workload cache has synced (e.g. initial list from API) or ctx is done.
 	// Returns true if synced successfully, false if context canceled or sync failed. Callers that depend on the cache
 	// should call this before processing (e.g. in Start) to avoid missing data on startup.
