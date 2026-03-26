@@ -8,7 +8,8 @@ export const useServiceMap = () => {
 
   const { data } = useQuery<{ getServiceMap: { services: ServiceMapSources } }>(GET_SERVICE_MAP, {
     skip: !sources.length,
-    pollInterval: 3000,
+    // Poll every 15s to keep the service map near-real-time without causing layout flicker
+    pollInterval: 15000,
   });
 
   return {
