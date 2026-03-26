@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
+import { sleep } from '@odigos/ui-kit/functions';
 import { Settings } from '@odigos/ui-kit/containers/v2';
 import { LocalUiConfigInput } from '@odigos/ui-kit/types';
 import { useConfigYamls, useEffectiveConfig, useUpdateLocalUiConfig } from '@/hooks';
@@ -13,6 +14,8 @@ export default function Page() {
   const onSave = useCallback(
     async (config: LocalUiConfigInput) => {
       await updateLocalUiConfig(config);
+      // create a delay before refetch - to allow the backend to reconcile first
+      await sleep(3000);
       await refetchEffectiveConfig();
     },
     [updateLocalUiConfig, refetchEffectiveConfig],
