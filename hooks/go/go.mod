@@ -1,3 +1,3 @@
 module github.com/odigos-io/odigos/hooks/go
 
-go 1.26.0
+go 1.26.1

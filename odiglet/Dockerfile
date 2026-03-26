@@ -51,7 +51,7 @@ COPY --from=public.ecr.aws/odigos/agents/nodejs-community:v0.0.13 /instrumentati
 COPY --from=dotnet-builder /dotnet-instrumentation /instrumentations/dotnet
 
 # PHP
-COPY --from=public.ecr.aws/odigos/agents/php-community:v0.2.6 /instrumentations/php /instrumentations/php
+COPY --from=public.ecr.aws/odigos/agents/php-community:v0.3.0 /instrumentations/php /instrumentations/php
 
 # Ruby
 COPY --from=public.ecr.aws/odigos/agents/ruby-community:v0.0.8 /instrumentations/ruby /instrumentations/ruby
@@ -63,6 +63,7 @@ RUN wget --directory-prefix=loader https://storage.googleapis.com/odigos-loader/
 
 ######### Device Plugin builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS deviceplugin-builder
+ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by deviceplugin
 COPY common/ common/
@@ -81,6 +82,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 ######### CSI Driver builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS csi-driver-builder
+ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -101,6 +103,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 ######### Odiglet builder #########
 FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS builder
+ENV GOTOOLCHAIN=auto
 WORKDIR /go/src/github.com/odigos-io/odigos
 # Copy local modules required by the build
 COPY api/ api/
@@ -125,7 +128,7 @@ RUN if [ "$RHEL" = "true" ] ; then \
 
 
 # Download grpc_health_probe this is used by the deviceplugin container to check if the deviceplugin is healthy
-ARG GRPC_HEALTH_PROBE_VERSION=v0.4.44
+ARG GRPC_HEALTH_PROBE_VERSION=v0.4.46
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         GRPC_ARCH="arm64"; \
     else \
