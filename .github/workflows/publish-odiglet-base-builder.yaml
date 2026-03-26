@@ -148,7 +148,18 @@ jobs:
         with:
           token: ${{ steps.create-pr-sts.outputs.GH_TOKEN }}
           title: "Update Odiglet Base Builder image to ${{ github.event.inputs.image_tag }}"
-          body: "This is an automated PR generated after a new release of the odiglet base builder, to update it's version in odiglet dockerfiles to ${{ github.event.inputs.image_tag }}"
+          body: |
+            #### What this PR does / why we need it:
+            This is an automated PR generated after a new release of the odiglet base builder. It updates the base builder image reference in `odiglet/Dockerfile` and `odiglet/debug.Dockerfile` to `${{ github.event.inputs.image_tag }}`.
+
+            #### Changelog entry: Does this PR introduce a user-facing bug fix, feature, dependency update, or breaking change??
+            <!--
+            If this update includes any **user-facing** changes that users should know about—for example: dropped support for versions, new features, or breaking changes—replace `NONE` in the block below and document them in the release notes.
+            -->
+
+            ```release-note
+            NONE
+            ```
           base: "main"
           commit-message: "Update Odiglet Base Builder image to ${{ github.event.inputs.image_tag }}"
           labels: |
