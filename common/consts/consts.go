@@ -143,6 +143,7 @@ const (
 	GroupByTraceProcessorV2         = "groupbytrace/samplingv2"
 	OdigosTailSamplingProcessorName = "odigostailsampling"
 	URLTemplatizationProcessorName  = "odigos-url-templatization"
+	OdigosURLTemplateProcessorType  = "odigosurltemplate"
 )
 
 // Auto rollback related consts
