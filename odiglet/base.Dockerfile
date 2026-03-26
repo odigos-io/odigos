@@ -17,7 +17,7 @@ RUN wget https://download.samba.org/pub/rsync/src/rsync-${RSYNC_VERSION}.tar.gz 
     && tar -xzf rsync-${RSYNC_VERSION}.tar.gz \
     && cd rsync-${RSYNC_VERSION} \
     && ./configure --prefix=/usr LDFLAGS="-static" \
-    && make \
+    && make -j"$(nproc)" \
     && make install DESTDIR=/rsync-install \
     && cd .. \
     && rm -rf rsync-${RSYNC_VERSION}*
