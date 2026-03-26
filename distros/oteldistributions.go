@@ -101,7 +101,11 @@ func (g *Getter) ResolveDistroNameForVersion(defaultDistroName string, runtimeVe
 			return defaultDistroName
 		}
 		if len(current.RuntimeEnvironments) > 0 && current.RuntimeEnvironments[0].SupportedVersions != "" {
-			constraint, err := version.NewConstraint(current.RuntimeEnvironments[0].SupportedVersions)
+			sv := current.RuntimeEnvironments[0].SupportedVersions
+			if distro.IsSupportedVersionsWildcard(sv) {
+				return currentName
+			}
+			constraint, err := version.NewConstraint(sv)
 			if err == nil && constraint.Check(detectedVersion) {
 				return currentName
 			}

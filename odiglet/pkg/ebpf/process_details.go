@@ -104,6 +104,12 @@ func (kd *K8sProcessDetails) Distribution(ctx context.Context) (*distro.OtelDist
 		}
 	}
 
+	// OBI (opentelemetry-ebpf-instrumentation) supports any language; skip language verification
+	if kd.Distro.Name == k8sconsts.OdigosDistroNameOBI {
+		kd.langVerified = &trueVal
+		return kd.Distro, nil
+	}
+
 	// verify the language of the process event matches the detected language for the container
 	// for containers with multiple processes or a script that spawns other processes, the language
 	// being detected depends on timing and we may get events for un-related processes.

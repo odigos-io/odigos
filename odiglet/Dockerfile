@@ -113,12 +113,46 @@ COPY distros/ distros/
 WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
 COPY odiglet/ .
 
+# Download deps and copy OBI module to a known path (full go.mod context so go list works).
+RUN --mount=type=cache,target=/go/pkg \
+    go mod download && \
+    cp -a "`go list -m -f '{{.Dir}}' go.opentelemetry.io/obi`" /tmp/obi-module
+
+######### OBI eBPF generation (official obi-generator image) #########
+# https://github.com/open-telemetry/opentelemetry-ebpf-instrumentation/pkgs/container/obi-generator
+FROM --platform=$BUILDPLATFORM ghcr.io/open-telemetry/obi-generator:0.2.10 AS obi-generate
+COPY --from=builder /tmp/obi-module /src
+# PATH must include LLVM bin so bpf2go can find llvm-strip (image entrypoint normally sets this).
+# obi-generator image may ship an older Go than OBI's go.mod; allow toolchain download (needs network).
+RUN cd /src && GOTOOLCHAIN=auto PATH="/usr/lib/llvm20/bin:$PATH" BPF2GO=/go/bin/bpf2go BPF_CLANG=clang \
+    BPF_CFLAGS="-std=gnu17 -O2 -g -Wunaligned-access -Wpacked -Wpadded -Wall -Werror" \
+    go generate ./...
+
+######### Odiglet build (continued) #########
+FROM --platform=$BUILDPLATFORM ${ODIGLET_BASE_IMAGE} AS odiglet-build
+WORKDIR /go/src/github.com/odigos-io/odigos
+COPY api/ api/
+COPY common/ common/
+COPY k8sutils/ k8sutils/
+COPY procdiscovery/ procdiscovery/
+COPY opampserver/ opampserver/
+COPY instrumentation/ instrumentation/
+COPY distros/ distros/
+WORKDIR /go/src/github.com/odigos-io/odigos/odiglet
+COPY odiglet/ .
+
+# Overlay OBI generated eBPF files from obi-generate stage into module cache.
+COPY --from=obi-generate /src /tmp/obi-generated
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    sh -c 'go mod download && OBI_DIR=`go list -m -f "{{.Dir}}" go.opentelemetry.io/obi` && chmod -R +w "$OBI_DIR" && cp -r /tmp/obi-generated/* "$OBI_DIR/"'
+
 ARG TARGETARCH
 ARG LD_FLAGS
 ARG RHEL=false
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" make build-odiglet
+    GOOS=linux GOARCH=$TARGETARCH LD_FLAGS="${LD_FLAGS}" SKIP_OBI_GENERATE=1 make build-odiglet
 RUN if [ "$RHEL" = "true" ] ; then \
       make licenses ; \
     fi
@@ -187,10 +221,10 @@ LABEL "version"=$VERSION
 LABEL "release"=$RELEASE
 LABEL "summary"=$SUMMARY
 LABEL "description"=$DESCRIPTION
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=odiglet-build /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=odiglet-build /go/src/github.com/odigos-io/odigos/odiglet/licenses /licenses
+COPY --from=odiglet-build /go/src/github.com/odigos-io/odigos/odiglet/LICENSE /licenses/.
+COPY --from=odiglet-build /tmp/grpc_health_probe /root/grpc_health_probe
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
 # Copy statically compiled rsync (no shared libraries needed)
@@ -201,10 +235,10 @@ CMD ["/root/odiglet"]
 
 ######### Default Odiglet #########
 FROM gcr.io/distroless/base:3443777deec6bd5c58be682f286aefffd1c871ae
-COPY --from=builder /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
+COPY --from=odiglet-build /go/src/github.com/odigos-io/odigos/odiglet/odiglet /root/odiglet
 COPY --from=deviceplugin-builder /go/src/github.com/odigos-io/odigos/deviceplugin/deviceplugin /root/deviceplugin
 COPY --from=csi-driver-builder /go/src/github.com/odigos-io/odigos/odiglet/odigos-csi-driver /root/odigos-csi-driver
-COPY --from=builder /tmp/grpc_health_probe /root/grpc_health_probe
+COPY --from=odiglet-build /tmp/grpc_health_probe /root/grpc_health_probe
 # Copy statically compiled rsync (no shared libraries needed)
 COPY --from=rsync-base /usr/bin/rsync /usr/bin/rsync
 WORKDIR /instrumentations/
