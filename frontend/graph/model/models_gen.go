@@ -69,10 +69,10 @@ type ActionInput struct {
 }
 
 type AgentsInitContainerResourcesConfig struct {
-	RequestCPUm      *int `json:"requestCPUm,omitempty"`
-	LimitCPUm        *int `json:"limitCPUm,omitempty"`
-	RequestMemoryMiB *int `json:"requestMemoryMiB,omitempty"`
-	LimitMemoryMiB   *int `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm      *ReconciledInt `json:"requestCPUm,omitempty"`
+	LimitCPUm        *ReconciledInt `json:"limitCPUm,omitempty"`
+	RequestMemoryMiB *ReconciledInt `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB   *ReconciledInt `json:"limitMemoryMiB,omitempty"`
 }
 
 type APIToken struct {
@@ -167,32 +167,32 @@ type CollectorDaemonSetInfo struct {
 }
 
 type CollectorGatewayConfig struct {
-	MinReplicas                *int    `json:"minReplicas,omitempty"`
-	MaxReplicas                *int    `json:"maxReplicas,omitempty"`
-	RequestMemoryMiB           *int    `json:"requestMemoryMiB,omitempty"`
-	LimitMemoryMiB             *int    `json:"limitMemoryMiB,omitempty"`
-	RequestCPUm                *int    `json:"requestCPUm,omitempty"`
-	LimitCPUm                  *int    `json:"limitCPUm,omitempty"`
-	MemoryLimiterLimitMiB      *int    `json:"memoryLimiterLimitMiB,omitempty"`
-	MemoryLimiterSpikeLimitMiB *int    `json:"memoryLimiterSpikeLimitMiB,omitempty"`
-	GoMemLimitMiB              *int    `json:"goMemLimitMiB,omitempty"`
-	ServiceGraphDisabled       *bool   `json:"serviceGraphDisabled,omitempty"`
-	ClusterMetricsEnabled      *bool   `json:"clusterMetricsEnabled,omitempty"`
-	HTTPSProxyAddress          *string `json:"httpsProxyAddress,omitempty"`
-	NodeSelector               *string `json:"nodeSelector,omitempty"`
+	MinReplicas                *ReconciledInt     `json:"minReplicas,omitempty"`
+	MaxReplicas                *ReconciledInt     `json:"maxReplicas,omitempty"`
+	RequestMemoryMiB           *ReconciledInt     `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *ReconciledInt     `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *ReconciledInt     `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *ReconciledInt     `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *ReconciledInt     `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *ReconciledInt     `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *ReconciledInt     `json:"goMemLimitMiB,omitempty"`
+	ServiceGraphDisabled       *ReconciledBoolean `json:"serviceGraphDisabled,omitempty"`
+	ClusterMetricsEnabled      *ReconciledBoolean `json:"clusterMetricsEnabled,omitempty"`
+	HTTPSProxyAddress          *ReconciledString  `json:"httpsProxyAddress,omitempty"`
+	NodeSelector               *ReconciledString  `json:"nodeSelector,omitempty"`
 }
 
 type CollectorNodeConfig struct {
-	CollectorOwnMetricsPort    *int                `json:"collectorOwnMetricsPort,omitempty"`
-	RequestMemoryMiB           *int                `json:"requestMemoryMiB,omitempty"`
-	LimitMemoryMiB             *int                `json:"limitMemoryMiB,omitempty"`
-	RequestCPUm                *int                `json:"requestCPUm,omitempty"`
-	LimitCPUm                  *int                `json:"limitCPUm,omitempty"`
-	MemoryLimiterLimitMiB      *int                `json:"memoryLimiterLimitMiB,omitempty"`
-	MemoryLimiterSpikeLimitMiB *int                `json:"memoryLimiterSpikeLimitMiB,omitempty"`
-	GoMemLimitMiB              *int                `json:"goMemLimitMiB,omitempty"`
-	K8sNodeLogsDirectory       *string             `json:"k8sNodeLogsDirectory,omitempty"`
-	EnableDataCompression      *bool               `json:"enableDataCompression,omitempty"`
+	CollectorOwnMetricsPort    *ReconciledInt      `json:"collectorOwnMetricsPort,omitempty"`
+	RequestMemoryMiB           *ReconciledInt      `json:"requestMemoryMiB,omitempty"`
+	LimitMemoryMiB             *ReconciledInt      `json:"limitMemoryMiB,omitempty"`
+	RequestCPUm                *ReconciledInt      `json:"requestCPUm,omitempty"`
+	LimitCPUm                  *ReconciledInt      `json:"limitCPUm,omitempty"`
+	MemoryLimiterLimitMiB      *ReconciledInt      `json:"memoryLimiterLimitMiB,omitempty"`
+	MemoryLimiterSpikeLimitMiB *ReconciledInt      `json:"memoryLimiterSpikeLimitMiB,omitempty"`
+	GoMemLimitMiB              *ReconciledInt      `json:"goMemLimitMiB,omitempty"`
+	K8sNodeLogsDirectory       *ReconciledString   `json:"k8sNodeLogsDirectory,omitempty"`
+	EnableDataCompression      *ReconciledBoolean  `json:"enableDataCompression,omitempty"`
 	OtlpExporterConfiguration  *OtlpExporterConfig `json:"otlpExporterConfiguration,omitempty"`
 }
 
@@ -206,14 +206,14 @@ type CollectorPodMetrics struct {
 }
 
 type ComponentLogLevelsConfig struct {
-	Default      *OdigosLogLevel `json:"default,omitempty"`
-	Autoscaler   *OdigosLogLevel `json:"autoscaler,omitempty"`
-	Scheduler    *OdigosLogLevel `json:"scheduler,omitempty"`
-	Instrumentor *OdigosLogLevel `json:"instrumentor,omitempty"`
-	Odiglet      *OdigosLogLevel `json:"odiglet,omitempty"`
-	Deviceplugin *OdigosLogLevel `json:"deviceplugin,omitempty"`
-	UI           *OdigosLogLevel `json:"ui,omitempty"`
-	Collector    *OdigosLogLevel `json:"collector,omitempty"`
+	Default      *ReconciledOdigosLogLevel `json:"default,omitempty"`
+	Autoscaler   *ReconciledOdigosLogLevel `json:"autoscaler,omitempty"`
+	Scheduler    *ReconciledOdigosLogLevel `json:"scheduler,omitempty"`
+	Instrumentor *ReconciledOdigosLogLevel `json:"instrumentor,omitempty"`
+	Odiglet      *ReconciledOdigosLogLevel `json:"odiglet,omitempty"`
+	Deviceplugin *ReconciledOdigosLogLevel `json:"deviceplugin,omitempty"`
+	UI           *ReconciledOdigosLogLevel `json:"ui,omitempty"`
+	Collector    *ReconciledOdigosLogLevel `json:"collector,omitempty"`
 }
 
 type ComputePlatform struct {
@@ -432,47 +432,47 @@ type DistroParam struct {
 
 type EffectiveConfig struct {
 	ConfigVersion                    int                                 `json:"configVersion"`
-	TelemetryEnabled                 *bool                               `json:"telemetryEnabled,omitempty"`
-	OpenshiftEnabled                 *bool                               `json:"openshiftEnabled,omitempty"`
-	IgnoredNamespaces                []string                            `json:"ignoredNamespaces,omitempty"`
-	IgnoredContainers                []string                            `json:"ignoredContainers,omitempty"`
-	IgnoreOdigosNamespace            *bool                               `json:"ignoreOdigosNamespace,omitempty"`
-	Psp                              *bool                               `json:"psp,omitempty"`
-	ImagePrefix                      *string                             `json:"imagePrefix,omitempty"`
-	SkipWebhookIssuerCreation        *bool                               `json:"skipWebhookIssuerCreation,omitempty"`
+	TelemetryEnabled                 *ReconciledBoolean                  `json:"telemetryEnabled,omitempty"`
+	OpenshiftEnabled                 *ReconciledBoolean                  `json:"openshiftEnabled,omitempty"`
+	IgnoredNamespaces                *ReconciledStringArray              `json:"ignoredNamespaces,omitempty"`
+	IgnoredContainers                *ReconciledStringArray              `json:"ignoredContainers,omitempty"`
+	IgnoreOdigosNamespace            *ReconciledBoolean                  `json:"ignoreOdigosNamespace,omitempty"`
+	Psp                              *ReconciledBoolean                  `json:"psp,omitempty"`
+	ImagePrefix                      *ReconciledString                   `json:"imagePrefix,omitempty"`
+	SkipWebhookIssuerCreation        *ReconciledBoolean                  `json:"skipWebhookIssuerCreation,omitempty"`
 	CollectorGateway                 *CollectorGatewayConfig             `json:"collectorGateway,omitempty"`
 	CollectorNode                    *CollectorNodeConfig                `json:"collectorNode,omitempty"`
-	Profiles                         []string                            `json:"profiles,omitempty"`
-	AllowConcurrentAgents            *bool                               `json:"allowConcurrentAgents,omitempty"`
-	UIMode                           *UIMode                             `json:"uiMode,omitempty"`
-	UIPaginationLimit                *int                                `json:"uiPaginationLimit,omitempty"`
-	UIRemoteURL                      *string                             `json:"uiRemoteUrl,omitempty"`
-	CentralBackendURL                *string                             `json:"centralBackendURL,omitempty"`
-	ClusterName                      *string                             `json:"clusterName,omitempty"`
-	MountMethod                      *MountMethod                        `json:"mountMethod,omitempty"`
-	CustomContainerRuntimeSocketPath *string                             `json:"customContainerRuntimeSocketPath,omitempty"`
-	AgentEnvVarsInjectionMethod      *EnvInjectionMethod                 `json:"agentEnvVarsInjectionMethod,omitempty"`
+	Profiles                         *ReconciledStringArray              `json:"profiles,omitempty"`
+	AllowConcurrentAgents            *ReconciledBoolean                  `json:"allowConcurrentAgents,omitempty"`
+	UIMode                           *ReconciledUIMode                   `json:"uiMode,omitempty"`
+	UIPaginationLimit                *ReconciledInt                      `json:"uiPaginationLimit,omitempty"`
+	UIRemoteURL                      *ReconciledString                   `json:"uiRemoteUrl,omitempty"`
+	CentralBackendURL                *ReconciledString                   `json:"centralBackendURL,omitempty"`
+	ClusterName                      *ReconciledString                   `json:"clusterName,omitempty"`
+	MountMethod                      *ReconciledMountMethod              `json:"mountMethod,omitempty"`
+	CustomContainerRuntimeSocketPath *ReconciledString                   `json:"customContainerRuntimeSocketPath,omitempty"`
+	AgentEnvVarsInjectionMethod      *ReconciledEnvInjectionMethod       `json:"agentEnvVarsInjectionMethod,omitempty"`
 	UserInstrumentationEnvs          *UserInstrumentationEnvsConfig      `json:"userInstrumentationEnvs,omitempty"`
-	NodeSelector                     *string                             `json:"nodeSelector,omitempty"`
-	KarpenterEnabled                 *bool                               `json:"karpenterEnabled,omitempty"`
+	NodeSelector                     *ReconciledString                   `json:"nodeSelector,omitempty"`
+	KarpenterEnabled                 *ReconciledBoolean                  `json:"karpenterEnabled,omitempty"`
 	Rollout                          *RolloutConfig                      `json:"rollout,omitempty"`
-	RollbackDisabled                 *bool                               `json:"rollbackDisabled,omitempty"`
-	RollbackGraceTime                *string                             `json:"rollbackGraceTime,omitempty"`
-	RollbackStabilityWindow          *string                             `json:"rollbackStabilityWindow,omitempty"`
+	RollbackDisabled                 *ReconciledBoolean                  `json:"rollbackDisabled,omitempty"`
+	RollbackGraceTime                *ReconciledString                   `json:"rollbackGraceTime,omitempty"`
+	RollbackStabilityWindow          *ReconciledString                   `json:"rollbackStabilityWindow,omitempty"`
 	Oidc                             *OidcConfig                         `json:"oidc,omitempty"`
-	OdigletHealthProbeBindPort       *int                                `json:"odigletHealthProbeBindPort,omitempty"`
-	GoAutoOffsetsCron                *string                             `json:"goAutoOffsetsCron,omitempty"`
-	GoAutoOffsetsMode                *string                             `json:"goAutoOffsetsMode,omitempty"`
-	ClickhouseJSONTypeEnabled        *bool                               `json:"clickhouseJsonTypeEnabled,omitempty"`
-	CheckDeviceHealthBeforeInjection *bool                               `json:"checkDeviceHealthBeforeInjection,omitempty"`
-	ResourceSizePreset               *string                             `json:"resourceSizePreset,omitempty"`
-	WaspEnabled                      *bool                               `json:"waspEnabled,omitempty"`
+	OdigletHealthProbeBindPort       *ReconciledInt                      `json:"odigletHealthProbeBindPort,omitempty"`
+	GoAutoOffsetsCron                *ReconciledString                   `json:"goAutoOffsetsCron,omitempty"`
+	GoAutoOffsetsMode                *ReconciledString                   `json:"goAutoOffsetsMode,omitempty"`
+	ClickhouseJSONTypeEnabled        *ReconciledBoolean                  `json:"clickhouseJsonTypeEnabled,omitempty"`
+	CheckDeviceHealthBeforeInjection *ReconciledBoolean                  `json:"checkDeviceHealthBeforeInjection,omitempty"`
+	ResourceSizePreset               *ReconciledString                   `json:"resourceSizePreset,omitempty"`
+	WaspEnabled                      *ReconciledBoolean                  `json:"waspEnabled,omitempty"`
 	MetricsSources                   *MetricsSourceConfig                `json:"metricsSources,omitempty"`
 	AgentsInitContainerResources     *AgentsInitContainerResourcesConfig `json:"agentsInitContainerResources,omitempty"`
-	TraceIDSuffix                    *string                             `json:"traceIdSuffix,omitempty"`
-	AllowedTestConnectionHosts       []string                            `json:"allowedTestConnectionHosts,omitempty"`
+	TraceIDSuffix                    *ReconciledString                   `json:"traceIdSuffix,omitempty"`
+	AllowedTestConnectionHosts       *ReconciledStringArray              `json:"allowedTestConnectionHosts,omitempty"`
 	OdigosOwnTelemetryStore          *OdigosOwnTelemetryConfig           `json:"odigosOwnTelemetryStore,omitempty"`
-	ImagePullSecrets                 []string                            `json:"imagePullSecrets,omitempty"`
+	ImagePullSecrets                 *ReconciledStringArray              `json:"imagePullSecrets,omitempty"`
 	ComponentLogLevels               *ComponentLogLevelsConfig           `json:"componentLogLevels,omitempty"`
 	ManifestYaml                     *string                             `json:"manifestYAML,omitempty"`
 }
@@ -1082,7 +1082,7 @@ type MessagingPayloadCollectionInput struct {
 }
 
 type MetricsSourceAgentJavaRuntimeMetricsConfig struct {
-	Disabled *bool                                    `json:"disabled,omitempty"`
+	Disabled *ReconciledBoolean                       `json:"disabled,omitempty"`
 	Metrics  []*MetricsSourceAgentRuntimeMetricConfig `json:"metrics,omitempty"`
 }
 
@@ -1092,8 +1092,8 @@ type MetricsSourceAgentMetricsConfig struct {
 }
 
 type MetricsSourceAgentRuntimeMetricConfig struct {
-	Name     string `json:"name"`
-	Disabled *bool  `json:"disabled,omitempty"`
+	Name     *ReconciledString  `json:"name,omitempty"`
+	Disabled *ReconciledBoolean `json:"disabled,omitempty"`
 }
 
 type MetricsSourceAgentRuntimeMetricsConfig struct {
@@ -1101,7 +1101,7 @@ type MetricsSourceAgentRuntimeMetricsConfig struct {
 }
 
 type MetricsSourceAgentSpanMetricsConfig struct {
-	Enabled bool `json:"enabled"`
+	Enabled *ReconciledBoolean `json:"enabled,omitempty"`
 }
 
 type MetricsSourceConfig struct {
@@ -1113,29 +1113,29 @@ type MetricsSourceConfig struct {
 }
 
 type MetricsSourceHostMetricsConfig struct {
-	Disabled *bool   `json:"disabled,omitempty"`
-	Interval *string `json:"interval,omitempty"`
+	Disabled *ReconciledBoolean `json:"disabled,omitempty"`
+	Interval *ReconciledString  `json:"interval,omitempty"`
 }
 
 type MetricsSourceKubeletStatsConfig struct {
-	Disabled *bool   `json:"disabled,omitempty"`
-	Interval *string `json:"interval,omitempty"`
+	Disabled *ReconciledBoolean `json:"disabled,omitempty"`
+	Interval *ReconciledString  `json:"interval,omitempty"`
 }
 
 type MetricsSourceOdigosOwnMetricsConfig struct {
-	Interval *string `json:"interval,omitempty"`
+	Interval *ReconciledString `json:"interval,omitempty"`
 }
 
 type MetricsSourceSpanMetricsConfig struct {
-	Disabled                     *bool    `json:"disabled,omitempty"`
-	Interval                     *string  `json:"interval,omitempty"`
-	MetricsExpiration            *string  `json:"metricsExpiration,omitempty"`
-	AdditionalDimensions         []string `json:"additionalDimensions,omitempty"`
-	HistogramDisabled            *bool    `json:"histogramDisabled,omitempty"`
-	HistogramBuckets             []string `json:"histogramBuckets,omitempty"`
-	IncludedProcessInDimensions  *bool    `json:"includedProcessInDimensions,omitempty"`
-	ExcludedResourceAttributes   []string `json:"excludedResourceAttributes,omitempty"`
-	ResourceMetricsKeyAttributes []string `json:"resourceMetricsKeyAttributes,omitempty"`
+	Disabled                     *ReconciledBoolean     `json:"disabled,omitempty"`
+	Interval                     *ReconciledString      `json:"interval,omitempty"`
+	MetricsExpiration            *ReconciledString      `json:"metricsExpiration,omitempty"`
+	AdditionalDimensions         *ReconciledStringArray `json:"additionalDimensions,omitempty"`
+	HistogramDisabled            *ReconciledBoolean     `json:"histogramDisabled,omitempty"`
+	HistogramBuckets             *ReconciledStringArray `json:"histogramBuckets,omitempty"`
+	IncludedProcessInDimensions  *ReconciledBoolean     `json:"includedProcessInDimensions,omitempty"`
+	ExcludedResourceAttributes   *ReconciledStringArray `json:"excludedResourceAttributes,omitempty"`
+	ResourceMetricsKeyAttributes *ReconciledStringArray `json:"resourceMetricsKeyAttributes,omitempty"`
 }
 
 type Mutation struct {
@@ -1211,13 +1211,13 @@ type OdigosAnalyze struct {
 }
 
 type OdigosOwnTelemetryConfig struct {
-	MetricsStoreDisabled *bool `json:"metricsStoreDisabled,omitempty"`
+	MetricsStoreDisabled *ReconciledBoolean `json:"metricsStoreDisabled,omitempty"`
 }
 
 type OidcConfig struct {
-	TenantURL    *string `json:"tenantUrl,omitempty"`
-	ClientID     *string `json:"clientId,omitempty"`
-	ClientSecret *string `json:"clientSecret,omitempty"`
+	TenantURL    *ReconciledString `json:"tenantUrl,omitempty"`
+	ClientID     *ReconciledString `json:"clientId,omitempty"`
+	ClientSecret *ReconciledString `json:"clientSecret,omitempty"`
 }
 
 type OtelAgentsAnalyze struct {
@@ -1227,8 +1227,8 @@ type OtelAgentsAnalyze struct {
 }
 
 type OtlpExporterConfig struct {
-	EnableDataCompression *bool                 `json:"enableDataCompression,omitempty"`
-	Timeout               *string               `json:"timeout,omitempty"`
+	EnableDataCompression *ReconciledBoolean    `json:"enableDataCompression,omitempty"`
+	Timeout               *ReconciledString     `json:"timeout,omitempty"`
 	RetryOnFailure        *RetryOnFailureConfig `json:"retryOnFailure,omitempty"`
 }
 
@@ -1340,6 +1340,46 @@ type PodWorkloadInput struct {
 type Query struct {
 }
 
+type ReconciledBoolean struct {
+	ReconciledFrom string `json:"reconciledFrom"`
+	Value          *bool  `json:"value,omitempty"`
+}
+
+type ReconciledEnvInjectionMethod struct {
+	ReconciledFrom string              `json:"reconciledFrom"`
+	Value          *EnvInjectionMethod `json:"value,omitempty"`
+}
+
+type ReconciledInt struct {
+	ReconciledFrom string `json:"reconciledFrom"`
+	Value          *int   `json:"value,omitempty"`
+}
+
+type ReconciledMountMethod struct {
+	ReconciledFrom string       `json:"reconciledFrom"`
+	Value          *MountMethod `json:"value,omitempty"`
+}
+
+type ReconciledOdigosLogLevel struct {
+	ReconciledFrom string          `json:"reconciledFrom"`
+	Value          *OdigosLogLevel `json:"value,omitempty"`
+}
+
+type ReconciledString struct {
+	ReconciledFrom string  `json:"reconciledFrom"`
+	Value          *string `json:"value,omitempty"`
+}
+
+type ReconciledStringArray struct {
+	ReconciledFrom string   `json:"reconciledFrom"`
+	Value          []string `json:"value,omitempty"`
+}
+
+type ReconciledUIMode struct {
+	ReconciledFrom string  `json:"reconciledFrom"`
+	Value          *UIMode `json:"value,omitempty"`
+}
+
 type RemoteConfig struct {
 	Rollout *RemoteConfigRollout `json:"rollout,omitempty"`
 }
@@ -1367,14 +1407,14 @@ type Resources struct {
 }
 
 type RetryOnFailureConfig struct {
-	Enabled         *bool   `json:"enabled,omitempty"`
-	InitialInterval *string `json:"initialInterval,omitempty"`
-	MaxInterval     *string `json:"maxInterval,omitempty"`
-	MaxElapsedTime  *string `json:"maxElapsedTime,omitempty"`
+	Enabled         *ReconciledBoolean `json:"enabled,omitempty"`
+	InitialInterval *ReconciledString  `json:"initialInterval,omitempty"`
+	MaxInterval     *ReconciledString  `json:"maxInterval,omitempty"`
+	MaxElapsedTime  *ReconciledString  `json:"maxElapsedTime,omitempty"`
 }
 
 type RolloutConfig struct {
-	AutomaticRolloutDisabled *bool `json:"automaticRolloutDisabled,omitempty"`
+	AutomaticRolloutDisabled *ReconciledBoolean `json:"automaticRolloutDisabled,omitempty"`
 }
 
 type RuntimeInfoAnalyze struct {
@@ -1623,7 +1663,7 @@ type URLTemplatizationRulesGroupInput struct {
 }
 
 type UserInstrumentationEnvsConfig struct {
-	Languages *string `json:"languages,omitempty"`
+	Languages *ReconciledString `json:"languages,omitempty"`
 }
 
 type WorkloadFilter struct {

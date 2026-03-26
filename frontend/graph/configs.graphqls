@@ -30,17 +30,6 @@ enum OdigosComponent {
   collector
 }
 
-type ComponentLogLevelsConfig {
-  default: OdigosLogLevel
-  autoscaler: OdigosLogLevel
-  scheduler: OdigosLogLevel
-  instrumentor: OdigosLogLevel
-  odiglet: OdigosLogLevel
-  deviceplugin: OdigosLogLevel
-  ui: OdigosLogLevel
-  collector: OdigosLogLevel
-}
-
 enum UiMode {
   default
   readonly
@@ -58,47 +47,102 @@ enum EnvInjectionMethod {
   loader_fallback_to_pod_manifest
 }
 
+# Reconciled field wrapper types: each wraps a value with the ConfigMap it originated from
+
+type ReconciledBoolean {
+  reconciledFrom: String!
+  value: Boolean
+}
+
+type ReconciledString {
+  reconciledFrom: String!
+  value: String
+}
+
+type ReconciledInt {
+  reconciledFrom: String!
+  value: Int
+}
+
+type ReconciledStringArray {
+  reconciledFrom: String!
+  value: [String!]
+}
+
+type ReconciledUiMode {
+  reconciledFrom: String!
+  value: UiMode
+}
+
+type ReconciledMountMethod {
+  reconciledFrom: String!
+  value: MountMethod
+}
+
+type ReconciledEnvInjectionMethod {
+  reconciledFrom: String!
+  value: EnvInjectionMethod
+}
+
+type ReconciledOdigosLogLevel {
+  reconciledFrom: String!
+  value: OdigosLogLevel
+}
+
+# Nested config types with reconciled leaf fields
+
+type ComponentLogLevelsConfig {
+  default: ReconciledOdigosLogLevel
+  autoscaler: ReconciledOdigosLogLevel
+  scheduler: ReconciledOdigosLogLevel
+  instrumentor: ReconciledOdigosLogLevel
+  odiglet: ReconciledOdigosLogLevel
+  deviceplugin: ReconciledOdigosLogLevel
+  ui: ReconciledOdigosLogLevel
+  collector: ReconciledOdigosLogLevel
+}
+
 type RetryOnFailureConfig {
-  enabled: Boolean
-  initialInterval: String
-  maxInterval: String
-  maxElapsedTime: String
+  enabled: ReconciledBoolean
+  initialInterval: ReconciledString
+  maxInterval: ReconciledString
+  maxElapsedTime: ReconciledString
 }
 
 type OtlpExporterConfig {
-  enableDataCompression: Boolean
-  timeout: String
+  enableDataCompression: ReconciledBoolean
+  timeout: ReconciledString
   retryOnFailure: RetryOnFailureConfig
 }
 
 type CollectorNodeConfig {
-  collectorOwnMetricsPort: Int
-  requestMemoryMiB: Int
-  limitMemoryMiB: Int
-  requestCPUm: Int
-  limitCPUm: Int
-  memoryLimiterLimitMiB: Int
-  memoryLimiterSpikeLimitMiB: Int
-  goMemLimitMiB: Int
-  k8sNodeLogsDirectory: String
-  enableDataCompression: Boolean
+  collectorOwnMetricsPort: ReconciledInt
+  requestMemoryMiB: ReconciledInt
+  limitMemoryMiB: ReconciledInt
+  requestCPUm: ReconciledInt
+  limitCPUm: ReconciledInt
+  memoryLimiterLimitMiB: ReconciledInt
+  memoryLimiterSpikeLimitMiB: ReconciledInt
+  goMemLimitMiB: ReconciledInt
+  k8sNodeLogsDirectory: ReconciledString
+  enableDataCompression: ReconciledBoolean
   otlpExporterConfiguration: OtlpExporterConfig
 }
 
 type CollectorGatewayConfig {
-  minReplicas: Int
-  maxReplicas: Int
-  requestMemoryMiB: Int
-  limitMemoryMiB: Int
-  requestCPUm: Int
-  limitCPUm: Int
-  memoryLimiterLimitMiB: Int
-  memoryLimiterSpikeLimitMiB: Int
-  goMemLimitMiB: Int
-  serviceGraphDisabled: Boolean
-  clusterMetricsEnabled: Boolean
-  httpsProxyAddress: String
-  nodeSelector: String # JSON string representation of map[string]string
+  minReplicas: ReconciledInt
+  maxReplicas: ReconciledInt
+  requestMemoryMiB: ReconciledInt
+  limitMemoryMiB: ReconciledInt
+  requestCPUm: ReconciledInt
+  limitCPUm: ReconciledInt
+  memoryLimiterLimitMiB: ReconciledInt
+  memoryLimiterSpikeLimitMiB: ReconciledInt
+  goMemLimitMiB: ReconciledInt
+  serviceGraphDisabled: ReconciledBoolean
+  clusterMetricsEnabled: ReconciledBoolean
+  httpsProxyAddress: ReconciledString
+  nodeSelector: ReconciledString # JSON string representation of map[string]string
 }
 
 type LanguageConfig {
@@ -107,56 +151,56 @@ type LanguageConfig {
 }
 
 type UserInstrumentationEnvsConfig {
-  languages: String # JSON string representation of map[ProgrammingLanguage]LanguageConfig
+  languages: ReconciledString # JSON string representation of map[ProgrammingLanguage]LanguageConfig
 }
 
 type RolloutConfig {
-  automaticRolloutDisabled: Boolean
+  automaticRolloutDisabled: ReconciledBoolean
 }
 
 type OidcConfig {
-  tenantUrl: String
-  clientId: String
-  clientSecret: String
+  tenantUrl: ReconciledString
+  clientId: ReconciledString
+  clientSecret: ReconciledString
 }
 
 type MetricsSourceSpanMetricsConfig {
-  disabled: Boolean
-  interval: String
-  metricsExpiration: String
-  additionalDimensions: [String!]
-  histogramDisabled: Boolean
-  histogramBuckets: [String!]
-  includedProcessInDimensions: Boolean
-  excludedResourceAttributes: [String!]
-  resourceMetricsKeyAttributes: [String!]
+  disabled: ReconciledBoolean
+  interval: ReconciledString
+  metricsExpiration: ReconciledString
+  additionalDimensions: ReconciledStringArray
+  histogramDisabled: ReconciledBoolean
+  histogramBuckets: ReconciledStringArray
+  includedProcessInDimensions: ReconciledBoolean
+  excludedResourceAttributes: ReconciledStringArray
+  resourceMetricsKeyAttributes: ReconciledStringArray
 }
 
 type MetricsSourceHostMetricsConfig {
-  disabled: Boolean
-  interval: String
+  disabled: ReconciledBoolean
+  interval: ReconciledString
 }
 
 type MetricsSourceKubeletStatsConfig {
-  disabled: Boolean
-  interval: String
+  disabled: ReconciledBoolean
+  interval: ReconciledString
 }
 
 type MetricsSourceOdigosOwnMetricsConfig {
-  interval: String
+  interval: ReconciledString
 }
 
 type MetricsSourceAgentSpanMetricsConfig {
-  enabled: Boolean!
+  enabled: ReconciledBoolean
 }
 
 type MetricsSourceAgentRuntimeMetricConfig {
-  name: String!
-  disabled: Boolean
+  name: ReconciledString
+  disabled: ReconciledBoolean
 }
 
 type MetricsSourceAgentJavaRuntimeMetricsConfig {
-  disabled: Boolean
+  disabled: ReconciledBoolean
   metrics: [MetricsSourceAgentRuntimeMetricConfig!]
 }
 
@@ -178,59 +222,59 @@ type MetricsSourceConfig {
 }
 
 type AgentsInitContainerResourcesConfig {
-  requestCPUm: Int
-  limitCPUm: Int
-  requestMemoryMiB: Int
-  limitMemoryMiB: Int
+  requestCPUm: ReconciledInt
+  limitCPUm: ReconciledInt
+  requestMemoryMiB: ReconciledInt
+  limitMemoryMiB: ReconciledInt
 }
 
 type OdigosOwnTelemetryConfig {
-  metricsStoreDisabled: Boolean
+  metricsStoreDisabled: ReconciledBoolean
 }
 
 type EffectiveConfig {
   configVersion: Int!
-  telemetryEnabled: Boolean
-  openshiftEnabled: Boolean
-  ignoredNamespaces: [String!]
-  ignoredContainers: [String!]
-  ignoreOdigosNamespace: Boolean
-  psp: Boolean
-  imagePrefix: String
-  skipWebhookIssuerCreation: Boolean
+  telemetryEnabled: ReconciledBoolean
+  openshiftEnabled: ReconciledBoolean
+  ignoredNamespaces: ReconciledStringArray
+  ignoredContainers: ReconciledStringArray
+  ignoreOdigosNamespace: ReconciledBoolean
+  psp: ReconciledBoolean
+  imagePrefix: ReconciledString
+  skipWebhookIssuerCreation: ReconciledBoolean
   collectorGateway: CollectorGatewayConfig
   collectorNode: CollectorNodeConfig
-  profiles: [String!]
-  allowConcurrentAgents: Boolean
-  uiMode: UiMode
-  uiPaginationLimit: Int
-  uiRemoteUrl: String
-  centralBackendURL: String
-  clusterName: String
-  mountMethod: MountMethod
-  customContainerRuntimeSocketPath: String
-  agentEnvVarsInjectionMethod: EnvInjectionMethod
+  profiles: ReconciledStringArray
+  allowConcurrentAgents: ReconciledBoolean
+  uiMode: ReconciledUiMode
+  uiPaginationLimit: ReconciledInt
+  uiRemoteUrl: ReconciledString
+  centralBackendURL: ReconciledString
+  clusterName: ReconciledString
+  mountMethod: ReconciledMountMethod
+  customContainerRuntimeSocketPath: ReconciledString
+  agentEnvVarsInjectionMethod: ReconciledEnvInjectionMethod
   userInstrumentationEnvs: UserInstrumentationEnvsConfig
-  nodeSelector: String # JSON string representation of map[string]string
-  karpenterEnabled: Boolean
+  nodeSelector: ReconciledString # JSON string representation of map[string]string
+  karpenterEnabled: ReconciledBoolean
   rollout: RolloutConfig
-  rollbackDisabled: Boolean
-  rollbackGraceTime: String
-  rollbackStabilityWindow: String
+  rollbackDisabled: ReconciledBoolean
+  rollbackGraceTime: ReconciledString
+  rollbackStabilityWindow: ReconciledString
   oidc: OidcConfig
-  odigletHealthProbeBindPort: Int
-  goAutoOffsetsCron: String
-  goAutoOffsetsMode: String
-  clickhouseJsonTypeEnabled: Boolean
-  checkDeviceHealthBeforeInjection: Boolean
-  resourceSizePreset: String
-  waspEnabled: Boolean
+  odigletHealthProbeBindPort: ReconciledInt
+  goAutoOffsetsCron: ReconciledString
+  goAutoOffsetsMode: ReconciledString
+  clickhouseJsonTypeEnabled: ReconciledBoolean
+  checkDeviceHealthBeforeInjection: ReconciledBoolean
+  resourceSizePreset: ReconciledString
+  waspEnabled: ReconciledBoolean
   metricsSources: MetricsSourceConfig
   agentsInitContainerResources: AgentsInitContainerResourcesConfig
-  traceIdSuffix: String
-  allowedTestConnectionHosts: [String!]
+  traceIdSuffix: ReconciledString
+  allowedTestConnectionHosts: ReconciledStringArray
   odigosOwnTelemetryStore: OdigosOwnTelemetryConfig
-  imagePullSecrets: [String!]
+  imagePullSecrets: ReconciledStringArray
   componentLogLevels: ComponentLogLevelsConfig
   manifestYAML: String
 }

@@ -64,12 +64,12 @@ func (r *queryResolver) RemoteConfig(ctx context.Context) (*model.RemoteConfig, 
 
 // EffectiveConfig is the resolver for the effectiveConfig field.
 func (r *queryResolver) EffectiveConfig(ctx context.Context) (*model.EffectiveConfig, error) {
-	odigosConfig, rawYAML, err := services.GetEffectiveConfigWithRawYAML(ctx, r.K8sCacheClient)
+	odigosConfig, rawYAML, provenance, err := services.GetEffectiveConfigWithRawYAML(ctx, r.K8sCacheClient)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := EffectiveConfigToModel(odigosConfig)
+	result, err := EffectiveConfigToModel(odigosConfig, provenance)
 	if err != nil {
 		return nil, err
 	}

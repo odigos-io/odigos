@@ -1097,6 +1097,46 @@ type ComplexityRoot struct {
 		WorkloadsByIds                    func(childComplexity int, ids []*model.K8sWorkloadIDInput) int
 	}
 
+	ReconciledBoolean struct {
+		ReconciledFrom func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
+	ReconciledEnvInjectionMethod struct {
+		ReconciledFrom func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
+	ReconciledInt struct {
+		ReconciledFrom func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
+	ReconciledMountMethod struct {
+		ReconciledFrom func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
+	ReconciledOdigosLogLevel struct {
+		ReconciledFrom func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
+	ReconciledString struct {
+		ReconciledFrom func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
+	ReconciledStringArray struct {
+		ReconciledFrom func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
+	ReconciledUiMode struct {
+		ReconciledFrom func(childComplexity int) int
+		Value          func(childComplexity int) int
+	}
+
 	RemoteConfig struct {
 		Rollout func(childComplexity int) int
 	}
@@ -6323,6 +6363,118 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.WorkloadsByIds(childComplexity, args["ids"].([]*model.K8sWorkloadIDInput)), true
 
+	case "ReconciledBoolean.reconciledFrom":
+		if e.complexity.ReconciledBoolean.ReconciledFrom == nil {
+			break
+		}
+
+		return e.complexity.ReconciledBoolean.ReconciledFrom(childComplexity), true
+
+	case "ReconciledBoolean.value":
+		if e.complexity.ReconciledBoolean.Value == nil {
+			break
+		}
+
+		return e.complexity.ReconciledBoolean.Value(childComplexity), true
+
+	case "ReconciledEnvInjectionMethod.reconciledFrom":
+		if e.complexity.ReconciledEnvInjectionMethod.ReconciledFrom == nil {
+			break
+		}
+
+		return e.complexity.ReconciledEnvInjectionMethod.ReconciledFrom(childComplexity), true
+
+	case "ReconciledEnvInjectionMethod.value":
+		if e.complexity.ReconciledEnvInjectionMethod.Value == nil {
+			break
+		}
+
+		return e.complexity.ReconciledEnvInjectionMethod.Value(childComplexity), true
+
+	case "ReconciledInt.reconciledFrom":
+		if e.complexity.ReconciledInt.ReconciledFrom == nil {
+			break
+		}
+
+		return e.complexity.ReconciledInt.ReconciledFrom(childComplexity), true
+
+	case "ReconciledInt.value":
+		if e.complexity.ReconciledInt.Value == nil {
+			break
+		}
+
+		return e.complexity.ReconciledInt.Value(childComplexity), true
+
+	case "ReconciledMountMethod.reconciledFrom":
+		if e.complexity.ReconciledMountMethod.ReconciledFrom == nil {
+			break
+		}
+
+		return e.complexity.ReconciledMountMethod.ReconciledFrom(childComplexity), true
+
+	case "ReconciledMountMethod.value":
+		if e.complexity.ReconciledMountMethod.Value == nil {
+			break
+		}
+
+		return e.complexity.ReconciledMountMethod.Value(childComplexity), true
+
+	case "ReconciledOdigosLogLevel.reconciledFrom":
+		if e.complexity.ReconciledOdigosLogLevel.ReconciledFrom == nil {
+			break
+		}
+
+		return e.complexity.ReconciledOdigosLogLevel.ReconciledFrom(childComplexity), true
+
+	case "ReconciledOdigosLogLevel.value":
+		if e.complexity.ReconciledOdigosLogLevel.Value == nil {
+			break
+		}
+
+		return e.complexity.ReconciledOdigosLogLevel.Value(childComplexity), true
+
+	case "ReconciledString.reconciledFrom":
+		if e.complexity.ReconciledString.ReconciledFrom == nil {
+			break
+		}
+
+		return e.complexity.ReconciledString.ReconciledFrom(childComplexity), true
+
+	case "ReconciledString.value":
+		if e.complexity.ReconciledString.Value == nil {
+			break
+		}
+
+		return e.complexity.ReconciledString.Value(childComplexity), true
+
+	case "ReconciledStringArray.reconciledFrom":
+		if e.complexity.ReconciledStringArray.ReconciledFrom == nil {
+			break
+		}
+
+		return e.complexity.ReconciledStringArray.ReconciledFrom(childComplexity), true
+
+	case "ReconciledStringArray.value":
+		if e.complexity.ReconciledStringArray.Value == nil {
+			break
+		}
+
+		return e.complexity.ReconciledStringArray.Value(childComplexity), true
+
+	case "ReconciledUiMode.reconciledFrom":
+		if e.complexity.ReconciledUiMode.ReconciledFrom == nil {
+			break
+		}
+
+		return e.complexity.ReconciledUiMode.ReconciledFrom(childComplexity), true
+
+	case "ReconciledUiMode.value":
+		if e.complexity.ReconciledUiMode.Value == nil {
+			break
+		}
+
+		return e.complexity.ReconciledUiMode.Value(childComplexity), true
+
 	case "RemoteConfig.rollout":
 		if e.complexity.RemoteConfig.Rollout == nil {
 			break
@@ -10491,9 +10643,9 @@ func (ec *executionContext) _AgentsInitContainerResourcesConfig_requestCPUm(ctx 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_requestCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10503,7 +10655,13 @@ func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_requ
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -10532,9 +10690,9 @@ func (ec *executionContext) _AgentsInitContainerResourcesConfig_limitCPUm(ctx co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_limitCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10544,7 +10702,13 @@ func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_limi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -10573,9 +10737,9 @@ func (ec *executionContext) _AgentsInitContainerResourcesConfig_requestMemoryMiB
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_requestMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10585,7 +10749,13 @@ func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_requ
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -10614,9 +10784,9 @@ func (ec *executionContext) _AgentsInitContainerResourcesConfig_limitMemoryMiB(c
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_limitMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -10626,7 +10796,13 @@ func (ec *executionContext) fieldContext_AgentsInitContainerResourcesConfig_limi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12544,9 +12720,9 @@ func (ec *executionContext) _CollectorGatewayConfig_minReplicas(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_minReplicas(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12556,7 +12732,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_minReplicas(_ co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12585,9 +12767,9 @@ func (ec *executionContext) _CollectorGatewayConfig_maxReplicas(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_maxReplicas(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12597,7 +12779,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_maxReplicas(_ co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12626,9 +12814,9 @@ func (ec *executionContext) _CollectorGatewayConfig_requestMemoryMiB(ctx context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_requestMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12638,7 +12826,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_requestMemoryMiB
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12667,9 +12861,9 @@ func (ec *executionContext) _CollectorGatewayConfig_limitMemoryMiB(ctx context.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_limitMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12679,7 +12873,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_limitMemoryMiB(_
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12708,9 +12908,9 @@ func (ec *executionContext) _CollectorGatewayConfig_requestCPUm(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_requestCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12720,7 +12920,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_requestCPUm(_ co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12749,9 +12955,9 @@ func (ec *executionContext) _CollectorGatewayConfig_limitCPUm(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_limitCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12761,7 +12967,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_limitCPUm(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12790,9 +13002,9 @@ func (ec *executionContext) _CollectorGatewayConfig_memoryLimiterLimitMiB(ctx co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_memoryLimiterLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12802,7 +13014,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_memoryLimiterLim
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12831,9 +13049,9 @@ func (ec *executionContext) _CollectorGatewayConfig_memoryLimiterSpikeLimitMiB(c
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_memoryLimiterSpikeLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12843,7 +13061,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_memoryLimiterSpi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12872,9 +13096,9 @@ func (ec *executionContext) _CollectorGatewayConfig_goMemLimitMiB(ctx context.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_goMemLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12884,7 +13108,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_goMemLimitMiB(_ 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -12913,9 +13143,9 @@ func (ec *executionContext) _CollectorGatewayConfig_serviceGraphDisabled(ctx con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_serviceGraphDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12925,7 +13155,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_serviceGraphDisa
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -12954,9 +13190,9 @@ func (ec *executionContext) _CollectorGatewayConfig_clusterMetricsEnabled(ctx co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_clusterMetricsEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12966,7 +13202,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_clusterMetricsEn
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -12995,9 +13237,9 @@ func (ec *executionContext) _CollectorGatewayConfig_httpsProxyAddress(ctx contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_httpsProxyAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13007,7 +13249,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_httpsProxyAddres
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -13036,9 +13284,9 @@ func (ec *executionContext) _CollectorGatewayConfig_nodeSelector(ctx context.Con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorGatewayConfig_nodeSelector(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13048,7 +13296,13 @@ func (ec *executionContext) fieldContext_CollectorGatewayConfig_nodeSelector(_ c
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -13077,9 +13331,9 @@ func (ec *executionContext) _CollectorNodeConfig_collectorOwnMetricsPort(ctx con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_collectorOwnMetricsPort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13089,7 +13343,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_collectorOwnMetrics
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -13118,9 +13378,9 @@ func (ec *executionContext) _CollectorNodeConfig_requestMemoryMiB(ctx context.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_requestMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13130,7 +13390,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_requestMemoryMiB(_ 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -13159,9 +13425,9 @@ func (ec *executionContext) _CollectorNodeConfig_limitMemoryMiB(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_limitMemoryMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13171,7 +13437,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_limitMemoryMiB(_ co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -13200,9 +13472,9 @@ func (ec *executionContext) _CollectorNodeConfig_requestCPUm(ctx context.Context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_requestCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13212,7 +13484,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_requestCPUm(_ conte
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -13241,9 +13519,9 @@ func (ec *executionContext) _CollectorNodeConfig_limitCPUm(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_limitCPUm(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13253,7 +13531,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_limitCPUm(_ context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -13282,9 +13566,9 @@ func (ec *executionContext) _CollectorNodeConfig_memoryLimiterLimitMiB(ctx conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_memoryLimiterLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13294,7 +13578,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_memoryLimiterLimitM
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -13323,9 +13613,9 @@ func (ec *executionContext) _CollectorNodeConfig_memoryLimiterSpikeLimitMiB(ctx 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_memoryLimiterSpikeLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13335,7 +13625,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_memoryLimiterSpikeL
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -13364,9 +13660,9 @@ func (ec *executionContext) _CollectorNodeConfig_goMemLimitMiB(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_goMemLimitMiB(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13376,7 +13672,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_goMemLimitMiB(_ con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -13405,9 +13707,9 @@ func (ec *executionContext) _CollectorNodeConfig_k8sNodeLogsDirectory(ctx contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_k8sNodeLogsDirectory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13417,7 +13719,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_k8sNodeLogsDirector
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -13446,9 +13754,9 @@ func (ec *executionContext) _CollectorNodeConfig_enableDataCompression(ctx conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_CollectorNodeConfig_enableDataCompression(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13458,7 +13766,13 @@ func (ec *executionContext) fieldContext_CollectorNodeConfig_enableDataCompressi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -13797,9 +14111,9 @@ func (ec *executionContext) _ComponentLogLevelsConfig_default(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.OdigosLogLevel)
+	res := resTmp.(*model.ReconciledOdigosLogLevel)
 	fc.Result = res
-	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+	return ec.marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_default(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13809,7 +14123,13 @@ func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_default(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledOdigosLogLevel", field.Name)
 		},
 	}
 	return fc, nil
@@ -13838,9 +14158,9 @@ func (ec *executionContext) _ComponentLogLevelsConfig_autoscaler(ctx context.Con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.OdigosLogLevel)
+	res := resTmp.(*model.ReconciledOdigosLogLevel)
 	fc.Result = res
-	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+	return ec.marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_autoscaler(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13850,7 +14170,13 @@ func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_autoscaler(_ c
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledOdigosLogLevel", field.Name)
 		},
 	}
 	return fc, nil
@@ -13879,9 +14205,9 @@ func (ec *executionContext) _ComponentLogLevelsConfig_scheduler(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.OdigosLogLevel)
+	res := resTmp.(*model.ReconciledOdigosLogLevel)
 	fc.Result = res
-	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+	return ec.marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_scheduler(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13891,7 +14217,13 @@ func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_scheduler(_ co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledOdigosLogLevel", field.Name)
 		},
 	}
 	return fc, nil
@@ -13920,9 +14252,9 @@ func (ec *executionContext) _ComponentLogLevelsConfig_instrumentor(ctx context.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.OdigosLogLevel)
+	res := resTmp.(*model.ReconciledOdigosLogLevel)
 	fc.Result = res
-	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+	return ec.marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_instrumentor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13932,7 +14264,13 @@ func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_instrumentor(_
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledOdigosLogLevel", field.Name)
 		},
 	}
 	return fc, nil
@@ -13961,9 +14299,9 @@ func (ec *executionContext) _ComponentLogLevelsConfig_odiglet(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.OdigosLogLevel)
+	res := resTmp.(*model.ReconciledOdigosLogLevel)
 	fc.Result = res
-	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+	return ec.marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_odiglet(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13973,7 +14311,13 @@ func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_odiglet(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledOdigosLogLevel", field.Name)
 		},
 	}
 	return fc, nil
@@ -14002,9 +14346,9 @@ func (ec *executionContext) _ComponentLogLevelsConfig_deviceplugin(ctx context.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.OdigosLogLevel)
+	res := resTmp.(*model.ReconciledOdigosLogLevel)
 	fc.Result = res
-	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+	return ec.marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_deviceplugin(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14014,7 +14358,13 @@ func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_deviceplugin(_
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledOdigosLogLevel", field.Name)
 		},
 	}
 	return fc, nil
@@ -14043,9 +14393,9 @@ func (ec *executionContext) _ComponentLogLevelsConfig_ui(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.OdigosLogLevel)
+	res := resTmp.(*model.ReconciledOdigosLogLevel)
 	fc.Result = res
-	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+	return ec.marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_ui(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14055,7 +14405,13 @@ func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_ui(_ context.C
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledOdigosLogLevel", field.Name)
 		},
 	}
 	return fc, nil
@@ -14084,9 +14440,9 @@ func (ec *executionContext) _ComponentLogLevelsConfig_collector(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.OdigosLogLevel)
+	res := resTmp.(*model.ReconciledOdigosLogLevel)
 	fc.Result = res
-	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+	return ec.marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_collector(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -14096,7 +14452,13 @@ func (ec *executionContext) fieldContext_ComponentLogLevelsConfig_collector(_ co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledOdigosLogLevel", field.Name)
 		},
 	}
 	return fc, nil
@@ -19303,9 +19665,9 @@ func (ec *executionContext) _EffectiveConfig_telemetryEnabled(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_telemetryEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19315,7 +19677,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_telemetryEnabled(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -19344,9 +19712,9 @@ func (ec *executionContext) _EffectiveConfig_openshiftEnabled(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_openshiftEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19356,7 +19724,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_openshiftEnabled(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -19385,9 +19759,9 @@ func (ec *executionContext) _EffectiveConfig_ignoredNamespaces(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_ignoredNamespaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19397,7 +19771,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_ignoredNamespaces(_ con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -19426,9 +19806,9 @@ func (ec *executionContext) _EffectiveConfig_ignoredContainers(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_ignoredContainers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19438,7 +19818,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_ignoredContainers(_ con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -19467,9 +19853,9 @@ func (ec *executionContext) _EffectiveConfig_ignoreOdigosNamespace(ctx context.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_ignoreOdigosNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19479,7 +19865,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_ignoreOdigosNamespace(_
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -19508,9 +19900,9 @@ func (ec *executionContext) _EffectiveConfig_psp(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_psp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19520,7 +19912,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_psp(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -19549,9 +19947,9 @@ func (ec *executionContext) _EffectiveConfig_imagePrefix(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_imagePrefix(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19561,7 +19959,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_imagePrefix(_ context.C
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -19590,9 +19994,9 @@ func (ec *executionContext) _EffectiveConfig_skipWebhookIssuerCreation(ctx conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_skipWebhookIssuerCreation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19602,7 +20006,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_skipWebhookIssuerCreati
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -19765,9 +20175,9 @@ func (ec *executionContext) _EffectiveConfig_profiles(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_profiles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19777,7 +20187,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_profiles(_ context.Cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -19806,9 +20222,9 @@ func (ec *executionContext) _EffectiveConfig_allowConcurrentAgents(ctx context.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_allowConcurrentAgents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19818,7 +20234,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_allowConcurrentAgents(_
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -19847,9 +20269,9 @@ func (ec *executionContext) _EffectiveConfig_uiMode(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.UIMode)
+	res := resTmp.(*model.ReconciledUIMode)
 	fc.Result = res
-	return ec.marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx, field.Selections, res)
+	return ec.marshalOReconciledUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledUIMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_uiMode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19859,7 +20281,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_uiMode(_ context.Contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type UiMode does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledUiMode_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledUiMode_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledUiMode", field.Name)
 		},
 	}
 	return fc, nil
@@ -19888,9 +20316,9 @@ func (ec *executionContext) _EffectiveConfig_uiPaginationLimit(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_uiPaginationLimit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19900,7 +20328,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_uiPaginationLimit(_ con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -19929,9 +20363,9 @@ func (ec *executionContext) _EffectiveConfig_uiRemoteUrl(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_uiRemoteUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19941,7 +20375,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_uiRemoteUrl(_ context.C
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -19970,9 +20410,9 @@ func (ec *executionContext) _EffectiveConfig_centralBackendURL(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_centralBackendURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -19982,7 +20422,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_centralBackendURL(_ con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20011,9 +20457,9 @@ func (ec *executionContext) _EffectiveConfig_clusterName(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_clusterName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20023,7 +20469,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_clusterName(_ context.C
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20052,9 +20504,9 @@ func (ec *executionContext) _EffectiveConfig_mountMethod(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.MountMethod)
+	res := resTmp.(*model.ReconciledMountMethod)
 	fc.Result = res
-	return ec.marshalOMountMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMountMethod(ctx, field.Selections, res)
+	return ec.marshalOReconciledMountMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledMountMethod(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_mountMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20064,7 +20516,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_mountMethod(_ context.C
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type MountMethod does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledMountMethod_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledMountMethod_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledMountMethod", field.Name)
 		},
 	}
 	return fc, nil
@@ -20093,9 +20551,9 @@ func (ec *executionContext) _EffectiveConfig_customContainerRuntimeSocketPath(ct
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_customContainerRuntimeSocketPath(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20105,7 +20563,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_customContainerRuntimeS
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20134,9 +20598,9 @@ func (ec *executionContext) _EffectiveConfig_agentEnvVarsInjectionMethod(ctx con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.EnvInjectionMethod)
+	res := resTmp.(*model.ReconciledEnvInjectionMethod)
 	fc.Result = res
-	return ec.marshalOEnvInjectionMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnvInjectionMethod(ctx, field.Selections, res)
+	return ec.marshalOReconciledEnvInjectionMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledEnvInjectionMethod(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_agentEnvVarsInjectionMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20146,7 +20610,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_agentEnvVarsInjectionMe
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type EnvInjectionMethod does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledEnvInjectionMethod_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledEnvInjectionMethod_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledEnvInjectionMethod", field.Name)
 		},
 	}
 	return fc, nil
@@ -20220,9 +20690,9 @@ func (ec *executionContext) _EffectiveConfig_nodeSelector(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_nodeSelector(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20232,7 +20702,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_nodeSelector(_ context.
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20261,9 +20737,9 @@ func (ec *executionContext) _EffectiveConfig_karpenterEnabled(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_karpenterEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20273,7 +20749,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_karpenterEnabled(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -20347,9 +20829,9 @@ func (ec *executionContext) _EffectiveConfig_rollbackDisabled(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_rollbackDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20359,7 +20841,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_rollbackDisabled(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -20388,9 +20876,9 @@ func (ec *executionContext) _EffectiveConfig_rollbackGraceTime(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_rollbackGraceTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20400,7 +20888,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_rollbackGraceTime(_ con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20429,9 +20923,9 @@ func (ec *executionContext) _EffectiveConfig_rollbackStabilityWindow(ctx context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_rollbackStabilityWindow(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20441,7 +20935,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_rollbackStabilityWindow
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20519,9 +21019,9 @@ func (ec *executionContext) _EffectiveConfig_odigletHealthProbeBindPort(ctx cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*model.ReconciledInt)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_odigletHealthProbeBindPort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20531,7 +21031,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_odigletHealthProbeBindP
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledInt_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledInt", field.Name)
 		},
 	}
 	return fc, nil
@@ -20560,9 +21066,9 @@ func (ec *executionContext) _EffectiveConfig_goAutoOffsetsCron(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_goAutoOffsetsCron(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20572,7 +21078,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_goAutoOffsetsCron(_ con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20601,9 +21113,9 @@ func (ec *executionContext) _EffectiveConfig_goAutoOffsetsMode(ctx context.Conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_goAutoOffsetsMode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20613,7 +21125,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_goAutoOffsetsMode(_ con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20642,9 +21160,9 @@ func (ec *executionContext) _EffectiveConfig_clickhouseJsonTypeEnabled(ctx conte
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_clickhouseJsonTypeEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20654,7 +21172,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_clickhouseJsonTypeEnabl
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -20683,9 +21207,9 @@ func (ec *executionContext) _EffectiveConfig_checkDeviceHealthBeforeInjection(ct
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_checkDeviceHealthBeforeInjection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20695,7 +21219,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_checkDeviceHealthBefore
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -20724,9 +21254,9 @@ func (ec *executionContext) _EffectiveConfig_resourceSizePreset(ctx context.Cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_resourceSizePreset(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20736,7 +21266,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_resourceSizePreset(_ co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20765,9 +21301,9 @@ func (ec *executionContext) _EffectiveConfig_waspEnabled(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_waspEnabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20777,7 +21313,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_waspEnabled(_ context.C
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -20910,9 +21452,9 @@ func (ec *executionContext) _EffectiveConfig_traceIdSuffix(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_traceIdSuffix(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20922,7 +21464,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_traceIdSuffix(_ context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -20951,9 +21499,9 @@ func (ec *executionContext) _EffectiveConfig_allowedTestConnectionHosts(ctx cont
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_allowedTestConnectionHosts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -20963,7 +21511,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_allowedTestConnectionHo
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -21037,9 +21591,9 @@ func (ec *executionContext) _EffectiveConfig_imagePullSecrets(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EffectiveConfig_imagePullSecrets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -21049,7 +21603,13 @@ func (ec *executionContext) fieldContext_EffectiveConfig_imagePullSecrets(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -31763,9 +32323,9 @@ func (ec *executionContext) _MetricsSourceAgentJavaRuntimeMetricsConfig_disabled
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceAgentJavaRuntimeMetricsConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -31775,7 +32335,13 @@ func (ec *executionContext) fieldContext_MetricsSourceAgentJavaRuntimeMetricsCon
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -31939,14 +32505,11 @@ func (ec *executionContext) _MetricsSourceAgentRuntimeMetricConfig_name(ctx cont
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceAgentRuntimeMetricConfig_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -31956,7 +32519,13 @@ func (ec *executionContext) fieldContext_MetricsSourceAgentRuntimeMetricConfig_n
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -31985,9 +32554,9 @@ func (ec *executionContext) _MetricsSourceAgentRuntimeMetricConfig_disabled(ctx 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceAgentRuntimeMetricConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -31997,7 +32566,13 @@ func (ec *executionContext) fieldContext_MetricsSourceAgentRuntimeMetricConfig_d
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -32071,14 +32646,11 @@ func (ec *executionContext) _MetricsSourceAgentSpanMetricsConfig_enabled(ctx con
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceAgentSpanMetricsConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32088,7 +32660,13 @@ func (ec *executionContext) fieldContext_MetricsSourceAgentSpanMetricsConfig_ena
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -32364,9 +32942,9 @@ func (ec *executionContext) _MetricsSourceHostMetricsConfig_disabled(ctx context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceHostMetricsConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32376,7 +32954,13 @@ func (ec *executionContext) fieldContext_MetricsSourceHostMetricsConfig_disabled
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -32405,9 +32989,9 @@ func (ec *executionContext) _MetricsSourceHostMetricsConfig_interval(ctx context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceHostMetricsConfig_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32417,7 +33001,13 @@ func (ec *executionContext) fieldContext_MetricsSourceHostMetricsConfig_interval
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -32446,9 +33036,9 @@ func (ec *executionContext) _MetricsSourceKubeletStatsConfig_disabled(ctx contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceKubeletStatsConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32458,7 +33048,13 @@ func (ec *executionContext) fieldContext_MetricsSourceKubeletStatsConfig_disable
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -32487,9 +33083,9 @@ func (ec *executionContext) _MetricsSourceKubeletStatsConfig_interval(ctx contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceKubeletStatsConfig_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32499,7 +33095,13 @@ func (ec *executionContext) fieldContext_MetricsSourceKubeletStatsConfig_interva
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -32528,9 +33130,9 @@ func (ec *executionContext) _MetricsSourceOdigosOwnMetricsConfig_interval(ctx co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceOdigosOwnMetricsConfig_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32540,7 +33142,13 @@ func (ec *executionContext) fieldContext_MetricsSourceOdigosOwnMetricsConfig_int
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -32569,9 +33177,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_disabled(ctx context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32581,7 +33189,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_disabled
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -32610,9 +33224,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_interval(ctx context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32622,7 +33236,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_interval
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -32651,9 +33271,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_metricsExpiration(ct
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_metricsExpiration(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32663,7 +33283,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_metricsE
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -32692,9 +33318,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_additionalDimensions
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_additionalDimensions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32704,7 +33330,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_addition
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -32733,9 +33365,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_histogramDisabled(ct
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_histogramDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32745,7 +33377,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_histogra
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -32774,9 +33412,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_histogramBuckets(ctx
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_histogramBuckets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32786,7 +33424,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_histogra
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -32815,9 +33459,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_includedProcessInDim
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_includedProcessInDimensions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32827,7 +33471,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_included
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -32856,9 +33506,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_excludedResourceAttr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_excludedResourceAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32868,7 +33518,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_excluded
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -32897,9 +33553,9 @@ func (ec *executionContext) _MetricsSourceSpanMetricsConfig_resourceMetricsKeyAt
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(*model.ReconciledStringArray)
 	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_resourceMetricsKeyAttributes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -32909,7 +33565,13 @@ func (ec *executionContext) fieldContext_MetricsSourceSpanMetricsConfig_resource
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledStringArray_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledStringArray", field.Name)
 		},
 	}
 	return fc, nil
@@ -36746,9 +37408,9 @@ func (ec *executionContext) _OdigosOwnTelemetryConfig_metricsStoreDisabled(ctx c
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OdigosOwnTelemetryConfig_metricsStoreDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -36758,7 +37420,13 @@ func (ec *executionContext) fieldContext_OdigosOwnTelemetryConfig_metricsStoreDi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -36787,9 +37455,9 @@ func (ec *executionContext) _OidcConfig_tenantUrl(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OidcConfig_tenantUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -36799,7 +37467,13 @@ func (ec *executionContext) fieldContext_OidcConfig_tenantUrl(_ context.Context,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -36828,9 +37502,9 @@ func (ec *executionContext) _OidcConfig_clientId(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OidcConfig_clientId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -36840,7 +37514,13 @@ func (ec *executionContext) fieldContext_OidcConfig_clientId(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -36869,9 +37549,9 @@ func (ec *executionContext) _OidcConfig_clientSecret(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OidcConfig_clientSecret(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -36881,7 +37561,13 @@ func (ec *executionContext) fieldContext_OidcConfig_clientSecret(_ context.Conte
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -37071,9 +37757,9 @@ func (ec *executionContext) _OtlpExporterConfig_enableDataCompression(ctx contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OtlpExporterConfig_enableDataCompression(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -37083,7 +37769,13 @@ func (ec *executionContext) fieldContext_OtlpExporterConfig_enableDataCompressio
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -37112,9 +37804,9 @@ func (ec *executionContext) _OtlpExporterConfig_timeout(ctx context.Context, fie
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_OtlpExporterConfig_timeout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -37124,7 +37816,13 @@ func (ec *executionContext) fieldContext_OtlpExporterConfig_timeout(_ context.Co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -40996,6 +41694,686 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _ReconciledBoolean_reconciledFrom(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledBoolean) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReconciledFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledBoolean_reconciledFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledBoolean",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledBoolean_value(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledBoolean) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledBoolean_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledBoolean_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledBoolean",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledEnvInjectionMethod_reconciledFrom(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledEnvInjectionMethod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledEnvInjectionMethod_reconciledFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReconciledFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledEnvInjectionMethod_reconciledFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledEnvInjectionMethod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledEnvInjectionMethod_value(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledEnvInjectionMethod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledEnvInjectionMethod_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.EnvInjectionMethod)
+	fc.Result = res
+	return ec.marshalOEnvInjectionMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐEnvInjectionMethod(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledEnvInjectionMethod_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledEnvInjectionMethod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type EnvInjectionMethod does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledInt_reconciledFrom(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledInt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledInt_reconciledFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReconciledFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledInt_reconciledFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledInt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledInt_value(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledInt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledInt_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledInt_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledInt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledMountMethod_reconciledFrom(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledMountMethod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledMountMethod_reconciledFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReconciledFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledMountMethod_reconciledFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledMountMethod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledMountMethod_value(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledMountMethod) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledMountMethod_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MountMethod)
+	fc.Result = res
+	return ec.marshalOMountMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐMountMethod(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledMountMethod_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledMountMethod",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MountMethod does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledOdigosLogLevel_reconciledFrom(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledOdigosLogLevel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledOdigosLogLevel_reconciledFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReconciledFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledOdigosLogLevel_reconciledFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledOdigosLogLevel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledOdigosLogLevel_value(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledOdigosLogLevel) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledOdigosLogLevel_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.OdigosLogLevel)
+	fc.Result = res
+	return ec.marshalOOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐOdigosLogLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledOdigosLogLevel_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledOdigosLogLevel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OdigosLogLevel does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledString_reconciledFrom(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledString) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReconciledFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledString_reconciledFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledString",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledString_value(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledString) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledString_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledString_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledString",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledStringArray_reconciledFrom(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledStringArray) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledStringArray_reconciledFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReconciledFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledStringArray_reconciledFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledStringArray",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledStringArray_value(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledStringArray) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledStringArray_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledStringArray_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledStringArray",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledUiMode_reconciledFrom(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledUIMode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledUiMode_reconciledFrom(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReconciledFrom, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledUiMode_reconciledFrom(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledUiMode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReconciledUiMode_value(ctx context.Context, field graphql.CollectedField, obj *model.ReconciledUIMode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReconciledUiMode_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UIMode)
+	fc.Result = res
+	return ec.marshalOUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐUIMode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReconciledUiMode_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReconciledUiMode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type UiMode does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _RemoteConfig_rollout(ctx context.Context, field graphql.CollectedField, obj *model.RemoteConfig) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RemoteConfig_rollout(ctx, field)
 	if err != nil {
@@ -41281,9 +42659,9 @@ func (ec *executionContext) _RetryOnFailureConfig_enabled(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_RetryOnFailureConfig_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -41293,7 +42671,13 @@ func (ec *executionContext) fieldContext_RetryOnFailureConfig_enabled(_ context.
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -41322,9 +42706,9 @@ func (ec *executionContext) _RetryOnFailureConfig_initialInterval(ctx context.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_RetryOnFailureConfig_initialInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -41334,7 +42718,13 @@ func (ec *executionContext) fieldContext_RetryOnFailureConfig_initialInterval(_ 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -41363,9 +42753,9 @@ func (ec *executionContext) _RetryOnFailureConfig_maxInterval(ctx context.Contex
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_RetryOnFailureConfig_maxInterval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -41375,7 +42765,13 @@ func (ec *executionContext) fieldContext_RetryOnFailureConfig_maxInterval(_ cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -41404,9 +42800,9 @@ func (ec *executionContext) _RetryOnFailureConfig_maxElapsedTime(ctx context.Con
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_RetryOnFailureConfig_maxElapsedTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -41416,7 +42812,13 @@ func (ec *executionContext) fieldContext_RetryOnFailureConfig_maxElapsedTime(_ c
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -41445,9 +42847,9 @@ func (ec *executionContext) _RolloutConfig_automaticRolloutDisabled(ctx context.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*bool)
+	res := resTmp.(*model.ReconciledBoolean)
 	fc.Result = res
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+	return ec.marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_RolloutConfig_automaticRolloutDisabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -41457,7 +42859,13 @@ func (ec *executionContext) fieldContext_RolloutConfig_automaticRolloutDisabled(
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledBoolean_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledBoolean_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledBoolean", field.Name)
 		},
 	}
 	return fc, nil
@@ -45843,9 +47251,9 @@ func (ec *executionContext) _UserInstrumentationEnvsConfig_languages(ctx context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*model.ReconciledString)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UserInstrumentationEnvsConfig_languages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -45855,7 +47263,13 @@ func (ec *executionContext) fieldContext_UserInstrumentationEnvsConfig_languages
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "reconciledFrom":
+				return ec.fieldContext_ReconciledString_reconciledFrom(ctx, field)
+			case "value":
+				return ec.fieldContext_ReconciledString_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReconciledString", field.Name)
 		},
 	}
 	return fc, nil
@@ -56671,9 +58085,6 @@ func (ec *executionContext) _MetricsSourceAgentRuntimeMetricConfig(ctx context.C
 			out.Values[i] = graphql.MarshalString("MetricsSourceAgentRuntimeMetricConfig")
 		case "name":
 			out.Values[i] = ec._MetricsSourceAgentRuntimeMetricConfig_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "disabled":
 			out.Values[i] = ec._MetricsSourceAgentRuntimeMetricConfig_disabled(ctx, field, obj)
 		default:
@@ -56748,9 +58159,6 @@ func (ec *executionContext) _MetricsSourceAgentSpanMetricsConfig(ctx context.Con
 			out.Values[i] = graphql.MarshalString("MetricsSourceAgentSpanMetricsConfig")
 		case "enabled":
 			out.Values[i] = ec._MetricsSourceAgentSpanMetricsConfig_enabled(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -58855,6 +60263,334 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reconciledBooleanImplementors = []string{"ReconciledBoolean"}
+
+func (ec *executionContext) _ReconciledBoolean(ctx context.Context, sel ast.SelectionSet, obj *model.ReconciledBoolean) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reconciledBooleanImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReconciledBoolean")
+		case "reconciledFrom":
+			out.Values[i] = ec._ReconciledBoolean_reconciledFrom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ReconciledBoolean_value(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reconciledEnvInjectionMethodImplementors = []string{"ReconciledEnvInjectionMethod"}
+
+func (ec *executionContext) _ReconciledEnvInjectionMethod(ctx context.Context, sel ast.SelectionSet, obj *model.ReconciledEnvInjectionMethod) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reconciledEnvInjectionMethodImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReconciledEnvInjectionMethod")
+		case "reconciledFrom":
+			out.Values[i] = ec._ReconciledEnvInjectionMethod_reconciledFrom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ReconciledEnvInjectionMethod_value(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reconciledIntImplementors = []string{"ReconciledInt"}
+
+func (ec *executionContext) _ReconciledInt(ctx context.Context, sel ast.SelectionSet, obj *model.ReconciledInt) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reconciledIntImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReconciledInt")
+		case "reconciledFrom":
+			out.Values[i] = ec._ReconciledInt_reconciledFrom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ReconciledInt_value(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reconciledMountMethodImplementors = []string{"ReconciledMountMethod"}
+
+func (ec *executionContext) _ReconciledMountMethod(ctx context.Context, sel ast.SelectionSet, obj *model.ReconciledMountMethod) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reconciledMountMethodImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReconciledMountMethod")
+		case "reconciledFrom":
+			out.Values[i] = ec._ReconciledMountMethod_reconciledFrom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ReconciledMountMethod_value(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reconciledOdigosLogLevelImplementors = []string{"ReconciledOdigosLogLevel"}
+
+func (ec *executionContext) _ReconciledOdigosLogLevel(ctx context.Context, sel ast.SelectionSet, obj *model.ReconciledOdigosLogLevel) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reconciledOdigosLogLevelImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReconciledOdigosLogLevel")
+		case "reconciledFrom":
+			out.Values[i] = ec._ReconciledOdigosLogLevel_reconciledFrom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ReconciledOdigosLogLevel_value(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reconciledStringImplementors = []string{"ReconciledString"}
+
+func (ec *executionContext) _ReconciledString(ctx context.Context, sel ast.SelectionSet, obj *model.ReconciledString) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reconciledStringImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReconciledString")
+		case "reconciledFrom":
+			out.Values[i] = ec._ReconciledString_reconciledFrom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ReconciledString_value(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reconciledStringArrayImplementors = []string{"ReconciledStringArray"}
+
+func (ec *executionContext) _ReconciledStringArray(ctx context.Context, sel ast.SelectionSet, obj *model.ReconciledStringArray) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reconciledStringArrayImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReconciledStringArray")
+		case "reconciledFrom":
+			out.Values[i] = ec._ReconciledStringArray_reconciledFrom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ReconciledStringArray_value(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reconciledUiModeImplementors = []string{"ReconciledUiMode"}
+
+func (ec *executionContext) _ReconciledUiMode(ctx context.Context, sel ast.SelectionSet, obj *model.ReconciledUIMode) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reconciledUiModeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReconciledUiMode")
+		case "reconciledFrom":
+			out.Values[i] = ec._ReconciledUiMode_reconciledFrom(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ReconciledUiMode_value(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -66731,6 +68467,62 @@ func (ec *executionContext) marshalOProgrammingLanguage2ᚖgithubᚗcomᚋodigos
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOReconciledBoolean2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledBoolean(ctx context.Context, sel ast.SelectionSet, v *model.ReconciledBoolean) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReconciledBoolean(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReconciledEnvInjectionMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledEnvInjectionMethod(ctx context.Context, sel ast.SelectionSet, v *model.ReconciledEnvInjectionMethod) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReconciledEnvInjectionMethod(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReconciledInt2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledInt(ctx context.Context, sel ast.SelectionSet, v *model.ReconciledInt) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReconciledInt(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReconciledMountMethod2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledMountMethod(ctx context.Context, sel ast.SelectionSet, v *model.ReconciledMountMethod) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReconciledMountMethod(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReconciledOdigosLogLevel2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledOdigosLogLevel(ctx context.Context, sel ast.SelectionSet, v *model.ReconciledOdigosLogLevel) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReconciledOdigosLogLevel(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReconciledString2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledString(ctx context.Context, sel ast.SelectionSet, v *model.ReconciledString) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReconciledString(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReconciledStringArray2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledStringArray(ctx context.Context, sel ast.SelectionSet, v *model.ReconciledStringArray) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReconciledStringArray(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReconciledUiMode2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐReconciledUIMode(ctx context.Context, sel ast.SelectionSet, v *model.ReconciledUIMode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ReconciledUiMode(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORemoteConfig2ᚖgithubᚗcomᚋodigosᚑioᚋodigosᚋfrontendᚋgraphᚋmodelᚐRemoteConfig(ctx context.Context, sel ast.SelectionSet, v *model.RemoteConfig) graphql.Marshaler {

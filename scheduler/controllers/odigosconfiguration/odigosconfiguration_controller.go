@@ -3,6 +3,7 @@ package odigosconfiguration
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -61,13 +62,17 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		return ctrl.Result{}, err
 	}
 
+	// provenance tracks which ConfigMap each field originated from.
+	// Fields not present in this map default to "odigos-configuration" (the Helm base).
+	provenance := make(map[string]string)
+
 	// Read and merge remote config (from central-backend) if it exists
 	// Remote config takes precedence over helm-managed config
 	remoteConfig, err := r.getAdditionalConfig(ctx, consts.OdigosRemoteConfigName)
 	if err != nil {
 		logger.Error(err, "Failed to get remote config, using only helm-managed config")
 	} else if remoteConfig != nil {
-		mergeConfigs(&odigosConfiguration, remoteConfig)
+		mergeConfigs(&odigosConfiguration, remoteConfig, provenance, consts.OdigosRemoteConfigName)
 		logger.Debug("Merged remote config into effective config")
 	}
 
@@ -76,7 +81,7 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	if err != nil {
 		logger.Error(err, "Failed to get local UI config, using only helm-managed config")
 	} else if localUiConfig != nil {
-		mergeConfigs(&odigosConfiguration, localUiConfig)
+		mergeConfigs(&odigosConfiguration, localUiConfig, provenance, consts.OdigosLocalUiConfigName)
 		logger.Debug("Merged local UI config into effective config")
 	}
 
@@ -116,7 +121,10 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 	// make sure the default ignored containers are always present
 	odigosConfiguration.IgnoredContainers = mergeIgnoredItemLists(odigosConfiguration.IgnoredContainers, k8sconsts.DefaultIgnoredContainers)
 
+	// Snapshot fields that profiles can modify so we can detect changes
+	preProfileSnapshot := snapshotProfileModifiableFields(&odigosConfiguration)
 	modifyConfigWithEffectiveProfiles(effectiveProfiles, &odigosConfiguration)
+	detectProfileProvenanceChanges(preProfileSnapshot, &odigosConfiguration, provenance)
 	odigosConfiguration.Profiles = effectiveProfiles
 
 	// compute effective collector configurations that merge sizing presets with existing configurations
@@ -134,7 +142,7 @@ func (r *odigosConfigurationController) Reconcile(ctx context.Context, _ ctrl.Re
 		return ctrl.Result{}, reconcile.TerminalError(err)
 	}
 
-	err = r.persistEffectiveConfig(ctx, &odigosConfiguration, odigosConfigMap)
+	err = r.persistEffectiveConfig(ctx, &odigosConfiguration, odigosConfigMap, provenance)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -190,7 +198,8 @@ func (r *odigosConfigurationController) getAdditionalConfig(ctx context.Context,
 // for supported fields, the additional config values, if set, take precedence over the base configuration values.
 // can be called multiple times with different additional configs to merge them into the base configuration,
 // in which case, most important config should be merged last.
-func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *common.OdigosConfiguration) {
+// provenance tracks which ConfigMap each overridden field came from.
+func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *common.OdigosConfiguration, provenance map[string]string, sourceName string) {
 	if addtionalConfig == nil {
 		return
 	}
@@ -201,6 +210,7 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 		if addtionalConfig.Rollout.AutomaticRolloutDisabled != nil {
 			baseConfig.Rollout.AutomaticRolloutDisabled = addtionalConfig.Rollout.AutomaticRolloutDisabled
+			provenance["rollout.automaticRolloutDisabled"] = sourceName
 		}
 	}
 
@@ -212,6 +222,7 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		}
 		if addtionalConfig.Sampling.DryRun != nil {
 			baseConfig.Sampling.DryRun = addtionalConfig.Sampling.DryRun
+			provenance["sampling.dryRun"] = sourceName
 		}
 		if addtionalConfig.Sampling.SpanSamplingAttributes != nil {
 			if baseConfig.Sampling.SpanSamplingAttributes == nil {
@@ -219,15 +230,19 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			}
 			if addtionalConfig.Sampling.SpanSamplingAttributes.Disabled != nil {
 				baseConfig.Sampling.SpanSamplingAttributes.Disabled = addtionalConfig.Sampling.SpanSamplingAttributes.Disabled
+				provenance["sampling.spanSamplingAttributes.disabled"] = sourceName
 			}
 			if addtionalConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled != nil {
 				baseConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.SamplingCategoryDisabled
+				provenance["sampling.spanSamplingAttributes.samplingCategoryDisabled"] = sourceName
 			}
 			if addtionalConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled != nil {
 				baseConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.TraceDecidingRuleDisabled
+				provenance["sampling.spanSamplingAttributes.traceDecidingRuleDisabled"] = sourceName
 			}
 			if addtionalConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled != nil {
 				baseConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled = addtionalConfig.Sampling.SpanSamplingAttributes.SpanDecisionAttributesDisabled
+				provenance["sampling.spanSamplingAttributes.spanDecisionAttributesDisabled"] = sourceName
 			}
 		}
 		if addtionalConfig.Sampling.TailSampling != nil {
@@ -236,9 +251,11 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			}
 			if addtionalConfig.Sampling.TailSampling.Disabled != nil {
 				baseConfig.Sampling.TailSampling.Disabled = addtionalConfig.Sampling.TailSampling.Disabled
+				provenance["sampling.tailSampling.disabled"] = sourceName
 			}
 			if addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration != nil {
 				baseConfig.Sampling.TailSampling.TraceAggregationWaitDuration = addtionalConfig.Sampling.TailSampling.TraceAggregationWaitDuration
+				provenance["sampling.tailSampling.traceAggregationWaitDuration"] = sourceName
 			}
 		}
 		if addtionalConfig.Sampling.K8sHealthProbesSampling != nil {
@@ -247,9 +264,11 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			}
 			if addtionalConfig.Sampling.K8sHealthProbesSampling.Enabled != nil {
 				baseConfig.Sampling.K8sHealthProbesSampling.Enabled = addtionalConfig.Sampling.K8sHealthProbesSampling.Enabled
+				provenance["sampling.k8sHealthProbesSampling.enabled"] = sourceName
 			}
 			if addtionalConfig.Sampling.K8sHealthProbesSampling.KeepPercentage != nil {
 				baseConfig.Sampling.K8sHealthProbesSampling.KeepPercentage = addtionalConfig.Sampling.K8sHealthProbesSampling.KeepPercentage
+				provenance["sampling.k8sHealthProbesSampling.keepPercentage"] = sourceName
 			}
 		}
 	}
@@ -261,27 +280,35 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		src, dst := addtionalConfig.ComponentLogLevels, baseConfig.ComponentLogLevels
 		if src.Default != "" {
 			dst.Default = src.Default
+			provenance["componentLogLevels.default"] = sourceName
 		}
 		if src.Autoscaler != "" {
 			dst.Autoscaler = src.Autoscaler
+			provenance["componentLogLevels.autoscaler"] = sourceName
 		}
 		if src.Scheduler != "" {
 			dst.Scheduler = src.Scheduler
+			provenance["componentLogLevels.scheduler"] = sourceName
 		}
 		if src.Instrumentor != "" {
 			dst.Instrumentor = src.Instrumentor
+			provenance["componentLogLevels.instrumentor"] = sourceName
 		}
 		if src.Odiglet != "" {
 			dst.Odiglet = src.Odiglet
+			provenance["componentLogLevels.odiglet"] = sourceName
 		}
 		if src.Deviceplugin != "" {
 			dst.Deviceplugin = src.Deviceplugin
+			provenance["componentLogLevels.deviceplugin"] = sourceName
 		}
 		if src.UI != "" {
 			dst.UI = src.UI
+			provenance["componentLogLevels.ui"] = sourceName
 		}
 		if src.Collector != "" {
 			dst.Collector = src.Collector
+			provenance["componentLogLevels.collector"] = sourceName
 		}
 	}
 
@@ -291,13 +318,77 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 	// - ...
 }
 
-func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap) error {
+// profileFieldSnapshot holds copies of fields that profiles can modify,
+// used to detect which fields were changed by profile application.
+type profileFieldSnapshot struct {
+	rollbackDisabled                 *bool
+	mountMethod                      *common.MountMethod
+	agentEnvVarsInjectionMethod      *common.EnvInjectionMethod
+	allowConcurrentAgents            *bool
+	checkDeviceHealthBeforeInjection *bool
+	waspEnabled                      *bool
+	metricsSources                   *common.MetricsSourceConfiguration
+}
+
+func copyBoolPtr(p *bool) *bool {
+	if p == nil {
+		return nil
+	}
+	v := *p
+	return &v
+}
+
+func snapshotProfileModifiableFields(config *common.OdigosConfiguration) profileFieldSnapshot {
+	snap := profileFieldSnapshot{
+		rollbackDisabled:                 copyBoolPtr(config.RollbackDisabled),
+		allowConcurrentAgents:            copyBoolPtr(config.AllowConcurrentAgents),
+		checkDeviceHealthBeforeInjection: copyBoolPtr(config.CheckDeviceHealthBeforeInjection),
+		waspEnabled:                      copyBoolPtr(config.WaspEnabled),
+	}
+	if config.MountMethod != nil {
+		m := *config.MountMethod
+		snap.mountMethod = &m
+	}
+	if config.AgentEnvVarsInjectionMethod != nil {
+		m := *config.AgentEnvVarsInjectionMethod
+		snap.agentEnvVarsInjectionMethod = &m
+	}
+	return snap
+}
+
+func detectProfileProvenanceChanges(before profileFieldSnapshot, after *common.OdigosConfiguration, provenance map[string]string) {
+	if !reflect.DeepEqual(before.rollbackDisabled, after.RollbackDisabled) {
+		provenance["rollbackDisabled"] = "profile"
+	}
+	if !reflect.DeepEqual(before.mountMethod, after.MountMethod) {
+		provenance["mountMethod"] = "profile"
+	}
+	if !reflect.DeepEqual(before.agentEnvVarsInjectionMethod, after.AgentEnvVarsInjectionMethod) {
+		provenance["agentEnvVarsInjectionMethod"] = "profile"
+	}
+	if !reflect.DeepEqual(before.allowConcurrentAgents, after.AllowConcurrentAgents) {
+		provenance["allowConcurrentAgents"] = "profile"
+	}
+	if !reflect.DeepEqual(before.checkDeviceHealthBeforeInjection, after.CheckDeviceHealthBeforeInjection) {
+		provenance["checkDeviceHealthBeforeInjection"] = "profile"
+	}
+	if !reflect.DeepEqual(before.waspEnabled, after.WaspEnabled) {
+		provenance["waspEnabled"] = "profile"
+	}
+	if !reflect.DeepEqual(before.metricsSources, after.MetricsSources) {
+		provenance["metricsSources"] = "profile"
+	}
+}
+
+func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Context, effectiveConfig *common.OdigosConfiguration, owner *corev1.ConfigMap, provenance map[string]string) error {
 	odigosNs := env.GetCurrentNamespace()
 
-	// apply patch the OdigosEffectiveConfigName configmap with the effective configuration
-	// this is the configuration after applying defaults and profiles.
-
 	effectiveConfigYamlText, err := yaml.Marshal(effectiveConfig)
+	if err != nil {
+		return err
+	}
+
+	provenanceYamlText, err := yaml.Marshal(provenance)
 	if err != nil {
 		return err
 	}
@@ -312,7 +403,8 @@ func (r *odigosConfigurationController) persistEffectiveConfig(ctx context.Conte
 			Name:      consts.OdigosEffectiveConfigName,
 		},
 		Data: map[string]string{
-			consts.OdigosConfigurationFileName: string(effectiveConfigYamlText),
+			consts.OdigosConfigurationFileName:           string(effectiveConfigYamlText),
+			consts.OdigosConfigurationProvenanceFileName: string(provenanceYamlText),
 		},
 	}
 
