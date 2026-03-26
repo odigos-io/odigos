@@ -204,6 +204,49 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 		return
 	}
 
+	if addtionalConfig.TelemetryEnabled {
+		baseConfig.TelemetryEnabled = addtionalConfig.TelemetryEnabled
+		provenance["telemetryEnabled"] = sourceName
+	}
+
+	if addtionalConfig.IgnoredNamespaces != nil {
+		baseConfig.IgnoredNamespaces = addtionalConfig.IgnoredNamespaces
+		provenance["ignoredNamespaces"] = sourceName
+	}
+	if addtionalConfig.IgnoredContainers != nil {
+		baseConfig.IgnoredContainers = addtionalConfig.IgnoredContainers
+		provenance["ignoredContainers"] = sourceName
+	}
+	if addtionalConfig.IgnoreOdigosNamespace != nil {
+		baseConfig.IgnoreOdigosNamespace = addtionalConfig.IgnoreOdigosNamespace
+		provenance["ignoreOdigosNamespace"] = sourceName
+	}
+
+	if addtionalConfig.ClusterName != "" {
+		baseConfig.ClusterName = addtionalConfig.ClusterName
+		provenance["clusterName"] = sourceName
+	}
+
+	if addtionalConfig.AgentEnvVarsInjectionMethod != nil {
+		baseConfig.AgentEnvVarsInjectionMethod = addtionalConfig.AgentEnvVarsInjectionMethod
+		provenance["agentEnvVarsInjectionMethod"] = sourceName
+	}
+
+	if addtionalConfig.CheckDeviceHealthBeforeInjection != nil {
+		baseConfig.CheckDeviceHealthBeforeInjection = addtionalConfig.CheckDeviceHealthBeforeInjection
+		provenance["checkDeviceHealthBeforeInjection"] = sourceName
+	}
+
+	if addtionalConfig.AllowConcurrentAgents != nil {
+		baseConfig.AllowConcurrentAgents = addtionalConfig.AllowConcurrentAgents
+		provenance["allowConcurrentAgents"] = sourceName
+	}
+
+	if addtionalConfig.WaspEnabled != nil {
+		baseConfig.WaspEnabled = addtionalConfig.WaspEnabled
+		provenance["waspEnabled"] = sourceName
+	}
+
 	if addtionalConfig.Rollout != nil {
 		if baseConfig.Rollout == nil {
 			baseConfig.Rollout = &common.RolloutConfiguration{}
@@ -212,6 +255,32 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			baseConfig.Rollout.AutomaticRolloutDisabled = addtionalConfig.Rollout.AutomaticRolloutDisabled
 			provenance["rollout.automaticRolloutDisabled"] = sourceName
 		}
+		if addtionalConfig.Rollout.MaxConcurrentRollouts != 0 {
+			baseConfig.Rollout.MaxConcurrentRollouts = addtionalConfig.Rollout.MaxConcurrentRollouts
+			provenance["rollout.maxConcurrentRollouts"] = sourceName
+		}
+	}
+
+	if addtionalConfig.RollbackDisabled != nil {
+		baseConfig.RollbackDisabled = addtionalConfig.RollbackDisabled
+		provenance["rollbackDisabled"] = sourceName
+	}
+	if addtionalConfig.RollbackGraceTime != "" {
+		baseConfig.RollbackGraceTime = addtionalConfig.RollbackGraceTime
+		provenance["rollbackGraceTime"] = sourceName
+	}
+	if addtionalConfig.RollbackStabilityWindow != "" {
+		baseConfig.RollbackStabilityWindow = addtionalConfig.RollbackStabilityWindow
+		provenance["rollbackStabilityWindow"] = sourceName
+	}
+
+	if addtionalConfig.GoAutoOffsetsCron != "" {
+		baseConfig.GoAutoOffsetsCron = addtionalConfig.GoAutoOffsetsCron
+		provenance["goAutoOffsetsCron"] = sourceName
+	}
+	if addtionalConfig.GoAutoOffsetsMode != "" {
+		baseConfig.GoAutoOffsetsMode = addtionalConfig.GoAutoOffsetsMode
+		provenance["goAutoOffsetsMode"] = sourceName
 	}
 
 	// merge the entire remote sampling configuration (if exists) into the base configuration.
@@ -311,11 +380,6 @@ func mergeConfigs(baseConfig *common.OdigosConfiguration, addtionalConfig *commo
 			provenance["componentLogLevels.collector"] = sourceName
 		}
 	}
-
-	// Future fields can be added here following the same pattern:
-	// - ignoredNamespaces, ignoredContainers
-	// - profiles
-	// - ...
 }
 
 // profileFieldSnapshot holds copies of fields that profiles can modify,
