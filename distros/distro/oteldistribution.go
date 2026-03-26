@@ -1,6 +1,7 @@
 package distro
 
 import (
+	"strings"
 	"text/template"
 
 	"github.com/odigos-io/odigos/common"
@@ -17,7 +18,17 @@ type RuntimeEnvironment struct {
 	Name string `yaml:"name"`
 
 	// semconv range of the runtime versions supported by this distribution.
+	// Use SupportedVersionsWildcard ("*") to accept any runtime version (not a hashicorp/go-version constraint).
 	SupportedVersions string `yaml:"supportedVersions,omitempty"`
+}
+
+// SupportedVersionsWildcard is the supportedVersions value meaning "any runtime version".
+// hashicorp/go-version cannot parse "*" as a constraint; callers must special-case it.
+const SupportedVersionsWildcard = "*"
+
+// IsSupportedVersionsWildcard reports whether supportedVersions means no semver range check.
+func IsSupportedVersionsWildcard(supportedVersions string) bool {
+	return strings.TrimSpace(supportedVersions) == SupportedVersionsWildcard
 }
 
 type Framework struct {
