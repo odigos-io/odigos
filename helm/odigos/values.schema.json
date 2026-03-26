@@ -1783,6 +1783,96 @@
       "required": [],
       "title": "sampling"
     },
+    "reactor": {
+      "additionalProperties": false,
+      "description": "Configuration for the reactor component (enterprise only).",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "description": "Enable the reactor component. Requires an enterprise license.",
+          "title": "enabled",
+          "type": "boolean"
+        },
+        "cooldownPeriod": {
+          "default": "5m",
+          "description": "Cooldown period between reactor actions.",
+          "title": "cooldownPeriod",
+          "type": "string"
+        },
+        "affinity": {
+          "additionalProperties": false,
+          "required": [],
+          "title": "affinity",
+          "type": "object"
+        },
+        "nodeSelector": {
+          "default": "",
+          "description": "Override the global nodeSelector (values.nodeSelector) for this component",
+          "required": [],
+          "title": "nodeSelector"
+        },
+        "priorityClassName": {
+          "default": "",
+          "description": "Priority class name. Set to use your existing cluster priority classes.",
+          "required": [],
+          "title": "priorityClassName"
+        },
+        "resources": {
+          "additionalProperties": false,
+          "properties": {
+            "limits": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "500m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "256Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "limits",
+              "type": "object"
+            },
+            "requests": {
+              "additionalProperties": false,
+              "properties": {
+                "cpu": {
+                  "default": "10m",
+                  "title": "cpu",
+                  "type": "string"
+                },
+                "memory": {
+                  "default": "64Mi",
+                  "title": "memory",
+                  "type": "string"
+                }
+              },
+              "required": [],
+              "title": "requests",
+              "type": "object"
+            }
+          },
+          "required": [],
+          "title": "resources",
+          "type": "object"
+        },
+        "tolerations": {
+          "default": [],
+          "description": "Tolerations for the reactor deployment.",
+          "items": {},
+          "title": "tolerations",
+          "type": "array"
+        }
+      },
+      "required": [],
+      "title": "reactor",
+      "type": "object"
+    },
     "scheduler": {
       "additionalProperties": false,
       "description": "Configuration for the scheduler component.",

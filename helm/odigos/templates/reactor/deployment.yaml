@@ -1,0 +1,109 @@
+{{- if .Values.reactor.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: odigos-reactor
+    odigos.io/system-object: "true"
+  name: odigos-reactor
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: odigos-reactor
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app.kubernetes.io/name: odigos-reactor
+    spec:
+      {{- if .Values.reactor.nodeSelector }}
+      # Component-specific nodeSelector (overrides global values.yaml nodeSelector)
+      nodeSelector:
+      {{- toYaml .Values.reactor.nodeSelector | nindent 8 }}
+      {{- else if .Values.nodeSelector }}
+      # Global nodeSelector from values.yaml
+      nodeSelector:
+      {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range .Values.topologySpreadConstraints }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey | quote }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | quote }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: odigos-reactor
+        {{- end }}
+      {{- end }}
+      {{- if .Values.reactor.priorityClassName }}
+      priorityClassName: {{ .Values.reactor.priorityClassName }}
+      {{- end }}
+      containers:
+      - name: manager
+        {{ $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+        image: {{ template "utils.imageName" (dict "Values" .Values "Component" "enterprise-reactor" "Tag" $imageTag) }}
+        ports:
+          - containerPort: 8080
+            protocol: TCP
+        env:
+          - name: OTEL_SERVICE_NAME
+            value: reactor
+          - name: REACTOR_PORT
+            value: "8080"
+          - name: REACTOR_BEARER_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-reactor-token
+                key: token
+          - name: REACTOR_COOLDOWN_PERIOD
+            value: {{ .Values.reactor.cooldownPeriod | quote }}
+          - name: REACTOR_NAMESPACE
+            value: {{ .Release.Namespace | quote }}
+          {{- if include "odigos.secretExists" . }}
+          - name: ODIGOS_ONPREM_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: odigos-pro
+                key: odigos-onprem-token
+          {{- end }}
+          - name: GOMEMLIMIT
+            value: {{ include "odigos.gomemlimitFromResources" (dict "Resources" .Values.reactor.resources) }}
+        envFrom:
+          - configMapRef:
+              name: odigos-own-telemetry-otel-config
+              optional: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+{{ toYaml .Values.reactor.resources | indent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: odigos-reactor
+      terminationGracePeriodSeconds: 10
+      {{ include "odigos.renderPullSecrets" . | nindent 6 }}
+{{- with .Values.reactor }}
+  {{- if .tolerations }}
+      tolerations: {{ toYaml .tolerations | nindent 8 }}
+  {{- end }}
+  {{- if .affinity }}
+      affinity: {{ toYaml .affinity | nindent 8 }}
+  {{- end }}
+{{- end }}
+{{- end }}

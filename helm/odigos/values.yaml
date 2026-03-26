@@ -1550,6 +1550,52 @@ sampling:
     # keepPercentage: 2
 
 # @schema
+# description: Configuration for the reactor component (enterprise only).
+# @schema
+reactor:
+  # @schema
+  # description: |-
+  #   Enable the reactor component. Requires an enterprise license.
+  # @schema
+  enabled: false
+
+  # @schema
+  # description: |-
+  #   Cooldown period between reactor actions.
+  # @schema
+  cooldownPeriod: "5m"
+
+  # @schema
+  # description: Override the global nodeSelector (values.nodeSelector) for this component
+  # @schema
+  # nodeSelector:
+  #   kubernetes.io/os: linux
+
+  # @schema
+  # description: |-
+  #   tolerations for the reactor deployment.
+  # @schema
+  tolerations: []
+  affinity: {}
+
+  # @schema
+  # description: |-
+  #   resources for the reactor deployment.
+  # @schema
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  # @schema
+  # description: Priority class name. Set to use your existing cluster priority classes.
+  # @schema
+  # priorityClassName: ''
+
+# @schema
 # description: |-
 #   On-prem token for Odigos Pro/Enterprise features.
 #   When set, Odigos will create a secret with this token to enable Pro features.
