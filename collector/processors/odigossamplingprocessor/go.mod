@@ -1,6 +1,6 @@
 module github.com/open-telemetry/opentelemetry-collector-contrib/odigos/processor/odigossamplingprocessor
 
-go 1.26.0
+go 1.26.1
 
 require (
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
@@ -14,15 +14,16 @@ require (
 	go.opentelemetry.io/collector/processor v1.47.0
 	go.opentelemetry.io/collector/processor/processorhelper v0.141.0
 	go.opentelemetry.io/collector/processor/processortest v0.141.0
-	go.opentelemetry.io/otel v1.38.0
-	go.opentelemetry.io/otel/metric v1.38.0
-	go.opentelemetry.io/otel/trace v1.38.0
+	go.opentelemetry.io/otel v1.40.0
+	go.opentelemetry.io/otel/metric v1.40.0
+	go.opentelemetry.io/otel/trace v1.40.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/zap v1.27.1
 )
 
 require (
 	github.com/PaesslerAG/gval v1.0.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.47.0 // indirect
@@ -51,10 +52,10 @@ require (
 	go.opentelemetry.io/collector/pdata/testdata v0.141.0 // indirect
 	go.opentelemetry.io/collector/pipeline v1.47.0 // indirect
 	go.opentelemetry.io/collector/processor/xprocessor v0.141.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.38.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.38.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.40.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.40.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
