@@ -6,7 +6,7 @@ metadata:
       "metadata":{"name":"odigos","namespace":"odigos-operator-system"}, "spec":{"version":"v1.22.2"}}]'
     capabilities: Basic Install
     categories: Logging & Tracing
-    containerImage: registry.odigos.io/odigos-operator-rhel-certified:v1.22.2
+    containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-certified:v1.22.2
     description: Odigos enables automatic distributed tracing with OpenTelemetry and
       eBPF.
     features.operators.openshift.io/disconnected: "false"
@@ -71,8 +71,8 @@ spec:
       - description: |-
           (Optional) ImagePrefix is a prefix for all container images.
           This should only be used if you are pulling Odigos images from the non-default registry.
-          Default: registry.odigos.io
-          Default (OpenShift): registry.connect.redhat.com
+          Default: registry.connect.redhat.com
+          Default (generic Kubernetes): registry.odigos.io
         displayName: Image Prefix
         path: imagePrefix
       - description: |-
