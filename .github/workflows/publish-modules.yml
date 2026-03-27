@@ -124,7 +124,7 @@ jobs:
         uses: odigos-io/ci-core/sts@main
         with:
           scope: odigos-io/odigos-enterprise
-          identity: create-release-pr.sts
+          identity: create-release-pr
           output-git-config: "false"
 
       - name: Trigger create release PR workflow
