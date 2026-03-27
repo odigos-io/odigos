@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Fetch all history for all tags and branches
           token: ${{ secrets.RELEASE_BOT_TOKEN }}
@@ -120,41 +120,41 @@ jobs:
         service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
         include:
           - service: autoscaler
-            runner: ubuntu-latest
+            runner: depot-ubuntu-latest
             summary: 'Autoscaler for Odigos'
             description: 'Autoscaler manages the installation of Odigos components.'
           - service: scheduler
-            runner: ubuntu-latest
+            runner: depot-ubuntu-latest
             summary: 'Scheduler for Odigos'
             description: 'Scheduler manages the installation of OpenTelemetry Collectors with Odigos.'
           - service: instrumentor
-            runner: ubuntu-latest
+            runner: depot-ubuntu-latest
             summary: 'Instrumentor for Odigos'
             description: 'Instrumentor manages auto-instrumentation for workloads with Odigos.'
           - service: collector
-            runner: large-runner
+            runner: depot-ubuntu-24.04-4
             summary: 'Odigos Collector'
             description: 'The Odigos build of the OpenTelemetry Collector.'
           - service: odiglet
-            runner: ubuntu-latest
+            runner: depot-ubuntu-24.04-4
             summary: 'Odiglet for Odigos'
             description: 'Odiglet is the core component of Odigos managing auto-instrumentation. This image requires a root user to load and manage eBPF programs.'
           - service: ui
-            runner: ubuntu-latest
+            runner: depot-ubuntu-latest
             summary: 'UI for Odigos'
             description: 'UI provides the frontend webapp for managing an Odigos installation.'
           - service: operator
-            runner: ubuntu-latest
+            runner: depot-ubuntu-latest
             summary: 'Odigos Operator'
             description: 'The Odigos Operator installs and manages Odigos in a cluster'
           - service: agents
-            runner: ubuntu-latest
+            runner: depot-ubuntu-latest
             summary: 'Odigos Agents'
             description: 'The Odigos Agents used to copy Odigos agent relevant files into the user workloads.'
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Extract Tag
         id: extract_tag
