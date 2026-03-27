@@ -34,11 +34,19 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v5
+      - name: Get sts tokens
+        id: sts-this-repo
+        uses: odigos-io/ci-core/sts@main
         with:
+          scope: odigos-io/odigos
+          identity: push-mod-tags
+          output-git-config: "true"
+
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.sts-this-repo.outputs.GH_TOKEN }}
           fetch-depth: 0 # need to fetch all tags for goreleaser to calculate the changelog
           ref: ${{ env.RC_TAG }} # checkout the tag we are releasing (main might have been updated since the tag was created)
-          token: ${{ secrets.RELEASE_BOT_TOKEN }} # so we can push the new tag
 
       - name: Get Stable Tag From Release Candidate
         run: |
@@ -201,13 +209,21 @@ jobs:
             git push origin --tags
             echo "Successfully pushed all tags"
 
-      - name: Trigger CLI Release
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-            https://api.github.com/repos/odigos-io/odigos/dispatches \
-            -d '{"event_type": "release_cli", "client_payload": {"tag": "${{ env.STABLE_TAG }}"}}'
+      - name: Get cli release sts tokens
+        id: sts-cli-release
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: release
+          output-git-config: "true"
+
+      - name: Trigger Release Workflow
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ steps.sts-cli-release.outputs.GH_TOKEN }}
+          repository: odigos-io/odigos
+          event-type: release_cli
+          client-payload: '{"tag": "${{ env.STABLE_TAG }}"}'
 
       - name: Notify Slack
         if: always()
