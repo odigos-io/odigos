@@ -20,7 +20,7 @@ metadata:
     capabilities: Basic Install
     categories: Logging & Tracing
     containerImage: registry.connect.redhat.com/odigos/odigos-certified-operator-certified@sha256:5938d83461c1d5a3f248355e8b344268fefa83d35db4aceca5036721f4282bec
-    createdAt: "2026-03-27T13:23:23Z"
+    createdAt: "2026-03-27T16:09:25Z"
     description: Odigos enables automatic distributed tracing with OpenTelemetry and eBPF.
     features.operators.openshift.io/disconnected: "false"
     features.operators.openshift.io/fips-compliant: "true"
@@ -82,8 +82,8 @@ spec:
           - description: |-
               (Optional) ImagePrefix is a prefix for all container images.
               This should only be used if you are pulling Odigos images from the non-default registry.
-              Default: registry.connect.redhat.com
-              Default (generic Kubernetes): registry.odigos.io
+              Default: registry.odigos.io
+              Default (OpenShift): registry.connect.redhat.com
             displayName: Image Prefix
             path: imagePrefix
           - description: |-
@@ -679,28 +679,28 @@ spec:
     name: Odigos
     url: https://odigos.io
   relatedImages:
+    - image: registry.connect.redhat.com/odigos/odigos-scheduler-certified@sha256:5bfb3bb457e7ff485694d822d4c181439d64ea1c02e1ce6b146c97a1631bf6a2
+      name: scheduler
+    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-certified@sha256:5938d83461c1d5a3f248355e8b344268fefa83d35db4aceca5036721f4282bec
+      name: manager
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified@sha256:c405b724cb22a345a9f37db8ed867e9f295b421a9925d09620d74c8b8227aa31
+      name: enterprise_instrumentor
+    - image: registry.connect.redhat.com/odigos/odigos-collector-certified@sha256:4b0bcfb06e592183708ee55dfb55e618fbb9a63232acf118f69c282c4b40695f
+      name: collector
+    - image: registry.connect.redhat.com/odigos/odigos-odiglet-certified@sha256:ff1ea4464c582f4c73abaa0799bccd531ba185a09845a952717fd38d4073372a
+      name: odiglet
+    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified@sha256:3063d8f1ed464de71455d91ccbd3c0bf4271df6dcffee00204c8bd2413d40705
+      name: enterprise_odiglet
     - image: registry.connect.redhat.com/odigos/odigos-certified-operator-certified@sha256:5938d83461c1d5a3f248355e8b344268fefa83d35db4aceca5036721f4282bec
       name: odigos-certified-operator-certified-5938d83461c1d5a3f248355e8b344268fefa83d35db4aceca5036721f4282bec-annotation
     - image: registry.connect.redhat.com/odigos/odigos-autoscaler-certified@sha256:b16c099d0b365fb1551426bb267d64266e7a3654747f8e20be169690faa116ee
       name: autoscaler
-    - image: registry.connect.redhat.com/odigos/odigos-collector-certified@sha256:4b0bcfb06e592183708ee55dfb55e618fbb9a63232acf118f69c282c4b40695f
-      name: collector
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified@sha256:3063d8f1ed464de71455d91ccbd3c0bf4271df6dcffee00204c8bd2413d40705
-      name: enterprise-odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified@sha256:c405b724cb22a345a9f37db8ed867e9f295b421a9925d09620d74c8b8227aa31
-      name: enterprise_instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-ui-certified@sha256:250c4eaba74f413c41c92679f50968c726d9d6e635024c1117eb305c1d80ac39
       name: frontend
     - image: registry.connect.redhat.com/odigos/odigos-instrumentor-certified@sha256:1c25d29e6fd52b1dfabcedeca48114886824ae31bc45c4359d4410ce54e8cb81
       name: instrumentor
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-instrumentor-certified@sha256:c405b724cb22a345a9f37db8ed867e9f295b421a9925d09620d74c8b8227aa31
       name: enterprise-instrumentor
-    - image: registry.connect.redhat.com/odigos/odigos-odiglet-certified@sha256:ff1ea4464c582f4c73abaa0799bccd531ba185a09845a952717fd38d4073372a
-      name: odiglet
-    - image: registry.connect.redhat.com/odigos/odigos-scheduler-certified@sha256:5bfb3bb457e7ff485694d822d4c181439d64ea1c02e1ce6b146c97a1631bf6a2
-      name: scheduler
-    - image: registry.connect.redhat.com/odigos/odigos-certified-operator-certified@sha256:5938d83461c1d5a3f248355e8b344268fefa83d35db4aceca5036721f4282bec
-      name: manager
     - image: registry.connect.redhat.com/odigos/odigos-enterprise-odiglet-certified@sha256:3063d8f1ed464de71455d91ccbd3c0bf4271df6dcffee00204c8bd2413d40705
-      name: enterprise_odiglet
+      name: enterprise-odiglet
   version: 1.22.2
