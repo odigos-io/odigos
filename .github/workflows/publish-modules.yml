@@ -67,12 +67,23 @@ jobs:
     if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: decide
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
+
+      - name: Get sts tokens
+        id: sts-this-repo
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: push-mod-tags
+          output-git-config: "true"
+
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Fetch all history for all tags and branches
-          token: ${{ secrets.RELEASE_BOT_TOKEN }}
+          token: ${{ steps.sts-this-repo.outputs.GH_TOKEN }}
 
       - name: Extract Tag
         id: extract_tag
@@ -91,15 +102,7 @@ jobs:
         with:
           tag: ${{ steps.extract_tag.outputs.tag }}
 
-      - name: Trigger Release PR in Odigos Enterprise
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.RELEASE_BOT_TOKEN }}" \
-          https://api.github.com/repos/odigos-io/odigos-enterprise/dispatches \
-            -d '{"event_type": "create_release_pr", "client_payload": {"tag": "${{ steps.extract_tag.outputs.tag }}"}}'
-
-      - name: Notify Slack Success
+      - name: Notify Slack
         if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
@@ -108,6 +111,38 @@ jobs:
           failure-description: "ERROR: Odigos go modules tagging failed"
           tag: ${{ steps.extract_tag.outputs.tag }}
 
+  trigger-enterprise-release-pr:
+    if: ${{ needs.decide.outputs.skip != 'true' }}
+    needs: [decide, tag-modules]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+
+      - name: Get sts tokens
+        id: sts-enterprise
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos-enterprise
+          identity: create-release-pr.sts
+          output-git-config: "false"
+
+      - name: Trigger create release PR workflow
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
+          repository: odigos-io/odigos-enterprise
+          event-type: create_release_pr
+          client-payload: '{"tag": "${{ needs.decide.outputs.tag }}"}'
+
+      - name: Notify Slack
+        uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
+        with:
+          webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
+          success-description: "Triggered Odigos Enterprise release PR workflow"
+          failure-description: "ERROR: Failed to trigger Odigos Enterprise release PR workflow"
+          tag: ${{ needs.decide.outputs.tag }}
+
   publish-images:
     if: ${{ needs.decide.outputs.skip != 'true' }}
     needs: decide
@@ -115,6 +150,7 @@ jobs:
       contents: 'read'
       id-token: 'write'
       packages: 'write'
+      
     strategy:
       matrix:
         service: ['autoscaler', 'scheduler', 'instrumentor', 'collector', 'odiglet', 'ui', 'operator', 'agents']
