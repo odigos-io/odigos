@@ -5,12 +5,13 @@ on:
     branches:
       - 'releases/**'
 
-permissions:
-  contents: write  # Required to push tags using the GITHUB_TOKEN
+permissions: read-all
 
 jobs:
   tag-release-branch-version:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
 
@@ -58,7 +59,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
-        
+
           TAG="${{ env.TAG }}"
 
           # Check if tag already exists
