@@ -39,7 +39,7 @@ jobs:
         uses: odigos-io/ci-core/sts@main
         with:
           scope: odigos-io/odigos
-          identity: push-mod-tags
+          identity: push-tags
           output-git-config: "true"
 
       - uses: actions/checkout@v6
