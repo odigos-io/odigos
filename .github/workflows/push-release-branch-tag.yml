@@ -5,19 +5,29 @@ on:
     branches:
       - 'releases/**'
 
-permissions:
-  contents: write  # Required to push tags using the GITHUB_TOKEN
+permissions: read-all
 
 jobs:
   tag-release-branch-version:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
+
+      - name: Get sts tokens
+        id: sts-this-repo
+        uses: odigos-io/ci-core/sts@main
+        with:
+          scope: odigos-io/odigos
+          identity: push-tags
+          output-git-config: "true"
+
       - name: Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Full history required to create tags
-          token: ${{ secrets.RELEASE_BOT_TOKEN }}
+          token: ${{ steps.sts-this-repo.outputs.GH_TOKEN }}
 
       - name: Extract tag from commit message
         id: extract_tag
@@ -49,9 +59,6 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
         run: |
-          # Configure Git user identity for the workflow using the actor who triggered it
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git config --global user.name "${{ github.actor }}"
 
           TAG="${{ env.TAG }}"
 
