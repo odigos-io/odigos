@@ -112,7 +112,7 @@ jobs:
           fi
 
 
-      - name: Get enterprisests Sts Token
+      - name: Get enterprise Sts Token
         id: sts-enterprise
         uses: odigos-io/ci-core/sts@main
         with:
@@ -130,7 +130,7 @@ jobs:
 
       - name: Create or Update Pre-release PR
         env:
-          GH_TOKEN: ${{ steps.sts-enterprise.outputs.GH_TOKEN }}
+          GH_TOKEN: ${{ steps.sts-create-rc.outputs.GH_TOKEN }}
         run: |
           RELEASE_BRANCH="${{ steps.rc_version.outputs.release_branch_name }}"
           PR_BRANCH="${{ steps.rc_version.outputs.pr_branch }}"
