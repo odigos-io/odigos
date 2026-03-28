@@ -39,9 +39,23 @@ jobs:
           SHA="${{ github.sha }}"
           REPO="${{ github.repository }}"
           mkdir -p .cherry-pick-workflow
+          ERR_LOG=".cherry-pick-workflow/gh-api-stderr.log"
 
+          set +e
           PR_JSON=$(gh api "repos/${REPO}/commits/${SHA}/pulls" \
-            --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | sort_by(.merged_at) | reverse | .[0] // empty' 2>/dev/null || echo "")
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | sort_by(.merged_at) | reverse | .[0] // empty' 2>"$ERR_LOG")
+          GH_EXIT=$?
+          set -euo pipefail
+
+          if [[ -s "$ERR_LOG" ]]; then
+            echo "::warning::gh api stderr while listing PRs for commit $SHA:"
+            cat "$ERR_LOG"
+          fi
+
+          if [[ "$GH_EXIT" -ne 0 ]]; then
+            echo "::error::gh api failed (exit $GH_EXIT) listing pull requests for commit $SHA. This is not the same as having no linked PR; fix auth, rate limits, or API usage. See stderr in the warning above."
+            exit 1
+          fi
 
           if [[ -z "$PR_JSON" || "$PR_JSON" == "null" ]]; then
             echo "No merged PR associated with commit $SHA (e.g. direct push to main)"
