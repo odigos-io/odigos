@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/odigos/exporter/mockdestinationexporter/internal/metadata"
+	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
@@ -52,7 +53,7 @@ func createLogsExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithQueue(configoptional.Some(pCfg.QueueConfig)),
 	)
 }
 
@@ -75,7 +76,7 @@ func createTracesExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithQueue(configoptional.Some(pCfg.QueueConfig)),
 	)
 }
 
@@ -98,6 +99,6 @@ func createMetricsExporter(
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
 		exporterhelper.WithTimeout(pCfg.TimeoutConfig),
 		exporterhelper.WithRetry(pCfg.RetryConfig),
-		exporterhelper.WithQueue(pCfg.QueueConfig),
+		exporterhelper.WithQueue(configoptional.Some(pCfg.QueueConfig)),
 	)
 }

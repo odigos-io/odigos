@@ -13,28 +13,45 @@ func TestValidateConfigs(t *testing.T) {
 	factories, err := components()
 	assert.NoError(t, err)
 
+	// MakeFactoryMap may register deprecated type aliases as extra keys; alias keys differ from
+	// factory.Type() but reference the same factory as factories.Map[factory.Type()].
 	for k, factory := range factories.Receivers {
-		assert.Equal(t, k, factory.Type())
+		assert.Equal(t, factory, factories.Receivers[factory.Type()])
+		if k != factory.Type() {
+			continue
+		}
 		assert.NoError(t, componenttest.CheckConfigStruct(factory.CreateDefaultConfig()))
 	}
 
 	for k, factory := range factories.Processors {
-		assert.Equal(t, k, factory.Type())
+		assert.Equal(t, factory, factories.Processors[factory.Type()])
+		if k != factory.Type() {
+			continue
+		}
 		assert.NoError(t, componenttest.CheckConfigStruct(factory.CreateDefaultConfig()))
 	}
 
 	for k, factory := range factories.Exporters {
-		assert.Equal(t, k, factory.Type())
+		assert.Equal(t, factory, factories.Exporters[factory.Type()])
+		if k != factory.Type() {
+			continue
+		}
 		assert.NoError(t, componenttest.CheckConfigStruct(factory.CreateDefaultConfig()))
 	}
 
 	for k, factory := range factories.Connectors {
-		assert.Equal(t, k, factory.Type())
+		assert.Equal(t, factory, factories.Connectors[factory.Type()])
+		if k != factory.Type() {
+			continue
+		}
 		assert.NoError(t, componenttest.CheckConfigStruct(factory.CreateDefaultConfig()))
 	}
 
 	for k, factory := range factories.Extensions {
-		assert.Equal(t, k, factory.Type())
+		assert.Equal(t, factory, factories.Extensions[factory.Type()])
+		if k != factory.Type() {
+			continue
+		}
 		assert.NoError(t, componenttest.CheckConfigStruct(factory.CreateDefaultConfig()))
 	}
 }

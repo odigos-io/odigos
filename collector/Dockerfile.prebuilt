@@ -1,0 +1,3 @@
+FROM gcr.io/distroless/base:latest
+COPY collector/odigosotelcol/odigosotelcol /odigosotelcol
+CMD ["/odigosotelcol"]
