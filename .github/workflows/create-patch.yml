@@ -60,6 +60,11 @@ jobs:
           echo "patch_version=$NEW_PATCH_VERSION" >> $GITHUB_OUTPUT
           echo "pr_branch=patch-release/$NEW_PATCH_VERSION" >> $GITHUB_OUTPUT
 
+      - name: Configure Git for bot commits
+        run: |
+          git config user.email "bot@odigos.io"
+          git config user.name "Odigos Release Bot"
+
       - name: Create or Update Patch Release PR
         env:
           GH_TOKEN: ${{ steps.sts-create-patch.outputs.GH_TOKEN }}
