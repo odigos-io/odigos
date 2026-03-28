@@ -9,7 +9,7 @@ permissions: read-all
 
 jobs:
   extract-versions:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     permissions:
       id-token: write
     outputs:
@@ -164,7 +164,7 @@ jobs:
   cherry-pick:
     needs: extract-versions
     if: needs.extract-versions.outputs.run_cherry_pick == 'true'
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-latest
     permissions:
       id-token: write
     strategy:
