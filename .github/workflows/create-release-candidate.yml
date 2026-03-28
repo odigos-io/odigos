@@ -130,7 +130,12 @@ jobs:
           event-type: ensure-release-branch
           client-payload: '{"branch":"${{ steps.rc_version.outputs.release_branch_name }}"}'
 
-      - name: Create or Update Pre-release PR
+      - name: Configure Git for bot commits
+        run: |
+          git config user.email "bot@odigos.io"
+          git config user.name "Odigos Release Bot"
+
+      - name: Create or Update Release Candidate PR
         env:
           GH_TOKEN: ${{ steps.sts-create-rc.outputs.GH_TOKEN }}
         run: |

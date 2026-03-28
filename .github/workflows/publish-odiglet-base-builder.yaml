@@ -101,6 +101,7 @@ jobs:
             us-central1-docker.pkg.dev/odigos-cloud/components/odiglet-base:${{ github.event.inputs.image_tag }}
       
       - name: Notify Slack
+        if: always()
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
@@ -175,7 +176,7 @@ jobs:
           merge-method: squash
 
       - name: Notify Slack
-        if: steps.create-pr.outputs.pull-request-number != ''
+        if: always() && steps.create-pr.outputs.pull-request-number != ''
         uses: odigos-io/ci-core/.github/actions/slack-release-notification@main
         with:
           webhook-url: ${{ secrets.ODIGOS_RELEASE_STATUS_WEBHOOK_URL }}
