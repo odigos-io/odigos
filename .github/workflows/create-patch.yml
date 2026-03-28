@@ -7,9 +7,14 @@ on:
         description: "version to create a patch for (format: vX.Y)"
         required: true
 
+
+permissions: read-all
+
 jobs:
   create-patch-release:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - name: Check Input Format
         id: release_branch

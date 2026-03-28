@@ -3,6 +3,8 @@ name: 'Create Release Candidate'
 on:
   workflow_dispatch:
 
+permissions: read-all
+
 jobs:
   create-release-candidate:
     runs-on: ubuntu-latest
