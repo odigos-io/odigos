@@ -73,7 +73,6 @@ processors:
   resourcedetection:
     detectors:
     - ec2
-    - eks
     - azure
     - aks
     timeout: 2s

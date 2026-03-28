@@ -45,7 +45,9 @@ func commonProcessors(nodeCG *odigosv1.CollectorsGroup, runningOnGKE bool) confi
 	if runningOnGKE {
 		detectors = []string{"gcp"}
 	} else {
-		detectors = []string{"ec2", "eks", "azure", "aks"}
+		// NOTE: with collector v0.148.0 on some fresh EKS nodes, the eks detector can fail startup
+		// with "can't get K8s Instance Metadata; node name is empty". ec2 still provides cloud metadata.
+		detectors = []string{"ec2", "azure", "aks"}
 	}
 	allProcessors[resourceDetectionProcessorName] = config.GenericMap{
 		"detectors": detectors,

@@ -1665,6 +1665,19 @@
       "required": [],
       "title": "profiles"
     },
+    "profiling": {
+      "additionalProperties": false,
+      "description": "Continuous profiling: node collector → gateway → UI (OTLP gRPC). In-memory slots only for active views; UI GET /metrics exposes odigos_ui_profiling_*.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "profiling"
+    },
     "psp": {
       "additionalProperties": false,
       "description": "Pod Security Policy",

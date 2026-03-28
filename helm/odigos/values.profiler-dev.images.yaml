@@ -1,0 +1,26 @@
+# Merge this file when testing a profiling branch while keeping everything else on a
+# released chart version.
+#
+#   helm repo add odigos https://odigos-io.github.io/odigos/
+#   helm repo update
+#   STABLE=$(helm search repo odigos/odigos --versions | awk '$1=="odigos/odigos"{print $2; exit}')
+#   helm upgrade --install odigos odigos/odigos --version "$STABLE" -n odigos-system --create-namespace \
+#     -f helm/odigos/values.profiler-dev.images.yaml
+#
+# Before apply:
+# 1. Set image.tag to the same Odigos release line as STABLE (images use registry.odigos.io).
+# 2. Replace REPLACE_WITH_CUSTOM_TAG in `images` with the tag you built/pushed (e.g. git rev-parse HEAD).
+
+image:
+  tag: v0.0.0
+
+profiling:
+  enabled: true
+
+# Full image refs for components built from your branch. All other components use:
+#   <imagePrefix>/odigos-<name>:<image.tag>  (default prefix registry.odigos.io)
+images:
+  collector: public.ecr.aws/odigos/odigos/core/profiler/odigos-collector:REPLACE_WITH_CUSTOM_TAG
+  odiglet: public.ecr.aws/odigos/odigos/core/profiler/odigos-odiglet:REPLACE_WITH_CUSTOM_TAG
+  autoscaler: public.ecr.aws/odigos/odigos/core/profiler/odigos-autoscaler:REPLACE_WITH_CUSTOM_TAG
+  ui: public.ecr.aws/odigos/odigos/core/profiler/odigos-ui:REPLACE_WITH_CUSTOM_TAG

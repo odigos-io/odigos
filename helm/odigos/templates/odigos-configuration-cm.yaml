@@ -46,6 +46,10 @@ data:
       clientSecret: secretRef:odigos-oidc
       {{- end }}
     {{- end }}
+    {{- if .Values.profiling.enabled }}
+    profiling:
+      enabled: true
+    {{- end }}
     {{- if .Values.collectorGateway }}
     {{- $gwLimiter := include "collector.gateway.memoryLimiter" . | fromYaml }}
     collectorGateway:

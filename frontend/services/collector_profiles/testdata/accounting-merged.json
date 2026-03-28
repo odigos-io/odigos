@@ -1,0 +1,127 @@
+{
+  "resourceProfiles": [
+    {
+      "scopeProfiles": [
+        {
+          "profiles": [
+            {
+              "sampleType": {
+                "typeStrindex": 1,
+                "unitStrindex": 2
+              },
+              "samples": [
+                {
+                  "values": [
+                    "2"
+                  ],
+                  "attributeIndices": [
+                    0
+                  ]
+                },
+                {
+                  "stackIndex": 1,
+                  "values": [
+                    "1"
+                  ],
+                  "attributeIndices": [
+                    0
+                  ]
+                }
+              ],
+              "timeUnixNano": "1000000000",
+              "periodType": {
+                "typeStrindex": 3,
+                "unitStrindex": 4
+              },
+              "period": "1000000"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "dictionary": {
+    "mappingTable": [
+      {
+        "memoryStart": "4096",
+        "memoryLimit": "8192",
+        "filenameStrindex": 10
+      }
+    ],
+    "locationTable": [
+      {
+        "address": "4352",
+        "lines": [
+          {
+            "line": "1"
+          }
+        ]
+      },
+      {
+        "address": "4608",
+        "lines": [
+          {
+            "functionIndex": 1,
+            "line": "2"
+          }
+        ]
+      },
+      {
+        "address": "4864",
+        "lines": [
+          {
+            "functionIndex": 2,
+            "line": "3"
+          }
+        ]
+      }
+    ],
+    "functionTable": [
+      {
+        "nameStrindex": 7
+      },
+      {
+        "nameStrindex": 8
+      },
+      {
+        "nameStrindex": 9
+      }
+    ],
+    "stringTable": [
+      "",
+      "samples",
+      "count",
+      "cpu",
+      "nanoseconds",
+      "service.name",
+      "test-svc",
+      "runtime.main",
+      "main.foo",
+      "main.bar",
+      "lib.so"
+    ],
+    "attributeTable": [
+      {
+        "keyStrindex": 5,
+        "value": {
+          "stringValue": "test-svc"
+        }
+      }
+    ],
+    "stackTable": [
+      {
+        "locationIndices": [
+          2,
+          1,
+          0
+        ]
+      },
+      {
+        "locationIndices": [
+          1,
+          0
+        ]
+      }
+    ]
+  }
+}
