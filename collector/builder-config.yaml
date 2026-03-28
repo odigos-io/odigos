@@ -97,6 +97,10 @@ receivers:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.141.0
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.141.0
   - gomod: github.com/odigos-io/odigos/collector/receivers/odigosebpfreceiver v0.141.0
+  # Pinned to OpenTelemetry Collector v0.141.x (matches dist version above). Newer ebpf-profiler tags
+  # pull collector 0.142+ and break a single odigosotelcol module graph.
+  - gomod: go.opentelemetry.io/ebpf-profiler v0.0.202549
+    import: go.opentelemetry.io/ebpf-profiler/collector
 
 # https://github.com/open-telemetry/opentelemetry-collector/issues/8127
 excludes:
