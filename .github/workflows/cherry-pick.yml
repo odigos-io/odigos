@@ -23,17 +23,17 @@ jobs:
     steps:
 
       - name: Get sts tokens
-        id: sts-cherry-pick-decied
+        id: sts-cherry-pick-decision
         uses: odigos-io/ci-core/sts@main
         with:
           scope: odigos-io/odigos
-          identity: cherry-pick-decied
+          identity: cherry-pick-decision
           output-git-config: "false"
 
       - name: Find merged PR for commit
         id: find_pr
         env:
-          GH_TOKEN: ${{ steps.sts-cherry-pick-decied.outputs.GH_TOKEN }}
+          GH_TOKEN: ${{ steps.sts-cherry-pick-decision.outputs.GH_TOKEN }}
         run: |
           set -euo pipefail
           SHA="${{ github.sha }}"
