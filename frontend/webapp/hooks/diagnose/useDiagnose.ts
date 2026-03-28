@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import { DOWNLOAD_DIAGNOSE } from '@/graphql';
-import { API, downloadFileFromURL } from '@/utils';
+import { createCSRFHeaders, getCSRFTokenFromCookie } from '@/hooks/tokens/useCSRF';
+import { downloadFileFromURL } from '@/utils';
 import { useNotificationStore } from '@odigos/ui-kit/store';
 import { Crud, StatusType, type DiagnoseFormData } from '@odigos/ui-kit/types';
 
@@ -28,8 +29,15 @@ export const useDiagnose = () => {
       addNotification({ type: StatusType.Error, title: 'Error', message: 'No diagnose data available' });
     } else {
       try {
-        // then we get the file from the backend
-        const response = await fetch(`${API.BACKEND_HTTP_ORIGIN}/diagnose/download`);
+        const { token: csrfToken } = getCSRFTokenFromCookie();
+        if (!csrfToken) {
+          addNotification({ type: StatusType.Error, title: 'Error', message: 'CSRF token missing' });
+          return;
+        }
+        const response = await fetch('/diagnose/download', {
+          credentials: 'include',
+          headers: createCSRFHeaders(csrfToken),
+        });
         if (!response.ok) throw new Error('Failed to download diagnose file');
 
         // then we create a blob URL from the file

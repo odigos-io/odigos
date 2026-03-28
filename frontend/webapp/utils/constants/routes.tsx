@@ -11,6 +11,8 @@ export const ROUTES = {
   INSTRUMENTATION_RULES: '/instrumentation-rules',
   SERVICE_MAP: '/service-map',
   PIPELINE_COLLECTORS: '/pipeline-collectors',
+  /** On-demand continuous profiling (GraphQL + flame graph UI). */
+  PROFILING: '/profiling',
 };
 
 export const SKIP_TO_SUMMERY_QUERY_PARAM = 'skipToSummary';
