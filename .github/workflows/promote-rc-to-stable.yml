@@ -214,7 +214,7 @@ jobs:
         uses: odigos-io/ci-core/sts@main
         with:
           scope: odigos-io/odigos
-          identity: release
+          identity: trigger-release
           output-git-config: "true"
 
       - name: Trigger Release Workflow
