@@ -187,6 +187,11 @@ type SpanRenamer struct {
 	Supported bool `yaml:"supported,omitempty"`
 }
 
+type PayloadCollection struct {
+	// if true, the distro supports payload collection for traces in the agent.
+	Supported bool `yaml:"supported,omitempty"`
+}
+
 type Traces struct {
 	// if set, the distro supports head sampling based on root spans of traces.
 	HeadSampling *HeadSampling `yaml:"headSampling,omitempty"`
@@ -200,6 +205,10 @@ type Traces struct {
 
 	// if set, the distro supports applying span renamer rules to traces in the agent.
 	SpanRenamer *SpanRenamer `yaml:"spanRenamer,omitempty"`
+
+	// if set, the distro supports payload collection.
+	// which payload and under which conditions to collect is instrumentation library specific.
+	PayloadCollection *PayloadCollection `yaml:"payloadCollection,omitempty"`
 }
 
 // OtelDistro (Short for OpenTelemetry Distribution) is a collection of OpenTelemetry components,

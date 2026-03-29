@@ -33,3 +33,5 @@ spec:
       serverAddressAttributeKey: "net.peer.name"
     headersCollection:
       supported: true
+    payloadCollection:
+      supported: true
