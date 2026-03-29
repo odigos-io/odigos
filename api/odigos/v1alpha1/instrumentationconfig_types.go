@@ -373,6 +373,9 @@ type AgentTracesConfig struct {
 
 	// Configuration for span renamer.
 	SpanRenamer *SpanRenamerConfig `json:"spanRenamer,omitempty"`
+
+	// configuration for payload collection for this container.
+	PayloadCollection *instrumentationrules.PayloadCollection `json:"payloadCollection,omitempty"`
 }
 
 // all "metrics" related configuration for an agent running on any process in a specific container.
